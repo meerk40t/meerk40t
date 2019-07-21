@@ -57,16 +57,17 @@ ID_MENU_ROTATE_CCW = idinc.new()
 ID_MENU_HFLIP = idinc.new()
 ID_MENU_VFLIP = idinc.new()
 
-
 ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
 ID_MENU_TREE = idinc.new()
 
 ID_MENU_WEBPAGE = idinc.new()
-
+ID_CUT_TREE = idinc.new()
+ID_CUT_BURN_BUTTON = idinc.new()
 
 project = LaserProject()
+
 
 class MeerK40t(wx.Frame):
 
@@ -104,7 +105,8 @@ class MeerK40t(wx.Frame):
                                        wx.Bitmap("icons/icons8-py-50.png", wx.BITMAP_TYPE_ANY))
         windows = RB.RibbonButtonBar(windows_panel)
         windows.AddButton(ID_NAV, "Navigation", wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY), "")
-        windows.AddButton(ID_CONTROLLER, "Controller", wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY), "")
+        windows.AddButton(ID_CONTROLLER, "Controller", wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY),
+                          "")
         windows.AddButton(ID_PREFERENCES, "Preferences",
                           wx.Bitmap("icons/icons8-administrative-tools-50.png", wx.BITMAP_TYPE_ANY), "")
 
@@ -221,7 +223,7 @@ class MeerK40t(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle("MainWindow")
+        self.SetTitle("MeerK40t")
         self.main_statusbar.SetStatusWidths([-1])
 
         # statusbar fields
@@ -396,6 +398,7 @@ class MeerK40t(wx.Frame):
     def tool_curve(self, event):
         pass
 
+
 # end of class MeerK40t
 
 
@@ -405,27 +408,35 @@ class CutConfiguration(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.SetSize((300, -1))
-        self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-
+        self.element_tree = wx.TreeCtrl(self, ID_CUT_TREE, style=wx.FULL_REPAINT_ON_RESIZE)
+        self.burn_button = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, wx.Bitmap("./icons/icons8-gas-industry-50.png",
+                                                                               wx.BITMAP_TYPE_ANY))
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
+        self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh()
         # end wxGlade
 
     def __set_properties(self):
         # begin wxGlade: CutConfiguration.__set_properties
         self.SetSize((300, -1))
+        self.burn_button.SetSize(self.burn_button.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: CutConfiguration.__do_layout
+
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_1.Add(self.element_tree, 1, wx.EXPAND, 0)
+        sizer_1.Add(self.burn_button, 0, 0, 0)
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def on_clicked_burn(self, event):
+        project.burn_project()
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
         print("Event handler 'on_item_activated' not implemented!")
@@ -446,6 +457,7 @@ class MeerK40tGui(wx.App):
         self.SetTopWindow(self.MeerK40t)
         self.MeerK40t.Show()
         return True
+
 
 # end of class MeerK40tGui
 

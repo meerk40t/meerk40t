@@ -9,6 +9,7 @@ STATUS_PACKET_REJECTED = 207
 STATUS_FINISH = 236
 STATUS_BUSY = 238
 STATUS_POWER = 239
+STATUS_NO_DEVICE = -1
 
 
 def convert_to_list_bytes(data):
@@ -65,11 +66,18 @@ class K40Controller:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def __add__(self, other):
+    def __iadd__(self, other):
         self.buffer += other
         self.process_queue()
+        return self
 
     def process_queue(self):
+        if self.usb is None:
+            try:
+                self.open()
+            except usb.core.USBError:
+                self.status = STATUS_NO_DEVICE
+                return
         wait_finish = False
         while True:
             while len(self.buffer) <= 30:
@@ -85,6 +93,7 @@ class K40Controller:
             # buffer has enough to send a packet.
             packet = self.buffer[0:30]
             self.buffer = self.buffer[30:]
+
             self.usb.wait(STATUS_OK)
             self.usb.send_packet(convert_to_list_bytes(packet))
             if wait_finish:

@@ -67,7 +67,7 @@ class ImageElement(LaserElement):
                     self.cache = wx.Bitmap.FromBuffer(width, height, self.image.tobytes())
                 except ValueError:
                     return
-            #TODO: 1 bit graphics crash
+            # TODO: 1 bit graphics crash
         dc.DrawBitmap(self.cache, 0, 0)
         dc.SetTransformMatrix(current_scene_matrix)
 
@@ -259,6 +259,7 @@ class LaserProject:
         self.elements = []
         self.size = 320, 220
         self.controller = K40Controller()
+
         self.controller.listener = self.notification
         self.writer = LhymicroWriter(controller=self.controller)
         self.status_listener = None
@@ -290,10 +291,12 @@ class LaserProject:
         if self.update_listener is not None:
             self.update_listener(None)
 
-    def execute(self, commands=None):
-        if commands is None:
-            commands = self.iterate_commands
-        for command, values in commands():
+    def burn_project(self):
+        for element in self.elements:
+            self.burn_element(element)
+
+    def burn_element(self, element):
+        for command, values in element.generate():
             if command == COMMAND_SIMPLE_MOVE:
                 x, y = values
                 self.writer.plot(x, y)
@@ -337,17 +340,17 @@ class LaserProject:
                 self.writer.unlock_rail()
             elif command == COMMAND_MOVE_TO:
                 x, y = values
-                self.execute(ZinglPlotter.plot_line(
+                self.burn_element(ZinglPlotter.plot_line(
                     int(self.writer.current_x), int(self.writer.current_y),
                     x, y))
             elif command == COMMAND_CUT_LINE_TO:
                 x, y = values
-                self.execute(ZinglPlotter.plot_line(
+                self.burn_element(ZinglPlotter.plot_line(
                     int(self.writer.current_x), int(self.writer.current_y),
                     x, y))
             elif command == COMMAND_CUT_QUAD_TO:
                 cx, cy, x, y = values
-                self.execute(ZinglPlotter.plot_quad_bezier(
+                self.burn_element(ZinglPlotter.plot_quad_bezier(
                     int(self.writer.current_x), int(self.writer.current_y),
                     cx, cy,
                     x, y))
@@ -359,13 +362,13 @@ class LaserProject:
                 #         c1x, c1y,
                 #         c2x, c2y,
                 #         x, y))
-                self.execute(ZinglPlotter.plot_line(
+                self.burn_element(ZinglPlotter.plot_line(
                     int(self.writer.current_x), int(self.writer.current_y),
                     x, y))
             elif command == COMMAND_CUT_ARC_TO:
                 cx, cy, x, y = values
                 # I do not actually have an arc plotter.
-                self.execute(ZinglPlotter.plot_line(
+                self.burn_element(ZinglPlotter.plot_line(
                     int(self.writer.current_x), int(self.writer.current_y),
                     x, y))
 
