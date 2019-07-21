@@ -9,6 +9,7 @@ STATUS_PACKET_REJECTED = 207
 STATUS_FINISH = 236
 STATUS_BUSY = 238
 STATUS_POWER = 239
+
 STATUS_NO_DEVICE = -1
 
 
@@ -77,6 +78,8 @@ class K40Controller:
                 self.open()
             except usb.core.USBError:
                 self.status = STATUS_NO_DEVICE
+                if self.listener is not None:
+                    self.listener(1, self.status)
                 return
         wait_finish = False
         while True:
