@@ -6,21 +6,28 @@ MeerK40t "Meer" (provisional name) is a built from the ground up open source las
 
 # Current State
 
-The bones are largely established. Most of the aspects of a functional stock k40 laser cutter already work. It needs to be put together and a few holes need to be patched up.
+The driver works the same way as with Whisperer so installing the bundled driver there is reasonable.
 
+The bones are largely established. And well built.
+
+Most of the aspects of a functional stock k40 laser cutter work, it will cut some things.
+
+It has some highly serious bugs and issues that aren't fixed and need to be.
 
 ---
 
 # Philosophy
 
-The goal is simple. Provide a working, effective, stock K40 laser program that is easy to hack on. There are a number of highly creative, dedicated, and determined people out there. And a lot of people have wanted to help with the software aspects as well. The primary subgoal of this project is to create an outlit for hacking this aspect of the K40.
+The goal is simple. Provide a working, effective, stock K40 laser program that is easy to hack on. There are a number of highly creative, dedicated, and determined people out there. And a lot of people have wanted to help with the software aspects as well. The primary subgoal of this project is to create an outlit for hacking the software aspect of the K40.
 
-Obviously there is little success for projects of lofty goals and no actions so I've written a (not quite yet) working application. The goal is to make sure it has good bones.
+Obviously there is little success for projects of lofty goals and no actions so I've written a (not quite fully) working application. The goal is to make sure it has good bones.
 
 ## GUI
 The primary GUI is written in wxPython. It's pretty easy to hack on and quite easy to improve. This is MeerK40t, Navigation, Preferences, Controller, and LaserSceneView. This includes a grid and guides I wrote for this project and a ZoomerPanel I wrote for EmbroidePy (an embrodiery project).
 
 ## Backend
+The USB driver will use the same methodology of Whisperer for now. So the same bundled driver is the easiest method.
+
 The main interfacing with K40 is done through the `K40Controller` this should properly synch with the device in an asynchronized manner both giving consistent state updates, but also robust control over the device. USB connectivity is done through `pyemb`. This is written from the ground up. And includes a couple additional custom commands like '\n' and '-' which do not appear in the LHMicro-GL codeset. 
 
 These perform metacontrol actions like pad the packet the rest of the way and, cause the controller to wait for the FINISHED signal. This means that all functionality of the board can be executed with just an ascii string. And multiple jobs can simply be added to the queue without any issues 
