@@ -96,6 +96,7 @@ class PathElement(LaserElement):
         svg_parser.parse_svg_path(parse, self.path)
         object_path = parse.path
         yield COMMAND_SET_SPEED, (self.cut.get("speed"))
+        yield COMMAND_MODE_COMPACT, 0
         for data in object_path:
             if isinstance(data, Move):
                 yield COMMAND_MOVE_TO, (int(data.end.real), int(data.end.imag))
@@ -260,10 +261,7 @@ class LaserProject:
         self.size = 320, 220
         self.controller = K40Controller()
 
-        self.controller.listener = self.notification
         self.writer = LhymicroWriter(controller=self.controller)
-        self.status_listener = None
-        self.packet_listener = None
         self.update_listener = None
         self.selected = []
 
@@ -279,13 +277,6 @@ class LaserProject:
         for e in self.selected:
             e.move(dx, dy)
 
-    def notification(self, level, data):
-        if level == 0 and self.packet_listener is not None:
-            self.packet_listener(data)
-        if level == 1 and self.status_listener is not None:
-            self.status_listener(data)
-        return False
-
     def add_element(self, obj):
         self.elements.append(obj)
         if self.update_listener is not None:
@@ -293,10 +284,10 @@ class LaserProject:
 
     def burn_project(self):
         for element in self.elements:
-            self.burn_element(element)
+            self.burn_element(element.generate())
 
     def burn_element(self, element):
-        for command, values in element.generate():
+        for command, values in element:
             if command == COMMAND_SIMPLE_MOVE:
                 x, y = values
                 self.writer.plot(x, y)
@@ -340,37 +331,36 @@ class LaserProject:
                 self.writer.unlock_rail()
             elif command == COMMAND_MOVE_TO:
                 x, y = values
-                self.burn_element(ZinglPlotter.plot_line(
-                    int(self.writer.current_x), int(self.writer.current_y),
-                    x, y))
+                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
+                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_LINE_TO:
                 x, y = values
-                self.burn_element(ZinglPlotter.plot_line(
-                    int(self.writer.current_x), int(self.writer.current_y),
-                    x, y))
+                self.writer.down()
+                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
+                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_QUAD_TO:
                 cx, cy, x, y = values
-                self.burn_element(ZinglPlotter.plot_quad_bezier(
-                    int(self.writer.current_x), int(self.writer.current_y),
-                    cx, cy,
-                    x, y))
+                self.writer.down()
+                for x, y, on in ZinglPlotter.plot_quad_bezier(int(self.writer.current_x), int(self.writer.current_y),cx, cy,x, y):
+                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_CUBIC_TO:
                 c1x, c1y, c2x, c2y, x, y = values
+                self.writer.down()
                 #  --- This currently does not actually work
                 # self.execute(ZinglPlotter.plot_cubic_bezier(
                 #         int(self.writer.current_x), int(self.writer.current_y),
                 #         c1x, c1y,
                 #         c2x, c2y,
                 #         x, y))
-                self.burn_element(ZinglPlotter.plot_line(
-                    int(self.writer.current_x), int(self.writer.current_y),
-                    x, y))
+                self.writer.down()
+                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
+                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_ARC_TO:
                 cx, cy, x, y = values
                 # I do not actually have an arc plotter.
-                self.burn_element(ZinglPlotter.plot_line(
-                    int(self.writer.current_x), int(self.writer.current_y),
-                    x, y))
+                self.writer.down()
+                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
+                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
 
     def iterate_commands(self):
         for element in self.elements:

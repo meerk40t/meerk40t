@@ -4,6 +4,7 @@
 #
 
 import wx
+import time
 # begin wxGlade: dependencies
 # end wxGlade
 
@@ -25,10 +26,59 @@ class Navigation(wx.Frame):
         self.bitmap_button_4 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-down.png", wx.BITMAP_TYPE_ANY))
         self.bitmap_button_8 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
         self.spin_jumpamount = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=1000.0)
+        self.spin_timeamount = wx.SpinCtrlDouble(self, wx.ID_ANY, "50.0", min=0.0, max=1000.0)
 
+        self.project = None
         self.__set_properties()
         self.__do_layout()
+        self.Bind(wx.EVT_BUTTON, self.home, self.bitmap_button_6)
+        self.Bind(wx.EVT_BUTTON, self.lock_rail, self.bitmap_button_9)
+        self.Bind(wx.EVT_BUTTON, self.unlock_rail, self.bitmap_button_7)
+        self.Bind(wx.EVT_BUTTON, self.move_left, self.bitmap_button_2)
+        self.Bind(wx.EVT_BUTTON, self.move_right, self.bitmap_button_3)
+        self.Bind(wx.EVT_BUTTON, self.move_bottom, self.bitmap_button_4)
+        self.Bind(wx.EVT_BUTTON, self.move_top, self.bitmap_button_1)
+        self.Bind(wx.EVT_BUTTON, self.fire_time, self.bitmap_button_8)
         # end wxGlade
+
+    def set_project(self, project):
+        self.project = project
+
+    def home(self, evt):
+        self.project.writer.home()
+
+    def lock_rail(self, evt):
+        self.project.writer.lock_rail()
+
+    def unlock_rail(self, evt):
+        self.project.writer.unlock_rail()
+
+    def fire_time(self, evt):
+        value = self.spin_timeamount.GetValue()
+        value = value / 1000.0
+        self.project.writer.down()
+        time.sleep(value)
+        self.project.writer.up()
+
+    def move_top(self, evt):
+        value = self.spin_jumpamount.GetValue()
+        value = int(value * 39.37)
+        self.project.writer.move(0, -value)
+
+    def move_left(self, evt):
+        value = self.spin_jumpamount.GetValue()
+        value = int(value * 39.37)
+        self.project.writer.move(-value, 0)
+
+    def move_right(self, evt):
+        value = self.spin_jumpamount.GetValue()
+        value = int(value * 39.37)
+        self.project.writer.move(value, 0)
+
+    def move_bottom(self, evt):
+        value = self.spin_jumpamount.GetValue()
+        value = int(value * 39.37)
+        self.project.writer.move(0, value)
 
     def __set_properties(self):
         # begin wxGlade: Navigation.__set_properties
@@ -76,6 +126,9 @@ class Navigation(wx.Frame):
         sizer_15.Add(self.spin_jumpamount, 0, 0, 0)
         label_mm3 = wx.StaticText(self, wx.ID_ANY, "mm")
         sizer_15.Add(label_mm3, 0, 0, 0)
+        sizer_15.Add(self.spin_timeamount, 0, 0, 0)
+        label_ms = wx.StaticText(self, wx.ID_ANY, "ms")
+        sizer_15.Add(label_ms, 0, 0, 0)
         sizer_9.Add(sizer_15, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_9)
         sizer_9.Fit(self)

@@ -26,6 +26,10 @@ class Preferences(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
+        self.project = None
+
+    def set_project(self, project):
+        self.project = project
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties

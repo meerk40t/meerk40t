@@ -55,9 +55,10 @@ class K40Controller:
         self.usb = None
         self.interface = None
         self.detached = False
-        self.listener = None
+        self.packet_listener = None
+        self.status_listener = None
+        self.wait_listener = None
 
-        self.queue = []
         self.buffer = b''
 
     def __enter__(self):
@@ -78,45 +79,54 @@ class K40Controller:
                 self.open()
             except usb.core.USBError:
                 self.status = STATUS_NO_DEVICE
-                if self.listener is not None:
-                    self.listener(1, self.status)
+                if self.status_listener is not None:
+                    self.status_listener(self.status)
                 return
         wait_finish = False
+        pad_buffer = False
         while True:
-            while len(self.buffer) <= 30:
-                if len(self.queue) == 0:
-                    return  # buffer isn't enough and queue is empty.
-                item = self.queue.pop()
-                if item[-1] == b'\n':
-                    item = item[0:-1]
-                    self.pad_buffer()
-                if item[-1] == b'-':
-                    wait_finish = True
-                self.buffer += self.queue.pop()
+            if len(self.buffer) == 0:
+                break
+            if self.buffer[-1] == b'\n':
+                self.buffer = self.buffer[0:-1]
+                pad_buffer = True
+            if self.buffer[-1] == b'-':
+                self.buffer = self.buffer[0:-1]
+                wait_finish = True
+            if pad_buffer:
+                self.pad_buffer()
+            if len(self.buffer) < 30:
+                break
             # buffer has enough to send a packet.
             packet = self.buffer[0:30]
             self.buffer = self.buffer[30:]
 
-            self.usb.wait(STATUS_OK)
-            self.usb.send_packet(convert_to_list_bytes(packet))
+            self.wait(STATUS_OK)
+            self.send_packet(convert_to_list_bytes(packet))
             if wait_finish:
-                self.usb.wait(STATUS_FINISH)
+                self.wait(STATUS_FINISH)
 
     def pad_buffer(self):
-        self.buffer += b'F' * (len(self.buffer) % 30)
+        self.buffer += b'F' * (30 - (len(self.buffer) % 30))
 
     def open(self):
-        self.usb = usb.core.find(idVender=0x1A86, idProduct=0x5512)
+        devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
+        for device in devices:
+            self.usb = device
+            break
         if self.usb is None:
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
         self.interface = self.usb.get_active_configuration()[(0, 0)]
-        if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
-            try:
-                self.usb.detach_kernel_driver(self.interface.bInterfaceNumber)
-                self.detached = True
-            except usb.core.USBError:
-                raise usb.core.USBError('Unable to detach from kernel')
+        try:
+            if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
+                try:
+                    self.usb.detach_kernel_driver(self.interface.bInterfaceNumber)
+                    self.detached = True
+                except usb.core.USBError:
+                    raise usb.core.USBError('Unable to detach from kernel')
+        except NotImplementedError:
+            pass  # Driver does not permit kernel detaching.
         usb.util.claim_interface(self.usb, self.interface)
         self.usb.ctrl_transfer(bmRequestType=64, bRequest=177, wValue=258,
                                wIndex=0, data_or_wLength=0, timeout=5000)
@@ -142,18 +152,18 @@ class K40Controller:
 
         sending = True
         while sending:
-            self.usb.write(0x82, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
-            if self.listener is not None:
-                self.listener(0, packet)
+            self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
+            if self.packet_listener is not None:
+                self.packet_listener(packet)
             self.update_status()
             if self.status[1] != STATUS_PACKET_REJECTED:
                 sending = False
 
     def update_status(self):
-        self.usb.write(0x82, [160], 10000)
-        self.status = self.usb.read(0x02, 6, 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
-        if self.listener is not None:
-            self.listener(1, self.status)
+        self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
+        self.status = self.usb.read(0x82, 6, 10000)
+        if self.status_listener is not None:
+            self.status_listener(self.status)
 
     def wait(self, value):
         i = 0
@@ -162,7 +172,7 @@ class K40Controller:
             if self.status[1] == value:
                 break
             time.sleep(0.1)
-            if self.listener is not None:
-                if self.listener(2, i):
+            if self.wait_listener is not None:
+                if self.wait_listener(i):
                     break
             i += 1

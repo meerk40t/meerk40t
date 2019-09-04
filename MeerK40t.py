@@ -348,16 +348,19 @@ class MeerK40t(wx.Frame):
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Preferences import Preferences
         window = Preferences(None, wx.ID_ANY, "")
+        window.set_project(project)
         window.Show()
 
     def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Navigation import Navigation
         window = Navigation(None, wx.ID_ANY, "")
+        window.set_project(project)
         window.Show()
 
     def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Controller import Controller
         window = Controller(None, wx.ID_ANY, "")
+        window.set_project(project)
         window.Show()
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
