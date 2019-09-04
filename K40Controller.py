@@ -176,3 +176,87 @@ class K40Controller:
                 if self.wait_listener(i):
                     break
             i += 1
+
+
+class MockController:
+    def __init__(self):
+        self.status = None
+        self.packet_listener = None
+        self.status_listener = None
+        self.wait_listener = None
+
+        self.buffer = b''
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __iadd__(self, other):
+        self.buffer += other
+        self.process_queue()
+        return self
+
+    def process_queue(self):
+        wait_finish = False
+        pad_buffer = False
+        while True:
+            if len(self.buffer) == 0:
+                break
+            if self.buffer[-1] == b'\n':
+                self.buffer = self.buffer[0:-1]
+                pad_buffer = True
+            if self.buffer[-1] == b'-':
+                self.buffer = self.buffer[0:-1]
+                wait_finish = True
+            if pad_buffer:
+                self.pad_buffer()
+            if len(self.buffer) < 30:
+                break
+            # buffer has enough to send a packet.
+            packet = self.buffer[0:30]
+            self.buffer = self.buffer[30:]
+
+            self.wait(STATUS_OK)
+            self.send_packet(convert_to_list_bytes(packet))
+            if wait_finish:
+                self.wait(STATUS_FINISH)
+
+    def pad_buffer(self):
+        self.buffer += b'F' * (30 - (len(self.buffer) % 30))
+
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+    def send_packet(self, data):
+        packet = [166] + [0] + data + [166] + [onewire_crc_lookup(data)]
+        sending = True
+        while sending:
+            if self.packet_listener is not None:
+                self.packet_listener(packet)
+            self.update_status()
+            if self.status[1] != STATUS_PACKET_REJECTED:
+                sending = False
+
+    def update_status(self):
+        self.status = [STATUS_OK] * 6
+        if self.status_listener is not None:
+            self.status_listener(self.status)
+
+    def wait(self, value):
+        i = 0
+        while True:
+            self.update_status()
+            self.status = [value] * 6
+            if self.status[1] == value:
+                break
+            time.sleep(0.1)
+            if self.wait_listener is not None:
+                if self.wait_listener(i):
+                    break
+            i += 1

@@ -1,3 +1,5 @@
+import threading
+
 import wx
 
 import EgvParser
@@ -5,7 +7,7 @@ import RasterPlotter
 import ZinglPlotter
 import path
 import svg_parser
-from K40Controller import K40Controller
+from K40Controller import K40Controller, MockController
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
 from ZMatrix import ZMatrix
@@ -112,6 +114,7 @@ class PathElement(LaserElement):
             elif isinstance(data, Arc):
                 yield COMMAND_CUT_ARC_TO, (int(data.center.real), int(data.center.imag),
                                            int(data.end.real), int(data.end.imag))
+        yield COMMAND_MODE_DEFAULT, 0
 
     def move(self, dx, dy):
         self.matrix.PostTranslate(dx, dy)
@@ -255,32 +258,12 @@ class PathCommandPlotter:
         pass
 
 
-class LaserProject:
-    def __init__(self):
-        self.elements = []
-        self.size = 320, 220
-        self.controller = K40Controller()
-
-        self.writer = LhymicroWriter(controller=self.controller)
-        self.update_listener = None
-        self.selected = []
-
-    def select(self, position):
-        self.selected = []
-        for e in self.elements:
-            matrix = e.matrix
-            p = matrix.InverseTransformPoint(position)
-            if e.box.Contains(p):
-                self.selected.append(e)
-
-    def move_selected(self, dx, dy):
-        for e in self.selected:
-            e.move(dx, dy)
-
-    def add_element(self, obj):
-        self.elements.append(obj)
-        if self.update_listener is not None:
-            self.update_listener(None)
+class LaserThread(threading.Thread):
+    def __init__(self, project):
+        threading.Thread.__init__(self)
+        self.project = project
+        self.writer = project.writer
+        self.elements = project.elements
 
     def burn_project(self):
         for element in self.elements:
@@ -341,7 +324,8 @@ class LaserProject:
             elif command == COMMAND_CUT_QUAD_TO:
                 cx, cy, x, y = values
                 self.writer.down()
-                for x, y, on in ZinglPlotter.plot_quad_bezier(int(self.writer.current_x), int(self.writer.current_y),cx, cy,x, y):
+                for x, y, on in ZinglPlotter.plot_quad_bezier(int(self.writer.current_x), int(self.writer.current_y),
+                                                              cx, cy, x, y):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_CUBIC_TO:
                 c1x, c1y, c2x, c2y, x, y = values
@@ -362,10 +346,44 @@ class LaserProject:
                 for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
 
-    def iterate_commands(self):
-        for element in self.elements:
-            for event in element.generate():
-                yield event
+    def run(self):
+        self.burn_project()
+        self.project.thread = None
+
+
+class LaserProject:
+    def __init__(self):
+        self.elements = []
+        self.size = 320, 220
+        self.controller = K40Controller()
+        #self.controller = MockController()
+
+        self.writer = LhymicroWriter(controller=self.controller)
+        self.update_listener = None
+        self.selected = []
+        self.thread = None
+
+    def select(self, position):
+        self.selected = []
+        for e in self.elements:
+            matrix = e.matrix
+            p = matrix.InverseTransformPoint(position)
+            if e.box.Contains(p):
+                self.selected.append(e)
+
+    def burn_project(self):
+        if self.thread is None:
+            self.thread = LaserThread(self)
+            self.thread.start()
+
+    def move_selected(self, dx, dy):
+        for e in self.selected:
+            e.move(dx, dy)
+
+    def add_element(self, obj):
+        self.elements.append(obj)
+        if self.update_listener is not None:
+            self.update_listener(None)
 
 
 def direct_plots(generate):

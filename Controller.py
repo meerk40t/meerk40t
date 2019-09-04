@@ -39,7 +39,9 @@ class Controller(wx.Frame):
         self.project.controller.packet_listener = self.update_packet
 
     def update_status(self, data):
-        if len(data) == 6:
+        if isinstance(data, int):
+            self.text_desc.SetValue(str(data))
+        elif len(data) == 6:
             self.text_byte_0.SetValue(str(data[0]))
             self.text_byte_1.SetValue(str(data[1]))
             self.text_byte_2.SetValue(str(data[2]))
