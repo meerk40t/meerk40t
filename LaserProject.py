@@ -37,7 +37,6 @@ class LaserElement:
             p = gc.CreatePath()
             parse = PathCommandPlotter(p)
             for event in self.generate():
-                # print(event)
                 parse.command(event)
             self.cache = p
             self.box = self.cache.GetBox()
@@ -151,7 +150,6 @@ class EgvElement(LaserElement):
             parse = PathCommandPlotter(p)
             for event in self.generate():
                 parse.command(event)
-            print(parse.x, parse.y)
             self.cache = p
             self.box = self.cache.GetBox()
         gc.StrokePath(self.cache)
@@ -277,6 +275,7 @@ class LaserThread(threading.Thread):
             self.burn_element(element.generate())
 
     def burn_element(self, element):
+        import time
         for command, values in element:
             if command == COMMAND_SIMPLE_MOVE:
                 x, y = values
@@ -322,12 +321,16 @@ class LaserThread(threading.Thread):
             elif command == COMMAND_MOVE_TO:
                 x, y = values
                 self.writer.up()
-                for x, y, on in direct_plots(ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y)):
+                for x, y, on in direct_plots(self.writer.current_x, self.writer.current_y,
+                                             ZinglPlotter.plot_line(int(self.writer.current_x),
+                                                                    int(self.writer.current_y), x, y)):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_LINE_TO:
                 x, y = values
                 self.writer.down()
-                for x, y, on in direct_plots(ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y)):
+                for x, y, on in direct_plots(self.writer.current_x, self.writer.current_y,
+                                             ZinglPlotter.plot_line(int(self.writer.current_x),
+                                                                    int(self.writer.current_y), x, y)):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
                 self.writer.up()
             elif command == COMMAND_CUT_QUAD_TO:
@@ -340,13 +343,9 @@ class LaserThread(threading.Thread):
             elif command == COMMAND_CUT_CUBIC_TO:
                 c1x, c1y, c2x, c2y, x, y = values
                 self.writer.down()
-                #  --- This currently does not actually work
-                # self.execute(ZinglPlotter.plot_cubic_bezier(
-                #         int(self.writer.current_x), int(self.writer.current_y),
-                #         c1x, c1y,
-                #         c2x, c2y,
-                #         x, y))
-                self.writer.down()
+                for x, y, on in ZinglPlotter.plot_cubic_bezier(int(self.writer.current_x), int(self.writer.current_y),
+                                                            c1x, c1y, c2x, c2y, x, y):
+                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
                 for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
                 self.writer.up()
@@ -398,23 +397,23 @@ class LaserProject:
             self.update_listener(None)
 
 
-def direct_plots(generate):
-    cx = 0
-    cy = 0
-    con = None
-    x = 0
-    y = 0
-    on = None
+def direct_plots(start_x, start_y, generate):
+    last_x = start_x
+    last_y = start_y
+    dx = 0
+    dy = 0
+
     for event in generate:
         x, y, on = event
-        dx = x - cx
-        dy = y - cy
+        if x == last_x + dx and y == last_y + dy:
+            last_x = x
+            last_y = y
+            continue
+        yield last_x, last_y, 1
+        dx = x - last_x
+        dy = y - last_y
+        last_x = x
+        last_y = y
+    yield last_x, last_y, 1
 
-        if con != on or (dx != 0 and dy != 0 and abs(dx) != abs(dy)):
-            yield cx, cy, con
-            cx = x
-            cy = y
-            con = on
-    if cx != x or cy != y or con != on:
-        yield cx, cy, on
 

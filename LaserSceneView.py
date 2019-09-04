@@ -36,6 +36,9 @@ class LaserSceneView(wx.Panel):
         self.draw_guides = True
         self.grid = None
         self.draw_laserhead = True
+        self.draw_laserpath = True
+        self.laserpath = [(0,0,0,0)] * 50
+        self.laserpath_index = 0
 
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -70,7 +73,10 @@ class LaserSceneView(wx.Panel):
     def on_paint(self, event):
         wx.BufferedPaintDC(self, self._Buffer)
 
-    def update_position(self, x, y):
+    def update_position(self, x, y, old_x=0, old_y=0):
+        self.laserpath[self.laserpath_index] = (x, y, old_x, old_y)
+        self.laserpath_index += 1
+        self.laserpath_index %= 50
         self.update_buffer()
 
     def on_size(self, event):
@@ -333,5 +339,8 @@ class LaserSceneView(wx.Panel):
             return
         for element in self.project.elements:
             element.draw(dc)
+        if self.draw_laserpath:
+            dc.SetPen(wx.BLUE_PEN)
+            dc.DrawLineList(self.laserpath)
 
 # end of class MainView

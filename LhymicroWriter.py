@@ -102,12 +102,14 @@ class LhymicroWriter:
                 self.move_y(dy)
             self.controller += b'S1P\n'
         elif self.state == STATE_COMPACT:
-            if dx != 0:
-                self.move_x(dx)
-            elif dy != 0:
-                self.move_y(dy)
-            else:
+            if dx != 0 and dy != 0 and abs(dx) != abs(dy):
+                raise ValueError("Not an octent %d, %d" % (dx,dy))
+            if abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
+            elif dx != 0:
+                self.move_x(dx)
+            else:
+                self.move_y(dy)
         elif self.state == STATE_CONCAT:
             if dx != 0:
                 self.move_x(dx)
@@ -115,6 +117,8 @@ class LhymicroWriter:
                 self.move_y(dy)
             self.controller += b'N'
         self.check_bounds()
+        if self.position_listener is not None:
+            self.position_listener(self.current_x, self.current_y, self.current_x - dx, self.current_y - dy)
 
     def down(self):
         if self.is_on:
@@ -214,8 +218,6 @@ class LhymicroWriter:
         self.min_y = min(self.min_y, self.current_y)
         self.max_x = max(self.max_x, self.current_x)
         self.max_y = max(self.max_y, self.current_y)
-        if self.position_listener is not None:
-            self.position_listener(self.current_x, self.current_y)
 
     def reset_modes(self):
         self.is_on = False

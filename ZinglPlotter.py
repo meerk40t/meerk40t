@@ -18,7 +18,7 @@ def plot_line(x0, y0, x1, y1):
 
     while True:  # /* loop */
         yield x0, y0, 1
-        if x0 == x1 or y0 == y1:
+        if x0 == x1 and y0 == y1:
             break
         e2 = 2 * err
         if e2 >= dy:  # e_xy+e_y < 0
