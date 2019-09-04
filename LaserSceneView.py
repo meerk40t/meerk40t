@@ -35,6 +35,7 @@ class LaserSceneView(wx.Panel):
         self.draw_grid = True
         self.draw_guides = True
         self.grid = None
+        self.draw_laserhead = True
 
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -54,6 +55,7 @@ class LaserSceneView(wx.Panel):
         self.project = project
         bedwidth, bedheight = project.size
         self.focus_viewport_scene((0, 0, bedwidth * 25.4, bedheight * 25.4), 0.1)
+        self.project.writer.position_listener = self.update_position
 
     def __set_properties(self):
         # begin wxGlade: MainView.__set_properties
@@ -67,6 +69,9 @@ class LaserSceneView(wx.Panel):
 
     def on_paint(self, event):
         wx.BufferedPaintDC(self, self._Buffer)
+
+    def update_position(self, x, y):
+        self.update_buffer()
 
     def on_size(self, event):
         Size = self.ClientSize
@@ -315,7 +320,11 @@ class LaserSceneView(wx.Panel):
             dc.DrawRectangle(0, 0, wmils, hmils)
             dc.SetPen(wx.BLACK_PEN)
             self.on_draw_grid(dc)
-
+        if self.draw_laserhead:
+            dc.SetPen(wx.RED_PEN)
+            x = self.project.writer.current_x
+            y = self.project.writer.current_y
+            dc.DrawCircle(x, y, 10)
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
         pen.SetCap(wx.CAP_BUTT)

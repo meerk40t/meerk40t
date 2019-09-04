@@ -151,6 +151,75 @@ def plot_ellipse_rect(x0, y0, x1, y1):
 
 
 def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
+    """plot a limited quadratic Bezier segment"""
+    sx = x2 - x1
+    sy = y2 - y1
+    xx = x0 - x1
+    yy = y0 - y1
+    xy = 0  # relative values for checks */
+    dx = 0
+    dy = 0
+    err = 0
+    cur = xx * sy - yy * sx  # /* curvature */
+
+    assert (xx * sx <= 0 and yy * sy <= 0)  # /* sign of gradient must not change */
+
+    if sx * sx + sy * sy > xx * xx + yy * yy:  # /* begin with shorter part */
+        x2 = x0
+        x0 = sx + x1
+        y2 = y0
+        y0 = sy + y1
+        cur = -cur  # /* swap P0 P2 */
+    if cur != 0:  # /* no straight line */
+        xx += sx
+        if x0 < x2:
+            sx = 1  # /* x step direction */
+        else:
+            sx = -1  # /* x step direction */
+        xx *= sx
+        yy += sy
+        if y0 < y2:
+            sy = 1
+        else:
+            sy = -1
+        yy *= sy  # /* y step direction */
+        xy = 2 * xx * yy
+        xx *= xx
+        yy *= yy  # /* differences 2nd degree */
+        if cur * sx * sy < 0:  # /* negated curvature? */
+            xx = -xx
+            yy = -yy
+            xy = -xy
+            cur = -cur
+        dx = 4.0 * sy * cur * (x1 - x0) + xx - xy  # /* differences 1st degree */
+        dy = 4.0 * sx * cur * (y0 - y1) + yy - xy
+        xx += xx
+        yy += yy
+        err = dx + dy + xy  # /* error 1st step */
+        while True:
+            yield x0, y0, 1  # /* plot curve */
+            if x0 == x2 and y0 == y2:
+                return  # /* last pixel -> curve finished */
+            y1 = 2 * err < dx  # /* save value for test of y step */
+            if 2 * err > dy:
+                x0 += sx
+                dx -= xy
+                dy += yy
+                err += dy
+                # /* x step */
+            if y1 != 0:
+                y0 += sy
+                dy -= xy
+                dx += xx
+                err += dx
+                # /* y step */
+            if dy < 0 and dx > 0:  # /* gradient negates -> algorithm fails */
+                break
+    for plot in plot_line(x0, y0, x2, y2):  # /* plot remaining part to end */:
+        yield plot  # plotLine(x0,y0, x2,y2) #/* plot remaining part to end */
+
+
+def plot_quad_bezier_seg_broken_c(x0, y0, x1, y1, x2, y2):
     # /* plot a limited quadratic Bezier segment */
     sx = x2 - x1
     sy = y2 - y1
@@ -483,8 +552,8 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
     EP = 0.01
     # /* check for curve restrains */
     # /* slope P0-P1 == P2-P3    and  (P0-P3 == P1-P2      or   no slope change) */
-    #assert ((x1 - x0) * (x2 - x3) < EP and ((x3 - x0) * (x1 - x2) < EP or xb * xb < xa * xc + EP))
-    #assert ((y1 - y0) * (y2 - y3) < EP and ((y3 - y0) * (y1 - y2) < EP or yb * yb < ya * yc + EP))
+    # assert ((x1 - x0) * (x2 - x3) < EP and ((x3 - x0) * (x1 - x2) < EP or xb * xb < xa * xc + EP))
+    # assert ((y1 - y0) * (y2 - y3) < EP and ((y3 - y0) * (y1 - y2) < EP or yb * yb < ya * yc + EP))
 
     if xa == 0 and ya == 0:  # /* quadratic Bezier */
         sx = floor((3 * x1 - x0 + 1) / 2)

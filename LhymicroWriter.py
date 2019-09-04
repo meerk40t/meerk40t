@@ -59,6 +59,7 @@ class LhymicroWriter:
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
+        self.position_listener = None
 
     def open(self):
         try:
@@ -213,6 +214,8 @@ class LhymicroWriter:
         self.min_y = min(self.min_y, self.current_y)
         self.max_x = max(self.max_x, self.current_x)
         self.max_y = max(self.max_y, self.current_y)
+        if self.position_listener is not None:
+            self.position_listener(self.current_x, self.current_y)
 
     def reset_modes(self):
         self.is_on = False

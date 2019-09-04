@@ -19,6 +19,9 @@ class LaserElement:
         self.matrix = ZMatrix()
         self.cut = {"color": 0, "speed": 60, "passes": 1}
         self.cache = None
+        self.pen = wx.Pen()
+        self.color = wx.Colour()
+        self.color.SetRGB(self.cut['color'])
 
     def draw(self, dc):
         current_scene_matrix = dc.GetTransformMatrix()
@@ -27,7 +30,9 @@ class LaserElement:
         use_matrix.Concat(self.matrix)
         dc.SetTransformMatrix(use_matrix)
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetPen(wx.RED_PEN)
+        self.color.SetRGB(self.cut['color'])
+        self.pen.SetColour(self.color)
+        gc.SetPen(self.pen)
         if self.cache is None:
             p = gc.CreatePath()
             parse = PathCommandPlotter(p)
@@ -79,7 +84,7 @@ class ImageElement(LaserElement):
         for event in RasterPlotter.plot_raster(self.image):
             x, y, n = event
             point = self.matrix.TransformPoint(x, y)
-            yield point[0], point[1], event[2]
+            yield n, (point[0], point[1])
         yield COMMAND_SET_STEP, (0)
 
     def move(self, dx, dy):
@@ -91,7 +96,7 @@ class PathElement(LaserElement):
         LaserElement.__init__(self)
         self.path = path
         self.box = wx.Rect2D(0, 0, 200, 200)
-        self.cut.update({"color": 0xFF0000, "speed": 20})
+        self.cut.update({"color": 0x00FF00, "speed": 20})
 
     def generate(self):
         parse = path.ObjectParser()
@@ -125,7 +130,7 @@ class EgvElement(LaserElement):
         LaserElement.__init__(self)
         self.file = file
         self.box = wx.Rect2D(0, 0, 0, 0)
-        self.cut.update({"color": 0xFF0000, "speed": 20})
+        self.cut.update({"color": 0x0000FF, "speed": 20})
 
     def generate(self):
         for event in EgvParser.parse_egv(self.file):
@@ -138,7 +143,9 @@ class EgvElement(LaserElement):
         use_matrix.Concat(self.matrix)
         dc.SetTransformMatrix(use_matrix)
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetPen(wx.RED_PEN)
+        self.color.SetRGB(self.cut['color'])
+        self.pen.SetColour(self.color)
+        gc.SetPen(self.pen)
         if self.cache is None:
             p = gc.CreatePath()
             parse = PathCommandPlotter(p)
@@ -314,19 +321,22 @@ class LaserThread(threading.Thread):
                 self.writer.unlock_rail()
             elif command == COMMAND_MOVE_TO:
                 x, y = values
-                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
+                self.writer.up()
+                for x, y, on in direct_plots(ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y)):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
             elif command == COMMAND_CUT_LINE_TO:
                 x, y = values
                 self.writer.down()
-                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
+                for x, y, on in direct_plots(ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y)):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                self.writer.up()
             elif command == COMMAND_CUT_QUAD_TO:
                 cx, cy, x, y = values
                 self.writer.down()
                 for x, y, on in ZinglPlotter.plot_quad_bezier(int(self.writer.current_x), int(self.writer.current_y),
                                                               cx, cy, x, y):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                self.writer.up()
             elif command == COMMAND_CUT_CUBIC_TO:
                 c1x, c1y, c2x, c2y, x, y = values
                 self.writer.down()
@@ -339,12 +349,14 @@ class LaserThread(threading.Thread):
                 self.writer.down()
                 for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                self.writer.up()
             elif command == COMMAND_CUT_ARC_TO:
                 cx, cy, x, y = values
                 # I do not actually have an arc plotter.
                 self.writer.down()
                 for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
                     self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                self.writer.up()
 
     def run(self):
         self.burn_project()
@@ -393,7 +405,7 @@ def direct_plots(generate):
     x = 0
     y = 0
     on = None
-    for event in generate():
+    for event in generate:
         x, y, on = event
         dx = x - cx
         dy = y - cy
@@ -406,13 +418,3 @@ def direct_plots(generate):
     if cx != x or cy != y or con != on:
         yield cx, cy, on
 
-
-def as_lines(generator):
-    cx = None
-    cy = None
-    for event in generator:
-        x, y, on = event
-        if cx is not None and on != 0:
-            yield (cx, cy, x, y)
-        cx = x
-        cy = y
