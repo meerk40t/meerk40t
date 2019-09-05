@@ -77,8 +77,8 @@ class LhymicroWriter:
             pass
 
     def plot(self, x, y):
-        dx = x - self.current_x
-        dy = y - self.current_y
+        dx = int(x - self.current_x)
+        dy = int(y - self.current_y)
         if dx != 0 and dy != 0 and abs(dx) != abs(dy):
             dx = self.next_x - self.current_x
             dy = self.next_y - self.current_y
@@ -91,9 +91,14 @@ class LhymicroWriter:
         self.next_x = x
         self.next_y = y
 
+    def move_abs(self, x, y):
+        self.move(x - self.current_x, y - self.current_y)
+
     def move(self, dx, dy):
-        if dx == 0 and dy == 0:
+        if abs(dx) == 0 and abs(dy) == 0:
             return
+        dx = int(round(dx))
+        dy = int(round(dy))
         if self.state == STATE_DEFAULT:
             self.controller += b'I'
             if dx != 0:
@@ -103,7 +108,9 @@ class LhymicroWriter:
             self.controller += b'S1P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                raise ValueError("Not an octent %d, %d" % (dx,dy))
+                raise ValueError("Not an octent %d, %d" % (dx, dy))
+                #self.move_x(dx)
+                #self.move_y(dy)
             if abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
             elif dx != 0:

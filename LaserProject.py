@@ -7,7 +7,7 @@ import RasterPlotter
 import ZinglPlotter
 import path
 import svg_parser
-from K40Controller import K40Controller, MockController
+from K40Controller import MockController, K40Controller
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
 from ZMatrix import ZMatrix
@@ -24,6 +24,9 @@ class LaserElement:
         self.color.SetRGB(self.cut['color'])
 
     def draw(self, dc):
+        """Default draw routine for the laser element.
+        If the generate is defined this will draw the
+        element as a series of lines, as defined by generate."""
         current_scene_matrix = dc.GetTransformMatrix()
         use_matrix = ZMatrix()
         use_matrix.Concat(current_scene_matrix)
@@ -35,11 +38,10 @@ class LaserElement:
         gc.SetPen(self.pen)
         if self.cache is None:
             p = gc.CreatePath()
-            parse = PathCommandPlotter(p)
+            parse = GraphicPathCommandPlotter(p)
             for event in self.generate():
                 parse.command(event)
             self.cache = p
-            self.box = self.cache.GetBox()
         gc.StrokePath(self.cache)
         dc.SetTransformMatrix(current_scene_matrix)
 
@@ -85,6 +87,7 @@ class ImageElement(LaserElement):
             point = self.matrix.TransformPoint(x, y)
             yield n, (point[0], point[1])
         yield COMMAND_SET_STEP, (0)
+        yield COMMAND_SET_SPEED, (0)
 
     def move(self, dx, dy):
         self.matrix.PostTranslate(dx, dy)
@@ -107,18 +110,23 @@ class PathElement(LaserElement):
             if isinstance(data, Move):
                 yield COMMAND_MOVE_TO, (int(data.end.real), int(data.end.imag))
             elif isinstance(data, Line):
-                yield COMMAND_CUT_LINE_TO, (int(data.end.real), int(data.end.imag))
+                yield COMMAND_CUT_LINE_TO, (int(data.start.real), int(data.start.imag),
+                                            int(data.end.real), int(data.end.imag))
             elif isinstance(data, QuadraticBezier):
-                yield COMMAND_CUT_QUAD_TO, (int(data.control.real), int(data.control.imag),
+                yield COMMAND_CUT_QUAD_TO, (int(data.start.real), int(data.start.imag),
+                                            data.control.real, data.control.imag,
                                             int(data.end.real), int(data.end.imag))
             elif isinstance(data, CubicBezier):
-                yield COMMAND_CUT_CUBIC_TO, (int(data.control1.real), int(data.control1.imag),
-                                             int(data.control2.real), int(data.control2.imag),
+                yield COMMAND_CUT_CUBIC_TO, (int(data.start.real), int(data.start.imag),
+                                             data.control1.real, data.control1.imag,
+                                             data.control2.real, data.control2.imag,
                                              int(data.end.real), int(data.end.imag))
             elif isinstance(data, Arc):
-                yield COMMAND_CUT_ARC_TO, (int(data.center.real), int(data.center.imag),
+                yield COMMAND_CUT_ARC_TO, (int(data.start.real), int(data.start.imag),
+                                           int(data.center.real), int(data.center.imag),
                                            int(data.end.real), int(data.end.imag))
         yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_SET_SPEED, (0)
 
     def move(self, dx, dy):
         self.matrix.PostTranslate(dx, dy)
@@ -147,7 +155,7 @@ class EgvElement(LaserElement):
         gc.SetPen(self.pen)
         if self.cache is None:
             p = gc.CreatePath()
-            parse = PathCommandPlotter(p)
+            parse = GraphicPathCommandPlotter(p)
             for event in self.generate():
                 parse.command(event)
             self.cache = p
@@ -159,7 +167,7 @@ class EgvElement(LaserElement):
         self.matrix.PostTranslate(dx, dy)
 
 
-class PathCommandPlotter:
+class GraphicPathCommandPlotter:
     def __init__(self, graphic_path):
         self.graphic_path = graphic_path
         self.on = False
@@ -219,16 +227,16 @@ class PathCommandPlotter:
             x, y = values
             self.move_to(x, y)
         elif command == COMMAND_CUT_LINE_TO:
-            x, y = values
-            self.line_to(x, y)
+            sx, sy, ex, ey = values
+            self.line_to(ex, ey)
         elif command == COMMAND_CUT_QUAD_TO:
-            cx, cy, x, y = values
+            sx, sy, cx, cy, x, y = values
             self.quad_to(cx, cy, x, y)
         elif command == COMMAND_CUT_CUBIC_TO:
-            c1x, c1y, c2x, c2y, x, y = values
+            sx, sy, c1x, c1y, c2x, c2y, x, y = values
             self.cubic_to(c1x, c1y, c2x, c2y, x, y)
         elif command == COMMAND_CUT_ARC_TO:
-            cx, cy, x, y = values
+            sx, sy, cx, cy, x, y = values
             # self.arc_to()
             # Wrong parameterizations
             pass
@@ -275,11 +283,10 @@ class LaserThread(threading.Thread):
             self.burn_element(element.generate())
 
     def burn_element(self, element):
-        import time
         for command, values in element:
             if command == COMMAND_SIMPLE_MOVE:
                 x, y = values
-                self.writer.plot(x, y)
+                self.writer.move_abs(x, y)
             if command == COMMAND_LASER_OFF:
                 self.writer.up()
             if command == COMMAND_LASER_ON:
@@ -287,15 +294,15 @@ class LaserThread(threading.Thread):
             elif command == COMMAND_SIMPLE_CUT:
                 self.writer.down()
                 x, y = values
-                self.writer.plot(x, y)
+                self.writer.move_abs(x, y)
             elif command == COMMAND_SIMPLE_SHIFT:
                 self.writer.up()
-                x, y = values
-                self.writer.plot(x, y)
+                sx, sy, x, y = values
+                self.writer.move_abs(x, y)
             elif command == COMMAND_RAPID_MOVE:
                 self.writer.to_default_mode()
-                x, y = values
-                self.writer.move(x, y)
+                sx, sy, x, y = values
+                self.writer.move_abs(x, y)
             elif command == COMMAND_SET_SPEED:
                 speed = values
                 self.writer.speed = speed
@@ -319,42 +326,40 @@ class LaserThread(threading.Thread):
             elif command == COMMAND_UNLOCK:
                 self.writer.unlock_rail()
             elif command == COMMAND_MOVE_TO:
-                x, y = values
+                ex, ey = values
                 self.writer.up()
                 for x, y, on in direct_plots(self.writer.current_x, self.writer.current_y,
-                                             ZinglPlotter.plot_line(int(self.writer.current_x),
-                                                                    int(self.writer.current_y), x, y)):
-                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                                             ZinglPlotter.plot_line(
+                                                 int(self.writer.current_x),
+                                                 int(self.writer.current_y), ex, ey
+                                             )):
+                    self.writer.move_abs(x, y)
             elif command == COMMAND_CUT_LINE_TO:
-                x, y = values
+                sx, sy, ex, ey = values
                 self.writer.down()
-                for x, y, on in direct_plots(self.writer.current_x, self.writer.current_y,
-                                             ZinglPlotter.plot_line(int(self.writer.current_x),
-                                                                    int(self.writer.current_y), x, y)):
-                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, ex, ey)):
+                    self.writer.move_abs(x, y)
                 self.writer.up()
             elif command == COMMAND_CUT_QUAD_TO:
-                cx, cy, x, y = values
+                sx, sy, cx, cy, ex, ey = values
                 self.writer.down()
-                for x, y, on in ZinglPlotter.plot_quad_bezier(int(self.writer.current_x), int(self.writer.current_y),
-                                                              cx, cy, x, y):
-                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, ex, ey)):
+                    self.writer.move_abs(x, y)
                 self.writer.up()
             elif command == COMMAND_CUT_CUBIC_TO:
-                c1x, c1y, c2x, c2y, x, y = values
+                sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
                 self.writer.down()
-                for x, y, on in ZinglPlotter.plot_cubic_bezier(int(self.writer.current_x), int(self.writer.current_y),
-                                                            c1x, c1y, c2x, c2y, x, y):
-                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
-                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
-                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                for x, y, on in direct_plots(sx, sy,
+                                             ZinglPlotter.plot_cubic_bezier(sx, sy,
+                                                                            c1x, c1y, c2x, c2y, ex, ey)):
+                    self.writer.move_abs(x, y)
                 self.writer.up()
             elif command == COMMAND_CUT_ARC_TO:
-                cx, cy, x, y = values
+                sx, sy, cx, cy, ex, ey = values
                 # I do not actually have an arc plotter.
                 self.writer.down()
-                for x, y, on in ZinglPlotter.plot_line(int(self.writer.current_x), int(self.writer.current_y), x, y):
-                    self.writer.move(x - self.writer.current_x, y - self.writer.current_y)
+                for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
+                    self.writer.move_abs(x, y)
                 self.writer.up()
 
     def run(self):
@@ -409,11 +414,12 @@ def direct_plots(start_x, start_y, generate):
             last_x = x
             last_y = y
             continue
+
         yield last_x, last_y, 1
         dx = x - last_x
         dy = y - last_y
+        if abs(dx) > 1 or abs(dy) > 1:
+            raise ValueError
         last_x = x
         last_y = y
     yield last_x, last_y, 1
-
-

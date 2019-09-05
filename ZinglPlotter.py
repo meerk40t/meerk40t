@@ -1,4 +1,4 @@
-from math import floor, sin, sqrt, cos, fabs
+from math import floor, sqrt
 
 
 def plot_line(x0, y0, x1, y1):
@@ -27,127 +27,6 @@ def plot_line(x0, y0, x1, y1):
         if e2 <= dx:  # e_xy+e_y < 0
             err += dx
             y0 += sy
-
-
-def plot_ellipse(xm, ym, a, b):
-    x = -a
-    y = 0  # /* II. quadrant from bottom left to top right */
-    e2 = b * b
-    err = x * (2 * e2 + x) + e2  # /* error of 1.step */
-
-    while True:
-        yield xm - x, ym + y, 1  # /*   I. Quadrant */
-        yield xm + x, ym + y, 1  # /*  II. Quadrant */
-        yield xm + x, ym - y, 1  # /* III. Quadrant */
-        yield xm - x, ym - y, 1  # /*  IV. Quadrant */
-        e2 = 2 * err
-        if e2 >= (x * 2 + 1) * b * b:  # /* e_xy+e_x > 0 */
-            err += (++x * 2 + 1) * b * b
-        if e2 <= (y * 2 + 1) * a * a:  # /* e_xy+e_y < 0 */
-            err += (++y * 2 + 1) * a * a
-        if x <= 0:
-            break
-    while y < b:  # /* too early stop of flat ellipses a=1, */
-        y += 1
-        yield xm, ym + y, 1  # /* -> finish tip of ellipse */
-        yield xm, ym - y, 1
-
-
-def plot_optimized_ellipse(xm, ym, a, b):
-    x = -a
-    y = 0  # #/* II. quadrant from bottom left to top right */
-    e2 = b
-    dx = (1 + 2 * x) * e2 * e2  # /* error increment  */
-    dy = x * x
-    err = dx + dy  # /* error of 1.step */
-
-    while True:
-        yield xm - x, ym + y, 1  # /*   I. Quadrant */
-        yield xm + x, ym + y, 1  # /*  II. Quadrant */
-        yield xm + x, ym - y, 1  # /* III. Quadrant */
-        yield xm - x, ym - y, 1  # /*  IV. Quadrant */
-        e2 = 2 * err
-        if e2 >= dx:
-            x += 1
-            dx += 2 * b * b
-            err += dx  # /* x step */
-        if e2 <= dy:
-            y += 1
-            dy += 2 * a * a
-            err += dy  # /* y step */
-        if x <= 0:
-            break
-    while y < b:  # #      /* too early stop for flat ellipses with a=1, */
-        y += 1
-        yield xm, ym + y, 1  # /* -> finish tip of ellipse */
-        yield xm, ym - y, 1
-
-
-def plot_circle(xm, ym, r):
-    x = -r
-    y = 0
-    err = 2 - 2 * r  # /* bottom left to top right */
-    while True:
-        yield xm - x, ym + y, 1  # /*   I. Quadrant +x +y */
-        yield xm - y, ym - x, 1  # /*  II. Quadrant -x +y */
-        yield xm + x, ym - y, 1  # /* III. Quadrant -x -y */
-        yield xm + y, ym + x, 1  # /*  IV. Quadrant +x -y */
-        r = err
-        if r <= y:
-            y += 1
-            err += y * 2 + 1  # /* e_xy+e_y < 0 */
-        if r > x or err > y:  # /* e_xy+e_x > 0 or no 2nd y-step */
-            x += 1
-            err += x * 2 + 1  # /* -> x-step now */
-        if x < 0:
-            break
-
-
-def plot_ellipse_rect(x0, y0, x1, y1):
-    # /* rectangular parameter enclosing the ellipse */
-    a = abs(x1 - x0)
-    b = abs(y1 - y0)
-    b1 = b & 1  # /* diameter */
-    dx = 4 * (1.0 - a) * b * b
-    dy = 4 * (b1 + 1) * a * a  # /* error increment */
-    err = dx + dy + b1 * a * a  # /* error of 1.step */
-
-    if x0 > x1:
-        x0 = err
-    b += a  # /* if called with swapped points */
-    if y0 > y1:
-        y0 = y1  # /* .. exchange them */
-    y0 += (b + 1) / 2.0
-    y1 = y0 - b1  # /* starting pixel */
-    a = 8 * a * a
-    b1 = 8 * b * b
-
-    while True:
-        yield x1, y0, 1  # /*   I. Quadrant */
-        yield x0, y0, 1  # /*  II. Quadrant */
-        yield x0, y1, 1  # /* III. Quadrant */
-        yield x1, y1, 1  # /*  IV. Quadrant */
-        e2 = 2 * err
-        if e2 <= dy:
-            y0 += 1
-            y1 -= 1
-            dy += a
-            err += dy  # /* y step */
-        if e2 >= dx or 2 * err > dy:
-            x0 += 1
-            x1 -= 1
-            dx += b1
-            err += dx  # /* x step */
-        if x0 <= x1:
-            break
-
-    while y0 - y1 <= b:  # /* too early stop of flat ellipses a=1 */
-        yield x0 - 1, y0, 1  # /* -> finish tip of ellipse */
-        yield x1 + 1, y0, 1
-        y0 += 1
-        yield x0 - 1, y1, 1
-        yield x1 + 1, y1, 1
-        y1 -= 1
 
 
 def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
@@ -213,89 +92,22 @@ def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
                 dx += xx
                 err += dx
                 # /* y step */
-            if dy < 0 and dx > 0:  # /* gradient negates -> algorithm fails */
+            if not (dy < 0 and dx > 0):  # /* gradient negates -> algorithm fails */
                 break
     for plot in plot_line(x0, y0, x2, y2):  # /* plot remaining part to end */:
         yield plot  # plotLine(x0,y0, x2,y2) #/* plot remaining part to end */
 
 
-def plot_quad_bezier_seg_broken_c(x0, y0, x1, y1, x2, y2):
-    # /* plot a limited quadratic Bezier segment */
-    sx = x2 - x1
-    sy = y2 - y1
-    xx = x0 - x1
-    yy = y0 - y1
-    xy = 0  # /* relative values for checks */
-    dx = 0.0
-    dy = 0.0
-    err = 0.0
-    cur = xx * sy - yy * sx  # /* curvature */
-
-    assert (xx * sx <= 0 and yy * sy <= 0)  # /* sign of gradient must not change */
-
-    if sx * long(sx) + sy * long(sy) > xx * xx + yy * yy:  # /* begin with longer part */
-        x2 = x0
-        x0 = sx + x1
-        y2 = y0
-        y0 = sy + y1
-        cur = -cur  # /* swap P0 P2 */
-    if cur != 0:  # /* no straight line */
-        xx += sx
-        if x0 < x2:
-            sx = 1
-        else:
-            sx = -1
-        xx *= sx  # /* x step direction */
-        yy += sy
-        if y0 < y2:
-            sy = 1
-        else:
-            sy = -1
-        yy *= sy  # /* y step direction */
-        xy = 2 * xx * yy
-        xx *= xx
-        yy *= yy  # /* differences 2nd degree */
-        if cur * sx * sy < 0:  # /* negated curvature? */
-            xx = -xx
-            yy = -yy
-            xy = -xy
-            cur = -cur
-    dx = 4.0 * sy * cur * (x1 - x0) + xx - xy  # /* differences 1st degree */
-    dy = 4.0 * sx * cur * (y0 - y1) + yy - xy
-    xx += xx
-    yy += yy
-    err = dx + dy + xy  # /* error 1st step */
-    while True:
-        yield x0, y0, 1  # /* plot curve */
-        if x0 == x2 and y0 == y2:
-            return  # /* last pixel -> curve finished */
-        y1 = 2 * err < dx  # /* save value for test of y step */
-        if 2 * err > dy:
-            x0 += sx
-            dx -= xy
-            dy += yy
-            err += dy  # /* x step */
-        if y1 != 0:
-            y0 += sy
-            dy -= xy
-            dx += xx
-            err += dx  # /* y step */
-        if dy < 0 and dx > 0:  # /* gradient negates -> algorithm fails */
-            break
-    for plot in plot_line(x0, y0, x2, y2):  # /* plot remaining part to end */:
-        yield plot
-
-
 def plot_quad_bezier(x0, y0, x1, y1, x2, y2):
-    # /* plot any quadratic Bezier curve */
+    """plot any quadratic Bezier curve"""
     x = x0 - x1
     y = y0 - y1
-    t = float(x0 - 2 * x1 + x2)
-    r = 0.0
+    t = x0 - 2 * x1 + x2
+    r = 0
 
-    if long(x) * (x2 - x1) > 0:  # /* horizontal cut at P4? */
-        if long(y) * (y2 - y1) > 0:  # /* vertical cut at P6 too? */
-            if fabs((y0 - 2 * y1 + y2) / t * x) > abs(y):  # /* which first? */
+    if x * (x2 - x1) > 0:  # /* horizontal cut at P4? */
+        if y * (y2 - y1) > 0:  # /* vertical cut at P6 too? */
+            if abs((y0 - 2 * y1 + y2) / t * x) > abs(y):  # /* which first? */
                 x0 = x2
                 x2 = x + x1
                 y0 = y2
@@ -313,7 +125,7 @@ def plot_quad_bezier(x0, y0, x1, y1, x2, y2):
         x0 = x1 = x
         y0 = y
         y1 = floor(r + 0.5)  # /* P0 = P4, P1 = P8 */
-    if long(y0 - y1) * (y2 - y1) > 0:  # /* vertical cut at P6? */
+    if (y0 - y1) * (y2 - y1) > 0:  # /* vertical cut at P6? */
         t = y0 - 2 * y1 + y2
         t = (y0 - y1) / t
         r = (1 - t) * ((1 - t) * x0 + 2.0 * t * x1) + t * t * x2  # /* Bx(t=P6) */
@@ -331,195 +143,9 @@ def plot_quad_bezier(x0, y0, x1, y1, x2, y2):
         yield plot
 
 
-def plot_quad_rational_bezier_seg(x0, y0, x1, y1, x2, y2, w):
-    # /* plot a limited rational Bezier segment, squared weight */
-    sx = x2 - x1
-    sy = y2 - y1  # /* relative values for checks */
-    dx = float(x0 - x2)
-    dy = float(y0 - y2)
-    xx = float(x0 - x1)
-    yy = float(y0 - y1)
-    xy = xx * sy + yy * sx
-    cur = xx * sy - yy * sx
-    err = 0.0  # /* curvature */
-
-    assert (xx * sx <= 0.0 and yy * sy <= 0.0)  # /* sign of gradient must not change */
-
-    if cur != 0.0 and w > 0.0:  # /* no straight line */
-        if sx * long(sx) + sy * long(sy) > xx * xx + yy * yy:  # /* begin with longer part */
-            x2 = x0
-            x0 -= dx
-            y2 = y0
-            y0 -= dy
-            cur = -cur  # /* swap P0 P2 */
-    xx = 2.0 * (4.0 * w * sx * xx + dx * dx)  # /* differences 2nd degree */
-    yy = 2.0 * (4.0 * w * sy * yy + dy * dy)
-    if x0 < x2:
-        sx = 1
-    else:
-        sx = -1  # /* x step direction */
-    if y0 < y2:
-        sy = 1
-    else:
-        sy = -1  # /* y step direction */
-    xy = -2.0 * sx * sy * (2.0 * w * xy + dx * dy)
-
-    if cur * sx * sy < 0.0:  # /* negated curvature? */
-        xx = -xx
-        yy = -yy
-        xy = -xy
-        cur = -cur
-    dx = 4.0 * w * (x1 - x0) * sy * cur + xx / 2.0 + xy  # /* differences 1st degree */
-    dy = 4.0 * w * (y0 - y1) * sx * cur + yy / 2.0 + xy
-
-    if w < 0.5 and (dy > xy or dx < xy):  # /* flat ellipse, algorithm fails */
-        cur = (w + 1.0) / 2.0
-        w = sqrt(w)
-        xy = 1.0 / (w + 1.0)
-        sx = floor((x0 + 2.0 * w * x1 + x2) * xy / 2.0 + 0.5)  # /* subdivide curve in half */
-        sy = floor((y0 + 2.0 * w * y1 + y2) * xy / 2.0 + 0.5)
-        dx = floor((w * x1 + x0) * xy + 0.5)
-        dy = floor((y1 * w + y0) * xy + 0.5)
-        for plot in plot_quad_rational_bezier_seg(x0, y0, dx, dy, sx, sy, cur):  # /* plot separately */
-            yield plot
-        dx = floor((w * x1 + x2) * xy + 0.5)
-        dy = floor((y1 * w + y2) * xy + 0.5)
-        for plot in plot_quad_rational_bezier_seg(sx, sy, dx, dy, x2, y2, cur):
-            yield plot
-        return
-    err = dx + dy - xy  # /* error 1.step */
-    while True:
-        yield x0, y0, 1  # /* plot curve */
-        if x0 == x2 and y0 == y2:
-            return  # /* last pixel -> curve finished */
-        x1 = 2 * err > dy
-        y1 = 2 * (err + yy) < -dy  # /* save value for test of x step */
-        if 2 * err < dx or y1:
-            y0 += sy
-            dy += xy
-            dx += xx
-            err += dx  # /* y step */
-        if 2 * err > dx or x1:
-            x0 += sx
-            dx += xy
-            dy += yy
-            err += dy  # /* x step */
-        if dy <= xy and dx >= xy:  # /* gradient negates -> algorithm fails */
-            break
-    for plot in plot_line(x0, y0, x2, y2):  # /* plot remaining needle to end */
-        yield plot
-
-
-def plot_quad_rational_bezier(x0, y0, x1, y1, x2, y2, w):
-    # /* plot any quadratic rational Bezier curve */
-    x = x0 - 2 * x1 + x2
-    y = y0 - 2 * y1 + y2
-    xx = float(x0 - x1)
-    yy = float(y0 - y1)
-    ww = 0.0
-    t = 0.0
-    q = 0.0
-
-    assert (w >= 0.0)
-
-    if xx * (x2 - x1) > 0:  # /* horizontal cut at P4? */
-        if yy * (y2 - y1) > 0:  # /* vertical cut at P6 too? */
-            if fabs(xx * y) > fabs(yy * x):  # /* which first? */
-                x0 = x2
-                x2 = xx + x1
-                y0 = y2
-                y2 = yy + y1  # /* swap points */
-                # /* now horizontal cut at P4 comes first */
-        if x0 == x2 or w == 1.0:
-            t = (x0 - x1) / float(x)
-        else:  # /* non-rational or rational case */
-            q = sqrt(4.0 * w * w * (x0 - x1) * (x2 - x1) + (x2 - x0) * long(x2 - x0))
-            if x1 < x0:
-                q = -q
-            t = (2.0 * w * (x0 - x1) - x0 + x2 + q) / (2.0 * (1.0 - w) * (x2 - x0))  # /* t at P4 */
-        q = 1.0 / (2.0 * t * (1.0 - t) * (w - 1.0) + 1.0)  # /* sub-divide at t */
-        xx = (t * t * (x0 - 2.0 * w * x1 + x2) + 2.0 * t * (w * x1 - x0) + x0) * q  # /* = P4 */
-        yy = (t * t * (y0 - 2.0 * w * y1 + y2) + 2.0 * t * (w * y1 - y0) + y0) * q
-        ww = t * (w - 1.0) + 1.0
-        ww *= ww * q  # /* squared weight P3 */
-        w = ((1.0 - t) * (w - 1.0) + 1.0) * sqrt(q)  # /* weight P8 */
-        x = floor(xx + 0.5)
-        y = floor(yy + 0.5)  # /* P4 */
-        yy = (xx - x0) * (y1 - y0) / (x1 - x0) + y0  # /* intersect P3 | P0 P1 */
-        for plot in plot_quad_rational_bezier_seg(x0, y0, x, floor(yy + 0.5), x, y, ww):
-            yield plot
-        yy = (xx - x2) * (y1 - y2) / (x1 - x2) + y2  # /* intersect P4 | P1 P2 */
-        y1 = floor(yy + 0.5)
-        x0 = x1 = x
-        y0 = y  # /* P0 = P4, P1 = P8 */
-    if (y0 - y1) * long(y2 - y1) > 0:  # /* vertical cut at P6? */
-        if y0 == y2 or w == 1.0:
-            t = (y0 - y1) / (y0 - 2.0 * y1 + y2)
-        else:  # /* non-rational or rational case */
-            q = sqrt(4.0 * w * w * (y0 - y1) * (y2 - y1) + (y2 - y0) * (long)(y2 - y0))
-            if y1 < y0:
-                q = -q
-            t = (2.0 * w * (y0 - y1) - y0 + y2 + q) / (2.0 * (1.0 - w) * (y2 - y0))  # /* t at P6 */
-        q = 1.0 / (2.0 * t * (1.0 - t) * (w - 1.0) + 1.0)  # /* sub-divide at t */
-        xx = (t * t * (x0 - 2.0 * w * x1 + x2) + 2.0 * t * (w * x1 - x0) + x0) * q  # /* = P6 */
-        yy = (t * t * (y0 - 2.0 * w * y1 + y2) + 2.0 * t * (w * y1 - y0) + y0) * q
-        ww = t * (w - 1.0) + 1.0
-        ww *= ww * q  # /* squared weight P5 */
-        w = ((1.0 - t) * (w - 1.0) + 1.0) * sqrt(q)  # /* weight P7 */
-        x = floor(xx + 0.5)
-        y = floor(yy + 0.5)  # /* P6 */
-        xx = (x1 - x0) * (yy - y0) / (y1 - y0) + x0  # /* intersect P6 | P0 P1 */
-        for plot in plot_quad_rational_bezier_seg(x0, y0, floor(xx + 0.5), y, x, y, ww):
-            yield plot
-        xx = (x1 - x2) * (yy - y2) / (y1 - y2) + x2  # /* intersect P7 | P1 P2 */
-        x1 = floor(xx + 0.5)
-        x0 = x
-        y0 = y1 = y  # /* P0 = P6, P1 = P7 */
-    for plot in plot_quad_rational_bezier_seg(x0, y0, x1, y1, x2, y2, w * w):  # /* remaining */
-        yield plot
-
-
-def plot_rotated_ellipse(x, y, a, b, angle):
-    # /* plot ellipse rotated by angle (radian) */
-    xd = float(long(a) * a)
-    yd = long(b) * b
-    s = sin(angle)
-    zd = (xd - yd) * s  # /* ellipse rotation */
-    xd = sqrt(xd - zd * s)
-    yd = sqrt(yd + zd * s)  # /* surrounding rectangle */
-    a = xd + 0.5
-    b = yd + 0.5
-    zd = zd * a * b / (xd * yd)  # /* scale to integer */
-    for plot in plot_rotated_ellipse_rect(x - a, y - b, x + a, y + b, long(4 * zd * cos(angle))):
-        yield plot
-
-
-def plot_rotated_ellipse_rect(x0, y0, x1, y1, zd):
-    # /* rectangle enclosing the ellipse, integer rotation angle */
-    xd = x1 - x0
-    yd = y1 - y0
-    w = xd * long(yd)
-    if zd == 0:
-        for plot in plot_ellipse_rect(x0, y0, x1, y1):  # /* looks nicer */
-            yield plot
-        return
-    if w != 0.0:
-        w = (w - zd) / (w + w)  # /* squared weight of P1 */
-    assert (w <= 1.0 and w >= 0.0)  # /* limit angle to |zd|<=xd*yd */
-    xd = floor(xd * w + 0.5)
-    yd = floor(yd * w + 0.5)  # /* snap xe,ye to int */
-    for plot in plot_quad_rational_bezier_seg(x0, y0 + yd, x0, y0, x0 + xd, y0, 1.0 - w):
-        yield plot
-    for plot in plot_quad_rational_bezier_seg(x0, y0 + yd, x0, y1, x1 - xd, y1, w):
-        yield plot
-    for plot in plot_quad_rational_bezier_seg(x1, y1 - yd, x1, y1, x1 - xd, y1, 1.0 - w):
-        yield plot
-    for plot in plot_quad_rational_bezier_seg(x1, y1 - yd, x1, y0, x0 + xd, y0, w):
-        yield plot
-
-
 def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
-    # /* plot limited cubic Bezier segment */
+    """plot limited cubic Bezier segment"""
+    second_leg = []
     f = 0
     fx = 0
     fy = 0
@@ -529,33 +155,36 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
     else:
         sx = -1
     if y0 < y3:
-        sy = 1
+        sy = 1  # /* step direction */
     else:
         sy = -1  # /* step direction */
-    xc = -fabs(x0 + x1 - x2 - x3)
+    xc = -abs(x0 + x1 - x2 - x3)
     xa = xc - 4 * sx * (x1 - x2)
     xb = sx * (x0 - x1 - x2 + x3)
-    yc = -fabs(y0 + y1 - y2 - y3)
+    yc = -abs(y0 + y1 - y2 - y3)
     ya = yc - 4 * sy * (y1 - y2)
     yb = sy * (y0 - y1 - y2 + y3)
-    ab = 0.0
-    ac = 0.0
-    bc = 0.0
-    cb = 0.0
-    xx = 0.0
-    xy = 0.0
-    yy = 0.0
-    dx = 0.0
-    dy = 0.0
-    ex = 0.0
-    pxy = 0.0
+    ab = 0
+    ac = 0
+    bc = 0
+    cb = 0
+    xx = 0
+    xy = 0
+    yy = 0
+    dx = 0
+    dy = 0
+    ex = 0
+    pxy = 0
     EP = 0.01
     # /* check for curve restrains */
-    # /* slope P0-P1 == P2-P3    and  (P0-P3 == P1-P2      or   no slope change) */
-    # assert ((x1 - x0) * (x2 - x3) < EP and ((x3 - x0) * (x1 - x2) < EP or xb * xb < xa * xc + EP))
-    # assert ((y1 - y0) * (y2 - y3) < EP and ((y3 - y0) * (y1 - y2) < EP or yb * yb < ya * yc + EP))
+    # /* slope P0-P1 == P2-P3 and  (P0-P3 == P1-P2    or  no slope change)
+    # if (x1 - x0) * (x2 - x3) < EP and ((x3 - x0) * (x1 - x2) < EP or xb * xb < xa * xc + EP):
+    #     return
+    # if (y1 - y0) * (y2 - y3) < EP and ((y3 - y0) * (y1 - y2) < EP or yb * yb < ya * yc + EP):
+    #     return
 
     if xa == 0 and ya == 0:  # /* quadratic Bezier */
+        # return plot_quad_bezier_seg(x0, y0, (3 * x1 - x0) >> 1, (3 * y1 - y0) >> 1, x3, y3)
         sx = floor((3 * x1 - x0 + 1) / 2)
         sy = floor((3 * y1 - y0 + 1) / 2)  # /* new midpoint */
 
@@ -564,15 +193,16 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
         return
     x1 = (x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + 1  # /* line lengths */
     x2 = (x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3) + 1
+
     while True:  # /* loop over both ends */
         ab = xa * yb - xb * ya
         ac = xa * yc - xc * ya
         bc = xb * yc - xc * yb
         ex = ab * (ab + ac - 3 * bc) + ac * ac  # /* P0 part of self-intersection loop? */
         if ex > 0:
-            f = 1
+            f = 1  # /* calc resolution */
         else:
-            f = sqrt(1 + 1024 / x1)  # /* calculate resolution */
+            f = floor(sqrt(1 + 1024 / x1))  # /* calc resolution */
         ab *= f
         ac *= f
         bc *= f
@@ -596,8 +226,7 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
             yy = -yy
             xy = -xy
             ac = -ac
-            cb = -cb
-            # /* init differences of 3rd degree */
+            cb = -cb  # /* init differences of 3rd degree */
         ab = 6 * ya * ac
         ac = -6 * xa * ac
         bc = 6 * ya * cb
@@ -605,21 +234,23 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
         dx += xy
         ex = dx + dy
         dy += xy  # /* error of 1st step */
-        pxy = 0.0  # pointer pxy points xy
-        fx = fy = f
         try:
+            pxy = 0
+            fx = fy = f
             while x0 != x3 and y0 != y3:
-                yield x0, y0, 1  # /* plot curve */
+                if leg == 0:
+                    second_leg.append((x0, y0, 1))  # /* plot curve */
+                else:
+                    yield x0, y0, 1  # /* plot curve */
                 while True:  # /* move sub-steps of one pixel */
-                    if (pxy == 0) and (dx > xy or dy < xy):
-                        raise StopIteration  # / * confusing * /
-                    if (pxy == 1) and (dx > 0 or dy < 0):
-                        raise StopIteration  # / * values * /
-                    # if dx > * pxy or dy < * pxy:  # pxy value of xy, or EP
-                    # /* confusing values */
+                    if pxy == 0:
+                        if dx > xy or dy < xy:
+                            raise StopIteration  # /* confusing */
+                    if pxy == 1:
+                        if dx > 0 or dy < 0:
+                            raise StopIteration  # /* values */
                     y1 = 2 * ex - dy  # /* save value for test of y step */
-                    if 2 * ex >= dx:
-                        # /* x sub-step */
+                    if 2 * ex >= dx:  # /* x sub-step */
                         fx -= 1
                         dx += xx
                         ex += dx
@@ -627,6 +258,8 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
                         dy += xy
                         yy += bc
                         xx += ab
+                    elif y1 > 0:
+                        raise StopIteration
                     if y1 <= 0:  # /* y sub-step */
                         fy -= 1
                         dy += yy
@@ -635,8 +268,8 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
                         dx += xy
                         xx += ac
                         yy += cb
-                    if fx > 0 and fy > 0:
-                        break  # /* pixel complete? */
+                    if not (fx > 0 and fy > 0):  # /* pixel complete? */
+                        break
                 if 2 * fx <= f:
                     x0 += sx
                     fx += f  # /* x step */
@@ -646,7 +279,7 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
                 if pxy == 0 and dx < 0 and dy > 0:
                     pxy = 1  # /* pixel ahead valid */
         except StopIteration:
-            pass  # exit:
+            pass
         xx = x0
         x0 = x3
         x3 = xx
@@ -658,36 +291,38 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
         sy = -sy
         yb = -yb
         x1 = x2
-        if leg - 1 == 0:
+        if not (leg != 0):
             break
         leg -= 1  # /* try other end */
-    for plot in plot_line(x0, y0, x3, y3):  # /* remaining part in case of cusp or crunode */
+    for plot in plot_line(x3, y3, x0, y0):  # /* remaining part in case of cusp or crunode */
+        second_leg.append(plot)
+    for plot in reversed(second_leg):
         yield plot
 
 
 def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
-    # /* plot any cubic Bezier curve */
+    """plot any cubic Bezier curve"""
     n = 0
     i = 0
-    xc = long(x0 + x1 - x2 - x3)
-    xa = long(xc - 4 * (x1 - x2))
-    xb = long(x0 - x1 - x2 + x3)
-    xd = long(xb + 4 * (x1 + x2))
-    yc = long(y0 + y1 - y2 - y3)
-    ya = long(yc - 4 * (y1 - y2))
-    yb = long(y0 - y1 - y2 + y3)
-    yd = long(yb + 4 * (y1 + y2))
-    fx0 = float(x0)
-    fx1 = 0.0
-    fx2 = 0.0
-    fx3 = 0.0
-    fy0 = float(y0)
-    fy1 = 0.0
-    fy2 = 0.0
-    fy3 = 0.0
-    t1 = float(xb * xb - xa * xc)
-    t2 = 0.0
-    t = [0.0] * 5
+    xc = x0 + x1 - x2 - x3
+    xa = xc - 4 * (x1 - x2)
+    xb = x0 - x1 - x2 + x3
+    xd = xb + 4 * (x1 + x2)
+    yc = y0 + y1 - y2 - y3
+    ya = yc - 4 * (y1 - y2)
+    yb = y0 - y1 - y2 + y3
+    yd = yb + 4 * (y1 + y2)
+    fx0 = x0
+    fx1 = 0
+    fx2 = 0
+    fx3 = 0
+    fy0 = y0
+    fy1 = 0
+    fy2 = 0
+    fy3 = 0
+    t1 = xb * xb - xa * xc
+    t2 = 0
+    t = [0] * 5
     # /* sub-divide curve at gradient sign changes */
     if xa == 0:  # /* horizontal */
         if abs(xc) < 2 * abs(xb):
@@ -696,11 +331,11 @@ def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
     elif t1 > 0.0:  # /* two changes */
         t2 = sqrt(t1)
         t1 = (xb - t2) / xa
-        if fabs(t1) < 1.0:
+        if abs(t1) < 1.0:
             t[n] = t1
             n += 1
         t1 = (xb + t2) / xa
-        if fabs(t1) < 1.0:
+        if abs(t1) < 1.0:
             t[n] = t1
             n += 1
     t1 = yb * yb - ya * yc
@@ -711,18 +346,24 @@ def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
     elif t1 > 0.0:  # /* two changes */
         t2 = sqrt(t1)
         t1 = (yb - t2) / ya
-        if fabs(t1) < 1.0:
+        if abs(t1) < 1.0:
             t[n] = t1
             n += 1
         t1 = (yb + t2) / ya
-        if fabs(t1) < 1.0:
+        if abs(t1) < 1.0:
             t[n] = t1
             n += 1
-    t.sort()  # /* bubble sort of 4 points */
-
+    i = 1
+    while i < n:  # /* bubble sort of 4 points */
+        t1 = t[i - 1]
+        if t1 > t[i]:
+            t[i - 1] = t[i]
+            t[i] = t1
+            i = 0
+        i += 1
     t1 = -1.0
     t[n] = 1.0  # /* begin / end point */
-    for i in range(1, n + 1):  # /* plot each segment separately */
+    for i in range(0, n + 1):  # /* plot each segment separately */
         t2 = t[i]  # /* sub-divide at t[i-1], t[i] */
         fx1 = (t1 * (t1 * xb - 2 * xc) - t2 * (t1 * (t1 * xa - 2 * xb) + xc) + xd) / 8 - fx0
         fy1 = (t1 * (t1 * yb - 2 * yc) - t2 * (t1 * (t1 * ya - 2 * yb) + yc) + yd) / 8 - fy0
@@ -733,7 +374,7 @@ def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
         fy3 = (t2 * (t2 * (3 * yb - t2 * ya) - 3 * yc) + yd) / 8
         fy0 -= fy3
         x3 = floor(fx3 + 0.5)
-        y3 = floor(fy3 + 0.5)  # /* scale bounds to int */
+        y3 = floor(fy3 + 0.5)  # /* scale bounds */
         if fx0 != 0.0:
             fx0 = (x0 - x3) / fx0
             fx1 *= fx0
@@ -743,6 +384,7 @@ def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
             fy1 *= fy0
             fy2 *= fy0
         if x0 != x3 or y0 != y3:  # /* segment t1 - t2 */
+            # plotCubicBezierSeg(x0,y0, x0+fx1,y0+fy1, x0+fx2,y0+fy2, x3,y3)
             for plot in plot_cubic_bezier_seg(x0, y0, x0 + fx1, y0 + fy1, x0 + fx2, y0 + fy2, x3, y3):
                 yield plot
         x0 = x3
