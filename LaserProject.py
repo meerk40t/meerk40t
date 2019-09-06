@@ -70,7 +70,7 @@ class ImageElement(LaserElement):
                 except ValueError:
                     return
             # TODO: 1 bit graphics crash
-        dc.DrawBitmap(self.cache, 0, 0)
+        gc.DrawBitmap(self.cache, 0, 0, self.image.width, self.image.height)
 
     def filter(self, pixel):
         if pixel[0] + pixel[1] + pixel[2] <= 384:
@@ -80,7 +80,7 @@ class ImageElement(LaserElement):
     def generate(self):
         yield COMMAND_SET_SPEED, (self.cut.get("speed"))
         yield COMMAND_SET_STEP, (self.cut.get("step"))
-        for event in RasterPlotter.plot_raster(self.image, filter=self.filter):
+        for event in RasterPlotter.plot_raster(self.image, filter=self.filter, overscan=100):
             x, y, pixel_color = event
             point = self.matrix.TransformPoint(x, y)
             if not isinstance(pixel_color, int) and pixel_color[0] + pixel_color[1] + pixel_color[2] <= 384:
