@@ -105,23 +105,36 @@ class PathElement(LaserElement):
         yield COMMAND_SET_STEP, (0)
         for data in object_path:
             if isinstance(data, Move):
-                yield COMMAND_MOVE_TO, (int(data.end.real), int(data.end.imag))
+                s = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                yield COMMAND_MOVE_TO, (int(s[0]), int(s[1]))
             elif isinstance(data, Line):
-                yield COMMAND_CUT_LINE_TO, (int(data.start.real), int(data.start.imag),
-                                            int(data.end.real), int(data.end.imag))
+                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
+                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                yield COMMAND_CUT_LINE_TO, (int(s[0]), int(s[1]),
+                                            int(e[0]), int(e[1]))
             elif isinstance(data, QuadraticBezier):
-                yield COMMAND_CUT_QUAD_TO, (int(data.start.real), int(data.start.imag),
-                                            data.control.real, data.control.imag,
-                                            int(data.end.real), int(data.end.imag))
+                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
+                c = self.matrix.TransformPoint(data.control.real, data.control.imag)
+                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                yield COMMAND_CUT_QUAD_TO, (int(s[0]), int(s[1]),
+                                            c[0], c[1],
+                                            int(e[0]), int(e[1]))
             elif isinstance(data, CubicBezier):
-                yield COMMAND_CUT_CUBIC_TO, (int(data.start.real), int(data.start.imag),
-                                             data.control1.real, data.control1.imag,
-                                             data.control2.real, data.control2.imag,
-                                             int(data.end.real), int(data.end.imag))
+                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
+                c1 = self.matrix.TransformPoint(data.control1.real, data.control1.imag)
+                c2 = self.matrix.TransformPoint(data.control2.real, data.control2.imag)
+                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                yield COMMAND_CUT_CUBIC_TO, (int(s[0]), int(s[1]),
+                                             c1[0], c1[1],
+                                             c2[0], c2[1],
+                                             int(e[0]), int(e[1]))
             elif isinstance(data, Arc):
-                yield COMMAND_CUT_ARC_TO, (int(data.start.real), int(data.start.imag),
-                                           int(data.center.real), int(data.center.imag),
-                                           int(data.end.real), int(data.end.imag))
+                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
+                c = self.matrix.TransformPoint(data.center.real, data.center.imag)
+                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                yield COMMAND_CUT_ARC_TO, (int(s[0]), int(s[1]),
+                                           int(c[0]), int(c[1]),
+                                           int(e[0]), int(e[1]))
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, (0)
 
@@ -374,8 +387,8 @@ class LaserProject:
     def __init__(self):
         self.elements = []
         self.size = 320, 220
-        self.controller = K40Controller()
-        #self.controller = MockController()
+        #self.controller = K40Controller()
+        self.controller = MockController()
 
         self.writer = LhymicroWriter(controller=self.controller)
         self.update_listener = None
