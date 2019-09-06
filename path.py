@@ -1,7 +1,7 @@
 from __future__ import division
-from math import sqrt, cos, sin, acos, degrees, radians, log, atan2
-from collections import MutableSequence
 
+from collections import MutableSequence
+from math import sqrt, cos, sin, acos, degrees, radians, log, atan2
 
 # This file contains classes for the different types of SVG path segments as
 # well as a Path object that contains a sequence of path segments.
@@ -83,6 +83,15 @@ class Line(object):
         return sqrt(distance.real ** 2 + distance.imag ** 2)
 
 
+    def bbox(self):
+        """returns the bounding box for the segment."""
+        xmin = min(self.start.real, self.end.real)
+        xmax = max(self.start.real, self.end.real)
+        ymin = min(self.start.imag, self.end.imag)
+        ymax = max(self.start.imag, self.end.imag)
+        return xmin, ymin, xmax, ymax
+
+
 class CubicBezier(object):
     def __init__(self, start, control1, control2, end):
         self.start = start
@@ -92,7 +101,7 @@ class CubicBezier(object):
 
     def __repr__(self):
         return 'CubicBezier(start=%s, control1=%s, control2=%s, end=%s)' % (
-               self.start, self.control1, self.control2, self.end)
+            self.start, self.control1, self.control2, self.end)
 
     def __eq__(self, other):
         if not isinstance(other, CubicBezier):
@@ -161,6 +170,14 @@ class CubicBezier(object):
         end_point = self.point(1)
         return segment_length(self, 0, 1, start_point, end_point, error, min_depth, 0)
 
+    def bbox(self):
+        """returns the bounding box for the segment"""
+        xmin = min(self.start.real, self.control1.real, self.control2.real, self.end.real)
+        xmax = max(self.start.real, self.control1.real, self.control2.real, self.end.real)
+        ymin = min(self.start.imag, self.control1.imag, self.control2.imag, self.end.imag)
+        ymax = max(self.start.imag, self.control1.imag, self.control2.imag, self.end.imag)
+        return xmin, ymin, xmax, ymax
+
 
 class QuadraticBezier(object):
     def __init__(self, start, control, end):
@@ -170,7 +187,7 @@ class QuadraticBezier(object):
 
     def __repr__(self):
         return 'QuadraticBezier(start=%s, control=%s, end=%s)' % (
-               self.start, self.control, self.end)
+            self.start, self.control, self.end)
 
     def __eq__(self, other):
         if not isinstance(other, QuadraticBezier):
@@ -226,18 +243,18 @@ class QuadraticBezier(object):
                pos ** 2 * self.end
 
     def length(self, error=None, min_depth=None):
-        a = self.start - 2*self.control + self.end
-        b = 2*(self.control - self.start)
-        a_dot_b = a.real*b.real + a.imag*b.imag
+        a = self.start - 2 * self.control + self.end
+        b = 2 * (self.control - self.start)
+        a_dot_b = a.real * b.real + a.imag * b.imag
 
         if abs(a) < 1e-12:
             s = abs(b)
-        elif abs(a_dot_b + abs(a)*abs(b)) < 1e-12:
-            k = abs(b)/abs(a)
+        elif abs(a_dot_b + abs(a) * abs(b)) < 1e-12:
+            k = abs(b) / abs(a)
             if k >= 2:
                 s = abs(b) - abs(a)
             else:
-                s = abs(a)*(k**2/2 - k + 1)
+                s = abs(a) * (k ** 2 / 2 - k + 1)
         else:
             # For an explanation of this case, see
             # http://www.malczak.info/blog/quadratic-bezier-curve-length/
@@ -252,8 +269,16 @@ class QuadraticBezier(object):
             BA = B / A2
 
             s = (A32 * Sabc + A2 * B * (Sabc - C2) + (4 * C * A - B ** 2) *
-                    log((2 * A2 + BA + Sabc) / (BA + C2))) / (4 * A32)
+                 log((2 * A2 + BA + Sabc) / (BA + C2))) / (4 * A32)
         return s
+
+    def bbox(self):
+        """returns the bounding box for the segment"""
+        xmin = min(self.start.real, self.control.real, self.end.real)
+        xmax = max(self.start.real, self.control.real, self.end.real)
+        ymin = min(self.start.imag, self.control.imag, self.end.imag)
+        ymax = max(self.start.imag, self.control.imag, self.end.imag)
+        return xmin, ymin, xmax, ymax
 
 
 class Arc(object):
@@ -273,7 +298,7 @@ class Arc(object):
 
     def __repr__(self):
         return 'Arc(start=%s, radius=%s, rotation=%s, arc=%s, sweep=%s, end=%s)' % (
-               self.start, self.radius, self.rotation, self.arc, self.sweep, self.end)
+            self.start, self.radius, self.rotation, self.arc, self.sweep, self.end)
 
     def __eq__(self, other):
         if not isinstance(other, Arc):
@@ -383,7 +408,7 @@ class Arc(object):
 
         n = sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
         p = ux * vx + uy * vy
-        d = p/n
+        d = p / n
         # In certain cases the above calculation can through inaccuracies
         # become just slightly out of range, f ex -1.0000000000000002.
         if d > 1.0:
@@ -422,6 +447,14 @@ class Arc(object):
         start_point = self.point(0)
         end_point = self.point(1)
         return segment_length(self, 0, 1, start_point, end_point, error, min_depth, 0)
+
+    def bbox(self):
+        """returns the bounding box for the segment"""
+        xmin = min(self.start.real, self.center.real, self.end.real)
+        xmax = max(self.start.real, self.center.real, self.end.real)
+        ymin = min(self.start.imag, self.center.imag, self.end.imag)
+        ymax = max(self.start.imag, self.center.imag, self.end.imag)
+        return xmin, ymin, xmax, ymax
 
 
 class Move(object):
@@ -470,6 +503,11 @@ class Move(object):
 
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         return 0
+
+    def bbox(self):
+        """returns the bounding box for the segment in the form
+        (xmin, xmax, ymin, ymax)."""
+        return self.start.real, self.end.real, self.start.imag, self.end.imag
 
 
 class Path(MutableSequence):
@@ -604,6 +642,16 @@ class Path(MutableSequence):
         for segment in self:
             segment *= rotate
 
+    def bbox(self):
+        """returns a bounding box for the input Path"""
+        bbs = [seg.bbox() for seg in self._segments]
+        xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
+        xmin = min(xmins)
+        xmax = max(xmaxs)
+        ymin = min(ymins)
+        ymax = max(ymaxs)
+        return xmin, ymin, xmax, ymax
+
     def d(self):
         if self.closed:
             segments = self[:-1]
@@ -621,7 +669,7 @@ class Path(MutableSequence):
             # the last segment or if this segment is actually the close point
             # of a closed path, then we should start a new subpath here.
             if isinstance(segment, Move) or (current_pos != start) or (
-               start == end and not isinstance(previous_segment, Move)):
+                    start == end and not isinstance(previous_segment, Move)):
                 parts.append('M {0:G},{1:G}'.format(start.real, start.imag))
 
             if isinstance(segment, Line):
@@ -689,7 +737,7 @@ class ObjectParser:
         self.path.append(CubicBezier(start_pos, control1, control2, end_pos))
 
     def arc(self, start_pos, radius, rotation, arc, sweep, end_pos):
-        self.path.append(Arc(start_pos,radius,rotation,arc,sweep,end_pos))
+        self.path.append(Arc(start_pos, radius, rotation, arc, sweep, end_pos))
 
     def closed(self):
         pass

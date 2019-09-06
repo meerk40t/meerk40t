@@ -306,7 +306,8 @@ class MeerK40t(wx.Frame):
         event.Skip()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_zoom_in' not implemented!")
+        m = self.scene.ClientSize / 2
+        self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
         event.Skip()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>

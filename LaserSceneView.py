@@ -26,6 +26,8 @@ class LaserSceneView(wx.Panel):
         self.identity.Reset()
         self.previous_window_position = None
         self.previous_scene_position = None
+        self.popup_window_position = None
+        self.popup_scene_position = None
         self._Buffer = None
 
         self.__set_properties()
@@ -37,7 +39,7 @@ class LaserSceneView(wx.Panel):
         self.grid = None
         self.draw_laserhead = True
         self.draw_laserpath = True
-        self.laserpath = [(0,0,0,0)] * 50
+        self.laserpath = [(0, 0, 0, 0)] * 500
         self.laserpath_index = 0
 
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -50,7 +52,7 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
         self.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
 
-        # self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
 
@@ -152,6 +154,7 @@ class LaserSceneView(wx.Panel):
         return self.matrix.GetTranslateY()
 
     def on_mousewheel(self, event):
+        print(str(event))
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
         if rotation > 1:
@@ -185,11 +188,11 @@ class LaserSceneView(wx.Panel):
         self.previous_scene_position = None
         self.move_function = self.move_pan
 
-    def move_pan(self,wdx,wdy,sdx,sdy):
+    def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
         self.update_buffer()
 
-    def move_selected(self,wdx,wdy,sdx,sdy):
+    def move_selected(self, wdx, wdy, sdx, sdy):
         self.project.move_selected(sdx, sdy)
         self.update_buffer()
 
@@ -210,11 +213,23 @@ class LaserSceneView(wx.Panel):
         self.previous_scene_position = scene_position
 
     def on_right_mouse_down(self, event):
+        self.popup_window_position = event.GetPosition()
+        self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
         menu = wx.Menu()
-        menu_item = menu.Append(wx.ID_ANY, "Track", "", wx.ITEM_CHECK)
-        # self.Bind(wx.EVT_MENU, self.on_click_new, menu_item)
+        convert = menu.Append(wx.ID_ANY, "Convert Raw", "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, convert)
+        menu_remove = menu.Append(wx.ID_ANY, "Remove", "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, menu_remove)
         self.PopupMenu(menu)
         menu.Destroy()
+
+    def on_popup_menu_remove(self, event):
+        self.project.menu_remove(self.popup_scene_position)
+        self.Update()
+
+    def on_popup_menu_convert(self, event):
+        self.project.menu_convert_raw(self.popup_scene_position)
+        self.Update()
 
     def focus_position_scene(self, scene_point):
         window_width, window_height = self.ClientSize
@@ -297,13 +312,13 @@ class LaserSceneView(wx.Panel):
             length = 50
             lines.append((x, 0, x, length))
             lines.append((x, h, x, h - length))
-            dc.DrawRotatedText("%1d" % ((x-sx) / (25.4 * self.matrix.GetScaleX())),x,0,-90)
+            dc.DrawRotatedText("%1d" % ((x - sx) / (25.4 * self.matrix.GetScaleX())), x, 0, -90)
 
         for y in range(int(offset_y), int(h), points):
             length = 50
             lines.append((0, y, length, y))
             lines.append((w, y, w - length, y))
-            dc.DrawText("%1d" % ((y-sy) / (25.4 * self.matrix.GetScaleY())), 0, y)
+            dc.DrawText("%1d" % ((y - sy) / (25.4 * self.matrix.GetScaleY())), 0, y)
         dc.DrawLineList(lines)
 
     def on_draw_background(self, dc):
