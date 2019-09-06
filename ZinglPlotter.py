@@ -40,6 +40,7 @@ def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
     dy = 0
     err = 0
     cur = xx * sy - yy * sx  # /* curvature */
+    points = None
 
     assert (xx * sx <= 0 and yy * sy <= 0)  # /* sign of gradient must not change */
 
@@ -49,6 +50,7 @@ def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
         y2 = y0
         y0 = sy + y1
         cur = -cur  # /* swap P0 P2 */
+        points = []
     if cur != 0:  # /* no straight line */
         xx += sx
         if x0 < x2:
@@ -76,8 +78,14 @@ def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
         yy += yy
         err = dx + dy + xy  # /* error 1st step */
         while True:
-            yield x0, y0, 1  # /* plot curve */
+            if points is None:
+                yield x0, y0, 1  # /* plot curve */
+            else:
+                points.append((x0, y0, 1))
             if x0 == x2 and y0 == y2:
+                if points is not None:
+                    for plot in reversed(points):
+                        yield plot
                 return  # /* last pixel -> curve finished */
             y1 = 2 * err < dx  # /* save value for test of y step */
             if 2 * err > dy:
@@ -95,7 +103,13 @@ def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
             if not (dy < 0 and dx > 0):  # /* gradient negates -> algorithm fails */
                 break
     for plot in plot_line(x0, y0, x2, y2):  # /* plot remaining part to end */:
-        yield plot  # plotLine(x0,y0, x2,y2) #/* plot remaining part to end */
+        if points is None:
+            yield plot  # /* plot curve */
+        else:
+            points.append(plot)  # plotLine(x0,y0, x2,y2) #/* plot remaining part to end */
+    if points is not None:
+        for plot in reversed(points):
+            yield plot
 
 
 def plot_quad_bezier(x0, y0, x1, y1, x2, y2):

@@ -254,8 +254,7 @@ class GraphicPathCommandPlotter:
         self.graphic_path.AddLineToPoint(ex, ey)
 
     def quad_to(self, cx, cy, ex, ey):
-        self.graphic_path.AddQuadCurveToPoint(wx.Point2D(cx, cy),
-                                              wx.Point2D(ex, ey))
+        self.graphic_path.AddQuadCurveToPoint(cx, cy, ex, ey)
 
     def cubic_to(self, c1x, c1y, c2x, c2y, ex, ey):
         self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, ex, ey)
@@ -337,13 +336,17 @@ class LaserThread(threading.Thread):
             elif command == COMMAND_CUT_LINE_TO:
                 sx, sy, ex, ey = values
                 self.writer.down()
-                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, ex, ey)):
+                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
+                                                                            ex, ey)):
                     self.writer.move_abs(x, y)
                 self.writer.up()
             elif command == COMMAND_CUT_QUAD_TO:
                 sx, sy, cx, cy, ex, ey = values
                 self.writer.down()
-                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, ex, ey)):
+                for x, y, on in direct_plots(sx, sy,
+                                             ZinglPlotter.plot_quad_bezier(sx, sy,
+                                                                           cx, cy,
+                                                                           ex, ey)):
                     self.writer.move_abs(x, y)
                 self.writer.up()
             elif command == COMMAND_CUT_CUBIC_TO:
@@ -351,7 +354,9 @@ class LaserThread(threading.Thread):
                 self.writer.down()
                 for x, y, on in direct_plots(sx, sy,
                                              ZinglPlotter.plot_cubic_bezier(sx, sy,
-                                                                            c1x, c1y, c2x, c2y, ex, ey)):
+                                                                            c1x, c1y,
+                                                                            c2x, c2y,
+                                                                            ex, ey)):
                     self.writer.move_abs(x, y)
                 self.writer.up()
             elif command == COMMAND_CUT_ARC_TO:
