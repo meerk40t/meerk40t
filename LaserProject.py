@@ -103,6 +103,7 @@ class PathElement(LaserElement):
         self.box = wx.Rect2D(object_path.bbox())
         yield COMMAND_SET_SPEED, (self.cut.get("speed"))
         yield COMMAND_SET_STEP, (0)
+        yield COMMAND_MODE_COMPACT, (0)
         for data in object_path:
             if isinstance(data, Move):
                 s = self.matrix.TransformPoint(data.end.real, data.end.imag)
@@ -387,8 +388,8 @@ class LaserProject:
     def __init__(self):
         self.elements = []
         self.size = 320, 220
-        #self.controller = K40Controller()
-        self.controller = MockController()
+        self.controller = K40Controller()
+        #self.controller = MockController()
 
         self.writer = LhymicroWriter(controller=self.controller)
         self.update_listener = None
