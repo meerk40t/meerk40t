@@ -295,6 +295,7 @@ class LaserThread(threading.Thread):
     def burn_project(self):
         for element in self.elements:
             self.burn_element(element.generate())
+        print('\a')
 
     def burn_element(self, element):
         for command, values in element:
@@ -397,6 +398,8 @@ class LaserProject:
         self.update_listener = None
         self.selected = []
         self.thread = None
+        self.autohome = False
+        self.autobeep = True
 
     def select(self, position):
         self.selected = []

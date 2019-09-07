@@ -8,37 +8,100 @@ import time
 # begin wxGlade: dependencies
 # end wxGlade
 
-# begin wxGlade: extracode
-# end wxGlade
-
 
 class Navigation(wx.Frame):
     def __init__(self, *args, **kwds):
-        # begin wxGlade: Navigation.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
+        # begin wxGlade: Navigate.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.bitmap_button_1 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8up.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_7 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-padlock-50.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_9 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-lock-50.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_2 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-left.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_6 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-home-filled-50.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_3 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-right.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_4 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-down.png", wx.BITMAP_TYPE_ANY))
-        self.bitmap_button_8 = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
-        self.spin_jumpamount = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=1000.0)
-        self.spin_timeamount = wx.SpinCtrlDouble(self, wx.ID_ANY, "50.0", min=0.0, max=1000.0)
+        self.SetSize((237, 401))
+        self.button_top = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8up.png", wx.BITMAP_TYPE_ANY))
+        self.button_left = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-left.png", wx.BITMAP_TYPE_ANY))
+        self.button_home = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-home-filled-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_right = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-right.png", wx.BITMAP_TYPE_ANY))
+        self.button_bottom = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-down.png", wx.BITMAP_TYPE_ANY))
+        self.button_unlock = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-padlock-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_lock = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-lock-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_pulse = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
+        self.spin_step_size = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=1000.0)
+        self.spin_pulse_time = wx.SpinCtrlDouble(self, wx.ID_ANY, "50.0", min=0.0, max=100.0)
 
-        self.project = None
         self.__set_properties()
         self.__do_layout()
-        self.Bind(wx.EVT_BUTTON, self.home, self.bitmap_button_6)
-        self.Bind(wx.EVT_BUTTON, self.lock_rail, self.bitmap_button_9)
-        self.Bind(wx.EVT_BUTTON, self.unlock_rail, self.bitmap_button_7)
-        self.Bind(wx.EVT_BUTTON, self.move_left, self.bitmap_button_2)
-        self.Bind(wx.EVT_BUTTON, self.move_right, self.bitmap_button_3)
-        self.Bind(wx.EVT_BUTTON, self.move_bottom, self.bitmap_button_4)
-        self.Bind(wx.EVT_BUTTON, self.move_top, self.bitmap_button_1)
-        self.Bind(wx.EVT_BUTTON, self.fire_time, self.bitmap_button_8)
+
+        self.Bind(wx.EVT_BUTTON, self.move_top, self.button_top)
+        self.Bind(wx.EVT_BUTTON, self.move_left, self.button_left)
+        self.Bind(wx.EVT_BUTTON, self.home, self.button_home)
+        self.Bind(wx.EVT_BUTTON, self.move_right, self.button_right)
+        self.Bind(wx.EVT_BUTTON, self.move_bottom, self.button_bottom)
+        self.Bind(wx.EVT_BUTTON, self.unlock_rail, self.button_unlock)
+        self.Bind(wx.EVT_BUTTON, self.lock_rail, self.button_lock)
+        self.Bind(wx.EVT_BUTTON, self.fire_time, self.button_pulse)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_step_size, self.spin_step_size)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_step_size, self.spin_step_size)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_pulse_time, self.spin_pulse_time)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_pulse_time, self.spin_pulse_time)
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: Navigate.__set_properties
+        self.SetTitle("Navigate")
+        self.SetTitle("Navigation")
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY))
+        self.SetIcon(_icon)
+        self.button_top.SetSize(self.button_top.GetBestSize())
+        self.button_left.SetSize(self.button_left.GetBestSize())
+        self.button_home.SetSize(self.button_home.GetBestSize())
+        self.button_right.SetSize(self.button_right.GetBestSize())
+        self.button_bottom.SetSize(self.button_bottom.GetBestSize())
+        self.button_unlock.SetSize(self.button_unlock.GetBestSize())
+        self.button_lock.SetSize(self.button_lock.GetBestSize())
+        self.button_pulse.SetSize(self.button_pulse.GetBestSize())
+        self.spin_step_size.SetIncrement(1.0)
+        self.spin_pulse_time.SetIncrement(10.0)
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: Navigate.__do_layout
+        sizer_7 = wx.BoxSizer(wx.VERTICAL)
+        sizer_8 = wx.BoxSizer(wx.VERTICAL)
+        sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_9 = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer_1 = wx.GridSizer(5, 3, 0, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add(self.button_top, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add(self.button_left, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add(self.button_home, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add(self.button_right, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add(self.button_bottom, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add((0, 0), 0, 0, 0)
+        grid_sizer_1.Add(self.button_unlock, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add(self.button_lock, 0, wx.EXPAND, 0)
+        grid_sizer_1.Add(self.button_pulse, 0, wx.EXPAND, 0)
+        sizer_7.Add(grid_sizer_1, 1, wx.EXPAND, 0)
+        label_4 = wx.StaticText(self, wx.ID_ANY, "Step size")
+        label_4.SetMinSize((85, 16))
+        sizer_9.Add(label_4, 0, 0, 0)
+        sizer_9.Add(self.spin_step_size, 0, 0, 0)
+        label_6 = wx.StaticText(self, wx.ID_ANY, "mm")
+        sizer_9.Add(label_6, 0, 0, 0)
+        sizer_8.Add(sizer_9, 1, wx.EXPAND, 0)
+        label_5 = wx.StaticText(self, wx.ID_ANY, "Pulse time")
+        label_5.SetMinSize((85, 16))
+        sizer_10.Add(label_5, 0, 0, 0)
+        sizer_10.Add(self.spin_pulse_time, 0, 0, 0)
+        label_7 = wx.StaticText(self, wx.ID_ANY, "ms")
+        sizer_10.Add(label_7, 0, 0, 0)
+        sizer_8.Add(sizer_10, 1, wx.EXPAND, 0)
+        sizer_7.Add(sizer_8, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_7)
+        self.Layout()
         # end wxGlade
 
     def set_project(self, project):
@@ -54,85 +117,35 @@ class Navigation(wx.Frame):
         self.project.writer.unlock_rail()
 
     def fire_time(self, evt):
-        value = self.spin_timeamount.GetValue()
+        value = self.spin_pulse_time.GetValue()
         value = value / 1000.0
         self.project.writer.down()
         time.sleep(value)
         self.project.writer.up()
 
     def move_top(self, evt):
-        value = self.spin_jumpamount.GetValue()
+        value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
         self.project.writer.move(0, -value)
 
     def move_left(self, evt):
-        value = self.spin_jumpamount.GetValue()
+        value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
         self.project.writer.move(-value, 0)
 
     def move_right(self, evt):
-        value = self.spin_jumpamount.GetValue()
+        value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
         self.project.writer.move(value, 0)
 
     def move_bottom(self, evt):
-        value = self.spin_jumpamount.GetValue()
+        value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
         self.project.writer.move(0, value)
 
-    def __set_properties(self):
-        # begin wxGlade: Navigation.__set_properties
-        self.SetTitle("Navigation")
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY))
-        self.SetIcon(_icon)
-        self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
-        self.bitmap_button_7.SetSize(self.bitmap_button_7.GetBestSize())
-        self.bitmap_button_9.SetSize(self.bitmap_button_9.GetBestSize())
-        self.bitmap_button_2.SetSize(self.bitmap_button_2.GetBestSize())
-        self.bitmap_button_6.SetSize(self.bitmap_button_6.GetBestSize())
-        self.bitmap_button_3.SetSize(self.bitmap_button_3.GetBestSize())
-        self.bitmap_button_4.SetSize(self.bitmap_button_4.GetBestSize())
-        self.bitmap_button_8.SetSize(self.bitmap_button_8.GetBestSize())
-        self.spin_jumpamount.SetMinSize((70, 23))
-        # end wxGlade
 
-    def __do_layout(self):
-        # begin wxGlade: Navigation.__do_layout
-        sizer_9 = wx.BoxSizer(wx.VERTICAL)
-        sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
-        grid_sizer_1 = wx.FlexGridSizer(4, 5, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_1, 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_7, 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_9, 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_2, 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_6, 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_3, 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_4, 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add((0, 0), 0, 0, 0)
-        grid_sizer_1.Add(self.bitmap_button_8, 0, 0, 0)
-        sizer_9.Add(grid_sizer_1, 0, 0, 0)
-        sizer_15.Add(self.spin_jumpamount, 0, 0, 0)
-        label_mm3 = wx.StaticText(self, wx.ID_ANY, "mm")
-        sizer_15.Add(label_mm3, 0, 0, 0)
-        sizer_15.Add(self.spin_timeamount, 0, 0, 0)
-        label_ms = wx.StaticText(self, wx.ID_ANY, "ms")
-        sizer_15.Add(label_ms, 0, 0, 0)
-        sizer_9.Add(sizer_15, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_9)
-        sizer_9.Fit(self)
-        self.Layout()
-        # end wxGlade
+    def on_spin_step_size(self, event):  # wxGlade: Navigate.<event_handler>
+        pass
 
-# end of class Navigation
+    def on_spin_pulse_time(self, event):  # wxGlade: Navigate.<event_handler>
+        pass

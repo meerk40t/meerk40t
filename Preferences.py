@@ -46,6 +46,11 @@ class Preferences(wx.Frame):
 
     def set_project(self, project):
         self.project = project
+        self.checkbox_mock_usb.SetValue(self.project.controller.mock)
+        self.checkbox_autobeep.SetValue(self.project.autobeep)
+        self.checkbox_autohome.SetValue(self.project.autohome)
+        self.checkbox_autolock.SetValue(self.project.writer.autolock)
+        self.project.writer.autolock = self.checkbox_autolock.GetValue()
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
@@ -130,16 +135,13 @@ class Preferences(wx.Frame):
         event.Skip()
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_autolock' not implemented!")
-        event.Skip()
+        self.project.writer.autolock = self.checkbox_autolock.GetValue()
 
     def on_check_autohome(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_autohome' not implemented!")
-        event.Skip()
+        self.project.autohome = self.checkbox_autohome.GetValue()
 
     def on_check_autobeep(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_autobeep' not implemented!")
-        event.Skip()
+        self.project.autobeep = self.checkbox_autobeep.GetValue()
 
     def spin_on_scalex(self, event):  # wxGlade: Preferences.<event_handler>
         print("Event handler 'spin_on_scalex' not implemented!")
@@ -150,6 +152,5 @@ class Preferences(wx.Frame):
         event.Skip()
 
     def on_checkbox_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_checkbox_mock_usb' not implemented!")
-        event.Skip()
+        self.project.controller.mock = self.checkbox_mock_usb.GetValue()
 

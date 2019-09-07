@@ -39,6 +39,7 @@ class LhymicroWriter:
             self.controller = K40Controller()
         else:
             self.controller = controller
+        self.autolock = True
         self.board = board
         if self.board is None:
             self.board = "M2"
