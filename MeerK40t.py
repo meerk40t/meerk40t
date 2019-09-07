@@ -340,19 +340,20 @@ class MeerK40t(wx.Frame):
         self.scene.draw_guides = not self.scene.draw_guides
 
     def transform_rotate_right(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.scene.move_selected()
+        from math import pi
+        tau = pi * 2
+        self.project.menu_rotate(0.25 * tau)
 
     def transform_rotate_left(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'transform_rotate_left' not implemented!")
-        event.Skip()
+        from math import pi
+        tau = pi * 2
+        self.project.menu_rotate(0.25 * tau)
 
     def transform_mirror_hflip(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'transform_mirror_hflip' not implemented!")
-        event.Skip()
+        self.project.menu_scale(-1, 1)
 
     def transform_mirror_vflip(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'transform_mirror_vflip' not implemented!")
-        event.Skip()
+        self.project.menu_scale(1, -1)
 
     def on_click_group(self, event):  # wxGlade: MeerK40t.<event_handler>
         print("Event handler 'on_click_group' not implemented!")
@@ -383,41 +384,6 @@ class MeerK40t(wx.Frame):
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         import webbrowser
         webbrowser.open("https://github.com/meerk40t/meerk40t", new=0, autoraise=True)
-
-    def on_click_undo(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_undo' not implemented!")
-        event.Skip()
-
-    def on_click_redo(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_redo' not implemented!")
-        event.Skip()
-
-    def on_click_zoom_default(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_zoom_default' not implemented!")
-        event.Skip()
-
-    def on_click_zoom_all(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_zoom_all' not implemented!")
-        event.Skip()
-
-    def tool_select(self, event):
-        pass
-
-    def tool_rect(self, event):
-        pass
-
-    def tool_circ(self, event):
-        pass
-
-    def tool_oval(self, event):
-        pass
-
-    def tool_polyline(self, event):
-        pass
-
-    def tool_curve(self, event):
-        pass
-
 
 # end of class MeerK40t
 

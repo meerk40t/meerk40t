@@ -391,7 +391,7 @@ class LaserProject:
     def __init__(self):
         self.elements = []
         self.size = 320, 220
-        self.controller = K40Controller()  #mock=True
+        self.controller = K40Controller()  # mock=True
 
         self.writer = LhymicroWriter(controller=self.controller)
         self.update_listener = None
@@ -448,25 +448,35 @@ class LaserProject:
                 self.remove_element(e)
                 break
 
-    def menu_scale(self, position, scale):
+    def menu_scale(self, scale, scale_y=None, position=None):
+        if scale_y is None:
+            scale_y = scale
         for e in self.elements:
             matrix = e.matrix
-            p = matrix.InverseTransformPoint(position)
-            if e.box.Contains(p):
-                e.matrix.PostScale(scale)
+            if position is not None:
+                p = matrix.InverseTransformPoint(position)
+                if e.box.Contains(p):
+                    e.matrix.PostScale(scale, scale_y, p[0], p[1])
+            else:
+                for e in self.selected:
+                    e.matrix.PostScale(scale, scale_y)
 
-    def menu_rotate(self, position, radians):
+    def menu_rotate(self, radians, position=None):
         for e in self.elements:
             matrix = e.matrix
-            p = matrix.InverseTransformPoint(position)
-            if e.box.Contains(p):
-                e.matrix.PostRotate(radians)
+            if position is not None:
+                p = matrix.InverseTransformPoint(position)
+                if e.box.Contains(p):
+                    e.matrix.PostRotate(radians, p[0], p[1])
+            else:
+                for e in self.selected:
+                    e.matrix.PostRotate(radians)
 
     def move_selected(self, dx, dy):
         for e in self.selected:
             e.move(dx, dy)
 
-    def remove_element(self,obj):
+    def remove_element(self, obj):
         self.elements.remove(obj)
         if self.update_listener is not None:
             self.update_listener(None)

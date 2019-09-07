@@ -240,7 +240,7 @@ class LaserSceneView(wx.Panel):
 
     def on_scale_popup(self, value):
         def specific(event):
-            self.project.menu_scale(self.popup_scene_position, value)
+            self.project.menu_scale(value, value, self.popup_scene_position)
             self.update_buffer()
         return specific
 
@@ -248,10 +248,9 @@ class LaserSceneView(wx.Panel):
         def specific(event):
             from math import pi
             tau = pi * 2
-            self.project.menu_rotate(self.popup_scene_position, value * tau)
+            self.project.menu_rotate(value * tau, self.popup_scene_position)
             self.update_buffer()
         return specific
-
 
     def on_popup_menu_remove(self, event):
         self.project.menu_remove(self.popup_scene_position)
