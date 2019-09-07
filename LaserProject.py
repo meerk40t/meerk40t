@@ -163,6 +163,7 @@ class EgvElement(LaserElement):
             parse = LaserCommandPathParser(p)
             for event in self.generate():
                 parse.command(event)
+            print(parse.x, parse.y)
             self.cache = p
             self.box = self.cache.GetBox()
         gc.StrokePath(self.cache)
@@ -439,7 +440,7 @@ class LaserProject:
                 self.add_element(RawElement(e))
                 break
 
-    def menu_remove_element(self, position):
+    def menu_remove(self, position):
         for e in self.elements:
             matrix = e.matrix
             p = matrix.InverseTransformPoint(position)

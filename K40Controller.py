@@ -135,7 +135,7 @@ class K40Controller:
                 break  # No valid packet was able to be produced.
             # try to send packet
             self.wait(STATUS_OK)
-            self.send_packet(convert_to_list_bytes(packet))
+            self.send_packet(packet)
             if wait_finish:
                 self.wait(STATUS_FINISH)
                 wait_finish = False
@@ -179,9 +179,10 @@ class K40Controller:
             self.interface = None
             self.usb = None
 
-    def send_packet(self, data):
-        if len(data) != 30:
+    def send_packet(self, packet_byte_data):
+        if len(packet_byte_data) != 30:
             raise usb.core.USBError('We can only send 30 byte packets.')
+        data = convert_to_list_bytes(packet_byte_data)
         packet = [166] + [0] + data + [166] + [onewire_crc_lookup(data)]
 
         sending = True
@@ -189,7 +190,7 @@ class K40Controller:
             if not self.mock:
                 self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
             if self.packet_listener is not None:
-                self.packet_listener(packet)
+                self.packet_listener(packet, packet_byte_data)
             self.update_status()
             if self.status[1] != STATUS_PACKET_REJECTED:
                 sending = False

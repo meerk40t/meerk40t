@@ -256,8 +256,8 @@ class MeerK40t(wx.Frame):
     def load_svg(self, pathname):
         svg = svg_parser.parse_svg_file(pathname)
         for element in svg:
-            if element.has_key('d'):
-                pathd = element.get('d')
+            if 'd' in element:
+                pathd = element['d']
                 self.project.add_element(PathElement(pathd))
         # self.project.add_element(PathElement(svg))
         self.scene.update_buffer()

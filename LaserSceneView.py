@@ -156,7 +156,6 @@ class LaserSceneView(wx.Panel):
         return self.matrix.GetTranslateY()
 
     def on_mousewheel(self, event):
-        print(str(event))
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
         if rotation > 1:
