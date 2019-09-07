@@ -97,7 +97,6 @@ class MeerK40t(wx.Frame):
 
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
-        toolbar.AddTool(ID_ADD_FILE, wx.Bitmap("icons/icons8-add-file-50.png", wx.BITMAP_TYPE_ANY))  # "New",
         toolbar.AddTool(ID_OPEN, wx.Bitmap("icons/icons8-opened-folder-50.png", wx.BITMAP_TYPE_ANY))  # "Open",
         toolbar.AddTool(ID_SAVE, wx.Bitmap("icons/icons8-save-50.png", wx.BITMAP_TYPE_ANY))  # "Save",
 
@@ -147,7 +146,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, "Zoom To Size", "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, "Hide Grid", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, "Hide Guides", "")
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, "Hide Guides", "", wx.ITEM_CHECK)
         self.main_menubar.Append(wxglade_tmp_menu, "View")
         wxglade_tmp_menu = wx.Menu()
 
@@ -196,9 +195,8 @@ class MeerK40t(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
-        toolbar.Bind(wx.EVT_TOOL, self.on_click_new, id=ID_ADD_FILE)
-        toolbar.Bind(wx.EVT_TOOL, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(wx.EVT_TOOL, self.on_click_save, id=ID_SAVE)
+        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_navigation, id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_controller, id=ID_CONTROLLER)
@@ -274,20 +272,44 @@ class MeerK40t(wx.Frame):
         self.scene.update_buffer()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_new' not implemented!")
-        event.Skip()
+        self.project.elements = []
+        self.Update()
+        self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_open' not implemented!")
-        event.Skip()
-
-    def on_click_recent(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_recent' not implemented!")
-        event.Skip()
+        # This code should load just specific project files rather than all importable formats.
+        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
+                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
+                "Engrave egv (*.egv)|*.egv|" \
+                 "Portable Network Graphics png (*.png)|*.png"
+        with wx.FileDialog(self, "Open", wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            if pathname.lower().endswith(".svg"):
+                self.load_svg(pathname)
+            elif pathname.lower().endswith(".egv"):
+                self.load_egv(pathname)
+            else:
+                self.load_image(pathname)
 
     def on_click_import(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_import' not implemented!")
-        event.Skip()
+        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
+                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
+                "Engrave egv (*.egv)|*.egv|" \
+                "Portable Network Graphics png (*.png)|*.png"
+        with wx.FileDialog(self, "Open", wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            if pathname.lower().endswith(".svg"):
+                self.load_svg(pathname)
+            elif pathname.lower().endswith(".egv"):
+                self.load_egv(pathname)
+            else:
+                self.load_image(pathname)
 
     def on_click_save(self, event):  # wxGlade: MeerK40t.<event_handler>
         print("Event handler 'on_click_save' not implemented!")
@@ -298,8 +320,7 @@ class MeerK40t(wx.Frame):
         event.Skip()
 
     def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_exit' not implemented!")
-        event.Skip()
+        self.Close()
 
     def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
@@ -313,16 +334,13 @@ class MeerK40t(wx.Frame):
         self.scene.focus_on_project()
 
     def toggle_show_grid(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'toggle_show_grid' not implemented!")
-        event.Skip()
+        self.scene.draw_grid = not self.scene.draw_grid
 
     def toggle_hide_guides(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'toggle_hide_guides' not implemented!")
-        event.Skip()
+        self.scene.draw_guides = not self.scene.draw_guides
 
     def transform_rotate_right(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'transform_rotate_right' not implemented!")
-        event.Skip()
+        self.scene.move_selected()
 
     def transform_rotate_left(self, event):  # wxGlade: MeerK40t.<event_handler>
         print("Event handler 'transform_rotate_left' not implemented!")
@@ -363,8 +381,8 @@ class MeerK40t(wx.Frame):
         window.Show()
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'launch_webpage' not implemented!")
-        event.Skip()
+        import webbrowser
+        webbrowser.open("https://github.com/meerk40t/meerk40t", new=0, autoraise=True)
 
     def on_click_undo(self, event):  # wxGlade: MeerK40t.<event_handler>
         print("Event handler 'on_click_undo' not implemented!")

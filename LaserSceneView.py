@@ -221,14 +221,37 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, convert)
         menu_remove = menu.Append(wx.ID_ANY, "Remove", "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_popup_menu_remove, menu_remove)
-        menu_scale_2 = menu.Append(wx.ID_ANY, "Scale 2x", "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_popup_menu_scale_2, menu_scale_2)
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(3.0), menu.Append(wx.ID_ANY, "Scale 300%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(2.0), menu.Append(wx.ID_ANY, "Scale 200%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(1.5), menu.Append(wx.ID_ANY, "Scale 150%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(1.5), menu.Append(wx.ID_ANY, "Scale 125%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(1.1), menu.Append(wx.ID_ANY, "Scale 110%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.9), menu.Append(wx.ID_ANY, "Scale 90%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.8), menu.Append(wx.ID_ANY, "Scale 80%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.75), menu.Append(wx.ID_ANY, "Scale 75%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.5), menu.Append(wx.ID_ANY, "Scale 50%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.333), menu.Append(wx.ID_ANY, "Scale 33%", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.25), menu.Append(wx.ID_ANY, u"Rotate \u03c4/4", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.25), menu.Append(wx.ID_ANY, u"Rotate -\u03c4/4", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.125), menu.Append(wx.ID_ANY, u"Rotate \u03c4/8", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.125), menu.Append(wx.ID_ANY, u"Rotate -\u03c4/8", "", wx.ITEM_NORMAL))
         self.PopupMenu(menu)
         menu.Destroy()
 
-    def on_popup_menu_scale_2(self, event):
-        self.project.menu_scale(self.popup_scene_position, 2.0)
-        self.update_buffer()
+    def on_scale_popup(self, value):
+        def specific(event):
+            self.project.menu_scale(self.popup_scene_position, value)
+            self.update_buffer()
+        return specific
+
+    def on_rotate_popup(self, value):
+        def specific(event):
+            from math import pi
+            tau = pi * 2
+            self.project.menu_rotate(self.popup_scene_position, value * tau)
+            self.update_buffer()
+        return specific
+
 
     def on_popup_menu_remove(self, event):
         self.project.menu_remove(self.popup_scene_position)

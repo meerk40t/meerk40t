@@ -455,6 +455,13 @@ class LaserProject:
             if e.box.Contains(p):
                 e.matrix.PostScale(scale)
 
+    def menu_rotate(self, position, radians):
+        for e in self.elements:
+            matrix = e.matrix
+            p = matrix.InverseTransformPoint(position)
+            if e.box.Contains(p):
+                e.matrix.PostRotate(radians)
+
     def move_selected(self, dx, dy):
         for e in self.selected:
             e.move(dx, dy)
