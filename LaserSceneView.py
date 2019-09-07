@@ -37,6 +37,7 @@ class LaserSceneView(wx.Panel):
         self.draw_grid = True
         self.draw_guides = True
         self.grid = None
+        self.guide_lines = None
         self.draw_laserhead = True
         self.draw_laserpath = True
         self.laserpath = [(0, 0, 0, 0)] * 500
@@ -79,7 +80,8 @@ class LaserSceneView(wx.Panel):
         self.laserpath[self.laserpath_index] = (x, y, old_x, old_y)
         self.laserpath_index += 1
         self.laserpath_index %= 50
-        self.update_buffer()
+        if self.laserpath_index % 25 == 0:
+            self.update_buffer()
 
     def on_size(self, event):
         Size = self.ClientSize
@@ -219,17 +221,28 @@ class LaserSceneView(wx.Panel):
         convert = menu.Append(wx.ID_ANY, "Convert Raw", "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, convert)
         menu_remove = menu.Append(wx.ID_ANY, "Remove", "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, menu_remove)
+        self.Bind(wx.EVT_MENU, self.on_popup_menu_remove, menu_remove)
+        menu_scale_2 = menu.Append(wx.ID_ANY, "Scale 2x", "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_popup_menu_scale_2, menu_scale_2)
         self.PopupMenu(menu)
         menu.Destroy()
 
+    def on_popup_menu_scale_2(self, event):
+        self.project.menu_scale(self.popup_scene_position, 2.0)
+        self.update_buffer()
+
     def on_popup_menu_remove(self, event):
         self.project.menu_remove(self.popup_scene_position)
-        self.Update()
+        self.update_buffer()
 
     def on_popup_menu_convert(self, event):
         self.project.menu_convert_raw(self.popup_scene_position)
-        self.Update()
+        self.update_buffer()
+
+    def focus_on_project(self):
+        bbox = self.project.bbox()
+        self.focus_viewport_scene(bbox)
+        self.update_buffer()
 
     def focus_position_scene(self, scene_point):
         window_width, window_height = self.ClientSize

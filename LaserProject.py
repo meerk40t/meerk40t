@@ -1,4 +1,5 @@
 import threading
+import time
 
 import wx
 
@@ -7,7 +8,7 @@ import RasterPlotter
 import ZinglPlotter
 import path
 import svg_parser
-from K40Controller import MockController, K40Controller
+from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
 from ZMatrix import ZMatrix
@@ -46,7 +47,7 @@ class LaserElement:
         yield COMMAND_MODE_DEFAULT
 
     def move(self, dx, dy):
-        self.matrix.Translate(dx, dy)
+        self.matrix.PostTranslate(dx, dy)
 
 
 class ImageElement(LaserElement):
@@ -101,9 +102,9 @@ class PathElement(LaserElement):
         svg_parser.parse_svg_path(parse, self.path)
         object_path = parse.path
         self.box = wx.Rect2D(object_path.bbox())
-        yield COMMAND_SET_SPEED, (self.cut.get("speed"))
-        yield COMMAND_SET_STEP, (0)
-        yield COMMAND_MODE_COMPACT, (0)
+        yield COMMAND_SET_SPEED, self.cut.get("speed")
+        yield COMMAND_SET_STEP, 0
+        yield COMMAND_MODE_COMPACT, 0
         for data in object_path:
             if isinstance(data, Move):
                 s = self.matrix.TransformPoint(data.end.real, data.end.imag)
@@ -137,7 +138,7 @@ class PathElement(LaserElement):
                                            int(c[0]), int(c[1]),
                                            int(e[0]), int(e[1]))
         yield COMMAND_MODE_DEFAULT, 0
-        yield COMMAND_SET_SPEED, (0)
+        yield COMMAND_SET_SPEED, 0
 
 
 class EgvElement(LaserElement):
@@ -287,6 +288,7 @@ class LaserThread(threading.Thread):
         threading.Thread.__init__(self)
         self.project = project
         self.writer = project.writer
+        self.controller = project.controller
         self.elements = project.elements
 
     def burn_project(self):
@@ -295,6 +297,10 @@ class LaserThread(threading.Thread):
 
     def burn_element(self, element):
         for command, values in element:
+            while self.controller.count_packet_buffer() > 5:
+                # Backend is clogged and not sending stuff. We're waiting.
+                time.sleep(0.1)  # if we've given it enough for a while just wait here.
+
             if command == COMMAND_SIMPLE_MOVE:
                 x, y = values
                 self.writer.move_abs(x, y)
@@ -351,7 +357,6 @@ class LaserThread(threading.Thread):
                 for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
                                                                             ex, ey)):
                     self.writer.move_abs(x, y)
-                self.writer.up()
             elif command == COMMAND_CUT_QUAD_TO:
                 sx, sy, cx, cy, ex, ey = values
                 self.writer.down()
@@ -360,7 +365,6 @@ class LaserThread(threading.Thread):
                                                                            cx, cy,
                                                                            ex, ey)):
                     self.writer.move_abs(x, y)
-                self.writer.up()
             elif command == COMMAND_CUT_CUBIC_TO:
                 sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
                 self.writer.down()
@@ -370,14 +374,12 @@ class LaserThread(threading.Thread):
                                                                             c2x, c2y,
                                                                             ex, ey)):
                     self.writer.move_abs(x, y)
-                self.writer.up()
             elif command == COMMAND_CUT_ARC_TO:
                 sx, sy, cx, cy, ex, ey = values
                 # I do not actually have an arc plotter.
                 self.writer.down()
                 for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
                     self.writer.move_abs(x, y)
-                self.writer.up()
 
     def run(self):
         self.burn_project()
@@ -388,8 +390,7 @@ class LaserProject:
     def __init__(self):
         self.elements = []
         self.size = 320, 220
-        self.controller = K40Controller()
-        #self.controller = MockController()
+        self.controller = K40Controller()  #mock=True
 
         self.writer = LhymicroWriter(controller=self.controller)
         self.update_listener = None
@@ -411,6 +412,21 @@ class LaserProject:
             self.thread = LaserThread(self)
             self.thread.start()
 
+    def bbox(self):
+        boxes = []
+        for e in self.elements:
+            box = e.box
+            if box is None:
+                continue
+            top_left = e.matrix.TransformPoint([box.Left, box.Top])
+            bottom_right = e.matrix.TransformPoint([box.Bottom, box.Right])
+            boxes.append([top_left[0], top_left[1], bottom_right[0], bottom_right[1]])
+        xmin = min([box[0] for box in boxes])
+        ymin = min([box[1] for box in boxes])
+        xmax = max([box[2] for box in boxes])
+        ymax = max([box[3] for box in boxes])
+        return xmin, ymin, xmax, ymax
+
     def menu_convert_raw(self, position):
         self.selected = []
         for e in self.elements:
@@ -430,6 +446,13 @@ class LaserProject:
             if e.box.Contains(p):
                 self.remove_element(e)
                 break
+
+    def menu_scale(self, position, scale):
+        for e in self.elements:
+            matrix = e.matrix
+            p = matrix.InverseTransformPoint(position)
+            if e.box.Contains(p):
+                e.matrix.PostScale(scale)
 
     def move_selected(self, dx, dy):
         for e in self.selected:

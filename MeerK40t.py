@@ -302,17 +302,15 @@ class MeerK40t(wx.Frame):
         event.Skip()
 
     def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_zoom_out' not implemented!")
-        event.Skip()
+        m = self.scene.ClientSize / 2
+        self.scene.scene_post_scale(1.0/1.5, 1.0/1.5, m[0], m[1])
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
-        event.Skip()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_size' not implemented!")
-        event.Skip()
+        self.scene.focus_on_project()
 
     def toggle_show_grid(self, event):  # wxGlade: MeerK40t.<event_handler>
         print("Event handler 'toggle_show_grid' not implemented!")

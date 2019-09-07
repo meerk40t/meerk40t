@@ -1,7 +1,8 @@
+import threading
 import time
+
 import usb.core
 import usb.util
-
 
 STATUS_BAD_STATE = 204
 STATUS_OK = 206
@@ -49,8 +50,21 @@ def onewire_crc_lookup(line):
     return crc
 
 
+class ControllerQueueThread(threading.Thread):
+    def __init__(self, controller):
+        threading.Thread.__init__(self)
+        self.controller = controller
+        self.state = 1
+
+    def run(self):
+        while self.state != 0:
+            self.controller.process_queue()
+            while self.state > 3:
+                time.sleep(1)
+
+
 class K40Controller:
-    def __init__(self):
+    def __init__(self, mock=False):
         self.status = None
         self.usb = None
         self.interface = None
@@ -60,6 +74,9 @@ class K40Controller:
         self.wait_listener = None
 
         self.buffer = b''
+        self.add_queue = b''
+        self.thread = None
+        self.mock = mock
 
     def __enter__(self):
         self.open()
@@ -69,12 +86,20 @@ class K40Controller:
         self.close()
 
     def __iadd__(self, other):
-        self.buffer += other
-        self.process_queue()
+        self.add_queue += other
+        self.consume_queue()
         return self
 
+    def consume_queue(self):
+        if self.thread is None:
+            self.thread = ControllerQueueThread(self)
+            self.thread.start()
+
+    def count_packet_buffer(self):
+        return int((len(self.buffer) + len(self.add_queue)) / 30.0)
+
     def process_queue(self):
-        if self.usb is None:
+        if self.usb is None and not self.mock:
             try:
                 self.open()
             except usb.core.USBError:
@@ -83,28 +108,37 @@ class K40Controller:
                     self.status_listener(self.status)
                 return
         wait_finish = False
-        pad_buffer = False
         while True:
+            if len(self.add_queue):
+                self.buffer += self.add_queue
+                self.add_queue = b''
             if len(self.buffer) == 0:
                 break
-            if self.buffer[-1] == b'\n':
-                self.buffer = self.buffer[0:-1]
-                pad_buffer = True
-            if self.buffer[-1] == b'-':
-                self.buffer = self.buffer[0:-1]
-                wait_finish = True
-            if pad_buffer:
-                self.pad_buffer()
-            if len(self.buffer) < 30:
-                break
-            # buffer has enough to send a packet.
-            packet = self.buffer[0:30]
-            self.buffer = self.buffer[30:]
-
+            find = self.buffer.find('\n', 0, 30)
+            if find != -1:
+                length = min(30, len(self.buffer), find+1)
+            else:
+                length = min(30, len(self.buffer))
+            packet = self.buffer[:length]
+            if packet.endswith('-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
+                packet += self.buffer[length:length+1]
+                length += 1
+            if packet.endswith('\n'):
+                packet = packet[:-1]
+                if packet.endswith('-'):
+                    packet = packet[:-1]
+                    wait_finish = True
+                packet += b'F' * (30 - len(packet))
+            if len(packet) == 30:
+                self.buffer = self.buffer[length:]
+            else:
+                break  # No valid packet was able to be produced.
+            # try to send packet
             self.wait(STATUS_OK)
             self.send_packet(convert_to_list_bytes(packet))
             if wait_finish:
                 self.wait(STATUS_FINISH)
+                wait_finish = False
 
     def pad_buffer(self):
         self.buffer += b'F' * (30 - (len(self.buffer) % 30))
@@ -152,7 +186,8 @@ class K40Controller:
 
         sending = True
         while sending:
-            self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
+            if not self.mock:
+                self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
             if self.packet_listener is not None:
                 self.packet_listener(packet)
             self.update_status()
@@ -160,99 +195,22 @@ class K40Controller:
                 sending = False
 
     def update_status(self):
-        self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
-        self.status = self.usb.read(0x82, 6, 10000)
-        if self.status_listener is not None:
-            self.status_listener(self.status)
+        if self.mock:
+            self.status = [STATUS_OK] * 6
+            if self.status_listener is not None:
+                self.status_listener(self.status)
+        else:
+            self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
+            self.status = self.usb.read(0x82, 6, 10000)
+            if self.status_listener is not None:
+                self.status_listener(self.status)
 
     def wait(self, value):
         i = 0
         while True:
             self.update_status()
-            if self.status[1] == value:
-                break
-            time.sleep(0.1)
-            if self.wait_listener is not None:
-                if self.wait_listener(i):
-                    break
-            i += 1
-
-
-class MockController:
-    def __init__(self):
-        self.status = None
-        self.packet_listener = None
-        self.status_listener = None
-        self.wait_listener = None
-
-        self.buffer = b''
-
-    def __enter__(self):
-        self.open()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    def __iadd__(self, other):
-        self.buffer += other
-        self.process_queue()
-        return self
-
-    def process_queue(self):
-        wait_finish = False
-        pad_buffer = False
-        while True:
-            if len(self.buffer) == 0:
-                break
-            if self.buffer[-1] == b'\n':
-                self.buffer = self.buffer[0:-1]
-                pad_buffer = True
-            if self.buffer[-1] == b'-':
-                self.buffer = self.buffer[0:-1]
-                wait_finish = True
-            if pad_buffer:
-                self.pad_buffer()
-            if len(self.buffer) < 30:
-                break
-            # buffer has enough to send a packet.
-            packet = self.buffer[0:30]
-            self.buffer = self.buffer[30:]
-
-            self.wait(STATUS_OK)
-            self.send_packet(convert_to_list_bytes(packet))
-            if wait_finish:
-                self.wait(STATUS_FINISH)
-
-    def pad_buffer(self):
-        self.buffer += b'F' * (30 - (len(self.buffer) % 30))
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def send_packet(self, data):
-        packet = [166] + [0] + data + [166] + [onewire_crc_lookup(data)]
-        sending = True
-        while sending:
-            if self.packet_listener is not None:
-                self.packet_listener(packet)
-            self.update_status()
-            if self.status[1] != STATUS_PACKET_REJECTED:
-                sending = False
-
-    def update_status(self):
-        self.status = [STATUS_OK] * 6
-        if self.status_listener is not None:
-            self.status_listener(self.status)
-
-    def wait(self, value):
-        i = 0
-        while True:
-            self.update_status()
-            self.status = [value] * 6
+            if self.mock:   # Mock controller
+                self.status = [value] * 6
             if self.status[1] == value:
                 break
             time.sleep(0.1)
