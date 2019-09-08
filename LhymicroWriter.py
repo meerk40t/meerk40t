@@ -29,7 +29,7 @@ def lhymicro_distance(v):
         v %= 255
         dist += (b'z' * zs)
     if v >= 52:
-        return dist + '%03d' % v
+        return dist + b'%03d' % v
     return dist + distance_lookup[v]
 
 
@@ -174,6 +174,10 @@ class LhymicroWriter:
     def to_compact_mode(self):
         self.to_concat_mode()
         speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.board)
+        try:
+            speed_code = bytes(speed_code)
+        except TypeError:
+            speed_code = bytes(speed_code, 'utf8')
         self.controller += speed_code
         self.controller += b'N'
         self.declare_directions()

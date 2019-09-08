@@ -131,18 +131,18 @@ class K40Controller:
                 self.lock.release()
             if len(self.buffer) == 0:
                 break
-            find = self.buffer.find('\n', 0, 30)
+            find = self.buffer.find(b'\n', 0, 30)
             if find != -1:
                 length = min(30, len(self.buffer), find + 1)
             else:
                 length = min(30, len(self.buffer))
             packet = self.buffer[:length]
-            if packet.endswith('-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
+            if packet.endswith(b'-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
                 packet += self.buffer[length:length + 1]
                 length += 1
-            if packet.endswith('\n'):
+            if packet.endswith(b'\n'):
                 packet = packet[:-1]
-                if packet.endswith('-'):
+                if packet.endswith(b'-'):
                     packet = packet[:-1]
                     wait_finish = True
                 packet += b'F' * (30 - len(packet))
@@ -263,7 +263,7 @@ class K40Controller:
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
                 self.rejected_count += 1
-            if self.status == value:
+            if status == value:
                 break
             time.sleep(0.1)
             if self.wait_listener is not None:
