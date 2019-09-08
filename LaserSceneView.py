@@ -60,7 +60,7 @@ class LaserSceneView(wx.Panel):
     def set_project(self, project):
         self.project = project
         bedwidth, bedheight = project.size
-        self.focus_viewport_scene((0, 0, bedwidth * 25.4, bedheight * 25.4), 0.1)
+        self.focus_viewport_scene((0, 0, bedwidth * 39.37, bedheight * 39.37), 0.1)
         self.project.writer.position_listener = self.update_position
 
     def __set_properties(self):
@@ -87,8 +87,8 @@ class LaserSceneView(wx.Panel):
         Size = self.ClientSize
         self._Buffer = wx.Bitmap(*Size)
         self.guide_lines = None
-        bedwidth, bedheight = self.project.size
-        self.focus_viewport_scene((0, 0, bedwidth * 25.4, bedheight * 25.4), 0.1)
+        bedwidth, bedheight = self.project.size_in_native_units()
+        self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
         self.update_buffer()
 
     def on_erase(self, event):
@@ -318,13 +318,16 @@ class LaserSceneView(wx.Panel):
 
     def calculate_grid(self):
         lines = []
-        bedwidth, bedheight = self.project.size
-        wmils = ceil(bedwidth * 25.4)
-        hmils = ceil(bedheight * 25.4)
-        for y in range(0, int(hmils), 254):
-            lines.append((0, y, wmils, y))
-        for x in range(0, int(wmils), 254):
+        wmils, hmils = self.project.size_in_native_units()
+        conversion, name = self.project.units
+        x = 0.0
+        while x < wmils:
             lines.append((x, 0, x, hmils))
+            x += conversion * 10
+        y = 0.0
+        while y < hmils:
+            lines.append((0, y, wmils, y))
+            y += conversion * 10
         self.grid = lines
 
     def on_draw_grid(self, dc):
@@ -346,13 +349,13 @@ class LaserSceneView(wx.Panel):
             length = 50
             lines.append((x, 0, x, length))
             lines.append((x, h, x, h - length))
-            dc.DrawRotatedText("%1d" % ((x - sx) / (25.4 * self.matrix.GetScaleX())), x, 0, -90)
+            dc.DrawRotatedText("%1d" % ((x - sx) / (39.37 * self.matrix.GetScaleX())), x, 0, -90)
 
         for y in range(int(offset_y), int(h), points):
             length = 50
             lines.append((0, y, length, y))
             lines.append((w, y, w - length, y))
-            dc.DrawText("%1d" % ((y - sy) / (25.4 * self.matrix.GetScaleY())), 0, y)
+            dc.DrawText("%1d" % ((y - sy) / (39.37 * self.matrix.GetScaleY())), 0, y)
         dc.DrawLineList(lines)
 
     def on_draw_background(self, dc):
@@ -369,8 +372,8 @@ class LaserSceneView(wx.Panel):
     def on_draw_scene(self, dc):
         if self.draw_grid:
             bedwidth, bedheight = self.project.size
-            wmils = ceil(bedwidth * 25.4)
-            hmils = ceil(bedheight * 25.4)
+            wmils = bedwidth * 39.37
+            hmils = bedheight * 39.37
             dc.SetPen(wx.WHITE_PEN)
             dc.DrawRectangle(0, 0, wmils, hmils)
             dc.SetPen(wx.BLACK_PEN)

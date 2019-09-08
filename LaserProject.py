@@ -487,6 +487,7 @@ class LaserProject:
     def __init__(self):
         self.elements = []
         self.size = 320, 220
+        self.units = (39.37, "mm")  # mils per unit.
         self.controller = K40Controller()  # mock=True
 
         self.writer = LhymicroWriter(controller=self.controller)
@@ -495,6 +496,21 @@ class LaserProject:
         self.thread = None
         self.autohome = False
         self.autobeep = True
+
+    def size_in_native_units(self):
+        return self.size[0] * 39.37, self.size[1] * 39.37
+
+    def set_inches(self):
+        self.units = (1000, "inches")
+
+    def set_mils(self):
+        self.units = (1, "mils")
+
+    def set_cm(self):
+        self.units = (393.7, "cm")
+
+    def set_mm(self):
+        self.units = (39.37, "mm")
 
     def select(self, position):
         self.selected = []
