@@ -164,22 +164,17 @@ class K40Controller:
         self.log("Attempting connection to USB.")
         devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
         for device in devices:
-            self.log("K40 device detected: %s" % str(device))
+            self.log("K40 device detected:\n%s\n" % str(device))
         for device in devices:
             self.usb = device
             break
         if self.usb is None:
             self.log("K40 not found.")
-            devices = usb.core.find(find_all=True)
-            for device in devices:
-                self.log("USB Device List: %s" % str(device))
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
-        self.log("Device found. Using: %s" % str(self.usb))
+        self.log("Device found. Using first device. *ALWAYS USE FIRST DEVICE*")
         self.interface = self.usb.get_active_configuration()[(0, 0)]
-        self.log("Getting Interface: %s" % self.interface)
         try:
-            self.log("Interface Number: %s" % str(self.interface.bInterfaceNumber))
             if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
                 try:
                     self.log("Attempting to detach kernel")
