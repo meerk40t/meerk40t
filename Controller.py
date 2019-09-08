@@ -5,14 +5,14 @@
 
 import wx
 
-
 class Controller(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Controller.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((717, 250))
-        self.packet_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
+        self.controller_statusbar = self.CreateStatusBar(1)
+        self.packet_list = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.BORDER_NONE | wx.TE_CHARWRAP | wx.TE_MULTILINE)
         self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "\n")
@@ -23,12 +23,16 @@ class Controller(wx.Frame):
         self.last_packet_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.controller_statusbar = self.CreateStatusBar(1)
 
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
         self.project = None
+
+    def set_project(self, project):
+        self.project = project
+        self.project.controller.status_listener = self.update_status
+        self.project.controller.packet_listener = self.update_packet
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
@@ -36,7 +40,13 @@ class Controller(wx.Frame):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-usb-connector-50.png", wx.BITMAP_TYPE_ANY))
         self.SetIcon(_icon)
-        self.packet_list.SetMinSize((228, 156))
+        self.controller_statusbar.SetStatusWidths([-1])
+
+        # statusbar fields
+        controller_statusbar_fields = ["Status"]
+        for i in range(len(controller_statusbar_fields)):
+            self.controller_statusbar.SetStatusText(controller_statusbar_fields[i], i)
+        self.packet_list.SetMinSize((250, -1))
         self.text_byte_0.SetMinSize((77, 23))
         self.text_byte_1.SetMinSize((77, 23))
         self.text_desc.SetMinSize((75, 23))
@@ -45,12 +55,6 @@ class Controller(wx.Frame):
         self.text_byte_4.SetMinSize((77, 23))
         self.text_byte_5.SetMinSize((77, 23))
         self.packet_count_text.SetMinSize((77, 23))
-        self.controller_statusbar.SetStatusWidths([-1])
-
-        # statusbar fields
-        Controller_statusbar_fields = ["Status"]
-        for i in range(len(Controller_statusbar_fields)):
-            self.controller_statusbar.SetStatusText(Controller_statusbar_fields[i], i)
         # end wxGlade
 
     def __do_layout(self):
@@ -67,7 +71,7 @@ class Controller(wx.Frame):
         byte2sizer = wx.BoxSizer(wx.VERTICAL)
         byte1sizer = wx.BoxSizer(wx.VERTICAL)
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer_8.Add(self.packet_list, 0, wx.EXPAND, 0)
+        sizer_8.Add(self.packet_list, 1, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "Byte 0")
         byte0sizer.Add(label_1, 0, 0, 0)
@@ -108,15 +112,10 @@ class Controller(wx.Frame):
         sizer_16.Add(label_11, 0, 0, 0)
         sizer_16.Add(self.packet_count_text, 0, 0, 0)
         sizer_9.Add(sizer_16, 5, 0, 0)
-        sizer_8.Add(sizer_9, 1, wx.EXPAND, 0)
+        sizer_8.Add(sizer_9, 4, wx.EXPAND, 0)
         self.SetSizer(sizer_8)
         self.Layout()
         # end wxGlade
-
-    def set_project(self, project):
-        self.project = project
-        self.project.controller.status_listener = self.update_status
-        self.project.controller.packet_listener = self.update_packet
 
     def update_status(self, data):
         try:
@@ -140,8 +139,7 @@ class Controller(wx.Frame):
             self.last_packet_text.SetValue(str(data))
             self.packet_text_text.SetValue(str(string_data))
             self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-
-            self.packet_list.InsertItems([str(string_data)], self.packet_list.Count)
+            self.packet_list.AppendText('\n' + str(string_data))
 
             self.Update()
         except RuntimeError:

@@ -32,6 +32,7 @@ ID_OPEN = idinc.new()
 ID_SAVE = idinc.new()
 ID_SCRIPTS = idinc.new()
 ID_NAV = idinc.new()
+ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
 ID_CUT_CONFIGURATION = idinc.new()
 ID_PREFERENCES = idinc.new()
@@ -104,6 +105,7 @@ class MeerK40t(wx.Frame):
                                        wx.Bitmap("icons/icons8-py-50.png", wx.BITMAP_TYPE_ANY))
         windows = RB.RibbonButtonBar(windows_panel)
         windows.AddButton(ID_NAV, "Navigation", wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY), "")
+        windows.AddButton(ID_USB, "Usb", wx.Bitmap("icons/icons8-usb-connector-50.png", wx.BITMAP_TYPE_ANY), "")
         windows.AddButton(ID_CONTROLLER, "Controller", wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY),
                           "")
         windows.AddButton(ID_PREFERENCES, "Preferences",
@@ -198,6 +200,7 @@ class MeerK40t(wx.Frame):
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
 
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_usb, id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_navigation, id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_controller, id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_preferences, id=ID_PREFERENCES)
@@ -368,6 +371,13 @@ class MeerK40t(wx.Frame):
         window = Preferences(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
+
+    def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
+        from UsbConnect import UsbConnect
+        window = UsbConnect(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+
 
     def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Navigation import Navigation

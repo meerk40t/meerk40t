@@ -74,13 +74,15 @@ class K40Controller:
         self.packet_listener = None
         self.status_listener = None
         self.wait_listener = None
+        self.usblog_listener = None
+        self.device_log = ""
 
         self.buffer = b''
         self.add_queue = b''
         self.thread = None
         self.packet_count = 0
+        self.rejected_count = 0
         self.lock = threading.Lock()
-
         self.mock = mock
 
     def __enter__(self):
@@ -96,6 +98,12 @@ class K40Controller:
         self.lock.release()
         self.consume_queue()
         return self
+
+    def log(self, info):
+        update = str(info) + '\n'
+        if self.usblog_listener is not None:
+            self.usblog_listener(update)
+        self.device_log += update
 
     def consume_queue(self):
         if self.thread is None:
@@ -125,12 +133,12 @@ class K40Controller:
                 break
             find = self.buffer.find('\n', 0, 30)
             if find != -1:
-                length = min(30, len(self.buffer), find+1)
+                length = min(30, len(self.buffer), find + 1)
             else:
                 length = min(30, len(self.buffer))
             packet = self.buffer[:length]
             if packet.endswith('-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
-                packet += self.buffer[length:length+1]
+                packet += self.buffer[length:length + 1]
                 length += 1
             if packet.endswith('\n'):
                 packet = packet[:-1]
@@ -153,40 +161,72 @@ class K40Controller:
         self.buffer += b'F' * (30 - (len(self.buffer) % 30))
 
     def open(self):
+        self.log("Attempting connection to USB.")
         devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
+        for device in devices:
+            self.log("K40 device detected: %s" % str(device))
         for device in devices:
             self.usb = device
             break
         if self.usb is None:
+            self.log("K40 not found.")
+            devices = usb.core.find(find_all=True)
+            for device in devices:
+                self.log("USB Device List: %s" % str(device))
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
+        self.log("Device found. Using: %s" % str(self.usb))
         self.interface = self.usb.get_active_configuration()[(0, 0)]
+        self.log("Getting Interface: %s" % self.interface)
         try:
+            self.log("Interface Number: %s" % str(self.interface.bInterfaceNumber))
             if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
                 try:
+                    self.log("Attempting to detach kernel")
                     self.usb.detach_kernel_driver(self.interface.bInterfaceNumber)
+                    self.log("Kernel detach: Success")
                     self.detached = True
                 except usb.core.USBError:
+                    self.log("Kernel detach: Failed")
                     raise usb.core.USBError('Unable to detach from kernel')
         except NotImplementedError:
-            pass  # Driver does not permit kernel detaching.
+            self.log("Kernel detach: Not Implemented.")  # Driver does not permit kernel detaching.
+        self.log("Attempting to claim interface.")
         usb.util.claim_interface(self.usb, self.interface)
+        self.log("Interface claimed.")
+        self.log("Sending control transfer.")
         self.usb.ctrl_transfer(bmRequestType=64, bRequest=177, wValue=258,
                                wIndex=0, data_or_wLength=0, timeout=5000)
+        self.log("USB Connection Successful.")
 
     def close(self):
+        self.log("Attempting disconnection from USB.")
         if self.usb is not None:
             if self.detached:
+                self.log("Kernel was detached.")
                 try:
+                    self.log("Attempting kernel attach")
                     self.usb.attach_kernel_driver(self.interface.bInterfaceNumber)
                     self.detached = False
+                    self.log("Kernel succesfully attach")
                 except usb.core.USBError:
+                    self.log("Error while attempting kernel attach")
                     raise usb.core.USBError('Unable to reattach driver to kernel')
+            else:
+                self.log("Kernel was not detached.")
+            self.log("Attempting to release interface.")
             usb.util.release_interface(self.usb, self.interface)
+            self.log("Interface released")
+            self.log("Attempting to dispose resources.")
             usb.util.dispose_resources(self.usb)
+            self.log("Resources disposed.")
             self.usb.reset()
+            self.log("USB reset")
             self.interface = None
             self.usb = None
+            self.log("USB Disconnection Successful.")
+        else:
+            self.log("No connection was found.")
 
     def send_packet(self, packet_byte_data):
         if len(packet_byte_data) != 30:
@@ -208,24 +248,25 @@ class K40Controller:
     def update_status(self):
         if self.mock:
             self.status = [STATUS_OK] * 6
-            if self.status_listener is not None:
-                self.status_listener(self.status)
         else:
             self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
             self.status = self.usb.read(0x82, 6, 10000)
-            if self.status_listener is not None:
-                self.status_listener(self.status)
+        if self.status_listener is not None:
+            self.status_listener(self.status)
 
     def wait(self, value):
         i = 0
         while True:
             self.update_status()
-            if self.mock:   # Mock controller
+            if self.mock:  # Mock controller
                 self.status = [value] * 6
-            if self.status[1] == value:
+            status = self.status[1]
+            if status == STATUS_PACKET_REJECTED:
+                self.rejected_count += 1
+            if self.status == value:
                 break
             time.sleep(0.1)
             if self.wait_listener is not None:
-                if self.wait_listener(i):
+                if self.wait_listener(value, i):
                     break
             i += 1
