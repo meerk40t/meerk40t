@@ -2,6 +2,10 @@ from math import floor, sqrt
 
 
 def plot_line(x0, y0, x1, y1):
+    x0 = int(x0)
+    y0 = int(y0)
+    x1 = int(x1)
+    y1 = int(y1)
     dx = abs(x1 - x0)
     dy = -abs(y1 - y0)
 
@@ -114,6 +118,11 @@ def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
 
 def plot_quad_bezier(x0, y0, x1, y1, x2, y2):
     """plot any quadratic Bezier curve"""
+    x0 = int(x0)
+    y0 = int(y0)
+    # control points are permitted fractional elements.
+    x2 = int(x2)
+    y2 = int(y2)
     x = x0 - x1
     y = y0 - y1
     t = x0 - 2 * x1 + x2
@@ -316,6 +325,11 @@ def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
 
 def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
     """plot any cubic Bezier curve"""
+    x0 = int(x0)
+    y0 = int(y0)
+    # control points are permitted fractional elements.
+    x3 = int(x3)
+    y3 = int(y3)
     n = 0
     i = 0
     xc = x0 + x1 - x2 - x3

@@ -139,10 +139,10 @@ class Controller(wx.Frame):
         try:
             self.last_packet_text.SetValue(str(data))
             self.packet_text_text.SetValue(str(string_data))
+            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
 
             self.packet_list.InsertItems([str(string_data)], self.packet_list.Count)
-            if self.packet_list.Count > 1000:
-                self.packet_list.Clear()
+
             self.Update()
         except RuntimeError:
             pass

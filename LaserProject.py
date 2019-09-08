@@ -55,7 +55,7 @@ class ImageElement(LaserElement):
         LaserElement.__init__(self)
         self.box = wx.Rect2D(0, 0, image.width, image.height)
         self.image = image
-        self.cut.update({"step": 1})
+        self.cut.update({"step": 1, "speed": 100})
 
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
@@ -81,13 +81,11 @@ class ImageElement(LaserElement):
     def generate(self):
         yield COMMAND_SET_SPEED, (self.cut.get("speed"))
         yield COMMAND_SET_STEP, (self.cut.get("step"))
-        for event in RasterPlotter.plot_raster(self.image, filter=self.filter, overscan=100):
-            x, y, pixel_color = event
-            point = self.matrix.TransformPoint(x, y)
-            if not isinstance(pixel_color, int) and pixel_color[0] + pixel_color[1] + pixel_color[2] <= 384:
-                yield COMMAND_SIMPLE_CUT, (point[0], point[1])
-            else:
-                yield COMMAND_SIMPLE_SHIFT, (point[0], point[1])
+        for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
+                                                 offset_x=self.matrix.GetTranslateX(),
+                                                 offset_y=self.matrix.GetTranslateY()):
+            yield command
+        yield COMMAND_MODE_DEFAULT, 0
 
 
 class PathElement(LaserElement):
@@ -112,31 +110,31 @@ class PathElement(LaserElement):
             elif isinstance(data, Line):
                 s = self.matrix.TransformPoint(data.start.real, data.start.imag)
                 e = self.matrix.TransformPoint(data.end.real, data.end.imag)
-                yield COMMAND_CUT_LINE_TO, (int(s[0]), int(s[1]),
-                                            int(e[0]), int(e[1]))
+                yield COMMAND_CUT_LINE, (int(s[0]), int(s[1]),
+                                         int(e[0]), int(e[1]))
             elif isinstance(data, QuadraticBezier):
                 s = self.matrix.TransformPoint(data.start.real, data.start.imag)
                 c = self.matrix.TransformPoint(data.control.real, data.control.imag)
                 e = self.matrix.TransformPoint(data.end.real, data.end.imag)
-                yield COMMAND_CUT_QUAD_TO, (int(s[0]), int(s[1]),
-                                            c[0], c[1],
-                                            int(e[0]), int(e[1]))
+                yield COMMAND_CUT_QUAD, (int(s[0]), int(s[1]),
+                                         c[0], c[1],
+                                         int(e[0]), int(e[1]))
             elif isinstance(data, CubicBezier):
                 s = self.matrix.TransformPoint(data.start.real, data.start.imag)
                 c1 = self.matrix.TransformPoint(data.control1.real, data.control1.imag)
                 c2 = self.matrix.TransformPoint(data.control2.real, data.control2.imag)
                 e = self.matrix.TransformPoint(data.end.real, data.end.imag)
-                yield COMMAND_CUT_CUBIC_TO, (int(s[0]), int(s[1]),
-                                             c1[0], c1[1],
-                                             c2[0], c2[1],
-                                             int(e[0]), int(e[1]))
+                yield COMMAND_CUT_CUBIC, (int(s[0]), int(s[1]),
+                                          c1[0], c1[1],
+                                          c2[0], c2[1],
+                                          int(e[0]), int(e[1]))
             elif isinstance(data, Arc):
                 s = self.matrix.TransformPoint(data.start.real, data.start.imag)
                 c = self.matrix.TransformPoint(data.center.real, data.center.imag)
                 e = self.matrix.TransformPoint(data.end.real, data.end.imag)
-                yield COMMAND_CUT_ARC_TO, (int(s[0]), int(s[1]),
-                                           int(c[0]), int(c[1]),
-                                           int(e[0]), int(e[1]))
+                yield COMMAND_CUT_ARC, (int(s[0]), int(s[1]),
+                                        int(c[0]), int(c[1]),
+                                        int(e[0]), int(e[1]))
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, 0
 
@@ -182,6 +180,9 @@ class RawElement(LaserElement):
 
 
 class LaserCommandPathParser:
+    """This class converts a set of laser commands into a
+     graphical representation of those commands."""
+
     def __init__(self, graphic_path):
         self.graphic_path = graphic_path
         self.on = False
@@ -241,16 +242,34 @@ class LaserCommandPathParser:
             x, y = values
             self.move_to(x, y)
         elif command == COMMAND_CUT_LINE_TO:
-            sx, sy, ex, ey = values
+            ex, ey = values
             self.line_to(ex, ey)
         elif command == COMMAND_CUT_QUAD_TO:
-            sx, sy, cx, cy, x, y = values
+            cx, cy, x, y = values
             self.quad_to(cx, cy, x, y)
         elif command == COMMAND_CUT_CUBIC_TO:
-            sx, sy, c1x, c1y, c2x, c2y, x, y = values
+            c1x, c1y, c2x, c2y, x, y = values
             self.cubic_to(c1x, c1y, c2x, c2y, x, y)
         elif command == COMMAND_CUT_ARC_TO:
+            cx, cy, x, y = values
+            # self.arc_to()
+            # Wrong parameterizations
+            pass
+        elif command == COMMAND_CUT_LINE:
+            sx, sy, ex, ey = values
+            self.move_to(sx, sy)
+            self.line_to(ex, ey)
+        elif command == COMMAND_CUT_QUAD:
             sx, sy, cx, cy, x, y = values
+            self.move_to(sx, sy)
+            self.quad_to(cx, cy, x, y)
+        elif command == COMMAND_CUT_CUBIC:
+            sx, sy, c1x, c1y, c2x, c2y, x, y = values
+            self.move_to(sx, sy)
+            self.cubic_to(c1x, c1y, c2x, c2y, x, y)
+        elif command == COMMAND_CUT_ARC:
+            sx, sy, cx, cy, x, y = values
+            self.move_to(x, y)
             # self.arc_to()
             # Wrong parameterizations
             pass
@@ -263,15 +282,23 @@ class LaserCommandPathParser:
 
     def move_to(self, x, y):
         self.graphic_path.MoveToPoint(x, y)
+        self.x = x
+        self.y = y
 
     def line_to(self, ex, ey):
         self.graphic_path.AddLineToPoint(ex, ey)
+        self.x = ex
+        self.y = ey
 
     def quad_to(self, cx, cy, ex, ey):
         self.graphic_path.AddQuadCurveToPoint(cx, cy, ex, ey)
+        self.x = ex
+        self.y = ey
 
     def cubic_to(self, c1x, c1y, c2x, c2y, ex, ey):
         self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, ex, ey)
+        self.x = ex
+        self.y = ey
 
     def arc_to(self, radius, rotation, arc, sweep, ex, ey):
         sx = self.graphic_path.GetCurrentX()
@@ -279,6 +306,8 @@ class LaserCommandPathParser:
         element = path.Arc(sx + (sy * 1j), radius, rotation, arc, sweep, ex + (ey * 1j))
         self.graphic_path.AddArc(element.center.real, element.center.imag, element.radius, element.theta,
                                  element.theta + element.sweep)
+        self.x = ex
+        self.y = ey
 
     def closed(self):
         pass
@@ -299,7 +328,7 @@ class LaserThread(threading.Thread):
 
     def burn_element(self, element):
         for command, values in element:
-            while self.controller.count_packet_buffer() > 5:
+            while self.controller.count_packet_buffer() > 50:
                 # Backend is clogged and not sending stuff. We're waiting.
                 time.sleep(0.1)  # if we've given it enough for a while just wait here.
 
@@ -354,13 +383,17 @@ class LaserThread(threading.Thread):
                                              )):
                     self.writer.move_abs(x, y)
             elif command == COMMAND_CUT_LINE_TO:
-                sx, sy, ex, ey = values
+                ex, ey = values
+                sx = self.writer.current_x
+                sy = self.writer.current_y
                 self.writer.down()
                 for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
                                                                             ex, ey)):
                     self.writer.move_abs(x, y)
             elif command == COMMAND_CUT_QUAD_TO:
-                sx, sy, cx, cy, ex, ey = values
+                cx, cy, ex, ey = values
+                sx = self.writer.current_x
+                sy = self.writer.current_y
                 self.writer.down()
                 for x, y, on in direct_plots(sx, sy,
                                              ZinglPlotter.plot_quad_bezier(sx, sy,
@@ -368,7 +401,9 @@ class LaserThread(threading.Thread):
                                                                            ex, ey)):
                     self.writer.move_abs(x, y)
             elif command == COMMAND_CUT_CUBIC_TO:
-                sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
+                c1x, c1y, c2x, c2y, ex, ey = values
+                sx = self.writer.current_x
+                sy = self.writer.current_y
                 self.writer.down()
                 for x, y, on in direct_plots(sx, sy,
                                              ZinglPlotter.plot_cubic_bezier(sx, sy,
@@ -377,8 +412,68 @@ class LaserThread(threading.Thread):
                                                                             ex, ey)):
                     self.writer.move_abs(x, y)
             elif command == COMMAND_CUT_ARC_TO:
-                sx, sy, cx, cy, ex, ey = values
+                cx, cy, ex, ey = values
                 # I do not actually have an arc plotter.
+                sx = self.writer.current_x
+                sy = self.writer.current_y
+                self.writer.down()
+                for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
+                    self.writer.move_abs(x, y)
+            # These are not _to, they can be done anywhere.
+            elif command == COMMAND_CUT_LINE:
+                sx, sy, ex, ey = values
+                pos_x = self.writer.current_x
+                pos_y = self.writer.current_y
+                if pos_x != sx or pos_y != sy:
+                    self.writer.up()
+                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                            pos_x, pos_y, sx, sy)):
+                        self.writer.move_abs(x, y)
+                self.writer.down()
+                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
+                                                                            ex, ey)):
+                    self.writer.move_abs(x, y)
+            elif command == COMMAND_CUT_QUAD:
+                sx, sy, cx, cy, ex, ey = values
+                pos_x = self.writer.current_x
+                pos_y = self.writer.current_y
+                if pos_x != sx or pos_y != sy:
+                    self.writer.up()
+                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                            pos_x, pos_y, sx, sy)):
+                        self.writer.move_abs(x, y)
+                self.writer.down()
+                for x, y, on in direct_plots(sx, sy,
+                                             ZinglPlotter.plot_quad_bezier(sx, sy,
+                                                                           cx, cy,
+                                                                           ex, ey)):
+                    self.writer.move_abs(x, y)
+            elif command == COMMAND_CUT_CUBIC:
+                sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
+                pos_x = self.writer.current_x
+                pos_y = self.writer.current_y
+                if pos_x != sx or pos_y != sy:
+                    self.writer.up()
+                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                            pos_x, pos_y, sx, sy)):
+                        self.writer.move_abs(x, y)
+                self.writer.down()
+                for x, y, on in direct_plots(sx, sy,
+                                             ZinglPlotter.plot_cubic_bezier(sx, sy,
+                                                                            c1x, c1y,
+                                                                            c2x, c2y,
+                                                                            ex, ey)):
+                    self.writer.move_abs(x, y)
+            elif command == COMMAND_CUT_ARC:
+                # I do not actually have an arc plotter.
+                sx, sy, cx, cy, ex, ey = values
+                pos_x = self.writer.current_x
+                pos_y = self.writer.current_y
+                if pos_x != sx or pos_y != sy:
+                    self.writer.up()
+                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                            pos_x, pos_y, sx, sy)):
+                        self.writer.move_abs(x, y)
                 self.writer.down()
                 for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
                     self.writer.move_abs(x, y)

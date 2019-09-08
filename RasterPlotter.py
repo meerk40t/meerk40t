@@ -1,3 +1,5 @@
+from LaserCommandConstants import *
+
 X_AXIS = 0
 TOP = 0
 LEFT = 0
@@ -121,6 +123,8 @@ def nextcolor_bottom(data, width, height, x, y, default, filter):
 def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                 offset_x=0, offset_y=0, filter=null_filter):
     width, height = image.size
+    offset_x = int(offset_x)
+    offset_y = int(offset_y)
     data = image.load()
     x = 0
     y = 0
@@ -136,14 +140,15 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
         y = height - 1
         dy = -1
 
-    yield offset_x + x, offset_y + y, pixel
+    yield COMMAND_SIMPLE_SHIFT, (offset_x + x, offset_y + y)
 
+    yield COMMAND_MODE_COMPACT, 0
     if (transversal & Y_AXIS) != 0:
         while 0 <= x < width:
             lower_bound = topmost_not_equal(data, width, height, x, skip_pixel, filter)
             if lower_bound == -1:
                 x += dx
-                yield offset_x + x, offset_y + y, pixel
+                yield COMMAND_HSTEP, dx
                 continue
             upper_bound = bottommost_not_equal(data, width, height, x, skip_pixel, filter)
             while (dy > 0 and y <= upper_bound) or (dy < 0 and lower_bound <= y):
@@ -161,18 +166,21 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                     pixel = filter(data[x, y])
                     y = nextcolor_top(data, width, height, x, y, end, filter)
                     y = max(y, end)
-                yield offset_x + x, offset_y + y, pixel
+                if pixel == skip_pixel:
+                    yield COMMAND_MOVE_TO, (offset_x + x, offset_y + y)
+                else:
+                    yield COMMAND_CUT_LINE_TO, (offset_x + x, offset_y + y)
                 if y == end:
                     break
             x += dx
-            yield offset_x + x, offset_y + y, pixel
+            yield COMMAND_HSTEP, dx
             dy = -dy
     else:
         while 0 <= y < height:
             lower_bound = leftmost_not_equal(data, width, height, y, skip_pixel, filter)
             if lower_bound == -1:
                 y += dy
-                yield offset_x + x, offset_y + y, pixel
+                yield COMMAND_VSTEP, dy
                 continue
             upper_bound = rightmost_not_equal(data, width, height, y, skip_pixel, filter)
             while (dx > 0 and x <= upper_bound) or (dx < 0 and lower_bound <= x):
@@ -190,9 +198,13 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                     pixel = filter(data[x, y])
                     x = nextcolor_left(data, width, height, x, y, end, filter)
                     x = max(x, end)
-                yield offset_x + x, offset_y + y, pixel
+                if pixel == skip_pixel:
+                    yield COMMAND_MOVE_TO, (offset_x + x, offset_y + y)
+                else:
+                    yield COMMAND_CUT_LINE_TO, (offset_x + x, offset_y + y)
                 if x == end:
                     break
             y += dy
-            yield offset_x + x, offset_y + y, pixel
+            yield COMMAND_VSTEP, dy
             dx = -dx
+    yield COMMAND_MODE_DEFAULT, 0

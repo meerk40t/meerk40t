@@ -59,6 +59,8 @@ class ControllerQueueThread(threading.Thread):
     def run(self):
         while self.state != 0:
             self.controller.process_queue()
+            time.sleep(0.1)
+
             while self.state > 3:
                 time.sleep(1)
 
@@ -76,6 +78,9 @@ class K40Controller:
         self.buffer = b''
         self.add_queue = b''
         self.thread = None
+        self.packet_count = 0
+        self.lock = threading.Lock()
+
         self.mock = mock
 
     def __enter__(self):
@@ -86,7 +91,9 @@ class K40Controller:
         self.close()
 
     def __iadd__(self, other):
+        self.lock.acquire()
         self.add_queue += other
+        self.lock.release()
         self.consume_queue()
         return self
 
@@ -110,8 +117,10 @@ class K40Controller:
         wait_finish = False
         while True:
             if len(self.add_queue):
+                self.lock.acquire()
                 self.buffer += self.add_queue
                 self.add_queue = b''
+                self.lock.release()
             if len(self.buffer) == 0:
                 break
             find = self.buffer.find('\n', 0, 30)
@@ -189,6 +198,7 @@ class K40Controller:
         while sending:
             if not self.mock:
                 self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
+            self.packet_count += 1
             if self.packet_listener is not None:
                 self.packet_listener(packet, packet_byte_data)
             self.update_status()
