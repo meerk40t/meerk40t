@@ -66,7 +66,7 @@ class ControllerQueueThread(threading.Thread):
 
 
 class K40Controller:
-    def __init__(self, mock=False):
+    def __init__(self, mock=False, use_device=0):
         self.status = None
         self.usb = None
         self.interface = None
@@ -76,6 +76,7 @@ class K40Controller:
         self.wait_listener = None
         self.usblog_listener = None
         self.device_log = ""
+        self.use_device = 0
 
         self.buffer = b''
         self.add_queue = b''
@@ -163,16 +164,18 @@ class K40Controller:
     def open(self):
         self.log("Attempting connection to USB.")
         devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
+        d = []
+        self.usb = None
         for device in devices:
             self.log("K40 device detected:\n%s\n" % str(device))
-        for device in devices:
-            self.usb = device
-            break
+            d.append(device)
+        if len(d) > self.use_device:
+            self.usb = d[self.use_device]
         if self.usb is None:
             self.log("K40 not found.")
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
-        self.log("Device found. Using first device. *ALWAYS USE FIRST DEVICE*")
+        self.log("Device found. Using device: #%d" % self.use_device)
         self.interface = self.usb.get_active_configuration()[(0, 0)]
         try:
             if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
