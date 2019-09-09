@@ -13,7 +13,6 @@ from ZMatrix import ZMatrix
 
 # begin wxGlade: extracode
 
-
 class LaserSceneView(wx.Panel):
     def __init__(self, *args, **kwds):
         # begin wxGlade: MainView.__init__
@@ -29,6 +28,7 @@ class LaserSceneView(wx.Panel):
         self.popup_window_position = None
         self.popup_scene_position = None
         self._Buffer = None
+        self.dirty_draw = False
 
         self.__set_properties()
         self.__do_layout()
@@ -40,7 +40,7 @@ class LaserSceneView(wx.Panel):
         self.guide_lines = None
         self.draw_laserhead = True
         self.draw_laserpath = True
-        self.laserpath = [(0, 0, 0, 0)] * 500
+        self.laserpath = [(0, 0, 0, 0)] * 1000
         self.laserpath_index = 0
 
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -56,12 +56,14 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+        self.project = None
 
     def set_project(self, project):
         self.project = project
         bedwidth, bedheight = project.size
         self.focus_viewport_scene((0, 0, bedwidth * 39.37, bedheight * 39.37), 0.1)
         self.project.writer.position_listener = self.update_position
+        self.project.space_listener = self.space_changed
 
     def __set_properties(self):
         # begin wxGlade: MainView.__set_properties
@@ -79,9 +81,8 @@ class LaserSceneView(wx.Panel):
     def update_position(self, x, y, old_x=0, old_y=0):
         self.laserpath[self.laserpath_index] = (x, y, old_x, old_y)
         self.laserpath_index += 1
-        self.laserpath_index %= 50
-        if self.laserpath_index % 25 == 0:
-            self.update_buffer()
+        self.laserpath_index %= len(self.laserpath)
+        self.post_buffer_update()
 
     def on_size(self, event):
         Size = self.ClientSize
@@ -91,10 +92,20 @@ class LaserSceneView(wx.Panel):
         self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
         self.update_buffer()
 
+    def space_changed(self):
+        self.grid = None
+        self.on_size(None)
+
     def on_erase(self, event):
         pass
 
+    def post_buffer_update(self):
+        if not self.dirty_draw:
+            self.dirty_draw = True
+            wx.CallAfter(self.update_buffer)
+
     def update_buffer(self):
+        self.dirty_draw = False
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         self.on_draw_background(dc)
@@ -104,7 +115,7 @@ class LaserSceneView(wx.Panel):
         self.on_draw_interface(dc)
         del dc  # need to get rid of the MemoryDC before Update() is called.
         self.Refresh()
-        self.Update()
+        #self.Update() # TODO: Should not force immediate update.
 
     def on_matrix_change(self):
         self.guide_lines = None
@@ -191,11 +202,11 @@ class LaserSceneView(wx.Panel):
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
-        self.update_buffer()
+        self.post_buffer_update()
 
     def move_selected(self, wdx, wdy, sdx, sdy):
         self.project.move_selected(sdx, sdy)
-        self.update_buffer()
+        self.post_buffer_update()
 
     def on_mouse_move(self, event):
         if not event.Dragging():
@@ -262,6 +273,8 @@ class LaserSceneView(wx.Panel):
 
     def focus_on_project(self):
         bbox = self.project.bbox()
+        if bbox is None:
+            return
         self.focus_viewport_scene(bbox)
         self.update_buffer()
 
@@ -319,15 +332,15 @@ class LaserSceneView(wx.Panel):
     def calculate_grid(self):
         lines = []
         wmils, hmils = self.project.size_in_native_units()
-        conversion, name = self.project.units
+        conversion, name, marks = self.project.units
         x = 0.0
         while x < wmils:
             lines.append((x, 0, x, hmils))
-            x += conversion * 10
+            x += conversion * marks
         y = 0.0
         while y < hmils:
             lines.append((0, y, wmils, y))
-            y += conversion * 10
+            y += conversion * marks
         self.grid = lines
 
     def on_draw_grid(self, dc):
@@ -344,18 +357,19 @@ class LaserSceneView(wx.Panel):
         sx, sy = self.convert_scene_to_window([0, 0])
         offset_x = sx % points
         offset_y = sy % points
+        conversion, name, marks = self.project.units
 
         for x in range(int(offset_x), int(w), points):
             length = 50
             lines.append((x, 0, x, length))
             lines.append((x, h, x, h - length))
-            dc.DrawRotatedText("%1d" % ((x - sx) / (39.37 * self.matrix.GetScaleX())), x, 0, -90)
+            dc.DrawRotatedText("%.2f %s" % ((x - sx) / (conversion * self.matrix.GetScaleX()), name), x, 0, -90)
 
         for y in range(int(offset_y), int(h), points):
             length = 50
             lines.append((0, y, length, y))
             lines.append((w, y, w - length, y))
-            dc.DrawText("%1d" % ((y - sy) / (39.37 * self.matrix.GetScaleY())), 0, y)
+            dc.DrawText("%.2f %s" % ((y - sy) / (conversion * self.matrix.GetScaleY()), name), 0, y)
         dc.DrawLineList(lines)
 
     def on_draw_background(self, dc):
@@ -368,28 +382,30 @@ class LaserSceneView(wx.Panel):
         pen.SetCap(wx.CAP_BUTT)
         if self.draw_guides:
             self.on_draw_guides(dc)
-
-    def on_draw_scene(self, dc):
-        if self.draw_grid:
-            bedwidth, bedheight = self.project.size
-            wmils = bedwidth * 39.37
-            hmils = bedheight * 39.37
-            dc.SetPen(wx.WHITE_PEN)
-            dc.DrawRectangle(0, 0, wmils, hmils)
-            dc.SetPen(wx.BLACK_PEN)
-            self.on_draw_grid(dc)
         if self.draw_laserhead:
             dc.SetPen(wx.RED_PEN)
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
             x = self.project.writer.current_x
             y = self.project.writer.current_y
+            x, y = self.convert_scene_to_window([x, y])
             dc.DrawCircle(x, y, 10)
+
+    def on_draw_scene(self, dc):
+        bedwidth, bedheight = self.project.size
+        wmils = bedwidth * 39.37
+        hmils = bedheight * 39.37
+        dc.SetPen(wx.WHITE_PEN)
+        dc.DrawRectangle(0, 0, wmils, hmils)
+        dc.SetPen(wx.BLACK_PEN)
+        if self.draw_grid:
+            self.on_draw_grid(dc)
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         if self.project is None:
             return
-        for element in self.project.elements:
+        for element in self.project.flat_elements():
             element.draw(dc)
         if self.draw_laserpath:
             dc.SetPen(wx.BLUE_PEN)

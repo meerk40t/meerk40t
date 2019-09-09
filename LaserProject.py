@@ -22,8 +22,9 @@ class LaserElement:
         self.cache = None
         self.pen = wx.Pen()
         self.color = wx.Colour()
-        self.box = None
         self.color.SetRGB(self.cut['color'])
+        self.box = [-10, -10, 10, 10]
+        self.parent = None
 
     def draw(self, dc):
         """Default draw routine for the laser element.
@@ -48,6 +49,11 @@ class LaserElement:
 
     def move(self, dx, dy):
         self.matrix.PostTranslate(dx, dy)
+
+    def contains(self, x, y=None):
+        if y is None:
+            x, y = x
+        return self.box[0] <= x <= self.box[2] and self.box[1] <= y <= self.box[3]
 
 
 class ImageElement(LaserElement):
@@ -89,17 +95,16 @@ class ImageElement(LaserElement):
 
 
 class PathElement(LaserElement):
-    def __init__(self, path):
+    def __init__(self, path_d):
         LaserElement.__init__(self)
-        self.path = path
-        self.box = None
+        self.path = path_d
         self.cut.update({"color": 0x00FF00, "speed": 20})
 
     def generate(self):
         parse = path.ObjectParser()
         svg_parser.parse_svg_path(parse, self.path)
         object_path = parse.path
-        self.box = wx.Rect2D(object_path.bbox())
+        self.box = object_path.bbox()
         yield COMMAND_SET_SPEED, self.cut.get("speed")
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
@@ -143,7 +148,6 @@ class EgvElement(LaserElement):
     def __init__(self, file):
         LaserElement.__init__(self)
         self.file = file
-        self.box = wx.Rect2D(0, 0, 0, 0)
         self.cut.update({"color": 0x0000FF, "speed": 20})
 
     def generate(self):
@@ -321,8 +325,12 @@ class LaserThread(threading.Thread):
         self.controller = project.controller
         self.elements = project.elements
 
+    def run(self):
+        self.burn_project()
+        self.project.thread = None
+
     def burn_project(self):
-        for element in self.elements:
+        for element in self.project.flat_elements():
             self.burn_element(element.generate())
         print('\a')
 
@@ -478,109 +486,133 @@ class LaserThread(threading.Thread):
                 for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
                     self.writer.move_abs(x, y)
 
-    def run(self):
-        self.burn_project()
-        self.project.thread = None
-
 
 class LaserProject:
     def __init__(self):
         self.elements = []
         self.size = 320, 220
-        self.units = (39.37, "mm")  # mils per unit.
-        self.controller = K40Controller()  # mock=True
+        self.units = (39.37, "mm", 10)
+        self.controller = K40Controller()
 
         self.writer = LhymicroWriter(controller=self.controller)
-        self.update_listener = None
+        self.tree_listener = None
+        self.space_listener = None
         self.selected = []
         self.thread = None
         self.autohome = False
         self.autobeep = True
 
+    def flat_elements(self, elements=None):
+        if elements is None:
+            elements = self.elements
+        for element in elements:
+            if isinstance(element, LaserElement):
+                element.parent = elements
+                yield element
+            else:
+                for flat_element in self.flat_elements(element):
+                    yield flat_element
+
     def size_in_native_units(self):
         return self.size[0] * 39.37, self.size[1] * 39.37
 
-    def set_inches(self):
-        self.units = (1000, "inches")
+    def set_inch(self):
+        self.units = (1000, "inch", 1)
+        if self.space_listener is not None:
+            self.space_listener()
 
-    def set_mils(self):
-        self.units = (1, "mils")
+    def set_mil(self):
+        self.units = (1, "mil", 1000)
+        if self.space_listener is not None:
+            self.space_listener()
 
     def set_cm(self):
-        self.units = (393.7, "cm")
+        self.units = (393.7, "cm", 1)
+        if self.space_listener is not None:
+            self.space_listener()
 
     def set_mm(self):
-        self.units = (39.37, "mm")
+        self.units = (39.37, "mm", 10)
+        if self.space_listener is not None:
+            self.space_listener()
 
     def select(self, position):
         self.selected = []
-        for e in self.elements:
+        for e in self.flat_elements():
             matrix = e.matrix
             p = matrix.InverseTransformPoint(position)
             if e.box is None:
                 continue
-            if e.box.Contains(p):
+            if e.contains(p):
                 self.selected.append(e)
 
     def burn_project(self):
         if self.thread is None:
             self.thread = LaserThread(self)
             self.thread.start()
+            print("burn project thread clicked.")
 
     def bbox(self):
-        boxes = []
-        for e in self.elements:
+        boundary_points = []
+        for e in self.flat_elements():
             box = e.box
             if box is None:
                 continue
-            top_left = e.matrix.TransformPoint([box.Left, box.Top])
-            bottom_right = e.matrix.TransformPoint([box.Bottom, box.Right])
-            boxes.append([top_left[0], top_left[1], bottom_right[0], bottom_right[1]])
-        xmin = min([box[0] for box in boxes])
-        ymin = min([box[1] for box in boxes])
-        xmax = max([box[2] for box in boxes])
-        ymax = max([box[3] for box in boxes])
+            top_left = e.matrix.TransformPoint([box[0], box[1]])
+            top_right = e.matrix.TransformPoint([box[2], box[1]])
+            bottom_left = e.matrix.TransformPoint([box[0], box[3]])
+            bottom_right = e.matrix.TransformPoint([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
 
     def menu_convert_raw(self, position):
         self.selected = []
-        for e in self.elements:
+        for e in self.flat_elements():
             if isinstance(e, RawElement):
                 continue
             matrix = e.matrix
             p = matrix.InverseTransformPoint(position)
-            if e.box.Contains(p):
+            if e.contains(p):
                 self.remove_element(e)
-                self.add_element(RawElement(e))
+                self.append(RawElement(e))
                 break
 
     def menu_remove(self, position):
-        for e in self.elements:
+        for e in self.flat_elements():
             matrix = e.matrix
             p = matrix.InverseTransformPoint(position)
-            if e.box.Contains(p):
+            if e.contains(p):
                 self.remove_element(e)
                 break
 
     def menu_scale(self, scale, scale_y=None, position=None):
         if scale_y is None:
             scale_y = scale
-        for e in self.elements:
+        for e in self.flat_elements():
             matrix = e.matrix
             if position is not None:
                 p = matrix.InverseTransformPoint(position)
-                if e.box.Contains(p):
+                if e.contains(p):
                     e.matrix.PostScale(scale, scale_y, p[0], p[1])
             else:
                 for e in self.selected:
                     e.matrix.PostScale(scale, scale_y)
 
     def menu_rotate(self, radians, position=None):
-        for e in self.elements:
+        for e in self.flat_elements():
             matrix = e.matrix
             if position is not None:
                 p = matrix.InverseTransformPoint(position)
-                if e.box.Contains(p):
+                if e.contains(p):
                     e.matrix.PostRotate(radians, p[0], p[1])
             else:
                 for e in self.selected:
@@ -591,14 +623,14 @@ class LaserProject:
             e.move(dx, dy)
 
     def remove_element(self, obj):
-        self.elements.remove(obj)
-        if self.update_listener is not None:
-            self.update_listener(None)
+        obj.parent.remove(obj)
+        if self.tree_listener is not None:
+            self.tree_listener()
 
-    def add_element(self, obj):
+    def append(self, obj):
         self.elements.append(obj)
-        if self.update_listener is not None:
-            self.update_listener(None)
+        if self.tree_listener is not None:
+            self.tree_listener()
 
 
 def direct_plots(start_x, start_y, generate):

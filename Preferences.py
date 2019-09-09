@@ -13,18 +13,20 @@ class Preferences(wx.Frame):
         # begin wxGlade: Preferences.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((406, 261))
-        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M/M1", "A/B/B1"], style=wx.CB_DROPDOWN)
+        self.SetSize((327, 307))
+        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, "Units", choices=["mm", "cm", "inch", "mils"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.spin_bedwidth = wx.SpinCtrlDouble(self, wx.ID_ANY, "330.0", min=1.0, max=1000.0)
         self.spin_bedheight = wx.SpinCtrlDouble(self, wx.ID_ANY, "230.0", min=1.0, max=1000.0)
-        self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, "Automatically Lock Rail")
-        self.checkbox_autohome = wx.CheckBox(self, wx.ID_ANY, "Home After Job complete")
-        self.checkbox_autobeep = wx.CheckBox(self, wx.ID_ANY, "Beep After Job Complete")
+        self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, "Automatically lock rail")
+        self.checkbox_autohome = wx.CheckBox(self, wx.ID_ANY, "Home after job complete")
+        self.checkbox_autobeep = wx.CheckBox(self, wx.ID_ANY, "Beep after job complete")
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, "Rotary")
         self.spin_scalex = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=5.0)
         self.spin_scaley = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=5.0)
         self.checkbox_mock_usb = wx.CheckBox(self, wx.ID_ANY, "Mock USB Connection Mode")
+        self.checkbox_multiple_devices = wx.CheckBox(self, wx.ID_ANY, "Multiple Devices")
+        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "0", min=0, max=5)
 
         self.__set_properties()
         self.__do_layout()
@@ -39,8 +41,11 @@ class Preferences(wx.Frame):
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_scalex, self.spin_scalex)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_scalex, self.spin_scalex)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_scaley, self.spin_scaley)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_scalex, self.spin_scaley)
+        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_scaley, self.spin_scaley)
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_mock_usb, self.checkbox_mock_usb)
+        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_multiple_devices, self.checkbox_multiple_devices)
+        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
+        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_index, self.spin_device_index)
         # end wxGlade
         self.project = None
 
@@ -58,11 +63,17 @@ class Preferences(wx.Frame):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-administrative-tools-50.png", wx.BITMAP_TYPE_ANY))
         self.SetIcon(_icon)
+        self.combobox_board.SetToolTip("Select the board to use. This has an effects the speedcodes used.")
         self.combobox_board.SetSelection(0)
         self.radio_units.SetSelection(0)
         self.spin_bedwidth.SetMinSize((80, 23))
+        self.spin_bedwidth.SetToolTip("Width of the laser bed.")
         self.spin_bedheight.SetMinSize((80, 23))
+        self.spin_bedheight.SetToolTip("Height of the laser bed.")
+        self.checkbox_autolock.SetToolTip("Lock rail after operations are finished.")
         self.checkbox_autolock.SetValue(1)
+        self.checkbox_autohome.SetToolTip("Home the machine after job is finished")
+        self.checkbox_autobeep.SetToolTip("Beep after the job is finished.")
         self.checkbox_autobeep.SetValue(1)
         self.checkbox_rotary.Enable(False)
         self.spin_scalex.SetMinSize((80, 23))
@@ -71,11 +82,15 @@ class Preferences(wx.Frame):
         self.spin_scaley.SetMinSize((80, 23))
         self.spin_scaley.Enable(False)
         self.spin_scaley.SetIncrement(0.01)
+        self.checkbox_mock_usb.SetToolTip("DEBUG. Without a K40 connected continue to process things as if there was one.")
+        self.spin_device_index.SetToolTip("If you have 1 device. This must be \"0\". Only people with multiple devices should change this setting.")
+        self.spin_device_index.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Preferences.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_9 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
@@ -88,11 +103,11 @@ class Preferences(wx.Frame):
         sizer_2.Add(self.combobox_board, 0, 0, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
         sizer_1.Add(self.radio_units, 0, 0, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, "Bedwidth")
+        label_2 = wx.StaticText(self, wx.ID_ANY, "Bed Width")
         sizer_7.Add(label_2, 0, 0, 0)
         sizer_7.Add(self.spin_bedwidth, 0, 0, 0)
         sizer_5.Add(sizer_7, 1, wx.EXPAND, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, "Bedheight")
+        label_3 = wx.StaticText(self, wx.ID_ANY, "Bed Height")
         sizer_4.Add(label_3, 0, 0, 0)
         sizer_4.Add(self.spin_bedheight, 0, 0, 0)
         sizer_5.Add(sizer_4, 1, wx.EXPAND, 0)
@@ -115,6 +130,13 @@ class Preferences(wx.Frame):
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.checkbox_mock_usb, 0, 0, 0)
+        static_line_3 = wx.StaticLine(self, wx.ID_ANY)
+        sizer_1.Add(static_line_3, 0, wx.EXPAND, 0)
+        sizer_1.Add(self.checkbox_multiple_devices, 0, 0, 0)
+        label_6 = wx.StaticText(self, wx.ID_ANY, "Index of K40 to connect to:")
+        sizer_3.Add(label_6, 0, 0, 0)
+        sizer_3.Add(self.spin_device_index, 0, 0, 0)
+        sizer_1.Add(sizer_3, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
@@ -123,16 +145,20 @@ class Preferences(wx.Frame):
         self.project.board = self.combobox_board.GetValue()
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_radio_units' not implemented!")
-        event.Skip()
+        if event.Int == 0:
+            self.project.set_mm()
+        elif event.Int == 1:
+            self.project.set_cm()
+        elif event.Int == 2:
+            self.project.set_inch()
+        elif event.Int == 3:
+            self.project.set_mil()
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'spin_on_bedwidth' not implemented!")
-        event.Skip()
+        self.project.size = self.spin_bedwidth.GetValue(), self.spin_bedheight.GetValue()
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'spin_on_bedheight' not implemented!")
-        event.Skip()
+        self.project.size = self.spin_bedwidth.GetValue(), self.spin_bedheight.GetValue()
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
         self.project.writer.autolock = self.checkbox_autolock.GetValue()
@@ -151,6 +177,12 @@ class Preferences(wx.Frame):
         print("Event handler 'spin_on_scaley' not implemented!")
         event.Skip()
 
+    def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
+        self.project.controller.use_device = int(self.spin_device_index.GetValue())
+
     def on_checkbox_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
         self.project.controller.mock = self.checkbox_mock_usb.GetValue()
+
+    def on_checkbox_multiple_devices(self, event):  # wxGlade: Preferences.<event_handler>
+        self.spin_device_index.Enable(self.checkbox_multiple_devices.GetValue())
 
