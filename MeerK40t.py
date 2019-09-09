@@ -464,7 +464,10 @@ class CutConfiguration(wx.Panel):
         item = event.GetItem()
         if item in self.item_lookup:
             element = self.item_lookup[item]
-            print(element)  # TODO: Permit editing of the various properties here.
+            from ElementProperty import ElementProperty
+            window = ElementProperty(None, wx.ID_ANY, "")
+            window.set_element(element)
+            window.Show()
 
     def on_item_changed(self, event):
         item = event.GetItem()

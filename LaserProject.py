@@ -14,6 +14,13 @@ from LhymicroWriter import LhymicroWriter
 from ZMatrix import ZMatrix
 from path import Move, Line, QuadraticBezier, CubicBezier, Arc
 
+VARIABLE_NAME_NAME = 'name'
+VARIABLE_NAME_COLOR = 'color'
+VARIABLE_NAME_SPEED = 'speed'
+VARIABLE_NAME_PASSES = 'passes'
+VARIABLE_NAME_DRATIO = 'd_ratio'
+VARIABLE_NAME_RASTER_STEP = "raster_step"
+VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 class LaserElement:
     def __init__(self):
