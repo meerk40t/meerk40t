@@ -5,6 +5,7 @@
 
 import wx
 
+
 class Controller(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Controller.__init__

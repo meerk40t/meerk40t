@@ -22,6 +22,7 @@ VARIABLE_NAME_DRATIO = 'd_ratio'
 VARIABLE_NAME_RASTER_STEP = "raster_step"
 VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
+
 class LaserElement:
     def __init__(self):
         self.matrix = ZMatrix()
@@ -158,7 +159,8 @@ class PathElement(LaserElement):
                                         int(c[0]), int(c[1]),
                                         int(e[0]), int(e[1]))
         yield COMMAND_MODE_DEFAULT, 0
-        yield COMMAND_SET_SPEED, 0
+        yield COMMAND_SET_SPEED, None
+        yield COMMAND_SET_D_RATIO, None
 
 
 class EgvElement(LaserElement):
@@ -378,10 +380,13 @@ class LaserThread(threading.Thread):
                 self.writer.move_abs(x, y)
             elif command == COMMAND_SET_SPEED:
                 speed = values
-                self.writer.speed = speed
+                self.writer.set_speed(speed=speed)
             elif command == COMMAND_SET_STEP:
                 step = values
-                self.writer.raster_step = step
+                self.writer.set_step(step=step)
+            elif command == COMMAND_SET_D_RATIO:
+                d_ratio = values
+                self.writer.set_d_ratio(d_ratio=d_ratio)
             elif command == COMMAND_MODE_COMPACT:
                 self.writer.to_compact_mode()
             elif command == COMMAND_MODE_DEFAULT:

@@ -24,7 +24,7 @@ class Navigation(wx.Frame):
         self.button_lock = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-lock-50.png", wx.BITMAP_TYPE_ANY))
         self.button_pulse = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
         self.spin_step_size = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=1000.0)
-        self.spin_pulse_time = wx.SpinCtrlDouble(self, wx.ID_ANY, "50.0", min=0.0, max=100.0)
+        self.spin_pulse_time = wx.SpinCtrlDouble(self, wx.ID_ANY, "50.0", min=0.0, max=1000.0)
 
         self.__set_properties()
         self.__do_layout()

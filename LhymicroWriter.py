@@ -49,6 +49,7 @@ class LhymicroWriter:
         self.is_top = False
         self.raster_step = 0
         self.speed = 30
+        self.d_ratio = None
 
         self.current_x = current_x
         self.current_y = current_y
@@ -109,9 +110,7 @@ class LhymicroWriter:
             self.controller += b'S1P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                raise ValueError("Not an octent %d, %d" % (dx, dy))
-                #self.move_x(dx)
-                #self.move_y(dy)
+                self.move_xy_line(dx, dy)
             if abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
             elif dx != 0:
@@ -127,6 +126,73 @@ class LhymicroWriter:
         self.check_bounds()
         if self.position_listener is not None:
             self.position_listener(self.current_x, self.current_y, self.current_x - dx, self.current_y - dy)
+
+    def move_xy_line(self, delta_x, delta_y):
+        """Strictly speaking if this happens it is because of a bug. Nothing should feed the writer this data.
+        It's invalid. All moves should be diagonal or orthogonal."""
+        dx = abs(delta_x)
+        dy = -abs(delta_y)
+        if delta_x > 0:
+            sx = 1
+        else:
+            sx = -1
+        if delta_y > 0:
+            sy = 1
+        else:
+            sy = -1
+        err = dx + dy  # error value e_xy
+        x0 = 0
+        y0 = 0
+        x1 = dx
+        y1 = dy
+        while True:  # /* loop */
+            if x0 == x1 and y0 == y1:
+                break
+            e2 = 2 * err
+            if e2 >= dy:  # e_xy+e_y < 0
+                err += dy
+                self.move_x(sx)
+                x0 += sx
+            if e2 <= dx:  # e_xy+e_y < 0
+                err += dx
+                self.move_y(sy)
+                y0 += sy
+
+    def set_speed(self, speed=None):
+        change = False
+        if self.speed != speed:
+            change = True
+            self.speed = speed
+        if not change:
+            return
+        if self.state == STATE_COMPACT:
+            # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
+            self.to_concat_mode()
+            self.to_compact_mode()
+
+    def set_d_ratio(self, d_ratio=None):
+        change = False
+        if self.d_ratio != d_ratio:
+            change = True
+            self.d_ratio = d_ratio
+        if not change:
+            return
+        if self.state == STATE_COMPACT:
+            # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
+            self.to_concat_mode()
+            self.to_compact_mode()
+
+    def set_step(self, step=None):
+        change = False
+        if self.raster_step != step:
+            change = True
+            self.raster_step = step
+        if not change:
+            return
+        if self.state == STATE_COMPACT:
+            # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
+            self.to_concat_mode()
+            self.to_compact_mode()
 
     def down(self):
         if self.is_on:
@@ -173,7 +239,10 @@ class LhymicroWriter:
 
     def to_compact_mode(self):
         self.to_concat_mode()
-        speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.board)
+        if self.d_ratio is not None:
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.board, d_ratio=self.d_ratio)
+        else:
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.board)
         try:
             speed_code = bytes(speed_code)
         except TypeError:
