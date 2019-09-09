@@ -33,7 +33,6 @@ class LaserSceneView(wx.Panel):
         self.__set_properties()
         self.__do_layout()
         self.overlay = wx.Overlay()
-        self.selection_rect = None
         self.draw_grid = True
         self.draw_guides = True
         self.grid = None
@@ -64,6 +63,7 @@ class LaserSceneView(wx.Panel):
         self.focus_viewport_scene((0, 0, bedwidth * 39.37, bedheight * 39.37), 0.1)
         self.project.writer.position_listener = self.update_position
         self.project.space_listener = self.space_changed
+        self.project.selection_listener = self.selection_changed
 
     def __set_properties(self):
         # begin wxGlade: MainView.__set_properties
@@ -96,6 +96,9 @@ class LaserSceneView(wx.Panel):
         self.grid = None
         self.on_size(None)
 
+    def selection_changed(self, selection):
+        self.post_buffer_update()
+
     def on_erase(self, event):
         pass
 
@@ -115,7 +118,6 @@ class LaserSceneView(wx.Panel):
         self.on_draw_interface(dc)
         del dc  # need to get rid of the MemoryDC before Update() is called.
         self.Refresh()
-        #self.Update() # TODO: Should not force immediate update.
 
     def on_matrix_change(self):
         self.guide_lines = None
@@ -190,7 +192,7 @@ class LaserSceneView(wx.Panel):
         self.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.project.select(self.previous_scene_position)
+        self.project.set_selected_by_position(self.previous_scene_position)
         self.move_function = self.move_selected
 
     def on_left_mouse_up(self, event):
@@ -242,10 +244,14 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_MENU, self.on_scale_popup(0.75), menu.Append(wx.ID_ANY, "Scale 75%", "", wx.ITEM_NORMAL))
         self.Bind(wx.EVT_MENU, self.on_scale_popup(0.5), menu.Append(wx.ID_ANY, "Scale 50%", "", wx.ITEM_NORMAL))
         self.Bind(wx.EVT_MENU, self.on_scale_popup(0.333), menu.Append(wx.ID_ANY, "Scale 33%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.25), menu.Append(wx.ID_ANY, u"Rotate \u03c4/4", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.25), menu.Append(wx.ID_ANY, u"Rotate -\u03c4/4", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.125), menu.Append(wx.ID_ANY, u"Rotate \u03c4/8", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.125), menu.Append(wx.ID_ANY, u"Rotate -\u03c4/8", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.25),
+                  menu.Append(wx.ID_ANY, u"Rotate \u03c4/4", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.25),
+                  menu.Append(wx.ID_ANY, u"Rotate -\u03c4/4", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.125),
+                  menu.Append(wx.ID_ANY, u"Rotate \u03c4/8", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.125),
+                  menu.Append(wx.ID_ANY, u"Rotate -\u03c4/8", "", wx.ITEM_NORMAL))
         self.PopupMenu(menu)
         menu.Destroy()
 
@@ -253,6 +259,7 @@ class LaserSceneView(wx.Panel):
         def specific(event):
             self.project.menu_scale(value, value, self.popup_scene_position)
             self.update_buffer()
+
         return specific
 
     def on_rotate_popup(self, value):
@@ -261,6 +268,7 @@ class LaserSceneView(wx.Panel):
             tau = pi * 2
             self.project.menu_rotate(value * tau, self.popup_scene_position)
             self.update_buffer()
+
         return specific
 
     def on_popup_menu_remove(self, event):
@@ -390,12 +398,15 @@ class LaserSceneView(wx.Panel):
             x, y = self.convert_scene_to_window([x, y])
             dc.DrawCircle(x, y, 10)
 
-    def on_draw_scene(self, dc):
+    def on_draw_bed(self, dc):
         bedwidth, bedheight = self.project.size
         wmils = bedwidth * 39.37
         hmils = bedheight * 39.37
         dc.SetPen(wx.WHITE_PEN)
         dc.DrawRectangle(0, 0, wmils, hmils)
+
+    def on_draw_scene(self, dc):
+        self.on_draw_bed(dc)
         dc.SetPen(wx.BLACK_PEN)
         if self.draw_grid:
             self.on_draw_grid(dc)
@@ -405,6 +416,11 @@ class LaserSceneView(wx.Panel):
         dc.SetPen(pen)
         if self.project is None:
             return
+        if self.project.selected_bbox is not None:
+            dc.SetPen(wx.BLUE_PEN)
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x0, y0, x1, y1 = self.project.selected_bbox
+            dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
         for element in self.project.flat_elements():
             element.draw(dc)
         if self.draw_laserpath:

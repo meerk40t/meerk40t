@@ -219,7 +219,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_SIZE, self.on_size_set)
 
         self.previous_position = None
-        self.project.tree_listener = self.tree_update
+        self.project.elements_change_listener = self.tree_update
 
     def on_size_set(self, event):
         self.panel.Size = self.ClientSize
@@ -417,12 +417,16 @@ class CutConfiguration(wx.Panel):
         self.element_tree = wx.TreeCtrl(self, ID_CUT_TREE, style=wx.FULL_REPAINT_ON_RESIZE)
         self.burn_button = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, wx.Bitmap("./icons/icons8-gas-industry-50.png",
                                                                                wx.BITMAP_TYPE_ANY))
+        self.item_lookup = {}
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
         self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh_tree_elements()
+
         # end wxGlade
 
     def __set_properties(self):
@@ -433,7 +437,6 @@ class CutConfiguration(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: CutConfiguration.__do_layout
-
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_1.Add(self.element_tree, 1, wx.EXPAND, 0)
         sizer_1.Add(self.burn_button, 0, 0, 0)
@@ -444,21 +447,45 @@ class CutConfiguration(wx.Panel):
     def on_clicked_burn(self, event):
         project.burn_project()
 
+    def on_item_right_click(self, event):
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, "Delete", "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete, convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_tree_popup_delete(self, event):
+        print(event)
+        for e in project.selected:
+            project.remove_element(e)
+        project.set_selected([])
+
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        print("Event handler 'on_item_activated' not implemented!")
-        event.Skip()
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            print(element)  # TODO: Permit editing of the various properties here.
+
+    def on_item_changed(self, event):
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            project.set_selected(element)
 
     def add_element(self, tree, node, element):
         if isinstance(element, list):
             subnode = tree.AppendItem(node, str("Group"))
+            self.item_lookup[subnode] = element
             for subitem in element:
                 self.add_element(tree, subnode, subitem)
         else:
-            tree.AppendItem(node, str(element))
+            item = tree.AppendItem(node, str(element))
+            self.item_lookup[item] = element
 
     def refresh_tree_elements(self):
         tree = self.element_tree
         tree.DeleteAllItems()
+        self.item_lookup = {}
         root = self.element_tree.AddRoot("Job Parts")
 
         for element in project.elements:

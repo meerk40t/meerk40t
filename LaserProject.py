@@ -44,6 +44,16 @@ class LaserElement:
             self.cache = p
         gc.StrokePath(self.cache)
 
+    def convert_absolute_to_affinespace(self, position):
+        if isinstance(position, complex):
+            return self.matrix.TransformPoint([position.real, position.imag])
+        return self.matrix.TransformPoint([position[0], position[1]])
+
+    def convert_affinespace_to_absolute(self, position):
+        if isinstance(position, complex):
+            return self.matrix.InverseTransformPoint([position.real, position.imag])
+        return self.matrix.InverseTransformPoint([position[0], position[1]])
+
     def generate(self):
         yield COMMAND_MODE_DEFAULT
 
@@ -110,33 +120,33 @@ class PathElement(LaserElement):
         yield COMMAND_MODE_COMPACT, 0
         for data in object_path:
             if isinstance(data, Move):
-                s = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                s = self.convert_absolute_to_affinespace(data.end)
                 yield COMMAND_MOVE_TO, (int(s[0]), int(s[1]))
             elif isinstance(data, Line):
-                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
-                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                s = self.convert_absolute_to_affinespace(data.start)
+                e = self.convert_absolute_to_affinespace(data.end)
                 yield COMMAND_CUT_LINE, (int(s[0]), int(s[1]),
                                          int(e[0]), int(e[1]))
             elif isinstance(data, QuadraticBezier):
-                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
-                c = self.matrix.TransformPoint(data.control.real, data.control.imag)
-                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                s = self.convert_absolute_to_affinespace(data.start)
+                c = self.convert_absolute_to_affinespace(data.control)
+                e = self.convert_absolute_to_affinespace(data.end)
                 yield COMMAND_CUT_QUAD, (int(s[0]), int(s[1]),
                                          c[0], c[1],
                                          int(e[0]), int(e[1]))
             elif isinstance(data, CubicBezier):
-                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
-                c1 = self.matrix.TransformPoint(data.control1.real, data.control1.imag)
-                c2 = self.matrix.TransformPoint(data.control2.real, data.control2.imag)
-                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                s = self.convert_absolute_to_affinespace(data.start)
+                c1 = self.convert_absolute_to_affinespace(data.control1)
+                c2 = self.convert_absolute_to_affinespace(data.control2)
+                e = self.convert_absolute_to_affinespace(data.end)
                 yield COMMAND_CUT_CUBIC, (int(s[0]), int(s[1]),
                                           c1[0], c1[1],
                                           c2[0], c2[1],
                                           int(e[0]), int(e[1]))
             elif isinstance(data, Arc):
-                s = self.matrix.TransformPoint(data.start.real, data.start.imag)
-                c = self.matrix.TransformPoint(data.center.real, data.center.imag)
-                e = self.matrix.TransformPoint(data.end.real, data.end.imag)
+                s = self.convert_absolute_to_affinespace(data.start)
+                c = self.convert_absolute_to_affinespace(data.center)
+                e = self.convert_absolute_to_affinespace(data.end)
                 yield COMMAND_CUT_ARC, (int(s[0]), int(s[1]),
                                         int(c[0]), int(c[1]),
                                         int(e[0]), int(e[1]))
@@ -165,7 +175,7 @@ class EgvElement(LaserElement):
             parse = LaserCommandPathParser(p)
             for event in self.generate():
                 parse.command(event)
-            print(parse.x, parse.y)
+            # print(parse.x, parse.y)
             self.cache = p
             self.box = self.cache.GetBox()
         gc.StrokePath(self.cache)
@@ -495,9 +505,12 @@ class LaserProject:
         self.controller = K40Controller()
 
         self.writer = LhymicroWriter(controller=self.controller)
-        self.tree_listener = None
-        self.space_listener = None
+        self.selection_listener = None
+        self.elements_change_listener = None
+        self.unit_space_listener = None
+
         self.selected = []
+        self.selected_bbox = None
         self.thread = None
         self.autohome = False
         self.autobeep = True
@@ -518,39 +531,77 @@ class LaserProject:
 
     def set_inch(self):
         self.units = (1000, "inch", 1)
-        if self.space_listener is not None:
-            self.space_listener()
+        if self.unit_space_listener is not None:
+            self.unit_space_listener()
 
     def set_mil(self):
         self.units = (1, "mil", 1000)
-        if self.space_listener is not None:
-            self.space_listener()
+        if self.unit_space_listener is not None:
+            self.unit_space_listener()
 
     def set_cm(self):
         self.units = (393.7, "cm", 1)
-        if self.space_listener is not None:
-            self.space_listener()
+        if self.unit_space_listener is not None:
+            self.unit_space_listener()
 
     def set_mm(self):
         self.units = (39.37, "mm", 10)
-        if self.space_listener is not None:
-            self.space_listener()
+        if self.unit_space_listener is not None:
+            self.unit_space_listener()
 
-    def select(self, position):
+    def set_selected(self, select_elements):
+        if isinstance(select_elements, list):
+            self.selected = select_elements
+        else:
+            self.selected = [select_elements]
+        self.set_selected_bbox_by_selected()
+        if self.selection_listener is not None:
+            self.selection_listener(self.selected)
+
+    def set_selected_bbox_by_selected(self):
+        boundary_points = []
+        for e in self.selected:
+            box = e.box
+            if box is None:
+                continue
+            left_top = e.convert_absolute_to_affinespace([box[0], box[1]])
+            right_top = e.convert_absolute_to_affinespace([box[2], box[1]])
+            left_bottom = e.convert_absolute_to_affinespace([box[0], box[3]])
+            right_bottom = e.convert_absolute_to_affinespace([box[2], box[3]])
+            boundary_points.append(left_top)
+            boundary_points.append(right_top)
+            boundary_points.append(left_bottom)
+            boundary_points.append(right_bottom)
+        if len(boundary_points) > 0:
+            xmin = min([e[0] for e in boundary_points])
+            ymin = min([e[1] for e in boundary_points])
+            xmax = max([e[0] for e in boundary_points])
+            ymax = max([e[1] for e in boundary_points])
+            self.selected_bbox = [xmin, ymin, xmax, ymax]
+        else:
+            self.selected_bbox = None
+
+    def set_selected_by_position(self, position):
         self.selected = []
         for e in self.flat_elements():
+            box = e.box
+            if box is None:
+                continue
             matrix = e.matrix
             p = matrix.InverseTransformPoint(position)
-            if e.box is None:
-                continue
             if e.contains(p):
-                self.selected.append(e)
+                if e.parent is None:
+                    self.set_selected(e)
+                else:
+                    self.set_selected(e.parent)
+                break
+        if self.selection_listener is not None:
+            self.selection_listener(self.selected)
 
     def burn_project(self):
         if self.thread is None:
             self.thread = LaserThread(self)
             self.thread.start()
-            print("burn project thread clicked.")
 
     def bbox(self):
         boundary_points = []
@@ -575,7 +626,6 @@ class LaserProject:
         return xmin, ymin, xmax, ymax
 
     def menu_convert_raw(self, position):
-        self.selected = []
         for e in self.flat_elements():
             if isinstance(e, RawElement):
                 continue
@@ -621,16 +671,21 @@ class LaserProject:
     def move_selected(self, dx, dy):
         for e in self.selected:
             e.move(dx, dy)
+        if self.selected_bbox is not None:
+            self.selected_bbox[0] += dx
+            self.selected_bbox[2] += dx
+            self.selected_bbox[1] += dy
+            self.selected_bbox[3] += dy
 
     def remove_element(self, obj):
         obj.parent.remove(obj)
-        if self.tree_listener is not None:
-            self.tree_listener()
+        if self.elements_change_listener is not None:
+            self.elements_change_listener()
 
     def append(self, obj):
         self.elements.append(obj)
-        if self.tree_listener is not None:
-            self.tree_listener()
+        if self.elements_change_listener is not None:
+            self.elements_change_listener()
 
 
 def direct_plots(start_x, start_y, generate):
