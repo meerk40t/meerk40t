@@ -28,12 +28,19 @@ class Controller(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.project = None
 
     def set_project(self, project):
         self.project = project
         self.project.controller.status_listener = self.update_status
         self.project.controller.packet_listener = self.update_packet
+
+    def on_close(self, event):
+        self.project.controller.status_listener = None
+        self.project.controller.packet_listener = None
+        self.project = None
+        event.Skip()  # delegate destroy to super
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties

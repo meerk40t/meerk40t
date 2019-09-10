@@ -342,23 +342,46 @@ class LaserThread(threading.Thread):
         self.project = project
         self.writer = project.writer
         self.controller = project.controller
-        self.elements = project.elements
+        self.element_list = None
+        self.element_index = -1
+        self.progress_listener = None
+        self.queue_listener = None
+        self.queue_size = 50
+        self.queue_last = -1
 
     def run(self):
+        self.element_list = [e for e in self.project.flat_elements()]
+        self.element_index = 0
         self.burn_project()
         self.project.thread = None
+        self.element_list = None
+        self.element_index = -1
 
     def burn_project(self):
-        for element in self.project.flat_elements():
+        for self.element_index, element in enumerate(self.element_list):
+            if self.progress_listener is not None:
+                self.progress_listener(self.element_index, len(self.element_list))
             self.burn_element(element.generate())
-        print('\a')
+        # Final listener calls.
+        if self.progress_listener is not None:
+            self.progress_listener(len(self.element_list), len(self.element_list))
+        if self.queue_listener is not None:
+            self.queue_listener(0, self.queue_size)
+
+        if self.project.autobeep:
+            print('\a')  # Beep.
 
     def burn_element(self, element):
         for command, values in element:
-            while self.controller.count_packet_buffer() > 50:
+            self.queue_last = self.controller.count_packet_buffer()
+            if self.queue_listener is not None:
+                self.queue_listener(self.queue_last, self.queue_size)
+            while self.queue_last > self.queue_size:
                 # Backend is clogged and not sending stuff. We're waiting.
                 time.sleep(0.1)  # if we've given it enough for a while just wait here.
-
+                self.queue_last = self.controller.count_packet_buffer()
+                if self.queue_listener is not None:
+                    self.queue_listener(self.queue_last, self.queue_size)
             if command == COMMAND_SIMPLE_MOVE:
                 x, y = values
                 self.writer.move_abs(x, y)
@@ -609,11 +632,6 @@ class LaserProject:
                 break
         if self.selection_listener is not None:
             self.selection_listener(self.selected)
-
-    def burn_project(self):
-        if self.thread is None:
-            self.thread = LaserThread(self)
-            self.thread.start()
 
     def bbox(self):
         boundary_points = []

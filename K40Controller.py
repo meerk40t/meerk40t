@@ -50,18 +50,22 @@ def onewire_crc_lookup(line):
     return crc
 
 
+THREAD_STATE_ABORT = 0
+THREAD_STATE_PROCEED = 1
+THREAD_STATE_PAUSE = 2
+
+
 class ControllerQueueThread(threading.Thread):
     def __init__(self, controller):
         threading.Thread.__init__(self)
         self.controller = controller
-        self.state = 1
 
     def run(self):
-        while self.state != 0:
+        while self.controller.state != THREAD_STATE_ABORT:
             self.controller.process_queue()
             time.sleep(0.1)
 
-            while self.state > 3:
+            while self.controller.state > THREAD_STATE_PAUSE:
                 time.sleep(1)
 
 
@@ -77,6 +81,7 @@ class K40Controller:
         self.usblog_listener = None
         self.device_log = ""
         self.use_device = 0
+        self.state = THREAD_STATE_PROCEED
 
         self.buffer = b''
         self.add_queue = b''
@@ -125,6 +130,8 @@ class K40Controller:
                 return
         wait_finish = False
         while True:
+            if self.state == THREAD_STATE_PAUSE:
+                break
             if len(self.add_queue):
                 self.lock.acquire()
                 self.buffer += self.add_queue

@@ -10,7 +10,7 @@ import wx.ribbon as RB
 from PIL import Image
 
 import svg_parser
-from LaserProject import LaserProject, ImageElement, PathElement, EgvElement
+from LaserProject import LaserProject, ImageElement, PathElement, EgvElement, LaserThread
 from LaserSceneView import LaserSceneView
 
 
@@ -445,7 +445,14 @@ class CutConfiguration(wx.Panel):
         # end wxGlade
 
     def on_clicked_burn(self, event):
-        project.burn_project()
+        if project.thread is None:
+            project.thread = LaserThread(project)
+            project.thread.start()
+
+            from JobInfo import JobInfo
+            window = JobInfo(None, wx.ID_ANY, "")
+            window.set_project(project)
+            window.Show()
 
     def on_item_right_click(self, event):
         menu = wx.Menu()
