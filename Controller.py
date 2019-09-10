@@ -29,7 +29,11 @@ class Controller(wx.Frame):
         self.__do_layout()
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.dirty = False
         self.project = None
+        self.status_data = None
+        self.packet_data = None
+        self.packet_string = None
 
     def set_project(self, project):
         self.project = project
@@ -125,32 +129,46 @@ class Controller(wx.Frame):
         self.Layout()
         # end wxGlade
 
+    def post_update(self):
+        if not self.dirty:
+            self.dirty = True
+            wx.CallAfter(self.post_update_on_gui_thread)
+
+    def post_update_on_gui_thread(self):
+        if self.project is None:
+            return # was closed this is just a leftover update.
+        data = self.packet_data
+        string_data = self.packet_string
+        self.last_packet_text.SetValue(str(data))
+        self.packet_text_text.SetValue(str(string_data))
+        self.packet_count_text.SetValue(str(self.project.controller.packet_count))
+        self.packet_list.AppendText('\n' + str(string_data))
+
+        self.Update()
+
+        data = self.status_data
+        if isinstance(data, int):
+            self.text_desc.SetValue(str(data))
+        elif len(data) == 6:
+            self.text_byte_0.SetValue(str(data[0]))
+            self.text_byte_1.SetValue(str(data[1]))
+            self.text_byte_2.SetValue(str(data[2]))
+            self.text_byte_3.SetValue(str(data[3]))
+            self.text_byte_4.SetValue(str(data[4]))
+            self.text_byte_5.SetValue(str(data[5]))
+            self.text_desc.SetValue(str(data))
+        self.Update()
+
+        self.dirty = False
+
     def update_status(self, data):
-        try:
-            if isinstance(data, int):
-                self.text_desc.SetValue(str(data))
-            elif len(data) == 6:
-                self.text_byte_0.SetValue(str(data[0]))
-                self.text_byte_1.SetValue(str(data[1]))
-                self.text_byte_2.SetValue(str(data[2]))
-                self.text_byte_3.SetValue(str(data[3]))
-                self.text_byte_4.SetValue(str(data[4]))
-                self.text_byte_5.SetValue(str(data[5]))
-            else:
-                self.text_desc.SetValue(str(data))
-            self.Update()
-        except RuntimeError:
-            pass
+        self.status_data = data
+        self.post_update()
 
     def update_packet(self, data, string_data):
-        try:
-            self.last_packet_text.SetValue(str(data))
-            self.packet_text_text.SetValue(str(string_data))
-            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-            self.packet_list.AppendText('\n' + str(string_data))
+        self.packet_data = data
+        self.packet_string = string_data
+        self.post_update()
 
-            self.Update()
-        except RuntimeError:
-            pass
 
 # end of class Controller

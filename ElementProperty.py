@@ -27,6 +27,7 @@ class ElementProperty(wx.Frame):
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_COMBOBOX, self.on_combobox_rasterdirection, self.combo_raster_direction)
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_speed, self.spin_speed_set)
@@ -149,6 +150,10 @@ class ElementProperty(wx.Frame):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
             e.cut[VARIABLE_NAME_RASTER_STEP] = self.spin_step_size.GetValue()
+
+    def on_combobox_rasterdirection(self, event):  # wxGlade: Preferences.<event_handler>
+        for e in self.flat_element(self.element):
+            e.cut[VARIABLE_NAME_RASTER_DIRECTION] = self.combo_raster_direction.GetSelection()
 
     def on_button_f00(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):

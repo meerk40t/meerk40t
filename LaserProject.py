@@ -26,7 +26,7 @@ VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 class LaserElement:
     def __init__(self):
         self.matrix = ZMatrix()
-        self.cut = {"color": 0, "speed": 60, "passes": 1}
+        self.cut = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_SPEED: 60, VARIABLE_NAME_PASSES: 1}
         self.cache = None
         self.pen = wx.Pen()
         self.color = wx.Colour()
@@ -41,7 +41,7 @@ class LaserElement:
 
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, self.matrix))
-        self.color.SetRGB(self.cut['color'])
+        self.color.SetRGB(self.cut[VARIABLE_NAME_COLOR])
         self.pen.SetColour(self.color)
         gc.SetPen(self.pen)
         if self.cache is None:
@@ -77,16 +77,17 @@ class LaserElement:
 class ImageElement(LaserElement):
     def __init__(self, image):
         LaserElement.__init__(self)
-        self.box = wx.Rect2D(0, 0, image.width, image.height)
+        self.box = [0, 0, image.width, image.height]
         self.image = image
-        self.cut.update({"step": 1, "speed": 100})
+        self.cut.update({VARIABLE_NAME_RASTER_STEP: 1,
+                         VARIABLE_NAME_SPEED: 100})
 
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, self.matrix))
         if self.cache is None:
-            width = int(self.box.GetRight())
-            height = int(self.box.GetBottom())
+            width = self.image.width
+            height = self.image.height
             try:
                 self.cache = wx.Bitmap.FromBufferRGBA(width, height, self.image.tobytes())
             except ValueError:
@@ -103,11 +104,39 @@ class ImageElement(LaserElement):
         return 0
 
     def generate(self):
-        yield COMMAND_SET_SPEED, (self.cut.get("speed"))
-        yield COMMAND_SET_STEP, (self.cut.get("step"))
+        speed = 100
+        if VARIABLE_NAME_SPEED in self.cut:
+            speed = self.cut[VARIABLE_NAME_SPEED]
+        if speed is None:
+            speed = 100
+        yield COMMAND_SET_SPEED, speed
+        step = 1
+        if VARIABLE_NAME_RASTER_STEP in self.cut:
+            step = self.cut[VARIABLE_NAME_RASTER_STEP]
+        yield COMMAND_SET_STEP, step
+
+        direction = 0
+        if VARIABLE_NAME_RASTER_DIRECTION in self.cut:
+            direction = self.cut[VARIABLE_NAME_RASTER_DIRECTION]
+            print(direction)
+        print(direction)
+        transverse = 0
+        if direction == 0:
+            transverse |= RasterPlotter.X_AXIS
+            transverse |= RasterPlotter.TOP
+        elif direction == 1:
+            transverse |= RasterPlotter.X_AXIS
+            transverse |= RasterPlotter.BOTTOM
+        elif direction == 2:
+            transverse |= RasterPlotter.Y_AXIS
+            transverse |= RasterPlotter.LEFT
+        elif direction == 3:
+            transverse |= RasterPlotter.Y_AXIS
+            transverse |= RasterPlotter.RIGHT
         for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
                                                  offset_x=self.matrix.GetTranslateX(),
-                                                 offset_y=self.matrix.GetTranslateY()):
+                                                 offset_y=self.matrix.GetTranslateY(),
+                                                 transversal=transverse):
             yield command
         yield COMMAND_MODE_DEFAULT, 0
 
@@ -116,14 +145,17 @@ class PathElement(LaserElement):
     def __init__(self, path_d):
         LaserElement.__init__(self)
         self.path = path_d
-        self.cut.update({"color": 0x00FF00, "speed": 20})
+        self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20})
 
     def generate(self):
         parse = path.ObjectParser()
         svg_parser.parse_svg_path(parse, self.path)
         object_path = parse.path
         self.box = object_path.bbox()
-        yield COMMAND_SET_SPEED, self.cut.get("speed")
+        speed = self.cut.get(VARIABLE_NAME_SPEED)
+        if speed is None:
+            speed = 100
+        yield COMMAND_SET_SPEED, speed
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
         for data in object_path:
@@ -167,7 +199,7 @@ class EgvElement(LaserElement):
     def __init__(self, file):
         LaserElement.__init__(self)
         self.file = file
-        self.cut.update({"color": 0x0000FF, "speed": 20})
+        self.cut.update({VARIABLE_NAME_COLOR: 0x0000FF, VARIABLE_NAME_SPEED: 20})
 
     def generate(self):
         for event in EgvParser.parse_egv(self.file):
@@ -403,13 +435,13 @@ class LaserThread(threading.Thread):
                 self.writer.move_abs(x, y)
             elif command == COMMAND_SET_SPEED:
                 speed = values
-                self.writer.set_speed(speed=speed)
+                self.writer.set_speed(speed)
             elif command == COMMAND_SET_STEP:
                 step = values
-                self.writer.set_step(step=step)
+                self.writer.set_step(step)
             elif command == COMMAND_SET_D_RATIO:
                 d_ratio = values
-                self.writer.set_d_ratio(d_ratio=d_ratio)
+                self.writer.set_d_ratio(d_ratio)
             elif command == COMMAND_MODE_COMPACT:
                 self.writer.to_compact_mode()
             elif command == COMMAND_MODE_DEFAULT:

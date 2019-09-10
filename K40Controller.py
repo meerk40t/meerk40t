@@ -154,13 +154,20 @@ class K40Controller:
                     packet = packet[:-1]
                     wait_finish = True
                 packet += b'F' * (30 - len(packet))
-            if len(packet) == 30:
-                self.buffer = self.buffer[length:]
-            else:
-                break  # No valid packet was able to be produced.
             # try to send packet
-            self.wait(STATUS_OK)
-            self.send_packet(packet)
+            try:
+                self.wait(STATUS_OK)
+                if self.state == THREAD_STATE_PAUSE:
+                    # We paused during the wait for OK. Abort this, do not attempt packet send.
+                    break
+                if len(packet) == 30:
+                    self.buffer = self.buffer[length:]
+                else:
+                    break  # No valid packet was able to be produced.
+                self.send_packet(packet)
+            except usb.core.USBError:
+                # Should have broken at wait. Failed a reconnect demand. This packet will not send.
+                break
             if wait_finish:
                 self.wait(STATUS_FINISH)
                 wait_finish = False
@@ -179,7 +186,11 @@ class K40Controller:
         if len(d) > self.use_device:
             self.usb = d[self.use_device]
         if self.usb is None:
-            self.log("K40 not found.")
+            if len(d) == 0:
+                self.log("K40 not found.")
+            else:
+                self.log("K40 devices were found but the configuration requires #%d." % self.use_device)
+                time.sleep(1)
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
         self.log("Device found. Using device: #%d" % self.use_device)
@@ -199,9 +210,15 @@ class K40Controller:
         self.log("Attempting to claim interface.")
         usb.util.claim_interface(self.usb, self.interface)
         self.log("Interface claimed.")
+        self.log("Requesting Status.")
+        self.update_status()
+        self.log(str(self.status))
         self.log("Sending control transfer.")
         self.usb.ctrl_transfer(bmRequestType=64, bRequest=177, wValue=258,
                                wIndex=0, data_or_wLength=0, timeout=5000)
+        self.log("Requesting Status.")
+        self.update_status()
+        self.log(str(self.status))
         self.log("USB Connection Successful.")
 
     def close(self):
@@ -220,13 +237,20 @@ class K40Controller:
             else:
                 self.log("Kernel was not detached.")
             self.log("Attempting to release interface.")
-            usb.util.release_interface(self.usb, self.interface)
-            self.log("Interface released")
+            try:
+                usb.util.release_interface(self.usb, self.interface)
+                self.log("Interface released")
+            except usb.core.USBError:
+                self.log("Interface did not exist.")
             self.log("Attempting to dispose resources.")
             usb.util.dispose_resources(self.usb)
             self.log("Resources disposed.")
-            self.usb.reset()
-            self.log("USB reset")
+            self.log("Attempting USB reset.")
+            try:
+                self.usb.reset()
+                self.log("USB reset.")
+            except usb.core.USBError:
+                self.log("USB connection did not exist.")
             self.interface = None
             self.usb = None
             self.log("USB Disconnection Successful.")
@@ -254,7 +278,14 @@ class K40Controller:
         if self.mock:
             self.status = [STATUS_OK] * 6
         else:
-            self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
+            try:
+                self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
+            except usb.core.USBError as e:
+                self.log("Usb refused status check.")
+                self.close()
+                self.open()
+                self.usb.write(0x02, [160], 10000)
+                self.log("Sending original status check.")
             self.status = self.usb.read(0x82, 6, 10000)
         if self.status_listener is not None:
             self.status_listener(self.status)

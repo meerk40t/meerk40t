@@ -35,6 +35,11 @@ class JobInfo(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         # end wxGlade
         self.project = None
+        self.dirty = False
+        self.queue_last = 0
+        self.queue_total = 0
+        self.progress_total = 0
+        self.progress_update = 0
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def set_project(self, project):
@@ -143,14 +148,29 @@ class JobInfo(wx.Frame):
                     self.project.controller.state = 1
                     self.button_stop.SetBackgroundColour("#ff0000")
 
+    def post_update(self):
+        if not self.dirty:
+            self.dirty = True
+            wx.CallAfter(self.post_update_on_gui_thread)
+
+    def post_update_on_gui_thread(self):
+        self.text_controller_progress.SetValue(str(self.queue_last))
+        self.text_controller_total.SetValue(str(self.queue_total))
+        self.gauge_controller.SetValue(self.queue_last)
+        self.gauge_controller.SetRange(self.queue_total)
+
+        self.text_job_progress.SetValue(str(self.progress_update))
+        self.text_job_total.SetValue(str(self.progress_total))
+        self.gauge_writer.SetValue(self.progress_update)
+        self.gauge_writer.SetRange(self.progress_total)
+        self.dirty = False
+
     def on_queue(self, last, limit):
-        self.text_controller_progress.SetValue(str(last))
-        self.text_controller_total.SetValue(str(limit))
-        self.gauge_controller.SetValue(last)
-        self.gauge_controller.SetRange(limit)
+        self.queue_last = last
+        self.queue_total = limit
+        self.post_update()
 
     def on_progress(self, last, limit):
-        self.text_job_progress.SetValue(str(last))
-        self.text_job_total.SetValue(str(limit))
-        self.gauge_writer.SetValue(last)
-        self.gauge_writer.SetRange(limit)
+        self.progress_total = limit
+        self.progress_update = last
+        self.post_update()
