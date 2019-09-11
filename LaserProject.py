@@ -5,12 +5,12 @@ import wx
 
 import EgvParser
 import RasterPlotter
-import ZinglPlotter
 import path
 import svg_parser
 from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
+from ThreadConstants import *
 from ZMatrix import ZMatrix
 from path import Move, Line, QuadraticBezier, CubicBezier, Arc
 
@@ -376,192 +376,68 @@ class LaserThread(threading.Thread):
         self.controller = project.controller
         self.element_list = None
         self.element_index = -1
+        self.command_index = -1
         self.progress_listener = None
         self.queue_listener = None
-        self.queue_size = 50
+        self.buffer_max = 50
         self.queue_last = -1
+        self.state = THREAD_STATE_UNSTARTED
+        self.autohome = self.project.autohome
+        self.element_index = 0
+        self.command_index = 0
+        self.element_list = [e for e in self.project.flat_elements()]
+
+    def start_element_producer(self):
+        if self.state != THREAD_STATE_ABORT:
+            self.state = THREAD_STATE_PROCEED
+            self.start()
 
     def run(self):
-        self.element_list = [e for e in self.project.flat_elements()]
         self.element_index = 0
-        self.burn_project()
-        self.project.thread = None
+        while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
+            self.process_queue()
+            time.sleep(0.1)
+            while self.state == THREAD_STATE_PAUSE:
+                time.sleep(1)
+        # Final listener calls.
+        self.update_listeners()
         self.element_list = None
         self.element_index = -1
-
-    def burn_project(self):
-        for self.element_index, element in enumerate(self.element_list):
-            if self.progress_listener is not None:
-                self.progress_listener(self.element_index, len(self.element_list))
-            self.burn_element(element.generate())
-        # Final listener calls.
-        if self.progress_listener is not None:
-            self.progress_listener(len(self.element_list), len(self.element_list))
-        if self.queue_listener is not None:
-            self.queue_listener(0, self.queue_size)
-
         if self.project.autobeep:
             print('\a')  # Beep.
 
-    def burn_element(self, element):
-        for command, values in element:
-            self.queue_last = self.controller.count_packet_buffer()
-            if self.queue_listener is not None:
-                self.queue_listener(self.queue_last, self.queue_size)
-            while self.queue_last > self.queue_size:
+
+    def process_queue(self):
+        if self.element_list is None:
+            self.state = THREAD_STATE_FINISHED
+            return
+        try:
+            element = self.element_list[self.element_index]
+        except IndexError:
+            self.state = THREAD_STATE_FINISHED
+            return
+        commands_gen = element.generate()
+        while True:
+            self.update_listeners()
+            while self.queue_last > self.buffer_max:
                 # Backend is clogged and not sending stuff. We're waiting.
                 time.sleep(0.1)  # if we've given it enough for a while just wait here.
-                self.queue_last = self.controller.count_packet_buffer()
-                if self.queue_listener is not None:
-                    self.queue_listener(self.queue_last, self.queue_size)
-            if command == COMMAND_SIMPLE_MOVE:
-                x, y = values
-                self.writer.move_abs(x, y)
-            if command == COMMAND_LASER_OFF:
-                self.writer.up()
-            if command == COMMAND_LASER_ON:
-                self.writer.down()
-            elif command == COMMAND_SIMPLE_CUT:
-                self.writer.down()
-                x, y = values
-                self.writer.move_abs(x, y)
-            elif command == COMMAND_SIMPLE_SHIFT:
-                self.writer.up()
-                x, y = values
-                self.writer.move_abs(x, y)
-            elif command == COMMAND_RAPID_MOVE:
-                self.writer.to_default_mode()
-                sx, sy, x, y = values
-                self.writer.move_abs(x, y)
-            elif command == COMMAND_SET_SPEED:
-                speed = values
-                self.writer.set_speed(speed)
-            elif command == COMMAND_SET_STEP:
-                step = values
-                self.writer.set_step(step)
-            elif command == COMMAND_SET_D_RATIO:
-                d_ratio = values
-                self.writer.set_d_ratio(d_ratio)
-            elif command == COMMAND_MODE_COMPACT:
-                self.writer.to_compact_mode()
-            elif command == COMMAND_MODE_DEFAULT:
-                self.writer.to_default_mode()
-            elif command == COMMAND_MODE_CONCAT:
-                self.writer.to_concat_mode()
-            elif command == COMMAND_HSTEP:
-                self.writer.v_switch()
-            elif command == COMMAND_VSTEP:
-                self.writer.h_switch()
-            elif command == COMMAND_HOME:
-                self.writer.home()
-            elif command == COMMAND_LOCK:
-                self.writer.lock_rail()
-            elif command == COMMAND_UNLOCK:
-                self.writer.unlock_rail()
-            elif command == COMMAND_MOVE_TO:
-                ex, ey = values
-                self.writer.up()
-                for x, y, on in direct_plots(self.writer.current_x, self.writer.current_y,
-                                             ZinglPlotter.plot_line(
-                                                 int(self.writer.current_x),
-                                                 int(self.writer.current_y), ex, ey
-                                             )):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_LINE_TO:
-                ex, ey = values
-                sx = self.writer.current_x
-                sy = self.writer.current_y
-                self.writer.down()
-                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
-                                                                            ex, ey)):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_QUAD_TO:
-                cx, cy, ex, ey = values
-                sx = self.writer.current_x
-                sy = self.writer.current_y
-                self.writer.down()
-                for x, y, on in direct_plots(sx, sy,
-                                             ZinglPlotter.plot_quad_bezier(sx, sy,
-                                                                           cx, cy,
-                                                                           ex, ey)):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_CUBIC_TO:
-                c1x, c1y, c2x, c2y, ex, ey = values
-                sx = self.writer.current_x
-                sy = self.writer.current_y
-                self.writer.down()
-                for x, y, on in direct_plots(sx, sy,
-                                             ZinglPlotter.plot_cubic_bezier(sx, sy,
-                                                                            c1x, c1y,
-                                                                            c2x, c2y,
-                                                                            ex, ey)):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_ARC_TO:
-                cx, cy, ex, ey = values
-                # I do not actually have an arc plotter.
-                sx = self.writer.current_x
-                sy = self.writer.current_y
-                self.writer.down()
-                for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
-                    self.writer.move_abs(x, y)
-            # These are not _to, they can be done anywhere.
-            elif command == COMMAND_CUT_LINE:
-                sx, sy, ex, ey = values
-                pos_x = self.writer.current_x
-                pos_y = self.writer.current_y
-                if pos_x != sx or pos_y != sy:
-                    self.writer.up()
-                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                            pos_x, pos_y, sx, sy)):
-                        self.writer.move_abs(x, y)
-                self.writer.down()
-                for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
-                                                                            ex, ey)):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_QUAD:
-                sx, sy, cx, cy, ex, ey = values
-                pos_x = self.writer.current_x
-                pos_y = self.writer.current_y
-                if pos_x != sx or pos_y != sy:
-                    self.writer.up()
-                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                            pos_x, pos_y, sx, sy)):
-                        self.writer.move_abs(x, y)
-                self.writer.down()
-                for x, y, on in direct_plots(sx, sy,
-                                             ZinglPlotter.plot_quad_bezier(sx, sy,
-                                                                           cx, cy,
-                                                                           ex, ey)):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_CUBIC:
-                sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
-                pos_x = self.writer.current_x
-                pos_y = self.writer.current_y
-                if pos_x != sx or pos_y != sy:
-                    self.writer.up()
-                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                            pos_x, pos_y, sx, sy)):
-                        self.writer.move_abs(x, y)
-                self.writer.down()
-                for x, y, on in direct_plots(sx, sy,
-                                             ZinglPlotter.plot_cubic_bezier(sx, sy,
-                                                                            c1x, c1y,
-                                                                            c2x, c2y,
-                                                                            ex, ey)):
-                    self.writer.move_abs(x, y)
-            elif command == COMMAND_CUT_ARC:
-                # I do not actually have an arc plotter.
-                sx, sy, cx, cy, ex, ey = values
-                pos_x = self.writer.current_x
-                pos_y = self.writer.current_y
-                if pos_x != sx or pos_y != sy:
-                    self.writer.up()
-                    for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                            pos_x, pos_y, sx, sy)):
-                        self.writer.move_abs(x, y)
-                self.writer.down()
-                for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
-                    self.writer.move_abs(x, y)
+                self.update_listeners()
+            try:
+                e = next(commands_gen)
+            except StopIteration:
+                self.element_index += 1
+                break
+            command, values = e
+            self.writer.command(command, values)
+            self.command_index += 1
+
+    def update_listeners(self):
+        self.queue_last = self.controller.count_packet_buffer()
+        if self.queue_listener is not None:
+            self.queue_listener(self.queue_last)
+        if self.progress_listener is not None:
+            self.progress_listener(self.element_index, len(self.element_list))
 
 
 class LaserProject:
@@ -748,26 +624,3 @@ class LaserProject:
         self.elements.append(obj)
         if self.elements_change_listener is not None:
             self.elements_change_listener()
-
-
-def direct_plots(start_x, start_y, generate):
-    last_x = start_x
-    last_y = start_y
-    dx = 0
-    dy = 0
-
-    for event in generate:
-        x, y, on = event
-        if x == last_x + dx and y == last_y + dy:
-            last_x = x
-            last_y = y
-            continue
-
-        yield last_x, last_y, 1
-        dx = x - last_x
-        dy = y - last_y
-        if abs(dx) > 1 or abs(dy) > 1:
-            raise ValueError
-        last_x = x
-        last_y = y
-    yield last_x, last_y, 1

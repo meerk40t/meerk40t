@@ -12,18 +12,41 @@ class UsbConnect(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.project = None
+        self.dirty = False
+        self.append_text = ""
 
     def set_project(self, project):
         self.project = project
         self.usblog_text.SetValue(self.project.controller.device_log)
         self.project.controller.usblog_listener = self.update_log
 
+    def on_close(self, event):
+        if self.project.thread is not None:
+            self.project.controller.usblog_listener = None
+            self.project.thread.queue_listener = None
+        self.project = None
+        event.Skip()  # Call destroy as regular.
+
     def update_log(self, text):
+        self.append_text += text
+        self.post_update()
+
+    def post_update_on_gui_thread(self):
+        if self.project is None:
+            return
         try:
-            self.usblog_text.AppendText(text)
+            self.usblog_text.AppendText(self.append_text)
+            self.append_text = ""
         except RuntimeError:
             self.project.controller.usblog_listener = None
+        self.dirty = False
+
+    def post_update(self):
+        if not self.dirty:
+            self.dirty = True
+            wx.CallAfter(self.post_update_on_gui_thread)
 
     def __set_properties(self):
         # begin wxGlade: UsbConnect.__set_properties

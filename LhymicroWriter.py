@@ -1,5 +1,7 @@
 from K40Controller import K40Controller
 from LaserSpeed import LaserSpeed
+from LaserCommandConstants import *
+import ZinglPlotter
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'
@@ -77,6 +79,156 @@ class LhymicroWriter:
             self.controller.close()
         except AttributeError:
             pass
+
+    def command(self, command, values):
+        if command == COMMAND_SIMPLE_MOVE:
+            x, y = values
+            self.move_abs(x, y)
+        if command == COMMAND_LASER_OFF:
+            self.up()
+        if command == COMMAND_LASER_ON:
+            self.down()
+        elif command == COMMAND_SIMPLE_CUT:
+            self.down()
+            x, y = values
+            self.move_abs(x, y)
+        elif command == COMMAND_SIMPLE_SHIFT:
+            self.up()
+            x, y = values
+            self.move_abs(x, y)
+        elif command == COMMAND_RAPID_MOVE:
+            self.to_default_mode()
+            sx, sy, x, y = values
+            self.move_abs(x, y)
+        elif command == COMMAND_SET_SPEED:
+            speed = values
+            self.set_speed(speed)
+        elif command == COMMAND_SET_STEP:
+            step = values
+            self.set_step(step)
+        elif command == COMMAND_SET_D_RATIO:
+            d_ratio = values
+            self.set_d_ratio(d_ratio)
+        elif command == COMMAND_MODE_COMPACT:
+            self.to_compact_mode()
+        elif command == COMMAND_MODE_DEFAULT:
+            self.to_default_mode()
+        elif command == COMMAND_MODE_CONCAT:
+            self.to_concat_mode()
+        elif command == COMMAND_HSTEP:
+            self.v_switch()
+        elif command == COMMAND_VSTEP:
+            self.h_switch()
+        elif command == COMMAND_HOME:
+            self.home()
+        elif command == COMMAND_LOCK:
+            self.lock_rail()
+        elif command == COMMAND_UNLOCK:
+            self.unlock_rail()
+        elif command == COMMAND_MOVE_TO:
+            ex, ey = values
+            self.up()
+            for x, y, on in direct_plots(self.current_x, self.current_y,
+                                         ZinglPlotter.plot_line(
+                                             int(self.current_x),
+                                             int(self.current_y), ex, ey
+                                         )):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_LINE_TO:
+            ex, ey = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
+                                                                        ex, ey)):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_QUAD_TO:
+            cx, cy, ex, ey = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in direct_plots(sx, sy,
+                                         ZinglPlotter.plot_quad_bezier(sx, sy,
+                                                                       cx, cy,
+                                                                       ex, ey)):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_CUBIC_TO:
+            c1x, c1y, c2x, c2y, ex, ey = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in direct_plots(sx, sy,
+                                         ZinglPlotter.plot_cubic_bezier(sx, sy,
+                                                                        c1x, c1y,
+                                                                        c2x, c2y,
+                                                                        ex, ey)):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_ARC_TO:
+            cx, cy, ex, ey = values
+            # I do not actually have an arc plotter.
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
+                self.move_abs(x, y)
+        # These are not _to, they can be done anywhere.
+        elif command == COMMAND_CUT_LINE:
+            sx, sy, ex, ey = values
+            pos_x = self.current_x
+            pos_y = self.current_y
+            if pos_x != sx or pos_y != sy:
+                self.up()
+                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                        pos_x, pos_y, sx, sy)):
+                    self.move_abs(x, y)
+            self.down()
+            for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
+                                                                        ex, ey)):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_QUAD:
+            sx, sy, cx, cy, ex, ey = values
+            pos_x = self.current_x
+            pos_y = self.current_y
+            if pos_x != sx or pos_y != sy:
+                self.up()
+                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                        pos_x, pos_y, sx, sy)):
+                    self.move_abs(x, y)
+            self.down()
+            for x, y, on in direct_plots(sx, sy,
+                                         ZinglPlotter.plot_quad_bezier(sx, sy,
+                                                                       cx, cy,
+                                                                       ex, ey)):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_CUBIC:
+            sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
+            pos_x = self.current_x
+            pos_y = self.current_y
+            if pos_x != sx or pos_y != sy:
+                self.up()
+                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                        pos_x, pos_y, sx, sy)):
+                    self.move_abs(x, y)
+            self.down()
+            for x, y, on in direct_plots(sx, sy,
+                                         ZinglPlotter.plot_cubic_bezier(sx, sy,
+                                                                        c1x, c1y,
+                                                                        c2x, c2y,
+                                                                        ex, ey)):
+                self.move_abs(x, y)
+        elif command == COMMAND_CUT_ARC:
+            # I do not actually have an arc plotter.
+            sx, sy, cx, cy, ex, ey = values
+            pos_x = self.current_x
+            pos_y = self.current_y
+            if pos_x != sx or pos_y != sy:
+                self.up()
+                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
+                        pos_x, pos_y, sx, sy)):
+                    self.move_abs(x, y)
+            self.down()
+            for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
+                self.move_abs(x, y)
 
     def plot(self, x, y):
         dx = int(x - self.current_x)
@@ -382,3 +534,26 @@ class LhymicroWriter:
         if dy != 0:
             self.controller += lhymicro_distance(abs(dy))
             self.check_bounds()
+
+
+def direct_plots(start_x, start_y, generate):
+    last_x = start_x
+    last_y = start_y
+    dx = 0
+    dy = 0
+
+    for event in generate:
+        x, y, on = event
+        if x == last_x + dx and y == last_y + dy:
+            last_x = x
+            last_y = y
+            continue
+
+        yield last_x, last_y, 1
+        dx = x - last_x
+        dy = y - last_y
+        if abs(dx) > 1 or abs(dy) > 1:
+            raise ValueError
+        last_x = x
+        last_y = y
+    yield last_x, last_y, 1

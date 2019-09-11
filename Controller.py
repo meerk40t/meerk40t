@@ -136,27 +136,29 @@ class Controller(wx.Frame):
 
     def post_update_on_gui_thread(self):
         if self.project is None:
-            return # was closed this is just a leftover update.
+            return  # was closed this is just a leftover update.
         data = self.packet_data
         string_data = self.packet_string
-        self.last_packet_text.SetValue(str(data))
-        self.packet_text_text.SetValue(str(string_data))
+        if data is not None:
+            self.last_packet_text.SetValue(str(data))
+        if string_data is not None:
+            self.packet_text_text.SetValue(str(string_data))
+            self.packet_list.AppendText('\n' + str(string_data))
         self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-        self.packet_list.AppendText('\n' + str(string_data))
-
         self.Update()
 
         data = self.status_data
-        if isinstance(data, int):
-            self.text_desc.SetValue(str(data))
-        elif len(data) == 6:
-            self.text_byte_0.SetValue(str(data[0]))
-            self.text_byte_1.SetValue(str(data[1]))
-            self.text_byte_2.SetValue(str(data[2]))
-            self.text_byte_3.SetValue(str(data[3]))
-            self.text_byte_4.SetValue(str(data[4]))
-            self.text_byte_5.SetValue(str(data[5]))
-            self.text_desc.SetValue(str(data))
+        if data is not None:
+            if isinstance(data, int):
+                self.text_desc.SetValue(str(data))
+            elif len(data) == 6:
+                self.text_byte_0.SetValue(str(data[0]))
+                self.text_byte_1.SetValue(str(data[1]))
+                self.text_byte_2.SetValue(str(data[2]))
+                self.text_byte_3.SetValue(str(data[3]))
+                self.text_byte_4.SetValue(str(data[4]))
+                self.text_byte_5.SetValue(str(data[5]))
+                self.text_desc.SetValue(str(data))
         self.Update()
 
         self.dirty = False

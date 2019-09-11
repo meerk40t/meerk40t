@@ -368,14 +368,6 @@ class MeerK40t(wx.Frame):
     def transform_mirror_vflip(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.menu_scale(1, -1)
 
-    def on_click_group(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_group' not implemented!")
-        event.Skip()
-
-    def on_click_ungroup(self, event):  # wxGlade: MeerK40t.<event_handler>
-        print("Event handler 'on_click_ungroup' not implemented!")
-        event.Skip()
-
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Preferences import Preferences
         window = Preferences(None, wx.ID_ANY, "")
@@ -445,14 +437,13 @@ class CutConfiguration(wx.Panel):
         # end wxGlade
 
     def on_clicked_burn(self, event):
-        if project.thread is None:
+        if project.thread is None or project.thread.element_list is None or len(project.thread.element_list) == 0:
             project.thread = LaserThread(project)
-            project.thread.start()
 
-            from JobInfo import JobInfo
-            window = JobInfo(None, wx.ID_ANY, "")
-            window.set_project(project)
-            window.Show()
+        from JobInfo import JobInfo
+        window = JobInfo(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
 
     def on_item_right_click(self, event):
         menu = wx.Menu()

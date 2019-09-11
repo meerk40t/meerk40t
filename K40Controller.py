@@ -4,6 +4,8 @@ import time
 import usb.core
 import usb.util
 
+from ThreadConstants import *
+
 STATUS_BAD_STATE = 204
 STATUS_OK = 206
 STATUS_PACKET_REJECTED = 207
@@ -50,11 +52,6 @@ def onewire_crc_lookup(line):
     return crc
 
 
-THREAD_STATE_ABORT = 0
-THREAD_STATE_PROCEED = 1
-THREAD_STATE_PAUSE = 2
-
-
 class ControllerQueueThread(threading.Thread):
     def __init__(self, controller):
         threading.Thread.__init__(self)
@@ -65,8 +62,9 @@ class ControllerQueueThread(threading.Thread):
             self.controller.process_queue()
             time.sleep(0.1)
 
-            while self.controller.state > THREAD_STATE_PAUSE:
+            while self.controller.state == THREAD_STATE_PAUSE:
                 time.sleep(1)
+        self.controller.thread = None
 
 
 class K40Controller:
@@ -79,9 +77,10 @@ class K40Controller:
         self.status_listener = None
         self.wait_listener = None
         self.usblog_listener = None
+        self.usbstatus_listener = None
         self.device_log = ""
         self.use_device = 0
-        self.state = THREAD_STATE_PROCEED
+        self.state = THREAD_STATE_PAUSE
 
         self.buffer = b''
         self.add_queue = b''
@@ -90,6 +89,7 @@ class K40Controller:
         self.rejected_count = 0
         self.lock = threading.Lock()
         self.mock = mock
+        self.usb_status = "Uninitalized"
 
     def __enter__(self):
         self.open()
@@ -102,7 +102,7 @@ class K40Controller:
         self.lock.acquire()
         self.add_queue += other
         self.lock.release()
-        self.consume_queue()
+        self.start_queue_consumer()
         return self
 
     def log(self, info):
@@ -111,8 +111,9 @@ class K40Controller:
             self.usblog_listener(update)
         self.device_log += update
 
-    def consume_queue(self):
+    def start_queue_consumer(self):
         if self.thread is None:
+            self.state = THREAD_STATE_PROCEED
             self.thread = ControllerQueueThread(self)
             self.thread.start()
 
@@ -124,10 +125,12 @@ class K40Controller:
             try:
                 self.open()
             except usb.core.USBError:
-                self.status = STATUS_NO_DEVICE
-                if self.status_listener is not None:
-                    self.status_listener(self.status)
+                if self.status != STATUS_NO_DEVICE:
+                    self.status = STATUS_NO_DEVICE
+                    if self.status_listener is not None:
+                        self.status_listener(self.status)
                 return
+        self.set_usb_status("Transmitting")
         wait_finish = False
         while True:
             if self.state == THREAD_STATE_PAUSE:
@@ -175,7 +178,15 @@ class K40Controller:
     def pad_buffer(self):
         self.buffer += b'F' * (30 - (len(self.buffer) % 30))
 
+    def set_usb_status(self, status):
+        if status == self.usb_status:
+            return
+        self.usb_status = status
+        if self.usbstatus_listener is not None:
+            self.usbstatus_listener(self.usb_status)
+
     def open(self):
+        self.set_usb_status("Connecting")
         self.log("Attempting connection to USB.")
         devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
         d = []
@@ -186,6 +197,7 @@ class K40Controller:
         if len(d) > self.use_device:
             self.usb = d[self.use_device]
         if self.usb is None:
+            self.set_usb_status("Not Found")
             if len(d) == 0:
                 self.log("K40 not found.")
             else:
@@ -220,8 +232,10 @@ class K40Controller:
         self.update_status()
         self.log(str(self.status))
         self.log("USB Connection Successful.")
+        self.set_usb_status("Connected")
 
     def close(self):
+        self.set_usb_status("Disconnecting")
         self.log("Attempting disconnection from USB.")
         if self.usb is not None:
             if self.detached:
@@ -256,6 +270,7 @@ class K40Controller:
             self.log("USB Disconnection Successful.")
         else:
             self.log("No connection was found.")
+        self.set_usb_status("Disconnecting")
 
     def send_packet(self, packet_byte_data):
         if len(packet_byte_data) != 30:
