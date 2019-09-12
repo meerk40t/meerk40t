@@ -377,37 +377,42 @@ class LaserThread(threading.Thread):
         self.element_list = None
         self.element_index = -1
         self.command_index = -1
-        self.progress_listener = None
-        self.queue_listener = None
         self.limit_buffer = True
-        self.buffer_max = 50
-        self.queue_last = -1
+        self.buffer_max = 50*30
+        self.buffer_size = -1
         self.state = THREAD_STATE_UNSTARTED
         self.autohome = self.project.autohome
         self.autobeep = self.project.autobeep
         self.element_index = 0
         self.command_index = 0
         self.element_list = [e for e in self.project.flat_elements()]
+        self.project("progress", (self.element_index, len(self.element_list)))
 
     def start_element_producer(self):
         if self.state != THREAD_STATE_ABORT:
-            self.state = THREAD_STATE_PROCEED
+            self.state = THREAD_STATE_STARTED
             self.start()
 
     def run(self):
         self.element_index = 0
+        self.project("progress", (self.element_index, len(self.element_list)))
+        self.project["buffer"] = self.update_buffer_size
         while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
             self.process_queue()
             time.sleep(0.1)
-            while self.state == THREAD_STATE_PAUSE:
+            while self.state == THREAD_STATE_PAUSED:
                 time.sleep(1)
         # Final listener calls.
-        self.update_listeners()
+        if self.autohome:
+            return self.writer.command(COMMAND_HOME, 0)
         self.element_list = None
         self.element_index = -1
-        if self.project.autobeep:
+        self.project["buffer", self.update_buffer_size] = None
+        if self.autobeep:
             print('\a')  # Beep.
 
+    def update_buffer_size(self, size):
+        self.buffer_size = size
 
     def process_queue(self):
         if self.element_list is None:
@@ -420,12 +425,11 @@ class LaserThread(threading.Thread):
             return
         commands_gen = element.generate()
         while True:
-            self.update_listeners()
-            if self.limit_buffer:
-                while self.queue_last > self.buffer_max:
-                    # Backend is clogged and not sending stuff. We're waiting.
-                    time.sleep(0.1)  # if we've given it enough for a while just wait here.
-                    self.update_listeners()
+            self.project("progress", (self.element_index + 1, len(self.element_list)))
+            self.project("command", self.command_index)
+            while self.limit_buffer and self.buffer_size > self.buffer_max:
+                # Backend is clogged and not sending stuff. We're waiting.
+                time.sleep(0.1)  # if we've given it enough for a while just wait here.
             try:
                 e = next(commands_gen)
             except StopIteration:
@@ -435,20 +439,15 @@ class LaserThread(threading.Thread):
             self.writer.command(command, values)
             self.command_index += 1
 
-    def update_listeners(self):
-        self.queue_last = self.controller.count_packet_buffer()
-        if self.queue_listener is not None:
-            self.queue_listener(self.queue_last)
-        if self.progress_listener is not None:
-            self.progress_listener(self.element_index, len(self.element_list))
-
 
 class LaserProject:
     def __init__(self):
+        self.listeners = {}
+        self.last_message = {}
         self.elements = []
         self.size = 320, 220
         self.units = (39.37, "mm", 10)
-        self.controller = K40Controller()
+        self.controller = K40Controller(self)
 
         self.writer = LhymicroWriter(controller=self.controller)
         self.selection_listener = None
@@ -460,6 +459,41 @@ class LaserProject:
         self.thread = None
         self.autohome = False
         self.autobeep = True
+
+    def __call__(self, code, message):
+        if code in self.listeners:
+            listeners = self.listeners[code]
+            for listener in listeners:
+                listener(message)
+        self.last_message[code] = message
+
+    def __setitem__(self, key, value):
+        if value is None:
+            key, value = key
+            self.remove_listener(value, key)
+        else:
+            self.add_listener(value, key)
+
+    def __getitem__(self, item):
+        if item in self.listeners:
+            return self.listeners[item]
+        else:
+            return None
+
+    def add_listener(self, listener, code):
+        if code in self.listeners:
+            listeners = self.listeners[code]
+            listeners.append(listener)
+        else:
+            self.listeners[code] = [listener]
+        if code in self.last_message:
+            last_message = self.last_message[code]
+            listener(last_message)
+
+    def remove_listener(self, listener, code):
+        if code in self.listeners:
+            listeners = self.listeners[code]
+            listeners.remove(listener)
 
     def flat_elements(self, elements=None):
         if elements is None:

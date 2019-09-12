@@ -20,12 +20,10 @@ class UsbConnect(wx.Frame):
     def set_project(self, project):
         self.project = project
         self.usblog_text.SetValue(self.project.controller.device_log)
-        self.project.controller.usblog_listener = self.update_log
+        self.project["usb_log"] = self.update_log
 
     def on_close(self, event):
-        if self.project.thread is not None:
-            self.project.controller.usblog_listener = None
-            self.project.thread.queue_listener = None
+        self.project["usb_log", self.update_log] = None
         self.project = None
         event.Skip()  # Call destroy as regular.
 
