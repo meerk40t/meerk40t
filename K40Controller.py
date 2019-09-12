@@ -63,6 +63,7 @@ class ControllerQueueThread(threading.Thread):
             time.sleep(0.1)
 
             while self.controller.state == THREAD_STATE_PAUSE:
+                self.controller.set_usb_status("Paused")
                 time.sleep(1)
         self.controller.thread = None
 
@@ -80,7 +81,10 @@ class K40Controller:
         self.usbstatus_listener = None
         self.device_log = ""
         self.use_device = 0
+        self.usb_bus = -1  # TODO: permit selecting which device to used based on the USB bus and address variables.
+        self.usb_address = -1
         self.state = THREAD_STATE_PAUSE
+        self.autostart = True
 
         self.buffer = b''
         self.add_queue = b''
@@ -102,7 +106,8 @@ class K40Controller:
         self.lock.acquire()
         self.add_queue += other
         self.lock.release()
-        self.start_queue_consumer()
+        if self.autostart:
+            self.start_queue_consumer()
         return self
 
     def log(self, info):
@@ -196,6 +201,8 @@ class K40Controller:
             d.append(device)
         if len(d) > self.use_device:
             self.usb = d[self.use_device]
+        for i, dev in enumerate(d):
+            self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))  # TODO: Verify functions
         if self.usb is None:
             self.set_usb_status("Not Found")
             if len(d) == 0:
@@ -205,7 +212,8 @@ class K40Controller:
                 time.sleep(1)
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
-        self.log("Device found. Using device: #%d" % self.use_device)
+        self.log("Device found. Using device: #%d on bus: %d at address %d"
+                 % (self.use_device, self.usb.bus, self.usb.address))  # TODO: Verify functions
         self.interface = self.usb.get_active_configuration()[(0, 0)]
         try:
             if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):

@@ -16,13 +16,13 @@ class JobInfo(wx.Frame):
         self.text_job_progress_copy = wx.TextCtrl(self.panel_writer, wx.ID_ANY, "")
         self.elements_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.panel_controller = wx.Panel(self, wx.ID_ANY, style=wx.BORDER_RAISED)
-        self.checkbox_queue_packets = wx.CheckBox(self.panel_controller, wx.ID_ANY, "Limit Packet Buffer")
+        self.checkbox_limit_buffer = wx.CheckBox(self.panel_controller, wx.ID_ANY, "Limit Packet Buffer")
         self.gauge_controller = wx.Gauge(self.panel_controller, wx.ID_ANY, 100)
         self.text_packet_buffer = wx.TextCtrl(self.panel_controller, wx.ID_ANY, "")
         self.spin_packet_buffer_max = wx.SpinCtrl(self.panel_controller, wx.ID_ANY, "50", min=1, max=10000)
-        self.checkbox_1 = wx.CheckBox(self, wx.ID_ANY, "Automatically Start Controller")
-        self.checkbox_2 = wx.CheckBox(self, wx.ID_ANY, "Home After")
-        self.checkbox_3 = wx.CheckBox(self, wx.ID_ANY, "Beep After")
+        self.checkbox_autostart = wx.CheckBox(self, wx.ID_ANY, "Automatically Start Controller")
+        self.checkbox_autohome = wx.CheckBox(self, wx.ID_ANY, "Home After")
+        self.checkbox_autobeep = wx.CheckBox(self, wx.ID_ANY, "Beep After")
         self.button_writer_control = wx.ToggleButton(self, wx.ID_ANY, "Start Job")
         self.combo_box_1 = wx.ComboBox(self, wx.ID_ANY, choices=["Availible K40"], style=wx.CB_DROPDOWN)
         self.panel_usb = wx.Panel(self, wx.ID_ANY, style=wx.BORDER_RAISED)
@@ -37,12 +37,12 @@ class JobInfo(wx.Frame):
 
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_click, self.elements_listbox)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_dclick, self.elements_listbox)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_limit_packet_buffer, self.checkbox_queue_packets)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_limit_packet_buffer, self.checkbox_limit_buffer)
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_auto_start_controller, self.checkbox_1)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_after, self.checkbox_2)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_beep_after, self.checkbox_3)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_auto_start_controller, self.checkbox_autostart)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_after, self.checkbox_autohome)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_beep_after, self.checkbox_autobeep)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_start_job, self.button_writer_control)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_select_writer, self.combo_box_1)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_start_controller, self.button_controller_control)
@@ -76,6 +76,11 @@ class JobInfo(wx.Frame):
         self.text_job_total.SetValue(str(self.progress_total))
         self.gauge_writer.SetValue(self.progress_update)
         self.gauge_writer.SetRange(self.progress_total)
+        self.checkbox_autobeep.SetValue(self.project.thread.autobeep)
+        self.checkbox_autohome.SetValue(self.project.thread.autohome)
+        self.checkbox_autostart.SetValue(self.project.controller.autostart)
+        self.checkbox_limit_buffer.SetValue(self.project.thread.limit_buffer)
+
         if len(self.project.thread.element_list) > 0:
             self.elements_listbox.InsertItems([str(e) for e in self.project.thread.element_list], 0)
 
@@ -92,10 +97,10 @@ class JobInfo(wx.Frame):
         self.SetTitle("Job")
         self.panel_writer.SetBackgroundColour(wx.Colour(238, 238, 238))
         self.elements_listbox.Enable(False)
-        self.checkbox_queue_packets.SetValue(1)
+        self.checkbox_limit_buffer.SetValue(1)
         self.panel_controller.SetBackgroundColour(wx.Colour(204, 204, 204))
-        self.checkbox_1.SetValue(1)
-        self.checkbox_3.SetValue(1)
+        self.checkbox_autostart.SetValue(1)
+        self.checkbox_autobeep.SetValue(1)
         self.button_writer_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_writer_control.SetFont(
             wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
@@ -140,7 +145,7 @@ class JobInfo(wx.Frame):
         self.panel_writer.SetSizer(sizer_9)
         sizer_2.Add(self.panel_writer, 0, wx.EXPAND, 0)
         sizer_2.Add(self.elements_listbox, 1, wx.EXPAND, 0)
-        sizer_11.Add(self.checkbox_queue_packets, 1, 0, 0)
+        sizer_11.Add(self.checkbox_limit_buffer, 1, 0, 0)
         sizer_11.Add(self.gauge_controller, 0, wx.EXPAND, 0)
         label_7 = wx.StaticText(self.panel_controller, wx.ID_ANY, "Packet Buffer")
         sizer_12.Add(label_7, 4, 0, 0)
@@ -151,9 +156,9 @@ class JobInfo(wx.Frame):
         sizer_11.Add(sizer_12, 1, wx.EXPAND, 0)
         self.panel_controller.SetSizer(sizer_11)
         sizer_2.Add(self.panel_controller, 0, wx.EXPAND, 0)
-        sizer_4.Add(self.checkbox_1, 0, 0, 0)
-        sizer_4.Add(self.checkbox_2, 0, 0, 0)
-        sizer_4.Add(self.checkbox_3, 0, 0, 0)
+        sizer_4.Add(self.checkbox_autostart, 0, 0, 0)
+        sizer_4.Add(self.checkbox_autohome, 0, 0, 0)
+        sizer_4.Add(self.checkbox_autobeep, 0, 0, 0)
         sizer_2.Add(sizer_4, 0, wx.EXPAND, 0)
         sizer_2.Add(self.button_writer_control, 0, wx.EXPAND, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
@@ -183,24 +188,19 @@ class JobInfo(wx.Frame):
         event.Skip()
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_check_limit_packet_buffer' not implemented!")
-        event.Skip()
+        self.project.thread.limit_buffer = not self.project.thread.limit_buffer
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_spin_packet_buffer_max' not implemented!")
-        event.Skip()
+        self.project.thread.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_check_auto_start_controller' not implemented!")
-        event.Skip()
+        self.project.controller.autostart = not self.project.controller.autostart
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_check_home_after' not implemented!")
-        event.Skip()
+        self.project.thread.autohome = not self.project.thread.autohome
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_check_beep_after' not implemented!")
-        event.Skip()
+        self.project.thread.autobeep = not self.project.thread.autobeep
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if self.project is None:

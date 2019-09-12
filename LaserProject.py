@@ -379,10 +379,12 @@ class LaserThread(threading.Thread):
         self.command_index = -1
         self.progress_listener = None
         self.queue_listener = None
+        self.limit_buffer = True
         self.buffer_max = 50
         self.queue_last = -1
         self.state = THREAD_STATE_UNSTARTED
         self.autohome = self.project.autohome
+        self.autobeep = self.project.autobeep
         self.element_index = 0
         self.command_index = 0
         self.element_list = [e for e in self.project.flat_elements()]
@@ -419,10 +421,11 @@ class LaserThread(threading.Thread):
         commands_gen = element.generate()
         while True:
             self.update_listeners()
-            while self.queue_last > self.buffer_max:
-                # Backend is clogged and not sending stuff. We're waiting.
-                time.sleep(0.1)  # if we've given it enough for a while just wait here.
-                self.update_listeners()
+            if self.limit_buffer:
+                while self.queue_last > self.buffer_max:
+                    # Backend is clogged and not sending stuff. We're waiting.
+                    time.sleep(0.1)  # if we've given it enough for a while just wait here.
+                    self.update_listeners()
             try:
                 e = next(commands_gen)
             except StopIteration:
