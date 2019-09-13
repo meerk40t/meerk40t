@@ -108,7 +108,7 @@ class K40Controller:
         self.rejected_count = 0
         self.lock = threading.Lock()
         self.usb_status = None
-        self.set_usb_status("Uninitalized")
+        self.set_usb_status("Uninitialized")
 
     def __enter__(self):
         self.open()
@@ -140,6 +140,15 @@ class K40Controller:
                 self.listener("status", self.status)
             return False
         return True
+
+    def emergency_stop(self):
+        self.thread.state = THREAD_STATE_ABORT
+        packet = b'I' + b'F' * 29
+        if self.usb is not None:
+            self.send_packet(packet)
+        self.buffer = b''
+        self.add_queue = b''
+        self.listener("buffer", len(self.buffer))
 
     def start_queue_consumer(self):
         if self.thread.state == THREAD_STATE_FINISHED:
@@ -186,7 +195,7 @@ class K40Controller:
                 self.buffer = self.buffer[length:]
                 self.listener("buffer", len(self.buffer))
             else:
-                return True # No valid packet was able to be produced.
+                return True  # No valid packet was able to be produced.
             self.send_packet(packet)
         except usb.core.USBError:
             # Execution should have broken at wait. Therefore not corrupting packet. Failed a reconnect demand.
@@ -202,7 +211,7 @@ class K40Controller:
         self.listener("usb_status", self.usb_status)
 
     def open(self):
-        self.set_usb_status("Connecting")
+        #self.set_usb_status("Connecting")
         self.log("Attempting connection to USB.")
         devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
         d = []
@@ -299,7 +308,9 @@ class K40Controller:
 
         sending = True
         while sending:
-            if not self.mock:
+            if self.mock:
+                time.sleep(0.1)
+            else:
                 self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
             self.packet_count += 1
             self.listener("packet", packet)
@@ -311,6 +322,7 @@ class K40Controller:
     def update_status(self):
         if self.mock:
             self.status = [STATUS_OK] * 6
+            time.sleep(0.01)
         else:
             try:
                 self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK

@@ -59,12 +59,12 @@ class Controller(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        project["status"] = self.update_status
-        project["packet"] = self.update_packet
-        project["packet_text"] = self.update_packet_text
-        project["buffer"] = self.on_buffer_update
-        project["usb_status"] = self.on_usbstatus
-        project["control_thread"] = self.on_control_state
+        project["status", self.update_status] = self
+        project["packet", self.update_packet] = self
+        project["packet_text", self.update_packet_text] = self
+        project["buffer", self.on_buffer_update] = self
+        project["usb_status", self.on_usbstatus] = self
+        project["control_thread", self.on_control_state] = self
         self.set_controller_button_by_state()
 
     def on_close(self, event):
@@ -215,8 +215,7 @@ class Controller(wx.Frame):
         self.project.controller.start_usb()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        print("Event handler 'on_button_emergency_stop' not implemented!")
-        event.Skip()
+        self.project.controller.emergency_stop()
 
     def post_update(self):
         if not self.dirty:
@@ -228,12 +227,15 @@ class Controller(wx.Frame):
             return  # was closed this is just a leftover update.
         data = self.packet_data
         string_data = self.packet_string
-        self.packet_string = b''
-        if data is not None:
+
+        if data is not None and len(data) != 0:
             self.last_packet_text.SetValue(str(data))
-        if string_data is not None:
+
+        if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
-            self.packet_list.SetValue(self.data_log)
+            #self.packet_list.SetValue(self.data_log)
+
+        self.packet_string = b''
         self.packet_count_text.SetValue(str(self.project.controller.packet_count))
         self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
 
@@ -277,7 +279,24 @@ class Controller(wx.Frame):
 
     def set_usb_button_by_state(self):
         status = self.usb_status
-        print(status)
+        if status == "Not Found":
+            self.button_usb_connect.SetBackgroundColour("#ff0000")
+            self.button_usb_connect.SetLabel(status)
+            self.button_usb_connect.SetValue(True)
+        elif status == "Uninitialized":
+            self.button_usb_connect.SetBackgroundColour("#00ff00")
+            self.button_usb_connect.SetLabel("Connect")
+            self.button_usb_connect.SetValue(True)
+        elif status == "Connecting":
+            self.button_usb_connect.SetBackgroundColour("#ffff00")
+            self.button_usb_connect.SetLabel("Connecting")
+            self.button_usb_connect.SetValue(False)
+        elif status == "Connected":
+            self.button_usb_connect.SetBackgroundColour("#00ff00")
+            self.button_usb_connect.SetLabel("Disconnect")
+            self.button_usb_connect.SetValue(False)
+        else:
+            print(status)
 
     def set_controller_button_by_state(self):
         state = self.control_state

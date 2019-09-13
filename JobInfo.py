@@ -55,9 +55,9 @@ class JobInfo(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        project["buffer"] = self.on_buffer_update
-        project["progress"] = self.on_progress
-        project["command"] = self.on_command_progress
+        project["buffer", self.on_buffer_update] = self
+        project["progress", self.on_progress] = self
+        project["command", self.on_command_progress] = self
         self.set_writer_button_by_state()
         self.checkbox_autobeep.SetValue(self.project.thread.autobeep)
         self.checkbox_autohome.SetValue(self.project.thread.autohome)

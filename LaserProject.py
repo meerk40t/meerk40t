@@ -378,7 +378,7 @@ class LaserThread(threading.Thread):
         self.element_index = -1
         self.command_index = -1
         self.limit_buffer = True
-        self.buffer_max = 50*30
+        self.buffer_max = 50 * 30
         self.buffer_size = -1
         self.state = THREAD_STATE_UNSTARTED
         self.autohome = self.project.autohome
@@ -396,7 +396,7 @@ class LaserThread(threading.Thread):
     def run(self):
         self.element_index = 0
         self.project("progress", (self.element_index, len(self.element_list)))
-        self.project["buffer"] = self.update_buffer_size
+        self.project["buffer", self.update_buffer_size] = self
         while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
             self.process_queue()
             time.sleep(0.1)
@@ -449,10 +449,8 @@ class LaserProject:
         self.units = (39.37, "mm", 10)
         self.controller = K40Controller(self)
 
-        self.writer = LhymicroWriter(controller=self.controller)
-        self.selection_listener = None
-        self.elements_change_listener = None
-        self.unit_space_listener = None
+        self.writer = LhymicroWriter(self, controller=self.controller)
+        self.config = None
 
         self.selected = []
         self.selected_bbox = None
@@ -468,17 +466,41 @@ class LaserProject:
         self.last_message[code] = message
 
     def __setitem__(self, key, value):
-        if value is None:
-            key, value = key
-            self.remove_listener(value, key)
-        else:
-            self.add_listener(value, key)
+        if isinstance(key, tuple):
+            if value is None:
+                key, value = key
+                self.remove_listener(value, key)
+            else:
+                key, value = key
+                self.add_listener(value, key)
 
-    def __getitem__(self, item):
-        if item in self.listeners:
-            return self.listeners[item]
-        else:
-            return None
+    def load_config(self):
+
+        self.autohome = self.config.ReadBool("autohome", self.autohome)
+        self.autobeep = self.config.ReadBool("autobeep", self.autobeep)
+        convert = self.config.ReadFloat("units-convert", self.units[0])
+        name = self.config.Read("units-name", self.units[1])
+        marks = self.config.ReadInt("units-marks", self.units[2])
+        self.controller.mock = self.config.ReadBool("mock", self.controller.mock)
+        self.writer.autolock = self.config.ReadBool("autolock", self.writer.autolock)
+        self.units = (convert, name, marks)
+        width = self.config.ReadInt("bed_width", self.size[0])
+        height = self.config.ReadInt("bed_height", self.size[1])
+        self.size = width, height
+
+    def save_config(self):
+        self.config.WriteBool("autohome", self.autohome)
+        self.config.WriteBool("autobeep", self.autobeep)
+        self.config.WriteFloat("units-convert", self.units[0])
+        self.config.Write("units-name", self.units[1])
+        self.config.WriteInt("units-marks", self.units[2])
+        self.config.WriteBool("mock", self.controller.mock)
+        self.config.WriteBool("autolock", self.writer.autolock)
+        self.config.WriteInt("bed_width", self.size[0])
+        self.config.WriteInt("bed_height", self.size[1])
+
+    def shutdown(self):
+        pass
 
     def add_listener(self, listener, code):
         if code in self.listeners:
@@ -511,23 +533,19 @@ class LaserProject:
 
     def set_inch(self):
         self.units = (1000, "inch", 1)
-        if self.unit_space_listener is not None:
-            self.unit_space_listener()
+        self("units", self.units)
 
     def set_mil(self):
         self.units = (1, "mil", 1000)
-        if self.unit_space_listener is not None:
-            self.unit_space_listener()
+        self("units", self.units)
 
     def set_cm(self):
         self.units = (393.7, "cm", 1)
-        if self.unit_space_listener is not None:
-            self.unit_space_listener()
+        self("units", self.units)
 
     def set_mm(self):
         self.units = (39.37, "mm", 10)
-        if self.unit_space_listener is not None:
-            self.unit_space_listener()
+        self("units", self.units)
 
     def set_selected(self, select_elements):
         if isinstance(select_elements, list):
@@ -535,8 +553,7 @@ class LaserProject:
         else:
             self.selected = [select_elements]
         self.set_selected_bbox_by_selected()
-        if self.selection_listener is not None:
-            self.selection_listener(self.selected)
+        self("selection", self.selected)
 
     def set_selected_bbox_by_selected(self):
         boundary_points = []
@@ -575,8 +592,7 @@ class LaserProject:
                 else:
                     self.set_selected(e.parent)
                 break
-        if self.selection_listener is not None:
-            self.selection_listener(self.selected)
+        self("selection", self.selected)
 
     def bbox(self):
         boundary_points = []
@@ -653,11 +669,10 @@ class LaserProject:
             self.selected_bbox[3] += dy
 
     def remove_element(self, obj):
-        obj.parent.remove(obj)
-        if self.elements_change_listener is not None:
-            self.elements_change_listener()
+        if obj in obj.parent:
+            obj.parent.remove(obj)
+        self("elements", 0)
 
     def append(self, obj):
         self.elements.append(obj)
-        if self.elements_change_listener is not None:
-            self.elements_change_listener()
+        self("elements", 0)

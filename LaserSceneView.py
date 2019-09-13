@@ -57,13 +57,20 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
         self.project = None
 
+
     def set_project(self, project):
         self.project = project
         bedwidth, bedheight = project.size
         self.focus_viewport_scene((0, 0, bedwidth * 39.37, bedheight * 39.37), 0.1)
-        self.project.writer.position_listener = self.update_position
-        self.project.space_listener = self.space_changed
-        self.project.selection_listener = self.selection_changed
+        self.project["position", self.update_position] = self
+        self.project["units", self.space_changed] = self
+        self.project["selection", self.selection_changed] = self
+
+    def on_close(self, event):
+        self.project["position", self.update_position] = None
+        self.project["units", self.space_changed] = None
+        self.project["selection", self.selection_changed] = None
+        event.Skip()
 
     def __set_properties(self):
         # begin wxGlade: MainView.__set_properties
@@ -78,12 +85,6 @@ class LaserSceneView(wx.Panel):
     def on_paint(self, event):
         wx.BufferedPaintDC(self, self._Buffer)
 
-    def update_position(self, x, y, old_x=0, old_y=0):
-        self.laserpath[self.laserpath_index] = (x, y, old_x, old_y)
-        self.laserpath_index += 1
-        self.laserpath_index %= len(self.laserpath)
-        self.post_buffer_update()
-
     def on_size(self, event):
         Size = self.ClientSize
         self._Buffer = wx.Bitmap(*Size)
@@ -92,7 +93,14 @@ class LaserSceneView(wx.Panel):
         self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
         self.update_buffer()
 
-    def space_changed(self):
+    def update_position(self, pos):
+        # x, y, old_x, old_y = pos
+        self.laserpath[self.laserpath_index] = pos
+        self.laserpath_index += 1
+        self.laserpath_index %= len(self.laserpath)
+        self.post_buffer_update()
+
+    def space_changed(self, units):
         self.grid = None
         self.on_size(None)
 

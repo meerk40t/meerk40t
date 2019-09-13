@@ -220,6 +220,15 @@ class MeerK40t(wx.Frame):
 
         self.previous_position = None
         self.project.elements_change_listener = self.tree_update
+        self.project.config = wx.Config("MeerK40t")
+        self.project.load_config()
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+
+    def on_close(self, event):
+        self.project.save_config()
+        self.project.shutdown()
+        self.scene.on_close(event)
+        event.Skip()  # Call destroy as regular.
 
     def on_size_set(self, event):
         self.panel.Size = self.ClientSize

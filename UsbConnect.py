@@ -20,7 +20,7 @@ class UsbConnect(wx.Frame):
     def set_project(self, project):
         self.project = project
         self.usblog_text.SetValue(self.project.controller.device_log)
-        self.project["usb_log"] = self.update_log
+        self.project["usb_log", self.update_log] = self
 
     def on_close(self, event):
         self.project["usb_log", self.update_log] = None

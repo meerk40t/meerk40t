@@ -1,7 +1,7 @@
-from K40Controller import K40Controller
-from LaserSpeed import LaserSpeed
-from LaserCommandConstants import *
 import ZinglPlotter
+from K40Controller import K40Controller
+from LaserCommandConstants import *
+from LaserSpeed import LaserSpeed
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'
@@ -36,7 +36,8 @@ def lhymicro_distance(v):
 
 
 class LhymicroWriter:
-    def __init__(self, board="M2", current_x=0, current_y=0, controller=None):
+    def __init__(self, project, board="M2", current_x=0, current_y=0, controller=None):
+        self.project = project
         if controller is None:
             self.controller = K40Controller()
         else:
@@ -63,7 +64,6 @@ class LhymicroWriter:
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
-        self.position_listener = None
 
     def open(self):
         try:
@@ -276,8 +276,7 @@ class LhymicroWriter:
                 self.move_y(dy)
             self.controller += b'N'
         self.check_bounds()
-        if self.position_listener is not None:
-            self.position_listener(self.current_x, self.current_y, self.current_x - dx, self.current_y - dy)
+        self.project("position", (self.current_x, self.current_y, self.current_x - dx, self.current_y - dy))
 
     def move_xy_line(self, delta_x, delta_y):
         """Strictly speaking if this happens it is because of a bug. Nothing should feed the writer this data.
