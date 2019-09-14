@@ -13,15 +13,15 @@ class Controller(wx.Frame):
         # begin wxGlade: Controller.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((806, 537))
-        self.combo_box_1 = wx.ComboBox(self, wx.ID_ANY, choices=["Available K40"], style=wx.CB_DROPDOWN)
-        self.packet_list = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.BORDER_NONE | wx.TE_CHARWRAP | wx.TE_MULTILINE)
+        self.SetSize((507, 507))
         self.button_controller_control = wx.ToggleButton(self, wx.ID_ANY, "Start Controller")
         self.text_controller_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_usb_connect = wx.ToggleButton(self, wx.ID_ANY, "Connect Usb")
         self.text_usb_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.button_buffer_viewer = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap(
+            "icons/icons8-comments-50.png", wx.BITMAP_TYPE_ANY))
         self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.rejected_packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -33,16 +33,16 @@ class Controller(wx.Frame):
         self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.button_stop = wx.BitmapButton(self, wx.ID_ANY,
-                                           wx.Bitmap("icons/icons8-stop-sign-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap(
+            "icons/icons8-stop-sign-50.png", wx.BITMAP_TYPE_ANY))
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_select_writer, self.combo_box_1)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_start_controller, self.button_controller_control)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_start_usb, self.button_usb_connect)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
+        self.Bind(wx.EVT_BUTTON, self.on_button_bufferview, self.button_buffer_viewer)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.dirty = False
@@ -80,21 +80,26 @@ class Controller(wx.Frame):
         # begin wxGlade: Controller.__set_properties
         self.SetTitle("Controller")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-usb-connector-50.png", wx.BITMAP_TYPE_ANY))
+        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-usb-connector-50.png",
+                                       wx.BITMAP_TYPE_ANY))
         self.SetIcon(_icon)
-        self.combo_box_1.SetSelection(0)
-        self.packet_list.SetMinSize((255, -1))
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_controller_control.SetBitmap(wx.Bitmap("icons/icons8-play-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_controller_control.SetBitmapPressed(wx.Bitmap("icons/icons8-pause-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_controller_control.SetBitmap(
+            wx.Bitmap("icons/icons8-play-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_controller_control.SetBitmapPressed(
+            wx.Bitmap("icons/icons8-pause-50.png", wx.BITMAP_TYPE_ANY))
         self.button_usb_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_usb_connect.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_usb_connect.SetBitmap(wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_usb_connect.SetBitmapPressed(wx.Bitmap("icons/icons8-disconnected-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_usb_connect.SetBitmap(
+            wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_usb_connect.SetBitmapPressed(
+            wx.Bitmap("icons/icons8-disconnected-50.png",
+                      wx.BITMAP_TYPE_ANY))
         self.text_buffer_length.SetMinSize((165, 23))
+        self.button_buffer_viewer.SetSize(self.button_buffer_viewer.GetBestSize())
         self.packet_count_text.SetMinSize((77, 23))
         self.rejected_packet_count_text.SetMinSize((77, 23))
         self.text_byte_0.SetMinSize((77, 23))
@@ -110,8 +115,7 @@ class Controller(wx.Frame):
 
     def __do_layout(self):
         # begin wxGlade: Controller.__do_layout
-        sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_9 = wx.BoxSizer(wx.VERTICAL)
+        sizer_1 = wx.BoxSizer(wx.VERTICAL)
         byte_data_sizer = wx.BoxSizer(wx.HORIZONTAL)
         byte5sizer = wx.BoxSizer(wx.VERTICAL)
         byte4sizer = wx.BoxSizer(wx.VERTICAL)
@@ -125,52 +129,51 @@ class Controller(wx.Frame):
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_18 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_18 = wx.BoxSizer(wx.VERTICAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_9 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.combo_box_1, 0, wx.EXPAND, 0)
-        sizer_1.Add(self.packet_list, 1, wx.EXPAND, 0)
-        sizer_8.Add(sizer_1, 1, wx.EXPAND, 0)
         sizer_9.Add(self.button_controller_control, 0, wx.EXPAND, 0)
         label_12 = wx.StaticText(self, wx.ID_ANY, "Controller")
         label_12.SetMinSize((80, 16))
         sizer_17.Add(label_12, 1, 0, 0)
         sizer_17.Add(self.text_controller_status, 0, wx.EXPAND, 0)
         sizer_9.Add(sizer_17, 0, 0, 0)
-        sizer_9.Add(self.button_usb_connect, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_9, 0, wx.EXPAND, 0)
+        sizer_18.Add(self.button_usb_connect, 0, wx.EXPAND, 0)
         label_7 = wx.StaticText(self, wx.ID_ANY, "Usb Status")
         label_7.SetMinSize((80, 16))
         sizer_15.Add(label_7, 1, 0, 0)
         sizer_15.Add(self.text_usb_status, 0, 0, 0)
         sizer_18.Add(sizer_15, 0, 0, 0)
-        sizer_9.Add(sizer_18, 0, 0, 0)
+        sizer_1.Add(sizer_18, 0, wx.EXPAND, 0)
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
-        sizer_9.Add(static_line_2, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
+        sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
+        sizer_1.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
         label_8 = wx.StaticText(self, wx.ID_ANY, "Buffer")
-        sizer_5.Add(label_8, 1, 0, 0)
-        sizer_5.Add(self.text_buffer_length, 3, 0, 0)
-        sizer_9.Add(sizer_5, 0, 0, 0)
+        sizer_5.Add(label_8, 0, 0, 0)
+        sizer_5.Add(self.text_buffer_length, 10, 0, 0)
+        sizer_5.Add(self.button_buffer_viewer, 1, 0, 0)
+        sizer_1.Add(sizer_5, 0, 0, 0)
+        static_line_1 = wx.StaticLine(self, wx.ID_ANY)
+        sizer_1.Add(static_line_1, 0, wx.EXPAND, 0)
         label_11 = wx.StaticText(self, wx.ID_ANY, "Packet Count  ")
         sizer_2.Add(label_11, 0, 0, 0)
         sizer_2.Add(self.packet_count_text, 0, 0, 0)
-        sizer_16.Add(sizer_2, 1, wx.EXPAND, 0)
+        sizer_16.Add(sizer_2, 10, wx.EXPAND, 0)
         label_13 = wx.StaticText(self, wx.ID_ANY, "Rejected Packets")
         sizer_3.Add(label_13, 0, 0, 0)
         sizer_3.Add(self.rejected_packet_count_text, 0, 0, 0)
         sizer_16.Add(sizer_3, 1, wx.EXPAND, 0)
-        sizer_9.Add(sizer_16, 0, 0, 0)
-        static_line_1 = wx.StaticLine(self, wx.ID_ANY)
-        sizer_9.Add(static_line_1, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_16, 0, 0, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, "Packet Text  ")
         sizer_14.Add(label_10, 1, 0, 0)
         sizer_14.Add(self.packet_text_text, 11, 0, 0)
-        sizer_9.Add(sizer_14, 0, 0, 0)
+        sizer_1.Add(sizer_14, 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "Last Packet  ")
         sizer_13.Add(label_9, 1, 0, 0)
         sizer_13.Add(self.last_packet_text, 11, 0, 0)
-        sizer_9.Add(sizer_13, 0, 0, 0)
+        sizer_1.Add(sizer_13, 0, 0, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "Byte 0")
         byte0sizer.Add(label_1, 0, 0, 0)
@@ -196,10 +199,9 @@ class Controller(wx.Frame):
         label_6 = wx.StaticText(self, wx.ID_ANY, "Byte 5")
         byte5sizer.Add(label_6, 0, 0, 0)
         byte_data_sizer.Add(byte5sizer, 1, wx.EXPAND, 0)
-        sizer_9.Add(byte_data_sizer, 1, wx.EXPAND, 0)
-        sizer_9.Add(self.button_stop, 1, wx.EXPAND, 0)
-        sizer_8.Add(sizer_9, 4, wx.EXPAND, 0)
-        self.SetSizer(sizer_8)
+        sizer_1.Add(byte_data_sizer, 0, wx.EXPAND, 0)
+        sizer_1.Add(self.button_stop, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
 
@@ -218,6 +220,12 @@ class Controller(wx.Frame):
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         self.project.controller.emergency_stop()
+
+    def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
+        from BufferView import BufferView
+        window = BufferView(None, wx.ID_ANY, "")
+        window.set_project(self.project)
+        window.Show()
 
     def post_update(self):
         if not self.dirty:

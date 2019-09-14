@@ -26,6 +26,7 @@ COMMAND_CUT_ARC_TO = 104  # From current position. At speed, performs an arc cut
 COMMAND_SET_SPEED = 200  # sets the speed for the device
 COMMAND_SET_STEP = 201  # sets the speed for the device
 COMMAND_SET_D_RATIO = 202  # sets the speed for the device
+COMMAND_SET_DIRECTION = 203 # sets the directions for the device.
 
 COMMAND_HOME = 300  # Homes the device
 COMMAND_LOCK = 301  # Locks the rail

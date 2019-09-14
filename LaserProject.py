@@ -123,14 +123,6 @@ class ImageElement(LaserElement):
             yield COMMAND_SET_STEP, step
             transverse |= RasterPlotter.X_AXIS
             transverse |= RasterPlotter.BOTTOM
-        # elif direction == 2:
-        #     transverse |= RasterPlotter.Y_AXIS
-        #     transverse |= RasterPlotter.LEFT
-        #     yield COMMAND_SET_STEP, 0
-        # elif direction == 3:
-        #     transverse |= RasterPlotter.Y_AXIS
-        #     transverse |= RasterPlotter.RIGHT
-        #     yield COMMAND_SET_STEP, 0 #impossible crapfest
 
         for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
                                                  offset_x=self.matrix.GetTranslateX(),
@@ -138,7 +130,6 @@ class ImageElement(LaserElement):
                                                  transversal=transverse,
                                                  step=step):
             yield command
-        yield COMMAND_MODE_DEFAULT, 0
 
 
 class PathElement(LaserElement):
@@ -272,6 +263,8 @@ class LaserCommandPathParser:
         elif command == COMMAND_SET_SPEED:
             pass
         elif command == COMMAND_SET_STEP:
+            pass
+        elif command == COMMAND_SET_DIRECTION:
             pass
         elif command == COMMAND_MODE_COMPACT:
             pass

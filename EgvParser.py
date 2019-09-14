@@ -85,7 +85,7 @@ def parse_egv(f):
                 for element in parse_egv(f):
                     yield element
             return
-    except ValueError:
+    except NameError:
         pass # Must be Python 3.
 
     egv_parser = EgvParser()

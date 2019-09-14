@@ -197,6 +197,10 @@ class LhymicroWriter:
         elif command == COMMAND_SET_D_RATIO:
             d_ratio = values
             self.set_d_ratio(d_ratio)
+        elif command == COMMAND_SET_DIRECTION:
+            x_dir, y_dir = values
+            self.is_left = x_dir < 0
+            self.is_top = y_dir < 0
         elif command == COMMAND_MODE_COMPACT:
             self.to_compact_mode()
         elif command == COMMAND_MODE_DEFAULT:
