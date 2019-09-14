@@ -156,9 +156,11 @@ class Preferences(wx.Frame):
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
         self.project.size = self.spin_bedwidth.GetValue(), self.spin_bedheight.GetValue()
+        self.project("bed-size", self.project.size)
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
         self.project.size = self.spin_bedwidth.GetValue(), self.spin_bedheight.GetValue()
+        self.project("bed-size", self.project.size)
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
         self.project.writer.autolock = self.checkbox_autolock.GetValue()
