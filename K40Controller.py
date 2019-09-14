@@ -80,6 +80,30 @@ class ControllerQueueThread(threading.Thread):
         self.controller.listener("control_thread", self.state)
 
 
+class UsbConnectThread(threading.Thread):
+    def __init__(self, controller):
+        threading.Thread.__init__(self)
+        self.controller = controller
+
+    def run(self):
+        try:
+            self.controller.open()
+        except usb.core.USBError:
+            pass
+
+
+class UsbDisconnectThread(threading.Thread):
+    def __init__(self, controller):
+        threading.Thread.__init__(self)
+        self.controller = controller
+
+    def run(self):
+        try:
+            self.controller.close()
+        except usb.core.USBError:
+            pass
+
+
 class K40Controller:
     def __init__(self, listener, usb_index=0, usb_address=-1, usb_bus=-1, mock=False):
         self.listener = listener
@@ -106,7 +130,9 @@ class K40Controller:
         self.listener("buffer", 0)
         self.packet_count = 0
         self.rejected_count = 0
-        self.lock = threading.Lock()
+        self.queue_lock = threading.Lock()
+        self.usb_lock = threading.Lock()
+
         self.usb_status = None
         self.set_usb_status("Uninitialized")
 
@@ -118,9 +144,9 @@ class K40Controller:
         self.close()
 
     def __iadd__(self, other):
-        self.lock.acquire()
+        self.queue_lock.acquire()
         self.add_queue += other
-        self.lock.release()
+        self.queue_lock.release()
         self.listener("buffer", len(self.buffer) + len(self.add_queue))
         if self.autostart:
             self.start_queue_consumer()
@@ -132,19 +158,19 @@ class K40Controller:
         self.device_log += update
 
     def start_usb(self):
-        try:
-            self.open()
-        except usb.core.USBError:
-            if self.status != STATUS_NO_DEVICE:
-                self.status = STATUS_NO_DEVICE
-                self.listener("status", self.status)
-            return False
-        return True
+        self.set_usb_status("Connecting")
+        thread = UsbConnectThread(self)
+        thread.start()
+
+    def stop_usb(self):
+        self.set_usb_status("Disconnecting")
+        thread = UsbDisconnectThread(self)
+        thread.start()
 
     def emergency_stop(self):
         self.thread.state = THREAD_STATE_ABORT
         packet = b'I' + b'F' * 29
-        if self.usb is not None:
+        if self.usb is None:
             self.send_packet(packet)
         self.buffer = b''
         self.add_queue = b''
@@ -160,14 +186,16 @@ class K40Controller:
         if self.pause:
             return False
         if self.usb is None and not self.mock:
-            if not self.start_usb():
+            try:
+                self.open()
+            except usb.core.USBError:
                 return False
         wait_finish = False
         if len(self.add_queue):
-            self.lock.acquire()
+            self.queue_lock.acquire()
             self.buffer += self.add_queue
             self.add_queue = b''
-            self.lock.release()
+            self.queue_lock.release()
             self.listener("buffer", len(self.buffer))
         if len(self.buffer) == 0:
             return True
@@ -211,7 +239,8 @@ class K40Controller:
         self.listener("usb_status", self.usb_status)
 
     def open(self):
-        #self.set_usb_status("Connecting")
+        self.usb_lock.acquire()
+        self.set_usb_status("Connecting")
         self.log("Attempting connection to USB.")
         devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
         d = []
@@ -222,7 +251,7 @@ class K40Controller:
         if len(d) > self.usb_index:
             self.usb = d[self.usb_index]
         for i, dev in enumerate(d):
-            self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))  # TODO: Verify functions
+            self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
         if self.usb is None:
             self.set_usb_status("Not Found")
             if len(d) == 0:
@@ -230,10 +259,11 @@ class K40Controller:
             else:
                 self.log("K40 devices were found but the configuration requires #%d." % self.usb_index)
                 time.sleep(1)
+            self.usb_lock.release()
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
         self.log("Device found. Using device: #%d on bus: %d at address %d"
-                 % (self.usb_index, self.usb.bus, self.usb.address))  # TODO: Verify functions
+                 % (self.usb_index, self.usb.bus, self.usb.address))
         self.interface = self.usb.get_active_configuration()[(0, 0)]
         try:
             if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
@@ -244,11 +274,13 @@ class K40Controller:
                     self.detached = True
                 except usb.core.USBError:
                     self.log("Kernel detach: Failed")
+                    self.usb_lock.release()
                     raise usb.core.USBError('Unable to detach from kernel')
         except NotImplementedError:
             self.log("Kernel detach: Not Implemented.")  # Driver does not permit kernel detaching.
         self.log("Attempting to claim interface.")
         usb.util.claim_interface(self.usb, self.interface)
+        #TODO: A second attempt to claim the same interface will lag out at this point.
         self.log("Interface claimed.")
         self.log("Requesting Status.")
         self.update_status()
@@ -261,8 +293,10 @@ class K40Controller:
         self.log(str(self.status))
         self.log("USB Connection Successful.")
         self.set_usb_status("Connected")
+        self.usb_lock.release()
 
     def close(self):
+        self.usb_lock.acquire()
         self.set_usb_status("Disconnecting")
         self.log("Attempting disconnection from USB.")
         if self.usb is not None:
@@ -275,6 +309,7 @@ class K40Controller:
                     self.log("Kernel succesfully attach")
                 except usb.core.USBError:
                     self.log("Error while attempting kernel attach")
+                    self.usb_lock.release()
                     raise usb.core.USBError('Unable to reattach driver to kernel')
             else:
                 self.log("Kernel was not detached.")
@@ -298,7 +333,8 @@ class K40Controller:
             self.log("USB Disconnection Successful.")
         else:
             self.log("No connection was found.")
-        self.set_usb_status("Disconnecting")
+        self.set_usb_status("Disconnected")
+        self.usb_lock.release()
 
     def send_packet(self, packet_byte_data):
         if len(packet_byte_data) != 30:

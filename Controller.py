@@ -46,7 +46,6 @@ class Controller(wx.Frame):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.dirty = False
-        self.dirty_usb = False
         self.project = None
         self.status_data = None
         self.data_log = b''
@@ -212,7 +211,10 @@ class Controller(wx.Frame):
         self.project.controller.start_queue_consumer()
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.controller.start_usb()
+        if self.project.controller.usb is None:
+            self.project.controller.start_usb()
+        else:
+            self.project.controller.stop_usb()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         self.project.controller.emergency_stop()
@@ -259,8 +261,9 @@ class Controller(wx.Frame):
         self.gauge_buffer.SetValue(self.buffer_size)
         self.gauge_buffer.SetRange(self.buffer_max)
         self.text_controller_status.SetValue(get_state_string_from_state(self.control_state))
-
         self.set_controller_button_by_state()
+
+        self.text_usb_status.SetValue(self.usb_status)
         self.set_usb_button_by_state()
         self.dirty = False
 
@@ -279,22 +282,32 @@ class Controller(wx.Frame):
 
     def set_usb_button_by_state(self):
         status = self.usb_status
+        print(status)
         if status == "Not Found":
             self.button_usb_connect.SetBackgroundColour("#ff0000")
             self.button_usb_connect.SetLabel(status)
             self.button_usb_connect.SetValue(True)
-        elif status == "Uninitialized":
-            self.button_usb_connect.SetBackgroundColour("#00ff00")
+            self.button_usb_connect.Enable()
+        elif status == "Uninitialized" or status == "Disconnected":
+            self.button_usb_connect.SetBackgroundColour("#ffff00")
             self.button_usb_connect.SetLabel("Connect")
             self.button_usb_connect.SetValue(True)
-        elif status == "Connecting":
+            self.button_usb_connect.Enable()
+        elif status == "Disconnecting":
             self.button_usb_connect.SetBackgroundColour("#ffff00")
-            self.button_usb_connect.SetLabel("Connecting")
-            self.button_usb_connect.SetValue(False)
+            self.button_usb_connect.SetLabel("Disconnecting...")
+            self.button_usb_connect.SetValue(True)
+            self.button_usb_connect.Disable()
         elif status == "Connected":
             self.button_usb_connect.SetBackgroundColour("#00ff00")
             self.button_usb_connect.SetLabel("Disconnect")
             self.button_usb_connect.SetValue(False)
+            self.button_usb_connect.Enable()
+        elif status == "Connecting":
+            self.button_usb_connect.SetBackgroundColour("#00ff00")
+            self.button_usb_connect.SetLabel("Connecting...")
+            self.button_usb_connect.SetValue(False)
+            self.button_usb_connect.Disable()
         else:
             print(status)
 
@@ -313,18 +326,9 @@ class Controller(wx.Frame):
             self.button_controller_control.SetLabel("Pause Controller")
             self.button_controller_control.SetValue(True)
 
-    def post_update_usb(self):
-        if not self.dirty_usb:
-            self.dirty_usb = True
-            wx.CallAfter(self.post_update_usb_on_gui_thread)
-
-    def post_update_usb_on_gui_thread(self):
-        self.text_usb_status.SetValue(self.usb_status)
-        self.dirty_usb = False
-
     def on_usbstatus(self, status):
         self.usb_status = status
-        self.post_update_usb()
+        self.post_update()
 
     def on_buffer_update(self, value):
         self.buffer_size = value

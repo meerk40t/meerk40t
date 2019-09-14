@@ -1,7 +1,12 @@
+import threading
+import time
+
 import ZinglPlotter
 from K40Controller import K40Controller
 from LaserCommandConstants import *
+from ThreadConstants import *
 from LaserSpeed import LaserSpeed
+
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'
@@ -35,13 +40,92 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
+class LaserThread(threading.Thread):
+    def __init__(self, project):
+        threading.Thread.__init__(self)
+        self.project = project
+        self.controller = project.controller
+        self.element_list = None
+        self.element_index = -1
+        self.command_index = -1
+        self.limit_buffer = True
+        self.buffer_max = 20 * 30
+        self.buffer_size = -1
+        self.state = THREAD_STATE_UNSTARTED
+        self.autohome = self.project.autohome
+        self.autobeep = self.project.autobeep
+        self.autostart = self.project.autostart
+        self.element_index = 0
+        self.command_index = 0
+        self.element_list = None
+
+    def start_element_producer(self):
+        if self.state != THREAD_STATE_ABORT:
+            self.state = THREAD_STATE_STARTED
+            self.start()
+
+    def refresh_element_list(self):
+        self.element_list = [e for e in self.project.flat_elements()]
+        self.project("progress", (self.element_index, len(self.element_list)))
+
+    def run(self):
+        self.element_index = 0
+        self.controller.autostart = self.autostart
+        self.project("progress", (self.element_index, len(self.element_list)))
+        self.project["buffer", self.update_buffer_size] = self
+        while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
+            self.process_queue()
+            time.sleep(0.1)
+            while self.state == THREAD_STATE_PAUSED:
+                time.sleep(1)
+        # Final listener calls.
+        if self.autohome:
+            return self.project.writer.command(COMMAND_HOME, 0)
+        self.element_list = None
+        self.element_index = -1
+        self.project["buffer", self.update_buffer_size] = None
+        if self.autobeep:
+            print('\a')  # Beep.
+        self.controller.autostart = True
+        self.state = THREAD_STATE_FINISHED
+
+    def update_buffer_size(self, size):
+        self.buffer_size = size
+
+    def process_queue(self):
+        if self.element_list is None:
+            self.state = THREAD_STATE_FINISHED
+            return
+        try:
+            element = self.element_list[self.element_index]
+        except IndexError:
+            self.state = THREAD_STATE_FINISHED
+            return
+        commands_gen = element.generate()
+        while True:
+            self.project("progress", (self.element_index + 1, len(self.element_list)))
+            self.project("command", self.command_index)
+            while self.limit_buffer and self.buffer_size > self.buffer_max:
+                # Backend is clogged and not sending stuff. We're waiting.
+                time.sleep(0.1)  # if we've given it enough for a while just wait here.
+            try:
+                e = next(commands_gen)
+            except StopIteration:
+                self.element_index += 1
+                break
+            command, values = e
+            self.project.writer.command(command, values)
+            self.command_index += 1
+
+
 class LhymicroWriter:
     def __init__(self, project, board="M2", current_x=0, current_y=0, controller=None):
         self.project = project
         if controller is None:
-            self.controller = K40Controller()
+            self.controller = K40Controller(project)
         else:
             self.controller = controller
+        self.thread = LaserThread(project)
         self.autolock = True
         self.board = board
         if self.board is None:
@@ -53,6 +137,7 @@ class LhymicroWriter:
         self.raster_step = 0
         self.speed = 30
         self.d_ratio = None
+        self.default_SnP = None
 
         self.current_x = current_x
         self.current_y = current_y
@@ -64,6 +149,9 @@ class LhymicroWriter:
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
+
+    def refresh_elements(self):
+        self.thread.refresh_element_list()
 
     def open(self):
         try:
@@ -260,6 +348,8 @@ class LhymicroWriter:
             if dy != 0:
                 self.move_y(dy)
             self.controller += b'S1P\n'
+            if not self.autolock:
+                self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 self.move_xy_line(dx, dy)
@@ -352,6 +442,8 @@ class LhymicroWriter:
             self.controller += b'I'
             self.controller += COMMAND_ON
             self.controller += b'S1P\n'
+            if not self.autolock:
+                self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_ON
         elif self.state == STATE_CONCAT:
@@ -367,6 +459,8 @@ class LhymicroWriter:
             self.controller += b'I'
             self.controller += COMMAND_OFF
             self.controller += b'S1P\n'
+            if not self.autolock:
+                self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_OFF
         elif self.state == STATE_CONCAT:
@@ -378,6 +472,8 @@ class LhymicroWriter:
     def to_default_mode(self):
         if self.state == STATE_CONCAT:
             self.controller += b'S1P\n'
+            if not self.autolock:
+                self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += b'FNSE-\n'
             self.reset_modes()

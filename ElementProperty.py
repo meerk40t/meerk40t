@@ -14,8 +14,7 @@ class ElementProperty(wx.Frame):
         self.spin_passes = wx.SpinCtrl(self, wx.ID_ANY, "1", min=0, max=63)
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=0, max=63)
         self.combo_raster_direction = wx.ComboBox(self, wx.ID_ANY,
-                                                  choices=["Top To Bottom", "Bottom To Top",
-                                                           "Left To Right", "Right To Left"],
+                                                  choices=["Top To Bottom", "Bottom To Top"],
                                                   style=wx.CB_DROPDOWN)
         self.button_F00 = wx.Button(self, wx.ID_ANY, "")
         self.button_0F0 = wx.Button(self, wx.ID_ANY, "")

@@ -1,5 +1,3 @@
-import threading
-import time
 
 import wx
 
@@ -10,7 +8,6 @@ import svg_parser
 from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
-from ThreadConstants import *
 from ZMatrix import ZMatrix
 from path import Move, Line, QuadraticBezier, CubicBezier, Arc
 
@@ -110,33 +107,36 @@ class ImageElement(LaserElement):
         if speed is None:
             speed = 100
         yield COMMAND_SET_SPEED, speed
-        step = 1
-        if VARIABLE_NAME_RASTER_STEP in self.cut:
-            step = self.cut[VARIABLE_NAME_RASTER_STEP]
-        yield COMMAND_SET_STEP, step
 
         direction = 0
         if VARIABLE_NAME_RASTER_DIRECTION in self.cut:
             direction = self.cut[VARIABLE_NAME_RASTER_DIRECTION]
-            print(direction)
-        print(direction)
+        step = 1
+        if VARIABLE_NAME_RASTER_STEP in self.cut:
+            step = self.cut[VARIABLE_NAME_RASTER_STEP]
         transverse = 0
         if direction == 0:
+            yield COMMAND_SET_STEP, step
             transverse |= RasterPlotter.X_AXIS
             transverse |= RasterPlotter.TOP
         elif direction == 1:
+            yield COMMAND_SET_STEP, step
             transverse |= RasterPlotter.X_AXIS
             transverse |= RasterPlotter.BOTTOM
-        elif direction == 2:
-            transverse |= RasterPlotter.Y_AXIS
-            transverse |= RasterPlotter.LEFT
-        elif direction == 3:
-            transverse |= RasterPlotter.Y_AXIS
-            transverse |= RasterPlotter.RIGHT
+        # elif direction == 2:
+        #     transverse |= RasterPlotter.Y_AXIS
+        #     transverse |= RasterPlotter.LEFT
+        #     yield COMMAND_SET_STEP, 0
+        # elif direction == 3:
+        #     transverse |= RasterPlotter.Y_AXIS
+        #     transverse |= RasterPlotter.RIGHT
+        #     yield COMMAND_SET_STEP, 0 #impossible crapfest
+
         for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
                                                  offset_x=self.matrix.GetTranslateX(),
                                                  offset_y=self.matrix.GetTranslateY(),
-                                                 transversal=transverse):
+                                                 transversal=transverse,
+                                                 step=step):
             yield command
         yield COMMAND_MODE_DEFAULT, 0
 
@@ -368,78 +368,6 @@ class LaserCommandPathParser:
         pass
 
 
-class LaserThread(threading.Thread):
-    def __init__(self, project):
-        threading.Thread.__init__(self)
-        self.project = project
-        self.writer = project.writer
-        self.controller = project.controller
-        self.element_list = None
-        self.element_index = -1
-        self.command_index = -1
-        self.limit_buffer = True
-        self.buffer_max = 50 * 30
-        self.buffer_size = -1
-        self.state = THREAD_STATE_UNSTARTED
-        self.autohome = self.project.autohome
-        self.autobeep = self.project.autobeep
-        self.element_index = 0
-        self.command_index = 0
-        self.element_list = [e for e in self.project.flat_elements()]
-        self.project("progress", (self.element_index, len(self.element_list)))
-
-    def start_element_producer(self):
-        if self.state != THREAD_STATE_ABORT:
-            self.state = THREAD_STATE_STARTED
-            self.start()
-
-    def run(self):
-        self.element_index = 0
-        self.project("progress", (self.element_index, len(self.element_list)))
-        self.project["buffer", self.update_buffer_size] = self
-        while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
-            self.process_queue()
-            time.sleep(0.1)
-            while self.state == THREAD_STATE_PAUSED:
-                time.sleep(1)
-        # Final listener calls.
-        if self.autohome:
-            return self.writer.command(COMMAND_HOME, 0)
-        self.element_list = None
-        self.element_index = -1
-        self.project["buffer", self.update_buffer_size] = None
-        if self.autobeep:
-            print('\a')  # Beep.
-
-    def update_buffer_size(self, size):
-        self.buffer_size = size
-
-    def process_queue(self):
-        if self.element_list is None:
-            self.state = THREAD_STATE_FINISHED
-            return
-        try:
-            element = self.element_list[self.element_index]
-        except IndexError:
-            self.state = THREAD_STATE_FINISHED
-            return
-        commands_gen = element.generate()
-        while True:
-            self.project("progress", (self.element_index + 1, len(self.element_list)))
-            self.project("command", self.command_index)
-            while self.limit_buffer and self.buffer_size > self.buffer_max:
-                # Backend is clogged and not sending stuff. We're waiting.
-                time.sleep(0.1)  # if we've given it enough for a while just wait here.
-            try:
-                e = next(commands_gen)
-            except StopIteration:
-                self.element_index += 1
-                break
-            command, values = e
-            self.writer.command(command, values)
-            self.command_index += 1
-
-
 class LaserProject:
     def __init__(self):
         self.listeners = {}
@@ -447,9 +375,6 @@ class LaserProject:
         self.elements = []
         self.size = 320, 220
         self.units = (39.37, "mm", 10)
-        self.controller = K40Controller(self)
-
-        self.writer = LhymicroWriter(self, controller=self.controller)
         self.config = None
 
         self.selected = []
@@ -457,6 +382,9 @@ class LaserProject:
         self.thread = None
         self.autohome = False
         self.autobeep = True
+        self.autostart = True
+        self.controller = K40Controller(self)
+        self.writer = LhymicroWriter(self, controller=self.controller)
 
     def __call__(self, code, message):
         if code in self.listeners:
@@ -475,15 +403,16 @@ class LaserProject:
                 self.add_listener(value, key)
 
     def load_config(self):
-
         self.autohome = self.config.ReadBool("autohome", self.autohome)
         self.autobeep = self.config.ReadBool("autobeep", self.autobeep)
+        self.autostart = self.config.ReadBool("autostart", self.autostart)
         convert = self.config.ReadFloat("units-convert", self.units[0])
         name = self.config.Read("units-name", self.units[1])
         marks = self.config.ReadInt("units-marks", self.units[2])
         self.controller.mock = self.config.ReadBool("mock", self.controller.mock)
         self.writer.autolock = self.config.ReadBool("autolock", self.writer.autolock)
         self.units = (convert, name, marks)
+        self("units", self.units)
         width = self.config.ReadInt("bed_width", self.size[0])
         height = self.config.ReadInt("bed_height", self.size[1])
         self.size = width, height
@@ -491,6 +420,7 @@ class LaserProject:
     def save_config(self):
         self.config.WriteBool("autohome", self.autohome)
         self.config.WriteBool("autobeep", self.autobeep)
+        self.config.WriteBool("autostart", self.autostart)
         self.config.WriteFloat("units-convert", self.units[0])
         self.config.Write("units-name", self.units[1])
         self.config.WriteInt("units-marks", self.units[2])

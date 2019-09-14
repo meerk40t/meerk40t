@@ -59,18 +59,18 @@ class JobInfo(wx.Frame):
         project["progress", self.on_progress] = self
         project["command", self.on_command_progress] = self
         self.set_writer_button_by_state()
-        self.checkbox_autobeep.SetValue(self.project.thread.autobeep)
-        self.checkbox_autohome.SetValue(self.project.thread.autohome)
+        self.checkbox_autobeep.SetValue(self.project.writer.thread.autobeep)
+        self.checkbox_autohome.SetValue(self.project.writer.thread.autohome)
         self.checkbox_autostart.SetValue(self.project.controller.autostart)
-        self.checkbox_limit_buffer.SetValue(self.project.thread.limit_buffer)
-        if len(self.project.thread.element_list) > 0:
-            self.elements_listbox.InsertItems([str(e) for e in self.project.thread.element_list], 0)
+        self.checkbox_limit_buffer.SetValue(self.project.writer.thread.limit_buffer)
+        self.spin_packet_buffer_max.SetValue(self.project.writer.thread.buffer_max)
+        if len(self.project.writer.thread.element_list) > 0:
+            self.elements_listbox.InsertItems([str(e) for e in self.project.writer.thread.element_list], 0)
 
     def on_close(self, event):
-        if self.project.thread is not None:
-            self.project["buffer", self.on_buffer_update] = None
-            self.project["progress", self.on_progress] = None
-            self.project["command", self.on_command_progress] = None
+        self.project["buffer", self.on_buffer_update] = None
+        self.project["progress", self.on_progress] = None
+        self.project["command", self.on_command_progress] = None
         self.project = None
         event.Skip()  # Call destroy as regular.
 
@@ -141,19 +141,19 @@ class JobInfo(wx.Frame):
         # end wxGlade
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.thread.limit_buffer = not self.project.thread.limit_buffer
+        self.project.writer.thread.limit_buffer = not self.project.writer.thread.limit_buffer
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.thread.buffer_max = self.spin_packet_buffer_max.GetValue()
+        self.project.writer.thread.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.controller.autostart = not self.project.controller.autostart
+        self.project.writer.thread.autostart = not self.project.controller.autostart
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.thread.autohome = not self.project.thread.autohome
+        self.project.writer.thread.autohome = not self.project.writer.thread.autohome
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.thread.autobeep = not self.project.thread.autobeep
+        self.project.writer.thread.autobeep = not self.project.writer.thread.autobeep
 
     def on_listbox_click(self, event):  # wxGlade: JobInfo.<event_handler>
         print("Event handler 'on_listbox_click' not implemented!")
@@ -164,24 +164,21 @@ class JobInfo(wx.Frame):
         event.Skip()
 
     def on_button_delete_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_button_delete_job' not implemented!")
-        event.Skip()
+        from LhymicroWriter import LaserThread
+        self.project.writer.thread = LaserThread(self.project)
+        self.project.writer.thread.refresh_element_list()
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.project is None:
-            return
-        if self.project.thread is None:
-            return
-        state = self.project.thread.state
+        state = self.project.writer.thread.state
         if state == THREAD_STATE_STARTED:
-            self.project.thread.state = THREAD_STATE_PAUSED
+            self.project.writer.thread.state = THREAD_STATE_PAUSED
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_PAUSED:
-            self.project.thread.state = THREAD_STATE_STARTED
+            self.project.writer.thread.state = THREAD_STATE_STARTED
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_UNSTARTED:
-            self.project.thread.state = THREAD_STATE_STARTED
-            self.project.thread.start()
+            self.project.writer.thread.state = THREAD_STATE_STARTED
+            self.project.writer.thread.start()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_ABORT:
             self.Close()
@@ -189,7 +186,7 @@ class JobInfo(wx.Frame):
             self.Close()
 
     def set_writer_button_by_state(self):
-        state = self.project.thread.state
+        state = self.project.writer.thread.state
         if state == THREAD_STATE_FINISHED:
             self.button_writer_control.SetBackgroundColour("#0000ff")
             self.button_writer_control.SetLabel("Close Job")
@@ -213,10 +210,6 @@ class JobInfo(wx.Frame):
 
     def on_combo_select_writer(self, event):  # wxGlade: JobInfo.<event_handler>
         print("Event handler 'on_combo_select_writer' not implemented!")
-        event.Skip()
-
-    def on_button_emergency_stop(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_button_emergency_stop' not implemented!")
         event.Skip()
 
     def post_update(self):

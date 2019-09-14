@@ -10,7 +10,7 @@ import wx.ribbon as RB
 from PIL import Image
 
 import svg_parser
-from LaserProject import LaserProject, ImageElement, PathElement, EgvElement, LaserThread
+from LaserProject import LaserProject, ImageElement, PathElement, EgvElement
 from LaserSceneView import LaserSceneView
 
 
@@ -446,8 +446,9 @@ class CutConfiguration(wx.Panel):
         # end wxGlade
 
     def on_clicked_burn(self, event):
-        if project.thread is None or project.thread.element_list is None or len(project.thread.element_list) == 0:
-            project.thread = LaserThread(project)
+        e = project.writer.thread.element_list
+        if e is None or len(e) == 0:
+            project.writer.refresh_elements()
 
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
