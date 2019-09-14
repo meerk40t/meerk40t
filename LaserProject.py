@@ -143,10 +143,12 @@ class PathElement(LaserElement):
         svg_parser.parse_svg_path(parse, self.path)
         object_path = parse.path
         self.box = object_path.bbox()
-        speed = self.cut.get(VARIABLE_NAME_SPEED)
-        if speed is None:
-            speed = 100
-        yield COMMAND_SET_SPEED, speed
+        if VARIABLE_NAME_SPEED in self.cut:
+            speed = self.cut.get(VARIABLE_NAME_SPEED)
+            yield COMMAND_SET_SPEED, speed
+        if VARIABLE_NAME_DRATIO in self.cut:
+            d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
+            yield COMMAND_SET_D_RATIO, d_ratio
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
         for data in object_path:

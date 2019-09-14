@@ -43,6 +43,7 @@ class ElementProperty(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_f0f, self.button_F0F)
         self.Bind(wx.EVT_BUTTON, self.on_button_0ff, self.button_0FF)
         self.Bind(wx.EVT_BUTTON, self.on_button_ff0, self.button_FF0)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_speed_dratio, self.checkbox_custom_d_ratio)
         # end wxGlade
         self.element = None
 
@@ -70,6 +71,7 @@ class ElementProperty(wx.Frame):
         self.spin_speed_set.SetMinSize((100, 23))
         self.spin_speed_set.SetIncrement(1.0)
         self.spin_speed_dratio.SetMinSize((100, 23))
+        self.spin_speed_dratio.SetIncrement(0.001)
         self.spin_speed_dratio.Enable(False)
         self.spin_passes.SetMinSize((100, 23))
         self.spin_step_size.SetMinSize((100, 23))
@@ -137,6 +139,9 @@ class ElementProperty(wx.Frame):
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
             e.cut[VARIABLE_NAME_SPEED] = self.spin_speed_set.GetValue()
+
+    def on_check_speed_dratio(self, event):
+        self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue())
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
