@@ -4,6 +4,8 @@
 #
 
 import wx
+
+
 # begin wxGlade: dependencies
 # end wxGlade
 
@@ -14,8 +16,10 @@ class Preferences(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((327, 307))
-        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
-        self.radio_units = wx.RadioBox(self, wx.ID_ANY, "Units", choices=["mm", "cm", "inch", "mils"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"],
+                                          style=wx.CB_DROPDOWN)
+        self.radio_units = wx.RadioBox(self, wx.ID_ANY, "Units", choices=["mm", "cm", "inch", "mils"], majorDimension=1,
+                                       style=wx.RA_SPECIFY_ROWS)
         self.spin_bedwidth = wx.SpinCtrlDouble(self, wx.ID_ANY, "330.0", min=1.0, max=1000.0)
         self.spin_bedheight = wx.SpinCtrlDouble(self, wx.ID_ANY, "230.0", min=1.0, max=1000.0)
         self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, "Automatically lock rail")
@@ -56,6 +60,8 @@ class Preferences(wx.Frame):
         self.checkbox_autohome.SetValue(self.project.autohome)
         self.checkbox_autolock.SetValue(self.project.writer.autolock)
         self.project.writer.autolock = self.checkbox_autolock.GetValue()
+        radio_index = self.project.units[3]
+        self.radio_units.SetSelection(radio_index)
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
@@ -82,8 +88,10 @@ class Preferences(wx.Frame):
         self.spin_scaley.SetMinSize((80, 23))
         self.spin_scaley.Enable(False)
         self.spin_scaley.SetIncrement(0.01)
-        self.checkbox_mock_usb.SetToolTip("DEBUG. Without a K40 connected continue to process things as if there was one.")
-        self.spin_device_index.SetToolTip("If you have 1 device. This must be \"0\". Only people with multiple devices should change this setting.")
+        self.checkbox_mock_usb.SetToolTip(
+            "DEBUG. Without a K40 connected continue to process things as if there was one.")
+        self.spin_device_index.SetToolTip(
+            "If you have 1 device. This must be \"0\". Only people with multiple devices should change this setting.")
         self.spin_device_index.Enable(False)
         # end wxGlade
 
@@ -187,4 +195,3 @@ class Preferences(wx.Frame):
 
     def on_checkbox_multiple_devices(self, event):  # wxGlade: Preferences.<event_handler>
         self.spin_device_index.Enable(self.checkbox_multiple_devices.GetValue())
-

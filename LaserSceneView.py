@@ -354,7 +354,7 @@ class LaserSceneView(wx.Panel):
     def calculate_grid(self):
         lines = []
         wmils, hmils = self.project.size_in_native_units()
-        conversion, name, marks = self.project.units
+        conversion, name, marks, index = self.project.units
         x = 0.0
         while x < wmils:
             lines.append((x, 0, x, hmils))
@@ -379,7 +379,7 @@ class LaserSceneView(wx.Panel):
         sx, sy = self.convert_scene_to_window([0, 0])
         offset_x = sx % points
         offset_y = sy % points
-        conversion, name, marks = self.project.units
+        conversion, name, marks, index = self.project.units
 
         for x in range(int(offset_x), int(w), points):
             length = 50

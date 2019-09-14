@@ -1,4 +1,3 @@
-
 import wx
 
 import EgvParser
@@ -369,7 +368,7 @@ class LaserProject:
         self.last_message = {}
         self.elements = []
         self.size = 320, 220
-        self.units = (39.37, "mm", 10)
+        self.units = (39.37, "mm", 10, 0)
         self.config = None
 
         self.selected = []
@@ -404,9 +403,10 @@ class LaserProject:
         convert = self.config.ReadFloat("units-convert", self.units[0])
         name = self.config.Read("units-name", self.units[1])
         marks = self.config.ReadInt("units-marks", self.units[2])
+        unitindex = self.config.ReadInt("unit-index", self.units[3])
         self.controller.mock = self.config.ReadBool("mock", self.controller.mock)
         self.writer.autolock = self.config.ReadBool("autolock", self.writer.autolock)
-        self.units = (convert, name, marks)
+        self.units = (convert, name, marks, unitindex)
         self("units", self.units)
         width = self.config.ReadInt("bed_width", self.size[0])
         height = self.config.ReadInt("bed_height", self.size[1])
@@ -419,6 +419,7 @@ class LaserProject:
         self.config.WriteFloat("units-convert", self.units[0])
         self.config.Write("units-name", self.units[1])
         self.config.WriteInt("units-marks", self.units[2])
+        self.config.WriteInt("unit-index", self.units[3])
         self.config.WriteBool("mock", self.controller.mock)
         self.config.WriteBool("autolock", self.writer.autolock)
         self.config.WriteInt("bed_width", self.size[0])
@@ -457,19 +458,19 @@ class LaserProject:
         return self.size[0] * 39.37, self.size[1] * 39.37
 
     def set_inch(self):
-        self.units = (1000, "inch", 1)
+        self.units = (1000, "inch", 1, 2)
         self("units", self.units)
 
     def set_mil(self):
-        self.units = (1, "mil", 1000)
+        self.units = (1, "mil", 1000, 3)
         self("units", self.units)
 
     def set_cm(self):
-        self.units = (393.7, "cm", 1)
+        self.units = (393.7, "cm", 1, 1)
         self("units", self.units)
 
     def set_mm(self):
-        self.units = (39.37, "mm", 10)
+        self.units = (39.37, "mm", 10, 0)
         self("units", self.units)
 
     def set_selected(self, select_elements):
