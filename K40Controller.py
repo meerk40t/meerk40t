@@ -16,6 +16,23 @@ STATUS_POWER = 239
 STATUS_NO_DEVICE = -1
 
 
+def get_code_string_from_code(code):
+    if code == STATUS_OK:
+        return "OK"
+    elif code == STATUS_BUSY:
+        return "Busy"
+    elif code == STATUS_PACKET_REJECTED:
+        return "Rejected"
+    elif code == STATUS_FINISH:
+        return "Finish"
+    elif code == STATUS_POWER:
+        return "Low Power"
+    elif code == STATUS_BAD_STATE:
+        return "Bad State"
+    else:
+        return "Unknown: " + str(code)
+
+
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2
         packet = [0] * 30

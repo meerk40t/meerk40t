@@ -6,6 +6,7 @@
 import wx
 
 from ThreadConstants import *
+from K40Controller import get_code_string_from_code
 
 
 class Controller(wx.Frame):
@@ -251,6 +252,7 @@ class Controller(wx.Frame):
         if data is not None:
             if isinstance(data, int):
                 self.text_desc.SetValue(str(data))
+                self.text_desc.SetValue(get_code_string_from_code(data))
             elif len(data) == 6:
                 self.text_byte_0.SetValue(str(data[0]))
                 self.text_byte_1.SetValue(str(data[1]))
@@ -258,7 +260,7 @@ class Controller(wx.Frame):
                 self.text_byte_3.SetValue(str(data[3]))
                 self.text_byte_4.SetValue(str(data[4]))
                 self.text_byte_5.SetValue(str(data[5]))
-                self.text_desc.SetValue(str(data))
+                self.text_desc.SetValue(get_code_string_from_code(data[1]))
         self.Update()
 
         if self.project is None:
