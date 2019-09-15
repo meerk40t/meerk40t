@@ -4,9 +4,8 @@ import time
 import ZinglPlotter
 from K40Controller import K40Controller
 from LaserCommandConstants import *
-from ThreadConstants import *
 from LaserSpeed import LaserSpeed
-
+from ThreadConstants import *
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'
@@ -130,6 +129,9 @@ class LhymicroWriter:
         self.board = board
         if self.board is None:
             self.board = "M2"
+        self.scale_x = 1.0
+        self.scale_y = 1.0
+        self.rotary = False
         self.state = STATE_DEFAULT
         self.is_on = False
         self.is_left = False
@@ -529,10 +531,13 @@ class LhymicroWriter:
     def home(self):
         self.to_default_mode()
         self.controller += b'IPP\n'
+        old_x = self.current_x
+        old_y = self.current_y
         self.current_x = 0
         self.current_y = 0
         self.reset_modes()
         self.state = STATE_DEFAULT
+        self.project("position", (self.current_x, self.current_y, old_x, old_y))
 
     def lock_rail(self):
         self.to_default_mode()

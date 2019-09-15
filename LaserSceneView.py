@@ -65,13 +65,15 @@ class LaserSceneView(wx.Panel):
         self.project["position", self.update_position] = self
         self.project["units", self.space_changed] = self
         self.project["selection", self.selection_changed] = self
-        self.project["bed-size", self.bed_changed] = self
+        self.project["bed_size", self.bed_changed] = self
+        self.project["elements", self.elements_changed] = self
 
     def on_close(self, event):
         self.project["position", self.update_position] = None
         self.project["units", self.space_changed] = None
         self.project["selection", self.selection_changed] = None
-        self.project["bed-size", self.bed_changed] = None
+        self.project["bed_size", self.bed_changed] = None
+        self.project["elements", self.elements_changed] = None
         event.Skip()
 
     def __set_properties(self):
@@ -111,6 +113,9 @@ class LaserSceneView(wx.Panel):
         self.on_size(None)
 
     def selection_changed(self, selection):
+        self.post_buffer_update()
+
+    def elements_changed(self, e):
         self.post_buffer_update()
 
     def on_erase(self, event):

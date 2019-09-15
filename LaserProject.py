@@ -395,35 +395,87 @@ class LaserProject:
             else:
                 key, value = key
                 self.add_listener(value, key)
+        elif isinstance(key, str):
+            if isinstance(value, str):
+                self.config.Write(key, value)
+            elif isinstance(value, int):
+                self.config.WriteInt(key, value)
+            elif isinstance(value, float):
+                self.config.WriteFloat(key, value)
+            elif isinstance(value, bool):
+                self.config.WriteBool(key, value)
+
+    def __getitem__(self, item):
+        if isinstance(item, tuple):
+            if len(item) == 2:
+                t, key = item
+                if t == str:
+                    return self.config.Read(key)
+                elif t == int:
+                    return self.config.ReadInt(key)
+                elif t == float:
+                    return self.config.ReadFloat(key)
+                elif t == bool:
+                    return self.config.ReadBool(key)
+            else:
+                t, key, default = item
+                if t == str:
+                    return self.config.Read(key, default)
+                elif t == int:
+                    return self.config.ReadInt(key, default)
+                elif t == float:
+                    return self.config.ReadFloat(key, default)
+                elif t == bool:
+                    return self.config.ReadBool(key, default)
+        return self.config.Read(item)
 
     def load_config(self):
-        self.autohome = self.config.ReadBool("autohome", self.autohome)
-        self.autobeep = self.config.ReadBool("autobeep", self.autobeep)
-        self.autostart = self.config.ReadBool("autostart", self.autostart)
-        convert = self.config.ReadFloat("units-convert", self.units[0])
-        name = self.config.Read("units-name", self.units[1])
-        marks = self.config.ReadInt("units-marks", self.units[2])
-        unitindex = self.config.ReadInt("unit-index", self.units[3])
-        self.controller.mock = self.config.ReadBool("mock", self.controller.mock)
-        self.writer.autolock = self.config.ReadBool("autolock", self.writer.autolock)
+        # self.spin_scalex.SetValue(self.project.writer.scale_x)
+        # self.spin_scaley.SetValue(self.project.writer.scale_y)
+        # self.checkbox_rotary.SetValue(self.project.writer.rotary)
+
+        self.autohome = self[bool, "autohome"]
+        self.autobeep = self[bool, "autobeep"]
+        self.autostart = self[bool, "autostart"]
+        convert = self[float, "units-convert", self.units[0]]
+        name = self[str, "units-name", self.units[1]]
+        marks = self[int, "units-marks", self.units[2]]
+        unitindex = self[int, "unit-index", self.units[3]]
         self.units = (convert, name, marks, unitindex)
-        self("units", self.units)
-        width = self.config.ReadInt("bed_width", self.size[0])
-        height = self.config.ReadInt("bed_height", self.size[1])
+        width = self[int, "bed_width", self.size[0]]
+        height = self[int, "bed_height", self.size[1]]
         self.size = width, height
+        self.writer.board = self[str,"board", self.writer.board]
+        self.writer.autolock = self[bool, "autolock", self.writer.autolock]
+        self.writer.rotary = self[bool, "rotary", self.writer.rotary]
+        self.writer.scale_x = self[float, "scale_x", self.writer.scale_x]
+        self.writer.scale_y = self[float, "scale_y", self.writer.scale_y]
+        self.controller.mock = self[bool, "mock", self.controller.mock]
+        self.controller.usb_index = self[int, "usb_index", self.controller.usb_index]
+        self.controller.usb_bus = self[int, "usb_bus", self.controller.usb_bus]
+        self.controller.usb_address = self[int, "usb_address", self.controller.usb_address]
+        self("units", self.units)
+        self("bed_size", self.size)
 
     def save_config(self):
-        self.config.WriteBool("autohome", self.autohome)
-        self.config.WriteBool("autobeep", self.autobeep)
-        self.config.WriteBool("autostart", self.autostart)
-        self.config.WriteFloat("units-convert", self.units[0])
-        self.config.Write("units-name", self.units[1])
-        self.config.WriteInt("units-marks", self.units[2])
-        self.config.WriteInt("unit-index", self.units[3])
-        self.config.WriteBool("mock", self.controller.mock)
-        self.config.WriteBool("autolock", self.writer.autolock)
-        self.config.WriteInt("bed_width", self.size[0])
-        self.config.WriteInt("bed_height", self.size[1])
+        self["autohome"] = self.autohome
+        self["autobeep"] = self.autobeep
+        self["autostart"] = self.autostart
+        self["units-convert"] = self.units[0]
+        self["units-name"] = self.units[1]
+        self["units-marks"] = self.units[2]
+        self["units-index"] = self.units[3]
+        self["bed_width"] = self.size[0]
+        self["bed_height"] = self.size[1]
+        self["board"] = self.writer.board
+        self["autolock"] = self.writer.autolock
+        self["rotary"] = self.writer.rotary
+        self["scale_x"] = self.writer.scale_x
+        self["scale_y"] = self.writer.scale_y
+        self["mock"] = self.controller.mock
+        self["usb_index"] = self.controller.usb_index
+        self["usb_bus"] = self.controller.usb_bus
+        self["usb_address"] = self.controller.usb_address
 
     def shutdown(self):
         pass
@@ -552,6 +604,7 @@ class LaserProject:
                 self.remove_element(e)
                 self.append(RawElement(e))
                 break
+        self("elements", 0)
 
     def menu_remove(self, position):
         for e in self.flat_elements():
@@ -560,6 +613,7 @@ class LaserProject:
             if e.contains(p):
                 self.remove_element(e)
                 break
+        self("elements", 0)
 
     def menu_scale(self, scale, scale_y=None, position=None):
         if scale_y is None:
@@ -571,8 +625,9 @@ class LaserProject:
                 if e.contains(p):
                     e.matrix.PostScale(scale, scale_y, p[0], p[1])
             else:
-                for e in self.selected:
-                    e.matrix.PostScale(scale, scale_y)
+                for s in self.selected:
+                    s.matrix.PostScale(scale, scale_y)
+        self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
         for e in self.flat_elements():
@@ -584,6 +639,7 @@ class LaserProject:
             else:
                 for e in self.selected:
                     e.matrix.PostRotate(radians)
+        self("elements", 0)
 
     def move_selected(self, dx, dy):
         for e in self.selected:

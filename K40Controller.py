@@ -105,10 +105,10 @@ class UsbDisconnectThread(threading.Thread):
 
 
 class K40Controller:
-    def __init__(self, listener, usb_index=0, usb_address=-1, usb_bus=-1, mock=False):
+    def __init__(self, listener, usb_index=-1, usb_address=-1, usb_bus=-1, mock=False):
         self.listener = listener
         self.usb_index = usb_index
-        self.usb_bus = usb_bus  # TODO: permit selecting which device to used based on the USB bus and address variables.
+        self.usb_bus = usb_bus
         self.usb_address = usb_address
         self.mock = mock
 
@@ -248,8 +248,19 @@ class K40Controller:
         for device in devices:
             self.log("K40 device detected:\n%s\n" % str(device))
             d.append(device)
-        if len(d) > self.usb_index:
-            self.usb = d[self.usb_index]
+        if self.usb_index == -1:
+            if self.usb_address == -1 and self.usb_bus == -1:
+                if len(d) > 0:
+                    self.usb = d[0]
+            else:
+                for dev in d:
+                    if (self.usb_address == -1 or self.usb_address == dev.address) and \
+                            (self.usb_bus == -1 or self.usb_bus == dev.bus):
+                        self.usb = dev
+                        break
+        else:
+            if len(d) > self.usb_index:
+                self.usb = d[self.usb_index]
         for i, dev in enumerate(d):
             self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
         if self.usb is None:
@@ -257,7 +268,8 @@ class K40Controller:
             if len(d) == 0:
                 self.log("K40 not found.")
             else:
-                self.log("K40 devices were found but the configuration requires #%d." % self.usb_index)
+                self.log("K40 devices were found but the configuration requires #%d Bus: %d, Add: %d"
+                         % (self.usb_index, self.usb_bus, self.usb_address))
                 time.sleep(1)
             self.usb_lock.release()
             raise usb.core.USBError('Unable to find device.')
@@ -280,7 +292,7 @@ class K40Controller:
             self.log("Kernel detach: Not Implemented.")  # Driver does not permit kernel detaching.
         self.log("Attempting to claim interface.")
         usb.util.claim_interface(self.usb, self.interface)
-        #TODO: A second attempt to claim the same interface will lag out at this point.
+        # TODO: A second attempt to claim the same interface will lag out at this point.
         self.log("Interface claimed.")
         self.log("Requesting Status.")
         self.update_status()

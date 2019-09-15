@@ -28,8 +28,8 @@ class Controller(wx.Frame):
         self.last_packet_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "\n")
-        self.text_byte_2 = wx.TextCtrl(self, wx.ID_ANY, "\n")
+        self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_byte_2 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -48,7 +48,6 @@ class Controller(wx.Frame):
         self.dirty = False
         self.project = None
         self.status_data = None
-        self.data_log = b''
         self.packet_data = None
         self.packet_string = b''
         self.buffer_size = 0
@@ -243,7 +242,6 @@ class Controller(wx.Frame):
 
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
-            #self.packet_list.SetValue(self.data_log)
 
         self.packet_string = b''
         self.packet_count_text.SetValue(str(self.project.controller.packet_count))
@@ -284,7 +282,6 @@ class Controller(wx.Frame):
         self.post_update()
 
     def update_packet_text(self, string_data):
-        self.data_log += string_data
         self.packet_string = string_data
         self.post_update()
 
