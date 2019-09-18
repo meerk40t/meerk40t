@@ -7,7 +7,7 @@ class ZMatrix(AffineMatrix2D):
         if matrix is not None:
             self.Set(Matrix2D(
                 matrix.value_scale_x(), matrix.value_skew_x(),
-                matrix.value_scale_y(), matrix.value_skew_y()),
+                matrix.value_skew_y(), matrix.value_scale_y()),
                 Point2D(
                     matrix.value_trans_x(), matrix.value_trans_y()))
 

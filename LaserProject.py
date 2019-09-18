@@ -57,7 +57,7 @@ class LaserElement:
         yield COMMAND_MODE_DEFAULT
 
     def move(self, dx, dy):
-        self.matrix.post_translate(dx, dy)
+        self.matrix.pre_translate(dx, dy)
 
     def contains(self, x, y=None):
         if y is None:
