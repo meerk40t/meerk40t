@@ -135,22 +135,22 @@ class Navigation(wx.Frame):
     def move_top(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.writer.move(0, -value)
+        self.project.writer.move_relative(0, -value)
 
     def move_left(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.writer.move(-value, 0)
+        self.project.writer.move_relative(-value, 0)
 
     def move_right(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.writer.move(value, 0)
+        self.project.writer.move_relative(value, 0)
 
     def move_bottom(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.writer.move(0, value)
+        self.project.writer.move_relative(0, value)
 
     def on_spin_step_size(self, event):  # wxGlade: Navigate.<event_handler>
         self.project["step_size"] = self.spin_step_size.GetValue()

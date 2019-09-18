@@ -1,9 +1,15 @@
-from wx import AffineMatrix2D
+from wx import AffineMatrix2D, Matrix2D, Point2D
 
 
 class ZMatrix(AffineMatrix2D):
-    def __init__(self, *args, **kwds):
+    def __init__(self, matrix=None):
         AffineMatrix2D.__init__(self)
+        if matrix is not None:
+            self.Set(Matrix2D(
+                matrix.value_scale_x(), matrix.value_skew_x(),
+                matrix.value_scale_y(), matrix.value_skew_y()),
+                Point2D(
+                    matrix.value_trans_x(), matrix.value_trans_y()))
 
     def Reset(self):
         AffineMatrix2D.__init__(self)

@@ -140,6 +140,7 @@ def rect2pathd(rect):
 def line2pathd(l):
     return 'M' + l['x1'] + ' ' + l['y1'] + 'L' + l['x2'] + ' ' + l['y2']
 
+
 # PathTokens class.
 class PathTokens:
     """Path Tokens is the class for the general outline of how SVG Pathd objects
@@ -285,26 +286,26 @@ class SVGPathTokens(PathTokens):
     def get_pos(self):
         if self.command == 'Z':
             return self.start_pos  # After Z, all further expected values are also Z.
-        coord0 = self.get()
+        coord0 = float(self.get())
         if coord0 == 'z' or coord0 == 'Z':
             self.command = 'Z'
             return self.start_pos
-        coord1 = self.get()
-        position = float(coord0) + float(coord1) * 1j
+        coord1 = float(self.get())
+        position = [coord0, coord1]
         if not self.absolute:
-            return position + self.current_pos
+            return [position[0] + self.current_pos[0], position[1] + self.current_pos[1]]
         return position
 
     def move_to(self):
         # Moveto command.
         pos = self.get_pos()
+        self.parser.move(self.current_pos, pos)
         self.current_pos = pos
 
         # when M is called, reset start_pos
         # This behavior of Z is defined in svg spec:
         # http://www.w3.org/TR/SVG/paths.html#PathDataClosePathCommand
         self.start_pos = self.current_pos
-        self.parser.move(self.start_pos)
 
         # Implicit moveto commands are treated as lineto commands.
         # So we set command to lineto here, in case there are
@@ -317,18 +318,18 @@ class SVGPathTokens(PathTokens):
         self.current_pos = pos
 
     def h_to(self):
-        x = self.get()
-        pos = float(x) + self.current_pos.imag * 1j
+        x = float(self.get())
+        pos = [x, self.current_pos[1]]
         if not self.absolute:
-            pos += self.current_pos.real
+            pos[0] += self.current_pos[0]
         self.parser.line(self.current_pos, pos)
         self.current_pos = pos
 
     def v_to(self):
-        y = self.get()
-        pos = self.current_pos.real + float(y) * 1j
+        y = float(self.get())
+        pos = [self.current_pos[0], y]
         if not self.absolute:
-            pos += self.current_pos.imag * 1j
+            pos[1] += self.current_pos[1]
         self.parser.line(self.current_pos, pos)
         self.current_pos = pos
 
@@ -392,15 +393,14 @@ class SVGPathTokens(PathTokens):
         self.last_quad = control
 
     def arc_to(self):
-        rx = self.get()
-        ry = self.get()
-        radius = float(rx) + float(ry) * 1j
+        rx = float(self.get())
+        ry = float(self.get())
         rotation = float(self.get())
         arc = float(self.get())
         sweep = float(self.get())
         end = self.get_pos()
 
-        self.parser.arc(self.current_pos, radius, rotation, arc, sweep, end)
+        self.parser.arc(self.current_pos, rx, ry, rotation, arc, sweep, end)
         self.current_pos = end
 
     def close(self):
@@ -419,7 +419,7 @@ class SVGPathTokens(PathTokens):
             self.close()
 
 
-def parse_svg_path(parser, pathdef, current_pos=0j):
+def parse_svg_path(parser, pathdef, current_pos=(0.0, 0.0)):
     """Parses the SVG path.
     The parser is datastructure agnostic requires a subclass of DefaultParser"""
     tokens = SVGPathTokens()
@@ -759,5 +759,3 @@ def parse_svg_color(color_string):
     if match:
         return parse_svg_color_rgbp(match.groups())
     return parse_svg_color_lookup(color_string)
-
-

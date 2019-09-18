@@ -1,11 +1,11 @@
 import threading
 import time
 
-import ZinglPlotter
 from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
 from ThreadConstants import *
+from path import *
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'
@@ -80,6 +80,8 @@ class LaserThread(threading.Thread):
         # Final listener calls.
         if self.autohome:
             return self.project.writer.command(COMMAND_HOME, 0)
+        if self.project.writer.autolock:
+            return self.project.writer.command(COMMAND_UNLOCK, 0)
         self.element_list = None
         self.element_index = -1
         self.project["buffer", self.update_buffer_size] = None
@@ -136,6 +138,7 @@ class LhymicroWriter:
         self.is_on = False
         self.is_left = False
         self.is_top = False
+        self.is_relative = False
         self.raster_step = 0
         self.speed = 30
         self.d_ratio = None
@@ -171,25 +174,79 @@ class LhymicroWriter:
             pass
 
     def command(self, command, values):
-        if command == COMMAND_SIMPLE_MOVE:
-            x, y = values
-            self.move_abs(x, y)
         if command == COMMAND_LASER_OFF:
             self.up()
-        if command == COMMAND_LASER_ON:
+        elif command == COMMAND_LASER_ON:
             self.down()
+        elif command == COMMAND_SIMPLE_MOVE:
+            x, y = values
+            self.move(x, y)
         elif command == COMMAND_SIMPLE_CUT:
             self.down()
             x, y = values
-            self.move_abs(x, y)
+            self.move(x, y)
         elif command == COMMAND_SIMPLE_SHIFT:
             self.up()
             x, y = values
-            self.move_abs(x, y)
+            self.move(x, y)
         elif command == COMMAND_RAPID_MOVE:
             self.to_default_mode()
             sx, sy, x, y = values
-            self.move_abs(x, y)
+            self.move(x, y)
+        elif command == COMMAND_MOVE:
+            x, y = values
+            sx = self.current_x
+            sy = self.current_y
+            if self.state == STATE_COMPACT:
+                for x, y in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                    self.move(x, y)
+            else:
+                self.move(x, y)
+        elif command == COMMAND_HSTEP:
+            self.v_switch()
+        elif command == COMMAND_VSTEP:
+            self.h_switch()
+        elif command == COMMAND_HOME:
+            self.home()
+        elif command == COMMAND_LOCK:
+            self.lock_rail()
+        elif command == COMMAND_UNLOCK:
+            self.unlock_rail()
+        elif command == COMMAND_PLOT:
+            path = values
+            if len(path) == 0:
+                return
+            first_point = path[0].start
+            self.move_absolute(first_point[0], first_point[1])
+            sx = self.current_x
+            sy = self.current_y
+            for x, y, on in group_plots(sx, sy, path.plot()):
+                if on == 0:
+                    self.up()
+                else:
+                    self.down()
+                self.move_absolute(x, y)
+        elif command == COMMAND_CUT_LINE_TO:
+            x, y = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                self.move_absolute(x, y)
+        elif command == COMMAND_CUT_QUAD_TO:
+            cx, cy, x, y, = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
+                self.move_absolute(x, y)
+        elif command == COMMAND_CUT_CUBIC_TO:
+            c1x, c1y, c2x, c2y, ex, ey = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
+                self.move_absolute(x, y)
         elif command == COMMAND_SET_SPEED:
             speed = values
             self.set_speed(speed)
@@ -203,146 +260,27 @@ class LhymicroWriter:
             x_dir, y_dir = values
             self.is_left = x_dir < 0
             self.is_top = y_dir < 0
+        elif command == COMMAND_SET_POSITION:
+            x, y = values
+            self.current_x = x
+            self.current_y = y
         elif command == COMMAND_MODE_COMPACT:
             self.to_compact_mode()
         elif command == COMMAND_MODE_DEFAULT:
             self.to_default_mode()
         elif command == COMMAND_MODE_CONCAT:
             self.to_concat_mode()
-        elif command == COMMAND_HSTEP:
-            self.v_switch()
-        elif command == COMMAND_VSTEP:
-            self.h_switch()
-        elif command == COMMAND_HOME:
-            self.home()
-        elif command == COMMAND_LOCK:
-            self.lock_rail()
-        elif command == COMMAND_UNLOCK:
-            self.unlock_rail()
-        elif command == COMMAND_MOVE_TO:
-            ex, ey = values
-            self.up()
-            for x, y, on in direct_plots(self.current_x, self.current_y,
-                                         ZinglPlotter.plot_line(
-                                             int(self.current_x),
-                                             int(self.current_y), ex, ey
-                                         )):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_LINE_TO:
-            ex, ey = values
-            sx = self.current_x
-            sy = self.current_y
-            self.down()
-            for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
-                                                                        ex, ey)):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_QUAD_TO:
-            cx, cy, ex, ey = values
-            sx = self.current_x
-            sy = self.current_y
-            self.down()
-            for x, y, on in direct_plots(sx, sy,
-                                         ZinglPlotter.plot_quad_bezier(sx, sy,
-                                                                       cx, cy,
-                                                                       ex, ey)):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_CUBIC_TO:
-            c1x, c1y, c2x, c2y, ex, ey = values
-            sx = self.current_x
-            sy = self.current_y
-            self.down()
-            for x, y, on in direct_plots(sx, sy,
-                                         ZinglPlotter.plot_cubic_bezier(sx, sy,
-                                                                        c1x, c1y,
-                                                                        c2x, c2y,
-                                                                        ex, ey)):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_ARC_TO:
-            cx, cy, ex, ey = values
-            # I do not actually have an arc plotter.
-            sx = self.current_x
-            sy = self.current_y
-            self.down()
-            for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
-                self.move_abs(x, y)
-        # These are not _to, they can be done anywhere.
-        elif command == COMMAND_CUT_LINE:
-            sx, sy, ex, ey = values
-            pos_x = self.current_x
-            pos_y = self.current_y
-            if pos_x != sx or pos_y != sy:
-                self.up()
-                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                        pos_x, pos_y, sx, sy)):
-                    self.move_abs(x, y)
-            self.down()
-            for x, y, on in direct_plots(sx, sy, ZinglPlotter.plot_line(sx, sy,
-                                                                        ex, ey)):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_QUAD:
-            sx, sy, cx, cy, ex, ey = values
-            pos_x = self.current_x
-            pos_y = self.current_y
-            if pos_x != sx or pos_y != sy:
-                self.up()
-                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                        pos_x, pos_y, sx, sy)):
-                    self.move_abs(x, y)
-            self.down()
-            for x, y, on in direct_plots(sx, sy,
-                                         ZinglPlotter.plot_quad_bezier(sx, sy,
-                                                                       cx, cy,
-                                                                       ex, ey)):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_CUBIC:
-            sx, sy, c1x, c1y, c2x, c2y, ex, ey = values
-            pos_x = self.current_x
-            pos_y = self.current_y
-            if pos_x != sx or pos_y != sy:
-                self.up()
-                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                        pos_x, pos_y, sx, sy)):
-                    self.move_abs(x, y)
-            self.down()
-            for x, y, on in direct_plots(sx, sy,
-                                         ZinglPlotter.plot_cubic_bezier(sx, sy,
-                                                                        c1x, c1y,
-                                                                        c2x, c2y,
-                                                                        ex, ey)):
-                self.move_abs(x, y)
-        elif command == COMMAND_CUT_ARC:
-            # I do not actually have an arc plotter.
-            sx, sy, cx, cy, ex, ey = values
-            pos_x = self.current_x
-            pos_y = self.current_y
-            if pos_x != sx or pos_y != sy:
-                self.up()
-                for x, y, on in direct_plots(pos_x, pos_y, ZinglPlotter.plot_line(
-                        pos_x, pos_y, sx, sy)):
-                    self.move_abs(x, y)
-            self.down()
-            for x, y, on in ZinglPlotter.plot_line(sx, sy, ex, ey):
-                self.move_abs(x, y)
 
-    def plot(self, x, y):
-        dx = int(x - self.current_x)
-        dy = int(y - self.current_y)
-        if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-            dx = self.next_x - self.current_x
-            dy = self.next_y - self.current_y
-            if dx != 0:
-                self.move_x(dx)
-            if dy != 0:
-                self.move_y(dy)
-            if abs(dx) == abs(dy):
-                self.move_angle(dx, dy)
-        self.next_x = x
-        self.next_y = y
+    def move(self, x, y):
+        if self.is_relative:
+            self.move_relative(x, y)
+        else:
+            self.move_absolute(x, y)
 
-    def move_abs(self, x, y):
-        self.move(x - self.current_x, y - self.current_y)
+    def move_absolute(self, x, y):
+        self.move_relative(x - self.current_x, y - self.current_y)
 
-    def move(self, dx, dy):
+    def move_relative(self, dx, dy):
         if abs(dx) == 0 and abs(dy) == 0:
             return
         dx = int(round(dx))
@@ -358,8 +296,12 @@ class LhymicroWriter:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                self.move_xy_line(dx, dy)
-            if abs(dx) == abs(dy):
+                # This is an error. We'll fix it though.
+                for x, y, on in group_plots(self.current_x, self.current_y,
+                                            Line.plot_line(self.current_x, self.current_y, self.current_x + dx,
+                                                           self.current_y + dy)):
+                    self.move_absolute(x, y)
+            elif abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
             elif dx != 0:
                 self.move_x(dx)
@@ -375,10 +317,13 @@ class LhymicroWriter:
         self.project("position", (self.current_x, self.current_y, self.current_x - dx, self.current_y - dy))
 
     def move_xy_line(self, delta_x, delta_y):
-        """Strictly speaking if this happens it is because of a bug. Nothing should feed the writer this data.
-        It's invalid. All moves should be diagonal or orthogonal."""
+        """Strictly speaking if this happens it is because of a bug.
+        Nothing should feed the writer this data. It's invalid.
+        All moves should be diagonal or orthogonal."""
+        """Zingl-Bresenham line draw algorithm"""
         dx = abs(delta_x)
         dy = -abs(delta_y)
+
         if delta_x > 0:
             sx = 1
         else:
@@ -390,20 +335,26 @@ class LhymicroWriter:
         err = dx + dy  # error value e_xy
         x0 = 0
         y0 = 0
-        x1 = dx
-        y1 = dy
         while True:  # /* loop */
-            if x0 == x1 and y0 == y1:
+            if x0 == delta_x and y0 == delta_y:
                 break
+            mx = 0
+            my = 0
             e2 = 2 * err
             if e2 >= dy:  # e_xy+e_y < 0
                 err += dy
-                self.move_x(sx)
                 x0 += sx
+                mx += sx
             if e2 <= dx:  # e_xy+e_y < 0
                 err += dx
-                self.move_y(sy)
                 y0 += sy
+                my += sy
+            if abs(mx) == abs(my):
+                self.move_angle(mx, my)
+            elif mx != 0:
+                self.move_x(mx)
+            else:
+                self.move_y(my)
 
     def set_speed(self, speed=None):
         change = False
@@ -640,24 +591,34 @@ class LhymicroWriter:
             self.check_bounds()
 
 
-def direct_plots(start_x, start_y, generate):
+def group_plots(start_x, start_y, generate):
     last_x = start_x
     last_y = start_y
+    last_on = 0
     dx = 0
     dy = 0
+    x = None
+    y = None
+    on = None
 
     for event in generate:
-        x, y, on = event
-        if x == last_x + dx and y == last_y + dy:
+        try:
+            x = event[0]
+            y = event[1]
+            on = event[2]
+        except IndexError:
+            on = 1
+        if x == last_x + dx and y == last_y + dy and on == last_on:
             last_x = x
             last_y = y
             continue
 
-        yield last_x, last_y, 1
+        yield last_x, last_y, last_on
         dx = x - last_x
         dy = y - last_y
         if abs(dx) > 1 or abs(dy) > 1:
             raise ValueError
         last_x = x
         last_y = y
-    yield last_x, last_y, 1
+        last_on = on
+    yield last_x, last_y, last_on

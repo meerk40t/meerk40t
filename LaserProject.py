@@ -8,7 +8,6 @@ from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
 from ZMatrix import ZMatrix
-from path import Move, Line, QuadraticBezier, CubicBezier, Arc
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
@@ -21,7 +20,7 @@ VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 class LaserElement:
     def __init__(self):
-        self.matrix = ZMatrix()
+        self.matrix = path.Matrix()
         self.cut = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_SPEED: 60, VARIABLE_NAME_PASSES: 1}
         self.cache = None
         self.pen = wx.Pen()
@@ -36,7 +35,7 @@ class LaserElement:
         element as a series of lines, as defined by generate."""
 
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, self.matrix))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         self.color.SetRGB(self.cut[VARIABLE_NAME_COLOR])
         self.pen.SetColour(self.color)
         gc.SetPen(self.pen)
@@ -49,20 +48,16 @@ class LaserElement:
         gc.StrokePath(self.cache)
 
     def convert_absolute_to_affinespace(self, position):
-        if isinstance(position, complex):
-            return self.matrix.TransformPoint([position.real, position.imag])
-        return self.matrix.TransformPoint([position[0], position[1]])
+        return self.matrix.point_in_matrix_space(position)
 
     def convert_affinespace_to_absolute(self, position):
-        if isinstance(position, complex):
-            return self.matrix.InverseTransformPoint([position.real, position.imag])
-        return self.matrix.InverseTransformPoint([position[0], position[1]])
+        return self.matrix.point_in_inverse_space(position)
 
     def generate(self):
         yield COMMAND_MODE_DEFAULT
 
     def move(self, dx, dy):
-        self.matrix.PostTranslate(dx, dy)
+        self.matrix.post_translate(dx, dy)
 
     def contains(self, x, y=None):
         if y is None:
@@ -122,10 +117,9 @@ class ImageElement(LaserElement):
             yield COMMAND_SET_STEP, step
             transverse |= RasterPlotter.X_AXIS
             transverse |= RasterPlotter.BOTTOM
-
         for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
-                                                 offset_x=self.matrix.GetTranslateX(),
-                                                 offset_y=self.matrix.GetTranslateY(),
+                                                 offset_x=self.matrix.value_trans_x(),
+                                                 offset_y=self.matrix.value_trans_y(),
                                                  transversal=transverse,
                                                  step=step):
             yield command
@@ -150,38 +144,8 @@ class PathElement(LaserElement):
             yield COMMAND_SET_D_RATIO, d_ratio
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
-        for data in object_path:
-            if isinstance(data, Move):
-                s = self.convert_absolute_to_affinespace(data.end)
-                yield COMMAND_MOVE_TO, (int(s[0]), int(s[1]))
-            elif isinstance(data, Line):
-                s = self.convert_absolute_to_affinespace(data.start)
-                e = self.convert_absolute_to_affinespace(data.end)
-                yield COMMAND_CUT_LINE, (int(s[0]), int(s[1]),
-                                         int(e[0]), int(e[1]))
-            elif isinstance(data, QuadraticBezier):
-                s = self.convert_absolute_to_affinespace(data.start)
-                c = self.convert_absolute_to_affinespace(data.control)
-                e = self.convert_absolute_to_affinespace(data.end)
-                yield COMMAND_CUT_QUAD, (int(s[0]), int(s[1]),
-                                         c[0], c[1],
-                                         int(e[0]), int(e[1]))
-            elif isinstance(data, CubicBezier):
-                s = self.convert_absolute_to_affinespace(data.start)
-                c1 = self.convert_absolute_to_affinespace(data.control1)
-                c2 = self.convert_absolute_to_affinespace(data.control2)
-                e = self.convert_absolute_to_affinespace(data.end)
-                yield COMMAND_CUT_CUBIC, (int(s[0]), int(s[1]),
-                                          c1[0], c1[1],
-                                          c2[0], c2[1],
-                                          int(e[0]), int(e[1]))
-            elif isinstance(data, Arc):
-                s = self.convert_absolute_to_affinespace(data.start)
-                c = self.convert_absolute_to_affinespace(data.center)
-                e = self.convert_absolute_to_affinespace(data.end)
-                yield COMMAND_CUT_ARC, (int(s[0]), int(s[1]),
-                                        int(c[0]), int(c[1]),
-                                        int(e[0]), int(e[1]))
+        plot = object_path * self.matrix
+        yield COMMAND_PLOT, plot
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, None
         yield COMMAND_SET_D_RATIO, None
@@ -208,7 +172,6 @@ class EgvElement(LaserElement):
             parse = LaserCommandPathParser(p)
             for event in self.generate():
                 parse.command(event)
-            # print(parse.x, parse.y)
             self.cache = p
             self.box = self.cache.GetBox()
         gc.StrokePath(self.cache)
@@ -233,34 +196,53 @@ class LaserCommandPathParser:
     def __init__(self, graphic_path):
         self.graphic_path = graphic_path
         self.on = False
+        self.relative = False
         self.x = 0
         self.y = 0
 
     def command(self, event):
         command, values = event
-        if command == COMMAND_SIMPLE_MOVE:
-            dx, dy = values
-            if self.on:
-                self.line_to(self.x + dx, self.y + dy)
-            else:
-                self.move_to(self.x + dx, self.y + dy)
-            self.x += dx
-            self.y += dy
         if command == COMMAND_LASER_OFF:
             self.on = False
-        if command == COMMAND_LASER_ON:
+        elif command == COMMAND_LASER_ON:
             self.on = True
-        elif command == COMMAND_SIMPLE_CUT:
-            self.on = True
-            dx, dy = values
-            self.line_to(self.x + dx, self.y + dy)
+        if command == COMMAND_SIMPLE_MOVE:
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            if self.on:
+                self.graphic_path.AddLineToPoint(x, y)
+            else:
+                self.graphic_path.MoveToPoint(x, y)
+            self.x += x
+            self.y += y
         elif command == COMMAND_SIMPLE_SHIFT:
             self.on = False
-            dx, dy = values
-            self.move_to(self.x + dx, self.y + dy)
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_SIMPLE_CUT:
+            self.on = True
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.AddLineToPoint(x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_RAPID_MOVE:
             x, y = values
-            self.move_to(x, y)
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_SET_SPEED:
             pass
         elif command == COMMAND_SET_STEP:
@@ -274,92 +256,90 @@ class LaserCommandPathParser:
         elif command == COMMAND_MODE_CONCAT:
             pass
         elif command == COMMAND_HSTEP:
-            dx = values
-            self.move_to(self.x + dx, self.y + 0)
-            self.x += dx
+            x = values
+            y = 0
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_VSTEP:
-            dy = values
-            self.move_to(self.x + 0, self.y + dy)
-            self.y += dy
+            x = 0
+            y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_HOME:
-            self.move_to(0, 0)
+            self.graphic_path.MoveToPoint(0, 0)
+            self.x = 0
+            self.y = 0
         elif command == COMMAND_LOCK:
             pass
         elif command == COMMAND_UNLOCK:
             pass
-        elif command == COMMAND_MOVE_TO:
+        elif command == COMMAND_PLOT:
+            plot = values
+            for e in plot:
+                if isinstance(e, path.Move):
+                    self.graphic_path.MoveToPoint(e.end[0], e.end[1])
+                elif isinstance(e, path.Line):
+                    self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
+                elif isinstance(e, path.QuadraticBezier):
+                    self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
+                                                          e.end[0], e.end[1])
+                elif isinstance(e, path.CubicBezier):
+                    self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
+                                                      e.control2[0], e.control2[1],
+                                                      e.end[0], e.end[1])
+                elif isinstance(e, path.Arc):
+                    for curve in e.as_cubic_curves():
+                        self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
+                                                          curve.control2[0], curve.control2[1],
+                                                          curve.end[0], curve.end[1])
+
+        elif command == COMMAND_MOVE:
             x, y = values
-            self.move_to(x, y)
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_CUT_LINE_TO:
-            ex, ey = values
-            self.line_to(ex, ey)
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.AddLineToPoint(x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_CUT_QUAD_TO:
             cx, cy, x, y = values
-            self.quad_to(cx, cy, x, y)
+            if self.relative:
+                x += self.x
+                y += self.y
+                cx += self.x
+                cy += self.y
+
+            self.graphic_path.AddQuadCurveToPoint(cx, cy, x, y)
+            self.x = x
+            self.y = y
         elif command == COMMAND_CUT_CUBIC_TO:
             c1x, c1y, c2x, c2y, x, y = values
-            self.cubic_to(c1x, c1y, c2x, c2y, x, y)
-        elif command == COMMAND_CUT_ARC_TO:
-            cx, cy, x, y = values
-            # self.arc_to()
-            # Wrong parameterizations
-            pass
-        elif command == COMMAND_CUT_LINE:
-            sx, sy, ex, ey = values
-            self.move_to(sx, sy)
-            self.line_to(ex, ey)
-        elif command == COMMAND_CUT_QUAD:
-            sx, sy, cx, cy, x, y = values
-            self.move_to(sx, sy)
-            self.quad_to(cx, cy, x, y)
-        elif command == COMMAND_CUT_CUBIC:
-            sx, sy, c1x, c1y, c2x, c2y, x, y = values
-            self.move_to(sx, sy)
-            self.cubic_to(c1x, c1y, c2x, c2y, x, y)
-        elif command == COMMAND_CUT_ARC:
-            sx, sy, cx, cy, x, y = values
-            self.move_to(x, y)
-            # self.arc_to()
-            # Wrong parameterizations
-            pass
-
-    def start(self):
-        pass
-
-    def end(self):
-        pass
-
-    def move_to(self, x, y):
-        self.graphic_path.MoveToPoint(x, y)
-        self.x = x
-        self.y = y
-
-    def line_to(self, ex, ey):
-        self.graphic_path.AddLineToPoint(ex, ey)
-        self.x = ex
-        self.y = ey
-
-    def quad_to(self, cx, cy, ex, ey):
-        self.graphic_path.AddQuadCurveToPoint(cx, cy, ex, ey)
-        self.x = ex
-        self.y = ey
-
-    def cubic_to(self, c1x, c1y, c2x, c2y, ex, ey):
-        self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, ex, ey)
-        self.x = ex
-        self.y = ey
-
-    def arc_to(self, radius, rotation, arc, sweep, ex, ey):
-        sx = self.graphic_path.GetCurrentX()
-        sy = self.graphic_path.GetCurrentY()
-        element = path.Arc(sx + (sy * 1j), radius, rotation, arc, sweep, ex + (ey * 1j))
-        self.graphic_path.AddArc(element.center.real, element.center.imag, element.radius, element.theta,
-                                 element.theta + element.sweep)
-        self.x = ex
-        self.y = ey
-
-    def closed(self):
-        pass
+            if self.relative:
+                x += self.x
+                y += self.y
+                c1x += self.x
+                c1y += self.y
+                c2x += self.x
+                c2y += self.y
+            self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, x, y)
+            self.x = x
+            self.y = y
 
 
 class LaserProject:
@@ -445,7 +425,7 @@ class LaserProject:
         width = self[int, "bed_width", self.size[0]]
         height = self[int, "bed_height", self.size[1]]
         self.size = width, height
-        self.writer.board = self[str,"board", self.writer.board]
+        self.writer.board = self[str, "board", self.writer.board]
         self.writer.autolock = self[bool, "autolock", self.writer.autolock]
         self.writer.rotary = self[bool, "rotary", self.writer.rotary]
         self.writer.scale_x = self[float, "scale_x", self.writer.scale_x]
@@ -563,7 +543,7 @@ class LaserProject:
             if box is None:
                 continue
             matrix = e.matrix
-            p = matrix.InverseTransformPoint(position)
+            p = matrix.point_in_inverse_space(position)
             if e.contains(p):
                 if e.parent is None:
                     self.set_selected(e)
@@ -578,10 +558,10 @@ class LaserProject:
             box = e.box
             if box is None:
                 continue
-            top_left = e.matrix.TransformPoint([box[0], box[1]])
-            top_right = e.matrix.TransformPoint([box[2], box[1]])
-            bottom_left = e.matrix.TransformPoint([box[0], box[3]])
-            bottom_right = e.matrix.TransformPoint([box[2], box[3]])
+            top_left = e.matrix.point_in_matrix_space([box[0], box[1]])
+            top_right = e.matrix.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.matrix.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.matrix.point_in_matrix_space([box[2], box[3]])
             boundary_points.append(top_left)
             boundary_points.append(top_right)
             boundary_points.append(bottom_left)
@@ -599,7 +579,7 @@ class LaserProject:
             if isinstance(e, RawElement):
                 continue
             matrix = e.matrix
-            p = matrix.InverseTransformPoint(position)
+            p = matrix.point_in_inverse_space(position)
             if e.contains(p):
                 self.remove_element(e)
                 self.append(RawElement(e))
@@ -609,7 +589,7 @@ class LaserProject:
     def menu_remove(self, position):
         for e in self.flat_elements():
             matrix = e.matrix
-            p = matrix.InverseTransformPoint(position)
+            p = matrix.point_in_inverse_space(position)
             if e.contains(p):
                 self.remove_element(e)
                 break
@@ -621,24 +601,24 @@ class LaserProject:
         for e in self.flat_elements():
             matrix = e.matrix
             if position is not None:
-                p = matrix.InverseTransformPoint(position)
+                p = matrix.point_in_inverse_space(position)
                 if e.contains(p):
-                    e.matrix.PostScale(scale, scale_y, p[0], p[1])
+                    e.matrix.post_scale(scale, scale_y, p[0], p[1])
             else:
                 for s in self.selected:
-                    s.matrix.PostScale(scale, scale_y)
+                    s.matrix.post_scale(scale, scale_y)
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
         for e in self.flat_elements():
             matrix = e.matrix
             if position is not None:
-                p = matrix.InverseTransformPoint(position)
+                p = matrix.point_in_inverse_space(position)
                 if e.contains(p):
-                    e.matrix.PostRotate(radians, p[0], p[1])
+                    e.matrix.post_rotate(radians, p[0], p[1])
             else:
                 for e in self.selected:
-                    e.matrix.PostRotate(radians)
+                    e.matrix.post_rotate(radians)
         self("elements", 0)
 
     def move_selected(self, dx, dy):
