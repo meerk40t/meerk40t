@@ -644,7 +644,7 @@ class QuadraticBezier(object):
                 if points is None:
                     yield x0, y0  # /* plot curve */
                 else:
-                    points.append((x0, y0, 1))
+                    points.append((x0, y0))
                 if x0 == x2 and y0 == y2:
                     if points is not None:
                         for plot in reversed(points):
@@ -904,7 +904,7 @@ class CubicBezier(object):
                 fx = fy = f
                 while x0 != x3 and y0 != y3:
                     if leg == 0:
-                        second_leg.append((x0, y0, 1))  # /* plot curve */
+                        second_leg.append((x0, y0))  # /* plot curve */
                     else:
                         yield x0, y0  # /* plot curve */
                     while True:  # /* move sub-steps of one pixel */
@@ -1503,6 +1503,7 @@ class Path(MutableSequence):
 
     def plot(self):
         for segment in self._segments:
+            print(segment)
             for e in segment.plot():
                 yield e
 

@@ -75,7 +75,7 @@ class ImageElement(LaserElement):
 
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, self.matrix))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         if self.cache is None:
             width = self.image.width
             height = self.image.height
@@ -163,7 +163,7 @@ class EgvElement(LaserElement):
 
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, self.matrix))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         self.color.SetRGB(self.cut['color'])
         self.pen.SetColour(self.color)
         gc.SetPen(self.pen)
@@ -206,35 +206,6 @@ class LaserCommandPathParser:
             self.on = False
         elif command == COMMAND_LASER_ON:
             self.on = True
-        if command == COMMAND_SIMPLE_MOVE:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            if self.on:
-                self.graphic_path.AddLineToPoint(x, y)
-            else:
-                self.graphic_path.MoveToPoint(x, y)
-            self.x += x
-            self.y += y
-        elif command == COMMAND_SIMPLE_SHIFT:
-            self.on = False
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_SIMPLE_CUT:
-            self.on = True
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
         elif command == COMMAND_RAPID_MOVE:
             x, y = values
             if self.relative:
@@ -255,6 +226,10 @@ class LaserCommandPathParser:
             pass
         elif command == COMMAND_MODE_CONCAT:
             pass
+        elif command == COMMAND_SET_ABSOLUTE:
+            self.relative = False
+        elif command == COMMAND_SET_INCREMENTAL:
+            self.relative = True
         elif command == COMMAND_HSTEP:
             x = values
             y = 0
@@ -301,7 +276,7 @@ class LaserCommandPathParser:
                                                           curve.control2[0], curve.control2[1],
                                                           curve.end[0], curve.end[1])
 
-        elif command == COMMAND_MOVE:
+        elif command == COMMAND_SHIFT:
             x, y = values
             if self.relative:
                 x += self.x
@@ -309,7 +284,18 @@ class LaserCommandPathParser:
             self.graphic_path.MoveToPoint(x, y)
             self.x = x
             self.y = y
-        elif command == COMMAND_CUT_LINE_TO:
+        elif command == COMMAND_MOVE:
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            if self.on:
+                self.graphic_path.MoveToPoint(x, y)
+            else:
+                self.graphic_path.AddLineToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_CUT:
             x, y = values
             if self.relative:
                 x += self.x
@@ -317,7 +303,7 @@ class LaserCommandPathParser:
             self.graphic_path.AddLineToPoint(x, y)
             self.x = x
             self.y = y
-        elif command == COMMAND_CUT_QUAD_TO:
+        elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y = values
             if self.relative:
                 x += self.x
@@ -328,7 +314,7 @@ class LaserCommandPathParser:
             self.graphic_path.AddQuadCurveToPoint(cx, cy, x, y)
             self.x = x
             self.y = y
-        elif command == COMMAND_CUT_CUBIC_TO:
+        elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, x, y = values
             if self.relative:
                 x += self.x

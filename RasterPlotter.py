@@ -149,7 +149,7 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
             lower_bound = topmost_not_equal(data, width, height, x, skip_pixel, filter)
             if lower_bound == -1:
                 x += dx
-                yield COMMAND_MOVE_TO, (offset_x + x, offset_y + y)
+                yield COMMAND_MOVE, (offset_x + x, offset_y + y)
                 #yield COMMAND_HSTEP, dx # hstep doesn't actually work.
                 continue
             upper_bound = bottommost_not_equal(data, width, height, x, skip_pixel, filter)
@@ -169,13 +169,13 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                     y = nextcolor_top(data, width, height, x, y, end, filter)
                     y = max(y, end)
                 if pixel == skip_pixel:
-                    yield COMMAND_MOVE_TO, (offset_x + x, offset_y + y)
+                    yield COMMAND_SHIFT, (offset_x + x, offset_y + y)
                 else:
-                    yield COMMAND_CUT_LINE_TO, (offset_x + x, offset_y + y)
+                    yield COMMAND_CUT, (offset_x + x, offset_y + y)
                 if y == end:
                     break
             x += dx
-            yield COMMAND_MOVE_TO, (offset_x + x, offset_y + y)
+            yield COMMAND_MOVE, (offset_x + x, offset_y + y)
             #yield COMMAND_HSTEP, dx # hstep failed to work
             dy = -dy
     else:
@@ -202,9 +202,9 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                     x = nextcolor_left(data, width, height, x, y, end, filter)
                     x = max(x, end)
                 if pixel == skip_pixel:
-                    yield COMMAND_MOVE_TO, (offset_x + x, offset_y + y)
+                    yield COMMAND_SHIFT, (offset_x + x, offset_y + y)
                 else:
-                    yield COMMAND_CUT_LINE_TO, (offset_x + x, offset_y + y)
+                    yield COMMAND_CUT, (offset_x + x, offset_y + y)
                 if x == end:
                     break
             y += dy

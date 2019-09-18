@@ -385,7 +385,7 @@ class SVGPathTokens(PathTokens):
             # the control point on the previous command relative
             # to the current point.
             c_pos = self.current_pos
-            control = c_pos + c_pos - self.last_quad
+            control = [c_pos[0] + c_pos[0] - self.last_quad[0], c_pos[1] + c_pos[1] - self.last_quad[1]]
         end = self.get_pos()
 
         self.parser.quad(self.current_pos, control, end)

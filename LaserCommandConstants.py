@@ -9,19 +9,15 @@ COMMAND_LASER_OFF = 1  # Turns laser off
 COMMAND_LASER_ON = 2  # Tuns laser on
 
 COMMAND_RAPID_MOVE = 10  # In default mode, performs move
-COMMAND_MOVE = 20  # At speed, performs a line move
-COMMAND_SHIFT = 21  # At speed, performs a line move
-COMMAND_CUT = 22  # At speed, performs a line move
+COMMAND_MOVE = 20  # At speed, performs a line move (laser state current)
+COMMAND_SHIFT = 21  # At speed, performs a line shift (laser off)
+COMMAND_CUT = 22  # At speed, performs a line cut (laser on)
+COMMAND_CUT_QUAD = 23  # From current position. At speed, performs a quadratic bezier cut
+COMMAND_CUT_CUBIC = 24  # From current position. At speed, performs a cubic bezier cut
 COMMAND_HSTEP = 30  # Causes horizontal raster step
 COMMAND_VSTEP = 40  # Causes a vertical raster step
-COMMAND_SIMPLE_MOVE = 50  # At speed, performs a octant move (laser current_state)
-COMMAND_SIMPLE_SHIFT = 51  # At speed, performs a octant shift (laser off)
-COMMAND_SIMPLE_CUT = 52  # At speed, performs a octant cut (laser on)
 
 COMMAND_PLOT = 100
-COMMAND_CUT_LINE_TO = 110  # From current position. At speed, performs a line cut
-COMMAND_CUT_QUAD_TO = 120  # From current position. At speed, performs a quadratic bezier cut
-COMMAND_CUT_CUBIC_TO = 130  # From current position. At speed, performs a cubic bezier cut
 
 COMMAND_MODE_DEFAULT = 1000
 COMMAND_MODE_COMPACT = 1001

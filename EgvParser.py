@@ -2,14 +2,26 @@
 
 from LaserCommandConstants import *
 
-COMMAND_RIGHT = b'B'
-COMMAND_LEFT = b'T'
-COMMAND_TOP = b'L'
-COMMAND_BOTTOM = b'R'
+CMD_RIGHT = b'B'
+CMD_LEFT = b'T'
+CMD_TOP = b'L'
+CMD_BOTTOM = b'R'
 
-COMMAND_ON = b'D'
-COMMAND_OFF = b'U'
-COMMAND_P = b'P'
+CMD_FINISH = b'F'
+CMD_ANGLE = b'M'
+
+CMD_RESET = b'@'
+
+CMD_ON = b'D'
+CMD_OFF = b'U'
+CMD_P = b'P'
+CMD_G = b'G'
+CMD_INTERRUPT = b'I'
+CMD_N = b'N'
+CMD_CUT = b'C'
+CMD_VELOCITY = b'V'
+CMD_S = b'S'
+CMD_E = b'E'
 
 
 class EgvParser:
@@ -86,7 +98,7 @@ def parse_egv(f):
                     yield element
             return
     except NameError:
-        pass # Must be Python 3.
+        pass  # Must be Python 3.
 
     egv_parser = EgvParser()
 
@@ -104,13 +116,13 @@ def parse_egv(f):
     is_finishing = False
     is_resetting = False
     value_s = -1
-
+    yield COMMAND_SET_INCREMENTAL, ()
     for commands in egv_parser.parse(f):
         cmd = commands[0]
         distance = commands[1] + commands[2]
         if cmd is None:
             return
-        elif cmd == COMMAND_RIGHT:  # move right
+        elif cmd == CMD_RIGHT:  # move right
             if is_compact and is_harmonic and is_left:
                 if is_top:
                     yield COMMAND_VSTEP, (-value_g)
@@ -118,9 +130,9 @@ def parse_egv(f):
                     yield COMMAND_VSTEP, (value_g)
                 yield COMMAND_LASER_OFF, ()
                 is_on = False
-            yield COMMAND_SIMPLE_MOVE, (distance, 0)
+            yield COMMAND_MOVE, (distance, 0)
             is_left = False
-        elif cmd == COMMAND_LEFT:  # move left
+        elif cmd == CMD_LEFT:  # move left
             if is_compact and is_harmonic and not is_left:
                 if is_top:
                     yield COMMAND_VSTEP, (-value_g)
@@ -128,9 +140,9 @@ def parse_egv(f):
                     yield COMMAND_VSTEP, (value_g)
                 yield COMMAND_LASER_OFF, ()
                 is_on = False
-            yield COMMAND_SIMPLE_MOVE, (-distance, 0)
+            yield COMMAND_MOVE, (-distance, 0)
             is_left = True
-        elif cmd == COMMAND_BOTTOM:  # move bottom
+        elif cmd == CMD_BOTTOM:  # move bottom
             if is_compact and is_harmonic and is_top:
                 if is_left:
                     yield COMMAND_HSTEP, (-value_g)
@@ -138,9 +150,9 @@ def parse_egv(f):
                     yield COMMAND_HSTEP, (value_g)
                 yield COMMAND_LASER_OFF, ()
                 is_on = False
-            yield COMMAND_SIMPLE_MOVE, (0, distance)
+            yield COMMAND_MOVE, (0, distance)
             is_top = False
-        elif cmd == COMMAND_TOP:  # move top
+        elif cmd == CMD_TOP:  # move top
             if is_compact and is_harmonic and not is_top:
                 if is_left:
                     yield COMMAND_HSTEP, (-value_g)
@@ -148,9 +160,9 @@ def parse_egv(f):
                     yield COMMAND_HSTEP, (value_g)
                 yield COMMAND_LASER_OFF, ()
                 is_on = False
-            yield COMMAND_SIMPLE_MOVE, (0, -distance)
+            yield COMMAND_MOVE, (0, -distance)
             is_top = True
-        elif cmd == b'M':
+        elif cmd == CMD_ANGLE:
             if is_left:
                 distance_x = -distance
             else:
@@ -159,16 +171,16 @@ def parse_egv(f):
                 distance_y = -distance
             else:
                 distance_y = distance
-            yield COMMAND_SIMPLE_MOVE, (distance_x, distance_y)
-        elif cmd == COMMAND_ON:  # laser on
+            yield COMMAND_MOVE, (distance_x, distance_y)
+        elif cmd == CMD_ON:  # laser on
             is_on = True
             yield COMMAND_LASER_ON, ()
-        elif cmd == COMMAND_OFF:  # laser off
+        elif cmd == CMD_OFF:  # laser off
             is_on = False
             yield COMMAND_LASER_OFF, ()
-        elif cmd == b'S':  # s command
+        elif cmd == CMD_S:  # s command
             value_s = commands[2]  # needed to know which E we are performing.
-        elif cmd == b'E':  # slow
+        elif cmd == CMD_E:  # slow
             is_compact = True
             if is_finishing or is_resetting:
                 is_resetting = False
@@ -186,34 +198,35 @@ def parse_egv(f):
             yield COMMAND_SET_STEP, (value_g)
             yield COMMAND_SET_SPEED, (speed_code)
             yield COMMAND_MODE_COMPACT, ()
-        elif cmd == b'F':  # finish
+        elif cmd == CMD_FINISH:  # finish
             is_compact = True
             yield COMMAND_MODE_DEFAULT, ()
-        elif cmd == b'P':  # pop
+        elif cmd == CMD_P:  # pop
             is_compact = False
             yield COMMAND_MODE_DEFAULT, ()
-        elif cmd == b'I':  # interrupt
+        elif cmd == CMD_INTERRUPT:  # interrupt
             pass
-        elif cmd == b'C':  # cut
+        elif cmd == CMD_CUT:  # cut
             is_harmonic = False
             is_cut = True
             value_g = 0
             if speed_code is None:
                 speed_code = ""
             speed_code += 'C'
-        elif cmd == b'V':  # velocity
+        elif cmd == CMD_VELOCITY:  # velocity
             is_speed = True
             if speed_code is None:
                 speed_code = ""
             speed_code += 'V%d' % commands[2]
-        elif cmd == b'G':  # engrave
+        elif cmd == CMD_G:  # engrave
             is_harmonic = True
             value_g = commands[2]
             if speed_code is None:
                 speed_code = ""
             speed_code += "G%03d" % value_g
-        elif cmd == b'N':  # next
+        elif cmd == CMD_N:  # next
             is_compact = False
             yield COMMAND_MODE_DEFAULT, ()
-        elif cmd == b'@':  # reset
+        elif cmd == CMD_RESET:  # reset
             is_resetting = True
+    yield COMMAND_SET_ABSOLUTE, ()

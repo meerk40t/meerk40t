@@ -178,30 +178,36 @@ class LhymicroWriter:
             self.up()
         elif command == COMMAND_LASER_ON:
             self.down()
-        elif command == COMMAND_SIMPLE_MOVE:
-            x, y = values
-            self.move(x, y)
-        elif command == COMMAND_SIMPLE_CUT:
-            self.down()
-            x, y = values
-            self.move(x, y)
-        elif command == COMMAND_SIMPLE_SHIFT:
-            self.up()
-            x, y = values
-            self.move(x, y)
         elif command == COMMAND_RAPID_MOVE:
             self.to_default_mode()
             sx, sy, x, y = values
             self.move(x, y)
+        elif command == COMMAND_SHIFT:
+            x, y = values
+            sx = self.current_x
+            sy = self.current_y
+            self.up()
+            if self.state == STATE_COMPACT:
+                for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                    self.move(x, y)
+            else:
+                self.move(x, y)
         elif command == COMMAND_MOVE:
             x, y = values
             sx = self.current_x
             sy = self.current_y
             if self.state == STATE_COMPACT:
-                for x, y in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                     self.move(x, y)
             else:
                 self.move(x, y)
+        elif command == COMMAND_CUT:
+            x, y = values
+            sx = self.current_x
+            sy = self.current_y
+            self.down()
+            for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                self.move_absolute(x, y)
         elif command == COMMAND_HSTEP:
             self.v_switch()
         elif command == COMMAND_VSTEP:
@@ -226,21 +232,14 @@ class LhymicroWriter:
                 else:
                     self.down()
                 self.move_absolute(x, y)
-        elif command == COMMAND_CUT_LINE_TO:
-            x, y = values
-            sx = self.current_x
-            sy = self.current_y
-            self.down()
-            for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
-                self.move_absolute(x, y)
-        elif command == COMMAND_CUT_QUAD_TO:
+        elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
             sx = self.current_x
             sy = self.current_y
             self.down()
             for x, y, on in group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
                 self.move_absolute(x, y)
-        elif command == COMMAND_CUT_CUBIC_TO:
+        elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, ex, ey = values
             sx = self.current_x
             sy = self.current_y
@@ -260,6 +259,10 @@ class LhymicroWriter:
             x_dir, y_dir = values
             self.is_left = x_dir < 0
             self.is_top = y_dir < 0
+        elif command == COMMAND_SET_INCREMENTAL:
+            self.is_relative = True
+        elif command == COMMAND_SET_ABSOLUTE:
+            self.is_relative = False
         elif command == COMMAND_SET_POSITION:
             x, y = values
             self.current_x = x
@@ -296,10 +299,8 @@ class LhymicroWriter:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                # This is an error. We'll fix it though.
                 for x, y, on in group_plots(self.current_x, self.current_y,
-                                            Line.plot_line(self.current_x, self.current_y, self.current_x + dx,
-                                                           self.current_y + dy)):
+                                    Line.plot_line(self.current_x, self.current_y, self.current_x + dx, self.current_y + dy)):
                     self.move_absolute(x, y)
             elif abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
