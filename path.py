@@ -493,7 +493,7 @@ class Close(object):
     def plot(self):
         if self.start is not None and self.end is not None:
             for x, y in Line.plot_line(self.start[0], self.start[1], self.end[0], self.end[1]):
-                yield x, y, 0
+                yield x, y, 1
 
     def reverse(self):
         return Close(self.end, self.start)
