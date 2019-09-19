@@ -272,15 +272,19 @@ class MeerK40t(wx.Frame):
         for element in svg:
             if 'd' in element:
                 pathd = element['d']
-                context.append(PathElement(pathd))
+                pe = PathElement(pathd)
+                if 'fill' in element:
+                    if element['fill'] != "none":
+                        pe.cut['fill'] = svg_parser.parse_svg_color(element['fill'])
+                if 'stroke' in element:
+                    if element['stroke'] != "none":
+                        pe.cut['color'] = svg_parser.parse_svg_color(element['stroke'])
+                context.append(pe)
             else:
                 group = []
                 context.append(group)
                 context = group
         self.scene.update_buffer()
-
-    def tree_update(self):
-        self.tree.refresh_tree_elements()
 
     def load_egv(self, pathname):
         self.project.append(EgvElement(pathname))
@@ -292,6 +296,9 @@ class MeerK40t(wx.Frame):
         width, height = image.size
         self.project.append(PathElement("M0,0 {0},0 {0},{1} 0,{1}z".format(width, height)))
         self.scene.update_buffer()
+
+    def tree_update(self):
+        self.tree.refresh_tree_elements()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.elements = []

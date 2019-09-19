@@ -132,9 +132,8 @@ class PathElement(LaserElement):
         self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20})
 
     def generate(self):
-        parse = path.ObjectParser()
-        svg_parser.parse_svg_path(parse, self.path)
-        object_path = parse.path
+        object_path = path.Path()
+        svg_parser.parse_svg_path(object_path, self.path)
         self.box = object_path.bbox()
         if VARIABLE_NAME_SPEED in self.cut:
             speed = self.cut.get(VARIABLE_NAME_SPEED)

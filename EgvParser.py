@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from LaserCommandConstants import *
+from LaserSpeed import LaserSpeed
 
 CMD_RIGHT = b'B'
 CMD_LEFT = b'T'
@@ -85,16 +86,17 @@ class EgvParser:
         self.distance += amount
 
 
-def parse_egv(f):
+def parse_egv(f, board="M2"):
     if isinstance(f, str):
         with open(f, "rb") as f:
-            for element in parse_egv(f):
+            for element in parse_egv(f, board=board):
                 yield element
+                print(element)
         return
     try:
         if isinstance(f, unicode):
             with open(f, "rb") as f:
-                for element in parse_egv(f):
+                for element in parse_egv(f, board=board):
                     yield element
             return
     except NameError:
@@ -195,8 +197,11 @@ def parse_egv(f):
             if is_finishing:
                 is_finishing = False
                 break
-            yield COMMAND_SET_STEP, (value_g)
-            yield COMMAND_SET_SPEED, (speed_code)
+            code_value, gear, step_value, diagonal, raster_step = LaserSpeed.parse_speed_code(speed_code)
+            b, m, gear = LaserSpeed.get_gearing(board, gear=gear, uses_raster_step=raster_step != 0)
+            speed = LaserSpeed.get_speed_from_value(code_value, b, m)
+            yield COMMAND_SET_STEP, (raster_step)
+            yield COMMAND_SET_SPEED, (speed)
             yield COMMAND_MODE_COMPACT, ()
         elif cmd == CMD_FINISH:  # finish
             is_compact = True

@@ -363,12 +363,16 @@ class Move(object):
     """
 
     def __init__(self, start, end=None):
-        if end is None:
-            self.start = Point(start)
-            self.end = Point(start)
-        else:
+        if end is not None and start is not None:
             self.start = Point(start)
             self.end = Point(end)
+        else:
+            if start is not None:
+                self.start = Point(start)
+                self.end = Point(start)
+            else:
+                self.start = Point(end)
+                self.end = Point(end)
 
     def __imul__(self, other):
         if isinstance(other, Matrix):
@@ -401,11 +405,13 @@ class Move(object):
         return not self == other
 
     def __len__(self):
-        return 1
+        return 2
 
     def __getitem__(self, item):
         if item == 0:
             return self.start
+        elif item == 1:
+            return self.end
         else:
             raise IndexError
 
@@ -419,6 +425,84 @@ class Move(object):
     def bbox(self):
         """returns the bounding box for the segment in the form
         (xmin, ymin, ymax, ymax)."""
+        return self.start[0], self.start[1], self.end[0], self.end[1]
+
+
+class Close(object):
+    """Represents close commands. If this exists at the end of the shape then the shape is closed.
+    the methodology of a single flag close fails in a couple ways. You can have multi-part shapes
+    which can close or not close several times.
+    """
+
+    def __init__(self, start=None, end=None):
+        if end is None:
+            if start is None:
+                self.start = None
+                self.end = None
+            self.start = Point(start)
+            self.end = Point(start)
+        else:
+            self.start = Point(start)
+            self.end = Point(end)
+
+    def __imul__(self, other):
+        if isinstance(other, Matrix):
+            if self.start is not None:
+                self.start *= other
+            if self.end is not None:
+                self.end *= other
+        return self
+
+    def __mul__(self, other):
+        if isinstance(other, Matrix):
+            n = copy(self)
+            n *= other
+            return n
+
+    __rmul__ = __mul__
+
+    def __copy__(self):
+        return Close(self.start, self.end)
+
+    def __repr__(self):
+        if self.start is None and self.end is None:
+            return 'Close()'
+        return 'Close(start=%s, end=%s)' % (self.start, self.end)
+
+    def __eq__(self, other):
+        if not isinstance(other, Close):
+            return NotImplemented
+        return self.start == other.start
+
+    def __ne__(self, other):
+        if not isinstance(other, Close):
+            return NotImplemented
+        return not self == other
+
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, item):
+        if item == 0:
+            return self.start
+        elif item == 1:
+            return self.end
+        else:
+            raise IndexError
+
+    def plot(self):
+        if self.start is not None and self.end is not None:
+            for x, y in Line.plot_line(self.start[0], self.start[1], self.end[0], self.end[1]):
+                yield x, y, 0
+
+    def reverse(self):
+        return Close(self.end, self.start)
+
+    def bbox(self):
+        """returns the bounding box for the segment in the form
+        (xmin, ymin, ymax, ymax)."""
+        if self.start is None and self.end is None:
+            return None
         return self.start[0], self.start[1], self.end[0], self.end[1]
 
 
@@ -1436,16 +1520,13 @@ class Arc(object):
 class Path(MutableSequence):
     """A Path is a sequence of path segments"""
 
-    def __init__(self, *segments, **kw):
+    def __init__(self, *segments):
         self._segments = list(segments)
         self._length = None
         self._lengths = None
-        self.closed = False
-        if 'closed' in kw:
-            self.closed = kw['closed']
 
     def __copy__(self):
-        p = Path(closed=self.closed)
+        p = Path()
         for seg in self._segments:
             p.append(copy(seg))
         return p
@@ -1483,8 +1564,7 @@ class Path(MutableSequence):
         return len(self._segments)
 
     def __repr__(self):
-        return 'Path(%s, closed=%s)' % (
-            ', '.join(repr(x) for x in self._segments), self.closed)
+        return 'Path(%s)' % (', '.join(repr(x) for x in self._segments))
 
     def __eq__(self, other):
         if not isinstance(other, Path):
@@ -1500,6 +1580,38 @@ class Path(MutableSequence):
         if not isinstance(other, Path):
             return NotImplemented
         return not self == other
+
+    def start(self):
+        pass
+
+    def end(self):
+        pass
+
+    def move(self, start_pos, end_pos):
+        self.append(Move(start_pos, end_pos))
+
+    def line(self, start_pos, end_pos):
+        self.append(Line(start_pos, end_pos))
+
+    def quad(self, start_pos, control, end_pos):
+        self.append(QuadraticBezier(start_pos, control, end_pos))
+
+    def cubic(self, start_pos, control1, control2, end_pos):
+        self.append(CubicBezier(start_pos, control1, control2, end_pos))
+
+    def arc(self, start_pos, rx, ry, rotation, arc, sweep, end_pos):
+        self.append(Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos))
+
+    def closed(self):
+        start_pos = self._segments[-1].end
+        end_pos = None
+        for segment in reversed(self._segments):
+            if isinstance(segment, Move):
+                end_pos = segment.start
+                break
+        if end_pos is None:
+            end_pos = self._segments[0].start
+        self.append(Close(start_pos, end_pos))
 
     def plot(self):
         for segment in self._segments:
@@ -1519,26 +1631,6 @@ class Path(MutableSequence):
         path._segments = reversed_segments
         return path
 
-    def _is_closable(self):
-        """Returns true if the end is on the start of a segment"""
-        end = self[-1].end
-        for segment in self:
-            if segment.start == end:
-                return True
-        return False
-
-    @property
-    def closed(self):
-        """Checks that the path is closed"""
-        return self._closed and self._is_closable()
-
-    @closed.setter
-    def closed(self, value):
-        value = bool(value)
-        if value and not self._is_closable():
-            raise ValueError("End does not coincide with a segment start.")
-        self._closed = value
-
     def bbox(self):
         """returns a bounding box for the input Path"""
         bbs = [seg.bbox() for seg in self._segments]
@@ -1550,17 +1642,12 @@ class Path(MutableSequence):
         return xmin, ymin, xmax, ymax
 
     def d(self):
-        if self.closed:
-            segments = self[:-1]
-        else:
-            segments = self[:]
-
         current_pos = None
         parts = []
         previous_segment = None
         end = self[-1].end
 
-        for segment in segments:
+        for segment in self:
             start = segment.start
             # If the start of this segment does not coincide with the end of
             # the last segment or if this segment is actually the close point
@@ -1568,8 +1655,7 @@ class Path(MutableSequence):
             if isinstance(segment, Move) or (current_pos != start) or (
                     start == end and not isinstance(previous_segment, Move)):
                 parts.append('M {0:G},{1:G}'.format(start[0], start[1]))
-
-            if isinstance(segment, Line):
+            elif isinstance(segment, Line):
                 parts.append('L {0:G},{1:G}'.format(
                     segment.end[0], segment.end[1])
                 )
@@ -1599,42 +1685,11 @@ class Path(MutableSequence):
             elif isinstance(segment, Arc):
                 parts.append('A {0:G},{1:G} {2:G} {3:d},{4:d} {5:G},{6:G}'.format(
                     segment.get_radius_x(), segment.get_radius_y(), segment.get_rotation(),
-                    int(segment.arc), int(segment.sweep),
+                    int(abs(segment.sweep) > (tau / 2.0)), int(segment.sweep >= 0),
                     segment.end[0], segment.end[1])
                 )
+            elif isinstance(segment, Close):
+                parts.append('Z')
             current_pos = segment.end
             previous_segment = segment
-
-        if self.closed:
-            parts.append('Z')
-
         return ' '.join(parts)
-
-
-class ObjectParser:
-    def __init__(self):
-        self.path = Path()
-
-    def start(self):
-        pass
-
-    def end(self):
-        pass
-
-    def move(self, start_pos, end_pos):
-        self.path.append(Move(start_pos, end_pos))
-
-    def line(self, start_pos, end_pos):
-        self.path.append(Line(start_pos, end_pos))
-
-    def quad(self, start_pos, control, end_pos):
-        self.path.append(QuadraticBezier(start_pos, control, end_pos))
-
-    def cubic(self, start_pos, control1, control2, end_pos):
-        self.path.append(CubicBezier(start_pos, control1, control2, end_pos))
-
-    def arc(self, start_pos, rx, ry, rotation, arc, sweep, end_pos):
-        self.path.append(Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos))
-
-    def closed(self):
-        pass
