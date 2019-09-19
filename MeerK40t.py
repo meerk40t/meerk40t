@@ -10,7 +10,8 @@ import wx.ribbon as RB
 from PIL import Image
 
 import svg_parser
-from LaserProject import LaserProject, ImageElement, PathElement, EgvElement
+from EgvParser import parse_egv
+from LaserProject import LaserProject, ImageElement, PathElement
 from LaserSceneView import LaserSceneView
 
 
@@ -287,7 +288,15 @@ class MeerK40t(wx.Frame):
         self.scene.update_buffer()
 
     def load_egv(self, pathname):
-        self.project.append(EgvElement(pathname))
+        for event in parse_egv(pathname):
+            path = event['path']
+            if len(path) == 0:
+                continue
+            path_d = path.d()
+            element = PathElement(path_d)
+            self.project.append(element)
+            if 'speed' in event:
+                element.cut['speed'] = event['speed']
         self.scene.update_buffer()
 
     def load_image(self, pathname):

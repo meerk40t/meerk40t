@@ -149,33 +149,6 @@ class PathElement(LaserElement):
         yield COMMAND_SET_SPEED, None
         yield COMMAND_SET_D_RATIO, None
 
-
-class EgvElement(LaserElement):
-    def __init__(self, file):
-        LaserElement.__init__(self)
-        self.file = file
-        self.cut.update({VARIABLE_NAME_COLOR: 0x0000FF, VARIABLE_NAME_SPEED: 20})
-
-    def generate(self):
-        for event in EgvParser.parse_egv(self.file):
-            yield event
-
-    def draw(self, dc):
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        self.color.SetRGB(self.cut['color'])
-        self.pen.SetColour(self.color)
-        gc.SetPen(self.pen)
-        if self.cache is None:
-            p = gc.CreatePath()
-            parse = LaserCommandPathParser(p)
-            for event in self.generate():
-                parse.command(event)
-            self.cache = p
-            self.box = self.cache.GetBox()
-        gc.StrokePath(self.cache)
-
-
 class RawElement(LaserElement):
     def __init__(self, element):
         LaserElement.__init__(self)
@@ -501,6 +474,8 @@ class LaserProject:
     def set_selected_bbox_by_selected(self):
         boundary_points = []
         for e in self.selected:
+            if isinstance(e, list):
+                continue
             box = e.box
             if box is None:
                 continue

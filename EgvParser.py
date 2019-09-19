@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
+from path import Path
 
 CMD_RIGHT = b'B'
 CMD_LEFT = b'T'
@@ -62,7 +62,7 @@ class EgvParser:
                 continue
             if ord('A') <= value <= ord('Z') or value == ord('@'):
                 if self.command is not None:
-                    yield [self.command, self.distance, self.number_value]
+                    yield self.command, self.distance, self.number_value
                 self.distance = 0
                 self.number_value = 0
                 self.command = byte
@@ -76,7 +76,7 @@ class EgvParser:
                 value = ord(byte)
                 self.append_distance(25 + value - ord('a') + 1)  # '|a' = 27, not 26
         if self.command is not None:
-            yield [self.command, self.distance, self.number_value]
+            yield self.command, self.distance, self.number_value
 
     def append_digit(self, value):
         self.number_value *= 10
@@ -86,12 +86,37 @@ class EgvParser:
         self.distance += amount
 
 
+class EgvPlotter:
+    def __init__(self, x=0, y=0):
+        self.path = Path()
+        self.x = x
+        self.y = y
+        self.cutting = False
+        self.data = {"path": self.path}
+
+    def cut(self, dx, dy):
+        if dx == 0 and dy == 0:
+            return  # Just setting the directions.
+        if self.cutting:
+            self.path.line((self.x, self.y), (self.x + dx, self.y + dy))
+        else:
+            self.path.move((self.x, self.y), (self.x + dx, self.y + dy))
+        self.x += dx
+        self.y += dy
+
+    def off(self):
+        self.cutting = False
+
+    def on(self):
+        self.path.move((self.x, self.y), (self.x, self.y))
+        self.cutting = True
+
+
 def parse_egv(f, board="M2"):
     if isinstance(f, str):
         with open(f, "rb") as f:
             for element in parse_egv(f, board=board):
                 yield element
-                print(element)
         return
     try:
         if isinstance(f, unicode):
@@ -103,66 +128,30 @@ def parse_egv(f, board="M2"):
         pass  # Must be Python 3.
 
     egv_parser = EgvParser()
-
     egv_parser.skip_header(f)
-
     speed_code = None
-    value_g = 0
     is_compact = False
-    is_on = False
     is_left = False
     is_top = False
-    is_speed = False
-    is_cut = False
-    is_harmonic = False
-    is_finishing = False
-    is_resetting = False
-    value_s = -1
-    yield COMMAND_SET_INCREMENTAL, ()
+    is_reset = False
+    obj = EgvPlotter()
+
     for commands in egv_parser.parse(f):
         cmd = commands[0]
         distance = commands[1] + commands[2]
         if cmd is None:
             return
         elif cmd == CMD_RIGHT:  # move right
-            if is_compact and is_harmonic and is_left:
-                if is_top:
-                    yield COMMAND_VSTEP, (-value_g)
-                else:
-                    yield COMMAND_VSTEP, (value_g)
-                yield COMMAND_LASER_OFF, ()
-                is_on = False
-            yield COMMAND_MOVE, (distance, 0)
+            obj.cut(distance, 0)
             is_left = False
         elif cmd == CMD_LEFT:  # move left
-            if is_compact and is_harmonic and not is_left:
-                if is_top:
-                    yield COMMAND_VSTEP, (-value_g)
-                else:
-                    yield COMMAND_VSTEP, (value_g)
-                yield COMMAND_LASER_OFF, ()
-                is_on = False
-            yield COMMAND_MOVE, (-distance, 0)
+            obj.cut(-distance, 0)
             is_left = True
         elif cmd == CMD_BOTTOM:  # move bottom
-            if is_compact and is_harmonic and is_top:
-                if is_left:
-                    yield COMMAND_HSTEP, (-value_g)
-                else:
-                    yield COMMAND_HSTEP, (value_g)
-                yield COMMAND_LASER_OFF, ()
-                is_on = False
-            yield COMMAND_MOVE, (0, distance)
+            obj.cut(0, distance)
             is_top = False
         elif cmd == CMD_TOP:  # move top
-            if is_compact and is_harmonic and not is_top:
-                if is_left:
-                    yield COMMAND_HSTEP, (-value_g)
-                else:
-                    yield COMMAND_HSTEP, (value_g)
-                yield COMMAND_LASER_OFF, ()
-                is_on = False
-            yield COMMAND_MOVE, (0, -distance)
+            obj.cut(0, -distance)
             is_top = True
         elif cmd == CMD_ANGLE:
             if is_left:
@@ -173,65 +162,51 @@ def parse_egv(f, board="M2"):
                 distance_y = -distance
             else:
                 distance_y = distance
-            yield COMMAND_MOVE, (distance_x, distance_y)
+            obj.cut(distance_x, distance_y)
         elif cmd == CMD_ON:  # laser on
-            is_on = True
-            yield COMMAND_LASER_ON, ()
+            obj.on()
         elif cmd == CMD_OFF:  # laser off
-            is_on = False
-            yield COMMAND_LASER_OFF, ()
-        elif cmd == CMD_S:  # s command
-            value_s = commands[2]  # needed to know which E we are performing.
-        elif cmd == CMD_E:  # slow
-            is_compact = True
-            if is_finishing or is_resetting:
-                is_resetting = False
+            obj.off()
+        elif cmd == CMD_S:  # slow
+            if commands[2] == 1:
+                is_reset = False
+                is_compact = True
+                yield obj.data
+                obj = EgvPlotter(obj.x, obj.y)
+                code_value, gear, step_value, diagonal, raster_step = LaserSpeed.parse_speed_code(speed_code)
+                b, m, gear = LaserSpeed.get_gearing(board, gear=gear, uses_raster_step=raster_step != 0)
+                speed = LaserSpeed.get_speed_from_value(code_value, b, m)
+                obj.data['step'] = raster_step
+                obj.data['speed'] = speed
+            else:
+                if not is_compact and not is_reset:
+                    is_compact = True  # We jumped out of compact, but then back in.
+        elif cmd == CMD_N:
+            if is_compact:
                 is_compact = False
-                is_on = False
-                is_left = False
-                is_top = False
-                is_speed = False
-                speed_code = None
-                is_cut = False
-                is_harmonic = False
-            if is_finishing:
-                is_finishing = False
-                break
-            code_value, gear, step_value, diagonal, raster_step = LaserSpeed.parse_speed_code(speed_code)
-            b, m, gear = LaserSpeed.get_gearing(board, gear=gear, uses_raster_step=raster_step != 0)
-            speed = LaserSpeed.get_speed_from_value(code_value, b, m)
-            yield COMMAND_SET_STEP, (raster_step)
-            yield COMMAND_SET_SPEED, (speed)
-            yield COMMAND_MODE_COMPACT, ()
-        elif cmd == CMD_FINISH:  # finish
-            is_compact = True
-            yield COMMAND_MODE_DEFAULT, ()
-        elif cmd == CMD_P:  # pop
-            is_compact = False
-            yield COMMAND_MODE_DEFAULT, ()
-        elif cmd == CMD_INTERRUPT:  # interrupt
-            pass
-        elif cmd == CMD_CUT:  # cut
-            is_harmonic = False
-            is_cut = True
-            value_g = 0
+        elif cmd == CMD_FINISH or cmd == CMD_RESET:  # next
+            is_reset = True
+            if is_compact:
+                is_compact = False
+                yield obj.data
+                obj = EgvPlotter(obj.x, obj.y)
+        elif cmd == CMD_CUT:  # Speed code element
             if speed_code is None:
                 speed_code = ""
             speed_code += 'C'
-        elif cmd == CMD_VELOCITY:  # velocity
-            is_speed = True
+        elif cmd == CMD_VELOCITY:  # Speed code element
             if speed_code is None:
                 speed_code = ""
             speed_code += 'V%d' % commands[2]
-        elif cmd == CMD_G:  # engrave
-            is_harmonic = True
+        elif cmd == CMD_G:  # Speed code element
             value_g = commands[2]
             if speed_code is None:
                 speed_code = ""
             speed_code += "G%03d" % value_g
-        elif cmd == CMD_N:  # next
-            is_compact = False
-            yield COMMAND_MODE_DEFAULT, ()
-        elif cmd == CMD_RESET:  # reset
-            is_resetting = True
-    yield COMMAND_SET_ABSOLUTE, ()
+        elif cmd == CMD_E:  # e command
+            pass
+        elif cmd == CMD_P:  # pop
+            pass
+        elif cmd == CMD_INTERRUPT:  # interrupt
+            pass
+    yield obj.data

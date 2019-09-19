@@ -1588,6 +1588,10 @@ class Path(MutableSequence):
         pass
 
     def move(self, start_pos, end_pos):
+        if len(self._segments) > 0:
+            if isinstance(self._segments[-1], Move):
+                self._segments[-1].end = Point(end_pos)
+                return
         self.append(Move(start_pos, end_pos))
 
     def line(self, start_pos, end_pos):
@@ -1615,7 +1619,6 @@ class Path(MutableSequence):
 
     def plot(self):
         for segment in self._segments:
-            print(segment)
             for e in segment.plot():
                 yield e
 
@@ -1645,8 +1648,9 @@ class Path(MutableSequence):
         current_pos = None
         parts = []
         previous_segment = None
+        if len(self) == 0:
+            return ''
         end = self[-1].end
-
         for segment in self:
             start = segment.start
             # If the start of this segment does not coincide with the end of
@@ -1654,7 +1658,7 @@ class Path(MutableSequence):
             # of a closed path, then we should start a new subpath here.
             if isinstance(segment, Move) or (current_pos != start) or (
                     start == end and not isinstance(previous_segment, Move)):
-                parts.append('M {0:G},{1:G}'.format(start[0], start[1]))
+                parts.append('M {0:G},{1:G}'.format(segment.end[0], segment.end[1]))
             elif isinstance(segment, Line):
                 parts.append('L {0:G},{1:G}'.format(
                     segment.end[0], segment.end[1])

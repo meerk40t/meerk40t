@@ -300,7 +300,9 @@ class LhymicroWriter:
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in group_plots(self.current_x, self.current_y,
-                                    Line.plot_line(self.current_x, self.current_y, self.current_x + dx, self.current_y + dy)):
+                                            Line.plot_line(self.current_x, self.current_y,
+                                                           self.current_x + dx, self.current_y + dy)
+                                            ):
                     self.move_absolute(x, y)
             elif abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
