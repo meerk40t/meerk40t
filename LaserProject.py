@@ -556,27 +556,27 @@ class LaserProject:
     def menu_scale(self, scale, scale_y=None, position=None):
         if scale_y is None:
             scale_y = scale
-        for e in self.flat_elements():
-            matrix = e.matrix
-            if position is not None:
+        if position is None:
+            for s in self.selected:
+                s.matrix.post_scale(scale, scale_y)
+        else:
+            for e in self.flat_elements():
+                matrix = e.matrix
                 p = matrix.point_in_inverse_space(position)
                 if e.contains(p):
                     e.matrix.post_scale(scale, scale_y, p[0], p[1])
-            else:
-                for s in self.selected:
-                    s.matrix.post_scale(scale, scale_y)
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
-        for e in self.flat_elements():
-            matrix = e.matrix
-            if position is not None:
+        if position is None:
+            for s in self.selected:
+                s.matrix.post_rotate(radians)
+        else:
+            for e in self.flat_elements():
+                matrix = e.matrix
                 p = matrix.point_in_inverse_space(position)
                 if e.contains(p):
                     e.matrix.post_rotate(radians, p[0], p[1])
-            else:
-                for e in self.selected:
-                    e.matrix.post_rotate(radians)
         self("elements", 0)
 
     def move_selected(self, dx, dy):

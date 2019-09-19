@@ -14,6 +14,11 @@ from EgvParser import parse_egv
 from LaserProject import LaserProject, ImageElement, PathElement
 from LaserSceneView import LaserSceneView
 
+try:
+    from math import tau
+except ImportError:
+    from math import pi
+    tau = pi * 2
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -389,14 +394,10 @@ class MeerK40t(wx.Frame):
         self.scene.draw_guides = not self.scene.draw_guides
 
     def transform_rotate_right(self, event):  # wxGlade: MeerK40t.<event_handler>
-        from math import pi
-        tau = pi * 2
         self.project.menu_rotate(0.25 * tau)
 
     def transform_rotate_left(self, event):  # wxGlade: MeerK40t.<event_handler>
-        from math import pi
-        tau = pi * 2
-        self.project.menu_rotate(0.25 * tau)
+        self.project.menu_rotate(-0.25 * tau)
 
     def transform_mirror_hflip(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.menu_scale(-1, 1)

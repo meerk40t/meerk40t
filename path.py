@@ -333,7 +333,6 @@ class Matrix:
 
     @staticmethod
     def get_rotate(theta):
-        theta *= tau / 360
         ct = cos(theta)
         st = sin(theta)
         return \
@@ -1382,7 +1381,7 @@ class Arc(object):
 
     def as_cubic_curves(self):
         sweep_limit = tau / 12
-        arc_required = ceil(abs(self.sweep) / sweep_limit)
+        arc_required = int(ceil(abs(self.sweep) / sweep_limit))
         slice = self.sweep / float(arc_required)
 
         start_angle = self.get_start_angle()
