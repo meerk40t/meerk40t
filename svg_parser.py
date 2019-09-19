@@ -405,8 +405,6 @@ class SVGPathTokens(PathTokens):
 
     def close(self):
         # Close path
-        if not (self.current_pos == self.start_pos):
-            self.parser.line(self.current_pos, self.start_pos)
         self.parser.closed()
         self.current_pos = self.start_pos
         self.command = None

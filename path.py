@@ -1634,6 +1634,17 @@ class Path(MutableSequence):
         path._segments = reversed_segments
         return path
 
+    def as_subpaths(self):
+        last = 0
+        subpath = Path()
+        for current, seg in enumerate(self):
+            if current != last and isinstance(seg, Move):
+                subpath._segments = self[last:current]
+                yield subpath
+                last = current
+        subpath._segments = self[last:]
+        yield subpath
+
     def bbox(self):
         """returns a bounding box for the input Path"""
         bbs = [seg.bbox() for seg in self._segments]
@@ -1645,19 +1656,16 @@ class Path(MutableSequence):
         return xmin, ymin, xmax, ymax
 
     def d(self):
-        current_pos = None
         parts = []
         previous_segment = None
         if len(self) == 0:
             return ''
-        end = self[-1].end
         for segment in self:
             start = segment.start
             # If the start of this segment does not coincide with the end of
             # the last segment or if this segment is actually the close point
             # of a closed path, then we should start a new subpath here.
-            if isinstance(segment, Move) or (current_pos != start) or (
-                    start == end and not isinstance(previous_segment, Move)):
+            if isinstance(segment, Move):
                 parts.append('M {0:G},{1:G}'.format(segment.end[0], segment.end[1]))
             elif isinstance(segment, Line):
                 parts.append('L {0:G},{1:G}'.format(
@@ -1694,6 +1702,5 @@ class Path(MutableSequence):
                 )
             elif isinstance(segment, Close):
                 parts.append('Z')
-            current_pos = segment.end
             previous_segment = segment
         return ' '.join(parts)
