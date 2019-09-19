@@ -1,6 +1,5 @@
 import wx
 
-import EgvParser
 import RasterPlotter
 import path
 import svg_parser
@@ -70,6 +69,7 @@ class ImageElement(LaserElement):
         LaserElement.__init__(self)
         self.box = [0, 0, image.width, image.height]
         self.image = image
+        self.cache = None
         self.cut.update({VARIABLE_NAME_RASTER_STEP: 1,
                          VARIABLE_NAME_SPEED: 100})
 
@@ -77,16 +77,13 @@ class ImageElement(LaserElement):
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         if self.cache is None:
-            width = self.image.width
-            height = self.image.height
-            try:
-                self.cache = wx.Bitmap.FromBufferRGBA(width, height, self.image.tobytes())
-            except ValueError:
-                try:
-                    self.cache = wx.Bitmap.FromBuffer(width, height, self.image.tobytes())
-                except ValueError:
-                    return
-            # TODO: 1 bit graphics crash
+            myPilImage = self.image
+            myWxImage = wx.Image(*myPilImage.size)
+            myPilImageCopy = myPilImage.copy()
+            myPilImageCopyRGB = myPilImageCopy.convert('RGB')  # Discard any alpha from the PIL image.
+            myPilImageRgbData = myPilImageCopyRGB.tobytes()
+            myWxImage.SetData(myPilImageRgbData)
+            self.cache = myWxImage.ConvertToBitmap()
         gc.DrawBitmap(self.cache, 0, 0, self.image.width, self.image.height)
 
     def filter(self, pixel):
@@ -148,6 +145,7 @@ class PathElement(LaserElement):
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, None
         yield COMMAND_SET_D_RATIO, None
+
 
 class RawElement(LaserElement):
     def __init__(self, element):

@@ -288,15 +288,26 @@ class MeerK40t(wx.Frame):
         self.scene.update_buffer()
 
     def load_egv(self, pathname):
+        context = self.project
+        group = []
+        context.append(group)
+        context = group
         for event in parse_egv(pathname):
             path = event['path']
-            if len(path) == 0:
-                continue
-            path_d = path.d()
-            element = PathElement(path_d)
-            self.project.append(element)
-            if 'speed' in event:
-                element.cut['speed'] = event['speed']
+            if len(path) > 0:
+                path_d = path.d()
+                element = PathElement(path_d)
+                context.append(element)
+                if 'speed' in event:
+                    element.cut['speed'] = event['speed']
+            if 'raster' in event:
+                raster = event['raster']
+                image = raster.get_image()
+                if image is not None:
+                    element = ImageElement(image)
+                    context.append(element)
+                    if 'speed' in event:
+                        element.cut['speed'] = event['speed']
         self.scene.update_buffer()
 
     def load_image(self, pathname):

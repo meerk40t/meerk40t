@@ -140,7 +140,7 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
         y = height - 1
         dy = -step
 
-    yield COMMAND_SIMPLE_SHIFT, (offset_x + x, offset_y + y)
+    yield COMMAND_SHIFT, (offset_x + x, offset_y + y)
     yield COMMAND_SET_DIRECTION, (dx,dy)
 
     yield COMMAND_MODE_COMPACT, 0

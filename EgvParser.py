@@ -3,26 +3,26 @@
 from LaserSpeed import LaserSpeed
 from path import Path
 
-CMD_RIGHT = b'B'
-CMD_LEFT = b'T'
-CMD_TOP = b'L'
-CMD_BOTTOM = b'R'
+CMD_RIGHT = ord(b'B')
+CMD_LEFT = ord(b'T')
+CMD_TOP = ord(b'L')
+CMD_BOTTOM = ord(b'R')
 
-CMD_FINISH = b'F'
-CMD_ANGLE = b'M'
+CMD_FINISH = ord(b'F')
+CMD_ANGLE = ord(b'M')
 
-CMD_RESET = b'@'
+CMD_RESET = ord(b'@')
 
-CMD_ON = b'D'
-CMD_OFF = b'U'
-CMD_P = b'P'
-CMD_G = b'G'
-CMD_INTERRUPT = b'I'
-CMD_N = b'N'
-CMD_CUT = b'C'
-CMD_VELOCITY = b'V'
-CMD_S = b'S'
-CMD_E = b'E'
+CMD_ON = ord(b'D')
+CMD_OFF = ord(b'U')
+CMD_P = ord(b'P')
+CMD_G = ord(b'G')
+CMD_INTERRUPT = ord(b'I')
+CMD_N = ord(b'N')
+CMD_CUT = ord(b'C')
+CMD_VELOCITY = ord(b'V')
+CMD_S = ord(b'S')
+CMD_E = ord(b'E')
 
 
 class EgvParser:
@@ -50,33 +50,25 @@ class EgvParser:
 
     def parse(self, f):
         while True:
-            byte = f.read(1)
-            if byte is None or len(byte) == 0:
-                break
-            value = ord(byte)
-            if ord('0') <= value <= ord('9'):
-                self.append_digit(value - ord('0'))  # '0' = 0
-                continue
-            if ord('a') <= value <= ord('y'):
-                self.append_distance(value - ord('a') + 1)  # 'a' = 1, not zero.
-                continue
-            if ord('A') <= value <= ord('Z') or value == ord('@'):
-                if self.command is not None:
-                    yield self.command, self.distance, self.number_value
-                self.distance = 0
-                self.number_value = 0
-                self.command = byte
-                continue
-            if value == ord('z'):
-                self.append_distance(255)
-            if value == ord('|'):
-                byte = f.read(1)
-                if byte is None or len(byte) == 0:
-                    break
-                value = ord(byte)
-                self.append_distance(25 + value - ord('a') + 1)  # '|a' = 27, not 26
-        if self.command is not None:
-            yield self.command, self.distance, self.number_value
+            b = f.read(1024)
+            for byte in b:
+                value = byte
+                if ord('0') <= value <= ord('9'):
+                    self.append_digit(value - ord('0'))  # '0' = 0
+                elif ord('a') <= value <= ord('y'):
+                    self.append_distance(value - ord('a') + 1)  # 'a' = 1, not zero.
+                elif ord('A') <= value <= ord('Z') or value == ord('@'):
+                    if self.command is not None:
+                        yield self.command, self.distance, self.number_value
+                    self.distance = 0
+                    self.number_value = 0
+                    self.command = byte
+                elif value == ord('z'):
+                    self.append_distance(255)
+                elif value == ord('|'):
+                    self.append_distance(26)
+            if len(b) == 0:
+                return
 
     def append_digit(self, value):
         self.number_value *= 10
@@ -86,15 +78,102 @@ class EgvParser:
         self.distance += amount
 
 
+class EgvRaster:
+    def __init__(self):
+        self.tiles = {}
+        self.min_x = None
+        self.min_y = None
+        self.max_x = None
+        self.max_y = None
+        self.bytes = None
+
+    def get_tile(self, x, y, create=True):
+        tile_x = x
+        tile_y = y
+        tile_key = (tile_x & 0xFFFFF000) | (tile_y & 0xFFF)
+        if tile_key in self.tiles:
+            tile = self.tiles[tile_key]
+        else:
+            if not create:
+                return None
+            tile = [0] * (0xFFF + 1)
+            self.tiles[tile_key] = tile
+        return tile
+
+    def __setitem__(self, key, value):
+        x, y = key
+        tile = self.get_tile(x, y, True)
+        tindex = x & 0xFFF
+        tile[tindex] = value
+        if self.min_x is None or self.min_x > x:
+            self.min_x = x
+        if self.min_y is None or self.min_y > y:
+            self.min_y = y
+        if self.max_x is None or self.max_x < x:
+            self.max_x = x
+        if self.max_y is None or self.max_y < x:
+            self.max_y = x
+        self.bytes = None
+
+    def __getitem__(self, item):
+        x, y = item
+        if self.min_x <= x <= self.max_x and self.min_y <= x <= self.max_y:
+            tile = self.get_tile(x, y, False)
+            if tile is None:
+                return 0
+            tindex = x & 0xFFF
+            return tile[tindex]
+        return 0
+
+    @property
+    def width(self):
+        if self.max_x is None:
+            return 0
+        return self.max_x - self.min_x
+
+    @property
+    def height(self):
+        if self.max_y is None:
+            return 0
+        return self.max_y - self.min_y
+
+    @property
+    def size(self):
+        return self.width, self.height
+
+    def get_image(self):
+        from PIL import Image
+        if self.bytes is None:
+            b = bytearray(b'')
+            if self.min_y is None and self.max_y is None and self.min_x is None and self.max_x is None:
+                return None
+            for y in range(self.min_y, self.max_y + 1):
+                tile = self.get_tile(self.min_x, y, False)
+                for x in range(self.min_x, self.max_x + 1):
+                    tindex = x & 0xFFF
+                    if tindex == 0:
+                        tile = self.get_tile(x, y, False)
+                    if tile is None or tile[tindex] == 0:
+                        b.append(0xFF)
+                    else:
+                        b.append(0)
+            self.bytes = bytes(b)
+        image = Image.frombytes("L", self.size, self.bytes)
+        return image
+
+
 class EgvPlotter:
     def __init__(self, x=0, y=0):
         self.path = Path()
+        self.raster = EgvRaster()
         self.x = x
         self.y = y
         self.cutting = False
         self.data = {"path": self.path}
+        self.cut = self.vector_cut
+        self.on = self.vector_on
 
-    def cut(self, dx, dy):
+    def vector_cut(self, dx, dy):
         if dx == 0 and dy == 0:
             return  # Just setting the directions.
         if self.cutting:
@@ -104,11 +183,36 @@ class EgvPlotter:
         self.x += dx
         self.y += dy
 
+    def raster_cut(self, dx, dy):
+        if dx == 0 and dy == 0:
+            return  # Just setting the directions.
+        if self.cutting:
+            if dy == 0:
+                for d in range(0, dx):
+                    self.raster[self.x + d, self.y] = 1
+        self.x += dx
+        self.y += dy
+
+    def set_raster(self, value):
+        if value:
+            self.cut = self.raster_cut
+            self.on = self.raster_on
+            self.data['raster'] = self.raster
+        else:
+            self.on = self.vector_on
+            self.cut = self.vector_cut
+
+    def vstep(self):
+        self.raster_cut(0, self.data['step'])
+
     def off(self):
         self.cutting = False
 
-    def on(self):
+    def vector_on(self):
         self.path.move((self.x, self.y), (self.x, self.y))
+        self.cutting = True
+
+    def raster_on(self):
         self.cutting = True
 
 
@@ -134,6 +238,7 @@ def parse_egv(f, board="M2"):
     is_left = False
     is_top = False
     is_reset = False
+    is_harmonic = False
     obj = EgvPlotter()
 
     for commands in egv_parser.parse(f):
@@ -143,9 +248,13 @@ def parse_egv(f, board="M2"):
             return
         elif cmd == CMD_RIGHT:  # move right
             obj.cut(distance, 0)
+            if is_harmonic and is_left:
+                obj.vstep()
             is_left = False
         elif cmd == CMD_LEFT:  # move left
             obj.cut(-distance, 0)
+            if is_harmonic and not is_left:
+                obj.vstep()
             is_left = True
         elif cmd == CMD_BOTTOM:  # move bottom
             obj.cut(0, distance)
@@ -178,16 +287,21 @@ def parse_egv(f, board="M2"):
                 speed = LaserSpeed.get_speed_from_value(code_value, b, m)
                 obj.data['step'] = raster_step
                 obj.data['speed'] = speed
+                if raster_step != 0:
+                    is_harmonic = True
+                    obj.set_raster(True)
             else:
                 if not is_compact and not is_reset:
                     is_compact = True  # We jumped out of compact, but then back in.
         elif cmd == CMD_N:
             if is_compact:
                 is_compact = False
-        elif cmd == CMD_FINISH or cmd == CMD_RESET:  # next
+        elif cmd == CMD_FINISH or cmd == CMD_RESET:
             is_reset = True
+            speed_code = None
             if is_compact:
                 is_compact = False
+                is_harmonic = False
                 yield obj.data
                 obj = EgvPlotter(obj.x, obj.y)
         elif cmd == CMD_CUT:  # Speed code element
