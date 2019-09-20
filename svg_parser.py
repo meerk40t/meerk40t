@@ -244,15 +244,18 @@ class SVGPathTokens(PathTokens):
 
     def get_pos(self):
         if self.command == 'Z':
-            return self.start_pos  # After Z, all further expected values are also Z.
-        coord0 = float(self.get())
+            return "z"  # After Z, all further expected values are also Z.
+        coord0 = self.get()
         if coord0 == 'z' or coord0 == 'Z':
             self.command = 'Z'
-            return self.start_pos
-        coord1 = float(self.get())
-        position = [coord0, coord1]
+            return "z"
+        coord1 = self.get()
+        position = (float(coord0), float(coord1))
         if not self.absolute:
-            return [position[0] + self.current_pos[0], position[1] + self.current_pos[1]]
+            current_pos = self.parser.current_point
+            if current_pos is None:
+                return position
+            return [position[0] + current_pos[0], position[1] + current_pos[1]]
         return position
 
     def move_to(self):
@@ -333,34 +336,17 @@ def parse_svg_path(parser, pathdef):
     tokens.svg_parse(parser, pathdef)
 
 
-class DefaultTransform:
-    """Default Transform gives an example of the needed class without actually implementing anything"""
-
-    def identity(self):
-        pass
-
-    def matrix(self, values):
-        pass
-
-    def translate(self, values):
-        pass
-
-    def scale(self, values):
-        pass
-
-    def rotate(self, values):
-        pass
-
-    def skewX(self, values):
-        pass
-
-    def skewY(self, values):
-        pass
-
-
 def _tokenize_transform(transform_str):
     """Generator to create transform parse elements.
-    Will return tuples(command, list(values))"""
+    Will return tuples(command, list(values))
+
+    TODO: Convert to 2D CSS transforms from SVG 1.1 for SVG 2.0.
+    In addition to SVG commands,
+    2D CSS has: translateX, translateY, scaleX, scaleY
+    2D CSS angles haves units: "deg" tau / 360, "rad" tau/tau, "grad" tau/400, "turn" tau.
+    2D CSS distances have length/percentages: "px", "cm", "mm", "in", "pt", etc. (+|-)?d+%
+    """
+
     if not transform_str:
         return
     transform_regex = '(?u)(' \
@@ -374,32 +360,32 @@ def _tokenize_transform(transform_str):
     transform_re = re.compile(transform_regex)
     float_re = re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?")
     for sub_element in transform_re.findall(transform_str):
-        yield sub_element[0], list(map(float, float_re.findall(sub_element[1])))
+        yield sub_element[0], tuple(map(float, float_re.findall(sub_element[1])))
 
 
 def parse_svg_transform(transform_str, obj):
-    """Parses the svg transform tag.
-    The object is datastructure agnostic. And requires a subclass of DefaultTransform"""
+    """Parses the svg transform tag. Currently parses SVG 1.1 transformations.
+    With regard to SVG 2.0 would be CSS transformations, and require a superset.
+
+    For typical usecase these will be given a path.Matrix."""
     if not transform_str:
         return
     if not isinstance(transform_str, str):
         raise TypeError('Must provide a string to parse')
 
-    obj.identity()
-    actions = list(_tokenize_transform(transform_str))
-    for action in actions:
-        if SVG_TRANSFORM_MATRIX in action[0]:
-            obj.matrix(action[1])
-        elif SVG_TRANSFORM_TRANSLATE in action[0]:
-            obj.translate(action[1])
-        elif SVG_TRANSFORM_SCALE in action[0]:
-            obj.scale(action[1])
-        elif SVG_TRANSFORM_ROTATE in action[0]:
-            obj.rotate(action[1])
-        elif SVG_TRANSFORM_SKEW_X in action[0]:
-            obj.skewX(action[1])
-        elif SVG_TRANSFORM_SKEW_Y in action[0]:
-            obj.skewY(action[1])
+    for name, params in _tokenize_transform(transform_str):
+        if SVG_TRANSFORM_MATRIX == name:
+            obj.post_cat(*params)
+        elif SVG_TRANSFORM_TRANSLATE == name:
+            obj.post_translate(*params)
+        elif SVG_TRANSFORM_SCALE == name:
+            obj.post_scale(*params)
+        elif SVG_TRANSFORM_ROTATE == name:
+            obj.post_rotate_deg(*params)
+        elif SVG_TRANSFORM_SKEW_X == name:
+            obj.post_skew_x_deg(*params)
+        elif SVG_TRANSFORM_SKEW_Y == name:
+            obj.post_skew_y_deg(*params)
 
 
 def parse_svg_file(f):

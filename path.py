@@ -254,6 +254,63 @@ class Matrix:
             self.post_rotate(theta)
             self.post_translate(-x, -y)
 
+    post_rotate_rad = post_rotate
+
+    def post_rotate_deg(self, theta, x=0, y=0):
+        self.post_rotate(theta * tau / 360.0, x, y)
+
+    def post_rotate_grad(self, theta, x=0, y=0):
+        self.post_rotate(theta * tau / 400.0, x, y)
+
+    def post_rotate_turn(self, theta, x=0, y=0):
+        self.post_rotate(theta * tau, x, y)
+
+    def post_skew_x(self, theta, x=0, y=0):
+        if x is None:
+            x = 0
+        if y is None:
+            y = 0
+        if x == 0 and y == 0:
+            self.m = self.matrix_multiply(self.m, self.get_skew_x(theta))
+        else:
+            self.post_translate(x, y)
+            self.post_skew_x(theta)
+            self.post_translate(-x, -y)
+
+    post_skew_x_rad = post_skew_x
+
+    def post_skew_x_deg(self, theta, x=0, y=0):
+        self.post_skew_x(theta * tau / 360.0, x, y)
+
+    def post_skew_x_grad(self, theta, x=0, y=0):
+        self.post_skew_x(theta * tau / 400.0, x, y)
+
+    def post_skew_x_turn(self, theta, x=0, y=0):
+        self.post_skew_x(theta * tau, x, y)
+
+    def post_skew_y(self, theta, x=0, y=0):
+        if x is None:
+            x = 0
+        if y is None:
+            y = 0
+        if x == 0 and y == 0:
+            self.m = self.matrix_multiply(self.m, self.get_skew_y(theta))
+        else:
+            self.post_translate(x, y)
+            self.post_skew_y(theta)
+            self.post_translate(-x, -y)
+
+    post_skew_y_rad = post_skew_y
+
+    def post_skew_y_deg(self, theta, x=0, y=0):
+        self.post_skew_y(theta * tau / 360.0, x, y)
+
+    def post_skew_y_grad(self, theta, x=0, y=0):
+        self.post_skew_y(theta * tau / 400.0, x, y)
+
+    def post_skew_y_turn(self, theta, x=0, y=0):
+        self.post_skew_y(theta * tau, x, y)
+
     def post_cat(self, matrix_list):
         for mx in matrix_list:
             self.m = self.matrix_multiply(self.m, mx)
@@ -350,6 +407,22 @@ class Matrix:
         return \
             ct, st, 0, \
             -st, ct, 0, \
+            0, 0, 1
+
+    @staticmethod
+    def get_skew_x(theta):
+        tt = tan(theta)
+        return \
+            1, 0, 0, \
+            tt, 1, 0, \
+            0, 0, 1
+
+    @staticmethod
+    def get_skew_y(theta):
+        tt = tan(theta)
+        return \
+            1, tt, 0, \
+            0, 1, 0, \
             0, 0, 1
 
     @staticmethod

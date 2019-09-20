@@ -581,7 +581,8 @@ class LaserProject:
 
     def move_selected(self, dx, dy):
         for e in self.selected:
-            e.move(dx, dy)
+            if isinstance(e, LaserElement):
+                e.move(dx, dy)
         if self.selected_bbox is not None:
             self.selected_bbox[0] += dx
             self.selected_bbox[2] += dx

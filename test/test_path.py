@@ -31,3 +31,28 @@ class TestPath(unittest.TestCase):
         path.cubic((20, 33), (25, 25), (100, 100))
         path.smooth_cubic((13, 45), (16, 16), (34, 56), "z")
         self.assertEqual(path.d(), "M 4,4 L 20,20 L 25,25 L 6,3 C 20,33 25,25 100,100 S 13,45 16,16 S 34,56 4,4 Z")
+
+    def test_transform_scale(self):
+        matrix = Matrix()
+        path = Path()
+        path.move((0, 0), (0, 100), (100, 100), 100 + 0j, "z")
+        svg_parser.parse_svg_transform("scale(2)", matrix)
+        path *= matrix
+        self.assertEqual(path.d(), "M 0,0 L 0,200 L 200,200 L 200,0 L 0,0 Z")
+
+    def test_transform_skewx(self):
+        matrix = Matrix()
+        path = Path()
+        path.move((0, 0), (0, 100), (100, 100), 100 + 0j, "z")
+        svg_parser.parse_svg_transform("skewX(10,50,50)", matrix)
+        path *= matrix
+        self.assertEqual(path.d(), "M -8.81635,0 L 8.81635,100 L 108.816,100 L 91.1837,0 L -8.81635,0 Z")
+
+    def test_transform_skewy(self):
+        matrix = Matrix()
+        path = Path()
+        path.move((0, 0), (0, 100), (100, 100), 100 + 0j, "z")
+        svg_parser.parse_svg_transform("skewY(10, 50,50)", matrix)
+        path *= matrix
+        print(path.d())
+        self.assertEqual(path.d(), "M 0,-8.81635 L 0,91.1837 L 100,108.816 L 100,8.81635 L 0,-8.81635 Z")
