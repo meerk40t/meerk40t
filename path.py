@@ -174,13 +174,17 @@ class Matrix:
         return self.m[item]
 
     def __repr__(self):
-        return "Matrix([%3f, %3f, %3f, %3f, %3f, %3f, %3f, %3f, %3f])" % self.m
+        m = self.m
+        return "Matrix([%3f, %3f, %3f, %3f, %3f, %3f, %3f, %3f, %3f])" % \
+               (m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8])
 
     def __copy__(self):
         return Matrix(self.m)
 
     def __str__(self):
-        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % self.m
+        m = self.m
+        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % \
+               (m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8])
 
     def get_matrix(self):
         return self.m

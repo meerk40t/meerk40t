@@ -330,8 +330,7 @@ class SVGPathTokens(PathTokens):
 
 
 def parse_svg_path(parser, pathdef):
-    """Parses the SVG path.
-    The parser is datastructure agnostic requires a subclass of DefaultParser"""
+    """Parses the SVG path."""
     tokens = SVGPathTokens()
     tokens.svg_parse(parser, pathdef)
 

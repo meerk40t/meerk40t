@@ -279,6 +279,8 @@ class MeerK40t(wx.Frame):
             if 'd' in element:
                 pathd = element['d']
                 pe = PathElement(pathd)
+                if 'transform' in element:
+                    pe.svg_transform(element['transform'])
                 if 'fill' in element:
                     if element['fill'] != "none":
                         pe.cut['fill'] = svg_parser.parse_svg_color(element['fill'])

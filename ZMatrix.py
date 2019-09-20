@@ -11,6 +11,12 @@ class ZMatrix(AffineMatrix2D):
                 Point2D(
                     matrix.value_trans_x(), matrix.value_trans_y()))
 
+    def __str__(self):
+        m = self.Get()[0]
+        p = self.Get()[1]
+        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % \
+               (m.m_11, m.m_12, 0, m.m_21, m.m_22, 0, p.x, p.y, 1)
+
     def Reset(self):
         AffineMatrix2D.__init__(self)
 

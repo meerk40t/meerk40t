@@ -32,7 +32,6 @@ class LaserElement:
         """Default draw routine for the laser element.
         If the generate is defined this will draw the
         element as a series of lines, as defined by generate."""
-
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         self.color.SetRGB(self.cut[VARIABLE_NAME_COLOR])
@@ -41,7 +40,7 @@ class LaserElement:
         if self.cache is None:
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
-            for event in self.generate():
+            for event in self.generate(path.Matrix()):
                 parse.command(event)
             self.cache = p
         gc.StrokePath(self.cache)
@@ -52,7 +51,7 @@ class LaserElement:
     def convert_affinespace_to_absolute(self, position):
         return self.matrix.point_in_inverse_space(position)
 
-    def generate(self):
+    def generate(self, m=None):
         yield COMMAND_MODE_DEFAULT
 
     def move(self, dx, dy):
@@ -73,6 +72,9 @@ class ImageElement(LaserElement):
         self.cut.update({VARIABLE_NAME_RASTER_STEP: 1,
                          VARIABLE_NAME_SPEED: 100})
 
+    def __str__(self):
+        return "Image step=%d  speed=%3f" % (self.cut[VARIABLE_NAME_RASTER_STEP], self.cut[VARIABLE_NAME_SPEED])
+
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
@@ -91,7 +93,9 @@ class ImageElement(LaserElement):
             return 1
         return 0
 
-    def generate(self):
+    def generate(self, m=None):
+        if m is None:
+            m = self.matrix
         speed = 100
         if VARIABLE_NAME_SPEED in self.cut:
             speed = self.cut[VARIABLE_NAME_SPEED]
@@ -115,8 +119,8 @@ class ImageElement(LaserElement):
             transverse |= RasterPlotter.X_AXIS
             transverse |= RasterPlotter.BOTTOM
         for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
-                                                 offset_x=self.matrix.value_trans_x(),
-                                                 offset_y=self.matrix.value_trans_y(),
+                                                 offset_x=m.value_trans_x(),
+                                                 offset_y=m.value_trans_y(),
                                                  transversal=transverse,
                                                  step=step):
             yield command
@@ -128,7 +132,16 @@ class PathElement(LaserElement):
         self.path = path_d
         self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20})
 
-    def generate(self):
+    def __str__(self):
+        string = "Path speed=%.1f %.1fx path=%s" % \
+                 (self.cut[VARIABLE_NAME_SPEED], self.matrix.value_scale_x(), self.path)
+        if len(string) < 100:
+            return string
+        return string[:97] + '...'
+
+    def generate(self, m=None):
+        if m is None:
+            m = self.matrix
         object_path = path.Path()
         svg_parser.parse_svg_path(object_path, self.path)
         self.box = object_path.bbox()
@@ -140,11 +153,14 @@ class PathElement(LaserElement):
             yield COMMAND_SET_D_RATIO, d_ratio
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
-        plot = object_path * self.matrix
+        plot = object_path * m
         yield COMMAND_PLOT, plot
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, None
         yield COMMAND_SET_D_RATIO, None
+
+    def svg_transform(self, transform_str):
+        svg_parser.parse_svg_transform(transform_str, self.matrix)
 
 
 class RawElement(LaserElement):
@@ -154,7 +170,10 @@ class RawElement(LaserElement):
         for command in element.generate():
             self.command_list.append(command)
 
-    def generate(self):
+    def generate(self, m=None):
+        if m is None:
+            m = self.matrix
+            # Raw cannot have matrix.
         for command in self.command_list:
             yield command
 
