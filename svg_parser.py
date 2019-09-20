@@ -233,21 +233,11 @@ class SVGPathTokens(PathTokens):
             "z": self.close
         })
         self.parser = None
-        self.current_pos = None
         self.absolute = False
-        self.start_pos = None
-        self.last_cubic = None
-        self.last_quad = None
 
-    def svg_parse(self, parser, pathdef, current_pos=(0, 0)):
-        # In the SVG specs, initial movetos are absolute, even if
-        # specified as 'm'. This is the default behavior here as well.
-        # But if you pass in a current_pos variable, the initial moveto
-        # will be relative to that current_pos. This is useful.
+    def svg_parse(self, parser, pathdef):
         self.parser = parser
-        self.current_pos = current_pos
         self.absolute = False
-        self.start_pos = None
         self.parser.start()
         self.parse(pathdef)
         self.parser.end()
@@ -269,12 +259,6 @@ class SVGPathTokens(PathTokens):
         # Moveto command.
         pos = self.get_pos()
         self.parser.move(pos)
-        self.current_pos = pos
-
-        # when M is called, reset start_pos
-        # This behavior of Z is defined in svg spec:
-        # http://www.w3.org/TR/SVG/paths.html#PathDataClosePathCommand
-        self.start_pos = self.current_pos
 
         # Implicit moveto commands are treated as lineto commands.
         # So we set command to lineto here, in case there are
@@ -284,47 +268,40 @@ class SVGPathTokens(PathTokens):
     def line_to(self):
         pos = self.get_pos()
         self.parser.line(pos)
-        self.current_pos = pos
 
     def h_to(self):
         x = float(self.get())
-        pos = [x, self.current_pos[1]]
-        if not self.absolute:
-            pos[0] += self.current_pos[0]
-        self.parser.line(pos)
-        self.current_pos = pos
+        if self.absolute:
+            self.parser.absolute_h(x)
+        else:
+            self.parser.relative_h(x)
 
     def v_to(self):
         y = float(self.get())
-        pos = [self.current_pos[0], y]
-        if not self.absolute:
-            pos[1] += self.current_pos[1]
-        self.parser.line(pos)
-        self.current_pos = pos
+        if self.absolute:
+            self.parser.absolute_v(y)
+        else:
+            self.parser.relative_v(y)
 
     def cubic_to(self):
         control1 = self.get_pos()
         control2 = self.get_pos()
         end = self.get_pos()
         self.parser.cubic(control1, control2, end)
-        self.current_pos = end
 
     def smooth_cubic_to(self):
         control2 = self.get_pos()
         end = self.get_pos()
         self.parser.smooth_cubic(control2, end)
-        self.current_pos = end
 
     def quad_to(self):
         control = self.get_pos()
         end = self.get_pos()
         self.parser.quad(control, end)
-        self.current_pos = end
 
     def smooth_quad_to(self):
         end = self.get_pos()
         self.parser.smooth_quad(end)
-        self.current_pos = end
 
     def arc_to(self):
         rx = float(self.get())
@@ -335,12 +312,10 @@ class SVGPathTokens(PathTokens):
         end = self.get_pos()
 
         self.parser.arc(rx, ry, rotation, arc, sweep, end)
-        self.current_pos = end
 
     def close(self):
         # Close path
         self.parser.closed()
-        self.current_pos = self.start_pos
         self.command = None
 
     def new_command(self):
@@ -351,11 +326,11 @@ class SVGPathTokens(PathTokens):
             self.close()
 
 
-def parse_svg_path(parser, pathdef, current_pos=(0.0, 0.0)):
+def parse_svg_path(parser, pathdef):
     """Parses the SVG path.
     The parser is datastructure agnostic requires a subclass of DefaultParser"""
     tokens = SVGPathTokens()
-    tokens.svg_parse(parser, pathdef, current_pos)
+    tokens.svg_parse(parser, pathdef)
 
 
 class DefaultTransform:

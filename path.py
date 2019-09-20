@@ -10,8 +10,13 @@ except ImportError:
     tau = pi * 2
 
 
-# This file contains classes for the different types of SVG path segments as well as a Path
-# object that contains a sequence of path segments. Matrix and Point classes.
+# This file is derived from regebro's svg.path project ( https://github.com/regebro/svg.path )
+# some of the math is from mathandy's svgpathtools project ( https://github.com/mathandy/svgpathtools ).
+# The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"
+# ( http://members.chello.at/easyfilter/bresenham.html ). They are all MIT Licensed and this library is
+# also MIT licensed. In the case of Zingl's work this isn't explicit from his website, however from personal
+# correspondence "'Free and open source' means you can do anything with it like the MIT licence."
+
 
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
@@ -90,6 +95,7 @@ class Point:
         if isinstance(other, (Point, tuple, list)):
             self[0] += other[0]
             self[1] += other[1]
+        return self
 
     def __rsub__(self, other):
         if isinstance(other, (Point, tuple, list)):
@@ -107,6 +113,7 @@ class Point:
         if isinstance(other, (Point, tuple, list)):
             self[0] -= other[0]
             self[1] -= other[1]
+        return self
 
     def distance_to(self, p2):
         return Point.distance(self, p2)
@@ -118,8 +125,7 @@ class Point:
         return Point.polar(self, angle, distance)
 
     def reflected_across(self, p):
-        m = Point(p)
-        m += m
+        m = p + p
         m -= self
         return m
 
@@ -1168,18 +1174,23 @@ class CubicBezier(object):
 class Arc(object):
     def __init__(self, *args, **kwargs):
         """Arc objects can take different parameters to create arcs.
-        Since we are often taking in SVG parameters.
-        The main is SVG parameterization which is start, rx, ry, rotation, arc_flag, sweep_flag, end.
-        So that we can do matrix transitions, the native parameterization is start, end, center, prx, pry, sweep
+        Since we expect taking in SVG parameters. We accept SVG parameterization which is:
+        start, rx, ry, rotation, arc_flag, sweep_flag, end.
+
+        To do matrix transitions, the native parameterization is start, end, center, prx, pry, sweep
         'start, end, center, prx, pry' are points and sweep amount is a value in tau radians.
+        If points are modified by an affine transformation, the arc is thusly transformed.
+
         prx is the point at angle 0 of the non-rotated ellipse.
         pry is the point at angle tau/4 of the non-rotated ellipse.
         The theta-rotation can be defined as the angle from center to prx
-        If points are modified by an affine transformation, the arc is thusly transformed.
-        The sweep angle can be a value greater than tau and less than -tau.
 
-        prx->center->pry should form a right triangle.
-        angle(center,end) - angle(center, start) should equal sweep or a angle mod thereof
+        The sweep angle can be a value greater than tau and less than -tau.
+        However if this is the case the Path.d() is expected to fail.
+
+        prx -> center -> pry should form a right triangle.
+        angle(center,end) - angle(center, start) should equal sweep or mod thereof.
+
         start and end should fall on the ellipse defined by prx, pry and center.
         """
         self.start = None
@@ -1324,11 +1335,12 @@ class Arc(object):
         return Arc(self.end, self.start, self.center, self.prx, self.pry, -self.sweep)
 
     def svg_parameterize(self, start, rx, ry, rotation_degrees, large_arc_flag, sweep_flag, end):
+        """Conversion from endpoint to center parameterization
+        http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes """
         rotation_radians = radians(rotation_degrees)
         large_arc_flag = bool(large_arc_flag)
         sweep_flag = bool(sweep_flag)
-        # Conversion from endpoint to center parameterization
-        # http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+
         cosr = cos(rotation_radians)
         sinr = sin(rotation_radians)
         dx = (start[0] - end[0]) / 2.0
@@ -1600,7 +1612,7 @@ class Path(MutableSequence):
     @property
     def first_point(self):
         """First point along the Path. This is the start point of the first segment unless it starts
-        with a Move command that can start from nowhere, in which case first point is the destination."""
+        with a Move command with a None start in which case first point is that Move's destination."""
         if len(self._segments) == 0:
             return None
         if self._segments[0].start is not None:
@@ -1614,12 +1626,30 @@ class Path(MutableSequence):
         return Point(self._segments[-1].end)
 
     @property
+    def z_point(self):
+        """
+        Z doesn't necessarily mean the first_point, it's the destination of the last Move.
+        This behavior of Z is defined in svg spec:
+        http://www.w3.org/TR/SVG/paths.html#PathDataClosePathCommand
+        """
+        end_pos = None
+        for segment in reversed(self._segments):
+            if isinstance(segment, Move):
+                end_pos = segment.end
+                break
+        if end_pos is None:
+            end_pos = self._segments[0].start
+        return end_pos
+
+    @property
     def smooth_point(self):
         """Returns the smoothing control point for the smooth commands.
         With regards to the SVG standard if the last command was a curve the smooth
         control point is the reflection of the previous control point.
 
-        If the last command was not a curve, the smooth_point is coincident with the current."""
+        If the last command was not a curve, the smooth_point is coincident with the current.
+        https://www.w3.org/TR/SVG/paths.html#PathDataCubicBezierCommands
+        """
 
         if len(self._segments) == 0:
             return None
@@ -1639,7 +1669,8 @@ class Path(MutableSequence):
     def end(self):
         pass
 
-    def move(self, end_pos):
+    def move(self, *points):
+        end_pos = points[0]
         if len(self._segments) > 0:
             if isinstance(self._segments[-1], Move):
                 # If there was just a move command update that.
@@ -1647,52 +1678,137 @@ class Path(MutableSequence):
                 return
         start_pos = self.current_point
         self.append(Move(start_pos, end_pos))
+        if len(points) > 1:
+            self.line(*points[1:])
 
-    def line(self, end_pos):
+    def line(self, *points):
         start_pos = self.current_point
+        end_pos = points[0]
+        if end_pos == 'z':
+            self.append(Line(start_pos, self.z_point))
+            self.closed()
+            return
         self.append(Line(start_pos, end_pos))
+        if len(points) > 1:
+            self.line(*points[1:])
 
-    def smooth_quad(self, end_pos):
+    def absolute_v(self, *y_points):
+        y_pos = y_points[0]
+        start_pos = self.current_point
+        self.append(Line(start_pos, Point(start_pos[0], y_pos)))
+        if len(y_points) > 1:
+            self.absolute_v(*y_points[1:])
+
+    def relative_v(self, *dys):
+        dy = dys[0]
+        start_pos = self.current_point
+        self.append(Line(start_pos, Point(start_pos[0], start_pos[1] + dy)))
+        if len(dys) > 1:
+            self.relative_v(*dys[1:])
+
+    def absolute_h(self, *x_points):
+        x_pos = x_points[0]
+        start_pos = self.current_point
+        self.append(Line(start_pos, Point(x_pos, start_pos[1])))
+        if len(x_points) > 1:
+            self.absolute_h(*x_points[1:])
+
+    def relative_h(self, *dxs):
+        dx = dxs[0]
+        start_pos = self.current_point
+        self.append(Line(start_pos, Point(start_pos[0] + dx, start_pos[1])))
+        if len(dxs) > 1:
+            self.relative_h(*dxs[1:])
+
+    def smooth_quad(self, *points):
         """Smooth curve. First control point is the "reflection" of
            the second control point in the previous path."""
         start_pos = self.current_point
         control1 = self.smooth_point
+        end_pos = points[0]
+        if end_pos == 'z':
+            self.append(QuadraticBezier(start_pos, control1, self.z_point))
+            self.closed()
+            return
         self.append(QuadraticBezier(start_pos, control1, end_pos))
+        if len(points) > 1:
+            self.smooth_quad(*points[1:])
 
-    def quad(self, control, end_pos):
+    def quad(self, *points):
         start_pos = self.current_point
+        control = points[0]
+        if control == 'z':
+            self.append(QuadraticBezier(start_pos, self.z_point, self.z_point))
+            self.closed()
+            return
+        end_pos = points[1]
+        if end_pos == 'z':
+            self.append(QuadraticBezier(start_pos, control, self.z_point))
+            self.closed()
+            return
         self.append(QuadraticBezier(start_pos, control, end_pos))
+        if len(points) > 2:
+            self.quad(*points[2:])
 
-    def smooth_cubic(self, control2, end_pos):
+    def smooth_cubic(self, *points):
         """Smooth curve. First control point is the "reflection" of
         the second control point in the previous path."""
         start_pos = self.current_point
         control1 = self.smooth_point
+        control2 = points[0]
+        if control2 == 'z':
+            self.append(CubicBezier(start_pos, control1, self.z_point, self.z_point))
+            self.closed()
+            return
+        end_pos = points[1]
+        if end_pos == 'z':
+            self.append(CubicBezier(start_pos, control1, control2, self.z_point))
+            self.closed()
+            return
         self.append(CubicBezier(start_pos, control1, control2, end_pos))
+        if len(points) > 2:
+            self.smooth_cubic(*points[2:])
 
-    def cubic(self, control1, control2, end_pos):
-        start_pos = None
-        if len(self._segments) > 0:
-            start_pos = Point(self._segments[-1].end)
+    def cubic(self, *points):
+        start_pos = self.current_point
+        control1 = points[0]
+        if control1 == 'z':
+            self.append(CubicBezier(start_pos, self.z_point, self.z_point, self.z_point))
+            self.closed()
+            return
+        control2 = points[1]
+        if control2 == 'z':
+            self.append(CubicBezier(start_pos, control1, self.z_point, self.z_point))
+            self.closed()
+            return
+        end_pos = points[2]
+        if end_pos == 'z':
+            self.append(CubicBezier(start_pos, control1, control2, self.z_point))
+            self.closed()
+            return
         self.append(CubicBezier(start_pos, control1, control2, end_pos))
+        if len(points) > 3:
+            self.cubic(*points[3:])
 
-    def arc(self, rx, ry, rotation, arc, sweep, end_pos):
-        start_pos = None
-        if len(self._segments) > 0:
-            start_pos = Point(self._segments[-1].end)
+    def arc(self, *arc_args):
+        start_pos = self.current_point
+        rx = arc_args[0]
+        ry = arc_args[1]
+        rotation = arc_args[2]
+        arc = arc_args[3]
+        sweep = arc_args[4]
+        end_pos = arc_args[5]
+        if end_pos == 'z':
+            self.append(Arc(start_pos, rx, ry, rotation, arc, sweep, self.z_point))
+            self.closed()
+            return
         self.append(Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos))
+        if len(arc_args) > 6:
+            self.arc(*arc_args[6:])
 
     def closed(self):
-        start_pos = None
-        if len(self._segments) > 0:
-            start_pos = Point(self._segments[-1].end)
-        end_pos = None
-        for segment in reversed(self._segments):
-            if isinstance(segment, Move):
-                end_pos = segment.end
-                break
-        if end_pos is None:
-            end_pos = self._segments[0].start
+        start_pos = self.current_point
+        end_pos = self.z_point
         self.append(Close(start_pos, end_pos))
 
     def plot(self):
@@ -1739,7 +1855,6 @@ class Path(MutableSequence):
         if len(self) == 0:
             return ''
         for segment in self:
-            start = segment.start
             # If the start of this segment does not coincide with the end of
             # the last segment or if this segment is actually the close point
             # of a closed path, then we should start a new subpath here.
