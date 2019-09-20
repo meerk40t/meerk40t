@@ -13,12 +13,15 @@ import svg_parser
 from EgvParser import parse_egv
 from LaserProject import LaserProject, ImageElement, PathElement
 from LaserSceneView import LaserSceneView
+from ThreadConstants import *
 
 try:
     from math import tau
 except ImportError:
     from math import pi
+
     tau = pi * 2
+
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -231,9 +234,25 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
+        if self.project.writer.thread.state == THREAD_STATE_STARTED or \
+                self.project.controller.thread.state == THREAD_STATE_STARTED:
+            dlg = wx.MessageDialog(None, "Issue emergency stop and close?",
+                                   'Processes are still running.', wx.OK | wx.CANCEL | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+            if result == wx.ID_OK:
+                project.controller.emergency_stop()
+                self.project("abort", 0)
+            else:
+                return
         self.project.save_config()
         self.project.shutdown()
         self.scene.on_close(event)
+        for key, value in self.project.windows.items():
+            try:
+                value.Close()
+            except RuntimeError:
+                pass
         event.Skip()  # Call destroy as regular.
 
     def on_size_set(self, event):
@@ -412,24 +431,28 @@ class MeerK40t(wx.Frame):
         window = Preferences(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
+        project.windows["preferences"] = window
 
     def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
         from UsbConnect import UsbConnect
         window = UsbConnect(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
+        project.windows["usbconnect"] = window
 
     def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Navigation import Navigation
         window = Navigation(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
+        project.windows["navigation"] = window
 
     def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
         from Controller import Controller
         window = Controller(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
+        project.windows["controller"] = window
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         import webbrowser
@@ -457,8 +480,12 @@ class CutConfiguration(wx.Panel):
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
         self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh_tree_elements()
-
         # end wxGlade
+        project["elements", self.on_elements_update] = self
+
+    def on_elements_update(self, *args):
+        self.refresh_tree_elements()
+        self.Update()
 
     def __set_properties(self):
         # begin wxGlade: CutConfiguration.__set_properties
@@ -484,6 +511,7 @@ class CutConfiguration(wx.Panel):
         window = JobInfo(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
+        project.windows["jobinfo"] = window
 
     def on_item_right_click(self, event):
         menu = wx.Menu()
@@ -506,6 +534,7 @@ class CutConfiguration(wx.Panel):
             window = ElementProperty(None, wx.ID_ANY, "")
             window.set_element(element)
             window.Show()
+            project.windows["elementproperty"] = window
 
     def on_item_changed(self, event):
         item = event.GetItem()
@@ -546,10 +575,10 @@ class MeerK40tGui(wx.App):
 # end of class MeerK40tGui
 def handleGUIException(exc_type, exc_value, exc_traceback):
     err_msg = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print(err_msg)
     dlg = wx.MessageDialog(None, err_msg, 'Error encountered', wx.OK | wx.ICON_ERROR)
     dlg.ShowModal()
     dlg.Destroy()
-    print(err_msg)
 
 
 sys.excepthook = handleGUIException

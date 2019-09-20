@@ -325,6 +325,7 @@ class LaserProject:
         self.size = 320, 220
         self.units = (39.37, "mm", 10, 0)
         self.config = None
+        self.windows = {}
 
         self.selected = []
         self.selected_bbox = None
