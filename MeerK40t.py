@@ -263,7 +263,9 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__set_properties
         self.SetTitle("MeerK40t")
         self.main_statusbar.SetStatusWidths([-1])
-
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(wx.Bitmap("icons/meerk40t.jpg", wx.BITMAP_TYPE_ANY))
+        self.SetIcon(_icon)
         # statusbar fields
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
