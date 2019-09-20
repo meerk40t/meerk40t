@@ -169,7 +169,7 @@ class EgvPlotter:
         self.x = x
         self.y = y
         self.cutting = False
-        self.data = {"path": self.path}
+        self.data = {'path': self.path}
         self.cut = self.vector_cut
         self.on = self.vector_on
 
@@ -177,9 +177,9 @@ class EgvPlotter:
         if dx == 0 and dy == 0:
             return  # Just setting the directions.
         if self.cutting:
-            self.path.line((self.x, self.y), (self.x + dx, self.y + dy))
+            self.path.line((self.x + dx, self.y + dy))
         else:
-            self.path.move((self.x, self.y), (self.x + dx, self.y + dy))
+            self.path.move((self.x + dx, self.y + dy))
         self.x += dx
         self.y += dy
 
@@ -209,7 +209,7 @@ class EgvPlotter:
         self.cutting = False
 
     def vector_on(self):
-        self.path.move((self.x, self.y), (self.x, self.y))
+        self.path.move((self.x, self.y))
         self.cutting = True
 
     def raster_on(self):

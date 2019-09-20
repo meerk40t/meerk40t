@@ -202,35 +202,6 @@ class PathTokens:
             self.post_execute()
 
 
-# Default Parser interface
-class DefaultParser:
-    """Default Parser gives an example of the needed thing without actually implementing anything"""
-
-    def start(self):
-        pass
-
-    def end(self):
-        pass
-
-    def move(self, start_pos):
-        pass
-
-    def line(self, start_pos, end_pos):
-        pass
-
-    def quad(self, start_pos, control, end_pos):
-        pass
-
-    def cubic(self, start_pos, control1, control2, end_pos):
-        pass
-
-    def arc(self, start_pos, radius, rotation, arc, sweep, end_pos):
-        pass
-
-    def closed(self):
-        pass
-
-
 # SVG Path Tokens.
 class SVGPathTokens(PathTokens):
     """Utilizes the general PathTokens class to parse SVG pathd strings.
@@ -268,7 +239,7 @@ class SVGPathTokens(PathTokens):
         self.last_cubic = None
         self.last_quad = None
 
-    def svg_parse(self, parser, pathdef, current_pos=0j):
+    def svg_parse(self, parser, pathdef, current_pos=(0, 0)):
         # In the SVG specs, initial movetos are absolute, even if
         # specified as 'm'. This is the default behavior here as well.
         # But if you pass in a current_pos variable, the initial moveto
@@ -277,8 +248,6 @@ class SVGPathTokens(PathTokens):
         self.current_pos = current_pos
         self.absolute = False
         self.start_pos = None
-        self.last_cubic = None
-        self.last_quad = None
         self.parser.start()
         self.parse(pathdef)
         self.parser.end()
@@ -299,7 +268,7 @@ class SVGPathTokens(PathTokens):
     def move_to(self):
         # Moveto command.
         pos = self.get_pos()
-        self.parser.move(self.current_pos, pos)
+        self.parser.move(pos)
         self.current_pos = pos
 
         # when M is called, reset start_pos
@@ -314,7 +283,7 @@ class SVGPathTokens(PathTokens):
 
     def line_to(self):
         pos = self.get_pos()
-        self.parser.line(self.current_pos, pos)
+        self.parser.line(pos)
         self.current_pos = pos
 
     def h_to(self):
@@ -322,7 +291,7 @@ class SVGPathTokens(PathTokens):
         pos = [x, self.current_pos[1]]
         if not self.absolute:
             pos[0] += self.current_pos[0]
-        self.parser.line(self.current_pos, pos)
+        self.parser.line(pos)
         self.current_pos = pos
 
     def v_to(self):
@@ -330,67 +299,32 @@ class SVGPathTokens(PathTokens):
         pos = [self.current_pos[0], y]
         if not self.absolute:
             pos[1] += self.current_pos[1]
-        self.parser.line(self.current_pos, pos)
+        self.parser.line(pos)
         self.current_pos = pos
 
     def cubic_to(self):
         control1 = self.get_pos()
         control2 = self.get_pos()
         end = self.get_pos()
-        self.parser.cubic(self.current_pos, control1, control2, end)
+        self.parser.cubic(control1, control2, end)
         self.current_pos = end
-        self.last_cubic = control2
 
     def smooth_cubic_to(self):
-        # Smooth curve. First control point is the "reflection" of
-        # the second control point in the previous path.
-
-        if self.last_command not in 'CScs':
-            # If there is no previous command or if the previous command
-            # was not an C, c, S or s, assume the first control point is
-            # coincident with the current point.
-            control1 = self.current_pos
-        else:
-            # The first control point is assumed to be the reflection of
-            # the second control point on the previous command relative
-            # to the current point.
-            c_pos = self.current_pos
-            control1 = c_pos + c_pos - self.last_cubic
         control2 = self.get_pos()
         end = self.get_pos()
-
-        self.parser.cubic(self.current_pos, control1, control2, end)
+        self.parser.smooth_cubic(control2, end)
         self.current_pos = end
-        self.last_cubic = control2
 
     def quad_to(self):
         control = self.get_pos()
         end = self.get_pos()
-
-        self.parser.quad(self.current_pos, control, end)
+        self.parser.quad(control, end)
         self.current_pos = end
-        self.last_quad = control
 
     def smooth_quad_to(self):
-        # Smooth curve. Control point is the "reflection" of
-        # the second control point in the previous path.
-
-        if self.last_command not in 'QTqt':
-            # If there is no previous command or if the previous command
-            # was not an Q, q, T or t, assume the first control point is
-            # coincident with the current point.
-            control = self.current_pos
-        else:
-            # The control point is assumed to be the reflection of
-            # the control point on the previous command relative
-            # to the current point.
-            c_pos = self.current_pos
-            control = [c_pos[0] + c_pos[0] - self.last_quad[0], c_pos[1] + c_pos[1] - self.last_quad[1]]
         end = self.get_pos()
-
-        self.parser.quad(self.current_pos, control, end)
+        self.parser.smooth_quad(end)
         self.current_pos = end
-        self.last_quad = control
 
     def arc_to(self):
         rx = float(self.get())
@@ -400,7 +334,7 @@ class SVGPathTokens(PathTokens):
         sweep = float(self.get())
         end = self.get_pos()
 
-        self.parser.arc(self.current_pos, rx, ry, rotation, arc, sweep, end)
+        self.parser.arc(rx, ry, rotation, arc, sweep, end)
         self.current_pos = end
 
     def close(self):

@@ -117,6 +117,12 @@ class Point:
     def polar_to(self, angle, distance):
         return Point.polar(self, angle, distance)
 
+    def reflected_across(self, p):
+        m = Point(p)
+        m += m
+        m -= self
+        return m
+
     @staticmethod
     def distance(p1, p2):
         dx = p1[0] - p2[0]
@@ -361,22 +367,22 @@ class Move(object):
     with non-drawn sections.
     """
 
-    def __init__(self, start, end=None):
-        if end is not None and start is not None:
+    def __init__(self, start=None, end=None):
+        if start is not None:
             self.start = Point(start)
+        else:
+            self.start = None
+        if end is not None:
             self.end = Point(end)
         else:
-            if start is not None:
-                self.start = Point(start)
-                self.end = Point(start)
-            else:
-                self.start = Point(end)
-                self.end = Point(end)
+            self.end = None
 
     def __imul__(self, other):
         if isinstance(other, Matrix):
-            self.start *= other
-            self.end *= other
+            if self.start is not None:
+                self.start *= other
+            if self.end is not None:
+                self.end *= other
         return self
 
     def __mul__(self, other):
@@ -391,7 +397,10 @@ class Move(object):
         return Move(self.start, self.end)
 
     def __repr__(self):
-        return 'Move(start=%s, end=%s)' % (self.start, self.end)
+        if self.start is None:
+            return 'Move(end=%s)' % self.end
+        else:
+            return 'Move(start=%s, end=%s)' % (self.start, self.end)
 
     def __eq__(self, other):
         if not isinstance(other, Move):
@@ -415,16 +424,24 @@ class Move(object):
             raise IndexError
 
     def plot(self):
-        for x, y in Line.plot_line(self.start[0], self.start[1], self.end[0], self.end[1]):
-            yield x, y, 0
+        if self.start is not None:
+            for x, y in Line.plot_line(self.start[0], self.start[1], self.end[0], self.end[1]):
+                yield x, y, 0
 
     def reverse(self):
-        return Move(self.end, self.start)
+        if self.start is not None:
+            return Move(self.end, self.start)
+        else:
+            if self.start is not None:
+                return Move(self.start, self.end)
 
     def bbox(self):
         """returns the bounding box for the segment in the form
         (xmin, ymin, ymax, ymax)."""
-        return self.start[0], self.start[1], self.end[0], self.end[1]
+        if self.start is not None:
+            return self.start[0], self.start[1], self.end[0], self.end[1]
+        else:
+            return self.end[0], self.end[1], self.end[0], self.end[1]
 
 
 class Close(object):
@@ -1580,33 +1597,95 @@ class Path(MutableSequence):
             return NotImplemented
         return not self == other
 
+    @property
+    def first_point(self):
+        """First point along the Path. This is the start point of the first segment unless it starts
+        with a Move command that can start from nowhere, in which case first point is the destination."""
+        if len(self._segments) == 0:
+            return None
+        if self._segments[0].start is not None:
+            return Point(self._segments[0].start)
+        return Point(self._segments[0].end)
+
+    @property
+    def current_point(self):
+        if len(self._segments) == 0:
+            return None
+        return Point(self._segments[-1].end)
+
+    @property
+    def smooth_point(self):
+        """Returns the smoothing control point for the smooth commands.
+        With regards to the SVG standard if the last command was a curve the smooth
+        control point is the reflection of the previous control point.
+
+        If the last command was not a curve, the smooth_point is coincident with the current."""
+
+        if len(self._segments) == 0:
+            return None
+        start_pos = self.current_point
+        last_segment = self._segments[-1]
+        if isinstance(last_segment, QuadraticBezier):
+            previous_control = last_segment.control
+            return previous_control.reflected_across(start_pos)
+        elif isinstance(last_segment, CubicBezier):
+            previous_control = last_segment.control2
+            return previous_control.reflected_across(start_pos)
+        return start_pos
+
     def start(self):
         pass
 
     def end(self):
         pass
 
-    def move(self, start_pos, end_pos):
+    def move(self, end_pos):
         if len(self._segments) > 0:
             if isinstance(self._segments[-1], Move):
+                # If there was just a move command update that.
                 self._segments[-1].end = Point(end_pos)
                 return
+        start_pos = self.current_point
         self.append(Move(start_pos, end_pos))
 
-    def line(self, start_pos, end_pos):
+    def line(self, end_pos):
+        start_pos = self.current_point
         self.append(Line(start_pos, end_pos))
 
-    def quad(self, start_pos, control, end_pos):
+    def smooth_quad(self, end_pos):
+        """Smooth curve. First control point is the "reflection" of
+           the second control point in the previous path."""
+        start_pos = self.current_point
+        control1 = self.smooth_point
+        self.append(QuadraticBezier(start_pos, control1, end_pos))
+
+    def quad(self, control, end_pos):
+        start_pos = self.current_point
         self.append(QuadraticBezier(start_pos, control, end_pos))
 
-    def cubic(self, start_pos, control1, control2, end_pos):
+    def smooth_cubic(self, control2, end_pos):
+        """Smooth curve. First control point is the "reflection" of
+        the second control point in the previous path."""
+        start_pos = self.current_point
+        control1 = self.smooth_point
         self.append(CubicBezier(start_pos, control1, control2, end_pos))
 
-    def arc(self, start_pos, rx, ry, rotation, arc, sweep, end_pos):
+    def cubic(self, control1, control2, end_pos):
+        start_pos = None
+        if len(self._segments) > 0:
+            start_pos = Point(self._segments[-1].end)
+        self.append(CubicBezier(start_pos, control1, control2, end_pos))
+
+    def arc(self, rx, ry, rotation, arc, sweep, end_pos):
+        start_pos = None
+        if len(self._segments) > 0:
+            start_pos = Point(self._segments[-1].end)
         self.append(Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos))
 
     def closed(self):
-        start_pos = self._segments[-1].end
+        start_pos = None
+        if len(self._segments) > 0:
+            start_pos = Point(self._segments[-1].end)
         end_pos = None
         for segment in reversed(self._segments):
             if isinstance(segment, Move):

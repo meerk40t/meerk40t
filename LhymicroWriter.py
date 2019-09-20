@@ -77,6 +77,16 @@ class LaserThread(threading.Thread):
         self.state = THREAD_STATE_ABORT
         self.project("writer", self.state)
 
+    def thread_pause_check(self, *args):
+        while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
+                self.state == THREAD_STATE_PAUSED:
+            # Backend is full. Or we are paused. We're waiting.
+            time.sleep(0.1)
+            if self.state == THREAD_STATE_ABORT:
+                raise StopIteration  # abort called.
+        if self.state == THREAD_STATE_ABORT:
+            raise StopIteration  # abort called.
+
     def run(self):
         command_index = 0
         self.controller.autostart = self.autostart
@@ -84,34 +94,24 @@ class LaserThread(threading.Thread):
 
         self.project["buffer", self.update_buffer_size] = self
         self.project["abort", self.abort] = self
+        self.project.writer.on_plot = self.thread_pause_check
         try:
             if self.element_list is None:
                 raise StopIteration
             self.project("progress", (0, len(self.element_list)))
             for element_index, element in enumerate(self.element_list):
-                while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
-                        self.state == THREAD_STATE_PAUSED:
-                    # Backend is full. Or we are paused. We're waiting.
-                    time.sleep(0.1)
-                    if self.state == THREAD_STATE_ABORT:
-                        raise StopIteration  # abort called.
+                self.thread_pause_check()
                 self.project("progress", (element_index + 1, len(self.element_list)))
                 for e in element.generate():
                     command, values = e
                     command_index += 1
-                    while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
-                            self.state == THREAD_STATE_PAUSED:
-                        # Backend is full. Or we are paused. We're waiting.
-                        time.sleep(0.1)
-                        if self.state == THREAD_STATE_ABORT:
-                            raise StopIteration  # abort called.
-                    if self.state == THREAD_STATE_ABORT:
-                        raise StopIteration  # abort called.
+                    self.thread_pause_check()
                     self.project("command", command_index)
                     self.project.writer.command(command, values)
         except StopIteration:
             pass  # We aborted the loop.
         # Final listener calls.
+        self.project.writer.on_plot = None
         self.project["abort", self.abort] = None
         if self.state == THREAD_STATE_ABORT:
             return  # Must no do anything else. Just die as fast as possible.
@@ -120,7 +120,6 @@ class LaserThread(threading.Thread):
         if self.project.writer.autolock:
             self.project.writer.command(COMMAND_UNLOCK, 0)
         self.element_list = None
-        self.element_index = -1
         self.project["buffer", self.update_buffer_size] = None
         if self.autobeep:
             print('\a')  # Beep.
@@ -167,6 +166,7 @@ class LhymicroWriter:
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
+        self.on_plot = None
 
     def refresh_elements(self):
         self.thread.refresh_element_list()
@@ -186,6 +186,43 @@ class LhymicroWriter:
         except AttributeError:
             pass
 
+    def group_plots(self, start_x, start_y, generate):
+        last_x = start_x
+        last_y = start_y
+        last_on = 0
+        dx = 0
+        dy = 0
+        x = None
+        y = None
+
+        for event in generate:
+            try:
+                x = event[0]
+                y = event[1]
+                on = event[2]
+            except IndexError:
+                on = 1
+            if x == last_x + dx and y == last_y + dy and on == last_on:
+                last_x = x
+                last_y = y
+                continue
+
+            yield last_x, last_y, last_on
+            if self.on_plot is not None:
+                self.on_plot(last_x, last_y, last_on)
+            dx = x - last_x
+            dy = y - last_y
+            if abs(dx) > 1 or abs(dy) > 1:
+                # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
+                # The bug is in the code that wrongly plotted the data, not here.
+                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
+            last_x = x
+            last_y = y
+            last_on = on
+        yield last_x, last_y, last_on
+        if self.on_plot is not None:
+            self.on_plot(last_x, last_y, last_on)
+
     def command(self, command, values):
         if command == COMMAND_LASER_OFF:
             self.up()
@@ -201,7 +238,7 @@ class LhymicroWriter:
             sy = self.current_y
             self.up()
             if self.state == STATE_COMPACT:
-                for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                     self.move(x, y)
             else:
                 self.move(x, y)
@@ -210,7 +247,7 @@ class LhymicroWriter:
             sx = self.current_x
             sy = self.current_y
             if self.state == STATE_COMPACT:
-                for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                     self.move(x, y)
             else:
                 self.move(x, y)
@@ -219,7 +256,7 @@ class LhymicroWriter:
             sx = self.current_x
             sy = self.current_y
             self.down()
-            for x, y, on in group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+            for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                 self.move_absolute(x, y)
         elif command == COMMAND_HSTEP:
             self.v_switch()
@@ -235,11 +272,11 @@ class LhymicroWriter:
             path = values
             if len(path) == 0:
                 return
-            first_point = path[0].start
+            first_point = path.first_point
             self.move_absolute(first_point[0], first_point[1])
             sx = self.current_x
             sy = self.current_y
-            for x, y, on in group_plots(sx, sy, path.plot()):
+            for x, y, on in self.group_plots(sx, sy, path.plot()):
                 if on == 0:
                     self.up()
                 else:
@@ -250,14 +287,14 @@ class LhymicroWriter:
             sx = self.current_x
             sy = self.current_y
             self.down()
-            for x, y, on in group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
+            for x, y, on in self.group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
                 self.move_absolute(x, y)
         elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, ex, ey = values
             sx = self.current_x
             sy = self.current_y
             self.down()
-            for x, y, on in group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
+            for x, y, on in self.group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
                 self.move_absolute(x, y)
         elif command == COMMAND_SET_SPEED:
             speed = values
@@ -312,10 +349,10 @@ class LhymicroWriter:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                for x, y, on in group_plots(self.current_x, self.current_y,
-                                            Line.plot_line(self.current_x, self.current_y,
-                                                           self.current_x + dx, self.current_y + dy)
-                                            ):
+                for x, y, on in self.group_plots(self.current_x, self.current_y,
+                                                 Line.plot_line(self.current_x, self.current_y,
+                                                                self.current_x + dx, self.current_y + dy)
+                                                 ):
                     self.move_absolute(x, y)
             elif abs(dx) == abs(dy):
                 self.move_angle(dx, dy)
@@ -605,37 +642,3 @@ class LhymicroWriter:
         if dy != 0:
             self.controller += lhymicro_distance(abs(dy))
             self.check_bounds()
-
-
-def group_plots(start_x, start_y, generate):
-    last_x = start_x
-    last_y = start_y
-    last_on = 0
-    dx = 0
-    dy = 0
-    x = None
-    y = None
-
-    for event in generate:
-        try:
-            x = event[0]
-            y = event[1]
-            on = event[2]
-        except IndexError:
-            on = 1
-        if x == last_x + dx and y == last_y + dy and on == last_on:
-            last_x = x
-            last_y = y
-            continue
-
-        yield last_x, last_y, last_on
-        dx = x - last_x
-        dy = y - last_y
-        if abs(dx) > 1 or abs(dy) > 1:
-            # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
-            # The bug is in the code that wrongly plotted the data, not here.
-            raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
-        last_x = x
-        last_y = y
-        last_on = on
-    yield last_x, last_y, last_on

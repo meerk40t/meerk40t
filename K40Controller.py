@@ -395,7 +395,7 @@ class K40Controller:
         sending = True
         while sending:
             if self.mock:
-                time.sleep(0.1)
+                time.sleep(0.02)
             else:
                 self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
             self.packet_count += 1
