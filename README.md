@@ -1,7 +1,7 @@
 # meerk40t
 Laser software for the Stock-LIHUIYU laserboard.
 
-MeerK40t "Meer" (provisional name) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
+MeerK40t "MeerK" (provisional name) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
 
 
 # Current State
@@ -50,16 +50,16 @@ The SVG parser is from code I wrote for `mathandy/svgpathtools`, which is a majo
 
 The LIHUIYU series of boards are connected to two stepper motors these can step one step in either direction, or trigger both at the same time. So everything in the K40 are made of dots at 1000dpi. Every movement is a step either orthogonally or diagonally, this means there are no actual curves only a series of very tiny steps in 1 of 8 possible directions. This is where the Zingl Plotter comes in. The Beauty of Bresenham's Algorithm ( http://members.chello.at/easyfilter/bresenham.html ) author, Zingl came up with a series of algorithms based on Bresenham's insights, which natively allows these operations to be performed with regard to the native shapes themselves. This means there is no need to deal with more primative or subdivied elements. We can natively use the curves.
 
-This combination of high level understanding of curves and low level rapid production of the curves to within 1 dot of correctness gives Meer the ability to perform vector curves natively. These are not subdivided into suitibly small line segments, curves are simply executed on the fly.
+This combination of high level understanding of curves and low level rapid production of the curves to within 1 dot of correctness gives MeerK the ability to perform vector curves natively. These are not subdivided into suitibly small line segments, curves are simply executed on the fly.
 
 
 ## Parsers
 
-The ability to drag and drop and display and modify job elements is critical to any good laser cutting application. Currently Meer uses Pillow to load images. 'EgvParser' which I wrote for K40Tools to load EGV files. And `svgparser` to load the SVG files.
+The ability to drag and drop and display and modify job elements is critical to any good laser cutting application. Currently MeerK uses Pillow to load images. 'EgvParser' which I wrote for K40Tools to load EGV files. And `svgparser` to load the SVG files.
 
 ## Rasterization
 
-The project includes a variant of RasterBuilder, I wrote for Visicut after adding a Stock K40 driver to the project, which provides methods for a highly debuggable methodology to build rasters based on a state machine. This gives Meer the ability to overscan, perform bottom-to-top rasters, start from any corner, provide right-to-left or left-to-right rasters, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend. If you wanted to, for example, break the image space into different regions and raster those areas independently, the ability to modify a robust debuggable rasterizer would be essential. Or if you wanted to perform passes based on value of the pixel (like first pass does 66% black, and second pass does 33% black). The good bones are essential.
+The project includes a variant of RasterBuilder, I wrote for Visicut after adding a Stock K40 driver to the project, which provides methods for a highly debuggable methodology to build rasters based on a state machine. This gives MeerK the ability to overscan, perform bottom-to-top rasters, start from any corner, provide right-to-left or left-to-right rasters, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend. If you wanted to, for example, break the image space into different regions and raster those areas independently, the ability to modify a robust debuggable rasterizer would be essential. Or if you wanted to perform passes based on value of the pixel (like first pass does 66% black, and second pass does 33% black). The good bones are essential.
 
 ## Lhymicro-gl Writer
 
