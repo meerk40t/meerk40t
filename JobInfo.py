@@ -41,23 +41,26 @@ class JobInfo(wx.Frame):
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_start_job, self.button_writer_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_delete_job, self.button_delete_job)
         # end wxGlade
-
         self.project = None
         self.dirty = False
-        self.dirty_usb = False
+        self.update_buffer_size = False
+        self.update_command_index = False
+        self.update_elements_progress = False
+        self.update_writer_state = False
+
         self.buffer_size = 0
-        self.usb_status = ""
-        self.progress_total = 0
-        self.progress_update = 0
-        self.command_progress = 0
+        self.elements_progress = 0
+        self.elements_progress_total = 0
+        self.command_index = 0
         self.listener_list = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def set_project(self, project):
         self.project = project
         project["buffer", self.on_buffer_update] = self
-        project["progress", self.on_progress] = self
-        project["command", self.on_command_progress] = self
+        project["progress", self.on_elements_progress] = self
+        project["command", self.on_command_index] = self
+        project["writer", self.on_writer_state] = self
         self.set_writer_button_by_state()
         self.checkbox_autobeep.SetValue(self.project.writer.thread.autobeep)
         self.checkbox_autohome.SetValue(self.project.writer.thread.autohome)
@@ -69,8 +72,9 @@ class JobInfo(wx.Frame):
 
     def on_close(self, event):
         self.project["buffer", self.on_buffer_update] = None
-        self.project["progress", self.on_progress] = None
-        self.project["command", self.on_command_progress] = None
+        self.project["progress", self.on_elements_progress] = None
+        self.project["command", self.on_command_index] = None
+        self.project["writer", self.on_writer_state] = None
         self.project = None
         event.Skip()  # Call destroy as regular.
 
@@ -119,7 +123,7 @@ class JobInfo(wx.Frame):
         sizer_2.Add(self.elements_listbox, 10, wx.EXPAND, 0)
         sizer_11.Add(self.checkbox_limit_buffer, 1, 0, 0)
         sizer_11.Add(self.gauge_controller, 0, wx.EXPAND, 0)
-        label_7 = wx.StaticText(self.panel_controller, wx.ID_ANY, "Packet Buffer")
+        label_7 = wx.StaticText(self.panel_controller, wx.ID_ANY, "Write Buffer")
         sizer_12.Add(label_7, 4, 0, 0)
         sizer_12.Add(self.text_packet_buffer, 5, 0, 0)
         label_4 = wx.StaticText(self.panel_controller, wx.ID_ANY, "/")
@@ -171,10 +175,10 @@ class JobInfo(wx.Frame):
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         state = self.project.writer.thread.state
         if state == THREAD_STATE_STARTED:
-            self.project.writer.thread.state = THREAD_STATE_PAUSED
+            self.project.writer.thread.pause()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_PAUSED:
-            self.project.writer.thread.state = THREAD_STATE_STARTED
+            self.project.writer.thread.resume()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_UNSTARTED:
             self.project.writer.thread.state = THREAD_STATE_STARTED
@@ -208,10 +212,6 @@ class JobInfo(wx.Frame):
             self.button_writer_control.SetLabel("Close Aborted Job")
             self.button_writer_control.SetValue(False)
 
-    def on_combo_select_writer(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_combo_select_writer' not implemented!")
-        event.Skip()
-
     def post_update(self):
         if not self.dirty:
             self.dirty = True
@@ -220,28 +220,46 @@ class JobInfo(wx.Frame):
     def post_update_on_gui_thread(self):
         if self.project is None:
             return  # left over update on closed window
-        self.text_packet_buffer.SetValue(str(self.buffer_size))
-        self.gauge_controller.SetValue(self.buffer_size)
-        self.gauge_controller.SetRange(self.spin_packet_buffer_max.GetValue())
 
-        self.text_job_progress.SetValue(str(self.progress_update))
-        self.text_job_total.SetValue(str(self.progress_total))
-        self.gauge_writer.SetValue(self.progress_update)
-        self.gauge_writer.SetRange(self.progress_total)
+        if self.update_buffer_size:
+            self.update_buffer_size = False
+            self.text_packet_buffer.SetValue(str(self.buffer_size))
+            self.gauge_controller.SetValue(self.buffer_size)
+            self.gauge_controller.SetRange(self.spin_packet_buffer_max.GetValue())
 
-        self.set_writer_button_by_state()
+        if self.update_elements_progress:
+            self.update_elements_progress = False
+            self.text_job_progress.SetValue(str(self.elements_progress))
+            self.text_job_total.SetValue(str(self.elements_progress_total))
+            self.gauge_writer.SetValue(self.elements_progress)
+            self.gauge_writer.SetRange(self.elements_progress_total)
+
+        if self.update_writer_state:
+            self.update_writer_state = False
+            self.set_writer_button_by_state()
+
+        if self.update_command_index:
+            self.update_command_index = False
+            self.text_command_index.SetValue(str(self.command_index))
         self.dirty = False
 
     def on_buffer_update(self, value):
+        self.update_buffer_size = True
         self.buffer_size = value
         self.post_update()
 
-    def on_command_progress(self, command_progress):
-        self.command_progress = command_progress
+    def on_command_index(self, command_index):
+        self.update_command_index = True
+        self.command_index = command_index
         self.post_update()
 
-    def on_progress(self, progress):
+    def on_elements_progress(self, progress):
+        self.update_elements_progress = True
         last, limit = progress
-        self.progress_total = limit
-        self.progress_update = last
+        self.elements_progress_total = limit
+        self.elements_progress = last
+        self.post_update()
+
+    def on_writer_state(self, state):
+        self.update_writer_state = True
         self.post_update()

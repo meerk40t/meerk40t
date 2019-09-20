@@ -72,8 +72,8 @@ def onewire_crc_lookup(line):
 class ControllerQueueThread(threading.Thread):
     def __init__(self, controller):
         threading.Thread.__init__(self)
-        self.state = THREAD_STATE_UNSTARTED
         self.controller = controller
+        self.state = THREAD_STATE_UNSTARTED
         self.controller.listener("control_thread", self.state)
 
     def run(self):
@@ -93,6 +93,7 @@ class ControllerQueueThread(threading.Thread):
                 time.sleep(1)
         if self.state == THREAD_STATE_ABORT:
             self.controller.listener("control_thread", self.state)
+            return
         self.state = THREAD_STATE_FINISHED
         self.controller.listener("control_thread", self.state)
 
@@ -130,6 +131,7 @@ class K40Controller:
         self.mock = mock
 
         self.thread = ControllerQueueThread(self)
+        self.listener("control_thread", self.thread.state)
 
         self.status = None
 
@@ -139,7 +141,7 @@ class K40Controller:
 
         self.device_log = ""
 
-        self.pause = False
+        self.process_queue_pause = False
         self.autostart = True
 
         self.buffer = b''
@@ -176,13 +178,13 @@ class K40Controller:
 
     def start_usb(self):
         self.set_usb_status("Connecting")
-        thread = UsbConnectThread(self)
-        thread.start()
+        usb_thread = UsbConnectThread(self)
+        usb_thread.start()
 
     def stop_usb(self):
         self.set_usb_status("Disconnecting")
-        thread = UsbDisconnectThread(self)
-        thread.start()
+        usb_thread = UsbDisconnectThread(self)
+        usb_thread.start()
 
     def emergency_stop(self):
         self.thread.state = THREAD_STATE_ABORT
@@ -192,15 +194,34 @@ class K40Controller:
         self.buffer = b''
         self.add_queue = b''
         self.listener("buffer", len(self.buffer))
+        self.listener("control_thread", self.thread.state)
+
+    def reset_thread(self):
+        self.thread = ControllerQueueThread(self)
 
     def start_queue_consumer(self):
+        if self.thread.state == THREAD_STATE_ABORT:
+            # We cannot reset an aborted thread without specifically calling reset.
+            return
         if self.thread.state == THREAD_STATE_FINISHED:
             self.thread = ControllerQueueThread(self)
         if self.thread.state == THREAD_STATE_UNSTARTED:
+            self.thread.state = THREAD_STATE_STARTED
             self.thread.start()
+            self.listener("control_thread", self.thread.state)
+
+    def pause(self):
+        self.process_queue_pause = True
+        self.thread.state = THREAD_STATE_PAUSED
+        self.listener("control_thread", self.thread.state)
+
+    def resume(self):
+        self.process_queue_pause = False
+        self.thread.state = THREAD_STATE_STARTED
+        self.listener("control_thread", self.thread.state)
 
     def process_queue(self):
-        if self.pause:
+        if self.process_queue_pause:
             return False
         if self.usb is None and not self.mock:
             try:
@@ -234,7 +255,7 @@ class K40Controller:
         # try to send packet
         try:
             self.wait(STATUS_OK)
-            if self.pause:
+            if self.process_queue_pause:
                 return False  # Paused during wait.
             if len(packet) == 30:
                 self.buffer = self.buffer[length:]

@@ -1610,7 +1610,7 @@ class Path(MutableSequence):
         end_pos = None
         for segment in reversed(self._segments):
             if isinstance(segment, Move):
-                end_pos = segment.start
+                end_pos = segment.end
                 break
         if end_pos is None:
             end_pos = self._segments[0].start

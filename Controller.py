@@ -5,8 +5,8 @@
 
 import wx
 
-from ThreadConstants import *
 from K40Controller import get_code_string_from_code
+from ThreadConstants import *
 
 
 class Controller(wx.Frame):
@@ -46,8 +46,8 @@ class Controller(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_bufferview, self.button_buffer_viewer)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.dirty = False
         self.project = None
+        self.dirty = False
         self.status_data = None
         self.packet_data = None
         self.packet_string = b''
@@ -55,6 +55,15 @@ class Controller(wx.Frame):
         self.buffer_max = 0
         self.usb_status = ""
         self.control_state = None
+
+        self.update_packet_string = False
+        self.update_packet_data = False
+        self.update_packet_count = False
+        self.update_rejected_count = False
+        self.update_status_data = False
+        self.update_buffer_size = False
+        self.update_control_state = False
+        self.update_usb_status = False
 
     def set_project(self, project):
         self.project = project
@@ -205,28 +214,6 @@ class Controller(wx.Frame):
         self.Layout()
         # end wxGlade
 
-    def on_combo_select_writer(self, event):  # wxGlade: Controller.<event_handler>
-        print("Event handler 'on_combo_select_writer' not implemented!")
-        event.Skip()
-
-    def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.controller.start_queue_consumer()
-
-    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        if self.project.controller.usb is None:
-            self.project.controller.start_usb()
-        else:
-            self.project.controller.stop_usb()
-
-    def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.controller.emergency_stop()
-
-    def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        from BufferView import BufferView
-        window = BufferView(None, wx.ID_ANY, "")
-        window.set_project(self.project)
-        window.Show()
-
     def post_update(self):
         if not self.dirty:
             self.dirty = True
@@ -235,56 +222,119 @@ class Controller(wx.Frame):
     def post_update_on_gui_thread(self):
         if self.project is None:
             return  # was closed this is just a leftover update.
-        data = self.packet_data
-        string_data = self.packet_string
 
-        if data is not None and len(data) != 0:
-            self.last_packet_text.SetValue(str(data))
+        update = False
+        if self.update_packet_string:
+            string_data = self.packet_string
+            if string_data is not None and len(string_data) != 0:
+                self.packet_text_text.SetValue(str(string_data))
+            self.packet_string = b''
+            update = True
 
-        if string_data is not None and len(string_data) != 0:
-            self.packet_text_text.SetValue(str(string_data))
+        if self.update_packet_data:
+            self.update_packet_data = False
+            self.last_packet_text.SetValue(str(self.packet_data))
+            update = True
 
-        self.packet_string = b''
-        self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-        self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
+        if self.update_packet_count:
+            self.update_packet_count = False
+            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
 
-        data = self.status_data
-        if data is not None:
-            if isinstance(data, int):
-                self.text_desc.SetValue(str(data))
-                self.text_desc.SetValue(get_code_string_from_code(data))
-            elif len(data) == 6:
-                self.text_byte_0.SetValue(str(data[0]))
-                self.text_byte_1.SetValue(str(data[1]))
-                self.text_byte_2.SetValue(str(data[2]))
-                self.text_byte_3.SetValue(str(data[3]))
-                self.text_byte_4.SetValue(str(data[4]))
-                self.text_byte_5.SetValue(str(data[5]))
-                self.text_desc.SetValue(get_code_string_from_code(data[1]))
-        self.Update()
-
-        if self.project is None:
-            return  # left over update on closed window
-        self.text_buffer_length.SetValue(str(self.buffer_size))
-        self.gauge_buffer.SetValue(self.buffer_size)
-        self.gauge_buffer.SetRange(self.buffer_max)
-        self.text_controller_status.SetValue(get_state_string_from_state(self.control_state))
-        self.set_controller_button_by_state()
-
-        self.text_usb_status.SetValue(self.usb_status)
-        self.set_usb_button_by_state()
+        if self.update_status_data:
+            self.update_status_data = False
+            status_data = self.status_data
+            if status_data is not None:
+                if isinstance(status_data, int):
+                    self.text_desc.SetValue(str(status_data))
+                    self.text_desc.SetValue(get_code_string_from_code(status_data))
+                else:
+                    if len(status_data) == 6:
+                        self.text_byte_0.SetValue(str(status_data[0]))
+                        self.text_byte_1.SetValue(str(status_data[1]))
+                        self.text_byte_2.SetValue(str(status_data[2]))
+                        self.text_byte_3.SetValue(str(status_data[3]))
+                        self.text_byte_4.SetValue(str(status_data[4]))
+                        self.text_byte_5.SetValue(str(status_data[5]))
+                        self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
+            update = True
+        if self.update_buffer_size:
+            self.update_buffer_size = False
+            self.text_buffer_length.SetValue(str(self.buffer_size))
+            self.gauge_buffer.SetValue(self.buffer_size)
+            self.gauge_buffer.SetRange(self.buffer_max)
+            update = True
+        if self.update_control_state:
+            self.update_control_state = False
+            self.text_controller_status.SetValue(get_state_string_from_state(self.control_state))
+            self.set_controller_button_by_state()
+            update = True
+        if self.update_usb_status:
+            self.update_usb_status = False
+            self.text_usb_status.SetValue(self.usb_status)
+            self.set_usb_button_by_state()
+            update = True
+        if update:
+            pass
         self.dirty = False
 
+    def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
+        state = self.control_state
+        if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
+            self.project.controller.start_queue_consumer()
+        elif state == THREAD_STATE_PAUSED:
+            self.project.controller.resume()
+        elif state == THREAD_STATE_STARTED:
+            self.project.controller.pause()
+        elif state == THREAD_STATE_ABORT:
+            self.project.controller.reset_thread()
+
+    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
+        if self.project.controller.usb is None:
+            self.project.controller.start_usb()
+        else:
+            self.project.controller.stop_usb()
+
+    def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
+        self.project("abort", 0)
+        self.project.controller.emergency_stop()
+
+    def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
+        from BufferView import BufferView
+        window = BufferView(None, wx.ID_ANY, "")
+        window.set_project(self.project)
+        window.Show()
+
     def update_status(self, data):
+        self.update_status_data = True
         self.status_data = data
         self.post_update()
 
     def update_packet(self, data):
+        self.update_packet_data = True
         self.packet_data = data
         self.post_update()
 
     def update_packet_text(self, string_data):
+        self.update_packet_string = True
         self.packet_string = string_data
+        self.post_update()
+
+    def on_usbstatus(self, status):
+        self.update_usb_status = True
+        self.usb_status = status
+        self.post_update()
+
+    def on_buffer_update(self, value):
+        self.update_buffer_size = True
+        self.buffer_size = value
+        if self.buffer_size > self.buffer_max:
+            self.buffer_max = self.buffer_size
+        self.post_update()
+
+    def on_control_state(self, state):
+        self.update_control_state = True
+        self.control_state = state
         self.post_update()
 
     def set_usb_button_by_state(self):
@@ -331,19 +381,9 @@ class Controller(wx.Frame):
             self.button_controller_control.SetBackgroundColour("#ffff00")
             self.button_controller_control.SetLabel("Pause Controller")
             self.button_controller_control.SetValue(True)
-
-    def on_usbstatus(self, status):
-        self.usb_status = status
-        self.post_update()
-
-    def on_buffer_update(self, value):
-        self.buffer_size = value
-        if self.buffer_size > self.buffer_max:
-            self.buffer_max = self.buffer_size
-        self.post_update()
-
-    def on_control_state(self, state):
-        self.control_state = state
-        self.post_update()
+        elif state == THREAD_STATE_ABORT:
+            self.button_controller_control.SetBackgroundColour("#ff0000")
+            self.button_controller_control.SetLabel("Manual Reset")
+            self.button_controller_control.SetValue(True)
 
 # end of class Controller

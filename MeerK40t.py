@@ -352,7 +352,7 @@ class MeerK40t(wx.Frame):
         files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
                 "Scalable Vector Graphics svg (*.svg)|*.svg|" \
                 "Engrave egv (*.egv)|*.egv|" \
-                "Portable Network Graphics png (*.png)|*.png"
+                "Portable Ne/twork Graphics png (*.png)|*.png"
         with wx.FileDialog(self, "Open", wildcard=files,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:

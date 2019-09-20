@@ -20,8 +20,6 @@ class BufferView(wx.Frame):
         self.__do_layout()
         # end wxGlade
         self.project = None
-        self.dirty = False
-        self.append_text = ""
 
     def set_project(self, project):
         self.project = project

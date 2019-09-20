@@ -57,7 +57,6 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
         self.project = None
 
-
     def set_project(self, project):
         self.project = project
         bedwidth, bedheight = project.size

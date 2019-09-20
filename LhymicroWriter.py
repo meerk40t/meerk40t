@@ -45,8 +45,6 @@ class LaserThread(threading.Thread):
         self.project = project
         self.controller = project.controller
         self.element_list = None
-        self.element_index = -1
-        self.command_index = -1
         self.limit_buffer = True
         self.buffer_max = 20 * 30
         self.buffer_size = -1
@@ -54,34 +52,73 @@ class LaserThread(threading.Thread):
         self.autohome = self.project.autohome
         self.autobeep = self.project.autobeep
         self.autostart = self.project.autostart
-        self.element_index = 0
-        self.command_index = 0
         self.element_list = None
+        self.project("writer", self.state)
 
     def start_element_producer(self):
         if self.state != THREAD_STATE_ABORT:
             self.state = THREAD_STATE_STARTED
+            self.project("writer", self.state)
             self.start()
 
     def refresh_element_list(self):
         self.element_list = [e for e in self.project.flat_elements()]
-        self.project("progress", (self.element_index, len(self.element_list)))
+        self.project("progress", (0, len(self.element_list)))
+
+    def pause(self):
+        self.state = THREAD_STATE_PAUSED
+        self.project("writer", self.state)
+
+    def resume(self):
+        self.state = THREAD_STATE_STARTED
+        self.project("writer", self.state)
+
+    def abort(self, *args):
+        self.state = THREAD_STATE_ABORT
+        self.project("writer", self.state)
 
     def run(self):
-        self.element_index = 0
+        command_index = 0
         self.controller.autostart = self.autostart
-        self.project("progress", (self.element_index, len(self.element_list)))
+        self.project("progress", (0, len(self.element_list)))
+
         self.project["buffer", self.update_buffer_size] = self
-        while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
-            self.process_queue()
-            time.sleep(0.1)
-            while self.state == THREAD_STATE_PAUSED:
-                time.sleep(1)
+        self.project["abort", self.abort] = self
+        try:
+            if self.element_list is None:
+                raise StopIteration
+            self.project("progress", (0, len(self.element_list)))
+            for element_index, element in enumerate(self.element_list):
+                while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
+                        self.state == THREAD_STATE_PAUSED:
+                    # Backend is full. Or we are paused. We're waiting.
+                    time.sleep(0.1)
+                    if self.state == THREAD_STATE_ABORT:
+                        raise StopIteration  # abort called.
+                self.project("progress", (element_index + 1, len(self.element_list)))
+                for e in element.generate():
+                    command, values = e
+                    command_index += 1
+                    while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
+                            self.state == THREAD_STATE_PAUSED:
+                        # Backend is full. Or we are paused. We're waiting.
+                        time.sleep(0.1)
+                        if self.state == THREAD_STATE_ABORT:
+                            raise StopIteration  # abort called.
+                    if self.state == THREAD_STATE_ABORT:
+                        raise StopIteration  # abort called.
+                    self.project("command", command_index)
+                    self.project.writer.command(command, values)
+        except StopIteration:
+            pass  # We aborted the loop.
         # Final listener calls.
+        self.project["abort", self.abort] = None
+        if self.state == THREAD_STATE_ABORT:
+            return  # Must no do anything else. Just die as fast as possible.
         if self.autohome:
-            return self.project.writer.command(COMMAND_HOME, 0)
+            self.project.writer.command(COMMAND_HOME, 0)
         if self.project.writer.autolock:
-            return self.project.writer.command(COMMAND_UNLOCK, 0)
+            self.project.writer.command(COMMAND_UNLOCK, 0)
         self.element_list = None
         self.element_index = -1
         self.project["buffer", self.update_buffer_size] = None
@@ -89,34 +126,10 @@ class LaserThread(threading.Thread):
             print('\a')  # Beep.
         self.controller.autostart = True
         self.state = THREAD_STATE_FINISHED
+        self.project("writer", self.state)
 
     def update_buffer_size(self, size):
         self.buffer_size = size
-
-    def process_queue(self):
-        if self.element_list is None:
-            self.state = THREAD_STATE_FINISHED
-            return
-        try:
-            element = self.element_list[self.element_index]
-        except IndexError:
-            self.state = THREAD_STATE_FINISHED
-            return
-        commands_gen = element.generate()
-        while True:
-            self.project("progress", (self.element_index + 1, len(self.element_list)))
-            self.project("command", self.command_index)
-            while self.limit_buffer and self.buffer_size > self.buffer_max:
-                # Backend is clogged and not sending stuff. We're waiting.
-                time.sleep(0.1)  # if we've given it enough for a while just wait here.
-            try:
-                e = next(commands_gen)
-            except StopIteration:
-                self.element_index += 1
-                break
-            command, values = e
-            self.project.writer.command(command, values)
-            self.command_index += 1
 
 
 class LhymicroWriter:
@@ -602,7 +615,6 @@ def group_plots(start_x, start_y, generate):
     dy = 0
     x = None
     y = None
-    on = None
 
     for event in generate:
         try:
@@ -620,7 +632,9 @@ def group_plots(start_x, start_y, generate):
         dx = x - last_x
         dy = y - last_y
         if abs(dx) > 1 or abs(dy) > 1:
-            raise ValueError
+            # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
+            # The bug is in the code that wrongly plotted the data, not here.
+            raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
         last_x = x
         last_y = y
         last_on = on
