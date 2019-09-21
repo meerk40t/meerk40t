@@ -396,7 +396,7 @@ class LaserProject:
         convert = self[float, "units-convert", self.units[0]]
         name = self[str, "units-name", self.units[1]]
         marks = self[int, "units-marks", self.units[2]]
-        unitindex = self[int, "unit-index", self.units[3]]
+        unitindex = self[int, "units-index", self.units[3]]
         self.units = (convert, name, marks, unitindex)
         width = self[int, "bed_width", self.size[0]]
         height = self[int, "bed_height", self.size[1]]
@@ -414,24 +414,24 @@ class LaserProject:
         self("bed_size", self.size)
 
     def save_config(self):
-        self["autohome"] = self.autohome
-        self["autobeep"] = self.autobeep
-        self["autostart"] = self.autostart
-        self["units-convert"] = self.units[0]
-        self["units-name"] = self.units[1]
-        self["units-marks"] = self.units[2]
-        self["units-index"] = self.units[3]
-        self["bed_width"] = self.size[0]
-        self["bed_height"] = self.size[1]
-        self["board"] = self.writer.board
-        self["autolock"] = self.writer.autolock
-        self["rotary"] = self.writer.rotary
-        self["scale_x"] = self.writer.scale_x
-        self["scale_y"] = self.writer.scale_y
-        self["mock"] = self.controller.mock
-        self["usb_index"] = self.controller.usb_index
-        self["usb_bus"] = self.controller.usb_bus
-        self["usb_address"] = self.controller.usb_address
+        self["autohome"] = bool(self.autohome)
+        self["autobeep"] = bool(self.autobeep)
+        self["autostart"] = bool(self.autostart)
+        self["units-convert"] = float(self.units[0])
+        self["units-name"] = str(self.units[1])
+        self["units-marks"] = int(self.units[2])
+        self["units-index"] = int(self.units[3])
+        self["bed_width"] = int(self.size[0])
+        self["bed_height"] = int(self.size[1])
+        self["board"] = str(self.writer.board)
+        self["autolock"] = bool(self.writer.autolock)
+        self["rotary"] = bool(self.writer.rotary)
+        self["scale_x"] = float(self.writer.scale_x)
+        self["scale_y"] = float(self.writer.scale_y)
+        self["mock"] = bool(self.controller.mock)
+        self["usb_index"] = int(self.controller.usb_index)
+        self["usb_bus"] = int(self.controller.usb_bus)
+        self["usb_address"] = int(self.controller.usb_address)
 
     def shutdown(self):
         pass
