@@ -72,6 +72,7 @@ class Preferences(wx.Frame):
         self.checkbox_rotary.SetValue(self.project.writer.rotary)
         self.spin_bedwidth.SetValue(self.project.size[0])
         self.spin_bedheight.SetValue(self.project.size[1])
+        print(self.project.units)
         self.radio_units.SetSelection(self.project.units[3])
         self.spin_device_index.SetValue(self.project.controller.usb_index)
         self.spin_device_bus.SetValue(self.project.controller.usb_bus)

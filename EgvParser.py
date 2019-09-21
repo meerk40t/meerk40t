@@ -52,6 +52,8 @@ class EgvParser:
         while True:
             b = f.read(1024)
             for byte in b:
+                if isinstance(byte, str):
+                    byte = ord(byte)  # Python 2.7
                 value = byte
                 if ord('0') <= value <= ord('9'):
                     self.append_digit(value - ord('0'))  # '0' = 0

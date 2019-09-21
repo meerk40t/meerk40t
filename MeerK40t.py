@@ -340,9 +340,13 @@ class MeerK40t(wx.Frame):
 
     def load_image(self, pathname):
         image = Image.open(pathname)
-        self.project.append(ImageElement(image))
+        context = self.project
+        group = []
+        context.append(group)
+        context = group
+        context.append(ImageElement(image))
         width, height = image.size
-        self.project.append(PathElement("M0,0 {0},0 {0},{1} 0,{1}z".format(width, height)))
+        context.append(PathElement("M0,0 {0},0 {0},{1} 0,{1}z".format(width, height)))
         self.scene.update_buffer()
 
     def tree_update(self):
