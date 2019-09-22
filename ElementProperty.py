@@ -147,8 +147,7 @@ class ElementProperty(wx.Frame):
             e.cut[VARIABLE_NAME_DRATIO] = self.spin_speed_dratio.GetValue()
 
     def on_spin_passes(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_PASSES] = self.spin_passes.GetValue()
+        self.element.cut[VARIABLE_NAME_PASSES] = self.spin_passes.GetValue()
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):

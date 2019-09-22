@@ -62,7 +62,7 @@ class LaserThread(threading.Thread):
             self.start()
 
     def refresh_element_list(self):
-        self.element_list = [e for e in self.project.flat_elements()]
+        self.element_list = [e for e in self.project.flat_elements_with_passes()]
         self.project("progress", (0, len(self.element_list)))
 
     def pause(self):

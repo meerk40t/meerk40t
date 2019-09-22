@@ -512,6 +512,22 @@ class LaserProject(LaserNode):
             listeners = self.listeners[code]
             listeners.remove(listener)
 
+    def flat_elements_with_passes(self, elements=None):
+        if elements is None:
+            elements = self.elements
+        for element in elements:
+            passes = 1
+            if VARIABLE_NAME_PASSES in element.cut:
+                passes = element.cut[VARIABLE_NAME_PASSES]
+            if isinstance(element, LaserElement):
+                element.parent = elements
+                for q in range(0, passes):
+                    yield element
+            else:
+                for q in range(0, passes):
+                    for flat_element in self.flat_elements_with_passes(element):
+                        yield flat_element
+
     def flat_elements(self, elements=None):
         if elements is None:
             elements = self.elements
