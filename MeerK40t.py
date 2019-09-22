@@ -110,7 +110,7 @@ class MeerK40t(wx.Frame):
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
         toolbar.AddTool(ID_OPEN, wx.Bitmap("icons/icons8-opened-folder-50.png", wx.BITMAP_TYPE_ANY))  # "Open",
-        toolbar.AddTool(ID_SAVE, wx.Bitmap("icons/icons8-save-50.png", wx.BITMAP_TYPE_ANY))  # "Save",
+        # toolbar.AddTool(ID_SAVE, wx.Bitmap("icons/icons8-save-50.png", wx.BITMAP_TYPE_ANY))  # "Save",
 
         windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows",
                                        wx.Bitmap("icons/icons8-py-50.png", wx.BITMAP_TYPE_ANY))
@@ -146,9 +146,9 @@ class MeerK40t(wx.Frame):
         # wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, "Open Project", "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, "Import File", "")
-        wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_SAVE, "Save", "")
-        wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, "Save As", "")
+        # wxglade_tmp_menu.AppendSeparator()
+        # wxglade_tmp_menu.Append(ID_MENU_SAVE, "Save", "")
+        # wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, "Save As", "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_EXIT, "Exit", "")
         self.main_menubar.Append(wxglade_tmp_menu, "File")
@@ -189,8 +189,8 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_click_new, id=ID_MENU_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_OPEN_PROJECT)
         self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
-        self.Bind(wx.EVT_MENU, self.on_click_save, id=ID_MENU_SAVE)
-        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=ID_MENU_SAVE_AS)
+        # self.Bind(wx.EVT_MENU, self.on_click_save, id=ID_MENU_SAVE)
+        # self.Bind(wx.EVT_MENU, self.on_click_save_as, id=ID_MENU_SAVE_AS)
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=ID_MENU_EXIT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
@@ -209,7 +209,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
+        # toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_usb, id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_navigation, id=ID_NAV)
@@ -593,7 +593,7 @@ class CutConfiguration(wx.Panel):
         if item in self.item_lookup:
             element = self.item_lookup[item]
             element.parent.remove(element)
-            project.set_selected([])
+            project.set_selected(None)
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
         item = event.GetItem()

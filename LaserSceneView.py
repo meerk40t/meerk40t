@@ -5,6 +5,7 @@
 
 import wx
 
+from ElementProperty import ElementProperty
 # begin wxGlade: dependencies
 # end wxGlade
 from ZMatrix import ZMatrix
@@ -50,6 +51,7 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         self.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
         self.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
 
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
@@ -218,6 +220,18 @@ class LaserSceneView(wx.Panel):
         self.previous_window_position = None
         self.previous_scene_position = None
         self.move_function = self.move_pan
+        self.project.validate()
+
+    def on_mouse_double_click(self, event):
+        position = event.GetPosition()
+        position = self.convert_window_to_scene(position)
+        self.project.set_selected_by_position(position)
+        if self.project.selected is not None:
+            self.project.close_old_window("elementproperty")
+            window = ElementProperty(None, wx.ID_ANY, "")
+            window.set_project_element(self.project, self.project.selected)
+            window.Show()
+            self.project.windows["elementproperty"] = window
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
@@ -436,10 +450,11 @@ class LaserSceneView(wx.Panel):
         dc.SetPen(pen)
         if self.project is None:
             return
-        if self.project.selected_bbox is not None:
+
+        if self.project.selected is not None and self.project.selected.bounds is not None:
             dc.SetPen(wx.BLUE_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x0, y0, x1, y1 = self.project.selected_bbox
+            x0, y0, x1, y1 = self.project.selected.bounds
             dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
         for element in self.project.flat_elements():
             element.draw(dc)

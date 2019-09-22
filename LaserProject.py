@@ -87,6 +87,8 @@ class LaserCommandPathParser:
                     self.graphic_path.MoveToPoint(e.end[0], e.end[1])
                 elif isinstance(e, path.Line):
                     self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
+                elif isinstance(e, path.Close):
+                    self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
                 elif isinstance(e, path.QuadraticBezier):
                     self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
                                                           e.end[0], e.end[1])
@@ -157,7 +159,11 @@ class LaserNode(list):
         list.__init__(self)
         self.cut = {}
         self.parent = None
-        self.box = [-10, -10, 10, 10]
+        self.box = None
+        self.bounds = None
+
+    def __eq__(self, other):
+        return other is self
 
     def set_color(self, color):
         self.cut[VARIABLE_NAME_COLOR] = color
@@ -192,8 +198,12 @@ class LaserNode(list):
         if self.parent is not None:
             self.parent.notify_change()
 
-    def __eq__(self, other):
-        return other is self
+    def contains(self, x, y=None):
+        if y is None:
+            x, y = x
+        if self.bounds is None:
+            return False
+        return self.bounds[0] <= x <= self.bounds[2] and self.bounds[1] <= y <= self.bounds[3]
 
 
 class LaserGroup(LaserNode):
@@ -201,7 +211,10 @@ class LaserGroup(LaserNode):
         LaserNode.__init__(self)
 
     def __str__(self):
-        return "Group"
+        if VARIABLE_NAME_PASSES in self.cut:
+            return "%d Group" % (self.cut[VARIABLE_NAME_PASSES])
+        else:
+            return "Group"
 
 
 class LaserElement(LaserNode):
@@ -246,11 +259,6 @@ class LaserElement(LaserNode):
     def move(self, dx, dy):
         self.matrix.pre_translate(dx, dy)
 
-    def contains(self, x, y=None):
-        if y is None:
-            x, y = x
-        return self.box[0] <= x <= self.box[2] and self.box[1] <= y <= self.box[3]
-
 
 class ImageElement(LaserElement):
     def __init__(self, image):
@@ -262,7 +270,9 @@ class ImageElement(LaserElement):
                          VARIABLE_NAME_SPEED: 100})
 
     def __str__(self):
-        return "Image step=%d  speed=%3f" % (self.cut[VARIABLE_NAME_RASTER_STEP], self.cut[VARIABLE_NAME_SPEED])
+        return "%d Image %dX s@%3f" % (self.cut[VARIABLE_NAME_PASSES],
+                                       self.cut[VARIABLE_NAME_RASTER_STEP],
+                                       self.cut[VARIABLE_NAME_SPEED])
 
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
@@ -322,8 +332,9 @@ class PathElement(LaserElement):
         self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20})
 
     def __str__(self):
-        string = "Path speed=%.1f %.1fx path=%s" % \
-                 (self.cut[VARIABLE_NAME_SPEED], self.matrix.value_scale_x(), self.path)
+        string = "%d Path @%.1f mm/s %.1fx path=%s" % \
+                 (self.cut[VARIABLE_NAME_PASSES], self.cut[VARIABLE_NAME_SPEED], self.matrix.value_scale_x(),
+                  str(hash(self.path)))
         if len(string) < 100:
             return string
         return string[:97] + '...'
@@ -385,8 +396,7 @@ class LaserProject(LaserNode):
         self.config = None
         self.windows = {}
 
-        self.selected = []
-        self.selected_bbox = None
+        self.selected = None
         self.thread = None
         self.autohome = False
         self.autobeep = True
@@ -447,10 +457,6 @@ class LaserProject(LaserNode):
         return self.config.Read(item)
 
     def load_config(self):
-        # self.spin_scalex.SetValue(self.project.writer.scale_x)
-        # self.spin_scaley.SetValue(self.project.writer.scale_y)
-        # self.checkbox_rotary.SetValue(self.project.writer.rotary)
-
         self.autohome = self[bool, "autohome"]
         self.autobeep = self[bool, "autobeep"]
         self.autostart = self[bool, "autostart"]
@@ -520,15 +526,62 @@ class LaserProject(LaserNode):
             listeners = self.listeners[code]
             listeners.remove(listener)
 
-    def flat_elements_with_passes(self, elements=None):
+    def validate(self, node=None):
+        if node is None:
+            # Default call.
+            node = self
+
+        node.bounds = None  # delete bounds
+        for element in node:
+            self.validate(element)  # validate all subelements.
+        if len(node) == 0:  # Leaf Node.
+            node.bounds = node.box
+            if isinstance(node, LaserElement):
+                # Perform matrix conversion of box into bounds.
+                boundary_points = []
+                box = node.box
+                if box is None:
+                    return
+                left_top = node.convert_absolute_to_affinespace([box[0], box[1]])
+                right_top = node.convert_absolute_to_affinespace([box[2], box[1]])
+                left_bottom = node.convert_absolute_to_affinespace([box[0], box[3]])
+                right_bottom = node.convert_absolute_to_affinespace([box[2], box[3]])
+                boundary_points.append(left_top)
+                boundary_points.append(right_top)
+                boundary_points.append(left_bottom)
+                boundary_points.append(right_bottom)
+                xmin = min([e[0] for e in boundary_points])
+                ymin = min([e[1] for e in boundary_points])
+                xmax = max([e[0] for e in boundary_points])
+                ymax = max([e[1] for e in boundary_points])
+                node.bounds = [xmin, ymin, xmax, ymax]
+            return
+
+        # Group node.
+        xvals = []
+        yvals = []
+        for e in node:
+            bounds = e.bounds
+            if bounds is None:
+                continue
+            xvals.append(bounds[0])
+            xvals.append(bounds[2])
+            yvals.append(bounds[1])
+            yvals.append(bounds[3])
+        if len(xvals) == 0:
+            return
+        node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+
+    def flat_elements_with_passes(self, elements=None, types=LaserElement):
         if elements is None:
             elements = self.elements
         for element in elements:
+            element.parent = elements
+
             passes = 1
             if VARIABLE_NAME_PASSES in element.cut:
                 passes = element.cut[VARIABLE_NAME_PASSES]
-            if isinstance(element, LaserElement):
-                element.parent = elements
+            if isinstance(element, types):
                 for q in range(0, passes):
                     yield element
             else:
@@ -536,16 +589,15 @@ class LaserProject(LaserNode):
                     for flat_element in self.flat_elements_with_passes(element):
                         yield flat_element
 
-    def flat_elements(self, elements=None):
+    def flat_elements(self, elements=None, types=(LaserElement)):
         if elements is None:
             elements = self.elements
         for element in elements:
-            if isinstance(element, LaserElement):
-                element.parent = elements
+            element.parent = elements
+            if isinstance(element, types):
                 yield element
-            else:
-                for flat_element in self.flat_elements(element):
-                    yield flat_element
+            for flat_element in self.flat_elements(element, types=types):
+                yield flat_element
 
     def size_in_native_units(self):
         return self.size[0] * 39.37, self.size[1] * 39.37
@@ -566,54 +618,20 @@ class LaserProject(LaserNode):
         self.units = (39.37, "mm", 10, 0)
         self("units", self.units)
 
-    def set_selected(self, select_elements):
-        if isinstance(select_elements, list):
-            self.selected = select_elements
-        else:
-            self.selected = [select_elements]
-        self.set_selected_bbox_by_selected()
+    def set_selected(self, selected):
+        self.selected = selected
         self("selection", self.selected)
-
-    def set_selected_bbox_by_selected(self):
-        boundary_points = []
-        for e in self.selected:
-            if isinstance(e, list):
-                continue
-            box = e.box
-            if box is None:
-                continue
-            left_top = e.convert_absolute_to_affinespace([box[0], box[1]])
-            right_top = e.convert_absolute_to_affinespace([box[2], box[1]])
-            left_bottom = e.convert_absolute_to_affinespace([box[0], box[3]])
-            right_bottom = e.convert_absolute_to_affinespace([box[2], box[3]])
-            boundary_points.append(left_top)
-            boundary_points.append(right_top)
-            boundary_points.append(left_bottom)
-            boundary_points.append(right_bottom)
-        if len(boundary_points) > 0:
-            xmin = min([e[0] for e in boundary_points])
-            ymin = min([e[1] for e in boundary_points])
-            xmax = max([e[0] for e in boundary_points])
-            ymax = max([e[1] for e in boundary_points])
-            self.selected_bbox = [xmin, ymin, xmax, ymax]
-        else:
-            self.selected_bbox = None
 
     def set_selected_by_position(self, position):
-        self.selected = []
-        for e in self.flat_elements():
-            box = e.box
-            if box is None:
+        self.selected = None
+        self.validate()
+        for e in self.flat_elements(types=LaserGroup):
+            bounds = e.bounds
+            if bounds is None:
                 continue
-            matrix = e.matrix
-            p = matrix.point_in_inverse_space(position)
-            if e.contains(p):
-                if e.parent is None:
-                    self.set_selected(e)
-                else:
-                    self.set_selected(e.parent)
+            if e.contains(position):
+                self.set_selected(e)
                 break
-        self("selection", self.selected)
 
     def bbox(self):
         boundary_points = []
@@ -641,56 +659,47 @@ class LaserProject(LaserNode):
         self("elements", 0)
 
     def menu_convert_raw(self, position):
-        for e in self.flat_elements():
-            if isinstance(e, RawElement):
-                continue
-            matrix = e.matrix
-            p = matrix.point_in_inverse_space(position)
-            if e.contains(p):
+        self.validate()
+        self.set_selected_by_position(position)
+        if self.selected is not None:
+            for e in self.selected:
                 e.detach()
                 self.append(RawElement(e))
-                break
 
     def menu_remove(self, position):
-        for e in self.flat_elements():
-            matrix = e.matrix
-            p = matrix.point_in_inverse_space(position)
-            if e.contains(p):
-                e.detach()
-                break
+        self.validate()
+        self.set_selected_by_position(position)
+        if self.selected is not None:
+            self.selected.detach()
 
     def menu_scale(self, scale, scale_y=None, position=None):
         if scale_y is None:
             scale_y = scale
-        if position is None:
-            for s in self.selected:
-                s.matrix.post_scale(scale, scale_y)
-        else:
-            for e in self.flat_elements():
-                matrix = e.matrix
-                p = matrix.point_in_inverse_space(position)
-                if e.contains(p):
-                    e.matrix.post_scale(scale, scale_y, p[0], p[1])
+        self.validate()
+        self.set_selected_by_position(position)
+        if self.selected is not None:
+            for e in self.selected:
+                p = e.convert_affinespace_to_absolute(position)
+                e.matrix.post_scale(scale, scale_y, p[0], p[1])
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
-        if position is None:
-            for s in self.selected:
-                s.matrix.post_rotate(radians)
-        else:
-            for e in self.flat_elements():
-                matrix = e.matrix
-                p = matrix.point_in_inverse_space(position)
-                if e.contains(p):
-                    e.matrix.post_rotate(radians, p[0], p[1])
+        self.validate()
+        self.set_selected_by_position(position)
+        if self.selected is not None:
+            for e in self.selected:
+                p = e.convert_affinespace_to_absolute(position)
+                e.matrix.post_rotate_rad(radians, p[0], p[1])
         self("elements", 0)
 
     def move_selected(self, dx, dy):
+        if self.selected is None:
+            return
         for e in self.selected:
             if isinstance(e, LaserElement):
                 e.move(dx, dy)
-        if self.selected_bbox is not None:
-            self.selected_bbox[0] += dx
-            self.selected_bbox[2] += dx
-            self.selected_bbox[1] += dy
-            self.selected_bbox[3] += dy
+        if self.selected is not None and self.selected.bounds is not None:
+            self.selected.bounds[0] += dx
+            self.selected.bounds[2] += dx
+            self.selected.bounds[1] += dy
+            self.selected.bounds[3] += dy
