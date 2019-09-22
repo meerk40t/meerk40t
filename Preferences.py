@@ -59,6 +59,14 @@ class Preferences(wx.Frame):
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_bus, self.spin_device_bus)
         # end wxGlade
         self.project = None
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+
+    def on_close(self, event):
+        try:
+            del self.project.windows["preferences"]
+        except KeyError:
+            pass
+        event.Skip()  # Call destroy.
 
     def set_project(self, project):
         self.project = project

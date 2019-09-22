@@ -49,6 +49,14 @@ class Navigation(wx.Frame):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_pulse_time, self.spin_pulse_time)
         # end wxGlade
         self.project = None
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+
+    def on_close(self, event):
+        try:
+            del self.project.windows["navigation"]
+        except KeyError:
+            pass
+        event.Skip()  # Call destroy.
 
     def __set_properties(self):
         # begin wxGlade: Navigate.__set_properties

@@ -1,5 +1,6 @@
 import wx
 
+
 # begin wxGlade: dependencies
 # end wxGlade
 
@@ -20,6 +21,16 @@ class BufferView(wx.Frame):
         self.__do_layout()
         # end wxGlade
         self.project = None
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+
+    def on_close(self, event):
+        try:
+            del self.project.windows["bufferview"]
+        except KeyError:
+            pass
+
+        self.project = None
+        event.Skip()  # Call destroy as regular.
 
     def set_project(self, project):
         self.project = project

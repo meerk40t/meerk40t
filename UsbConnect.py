@@ -24,6 +24,10 @@ class UsbConnect(wx.Frame):
 
     def on_close(self, event):
         self.project["usb_log", self.update_log] = None
+        try:
+            del self.project.windows["usbconnect"]
+        except KeyError:
+            pass
         self.project = None
         event.Skip()  # Call destroy as regular.
 

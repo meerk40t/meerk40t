@@ -75,6 +75,10 @@ class JobInfo(wx.Frame):
         self.project["progress", self.on_elements_progress] = None
         self.project["command", self.on_command_index] = None
         self.project["writer", self.on_writer_state] = None
+        try:
+            del self.project.windows["jobinfo"]
+        except KeyError:
+            pass
         self.project = None
         event.Skip()  # Call destroy as regular.
 
