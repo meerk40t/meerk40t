@@ -433,6 +433,7 @@ class MeerK40t(wx.Frame):
         self.project.menu_scale(1, -1)
 
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("preferences")
         from Preferences import Preferences
         window = Preferences(None, wx.ID_ANY, "")
         window.set_project(project)
@@ -440,6 +441,7 @@ class MeerK40t(wx.Frame):
         project.windows["preferences"] = window
 
     def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("usbconnect")
         from UsbConnect import UsbConnect
         window = UsbConnect(None, wx.ID_ANY, "")
         window.set_project(project)
@@ -447,6 +449,7 @@ class MeerK40t(wx.Frame):
         project.windows["usbconnect"] = window
 
     def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("navigation")
         from Navigation import Navigation
         window = Navigation(None, wx.ID_ANY, "")
         window.set_project(project)
@@ -454,6 +457,7 @@ class MeerK40t(wx.Frame):
         project.windows["navigation"] = window
 
     def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("controller")
         from Controller import Controller
         window = Controller(None, wx.ID_ANY, "")
         window.set_project(project)
@@ -560,6 +564,7 @@ class CutConfiguration(wx.Panel):
         event.Skip()
 
     def on_clicked_burn(self, event):
+        project.close_old_window("jobinfo")
         e = project.writer.thread.element_list
         if e is None or len(e) == 0:
             project.writer.refresh_elements()
@@ -593,6 +598,7 @@ class CutConfiguration(wx.Panel):
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
         item = event.GetItem()
         if item in self.item_lookup:
+            project.close_old_window("elementproperty")
             element = self.item_lookup[item]
             from ElementProperty import ElementProperty
             window = ElementProperty(None, wx.ID_ANY, "")

@@ -494,6 +494,14 @@ class LaserProject(LaserNode):
         self["usb_bus"] = int(self.controller.usb_bus)
         self["usb_address"] = int(self.controller.usb_address)
 
+    def close_old_window(self, name):
+        if name in self.windows:
+            old_window = self.windows[name]
+            try:
+                old_window.Close()
+            except RuntimeError:
+                pass  # already closed.
+
     def shutdown(self):
         pass
 
@@ -648,7 +656,7 @@ class LaserProject(LaserNode):
             matrix = e.matrix
             p = matrix.point_in_inverse_space(position)
             if e.contains(p):
-                e.parent.remove(e)
+                e.detach()
                 break
 
     def menu_scale(self, scale, scale_y=None, position=None):
