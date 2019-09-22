@@ -11,7 +11,7 @@ from PIL import Image
 
 import svg_parser
 from EgvParser import parse_egv
-from LaserProject import LaserProject, ImageElement, PathElement
+from LaserProject import LaserProject, ImageElement, PathElement, LaserElement, LaserGroup
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
 
@@ -142,8 +142,8 @@ class MeerK40t(wx.Frame):
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(ID_MENU_NEW, "New", "")
-        wxglade_tmp_menu.AppendSeparator()
+        # wxglade_tmp_menu.Append(ID_MENU_NEW, "New", "")
+        # wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, "Open Project", "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, "Import File", "")
         wxglade_tmp_menu.AppendSeparator()
@@ -310,14 +310,14 @@ class MeerK40t(wx.Frame):
                         pe.cut['color'] = svg_parser.parse_svg_color(element['stroke'])
                 context.append(pe)
             else:
-                group = []
+                group = LaserGroup()
                 context.append(group)
                 context = group
         self.scene.update_buffer()
 
     def load_egv(self, pathname):
         context = self.project
-        group = []
+        group = LaserGroup()
         context.append(group)
         context = group
         for event in parse_egv(pathname):
@@ -341,7 +341,7 @@ class MeerK40t(wx.Frame):
     def load_image(self, pathname):
         image = Image.open(pathname)
         context = self.project
-        group = []
+        group = LaserGroup()
         context.append(group)
         context = group
         context.append(ImageElement(image))
@@ -471,23 +471,28 @@ class MeerK40t(wx.Frame):
 class CutConfiguration(wx.Panel):
     def __init__(self, *args, **kwds):
         # begin wxGlade: CutConfiguration.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        kwds["style"] = kwds.get("style", 0) | wx.FULL_REPAINT_ON_RESIZE | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.SetSize((300, -1))
-        self.element_tree = wx.TreeCtrl(self, ID_CUT_TREE, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.burn_button = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, wx.Bitmap("./icons/icons8-gas-industry-50.png",
-                                                                               wx.BITMAP_TYPE_ANY))
-        self.item_lookup = {}
+        self.SetSize((503, -1))
+        self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
+        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON,
+                                               wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
+
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.element_tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.element_tree)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
+        # end wxGlade
         self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh_tree_elements()
         # end wxGlade
+        self.item_lookup = {}
         project["elements", self.on_elements_update] = self
+        self.dragging_element = None
 
     def on_elements_update(self, *args):
         self.refresh_tree_elements()
@@ -495,18 +500,64 @@ class CutConfiguration(wx.Panel):
 
     def __set_properties(self):
         # begin wxGlade: CutConfiguration.__set_properties
-        self.SetSize((300, -1))
-        self.burn_button.SetSize(self.burn_button.GetBestSize())
+        self.SetSize((503, -1))
+        self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: CutConfiguration.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_1.Add(self.element_tree, 1, wx.EXPAND, 0)
-        sizer_1.Add(self.burn_button, 0, 0, 0)
+        sizer_1.Add(self.bitmap_button_1, 0, 0, 0)
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        self.dragging_element = None
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            self.dragging_element = element
+            event.Allow()
+
+    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        if self.dragging_element is None:
+            event.Skip()
+            return
+        drag_element = self.dragging_element
+        drag_parent = self.dragging_element.parent
+        self.dragging_element = None
+
+        item = event.GetItem()
+        if item not in self.item_lookup:
+            event.Skip()
+            return
+        drop_element = self.item_lookup[item]
+
+        if drag_element == drop_element or isinstance(drop_element, LaserElement):
+            # Cannot drop into other laser elements.
+            event.Skip()
+            return
+
+        drag_parent.remove(drag_element)
+        if len(drag_parent) == 0 and isinstance(drag_parent, LaserGroup):
+            drag_parent.parent.remove(drag_parent)
+
+        if isinstance(drop_element, LaserProject):  # Project
+            if not isinstance(drag_element, LaserGroup):
+                group = LaserGroup()
+                group.append(drag_element)
+                drop_element.append(group)
+            else:
+                drop_element.append(drag_element)
+            event.Allow()
+            return
+        if isinstance(drop_element, LaserGroup):  # Group
+            drop_element.append(drag_element)
+            event.Allow()
+            return
+        event.Skip()
 
     def on_clicked_burn(self, event):
         e = project.writer.thread.element_list
@@ -520,17 +571,24 @@ class CutConfiguration(wx.Panel):
         project.windows["jobinfo"] = window
 
     def on_item_right_click(self, event):
-        menu = wx.Menu()
-        convert = menu.Append(wx.ID_ANY, "Delete", "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete, convert)
-        self.PopupMenu(menu)
-        menu.Destroy()
+        item = self.element_tree.GetSelection()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            if not isinstance(element, LaserProject):
+                menu = wx.Menu()
+                convert = menu.Append(wx.ID_ANY, "Delete", "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_delete, convert)
+                self.PopupMenu(menu)
+                menu.Destroy()
+                return
+        event.Skip()
 
     def on_tree_popup_delete(self, event):
-        print(event)
-        for e in project.selected:
-            project.remove_element(e)
-        project.set_selected([])
+        item = self.element_tree.GetSelection()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            element.parent.remove(element)
+            project.set_selected([])
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
         item = event.GetItem()
@@ -538,7 +596,7 @@ class CutConfiguration(wx.Panel):
             element = self.item_lookup[item]
             from ElementProperty import ElementProperty
             window = ElementProperty(None, wx.ID_ANY, "")
-            window.set_element(element)
+            window.set_project_element(project, element)
             window.Show()
             project.windows["elementproperty"] = window
 
@@ -549,23 +607,19 @@ class CutConfiguration(wx.Panel):
             project.set_selected(element)
 
     def add_element(self, tree, node, element):
-        if isinstance(element, list):
-            subnode = tree.AppendItem(node, str("Group"))
-            self.item_lookup[subnode] = element
-            for subitem in element:
-                self.add_element(tree, subnode, subitem)
-        else:
-            item = tree.AppendItem(node, str(element))
-            self.item_lookup[item] = element
+        item = tree.AppendItem(node, str(element))
+        self.item_lookup[item] = element
+        for subitem in element:
+            self.add_element(tree, item, subitem)
 
     def refresh_tree_elements(self):
         tree = self.element_tree
         tree.DeleteAllItems()
         self.item_lookup = {}
         root = self.element_tree.AddRoot("Job Parts")
+        self.item_lookup[root] = project
+        self.add_element(tree, root, project.elements)
 
-        for element in project.elements:
-            self.add_element(tree, root, element)
         tree.CollapseAll()
         tree.ExpandAll()
 

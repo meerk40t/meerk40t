@@ -17,16 +17,205 @@ VARIABLE_NAME_RASTER_STEP = "raster_step"
 VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 
-class LaserElement:
+class LaserCommandPathParser:
+    """This class converts a set of laser commands into a
+     graphical representation of those commands."""
+
+    def __init__(self, graphic_path):
+        self.graphic_path = graphic_path
+        self.on = False
+        self.relative = False
+        self.x = 0
+        self.y = 0
+
+    def command(self, event):
+        command, values = event
+        if command == COMMAND_LASER_OFF:
+            self.on = False
+        elif command == COMMAND_LASER_ON:
+            self.on = True
+        elif command == COMMAND_RAPID_MOVE:
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_SET_SPEED:
+            pass
+        elif command == COMMAND_SET_STEP:
+            pass
+        elif command == COMMAND_SET_DIRECTION:
+            pass
+        elif command == COMMAND_MODE_COMPACT:
+            pass
+        elif command == COMMAND_MODE_DEFAULT:
+            pass
+        elif command == COMMAND_MODE_CONCAT:
+            pass
+        elif command == COMMAND_SET_ABSOLUTE:
+            self.relative = False
+        elif command == COMMAND_SET_INCREMENTAL:
+            self.relative = True
+        elif command == COMMAND_HSTEP:
+            x = values
+            y = self.y
+            x += self.x
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_VSTEP:
+            x = self.x
+            y = values
+            y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_HOME:
+            self.graphic_path.MoveToPoint(0, 0)
+            self.x = 0
+            self.y = 0
+        elif command == COMMAND_LOCK:
+            pass
+        elif command == COMMAND_UNLOCK:
+            pass
+        elif command == COMMAND_PLOT:
+            plot = values
+            for e in plot:
+                if isinstance(e, path.Move):
+                    self.graphic_path.MoveToPoint(e.end[0], e.end[1])
+                elif isinstance(e, path.Line):
+                    self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
+                elif isinstance(e, path.QuadraticBezier):
+                    self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
+                                                          e.end[0], e.end[1])
+                elif isinstance(e, path.CubicBezier):
+                    self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
+                                                      e.control2[0], e.control2[1],
+                                                      e.end[0], e.end[1])
+                elif isinstance(e, path.Arc):
+                    for curve in e.as_cubic_curves():
+                        self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
+                                                          curve.control2[0], curve.control2[1],
+                                                          curve.end[0], curve.end[1])
+
+        elif command == COMMAND_SHIFT:
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.MoveToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_MOVE:
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            if self.on:
+                self.graphic_path.MoveToPoint(x, y)
+            else:
+                self.graphic_path.AddLineToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_CUT:
+            x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+            self.graphic_path.AddLineToPoint(x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_CUT_QUAD:
+            cx, cy, x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+                cx += self.x
+                cy += self.y
+
+            self.graphic_path.AddQuadCurveToPoint(cx, cy, x, y)
+            self.x = x
+            self.y = y
+        elif command == COMMAND_CUT_CUBIC:
+            c1x, c1y, c2x, c2y, x, y = values
+            if self.relative:
+                x += self.x
+                y += self.y
+                c1x += self.x
+                c1y += self.y
+                c2x += self.x
+                c2y += self.y
+            self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, x, y)
+            self.x = x
+            self.y = y
+
+
+class LaserNode(list):
     def __init__(self):
+        list.__init__(self)
+        self.cut = {}
+        self.parent = None
+        self.box = [-10, -10, 10, 10]
+
+    def set_color(self, color):
+        self.cut[VARIABLE_NAME_COLOR] = color
+
+    def draw(self, dc):
+        pass
+
+    def generate(self, dc):
+        pass
+
+    def append(self, obj):
+        if obj.parent is not None:
+            raise ValueError("Still has a parent.")
+        if obj in self:
+            raise ValueError("Already part of list.")
+        list.append(self, obj)
+        obj.parent = self
+        self.notify_change()
+
+    def remove(self, obj):
+        list.remove(self, obj)
+        obj.parent = None
+        self.notify_change()
+
+    def detach(self):
+        if self.parent is not None:
+            self.parent.remove(self)
+
+    def notify_change(self):
+        if self.parent == self:
+            raise ValueError
+        if self.parent is not None:
+            self.parent.notify_change()
+
+    def __eq__(self, other):
+        return other is self
+
+
+class LaserGroup(LaserNode):
+    def __init__(self):
+        LaserNode.__init__(self)
+
+    def __str__(self):
+        return "Group"
+
+
+class LaserElement(LaserNode):
+    def __init__(self):
+        LaserNode.__init__(self)
         self.matrix = path.Matrix()
         self.cut = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_SPEED: 60, VARIABLE_NAME_PASSES: 1}
         self.cache = None
         self.pen = wx.Pen()
         self.color = wx.Colour()
         self.color.SetRGB(self.cut['color'])
-        self.box = [-10, -10, 10, 10]
-        self.parent = None
+
+    def set_color(self, color):
+        self.cut[VARIABLE_NAME_COLOR] = color
 
     def draw(self, dc):
         """Default draw routine for the laser element.
@@ -177,151 +366,20 @@ class RawElement(LaserElement):
         for command in self.command_list:
             yield command
 
-
-class LaserCommandPathParser:
-    """This class converts a set of laser commands into a
-     graphical representation of those commands."""
-
-    def __init__(self, graphic_path):
-        self.graphic_path = graphic_path
-        self.on = False
-        self.relative = False
-        self.x = 0
-        self.y = 0
-
-    def command(self, event):
-        command, values = event
-        if command == COMMAND_LASER_OFF:
-            self.on = False
-        elif command == COMMAND_LASER_ON:
-            self.on = True
-        elif command == COMMAND_RAPID_MOVE:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_SET_SPEED:
-            pass
-        elif command == COMMAND_SET_STEP:
-            pass
-        elif command == COMMAND_SET_DIRECTION:
-            pass
-        elif command == COMMAND_MODE_COMPACT:
-            pass
-        elif command == COMMAND_MODE_DEFAULT:
-            pass
-        elif command == COMMAND_MODE_CONCAT:
-            pass
-        elif command == COMMAND_SET_ABSOLUTE:
-            self.relative = False
-        elif command == COMMAND_SET_INCREMENTAL:
-            self.relative = True
-        elif command == COMMAND_HSTEP:
-            x = values
-            y = 0
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_VSTEP:
-            x = 0
-            y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_HOME:
-            self.graphic_path.MoveToPoint(0, 0)
-            self.x = 0
-            self.y = 0
-        elif command == COMMAND_LOCK:
-            pass
-        elif command == COMMAND_UNLOCK:
-            pass
-        elif command == COMMAND_PLOT:
-            plot = values
-            for e in plot:
-                if isinstance(e, path.Move):
-                    self.graphic_path.MoveToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Line):
-                    self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.QuadraticBezier):
-                    self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
-                                                          e.end[0], e.end[1])
-                elif isinstance(e, path.CubicBezier):
-                    self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
-                                                      e.control2[0], e.control2[1],
-                                                      e.end[0], e.end[1])
-                elif isinstance(e, path.Arc):
-                    for curve in e.as_cubic_curves():
-                        self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
-                                                          curve.control2[0], curve.control2[1],
-                                                          curve.end[0], curve.end[1])
-
-        elif command == COMMAND_SHIFT:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_MOVE:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            if self.on:
-                self.graphic_path.MoveToPoint(x, y)
-            else:
-                self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT_QUAD:
-            cx, cy, x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-                cx += self.x
-                cy += self.y
-
-            self.graphic_path.AddQuadCurveToPoint(cx, cy, x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT_CUBIC:
-            c1x, c1y, c2x, c2y, x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-                c1x += self.x
-                c1y += self.y
-                c2x += self.x
-                c2y += self.y
-            self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, x, y)
-            self.x = x
-            self.y = y
+    def __str__(self):
+        string = "Raw #%d cmd=%s" % \
+                 (len(self.command_list), str(self.command_list))
+        if len(string) < 100:
+            return string
+        return string[:97] + '...'
 
 
-class LaserProject:
+class LaserProject(LaserNode):
     def __init__(self):
+        LaserNode.__init__(self)
         self.listeners = {}
         self.last_message = {}
-        self.elements = []
+        self.elements = self
         self.size = 320, 220
         self.units = (39.37, "mm", 10, 0)
         self.config = None
@@ -335,6 +393,9 @@ class LaserProject:
         self.autostart = True
         self.controller = K40Controller(self)
         self.writer = LhymicroWriter(self, controller=self.controller)
+
+    def __str__(self):
+        return "Project"
 
     def __call__(self, code, message):
         if code in self.listeners:
@@ -552,6 +613,9 @@ class LaserProject:
         ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
 
+    def notify_change(self):
+        self("elements", 0)
+
     def menu_convert_raw(self, position):
         for e in self.flat_elements():
             if isinstance(e, RawElement):
@@ -559,19 +623,17 @@ class LaserProject:
             matrix = e.matrix
             p = matrix.point_in_inverse_space(position)
             if e.contains(p):
-                self.remove_element(e)
+                e.detach()
                 self.append(RawElement(e))
                 break
-        self("elements", 0)
 
     def menu_remove(self, position):
         for e in self.flat_elements():
             matrix = e.matrix
             p = matrix.point_in_inverse_space(position)
             if e.contains(p):
-                self.remove_element(e)
+                e.parent.remove(e)
                 break
-        self("elements", 0)
 
     def menu_scale(self, scale, scale_y=None, position=None):
         if scale_y is None:
@@ -608,12 +670,3 @@ class LaserProject:
             self.selected_bbox[2] += dx
             self.selected_bbox[1] += dy
             self.selected_bbox[3] += dy
-
-    def remove_element(self, obj):
-        if obj in obj.parent:
-            obj.parent.remove(obj)
-        self("elements", 0)
-
-    def append(self, obj):
-        self.elements.append(obj)
-        self("elements", 0)
