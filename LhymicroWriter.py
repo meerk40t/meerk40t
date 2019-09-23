@@ -153,6 +153,7 @@ class LhymicroWriter:
         self.is_relative = False
         self.raster_step = 0
         self.speed = 30
+        self.power = 1000.0
         self.d_ratio = None
         self.default_SnP = None
 
@@ -187,6 +188,7 @@ class LhymicroWriter:
             pass
 
     def group_plots(self, start_x, start_y, generate):
+        """PPI is Pulses per inch."""
         last_x = start_x
         last_y = start_y
         last_on = 0
@@ -194,14 +196,20 @@ class LhymicroWriter:
         dy = 0
         x = None
         y = None
-
+        pulse_value = 0
         for event in generate:
             try:
                 x = event[0]
                 y = event[1]
-                on = event[2]
+                plot_on = event[2]
             except IndexError:
+                plot_on = 1
+            pulse_value += self.power * plot_on
+            if pulse_value >= 1000.0:
                 on = 1
+                pulse_value -= 1000.0
+            else:
+                on = 0
             if x == last_x + dx and y == last_y + dy and on == last_on:
                 last_x = x
                 last_y = y
@@ -299,6 +307,9 @@ class LhymicroWriter:
         elif command == COMMAND_SET_SPEED:
             speed = values
             self.set_speed(speed)
+        elif command == COMMAND_SET_POWER:
+            power = values
+            self.set_power(power)
         elif command == COMMAND_SET_STEP:
             step = values
             self.set_step(step)
@@ -420,6 +431,9 @@ class LhymicroWriter:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
             self.to_concat_mode()
             self.to_compact_mode()
+
+    def set_power(self, power=1000.0):
+        self.power = power
 
     def set_d_ratio(self, d_ratio=None):
         change = False

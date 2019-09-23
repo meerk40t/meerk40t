@@ -11,6 +11,7 @@ from ZMatrix import ZMatrix
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
 VARIABLE_NAME_SPEED = 'speed'
+VARIABLE_NAME_POWER = 'power'
 VARIABLE_NAME_PASSES = 'passes'
 VARIABLE_NAME_DRATIO = 'd_ratio'
 VARIABLE_NAME_RASTER_STEP = "raster_step"
@@ -43,6 +44,8 @@ class LaserCommandPathParser:
             self.x = x
             self.y = y
         elif command == COMMAND_SET_SPEED:
+            pass
+        elif command == COMMAND_SET_POWER:
             pass
         elif command == COMMAND_SET_STEP:
             pass
@@ -221,7 +224,8 @@ class LaserElement(LaserNode):
     def __init__(self):
         LaserNode.__init__(self)
         self.matrix = path.Matrix()
-        self.cut = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_SPEED: 60, VARIABLE_NAME_PASSES: 1}
+        self.cut = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_SPEED: 60, VARIABLE_NAME_PASSES: 1,
+                    VARIABLE_NAME_POWER: 1000.0}
         self.cache = None
         self.pen = wx.Pen()
         self.color = wx.Colour()
@@ -267,7 +271,8 @@ class ImageElement(LaserElement):
         self.image = image
         self.cache = None
         self.cut.update({VARIABLE_NAME_RASTER_STEP: 1,
-                         VARIABLE_NAME_SPEED: 100})
+                         VARIABLE_NAME_SPEED: 100,
+                         VARIABLE_NAME_POWER: 1000.0})
 
     def __str__(self):
         return "%d Image %dX s@%3f" % (self.cut[VARIABLE_NAME_PASSES],
@@ -329,7 +334,7 @@ class PathElement(LaserElement):
     def __init__(self, path_d):
         LaserElement.__init__(self)
         self.path = path_d
-        self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20})
+        self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
 
     def __str__(self):
         string = "%d Path @%.1f mm/s %.1fx path=%s" % \
@@ -348,6 +353,9 @@ class PathElement(LaserElement):
         if VARIABLE_NAME_SPEED in self.cut:
             speed = self.cut.get(VARIABLE_NAME_SPEED)
             yield COMMAND_SET_SPEED, speed
+        if VARIABLE_NAME_POWER in self.cut:
+            power = self.cut.get(VARIABLE_NAME_POWER)
+            yield COMMAND_SET_POWER, power
         if VARIABLE_NAME_DRATIO in self.cut:
             d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
             yield COMMAND_SET_D_RATIO, d_ratio

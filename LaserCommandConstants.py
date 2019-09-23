@@ -24,11 +24,12 @@ COMMAND_MODE_COMPACT = 1001
 COMMAND_MODE_CONCAT = 1002
 
 COMMAND_SET_SPEED = 200  # sets the speed for the device
-COMMAND_SET_STEP = 201  # sets the raster step for the device
-COMMAND_SET_D_RATIO = 202  # sets the d_ratio for the device
-COMMAND_SET_DIRECTION = 203  # sets the directions for the device.
-COMMAND_SET_INCREMENTAL = 204  # sets the commands to be relative to current position
-COMMAND_SET_ABSOLUTE = 205  # sets the commands to be absolute positions.
+COMMAND_SET_POWER = 201  # sets the PPI power. Out of 1000.
+COMMAND_SET_STEP = 202  # sets the raster step for the device
+COMMAND_SET_D_RATIO = 203  # sets the d_ratio for the device
+COMMAND_SET_DIRECTION = 204  # sets the directions for the device.
+COMMAND_SET_INCREMENTAL = 205  # sets the commands to be relative to current position
+COMMAND_SET_ABSOLUTE = 206  # sets the commands to be absolute positions.
 COMMAND_SET_POSITION = 210  # Without moving sets the current position to the given coord.
 
 COMMAND_HOME = 300  # Homes the device
