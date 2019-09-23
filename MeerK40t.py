@@ -14,6 +14,7 @@ from EgvParser import parse_egv
 from LaserProject import LaserProject, ImageElement, PathElement, LaserElement, LaserGroup
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
+from path import Path
 
 try:
     from math import tau
@@ -610,6 +611,9 @@ class CutConfiguration(wx.Panel):
                 menu = wx.Menu()
                 convert = menu.Append(wx.ID_ANY, "Delete", "", wx.ITEM_NORMAL)
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_delete, convert)
+                if isinstance(element, PathElement):
+                    convert = menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL)
+                    self.Bind(wx.EVT_MENU, self.on_tree_popup_subpath, convert)
                 self.PopupMenu(menu)
                 menu.Destroy()
                 return
@@ -621,6 +625,20 @@ class CutConfiguration(wx.Panel):
             element = self.item_lookup[item]
             element.parent.remove(element)
             project.set_selected(None)
+
+    def on_tree_popup_subpath(self, event):
+        item = self.element_tree.GetSelection()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            context = element.parent
+            if isinstance(element, PathElement):
+                element.detach()
+                path = Path()
+                svg_parser.parse_svg_path(path, element.path)
+                for subpath in path.as_subpaths():
+                    context.append(PathElement(subpath.d()))
+
+        project.set_selected(None)
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
         item = event.GetItem()
