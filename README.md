@@ -8,23 +8,60 @@ MeerK40t "MeerK" (provisional name) is a built-from-the-ground-up MIT licensed o
 
 The usb driver uses `pyusb` so it requires the same driver install as Whisperer.
 
-The program works. There are still a number of bugs, this doesn't mean things don't work, it's just that there's major pitfalls. These holes are being patched over. There's a lot of bits to hook up and things to flesh out, but the core functionality runs.
+Verifying functionality and bug finding.
 
 # Phases:
-Phase 0 is to make sure people can use the software if they are rather savvy. It should at least more or less function and have all the features it should have even though there might be bugs.
+Phase 0. Building. - Done.
 
-Phase 1 is to make sure it's stable and there should be no known major bugs and it should work consistently and allow all the stuff it should be able to do to be done. 
+Phase 1. Testing.
+* Make sure the program is stable and there should be no known major bugs
+* Make sure it runs consistently and allow all the stuff it should need to be viable.
+* Add instructions to how to install for savvy people to use it and try to get some feedback on bugs or issues. 
 
-Phase 2 is to bundle it in an installable form with driver so that it can just be installed and used and work.
+Phase 2. Bundle.
+* More success requires easier installing and utilizing.
+* Bundle program in an installable form with libusb driver so that it can just be installed and work.
 
-Phase 3 is to try to get collaboration and feedback and use that to improve things with more of a team group effort.
+Phase 3. Collaborate and Listen.
+* Try to get stronger collaboration and feedback
+* Improve things with more of a team group effort.
+* Take feature suggestions.
+* Take code assistence.
+* Improve.
 
 ---
 
-Currently we are at Phase 0. You can use it, but all the known bugs and systems are still being developed. It does not need to be perfect, but it should have everything that hooked up and working. So things like settings not saving on close and restart is a fundamental issue that needs to be worked out before phase 1.
-
+Currently we are at Phase 1. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be hooked up and working.
 
 ---
+
+# Installing / Testing
+
+These are not definitive instructions they are some that should work. Basically you need to use python to run `MeerK40t.py`.
+
+Windows Instructions:
+You will need python:
+* Download and install from: https://www.python.org/
+
+You will need meerk40t:
+* Download click: "Clone or Download".
+* Click "Download Zip"
+* Unzip on your desktop, this should be the meerk40t-master directory.
+* Press Windows + R (to load run).
+* Type "cmd" 
+  * This should be a dos prompt at `C:\Users\(Name)>` location.
+* Type "cd Desktop"
+* Type "cd meerk40t-master
+* Type "python MeerK40t.py"
+  * At this point it could fail in a couple ways. It could lack: `wxPython`. `pyusb`. `Pillow`.
+  * `ModuleNotFoundError: No module named 'wx'` means you need wxPython.
+    * Type: `pip install wxPython`
+  * `ModuleNotFoundError: No module named 'usb'` means you need pyusb.
+    * Type: `pip install pyusb`
+  * `ModuleNotFoundError: No module named 'PIL'` means you need Pillow.
+    * Type: `pip install Pillow`
+
+
 
 # Philosophy
 
