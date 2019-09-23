@@ -280,7 +280,12 @@ class K40Controller:
         self.usb_lock.acquire()
         self.set_usb_status("Connecting")
         self.log("Attempting connection to USB.")
-        devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
+        try:
+            devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
+        except usb.core.NoBackendError:
+            self.log("PyUsb detected no backend LibUSB driver.")
+            self.set_usb_status("Not Found")  # TODO: Give this its own status.
+            return
         d = []
         self.usb = None
         for device in devices:

@@ -562,6 +562,9 @@ class CutConfiguration(wx.Panel):
         self.dragging_element = None
 
         item = event.GetItem()
+        if item is None:
+            event.Skip()
+            return
         if item not in self.item_lookup:
             event.Skip()
             return
