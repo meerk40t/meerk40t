@@ -407,7 +407,8 @@ def parse_svg_file(f):
             if SVG_ATTR_STYLE in attrs:
                 for equate in attrs[SVG_ATTR_STYLE].split(";"):
                     equal_item = equate.split(":")
-                    attrs[equal_item[0]] = equal_item[1]
+                    if len(equal_item) == 2:
+                        attrs[equal_item[0]] = equal_item[1]
             if SVG_ATTR_TRANSFORM in attrs:
                 current_transform = values.get(SVG_ATTR_TRANSFORM, "")
                 attrs[SVG_ATTR_TRANSFORM] = current_transform + attrs[SVG_ATTR_TRANSFORM]
