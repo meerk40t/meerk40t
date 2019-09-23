@@ -80,6 +80,7 @@ class ControllerQueueThread(threading.Thread):
         self.state = THREAD_STATE_STARTED
         self.controller.listener("control_thread", self.state)
         waited = 0
+        self.controller.listener("status_bar", ("Laser On!", 1))
         while self.state != THREAD_STATE_ABORT:
             if self.controller.process_queue():
                 time.sleep(0.1)
@@ -91,6 +92,7 @@ class ControllerQueueThread(threading.Thread):
             while self.state == THREAD_STATE_PAUSED:
                 self.controller.listener("control_thread", self.state)
                 time.sleep(1)
+        self.controller.listener("status_bar", (None, 1))
         if self.state == THREAD_STATE_ABORT:
             self.controller.listener("control_thread", self.state)
             return

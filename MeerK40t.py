@@ -14,8 +14,8 @@ from EgvParser import parse_egv
 from LaserProject import LaserProject, ImageElement, PathElement, LaserElement, LaserGroup
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
-from path import Path
 from icons import *
+from path import Path
 
 try:
     from math import tau
@@ -119,13 +119,13 @@ class MeerK40t(wx.Frame):
         toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
         # toolbar.AddTool(ID_SAVE, wx.Bitmap("icons/icons8-save-50.png", wx.BITMAP_TYPE_ANY))  # "Save",
 
-        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows",icons8_opened_folder_50.GetBitmap())
+        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows", icons8_opened_folder_50.GetBitmap())
         windows = RB.RibbonButtonBar(windows_panel)
         windows.AddButton(ID_NAV, "Navigation", icons8_move_32.GetBitmap(), "")
         windows.AddButton(ID_USB, "Usb", icons8_usb_connector_50.GetBitmap(), "")
         windows.AddButton(ID_SPOOLER, "Spooler", icons8_route_50.GetBitmap(), "")
-        windows.AddButton(ID_CONTROLLER, "Controller", icons8_connected_50.GetBitmap(),"")
-        windows.AddButton(ID_PREFERENCES, "Preferences",icons8_administrative_tools_50.GetBitmap(), "")
+        windows.AddButton(ID_CONTROLLER, "Controller", icons8_connected_50.GetBitmap(), "")
+        windows.AddButton(ID_PREFERENCES, "Preferences", icons8_administrative_tools_50.GetBitmap(), "")
 
         label_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
 
@@ -229,7 +229,7 @@ class MeerK40t(wx.Frame):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_preferences, id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_spooler, id=ID_SPOOLER)
 
-        self.main_statusbar = self.CreateStatusBar(1)
+        self.main_statusbar = self.CreateStatusBar(3)
 
         self.__set_properties()
         self.__do_layout()
@@ -245,6 +245,18 @@ class MeerK40t(wx.Frame):
         self.project.config = wx.Config("MeerK40t")
         self.project.load_config()
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.project["usb_status", self.on_usb_status] = self
+        self.project["control_thread", self.on_control_state] = self
+        self.project["writer", self.on_writer_state] = self
+
+    def on_usb_status(self, value):
+        self.main_statusbar.SetStatusText("Usb: %s" % value, 0)
+
+    def on_control_state(self, value):
+        self.main_statusbar.SetStatusText("Controller: %s" % get_state_string_from_state(value), 1)
+
+    def on_writer_state(self, value):
+        self.main_statusbar.SetStatusText("Spooler: %s" % get_state_string_from_state(value), 2)
 
     def on_close(self, event):
         if self.project.writer.thread.state == THREAD_STATE_STARTED or \
@@ -258,6 +270,9 @@ class MeerK40t(wx.Frame):
                 self.project("abort", 1)
             else:
                 return
+        self.project["usb_status", self.on_usb_status] = None
+        self.project["control_thread", self.on_control_state] = None
+        self.project["writer", self.on_writer_state] = None
         self.project.save_config()
         self.project.shutdown()
         self.scene.on_close(event)
@@ -275,7 +290,7 @@ class MeerK40t(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
         self.SetTitle("MeerK40t")
-        self.main_statusbar.SetStatusWidths([-1])
+        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
