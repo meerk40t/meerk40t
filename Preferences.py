@@ -4,6 +4,7 @@
 #
 
 import wx
+from icons import icons8_administrative_tools_50
 
 
 # begin wxGlade: dependencies
@@ -94,7 +95,7 @@ class Preferences(wx.Frame):
         # begin wxGlade: Preferences.__set_properties
         self.SetTitle("Preferences")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-administrative-tools-50.png", wx.BITMAP_TYPE_ANY))
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.combobox_board.SetToolTip("Select the board to use. This has an effects the speedcodes used.")
         self.combobox_board.SetSelection(0)

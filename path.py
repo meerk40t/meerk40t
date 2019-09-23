@@ -1463,14 +1463,20 @@ class Arc(object):
         vy = (-y1prim - cyprim) / ry
         n = sqrt(ux * ux + uy * uy)
         p = ux
-        theta_radians = acos(p / n)
+        try:
+            theta_radians = acos(p / n)
+        except ZeroDivisionError:
+            theta_radians = 0
         if uy < 0:
             theta_radians = -theta_radians
         theta_radians = theta_radians % tau
 
         n = sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
         p = ux * vx + uy * vy
-        d = p / n
+        try:
+            d = p / n
+        except ZeroDivisionError:
+            d = 0
         # In certain cases the above calculation can through inaccuracies
         # become just slightly out of range, f ex -1.0000000000000002.
         if d > 1.0:

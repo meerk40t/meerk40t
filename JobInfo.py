@@ -1,5 +1,7 @@
 import wx
 
+from icons import icons8_laser_beam_52, icons8_route_50
+
 
 class JobInfo(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -12,8 +14,7 @@ class JobInfo(wx.Frame):
         self.checkbox_autohome = wx.CheckBox(self, wx.ID_ANY, "Home After")
         self.checkbox_autobeep = wx.CheckBox(self, wx.ID_ANY, "Beep After")
         self.button_writer_control = wx.Button(self, wx.ID_ANY, "Start Job")
-        self.button_job_spooler = wx.BitmapButton(self, wx.ID_ANY,
-                                                  wx.Bitmap("icons/icons8-route-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_job_spooler = wx.BitmapButton(self, wx.ID_ANY, icons8_route_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -57,7 +58,7 @@ class JobInfo(wx.Frame):
         self.button_writer_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_writer_control.SetFont(
             wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_writer_control.SetBitmap(wx.Bitmap("icons/icons8-laser-beam-52.png", wx.BITMAP_TYPE_ANY))
+        self.button_writer_control.SetBitmap(icons8_laser_beam_52.GetBitmap())
         self.button_job_spooler.SetSize(self.button_job_spooler.GetBestSize())
         # end wxGlade
 

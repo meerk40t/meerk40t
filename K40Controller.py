@@ -189,7 +189,7 @@ class K40Controller:
     def emergency_stop(self):
         self.thread.state = THREAD_STATE_ABORT
         packet = b'I' + b'F' * 29
-        if self.usb is None:
+        if self.usb is not None:
             self.send_packet(packet)
         self.buffer = b''
         self.add_queue = b''

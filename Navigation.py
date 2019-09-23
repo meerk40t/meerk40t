@@ -6,6 +6,7 @@
 import time
 
 import wx
+from icons import *
 
 
 # begin wxGlade: dependencies
@@ -18,17 +19,14 @@ class Navigation(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((237, 401))
-        self.button_top = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8up.png", wx.BITMAP_TYPE_ANY))
-        self.button_left = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-left.png", wx.BITMAP_TYPE_ANY))
-        self.button_home = wx.BitmapButton(self, wx.ID_ANY,
-                                           wx.Bitmap("icons/icons8-home-filled-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_right = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-right.png", wx.BITMAP_TYPE_ANY))
-        self.button_bottom = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-down.png", wx.BITMAP_TYPE_ANY))
-        self.button_unlock = wx.BitmapButton(self, wx.ID_ANY,
-                                             wx.Bitmap("icons/icons8-padlock-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_lock = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap("icons/icons8-lock-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_pulse = wx.BitmapButton(self, wx.ID_ANY,
-                                            wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_top = wx.BitmapButton(self, wx.ID_ANY, icons8up.GetBitmap())
+        self.button_left = wx.BitmapButton(self, wx.ID_ANY, icons8_left.GetBitmap())
+        self.button_home = wx.BitmapButton(self, wx.ID_ANY,icons8_home_filled_50.GetBitmap())
+        self.button_right = wx.BitmapButton(self, wx.ID_ANY, icons8_right.GetBitmap())
+        self.button_bottom = wx.BitmapButton(self, wx.ID_ANY, icons8_down.GetBitmap())
+        self.button_unlock = wx.BitmapButton(self, wx.ID_ANY,icons8_padlock_50.GetBitmap())
+        self.button_lock = wx.BitmapButton(self, wx.ID_ANY, icons8_lock_50.GetBitmap())
+        self.button_pulse = wx.BitmapButton(self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
         self.spin_step_size = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=1000.0)
         self.spin_pulse_time = wx.SpinCtrlDouble(self, wx.ID_ANY, "50.0", min=0.0, max=1000.0)
 
@@ -63,7 +61,7 @@ class Navigation(wx.Frame):
         self.SetTitle("Navigate")
         self.SetTitle("Navigation")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY))
+        _icon.CopyFromBitmap(icons8_move_32.GetBitmap())
         self.SetIcon(_icon)
         self.button_top.SetSize(self.button_top.GetBestSize())
         self.button_left.SetSize(self.button_left.GetBestSize())

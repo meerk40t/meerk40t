@@ -394,6 +394,8 @@ class LaserSceneView(wx.Panel):
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
         sx, sy = self.convert_scene_to_window([0, 0])
+        if points == 0:
+            return
         offset_x = sx % points
         offset_y = sy % points
         conversion, name, marks, index = self.project.units

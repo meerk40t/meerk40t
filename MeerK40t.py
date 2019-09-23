@@ -15,6 +15,7 @@ from LaserProject import LaserProject, ImageElement, PathElement, LaserElement, 
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
 from path import Path
+from icons import *
 
 try:
     from math import tau
@@ -108,27 +109,23 @@ class MeerK40t(wx.Frame):
         self._bitmap_creation_dc = wx.MemoryDC()
         self._colour_data = wx.ColourData()
 
-        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples",
-                             wx.Bitmap("icons/icons8-redo-50.png", wx.BITMAP_TYPE_ANY))
+        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples", icons8_opened_folder_50.GetBitmap())
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, "Toolbar",
                                        style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_EXT_BUTTON)
 
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
-        toolbar.AddTool(ID_OPEN, wx.Bitmap("icons/icons8-opened-folder-50.png", wx.BITMAP_TYPE_ANY))  # "Open",
-        toolbar.AddTool(ID_JOB, wx.Bitmap("icons/icons8-laser-beam-52.png", wx.BITMAP_TYPE_ANY), "")
+        toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap())  # "Open",
+        toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
         # toolbar.AddTool(ID_SAVE, wx.Bitmap("icons/icons8-save-50.png", wx.BITMAP_TYPE_ANY))  # "Save",
 
-        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows",
-                                       wx.Bitmap("icons/icons8-py-50.png", wx.BITMAP_TYPE_ANY))
+        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows",icons8_opened_folder_50.GetBitmap())
         windows = RB.RibbonButtonBar(windows_panel)
-        windows.AddButton(ID_NAV, "Navigation", wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY), "")
-        windows.AddButton(ID_USB, "Usb", wx.Bitmap("icons/icons8-usb-connector-50.png", wx.BITMAP_TYPE_ANY), "")
-        windows.AddButton(ID_SPOOLER, "Spooler", wx.Bitmap("icons/icons8-route-50.png", wx.BITMAP_TYPE_ANY), "")
-        windows.AddButton(ID_CONTROLLER, "Controller", wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY),
-                          "")
-        windows.AddButton(ID_PREFERENCES, "Preferences",
-                          wx.Bitmap("icons/icons8-administrative-tools-50.png", wx.BITMAP_TYPE_ANY), "")
+        windows.AddButton(ID_NAV, "Navigation", icons8_move_32.GetBitmap(), "")
+        windows.AddButton(ID_USB, "Usb", icons8_usb_connector_50.GetBitmap(), "")
+        windows.AddButton(ID_SPOOLER, "Spooler", icons8_route_50.GetBitmap(), "")
+        windows.AddButton(ID_CONTROLLER, "Controller", icons8_connected_50.GetBitmap(),"")
+        windows.AddButton(ID_PREFERENCES, "Preferences",icons8_administrative_tools_50.GetBitmap(), "")
 
         label_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
 
@@ -280,7 +277,7 @@ class MeerK40t(wx.Frame):
         self.SetTitle("MeerK40t")
         self.main_statusbar.SetStatusWidths([-1])
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(wx.Bitmap("icons/meerk40t.jpg", wx.BITMAP_TYPE_ANY))
+        _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
         # statusbar fields
         main_statusbar_fields = ["Status"]
@@ -511,8 +508,7 @@ class CutConfiguration(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.SetSize((503, -1))
         self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON,
-                                               wx.Bitmap("icons/icons8-gas-industry-50.png", wx.BITMAP_TYPE_ANY))
+        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_gas_industry_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -605,6 +601,9 @@ class CutConfiguration(wx.Panel):
 
     def on_item_right_click(self, event):
         item = self.element_tree.GetSelection()
+        if item is None:
+            return
+
         if item in self.item_lookup:
             element = self.item_lookup[item]
             if not isinstance(element, LaserProject):

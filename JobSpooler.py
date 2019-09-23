@@ -1,5 +1,5 @@
 import wx
-
+from icons import icons8_connected_50, icons8_play_50
 from LaserProject import PathElement, ImageElement, RawElement, \
     VARIABLE_NAME_SPEED, VARIABLE_NAME_RASTER_STEP, VARIABLE_NAME_POWER
 
@@ -19,8 +19,7 @@ class JobSpooler(wx.Frame):
         self.text_packet_buffer = wx.TextCtrl(self.panel_controller, wx.ID_ANY, "")
         self.spin_packet_buffer_max = wx.SpinCtrl(self.panel_controller, wx.ID_ANY, "1500", min=1, max=100000)
         self.button_writer_control = wx.Button(self, wx.ID_ANY, "Start Job")
-        self.button_controller = wx.BitmapButton(self, wx.ID_ANY,
-                                                 wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_controller = wx.BitmapButton(self, wx.ID_ANY, icons8_connected_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -82,7 +81,7 @@ class JobSpooler(wx.Frame):
         self.button_writer_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_writer_control.SetFont(
             wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_writer_control.SetBitmap(wx.Bitmap("icons/icons8-play-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_writer_control.SetBitmap(icons8_play_50.GetBitmap())
         self.button_controller.SetSize(self.button_controller.GetBestSize())
         # end wxGlade
 

@@ -4,7 +4,7 @@
 #
 
 import wx
-
+from icons import *
 from K40Controller import get_code_string_from_code
 from ThreadConstants import *
 
@@ -21,8 +21,7 @@ class Controller(wx.Frame):
         self.text_usb_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.button_buffer_viewer = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap(
-            "icons/icons8-comments-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_buffer_viewer = wx.BitmapButton(self, wx.ID_ANY, icons8_comments_50.GetBitmap())
         self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.rejected_packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -34,8 +33,7 @@ class Controller(wx.Frame):
         self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, wx.Bitmap(
-            "icons/icons8-stop-sign-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_sign_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -93,24 +91,18 @@ class Controller(wx.Frame):
         # begin wxGlade: Controller.__set_properties
         self.SetTitle("Controller")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(wx.Bitmap("icons/icons8-usb-connector-50.png",
-                                       wx.BITMAP_TYPE_ANY))
+        _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_controller_control.SetBitmap(
-            wx.Bitmap("icons/icons8-play-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_controller_control.SetBitmapPressed(
-            wx.Bitmap("icons/icons8-pause-50.png", wx.BITMAP_TYPE_ANY))
+        self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
+        self.button_controller_control.SetBitmapPressed(icons8_pause_50.GetBitmap())
         self.button_usb_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_usb_connect.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_usb_connect.SetBitmap(
-            wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY))
-        self.button_usb_connect.SetBitmapPressed(
-            wx.Bitmap("icons/icons8-disconnected-50.png",
-                      wx.BITMAP_TYPE_ANY))
+        self.button_usb_connect.SetBitmap(icons8_connected_50.GetBitmap())
+        self.button_usb_connect.SetBitmapPressed(icons8_disconnected_50.GetBitmap())
         self.text_buffer_length.SetMinSize((165, 23))
         self.button_buffer_viewer.SetSize(self.button_buffer_viewer.GetBestSize())
         self.packet_count_text.SetMinSize((77, 23))
