@@ -37,6 +37,19 @@ Currently we are at Phase 1. You can use it, there are no know giant gaps in fun
 
 # Installing / Testing
 
+I compiled the project into a binary at the end of Phase 0. So the releases should have a working .exe file.
+https://github.com/meerk40t/meerk40t/releases
+
+This might work out of the gate for you.
+
+---
+
+You can also download the source and run `MeerK40t.py` with python. The icons are included so it should run out of the gate.
+
+---
+
+Fallback instructions.
+
 These are not definitive instructions they are some that should work. Basically you need to use python to run `MeerK40t.py`.
 
 Windows Instructions:
@@ -60,7 +73,6 @@ You will need meerk40t:
     * Type: `pip install pyusb`
   * `ModuleNotFoundError: No module named 'PIL'` means you need Pillow.
     * Type: `pip install Pillow`
-
 
 
 # Philosophy
