@@ -85,13 +85,13 @@ class JobInfo(wx.Frame):
         self.project.writer.thread.limit_buffer = not self.project.writer.thread.limit_buffer
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.autostart = not self.project.controller.autostart
+        self.project.writer.autostart = not self.project.writer.autostart
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.autohome = not self.project.writer.thread.autohome
+        self.project.writer.autohome = not self.project.writer.autohome
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.autobeep = not self.project.writer.thread.autobeep
+        self.project.writer.autobeep = not self.project.writer.autobeep
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.project.close_old_window("jobspooler")

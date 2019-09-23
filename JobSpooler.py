@@ -1,9 +1,9 @@
 import wx
-from icons import icons8_connected_50, icons8_play_50
+
 from LaserProject import PathElement, ImageElement, RawElement, \
     VARIABLE_NAME_SPEED, VARIABLE_NAME_RASTER_STEP, VARIABLE_NAME_POWER
-
 from ThreadConstants import *
+from icons import icons8_connected_50, icons8_play_50
 
 
 class JobSpooler(wx.Frame):
@@ -26,6 +26,7 @@ class JobSpooler(wx.Frame):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_limit_packet_buffer, self.checkbox_limit_buffer)
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
+        self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_BUTTON, self.on_button_start_job, self.button_writer_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_controller, self.button_controller)
@@ -145,16 +146,20 @@ class JobSpooler(wx.Frame):
         self.project.writer.thread.limit_buffer = not self.project.writer.thread.limit_buffer
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.buffer_max = self.spin_packet_buffer_max.GetValue()
+        if self.project is not None:
+            self.project.writer.thread.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.autostart = not self.project.controller.autostart
+        if self.project is not None:
+            self.project.writer.thread.autostart = not self.project.controller.autostart
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.autohome = not self.project.writer.thread.autohome
+        if self.project is not None:
+            self.project.writer.thread.autohome = not self.project.writer.thread.autohome
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.autobeep = not self.project.writer.thread.autobeep
+        if self.project is not None:
+            self.project.writer.thread.autobeep = not self.project.writer.thread.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
         self.project.close_old_window("controller")
@@ -166,31 +171,26 @@ class JobSpooler(wx.Frame):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         state = self.project.writer.thread.state
-        if state == THREAD_STATE_STARTED:
+        if state == THREAD_STATE_STARTED :
             self.project.writer.thread.pause()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_PAUSED:
             self.project.writer.thread.resume()
             self.set_writer_button_by_state()
-        elif state == THREAD_STATE_UNSTARTED:
+        elif state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
             self.project.writer.start_queue_consumer()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_ABORT:
             self.project.writer.reset_thread()
-        elif state == THREAD_STATE_FINISHED:
-            self.Close()
 
     def set_writer_button_by_state(self):
         state = self.project.writer.thread.state
-        if state == THREAD_STATE_FINISHED:
-            self.button_writer_control.SetBackgroundColour("#0000ff")
-            self.button_writer_control.SetLabel("Close Job")
+        if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
+            self.button_writer_control.SetBackgroundColour("#00ff00")
+            self.button_writer_control.SetLabel("Start Job")
         elif state == THREAD_STATE_PAUSED:
             self.button_writer_control.SetBackgroundColour("#00ff00")
             self.button_writer_control.SetLabel("Resume Job")
-        elif state == THREAD_STATE_UNSTARTED:
-            self.button_writer_control.SetBackgroundColour("#00ff00")
-            self.button_writer_control.SetLabel("Start Job")
         elif state == THREAD_STATE_STARTED:
             self.button_writer_control.SetBackgroundColour("#ffff00")
             self.button_writer_control.SetLabel("Pause Job")

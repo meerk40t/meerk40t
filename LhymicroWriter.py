@@ -40,10 +40,10 @@ def lhymicro_distance(v):
 
 
 class LaserThread(threading.Thread):
-    def __init__(self, project, queue, controller):
+    def __init__(self, project, writer, controller):
         threading.Thread.__init__(self)
         self.project = project
-        self.queue = queue
+        self.writer = writer
         self.controller = controller
         self.limit_buffer = True
         self.buffer_max = 20 * 30
@@ -87,7 +87,7 @@ class LaserThread(threading.Thread):
         self.project.writer.on_plot = self.thread_pause_check
         try:
             while True:
-                element = self.queue.peek()
+                element = self.writer.peek()
                 if element is None:
                     raise StopIteration
                 self.thread_pause_check()
@@ -97,7 +97,7 @@ class LaserThread(threading.Thread):
                     self.thread_pause_check()
                     self.project("command", command_index)
                     self.project.writer.command(command, values)
-                self.queue.pop()
+                self.writer.pop()
                 self.project("spooler", element)
         except StopIteration:
             pass  # We aborted the loop.
@@ -106,14 +106,14 @@ class LaserThread(threading.Thread):
         self.project["abort", self.abort] = None
         self.project["buffer", self.update_buffer_size] = None
         if self.state == THREAD_STATE_ABORT:
-            self.queue.clear_queue()
+            self.writer.clear_queue()
             return  # Must no do anything else. Just die as fast as possible.
-        # if self.autohome:
-        #     self.project.writer.command(COMMAND_HOME, 0)
-        if self.project.writer.autolock:
+        if self.writer.autohome:
+            self.project.writer.command(COMMAND_HOME, 0)
+        if self.writer.autolock:
             self.project.writer.command(COMMAND_UNLOCK, 0)
-        # if self.autobeep:
-        #     print('\a')  # Beep.
+        if self.writer.autobeep:
+            print('\a')  # Beep.
         self.controller.autostart = True
         self.state = THREAD_STATE_FINISHED
         self.project("writer", self.state)
