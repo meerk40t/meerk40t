@@ -8,7 +8,6 @@ MeerK40t "MeerK" (provisional name) is a built-from-the-ground-up MIT licensed o
 
 The usb driver uses `pyusb` so it requires the same driver install as Whisperer.
 
-Verifying functionality and bug finding.
 
 # Phases:
 Phase 0. Building. - Done.
@@ -16,6 +15,7 @@ Phase 0. Building. - Done.
 Phase 1. Testing.
 * Make sure the program is stable and there should be no known major bugs
 * Make sure it runs consistently and allow all the stuff it should need to be viable.
+* Document everything and add test suites.
 * Add instructions to how to install for savvy people to use it and try to get some feedback on bugs or issues. 
 
 Phase 2. Bundle.
@@ -31,7 +31,7 @@ Phase 3. Collaborate and Listen.
 
 ---
 
-Currently we are at Phase 1. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be hooked up and working.
+Currently at Phase 1. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be hooked up and working. It has some killer features and some elements that are pretty rock solid.
 
 ---
 
@@ -79,7 +79,7 @@ You will need meerk40t:
 
 The goal is simple. Provide a working, effective, stock K40 laser program that is easy to hack on. There are a number of highly creative, dedicated, and determined people out there. And a lot of people have want to help with the software aspects as well. Creating a highly functional and highly modular program should help people do that.
 
-There is little chance of success for projects of lofty goals and no actions the early phases of this project are working out a good enough version that satisfies 'minimum viable product' functionality. This combined with the good bones of the modular design and design choices can provide easily hackable modular software package.
+There is little chance of success for projects of lofty goals and no actions so I am creating a minimum viable product that should work for most use cases. This combined with the good bones of the modular design and design choices can provide easily hackable modular software package.
 
 ## GUI
 The primary GUI is written in wxPython. It's pretty easy to hack on and quite easy to improve. Being modular though, the gui aspects should be kept apart from the functional aspects, so that a different GUI could be used without losing any core functionality.
@@ -89,9 +89,9 @@ The USB driver currently uses the same methodology that Whisperer, name to use p
 
 ## Controller
 
-The main interfacing with K40 is done through the `K40Controller` this should properly synch with the device in an asynchronized manner both giving consistent state updates, but also robust control over the device. USB connectivity is done through `pyemb`. This is written from the ground up. And includes a couple additional custom commands like '\n' and '-' which do not appear in the LHMicro-GL codeset. 
+The main interfacing with K40 is done through the `K40Controller` this should properly synch with the device in an asynchronized manner both giving consistent state updates, and robust control over the device. USB connectivity is done through `pyemb`. This code is written from the ground up. And includes a couple additional custom commands like '\n' and '-' which do not appear in the LHMicro-GL codeset. 
 
-These perform metacontrol actions like pad the packet the rest of the way and, cause the controller to wait for the FINISHED signal. This means that all functionality on the board can be executed with just an ascii string. And multiple jobs can simply be added to the queue without any issues.
+These extra code elements perform metacontrol actions like pad the packet the rest of the way and cause the controller to wait for the FINISHED signal. This means that all functionality on the board can be executed with just an ascii string. And multiple jobs can simply be added to the queue without any issues.
 
 ## Geometry
 
@@ -108,11 +108,11 @@ The ability to drag and drop and display and modify job elements is critical to 
 
 ## Rasterization
 
-The project includes a variant of RasterBuilder, I wrote for Visicut after adding a Stock K40 driver to the project, which provides methods for a highly debuggable methodology to build rasters based on a state machine. This gives MeerK the ability to overscan, perform bottom-to-top rasters, start from any corner, provide right-to-left or left-to-right rasters, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend. If you wanted to, for example, break the image space into different regions and raster those areas independently, the ability to modify a robust debuggable rasterizer would be essential. Or if you wanted to perform passes based on value of the pixel (like first pass does 66% black, and second pass does 33% black). The good bones are essential.
+The project includes a variant of RasterBuilder, I wrote for Visicut after adding a Stock K40 driver to the project, which provides methods for a highly debuggable methodology to build rasters based on a state machine. This gives MeerK the ability to overscan, perform bottom-to-top rasters, start from any corner, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend. If you wanted to, for example, break the image space into different regions and raster those areas independently, the ability to modify a robust debuggable rasterizer would be essential. Or if you wanted to perform passes based on value of the pixel (like first pass does 66% black, and second pass does 33% black). The good bones are essential.
 
 ## Lhymicro-gl Writer
 
-Beyond just connecting to the correct USB the other essential component is the ability to accurately write Lhymicro-gl code, which the stock firmware uses. This is done with the LhymicroWriter. With a middle-level to low level on the fly writer, we can track our location natively. We can also adapt for edge conditions and alterations without any trouble. So writing an extension that changes the speed speed the laser moves at while it's moving and running a different set of code instructions is possible. Since the writer knows its current state and can simply perform all the things it needs to perform these state changes, and write that in the Lhymicro-gl.
+Beyond just connecting to the correct USB the other essential component is the ability to accurately write Lhymicro-gl code, which the stock firmware uses. This is done with the LhymicroWriter. With a middle-level to low level on the fly writer, we can track our location natively. We can also adapt for edge conditions and alterations without any trouble. So writing an extension that changes the speed speed the laser moves at while it's moving and running a different set of code instructions is possible. Since the writer knows its current state and can simply perform all the things it needs to perform in those state changes, and write that in the Lhymicro-gl.
 
 ### LaserSpeed
 
@@ -125,4 +125,6 @@ One of the core design elements is the use of a middle language which can be use
 ## LaserProject
 
 The LaserProject consist of LaserElements these can call a `generate()` generator which creates a series of LaserCommands which are used to produce itself. Nothing is generated before hand and no giant memory structures need to be created to process the projects this way. Additional objects and structures can easily used through the same API. These LaserElements also contain instructions as to how to draw themselves.
+
+
 
