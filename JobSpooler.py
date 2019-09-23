@@ -74,7 +74,7 @@ class JobSpooler(wx.Frame):
         self.list_job_spool.AppendColumn("Device", format=wx.LIST_FORMAT_LEFT, width=53)
         self.list_job_spool.AppendColumn("Type", format=wx.LIST_FORMAT_LEFT, width=50)
         self.list_job_spool.AppendColumn("Speed", format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_spool.AppendColumn("Settings", format=wx.LIST_FORMAT_LEFT, width=72)
+        self.list_job_spool.AppendColumn("Settings", format=wx.LIST_FORMAT_LEFT, width=82)
         self.list_job_spool.AppendColumn("Submitted", format=wx.LIST_FORMAT_LEFT, width=70)
         self.list_job_spool.AppendColumn("Time Estimate", format=wx.LIST_FORMAT_LEFT, width=92)
         self.checkbox_limit_buffer.SetValue(1)
