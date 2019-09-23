@@ -292,6 +292,7 @@ class Controller(wx.Frame):
             self.project.controller.pause()
         elif state == THREAD_STATE_ABORT:
             self.project.controller.reset_thread()
+            self.project("abort", 0)
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
         if self.project.controller.usb is None:
@@ -300,7 +301,7 @@ class Controller(wx.Frame):
             self.project.controller.stop_usb()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.project("abort", 0)
+        self.project("abort", 1)
         self.project.controller.emergency_stop()
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>

@@ -65,9 +65,10 @@ class LaserThread(threading.Thread):
         self.state = THREAD_STATE_STARTED
         self.project("writer", self.state)
 
-    def abort(self, *args):
-        self.state = THREAD_STATE_ABORT
-        self.project("writer", self.state)
+    def abort(self, val):
+        if val != 0:
+            self.state = THREAD_STATE_ABORT
+            self.project("writer", self.state)
 
     def thread_pause_check(self, *args):
         while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
@@ -105,6 +106,7 @@ class LaserThread(threading.Thread):
         self.project["abort", self.abort] = None
         self.project["buffer", self.update_buffer_size] = None
         if self.state == THREAD_STATE_ABORT:
+            self.queue.clear_queue()
             return  # Must no do anything else. Just die as fast as possible.
         # if self.autohome:
         #     self.project.writer.command(COMMAND_HOME, 0)
@@ -179,6 +181,12 @@ class LhymicroWriter:
         self.queue_lock.release()
         return e
 
+    def clear_queue(self):
+        self.queue_lock.acquire()
+        self.queue = []
+        self.queue_lock.release()
+        self.project("spooler", 0)
+
     def add_queue(self, elements):
         self.queue_lock.acquire()
         self.queue += elements
@@ -186,6 +194,10 @@ class LhymicroWriter:
         if self.autostart:
             self.start_queue_consumer()
         self.project("spooler", 0)
+
+    def reset_thread(self):
+        self.thread = LaserThread(self.project, self, self.controller)
+        self.project("writer", self.thread.state)
 
     def start_queue_consumer(self):
         if self.thread.state == THREAD_STATE_ABORT:

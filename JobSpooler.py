@@ -173,11 +173,10 @@ class JobSpooler(wx.Frame):
             self.project.writer.thread.resume()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_UNSTARTED:
-            self.project.writer.thread.state = THREAD_STATE_STARTED
-            self.project.writer.thread.start()
+            self.project.writer.start_queue_consumer()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_ABORT:
-            self.Close()
+            self.project.writer.reset_thread()
         elif state == THREAD_STATE_FINISHED:
             self.Close()
 
@@ -201,7 +200,7 @@ class JobSpooler(wx.Frame):
             # self.button_writer_control.SetValue(True)
         elif state == THREAD_STATE_ABORT:
             self.button_writer_control.SetBackgroundColour("#ff0000")
-            self.button_writer_control.SetLabel("Close Aborted Job")
+            self.button_writer_control.SetLabel("Manual Reset")
             # self.button_writer_control.SetValue(False)
 
     def post_update(self):

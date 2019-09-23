@@ -257,7 +257,7 @@ class MeerK40t(wx.Frame):
             dlg.Destroy()
             if result == wx.ID_OK:
                 project.controller.emergency_stop()
-                self.project("abort", 0)
+                self.project("abort", 1)
             else:
                 return
         self.project.save_config()
