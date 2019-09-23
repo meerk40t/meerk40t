@@ -565,6 +565,9 @@ class CutConfiguration(wx.Panel):
         if item is None:
             event.Skip()
             return
+        if item.ID is None:
+            event.Skip()
+            return
         if item not in self.item_lookup:
             event.Skip()
             return
