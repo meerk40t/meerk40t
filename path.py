@@ -1382,6 +1382,10 @@ class Arc(object):
             self.end *= other
             self.prx *= other
             self.pry *= other
+            if other.value_scale_x() < 0:
+                self.sweep = -self.sweep
+            if other.value_scale_y() < 0:
+                self.sweep = -self.sweep
         return self
 
     def __mul__(self, other):

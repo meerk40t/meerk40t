@@ -695,22 +695,30 @@ class LaserProject(LaserNode):
         if scale_y is None:
             scale_y = scale
         self.validate()
-        self.set_selected_by_position(position)
+        if position is not None:
+            self.set_selected_by_position(position)
         if self.selected is not None:
             for e in self.selected:
                 if isinstance(e, PathElement):
-                    p = e.convert_affinespace_to_absolute(position)
-                    e.matrix.post_scale(scale, scale_y, p[0], p[1])
+                    if position is not None:
+                        p = e.convert_affinespace_to_absolute(position)
+                        e.matrix.post_scale(scale, scale_y, p[0], p[1])
+                    else:
+                        e.matrix.pre_scale(scale, scale_y)
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
         self.validate()
-        self.set_selected_by_position(position)
+        if position is not None:
+            self.set_selected_by_position(position)
         if self.selected is not None:
             for e in self.selected:
                 if isinstance(e, PathElement):
-                    p = e.convert_affinespace_to_absolute(position)
-                    e.matrix.post_rotate_rad(radians, p[0], p[1])
+                    if position is not None:
+                        p = e.convert_affinespace_to_absolute(position)
+                        e.matrix.post_rotate_rad(radians, p[0], p[1])
+                    else:
+                        e.matrix.pre_rotate(radians)
         self("elements", 0)
 
     def move_selected(self, dx, dy):
