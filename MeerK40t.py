@@ -41,12 +41,14 @@ ID_MAIN_TOOLBAR = idinc.new()
 ID_ADD_FILE = idinc.new()
 ID_OPEN = idinc.new()
 ID_SAVE = idinc.new()
-ID_SCRIPTS = idinc.new()
 ID_NAV = idinc.new()
 ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
-ID_CUT_CONFIGURATION = idinc.new()
 ID_PREFERENCES = idinc.new()
+ID_JOB = idinc.new()
+ID_SPOOLER = idinc.new()
+
+ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
 
 ID_MENU_NEW = idinc.new()
@@ -72,6 +74,9 @@ ID_MENU_VFLIP = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
+ID_MENU_USB = idinc.new()
+ID_MENU_SPOOLER = idinc.new()
+ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
 
 ID_MENU_WEBPAGE = idinc.new()
@@ -110,6 +115,7 @@ class MeerK40t(wx.Frame):
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
         toolbar.AddTool(ID_OPEN, wx.Bitmap("icons/icons8-opened-folder-50.png", wx.BITMAP_TYPE_ANY))  # "Open",
+        toolbar.AddTool(ID_JOB, wx.Bitmap("icons/icons8-laser-beam-52.png", wx.BITMAP_TYPE_ANY), "")
         # toolbar.AddTool(ID_SAVE, wx.Bitmap("icons/icons8-save-50.png", wx.BITMAP_TYPE_ANY))  # "Save",
 
         windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows",
@@ -117,6 +123,7 @@ class MeerK40t(wx.Frame):
         windows = RB.RibbonButtonBar(windows_panel)
         windows.AddButton(ID_NAV, "Navigation", wx.Bitmap("icons/icons8-move-32.png", wx.BITMAP_TYPE_ANY), "")
         windows.AddButton(ID_USB, "Usb", wx.Bitmap("icons/icons8-usb-connector-50.png", wx.BITMAP_TYPE_ANY), "")
+        windows.AddButton(ID_SPOOLER, "Spooler", wx.Bitmap("icons/icons8-route-50.png", wx.BITMAP_TYPE_ANY), "")
         windows.AddButton(ID_CONTROLLER, "Controller", wx.Bitmap("icons/icons8-connected-50.png", wx.BITMAP_TYPE_ANY),
                           "")
         windows.AddButton(ID_PREFERENCES, "Preferences",
@@ -176,6 +183,9 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, "Controller", "")
+        wxglade_tmp_menu.Append(ID_MENU_USB, "USB", "")
+        wxglade_tmp_menu.Append(ID_MENU_SPOOLER, "Job Spooler", "")
+        wxglade_tmp_menu.Append(ID_MENU_JOB, "Execute Job", "")
 
         self.main_menubar.Append(wxglade_tmp_menu, "Windows")
 
@@ -205,16 +215,21 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, self.open_usb, id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, self.open_spooler, id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, self.open_job, id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.open_job, id=ID_JOB)
         # toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_usb, id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_navigation, id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_controller, id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_preferences, id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_spooler, id=ID_SPOOLER)
 
         self.main_statusbar = self.CreateStatusBar(1)
 
@@ -464,6 +479,22 @@ class MeerK40t(wx.Frame):
         window.Show()
         project.windows["controller"] = window
 
+    def open_spooler(self, event):  # wxGlade: MeerK40t.<event_handler>
+        self.project.close_old_window("jobspooler")
+        from JobSpooler import JobSpooler
+        window = JobSpooler(None, wx.ID_ANY, "")
+        window.set_project(self.project)
+        window.Show()
+        self.project.windows["jobspooler"] = window
+
+    def open_job(self, event=None):
+        project.close_old_window("jobinfo")
+        from JobInfo import JobInfo
+        window = JobInfo(None, wx.ID_ANY, "")
+        window.set_project(project, [e for e in project.flat_elements_with_passes()])
+        window.Show()
+        project.windows["jobinfo"] = window
+
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         import webbrowser
         webbrowser.open("https://github.com/meerk40t/meerk40t", new=0, autoraise=True)
@@ -565,13 +596,9 @@ class CutConfiguration(wx.Panel):
 
     def on_clicked_burn(self, event):
         project.close_old_window("jobinfo")
-        e = project.writer.thread.element_list
-        if e is None or len(e) == 0:
-            project.writer.refresh_elements()
-
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project)
+        window.set_project(project, [e for e in project.flat_elements_with_passes()])
         window.Show()
         project.windows["jobinfo"] = window
 

@@ -40,19 +40,15 @@ def lhymicro_distance(v):
 
 
 class LaserThread(threading.Thread):
-    def __init__(self, project):
+    def __init__(self, project, queue, controller):
         threading.Thread.__init__(self)
         self.project = project
-        self.controller = project.controller
-        self.element_list = None
+        self.queue = queue
+        self.controller = controller
         self.limit_buffer = True
         self.buffer_max = 20 * 30
         self.buffer_size = -1
         self.state = THREAD_STATE_UNSTARTED
-        self.autohome = self.project.autohome
-        self.autobeep = self.project.autobeep
-        self.autostart = self.project.autostart
-        self.element_list = None
         self.project("writer", self.state)
 
     def start_element_producer(self):
@@ -60,10 +56,6 @@ class LaserThread(threading.Thread):
             self.state = THREAD_STATE_STARTED
             self.project("writer", self.state)
             self.start()
-
-    def refresh_element_list(self):
-        self.element_list = [e for e in self.project.flat_elements_with_passes()]
-        self.project("progress", (0, len(self.element_list)))
 
     def pause(self):
         self.state = THREAD_STATE_PAUSED
@@ -89,40 +81,37 @@ class LaserThread(threading.Thread):
 
     def run(self):
         command_index = 0
-        self.controller.autostart = self.autostart
-        self.project("progress", (0, len(self.element_list)))
-
         self.project["buffer", self.update_buffer_size] = self
         self.project["abort", self.abort] = self
         self.project.writer.on_plot = self.thread_pause_check
         try:
-            if self.element_list is None:
-                raise StopIteration
-            self.project("progress", (0, len(self.element_list)))
-            for element_index, element in enumerate(self.element_list):
+            while True:
+                element = self.queue.peek()
+                if element is None:
+                    raise StopIteration
                 self.thread_pause_check()
-                self.project("progress", (element_index + 1, len(self.element_list)))
                 for e in element.generate():
                     command, values = e
                     command_index += 1
                     self.thread_pause_check()
                     self.project("command", command_index)
                     self.project.writer.command(command, values)
+                self.queue.pop()
+                self.project("spooler", element)
         except StopIteration:
             pass  # We aborted the loop.
         # Final listener calls.
         self.project.writer.on_plot = None
         self.project["abort", self.abort] = None
+        self.project["buffer", self.update_buffer_size] = None
         if self.state == THREAD_STATE_ABORT:
             return  # Must no do anything else. Just die as fast as possible.
-        if self.autohome:
-            self.project.writer.command(COMMAND_HOME, 0)
+        # if self.autohome:
+        #     self.project.writer.command(COMMAND_HOME, 0)
         if self.project.writer.autolock:
             self.project.writer.command(COMMAND_UNLOCK, 0)
-        self.element_list = None
-        self.project["buffer", self.update_buffer_size] = None
-        if self.autobeep:
-            print('\a')  # Beep.
+        # if self.autobeep:
+        #     print('\a')  # Beep.
         self.controller.autostart = True
         self.state = THREAD_STATE_FINISHED
         self.project("writer", self.state)
@@ -138,8 +127,15 @@ class LhymicroWriter:
             self.controller = K40Controller(project)
         else:
             self.controller = controller
-        self.thread = LaserThread(project)
+        self.thread = LaserThread(project, self, self.controller)
+        self.queue_lock = threading.Lock()
+        self.queue = []
+
+        self.autohome = self.project.autohome
+        self.autobeep = self.project.autobeep
+        self.autostart = self.project.autostart
         self.autolock = True
+
         self.board = board
         if self.board is None:
             self.board = "M2"
@@ -169,8 +165,38 @@ class LhymicroWriter:
         self.start_y = current_y
         self.on_plot = None
 
-    def refresh_elements(self):
-        self.thread.refresh_element_list()
+    def peek(self):
+        if len(self.queue) == 0:
+            return None
+        return self.queue[0]
+
+    def pop(self):
+        if len(self.queue) == 0:
+            return None
+        self.queue_lock.acquire()
+        e = self.queue[0]
+        del self.queue[0]
+        self.queue_lock.release()
+        return e
+
+    def add_queue(self, elements):
+        self.queue_lock.acquire()
+        self.queue += elements
+        self.queue_lock.release()
+        if self.autostart:
+            self.start_queue_consumer()
+        self.project("spooler", 0)
+
+    def start_queue_consumer(self):
+        if self.thread.state == THREAD_STATE_ABORT:
+            # We cannot reset an aborted thread without specifically calling reset.
+            return
+        if self.thread.state == THREAD_STATE_FINISHED:
+            self.thread = LaserThread(self.project, self, self.controller)
+        if self.thread.state == THREAD_STATE_UNSTARTED:
+            self.thread.state = THREAD_STATE_STARTED
+            self.thread.start()
+            self.project("writer", self.thread.state)
 
     def open(self):
         try:
@@ -383,8 +409,10 @@ class LhymicroWriter:
     def move_xy_line(self, delta_x, delta_y):
         """Strictly speaking if this happens it is because of a bug.
         Nothing should feed the writer this data. It's invalid.
-        All moves should be diagonal or orthogonal."""
-        """Zingl-Bresenham line draw algorithm"""
+        All moves should be diagonal or orthogonal.
+
+        Zingl-Bresenham line draw algorithm"""
+
         dx = abs(delta_x)
         dy = -abs(delta_y)
 
