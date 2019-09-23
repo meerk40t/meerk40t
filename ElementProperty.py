@@ -168,6 +168,7 @@ class ElementProperty(wx.Frame):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
             e.cut[VARIABLE_NAME_RASTER_STEP] = self.spin_step_size.GetValue()
+            self.project.validate_matrix(e)
         self.project("elements", 0)
 
     def on_combobox_rasterdirection(self, event):  # wxGlade: Preferences.<event_handler>

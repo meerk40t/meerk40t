@@ -534,6 +534,16 @@ class LaserProject(LaserNode):
             listeners = self.listeners[code]
             listeners.remove(listener)
 
+    def validate_matrix(self, node):
+        if isinstance(node, ImageElement):
+            tx = node.matrix.value_trans_x()
+            ty = node.matrix.value_trans_y()
+            node.matrix.reset()
+            node.matrix.post_translate(tx, ty)
+            if VARIABLE_NAME_RASTER_STEP in node.cut:
+                step = float(node.cut[VARIABLE_NAME_RASTER_STEP])
+                node.matrix.post_scale(step, step)
+
     def validate(self, node=None):
         if node is None:
             # Default call.
@@ -542,6 +552,7 @@ class LaserProject(LaserNode):
         node.bounds = None  # delete bounds
         for element in node:
             self.validate(element)  # validate all subelements.
+        self.validate_matrix(node)
         if len(node) == 0:  # Leaf Node.
             node.bounds = node.box
             if isinstance(node, LaserElement):
@@ -687,8 +698,9 @@ class LaserProject(LaserNode):
         self.set_selected_by_position(position)
         if self.selected is not None:
             for e in self.selected:
-                p = e.convert_affinespace_to_absolute(position)
-                e.matrix.post_scale(scale, scale_y, p[0], p[1])
+                if isinstance(e, PathElement):
+                    p = e.convert_affinespace_to_absolute(position)
+                    e.matrix.post_scale(scale, scale_y, p[0], p[1])
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
@@ -696,8 +708,9 @@ class LaserProject(LaserNode):
         self.set_selected_by_position(position)
         if self.selected is not None:
             for e in self.selected:
-                p = e.convert_affinespace_to_absolute(position)
-                e.matrix.post_rotate_rad(radians, p[0], p[1])
+                if isinstance(e, PathElement):
+                    p = e.convert_affinespace_to_absolute(position)
+                    e.matrix.post_rotate_rad(radians, p[0], p[1])
         self("elements", 0)
 
     def move_selected(self, dx, dy):

@@ -129,18 +129,18 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
     x = 0
     y = 0
     pixel = skip_pixel
-    dx = step
-    dy = step
+    dx = 1
+    dy = 1
 
     if (transversal & RIGHT) != 0:
         x = width - 1
-        dx = -step
+        dx = -1
 
     if (transversal & BOTTOM) != 0:
         y = height - 1
-        dy = -step
+        dy = -1
 
-    yield COMMAND_SHIFT, (offset_x + x, offset_y + y)
+    yield COMMAND_SHIFT, (offset_x + x * step, offset_y + y * step)
     yield COMMAND_SET_DIRECTION, (dx,dy)
 
     yield COMMAND_MODE_COMPACT, 0
@@ -149,8 +149,8 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
             lower_bound = topmost_not_equal(data, width, height, x, skip_pixel, filter)
             if lower_bound == -1:
                 x += dx
-                yield COMMAND_MOVE, (offset_x + x, offset_y + y)
-                #yield COMMAND_HSTEP, dx # hstep doesn't actually work.
+                yield COMMAND_MOVE, (offset_x + x * step, offset_y + y * step)
+                #yield COMMAND_HSTEP, dx * step # hstep doesn't actually work.
                 continue
             upper_bound = bottommost_not_equal(data, width, height, x, skip_pixel, filter)
             while (dy > 0 and y <= upper_bound) or (dy < 0 and lower_bound <= y):
@@ -169,13 +169,13 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                     y = nextcolor_top(data, width, height, x, y, end, filter)
                     y = max(y, end)
                 if pixel == skip_pixel:
-                    yield COMMAND_SHIFT, (offset_x + x, offset_y + y)
+                    yield COMMAND_SHIFT, (offset_x + x * step, offset_y + y * step)
                 else:
-                    yield COMMAND_CUT, (offset_x + x, offset_y + y)
+                    yield COMMAND_CUT, (offset_x + x * step, offset_y + y * step)
                 if y == end:
                     break
             x += dx
-            yield COMMAND_MOVE, (offset_x + x, offset_y + y)
+            yield COMMAND_MOVE, (offset_x + x * step, offset_y + y * step)
             #yield COMMAND_HSTEP, dx # hstep failed to work
             dy = -dy
     else:
@@ -183,7 +183,7 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
             lower_bound = leftmost_not_equal(data, width, height, y, skip_pixel, filter)
             if lower_bound == -1:
                 y += dy
-                yield COMMAND_VSTEP, dy
+                yield COMMAND_VSTEP, dy * step
                 continue
             upper_bound = rightmost_not_equal(data, width, height, y, skip_pixel, filter)
             while (dx > 0 and x <= upper_bound) or (dx < 0 and lower_bound <= x):
@@ -202,12 +202,12 @@ def plot_raster(image=None, transversal=0, skip_pixel=0, overscan=0,
                     x = nextcolor_left(data, width, height, x, y, end, filter)
                     x = max(x, end)
                 if pixel == skip_pixel:
-                    yield COMMAND_SHIFT, (offset_x + x, offset_y + y)
+                    yield COMMAND_SHIFT, (offset_x + x * step, offset_y + y * step)
                 else:
-                    yield COMMAND_CUT, (offset_x + x, offset_y + y)
+                    yield COMMAND_CUT, (offset_x + x * step, offset_y + y * step)
                 if x == end:
                     break
             y += dy
-            yield COMMAND_VSTEP, dy
+            yield COMMAND_VSTEP, dy * step
             dx = -dx
     yield COMMAND_MODE_DEFAULT, 0

@@ -1,7 +1,8 @@
 import wx
 
-from LaserProject import PathElement, ImageElement, RawElement, VARIABLE_NAME_SPEED, VARIABLE_NAME_RASTER_STEP, \
-    VARIABLE_NAME_POWER
+from LaserProject import PathElement, ImageElement, RawElement, \
+    VARIABLE_NAME_SPEED, VARIABLE_NAME_RASTER_STEP, VARIABLE_NAME_POWER
+
 from ThreadConstants import *
 
 
@@ -185,23 +186,18 @@ class JobSpooler(wx.Frame):
         if state == THREAD_STATE_FINISHED:
             self.button_writer_control.SetBackgroundColour("#0000ff")
             self.button_writer_control.SetLabel("Close Job")
-            # self.button_writer_control.SetValue(False)
         elif state == THREAD_STATE_PAUSED:
             self.button_writer_control.SetBackgroundColour("#00ff00")
             self.button_writer_control.SetLabel("Resume Job")
-            # self.button_writer_control.SetValue(False)
         elif state == THREAD_STATE_UNSTARTED:
             self.button_writer_control.SetBackgroundColour("#00ff00")
             self.button_writer_control.SetLabel("Start Job")
-            # self.button_writer_control.SetValue(True)
         elif state == THREAD_STATE_STARTED:
             self.button_writer_control.SetBackgroundColour("#ffff00")
             self.button_writer_control.SetLabel("Pause Job")
-            # self.button_writer_control.SetValue(True)
         elif state == THREAD_STATE_ABORT:
             self.button_writer_control.SetBackgroundColour("#ff0000")
             self.button_writer_control.SetLabel("Manual Reset")
-            # self.button_writer_control.SetValue(False)
 
     def post_update(self):
         if not self.dirty:
