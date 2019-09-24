@@ -66,14 +66,21 @@ You will need meerk40t:
 * Type "cd Desktop"
 * Type "cd meerk40t-master
 * Type "python MeerK40t.py"
-  * At this point it could fail in a couple ways. It could lack: `wxPython`. `pyusb`. `Pillow`.
-  * `ModuleNotFoundError: No module named 'wx'` means you need wxPython.
-    * Type: `pip install wxPython`
-  * `ModuleNotFoundError: No module named 'usb'` means you need pyusb.
-    * Type: `pip install pyusb`
-  * `ModuleNotFoundError: No module named 'PIL'` means you need Pillow.
-    * Type: `pip install Pillow`
+  * At this point it could fail in a couple ways. It could lack: `wxPython`. `pyusb`. `Pillow`. See Troubleshooting:
 
+## Troubleshooting Install
+
+Windows:
+* `ModuleNotFoundError: No module named 'wx'` means you need wxPython.
+  * Type: `pip install wxPython`
+* `ModuleNotFoundError: No module named 'usb'` means you need pyusb.
+  * Type: `pip install pyusb`
+* `ModuleNotFoundError: No module named 'PIL'` means you need Pillow.
+  * Type: `pip install Pillow`
+
+Linux:
+* `ImportError: libpng12.so.0: cannot open shared object file: No such file or directory .` libpng is not installed.
+  * Type: `sudo apt-get libpng`
 
 # Philosophy
 
