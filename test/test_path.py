@@ -68,4 +68,6 @@ class TestPath(unittest.TestCase):
         for i in range(50):
             pts.append((randint(-99, 99), randint(-99, 99)))
         hull = [e for e in Point.convex_hull(pts)]
-        self.assertEqual([(-100, 100), (-100, -100), (100, -100), (100, 100)], hull)
+        for p in hull:
+            self.assertEqual(abs(p[0]), 100)
+            self.assertEqual(abs(p[1]), 100)
