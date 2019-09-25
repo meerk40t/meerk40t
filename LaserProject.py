@@ -1,3 +1,5 @@
+import wx
+# TODO: Move the draw requirements of the elements outside this class so the writer can be tested without wx.
 import path
 import svg_parser
 from K40Controller import K40Controller
@@ -5,6 +7,7 @@ from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 from ZMatrix import ZMatrix
+
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
