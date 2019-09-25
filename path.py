@@ -349,9 +349,16 @@ class Matrix:
     def post_skew_y_turn(self, theta, x=0, y=0):
         self.post_skew_y(theta * tau, x, y)
 
-    def post_cat(self, matrix_list):
-        for mx in matrix_list:
-            self.m = self.matrix_multiply(self.m, mx)
+    def post_cat(self, a, b, c, d, e, f):
+        """SVG Matrix:
+        [a c e]
+        [b d f]
+        [0 0 1]
+        """
+        mx = [a, b, 0,
+              c, d, 0,
+              e, f, 1]
+        self.m = self.matrix_multiply(self.m, mx)
 
     def pre_scale(self, sx=1, sy=None):
         if sy is None:
@@ -364,9 +371,11 @@ class Matrix:
     def pre_rotate(self, theta):
         self.m = self.matrix_multiply(self.get_rotate(theta), self.m)
 
-    def pre_cat(self, matrix_list):
-        for mx in matrix_list:
-            self.m = self.matrix_multiply(mx, self.m)
+    def pre_cat(self,  a, b, c, d, e, f):
+        mx = [a, b, 0,
+              c, d, 0,
+              e, f, 1]
+        self.m = self.matrix_multiply(mx, self.m)
 
     def point_in_inverse_space(self, v0, v1=None):
         inverse = Matrix(self)
