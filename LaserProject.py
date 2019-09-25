@@ -1,5 +1,3 @@
-import wx
-
 import path
 import svg_parser
 from K40Controller import K40Controller

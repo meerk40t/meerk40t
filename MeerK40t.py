@@ -434,10 +434,12 @@ class MeerK40t(wx.Frame):
     def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.scene.update_buffer()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.scene.update_buffer()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.scene.focus_on_project()

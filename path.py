@@ -130,6 +130,32 @@ class Point:
         return m
 
     @staticmethod
+    def orientation(p, q, r):
+        val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+        if val == 0:
+            return 0
+        elif val > 0:
+            return 1
+        else:
+            return 2
+
+    @staticmethod
+    def convex_hull(*pts):
+        points = sorted(pts, key=lambda p: p[0])
+        first_point_on_hull = points[0]
+        point_on_hull = first_point_on_hull
+        while True:
+            yield point_on_hull
+            endpoint = point_on_hull
+            for t in points:
+                if point_on_hull is endpoint \
+                        or Point.orientation(point_on_hull, t, endpoint) == 2:
+                    endpoint = t
+            point_on_hull = endpoint
+            if first_point_on_hull is point_on_hull:
+                break
+
+    @staticmethod
     def distance(p1, p2):
         dx = p1[0] - p2[0]
         dx *= dx
