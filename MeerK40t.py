@@ -15,7 +15,7 @@ from LaserProject import LaserProject, ImageElement, PathElement, LaserElement, 
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
 from icons import *
-from path import Path
+from path import Path, Point
 
 try:
     from math import tau
@@ -637,6 +637,10 @@ class CutConfiguration(wx.Panel):
                 if isinstance(element, PathElement):
                     convert = menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL)
                     self.Bind(wx.EVT_MENU, self.on_tree_popup_subpath, convert)
+                convert = menu.Append(wx.ID_ANY, "Convex Hull", "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_hull, convert)
+                convert = menu.Append(wx.ID_ANY, "Execute Job", "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_burn, convert)
                 self.PopupMenu(menu)
                 menu.Destroy()
                 return
@@ -660,7 +664,47 @@ class CutConfiguration(wx.Panel):
                 svg_parser.parse_svg_path(path, element.path)
                 for subpath in path.as_subpaths():
                     context.append(PathElement(subpath.d()))
+        project.set_selected(None)
 
+    def on_tree_popup_burn(self, event):
+        item = self.element_tree.GetSelection()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            project.close_old_window("jobinfo")
+            from JobInfo import JobInfo
+            window = JobInfo(None, wx.ID_ANY, "")
+            window.set_project(project, [e for e in project.flat_elements_with_passes(element)])
+            window.Show()
+            project.windows["jobinfo"] = window
+
+    def get_convex_hull(self, element):
+        pts = []
+        for e in LaserProject.flatten(element):
+            if isinstance(e, PathElement):
+                epath = Path()
+                svg_parser.parse_svg_path(epath, e.path)
+                epath *= e.matrix
+                pts += [q for q in epath.as_points()]
+            elif isinstance(e, ImageElement):
+                bounds = e.bounds
+                pts += [(bounds[0], bounds[1]), (bounds[0], bounds[3]), (bounds[2], bounds[1]), (bounds[2], bounds[3])]
+        hull = [p for p in Point.convex_hull(pts)]
+        if len(hull) == 0:
+            return None
+        return hull
+
+    def on_tree_popup_hull(self, event):
+        item = self.element_tree.GetSelection()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            path = Path()
+            pts = self.get_convex_hull(element)
+            if pts is None:
+                return
+            path.move(*pts)
+            path.closed()
+            context = element.parent
+            context.append(PathElement(path.d()))
         project.set_selected(None)
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>

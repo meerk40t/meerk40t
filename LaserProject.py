@@ -603,19 +603,24 @@ class LaserProject(LaserNode):
     def flat_elements_with_passes(self, elements=None, types=LaserElement):
         if elements is None:
             elements = self.elements
+        passes = 1
+        if VARIABLE_NAME_PASSES in elements.cut:
+            passes = elements.cut[VARIABLE_NAME_PASSES]
+        if isinstance(elements, types):
+            for q in range(0, passes):
+                yield elements
         for element in elements:
-            element.parent = elements
+            for q in range(0, passes):
+                for flat_element in self.flat_elements_with_passes(element, types=types):
+                    yield flat_element
 
-            passes = 1
-            if VARIABLE_NAME_PASSES in element.cut:
-                passes = element.cut[VARIABLE_NAME_PASSES]
-            if isinstance(element, types):
-                for q in range(0, passes):
-                    yield element
-            else:
-                for q in range(0, passes):
-                    for flat_element in self.flat_elements_with_passes(element):
-                        yield flat_element
+    @staticmethod
+    def flatten(elements, types=LaserElement):
+        if isinstance(elements, types):
+            yield elements
+        for element in elements:
+            for flat_element in LaserProject.flatten(element, types=types):
+                yield flat_element
 
     def flat_elements(self, elements=None, types=(LaserElement)):
         if elements is None:
