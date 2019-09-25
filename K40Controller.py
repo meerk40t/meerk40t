@@ -405,6 +405,7 @@ class K40Controller:
             if self.mock:
                 time.sleep(0.02)
             else:
+                # TODO: Under some cases it attempts to claim interface here and cannot. Sends USBError (None)
                 self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
             self.packet_count += 1
             self.listener("packet", packet)
@@ -422,8 +423,14 @@ class K40Controller:
                 self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
             except usb.core.USBError as e:
                 self.log("Usb refused status check.")
-                self.close()
-                self.open()
+                while True:
+                    try:
+                        self.close()
+                        self.open()
+                    except usb.core.USBError:
+                        pass
+                    if self.usb is not None:
+                        break
                 self.usb.write(0x02, [160], 10000)
                 self.log("Sending original status check.")
             self.status = self.usb.read(0x82, 6, 10000)

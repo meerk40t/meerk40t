@@ -317,6 +317,9 @@ class ImageElement(LaserElement):
         step = 1
         if VARIABLE_NAME_RASTER_STEP in self.cut:
             step = self.cut[VARIABLE_NAME_RASTER_STEP]
+        if VARIABLE_NAME_POWER in self.cut:
+            power = self.cut.get(VARIABLE_NAME_POWER)
+            yield COMMAND_SET_POWER, power
         traverse = 0
         if direction == 0:
             yield COMMAND_SET_STEP, step
@@ -332,7 +335,8 @@ class ImageElement(LaserElement):
                                m.value_trans_x(),
                                m.value_trans_y(),
                                step, self.modulate_filter)
-        yield COMMAND_MOVE, raster.initial_position_in_scene()
+
+        yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
         yield COMMAND_SET_DIRECTION, raster.initial_direction()
         yield COMMAND_MODE_COMPACT, 0
         yield COMMAND_RASTER, raster
@@ -368,9 +372,11 @@ class PathElement(LaserElement):
         if VARIABLE_NAME_DRATIO in self.cut:
             d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
             yield COMMAND_SET_D_RATIO, d_ratio
+        plot = object_path * m
+        first_point = plot.first_point
+        yield COMMAND_RAPID_MOVE, first_point
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
-        plot = object_path * m
         yield COMMAND_PLOT, plot
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, None
@@ -603,19 +609,24 @@ class LaserProject(LaserNode):
     def flat_elements_with_passes(self, elements=None, types=LaserElement):
         if elements is None:
             elements = self.elements
+        passes = 1
+        if VARIABLE_NAME_PASSES in elements.cut:
+            passes = elements.cut[VARIABLE_NAME_PASSES]
+        if isinstance(elements, types):
+            for q in range(0, passes):
+                yield elements
         for element in elements:
-            element.parent = elements
+            for q in range(0, passes):
+                for flat_element in self.flat_elements_with_passes(element, types=types):
+                    yield flat_element
 
-            passes = 1
-            if VARIABLE_NAME_PASSES in element.cut:
-                passes = element.cut[VARIABLE_NAME_PASSES]
-            if isinstance(element, types):
-                for q in range(0, passes):
-                    yield element
-            else:
-                for q in range(0, passes):
-                    for flat_element in self.flat_elements_with_passes(element):
-                        yield flat_element
+    @staticmethod
+    def flatten(elements, types=LaserElement):
+        if isinstance(elements, types):
+            yield elements
+        for element in elements:
+            for flat_element in LaserProject.flatten(element, types=types):
+                yield flat_element
 
     def flat_elements(self, elements=None, types=(LaserElement)):
         if elements is None:

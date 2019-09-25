@@ -33,6 +33,12 @@ class Point:
         self.x = x
         self.y = y
 
+    def __key(self):
+        return (self.x, self.y)
+
+    def __hash__(self):
+        return hash(self.__key())
+
     def __eq__(self, other):
         if isinstance(other, (Point, list, tuple)):
             return self[0] == other[0] and self[1] == other[1]
@@ -140,8 +146,10 @@ class Point:
             return 2
 
     @staticmethod
-    def convex_hull(*pts):
-        points = sorted(pts, key=lambda p: p[0])
+    def convex_hull(pts):
+        if len(pts) == 0:
+            return
+        points = sorted(set(pts), key=lambda p: p[0])
         first_point_on_hull = points[0]
         point_on_hull = first_point_on_hull
         while True:
@@ -341,9 +349,16 @@ class Matrix:
     def post_skew_y_turn(self, theta, x=0, y=0):
         self.post_skew_y(theta * tau, x, y)
 
-    def post_cat(self, matrix_list):
-        for mx in matrix_list:
-            self.m = self.matrix_multiply(self.m, mx)
+    def post_cat(self, a, b, c, d, e, f):
+        """SVG Matrix:
+        [a c e]
+        [b d f]
+        [0 0 1]
+        """
+        mx = [a, b, 0,
+              c, d, 0,
+              e, f, 1]
+        self.m = self.matrix_multiply(self.m, mx)
 
     def pre_scale(self, sx=1, sy=None):
         if sy is None:
@@ -356,9 +371,11 @@ class Matrix:
     def pre_rotate(self, theta):
         self.m = self.matrix_multiply(self.get_rotate(theta), self.m)
 
-    def pre_cat(self, matrix_list):
-        for mx in matrix_list:
-            self.m = self.matrix_multiply(mx, self.m)
+    def pre_cat(self,  a, b, c, d, e, f):
+        mx = [a, b, 0,
+              c, d, 0,
+              e, f, 1]
+        self.m = self.matrix_multiply(mx, self.m)
 
     def point_in_inverse_space(self, v0, v1=None):
         inverse = Matrix(self)
@@ -469,7 +486,36 @@ class Matrix:
             m1[6] * m0[2] + m1[7] * m0[5] + m1[8] * m0[8]]
 
 
-class Move(object):
+class Segment:
+    def __init__(self):
+        self.start = None
+        self.end = None
+
+    def __mul__(self, other):
+        if isinstance(other, Matrix):
+            n = copy(self)
+            n *= other
+            return n
+
+    __rmul__ = __mul__
+
+    def __iter__(self):
+        self.n = -1
+        return self
+
+    def __next__(self):
+        self.n += 1
+        try:
+            val = self[self.n]
+            if val is None:
+                self.n += 1
+                val = self[self.n]
+            return val
+        except IndexError:
+            raise StopIteration
+
+
+class Move(Segment):
     """Represents move commands. Does nothing, but is there to handle
     paths that consist of only move commands, which is valid, but pointless.
     Also serve as a bridge to make discontinuous paths into continuous paths
@@ -477,6 +523,7 @@ class Move(object):
     """
 
     def __init__(self, start=None, end=None):
+        Segment.__init__(self)
         if start is not None:
             self.start = Point(start)
         else:
@@ -493,14 +540,6 @@ class Move(object):
             if self.end is not None:
                 self.end *= other
         return self
-
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
 
     def __copy__(self):
         return Move(self.start, self.end)
@@ -553,13 +592,14 @@ class Move(object):
             return self.end[0], self.end[1], self.end[0], self.end[1]
 
 
-class Close(object):
+class Close(Segment):
     """Represents close commands. If this exists at the end of the shape then the shape is closed.
     the methodology of a single flag close fails in a couple ways. You can have multi-part shapes
     which can close or not close several times.
     """
 
     def __init__(self, start=None, end=None):
+        Segment.__init__(self)
         if end is None:
             if start is None:
                 self.start = None
@@ -577,14 +617,6 @@ class Close(object):
             if self.end is not None:
                 self.end *= other
         return self
-
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
 
     def __copy__(self):
         return Close(self.start, self.end)
@@ -631,8 +663,9 @@ class Close(object):
         return self.start[0], self.start[1], self.end[0], self.end[1]
 
 
-class Line(object):
+class Line(Segment):
     def __init__(self, start, end):
+        Segment.__init__(self)
         self.start = Point(start)
         self.end = Point(end)
 
@@ -654,14 +687,6 @@ class Line(object):
             self.start *= other
             self.end *= other
         return self
-
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
 
     def __len__(self):
         return 2
@@ -725,8 +750,9 @@ class Line(object):
                 y0 += sy
 
 
-class QuadraticBezier(object):
+class QuadraticBezier(Segment):
     def __init__(self, start, control, end):
+        Segment.__init__(self)
         self.start = Point(start)
         self.control = Point(control)
         self.end = Point(end)
@@ -752,14 +778,6 @@ class QuadraticBezier(object):
             self.control *= other
             self.end *= other
         return self
-
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
 
     def __len__(self):
         return 3
@@ -935,8 +953,9 @@ class QuadraticBezier(object):
             yield plot
 
 
-class CubicBezier(object):
+class CubicBezier(Segment):
     def __init__(self, start, control1, control2, end):
+        Segment.__init__(self)
         self.start = Point(start)
         self.control1 = Point(control1)
         self.control2 = Point(control2)
@@ -964,14 +983,6 @@ class CubicBezier(object):
             self.control2 *= other
             self.end *= other
         return self
-
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
 
     def __len__(self):
         return 4
@@ -1274,7 +1285,7 @@ class CubicBezier(object):
             t1 = t2
 
 
-class Arc(object):
+class Arc(Segment):
     def __init__(self, *args, **kwargs):
         """Arc objects can take different parameters to create arcs.
         Since we expect taking in SVG parameters. We accept SVG parameterization which is:
@@ -1296,6 +1307,7 @@ class Arc(object):
 
         start and end should fall on the ellipse defined by prx, pry and center.
         """
+        Segment.__init__(self)
         self.start = None
         self.end = None
         self.center = None
@@ -1414,14 +1426,6 @@ class Arc(object):
                 self.sweep = -self.sweep
         return self
 
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
-
     def __len__(self):
         return 5
 
@@ -1515,11 +1519,11 @@ class Arc(object):
         self.sweep = delta_radians % tau
         if not sweep_flag:
             self.sweep -= tau
-        self.start = start
+        self.start = Point(start)
         self.prx = Point.polar(center, rotation_radians, rx)
         self.pry = Point.polar(center, rotation_radians + tau / 4.0, ry)
-        self.center = center
-        self.end = end
+        self.center = Point(center)
+        self.end = Point(end)
 
     def as_cubic_curves(self):
         sweep_limit = tau / 12
@@ -1951,6 +1955,15 @@ class Path(MutableSequence):
                 last = current
         subpath._segments = self[last:]
         yield subpath
+
+    def as_points(self):
+        """Returns the list of defining points within path"""
+        for seg in self:
+            for p in seg:
+                if not isinstance(p, Point):
+                    yield Point(p)
+                else:
+                    yield p
 
     def bbox(self):
         """returns a bounding box for the input Path"""
