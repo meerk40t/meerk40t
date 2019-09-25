@@ -5,9 +5,17 @@ MeerK40t "MeerK" (provisional name) is a built-from-the-ground-up MIT licensed o
 
 
 # Current State
-
 The usb driver uses `pyusb` so it requires the same driver install as Whisperer.
-PPI Power Modulation is awesome.
+
+* Grid/Guides, Zoom and Pan scene Navigation (use middle mouse button, mouse wheel).
+* PPI Power modulation (Yes, power modulation for the M2 Nano)
+* Multi-K40 support.
+* Independent path speeds.
+* No need to color paths.
+* Drag and Drop support for SVGs/Images.
+* Instant Start. Start a job. Laser takes off instantly. No preprocessing is needed.
+
+If you have any bug reports or feature requests raise an issue. They might not be added right away (unless they are awesome) but I do need a running log of things people think of and things needed. And discussions about those things.
 
 
 # Phases:
@@ -26,9 +34,6 @@ Phase 2. Bundle.
 Phase 3. Collaborate and Listen.
 * Try to get stronger collaboration and feedback
 * Improve things with more of a team group effort.
-* Take feature suggestions.
-* Take code assistence.
-* Improve.
 
 ---
 
