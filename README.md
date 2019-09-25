@@ -7,6 +7,7 @@ MeerK40t "MeerK" (provisional name) is a built-from-the-ground-up MIT licensed o
 # Current State
 
 The usb driver uses `pyusb` so it requires the same driver install as Whisperer.
+PPI Power Modulation is awesome.
 
 
 # Phases:
