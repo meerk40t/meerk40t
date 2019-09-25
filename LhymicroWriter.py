@@ -154,6 +154,8 @@ class LhymicroWriter:
         self.power = 1000.0
         self.d_ratio = None
         self.default_SnP = None
+        self.pulse_total = 0.0
+        self.pulse_modulation = True
 
         self.current_x = current_x
         self.current_y = current_y
@@ -225,6 +227,110 @@ class LhymicroWriter:
         except AttributeError:
             pass
 
+    def raster_pulse_modulate(self, start_x, start_y, generate):
+        if not self.pulse_modulation:
+            for x, y, on in generate:
+                yield x, y, int(round(on))
+            return
+        current_x = start_x
+        current_y = start_y
+        dest_x = start_x
+        dest_y = start_y
+        current_on = 0
+        dx = 0
+        dy = 0
+
+        changed_direction = False
+        changed_laser = False
+        for event in generate:
+            dest_x = event[0]
+            dest_y = event[1]
+            try:
+                modulated_on = event[2]
+            except IndexError:
+                modulated_on = 1  # modulated_on didn't exist.
+            total_dx = dest_x - current_x
+            total_dy = dest_y - current_y
+            print("event: %d, %d == %d" % (total_dx, total_dy, modulated_on))
+            sub_steps = max(abs(total_dx), abs(total_dy))
+            if total_dx > 0:
+                if dx != 1:
+                    changed_direction = True
+                dx = 1
+            elif total_dx < 0:
+                if dx != -1:
+                    changed_direction = True
+                dx = -1
+            else:
+                if dx != 0:
+                    changed_direction = True
+                dx = 0
+            if total_dy > 0:
+                if dy != 1:
+                    changed_direction = True
+                dy = 1
+            elif total_dy < 0:
+                if dy != -1:
+                    changed_direction = True
+                dy = -1
+            else:
+                if dy != 0:
+                    changed_direction = True
+                dy = 0
+            if changed_direction:
+                yield current_x, current_y, current_on
+                changed_direction = False
+            for i in range(0, sub_steps):
+                if changed_laser:
+                    yield current_x, current_y, current_on
+                    changed_laser = False
+                self.pulse_total += self.power * modulated_on
+                if self.pulse_total >= 1000.0:
+                    self.pulse_total -= 1000.0
+                    if current_on != 1:
+                        changed_laser = True
+                    current_on = 1
+                else:
+                    if current_on != 0:
+                        changed_laser = True
+                    current_on = 0
+                current_x += dx
+                current_y += dy
+                # subcycle current is updated.
+                # print("Changed? on=%s" % (str(changed_laser)))
+                # yield current_x, current_y, current_on
+                # changed_laser = False
+        yield current_x, current_y, current_on  # Final point.
+        # final elements
+        # if self.on_plot is not None:
+        #     self.on_plot(last_x, last_y, last_on)
+
+    def ungroup_plots(self, generate):
+        current_x = None
+        current_y = None
+        for next_x, next_y, on in generate:
+            if current_x is None or current_y is None:
+                current_x = next_x
+                current_y = next_y
+                yield current_x, current_y, on
+                continue
+            if next_x > current_x:
+                dx = 1
+            elif next_x < current_x:
+                dx = -1
+            else:
+                dx = 0
+            if next_y > current_y:
+                dy = 1
+            elif next_y < current_y:
+                dy = -1
+            else:
+                dy = 0
+            while current_x != next_x or current_y != next_y:
+                current_x += dx
+                current_y += dy
+                yield current_x, current_y, on
+
     def group_plots(self, start_x, start_y, generate):
         """PPI is Pulses per inch."""
         last_x = start_x
@@ -234,7 +340,6 @@ class LhymicroWriter:
         dy = 0
         x = None
         y = None
-        pulse_value = 0
         for event in generate:
             try:
                 x = event[0]
@@ -242,17 +347,19 @@ class LhymicroWriter:
                 plot_on = event[2]
             except IndexError:
                 plot_on = 1
-            pulse_value += self.power * plot_on
-            if pulse_value >= 1000.0:
-                on = 1
-                pulse_value -= 1000.0
+            if self.pulse_modulation:
+                self.pulse_total += self.power * plot_on
+                if self.pulse_total >= 1000.0:
+                    on = 1
+                    self.pulse_total -= 1000.0
+                else:
+                    on = 0
             else:
-                on = 0
+                on = int(round(plot_on))
             if x == last_x + dx and y == last_y + dy and on == last_on:
                 last_x = x
                 last_y = y
                 continue
-
             yield last_x, last_y, last_on
             if self.on_plot is not None:
                 self.on_plot(last_x, last_y, last_on)
@@ -276,13 +383,14 @@ class LhymicroWriter:
             self.down()
         elif command == COMMAND_RAPID_MOVE:
             self.to_default_mode()
-            sx, sy, x, y = values
+            x, y = values
             self.move(x, y)
         elif command == COMMAND_SHIFT:
             x, y = values
             sx = self.current_x
             sy = self.current_y
             self.up()
+            self.pulse_modulation = False
             if self.state == STATE_COMPACT:
                 for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                     self.move(x, y)
@@ -292,6 +400,8 @@ class LhymicroWriter:
             x, y = values
             sx = self.current_x
             sy = self.current_y
+            self.pulse_modulation = self.is_on
+
             if self.state == STATE_COMPACT:
                 for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                     self.move(x, y)
@@ -301,8 +411,12 @@ class LhymicroWriter:
             x, y = values
             sx = self.current_x
             sy = self.current_y
-            self.down()
+            self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                if on == 0:
+                    self.up()
+                else:
+                    self.down()
                 self.move_absolute(x, y)
         elif command == COMMAND_HSTEP:
             self.v_switch()
@@ -322,25 +436,57 @@ class LhymicroWriter:
             self.move_absolute(first_point[0], first_point[1])
             sx = self.current_x
             sy = self.current_y
+            self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, path.plot()):
                 if on == 0:
                     self.up()
                 else:
                     self.down()
                 self.move_absolute(x, y)
+        elif command == COMMAND_RASTER:
+            raster = values
+            sx = self.current_x
+            sy = self.current_y
+            self.pulse_modulation = True
+            for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
+                x, y, on = e
+                dx = x - sx
+                dy = y - sy
+                sx = x
+                sy = y
+                if dy != 0:
+                    self.h_switch()
+                    if self.is_top:
+                        dy += self.raster_step
+                    else:
+                        dy -= self.raster_step
+                if on == 0:
+                    self.up()
+                else:
+                    self.down()
+                if dx != 0:
+                    self.move_relative(dx, dy)
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
             sx = self.current_x
             sy = self.current_y
-            self.down()
+            self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
+                if on == 0:
+                    self.up()
+                else:
+                    self.down()
                 self.move_absolute(x, y)
         elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, ex, ey = values
             sx = self.current_x
             sy = self.current_y
-            self.down()
+            self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
+                if on == 0:
+                    self.up()
+                else:
+                    self.down()
                 self.move_absolute(x, y)
         elif command == COMMAND_SET_SPEED:
             speed = values
@@ -574,6 +720,7 @@ class LhymicroWriter:
             self.current_y -= self.raster_step
         else:
             self.current_y += self.raster_step
+        self.is_on = False
 
     def v_switch(self):
         if self.is_top:
@@ -585,6 +732,7 @@ class LhymicroWriter:
             self.current_x -= self.raster_step
         else:
             self.current_x += self.raster_step
+        self.is_on = False
 
     def home(self):
         self.to_default_mode()

@@ -56,3 +56,16 @@ class TestPath(unittest.TestCase):
         path *= matrix
         print(path.d())
         self.assertEqual(path.d(), "M 0,-8.81635 L 0,91.1837 L 100,108.816 L 100,8.81635 L 0,-8.81635 Z")
+
+    def test_convex_hull(self):
+        pts = (3, 4), (4, 6), (18, -2), (9, 0)
+        hull = [e for e in Point.convex_hull(*pts)]
+        self.assertEqual([(3, 4), (9, 0), (18, -2), (4, 6)], hull)
+
+        # bounding box and a bunch of random numbers that must be inside.
+        pts = [(100, 100), (100, -100), (-100, -100), (-100, 100)]
+        from random import randint
+        for i in range(50):
+            pts.append((randint(-99, 99), randint(-99, 99)))
+        hull = [e for e in Point.convex_hull(*pts)]
+        self.assertEqual([(-100, -100), (100, -100), (100, 100), (-100, 100)], hull)

@@ -1,12 +1,13 @@
 import wx
-
-import RasterPlotter
+# TODO: Move the draw requirements of the elements outside this class so the writer can be tested without wx.
 import path
 import svg_parser
 from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
+from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 from ZMatrix import ZMatrix
+
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
@@ -293,9 +294,12 @@ class ImageElement(LaserElement):
         gc.DrawBitmap(self.cache, 0, 0, self.image.width, self.image.height)
 
     def filter(self, pixel):
-        if pixel[0] + pixel[1] + pixel[2] <= 384:
+        if pixel[0] + pixel[1] + pixel[2] >= 384.0:
             return 1
         return 0
+
+    def modulate_filter(self, pixel):
+        return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
 
     def generate(self, m=None):
         if m is None:
@@ -313,21 +317,26 @@ class ImageElement(LaserElement):
         step = 1
         if VARIABLE_NAME_RASTER_STEP in self.cut:
             step = self.cut[VARIABLE_NAME_RASTER_STEP]
-        transverse = 0
+        traverse = 0
         if direction == 0:
             yield COMMAND_SET_STEP, step
-            transverse |= RasterPlotter.X_AXIS
-            transverse |= RasterPlotter.TOP
+            traverse |= X_AXIS
+            traverse |= TOP
         elif direction == 1:
             yield COMMAND_SET_STEP, step
-            transverse |= RasterPlotter.X_AXIS
-            transverse |= RasterPlotter.BOTTOM
-        for command in RasterPlotter.plot_raster(self.image, filter=self.filter,
-                                                 offset_x=m.value_trans_x(),
-                                                 offset_y=m.value_trans_y(),
-                                                 transversal=transverse,
-                                                 step=step):
-            yield command
+            traverse |= X_AXIS
+            traverse |= BOTTOM
+        width, height = self.image.size
+        data = self.image.load()
+        raster = RasterPlotter(data, width, height, traverse, 0, 0,
+                               m.value_trans_x(),
+                               m.value_trans_y(),
+                               step, self.modulate_filter)
+        yield COMMAND_MOVE, raster.initial_position_in_scene()
+        yield COMMAND_SET_DIRECTION, raster.initial_direction()
+        yield COMMAND_MODE_COMPACT, 0
+        yield COMMAND_RASTER, raster
+        yield COMMAND_MODE_DEFAULT, 0
 
 
 class PathElement(LaserElement):

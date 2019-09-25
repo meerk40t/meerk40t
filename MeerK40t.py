@@ -276,11 +276,11 @@ class MeerK40t(wx.Frame):
         self.project.save_config()
         self.project.shutdown()
         self.scene.on_close(event)
-        for key, value in self.project.windows.items():
-            try:
+        try:
+            for key, value in self.project.windows.items():
                 value.Close()
-            except RuntimeError:
-                pass
+        except RuntimeError:  # close runtime error, as well as dictionary size change during iteration.
+            pass
         event.Skip()  # Call destroy as regular.
 
     def on_size_set(self, event):
@@ -434,10 +434,12 @@ class MeerK40t(wx.Frame):
     def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.scene.update_buffer()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.scene.update_buffer()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.scene.focus_on_project()
@@ -624,7 +626,8 @@ class CutConfiguration(wx.Panel):
         item = self.element_tree.GetSelection()
         if item is None:
             return
-
+        if item.ID is None:
+            return
         if item in self.item_lookup:
             element = self.item_lookup[item]
             if not isinstance(element, LaserProject):

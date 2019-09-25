@@ -338,7 +338,7 @@ class Controller(wx.Frame):
 
     def set_usb_button_by_state(self):
         status = self.usb_status
-        if status == "Not Found":
+        if status == "Not Found" or "No Driver":
             self.button_usb_connect.SetBackgroundColour("#ff0000")
             self.button_usb_connect.SetLabel(status)
             self.button_usb_connect.SetValue(True)
