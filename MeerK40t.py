@@ -683,7 +683,11 @@ class CutConfiguration(wx.Panel):
             if isinstance(e, PathElement):
                 epath = Path()
                 svg_parser.parse_svg_path(epath, e.path)
-                epath *= e.matrix
+                try:
+                    epath *= e.matrix
+                except TypeError:
+                    epath *= e.matrix
+                    print(epath)
                 pts += [q for q in epath.as_points()]
             elif isinstance(e, ImageElement):
                 bounds = e.bounds

@@ -1519,11 +1519,11 @@ class Arc(Segment):
         self.sweep = delta_radians % tau
         if not sweep_flag:
             self.sweep -= tau
-        self.start = start
+        self.start = Point(start)
         self.prx = Point.polar(center, rotation_radians, rx)
         self.pry = Point.polar(center, rotation_radians + tau / 4.0, ry)
-        self.center = center
-        self.end = end
+        self.center = Point(center)
+        self.end = Point(end)
 
     def as_cubic_curves(self):
         sweep_limit = tau / 12
