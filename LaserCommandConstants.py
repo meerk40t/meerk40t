@@ -18,6 +18,7 @@ COMMAND_HSTEP = 30  # Causes horizontal raster step
 COMMAND_VSTEP = 40  # Causes a vertical raster step
 
 COMMAND_PLOT = 100
+COMMAND_RASTER = 101
 
 COMMAND_MODE_DEFAULT = 1000
 COMMAND_MODE_COMPACT = 1001
