@@ -190,6 +190,8 @@ class LaserSceneView(wx.Panel):
     def on_mousewheel(self, event):
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
+        if self.project.mouse_zoom_invert:
+            rotation = -rotation
         if rotation > 1:
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
         elif rotation < -1:
@@ -260,6 +262,9 @@ class LaserSceneView(wx.Panel):
     def on_right_mouse_down(self, event):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
+
+        self.project.set_selected_by_position(self.popup_scene_position)
+
         menu = wx.Menu()
         convert = menu.Append(wx.ID_ANY, "Convert Raw", "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, convert)

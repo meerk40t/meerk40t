@@ -1,4 +1,5 @@
 import wx
+
 # TODO: Move the draw requirements of the elements outside this class so the writer can be tested without wx.
 import path
 import svg_parser
@@ -7,7 +8,6 @@ from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 from ZMatrix import ZMatrix
-
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
@@ -424,6 +424,7 @@ class LaserProject(LaserNode):
         self.autohome = False
         self.autobeep = True
         self.autostart = True
+        self.mouse_zoom_invert = False
         self.controller = K40Controller(self)
         self.writer = LhymicroWriter(self, controller=self.controller)
 
@@ -483,6 +484,7 @@ class LaserProject(LaserNode):
         self.autohome = self[bool, "autohome"]
         self.autobeep = self[bool, "autobeep"]
         self.autostart = self[bool, "autostart"]
+        self.mouse_zoom_invert = self[bool, "mouse_zoom_invert"]
         convert = self[float, "units-convert", self.units[0]]
         name = self[str, "units-name", self.units[1]]
         marks = self[int, "units-marks", self.units[2]]
@@ -507,6 +509,7 @@ class LaserProject(LaserNode):
         self["autohome"] = bool(self.autohome)
         self["autobeep"] = bool(self.autobeep)
         self["autostart"] = bool(self.autostart)
+        self["mouse_zoom_invert"] = bool(self.mouse_zoom_invert)
         self["units-convert"] = float(self.units[0])
         self["units-name"] = str(self.units[1])
         self["units-marks"] = int(self.units[2])

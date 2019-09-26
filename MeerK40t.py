@@ -73,6 +73,7 @@ ID_MENU_ROTATE_CCW = idinc.new()
 ID_MENU_HFLIP = idinc.new()
 ID_MENU_VFLIP = idinc.new()
 
+ID_MENU_KEYMAP = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
@@ -178,7 +179,10 @@ class MeerK40t(wx.Frame):
         self.main_menubar.Append(wxglade_tmp_menu, "Design")
 
         wxglade_tmp_menu = wx.Menu()
+
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
+        wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
+
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, "Controller", "")
         wxglade_tmp_menu.Append(ID_MENU_USB, "USB", "")
@@ -210,6 +214,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.transform_mirror_hflip, id=ID_MENU_HFLIP)
         self.Bind(wx.EVT_MENU, self.transform_mirror_vflip, id=ID_MENU_VFLIP)
 
+        self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
@@ -469,6 +474,14 @@ class MeerK40t(wx.Frame):
         window.set_project(project)
         window.Show()
         project.windows["preferences"] = window
+
+    def open_keymap(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("keymap")
+        from Keymap import Keymap
+        window = Keymap(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["keymap"] = window
 
     def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
         project.close_old_window("usbconnect")
