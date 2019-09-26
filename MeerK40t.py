@@ -538,7 +538,7 @@ class CutConfiguration(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.SetSize((503, -1))
         self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_gas_industry_50.GetBitmap())
+        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_laser_beam_52.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()

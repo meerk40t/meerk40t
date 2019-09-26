@@ -539,9 +539,10 @@ class LhymicroWriter:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.controller += b'S1P\n'
-            if not self.autolock:
-                self.controller += b'IS2P\n'
+            if self.autolock:
+                self.controller += b'S1P\n'
+            else:
+                self.controller += b'S2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in self.group_plots(self.current_x, self.current_y,
@@ -651,9 +652,10 @@ class LhymicroWriter:
         if self.state == STATE_DEFAULT:
             self.controller += b'I'
             self.controller += COMMAND_ON
-            self.controller += b'S1P\n'
-            if not self.autolock:
-                self.controller += b'IS2P\n'
+            if self.autolock:
+                self.controller += b'S1P\n'
+            else:
+                self.controller += b'S2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_ON
         elif self.state == STATE_CONCAT:
@@ -668,9 +670,10 @@ class LhymicroWriter:
         if self.state == STATE_DEFAULT:
             self.controller += b'I'
             self.controller += COMMAND_OFF
-            self.controller += b'S1P\n'
-            if not self.autolock:
-                self.controller += b'IS2P\n'
+            if self.autolock:
+                self.controller += b'S1P\n'
+            else:
+                self.controller += b'S2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_OFF
         elif self.state == STATE_CONCAT:
@@ -681,9 +684,10 @@ class LhymicroWriter:
 
     def to_default_mode(self):
         if self.state == STATE_CONCAT:
-            self.controller += b'S1P\n'
-            if not self.autolock:
-                self.controller += b'IS2P\n'
+            if self.autolock:
+                self.controller += b'S1P\n'
+            else:
+                self.controller += b'S2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += b'FNSE-\n'
             self.reset_modes()
