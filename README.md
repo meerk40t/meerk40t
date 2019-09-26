@@ -43,10 +43,14 @@ Currently at Phase 1-2. You can use it, there are no know giant gaps in function
 
 # Installing / Testing
 
-Starting at the end of Phase 0, I compiled the project into a binary at the end of Phase 0. So the releases should have a working .exe file.
+I compiled the project into a Windows .exe Binary.
+
+Download: MeerK40t.exe
 https://github.com/meerk40t/meerk40t/releases
 
-This might work out of the gate for you.
+Run: MeerK40t.exe
+
+This might work out of the gate for you. It doesn't need to install or do anything weird. Chrome may say it's dangerous given that not enough people have downloaded it or installed it. If that makes you worry you can run it from the python source code or read the source code etc, using the methods below.
 
 ---
 
