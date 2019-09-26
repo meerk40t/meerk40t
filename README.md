@@ -53,9 +53,11 @@ This might work out of the gate for you.
 You can also download the source and run `MeerK40t.py` with python. The icons are included so it should.
 To help with this I added a `install_run.bat` which will install and run. It'll check the requirements and start MeerK40t and you can run it diretly from Windows rather than needing the command prompt.
 
+```
 pip install -r requirements.txt
 python MeerK40t.py
 pause
+```
 
 ---
 
