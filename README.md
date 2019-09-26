@@ -15,7 +15,7 @@ The usb driver uses `pyusb` so it requires the same driver install as Whisperer.
 * Drag and Drop support for SVGs/Images.
 * Instant Start. Start a job. Laser takes off instantly. No preprocessing is needed.
 
-If you have any bug reports or feature requests raise an issue. They might not be added right away (unless they are awesome) but I do need a running log of things people think of and things needed. And discussions about those things.
+If you have any bug reports or feature requests raise an issue. They might not be added right away (unless they are awesome) but I do need a running log of things people think of, and things needed and discussions about those things.
 
 
 # Phases:
@@ -37,32 +37,45 @@ Phase 3. Collaborate and Listen.
 
 ---
 
-Currently at Phase 1. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be hooked up and working. It has some killer features and some elements that are pretty rock solid.
+Currently at Phase 1-2. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be hooked up and working. It has some killer features and some elements that are great.
 
 ---
 
 # Installing / Testing
 
-I compiled the project into a binary at the end of Phase 0. So the releases should have a working .exe file.
+Starting at the end of Phase 0, I compiled the project into a binary at the end of Phase 0. So the releases should have a working .exe file.
 https://github.com/meerk40t/meerk40t/releases
 
 This might work out of the gate for you.
 
 ---
 
-You can also download the source and run `MeerK40t.py` with python. The icons are included so it should run out of the gate.
+You can also download the source and run `MeerK40t.py` with python. The icons are included so it should.
+To help with this I added a `install_run.bat` which will install and run. It'll check the requirements and start MeerK40t and you can run it diretly from Windows rather than needing the command prompt.
+
+pip install -r requirements.txt
+python MeerK40t.py
+pause
 
 ---
 
 Fallback instructions.
 
-These are not definitive instructions they are some that should work. Basically you need to use python to run `MeerK40t.py`.
+You need to use `python` and the python requirements of `wxPython` `pyusb` and `Pillow` to run `MeerK40t.py`.
 
 Windows Instructions:
 You will need python:
 * Download and install from: https://www.python.org/
 
-You will need meerk40t:
+You will need Meerk40t:
+
+* Download click: "Clone or Download".
+* Click "Download Zip"
+* Unzip on your desktop, this should be the meerk40t-master directory.
+* Find `install_run.bat` in the `meerk40t-master` directory and run it.
+
+Alternatively:
+
 * Download click: "Clone or Download".
 * Click "Download Zip"
 * Unzip on your desktop, this should be the meerk40t-master directory.
@@ -88,16 +101,19 @@ Linux:
 * `ImportError: libpng12.so.0: cannot open shared object file: No such file or directory .` libpng is not installed.
   * Type: `sudo apt-get libpng`
 
+
 # Philosophy
 
 The goal is simple. Provide a working, effective, stock K40 laser program that is easy to hack on. There are a number of highly creative, dedicated, and determined people out there. And a lot of people have want to help with the software aspects as well. Creating a highly functional and highly modular program should help people do that.
 
-There is little chance of success for projects of lofty goals and no actions so I am creating a minimum viable product that should work for most use cases. This combined with the good bones of the modular design and design choices can provide easily hackable modular software package.
+There is little chance of success for projects of lofty goals and no actions so I am creating a viable product that should work for most use cases. This combined with the good bones of the modular design, and design choices can provide easily hackable modular software package.
 
 ## GUI
+
 The primary GUI is written in wxPython. It's pretty easy to hack on and quite easy to improve. Being modular though, the gui aspects should be kept apart from the functional aspects, so that a different GUI could be used without losing any core functionality.
 
 ## Driver
+
 The USB driver currently uses the same methodology that Whisperer, name to use pyusb. So using the same bundled driver is the easiest method. Until phase 2 when this project will basically bundle the same driver. Using the USB-EPP/I2C... CH341A
 
 ## Controller
@@ -139,5 +155,8 @@ One of the core design elements is the use of a middle language which can be use
 
 The LaserProject consist of LaserElements these can call a `generate()` generator which creates a series of LaserCommands which are used to produce itself. Nothing is generated before hand and no giant memory structures need to be created to process the projects this way. Additional objects and structures can easily used through the same API. These LaserElements also contain instructions as to how to draw themselves.
 
+# Pulse Modulation
+
+The stock firmware is not known for having power control, I give it power control. Some have asked how this is possible. Basically I use software to pulse the laser. See the Wiki for additional details: https://github.com/meerk40t/meerk40t/wiki/How-does-MeerK40t's-pulse-modulation-works%3F
 
 
