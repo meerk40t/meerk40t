@@ -139,6 +139,12 @@ The ability to drag and drop and display and modify job elements is critical to 
 
 The project includes a variant of RasterBuilder, I wrote for Visicut after adding a Stock K40 driver to the project, which provides methods for a highly debuggable methodology to build rasters based on a state machine. This gives MeerK the ability to overscan, perform bottom-to-top rasters, start from any corner, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend. If you wanted to, for example, break the image space into different regions and raster those areas independently, the ability to modify a robust debuggable rasterizer would be essential. Or if you wanted to perform passes based on value of the pixel (like first pass does 66% black, and second pass does 33% black). The good bones are essential.
 
+
+**Note:** Rasters do not scale in a traditional manner. You can make them bigger with step size but you need to understand generally what that means. The program will not perform these operations for you automatically because they can potentially be lossy.
+
+See notes on Rastering (https://github.com/meerk40t/meerk40t/wiki/Notes-on-Rastering) in the wiki.
+
+
 ## Lhymicro-gl Writer
 
 Beyond just connecting to the correct USB the other essential component is the ability to accurately write Lhymicro-gl code, which the stock firmware uses. This is done with the LhymicroWriter. With a middle-level to low level on the fly writer, we can track our location natively. We can also adapt for edge conditions and alterations without any trouble. So writing an extension that changes the speed speed the laser moves at while it's moving and running a different set of code instructions is possible. Since the writer knows its current state and can simply perform all the things it needs to perform in those state changes, and write that in the Lhymicro-gl.
