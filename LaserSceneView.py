@@ -416,6 +416,8 @@ class LaserSceneView(wx.Panel):
             lines.append((x, 0, x, length))
             lines.append((x, h, x, h - length))
             mark_point = (x - sx) / scaled_conversion
+            if round(mark_point * 1000) == 0:
+                mark_point = 0.0  # prevents -0
             dc.DrawRotatedText("%.2f %s" % (mark_point, name), x, 0, -90)
             x += points
 
@@ -424,7 +426,9 @@ class LaserSceneView(wx.Panel):
             lines.append((0, y, length, y))
             lines.append((w, y, w - length, y))
             mark_point = (y - sy) / scaled_conversion
-            dc.DrawText("%.2f %s" % (mark_point, name), 0, y)
+            if round(mark_point * 1000) == 0:
+                mark_point = 0.0  # prevents -0
+            dc.DrawText("%.2f %s" % (mark_point + 0, name), 0, y + 0)
             y += points
         dc.DrawLineList(lines)
 
