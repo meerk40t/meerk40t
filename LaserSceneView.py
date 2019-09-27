@@ -395,29 +395,36 @@ class LaserSceneView(wx.Panel):
     def on_draw_guides(self, dc):
         lines = []
         w, h = self.Size
+        conversion, name, marks, index = self.project.units
+        scaled_conversion = conversion * self.matrix.GetScaleX()
+
         wpoints = w / 15.0
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
+        # tweak the scaled points into being useful.
+        points = scaled_conversion * round(points / scaled_conversion * 10) / 10.0
         sx, sy = self.convert_scene_to_window([0, 0])
         if points == 0:
             return
         offset_x = sx % points
         offset_y = sy % points
-        conversion, name, marks, index = self.project.units
+
         x = offset_x
+        length = 50
+
         while x < w:
-            length = 50
             lines.append((x, 0, x, length))
             lines.append((x, h, x, h - length))
-            dc.DrawRotatedText("%.2f %s" % ((x - sx) / (conversion * self.matrix.GetScaleX()), name), x, 0, -90)
+            mark_point = (x - sx) / scaled_conversion
+            dc.DrawRotatedText("%.2f %s" % (mark_point, name), x, 0, -90)
             x += points
 
         y = offset_y
         while y < h:
-            length = 50
             lines.append((0, y, length, y))
             lines.append((w, y, w - length, y))
-            dc.DrawText("%.2f %s" % ((y - sy) / (conversion * self.matrix.GetScaleY()), name), 0, y)
+            mark_point = (y - sy) / scaled_conversion
+            dc.DrawText("%.2f %s" % (mark_point, name), 0, y)
             y += points
         dc.DrawLineList(lines)
 
