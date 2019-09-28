@@ -209,6 +209,10 @@ class LaserNode(list):
             return False
         return self.bounds[0] <= x <= self.bounds[2] and self.bounds[1] <= y <= self.bounds[3]
 
+    @property
+    def center(self):
+        return (self.bounds[2] - self.bounds[0]) / 2.0, (self.bounds[3] - self.bounds[1]) / 2.0
+
 
 class LaserGroup(LaserNode):
     def __init__(self):
@@ -262,7 +266,7 @@ class LaserElement(LaserNode):
         yield COMMAND_MODE_DEFAULT
 
     def move(self, dx, dy):
-        self.matrix.pre_translate(dx, dy)
+        self.matrix.post_translate(dx, dy)  # Apply translate after all the other events.
 
 
 class ImageElement(LaserElement):
@@ -293,12 +297,18 @@ class ImageElement(LaserElement):
             self.cache = myWxImage.ConvertToBitmap()
         gc.DrawBitmap(self.cache, 0, 0, self.image.width, self.image.height)
 
-    def filter(self, pixel):
-        if pixel[0] + pixel[1] + pixel[2] >= 384.0:
-            return 1
-        return 0
+    def modulate_filter_1_bit(self, pixel):
+        return (255 - pixel) / 255.0
 
-    def modulate_filter(self, pixel):
+    def modulate_filter_8_bit(self, pixel):
+        return (255 - pixel) / 255.0
+
+    def modulate_filter_palette(self, pixel):
+        p = self.image.getpalette()
+        v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
+        return 1.0 - v / 765.0
+
+    def modulate_filter_rgb(self, pixel):
         return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
 
     def generate(self, m=None):
@@ -330,11 +340,27 @@ class ImageElement(LaserElement):
             traverse |= X_AXIS
             traverse |= BOTTOM
         width, height = self.image.size
+
+        mode = self.image.mode
+        if mode == "1":
+            image_filter = self.modulate_filter_1_bit
+        elif mode == "P":
+            image_filter = self.modulate_filter_palette
+        elif mode == "L":
+            image_filter = self.modulate_filter_8_bit
+        elif mode == "RGB" or mode == "RGBA":
+            image_filter = self.modulate_filter_rgb
+        else:
+            # Other modes we force it to become an RGB.
+            self.image = self.image.convert("RGBA")
+            image_filter = self.modulate_filter_rgb
+
         data = self.image.load()
+
         raster = RasterPlotter(data, width, height, traverse, 0, 0,
                                m.value_trans_x(),
                                m.value_trans_y(),
-                               step, self.modulate_filter)
+                               step, image_filter)
 
         yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
         yield COMMAND_SET_DIRECTION, raster.initial_direction()
@@ -560,7 +586,7 @@ class LaserProject(LaserNode):
             node.matrix.post_translate(tx, ty)
             if VARIABLE_NAME_RASTER_STEP in node.cut:
                 step = float(node.cut[VARIABLE_NAME_RASTER_STEP])
-                node.matrix.post_scale(step, step)
+                node.matrix.pre_scale(step, step)
 
     def validate(self, node=None):
         if node is None:
@@ -724,24 +750,23 @@ class LaserProject(LaserNode):
             for e in self.selected:
                 if isinstance(e, PathElement):
                     if position is not None:
-                        p = e.convert_affinespace_to_absolute(position)
-                        e.matrix.post_scale(scale, scale_y, p[0], p[1])
+                        e.matrix.post_scale(scale, scale_y, position[0], position[1])
                     else:
-                        e.matrix.pre_scale(scale, scale_y)
+                        e.matrix.post_scale(scale, scale_y)
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
         self.validate()
         if position is not None:
             self.set_selected_by_position(position)
+        else:
+            position = self.center
         if self.selected is not None:
+            self.validate()
             for e in self.selected:
                 if isinstance(e, PathElement):
-                    if position is not None:
-                        p = e.convert_affinespace_to_absolute(position)
-                        e.matrix.post_rotate_rad(radians, p[0], p[1])
-                    else:
-                        e.matrix.pre_rotate(radians)
+                    p = position
+                    e.matrix.post_rotate(radians, position[0], position[1])
         self("elements", 0)
 
     def move_selected(self, dx, dy):

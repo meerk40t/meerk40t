@@ -24,6 +24,7 @@ except ImportError:
 
     tau = pi * 2
 
+MEERK40T_VERSION = "0.1.5"
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -294,7 +295,7 @@ class MeerK40t(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle("MeerK40t")
+        self.SetTitle("MeerK40t v%s" % MEERK40T_VERSION)
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
@@ -538,7 +539,7 @@ class CutConfiguration(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.SetSize((503, -1))
         self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_gas_industry_50.GetBitmap())
+        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_laser_beam_52.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -696,11 +697,7 @@ class CutConfiguration(wx.Panel):
             if isinstance(e, PathElement):
                 epath = Path()
                 svg_parser.parse_svg_path(epath, e.path)
-                try:
-                    epath *= e.matrix
-                except TypeError:
-                    epath *= e.matrix
-                    print(epath)
+                epath *= e.matrix
                 pts += [q for q in epath.as_points()]
             elif isinstance(e, ImageElement):
                 bounds = e.bounds

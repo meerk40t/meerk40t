@@ -1,9 +1,7 @@
-"""
-(Experimental) replacement for import/export functionality SAX
-"""
-
 import re
 from xml.etree.ElementTree import iterparse
+from math import radians
+from path import Angle
 
 # SVG STATIC VALUES
 SVG_NAME_TAG = 'svg'
@@ -374,17 +372,17 @@ def parse_svg_transform(transform_str, obj):
 
     for name, params in _tokenize_transform(transform_str):
         if SVG_TRANSFORM_MATRIX == name:
-            obj.post_cat(*params)
+            obj.pre_cat(*params)
         elif SVG_TRANSFORM_TRANSLATE == name:
-            obj.post_translate(*params)
+            obj.pre_translate(*params)
         elif SVG_TRANSFORM_SCALE == name:
-            obj.post_scale(*params)
+            obj.pre_scale(*params)
         elif SVG_TRANSFORM_ROTATE == name:
-            obj.post_rotate_deg(*params)
+            obj.pre_rotate(Angle.degrees(params[0]), *params[1:])
         elif SVG_TRANSFORM_SKEW_X == name:
-            obj.post_skew_x_deg(*params)
+            obj.pre_skew_x(Angle.degrees(params[0]), *params[1:])
         elif SVG_TRANSFORM_SKEW_Y == name:
-            obj.post_skew_y_deg(*params)
+            obj.pre_skew_y(Angle.degrees(params[0]), *params[1:])
 
 
 def parse_svg_file(f):
