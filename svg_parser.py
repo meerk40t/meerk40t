@@ -1,6 +1,6 @@
 import re
 from xml.etree.ElementTree import iterparse
-from math import radians
+
 from path import Angle
 
 # SVG STATIC VALUES
@@ -25,6 +25,8 @@ SVG_TAG_ELLIPSE = 'ellipse'
 SVG_TAG_LINE = 'line'
 SVG_TAG_POLYLINE = 'polyline'
 SVG_TAG_POLYGON = 'polygon'
+SVG_TAG_TEXT = 'text'
+SVG_TAG_IMAGE = 'image'
 SVG_ATTR_DATA = 'd'
 SVG_ATTR_FILL = 'fill'
 SVG_ATTR_STROKE = 'stroke'
@@ -37,6 +39,7 @@ SVG_ATTR_RADIUS_X = 'rx'
 SVG_ATTR_RADIUS_Y = 'ry'
 SVG_ATTR_RADIUS = 'r'
 SVG_ATTR_POINTS = 'points'
+SVG_ATTR_PRESERVEASPECTRATIO = 'preserveAspectRatio'
 SVG_ATTR_X = 'x'
 SVG_ATTR_Y = 'y'
 SVG_ATTR_TAG = 'tag'
@@ -56,6 +59,7 @@ COORD_PAIR_TMPLT = re.compile(
 
 
 # Leaf node to pathd values.
+
 
 def path2pathd(path):
     return path.get(SVG_ATTR_DATA, '')
@@ -360,6 +364,129 @@ def _tokenize_transform(transform_str):
         yield sub_element[0], tuple(map(float, float_re.findall(sub_element[1])))
 
 
+def parse_viewbox_transform(svg_element):
+    """
+    SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
+    With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+
+    It creates a matrix equal to that viewport expected.
+
+    :param svg_element: dict containing the relevant svg entries.
+    :return: string of the SVG transform commands to account for the viewbox.
+    """
+    if SVG_ATTR_VIEWBOX in svg_element:
+        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
+        # width and height values of the viewBox attribute respectively.
+        viewbox = svg_element[SVG_ATTR_VIEWBOX]
+        vb = viewbox.split(" ")
+        vb_x = float(vb[0])
+        vb_y = float(vb[1])
+        vb_width = float(vb[2])
+        vb_height = float(vb[3])
+    else:
+        vb_x = 0.0
+        vb_y = 0.0
+        vb_width = 100.0
+        vb_height = 100.0
+    # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+    if SVG_ATTR_X in svg_element:
+        e_x = parse_svg_distance(svg_element[SVG_ATTR_X])
+    else:
+        e_x = 0
+    if SVG_ATTR_Y in svg_element:
+        e_y = parse_svg_distance(svg_element[SVG_ATTR_Y])
+    else:
+        e_y = 0
+    if SVG_ATTR_WIDTH in svg_element:
+        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH])
+    else:
+        e_width = 100.0
+    if SVG_ATTR_WIDTH in svg_element:
+        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH])
+    else:
+        e_width = 100.0
+    if SVG_ATTR_HEIGHT in svg_element:
+        e_height = parse_svg_distance(svg_element[SVG_ATTR_HEIGHT])
+    else:
+        e_height = e_width
+
+    # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+    # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+    # or if meetOrSlice is missing from this value.
+    if SVG_ATTR_PRESERVEASPECTRATIO in svg_element:
+        aspect = svg_element[SVG_ATTR_PRESERVEASPECTRATIO]
+        aspect_slice = aspect.slice(' ')
+        try:
+            align = aspect_slice[0]
+        except IndexError:
+            align = 'xMidYMid'
+        try:
+            meet_or_slice = aspect_slice[1]
+        except IndexError:
+            meet_or_slice = 'meet'
+    else:
+        align = 'xMidYMid'
+        meet_or_slice = 'meet'
+
+    # Initialize scale-x to e-width/vb-width.
+    scale_x = e_width / vb_width
+    # Initialize scale-y to e-height/vb-height.
+    scale_y = e_height / vb_height
+
+    # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
+    if align != SVG_VALUE_NONE and meet_or_slice == 'meet':
+        scale_x = max(scale_x, scale_y)
+        scale_y = scale_x
+    # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
+    elif align != SVG_VALUE_NONE and meet_or_slice == 'slice':
+        scale_x = min(scale_x, scale_y)
+        scale_y = scale_x
+    # Initialize translate-x to e-x - (vb-x * scale-x).
+    translate_x = e_x - (vb_x * scale_x)
+    # Initialize translate-y to e-y - (vb-y * scale-y)
+    translate_y = e_y - (vb_y * scale_y)
+    # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+    align = align.lower()
+    if 'xmid' in align:
+        translate_x += (e_width - vb_width * scale_x) / 2.0
+    # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
+    if 'xmax' in align:
+        translate_x += e_width - vb_width * scale_x
+    # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+    if 'ymid' in align:
+        translate_y += (e_height - vb_height * scale_y) / 2.0
+    # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
+    if 'ymax' in align:
+        translate_y += (e_height - vb_height * scale_y)
+
+    if translate_x == 0 and translate_y == 0:
+        if scale_x == 1 and scale_y == 1:
+            return ""  # Nothing happens.
+        else:
+            return "scale(%f, %f)" % (scale_x, scale_y)
+    else:
+        if scale_x == 1 and scale_y == 1:
+            return "translate(%f, %f)" % (translate_x, translate_y)
+        else:
+            return "scale(%f, %f) translate(%f, %f)" % (scale_x, scale_y, translate_x, translate_y)
+
+
+def parse_svg_distance(distance_str):
+    if distance_str.endswith('mm'):
+        return float(distance_str[:-2]) * 3.7795
+    if distance_str.endswith('cm'):
+        return float(distance_str[:-2]) * 37.795
+    if distance_str.endswith('in'):
+        return float(distance_str[:-2]) * 96.0
+    if distance_str.endswith('px'):
+        return float(distance_str[:-2])
+    if distance_str.endswith('pt'):
+        return float(distance_str[:-2]) * 1.3333
+    if distance_str.endswith('pc'):
+        return float(distance_str[:-2]) * 16
+    return float(distance_str)
+
+
 def parse_svg_transform(transform_str, obj):
     """Parses the svg transform tag. Currently parses SVG 1.1 transformations.
     With regard to SVG 2.0 would be CSS transformations, and require a superset.
@@ -385,7 +512,7 @@ def parse_svg_transform(transform_str, obj):
             obj.pre_skew_y(Angle.degrees(params[0]), *params[1:])
 
 
-def parse_svg_file(f):
+def parse_svg_file(f, viewport_transform=False):
     """Parses the SVG file.
     Style elements are split into their proper values.
     Transform elements are concatenated and unparsed.
@@ -396,24 +523,36 @@ def parse_svg_file(f):
     for event, elem in iterparse(f, events=('start', 'end')):
         if event == 'start':
             stack.append(values)
-
             current_values = values
             values = {}
             values.update(current_values)  # copy of dictionary
 
-            attrs = elem.attrib
-            if SVG_ATTR_STYLE in attrs:
-                for equate in attrs[SVG_ATTR_STYLE].split(";"):
+            attributes = elem.attrib
+            if SVG_ATTR_STYLE in attributes:
+                for equate in attributes[SVG_ATTR_STYLE].split(";"):
                     equal_item = equate.split(":")
                     if len(equal_item) == 2:
-                        attrs[equal_item[0]] = equal_item[1]
-            if SVG_ATTR_TRANSFORM in attrs:
-                current_transform = values.get(SVG_ATTR_TRANSFORM, "")
-                attrs[SVG_ATTR_TRANSFORM] = current_transform + attrs[SVG_ATTR_TRANSFORM]
+                        attributes[equal_item[0]] = equal_item[1]
+            if SVG_ATTR_TRANSFORM in attributes:
+                new_transform = attributes[SVG_ATTR_TRANSFORM]
+                if SVG_ATTR_TRANSFORM in values:
+                    current_transform = values[SVG_ATTR_TRANSFORM]
+                    attributes[SVG_ATTR_TRANSFORM] = current_transform + " " + new_transform
+                else:
+                    attributes[SVG_ATTR_TRANSFORM] = new_transform
+                # will be used to update values.
 
-            values.update(attrs)
-            tag = elem.tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+            values.update(attributes)
+            tag = elem.tag
+            if tag.startswith('{'):
+                tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
             if SVG_NAME_TAG == tag:
+                if viewport_transform:
+                    new_transform = parse_viewbox_transform(values)
+                    if SVG_ATTR_TRANSFORM in attributes:
+                        values[SVG_ATTR_TRANSFORM] += " " + new_transform
+                    else:
+                        values[SVG_ATTR_TRANSFORM] = new_transform
                 yield values
                 continue
             elif SVG_TAG_GROUP == tag:
@@ -432,11 +571,23 @@ def parse_svg_file(f):
                 values[SVG_ATTR_DATA] = polygon2pathd(values)
             elif SVG_TAG_RECT == tag:
                 values[SVG_ATTR_DATA] = rect2pathd(values)
+            elif SVG_TAG_IMAGE == tag:
+                values[SVG_TAG_IMAGE] = True
+                # Has no pathd data, but yields as element.
+                pass
             else:
                 continue
             values[SVG_ATTR_TAG] = tag
             yield values
-        else:
+        else:  # End event.
+            # The iterparse spec makes it clear that internal text data is undefined except at the end.
+            tag = elem.tag
+            if tag.startswith('{'):
+                tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+            if SVG_TAG_TEXT == tag:
+                values[SVG_ATTR_TAG] = tag
+                values[SVG_TAG_TEXT] = elem.text
+                yield values
             values = stack.pop()
 
 
