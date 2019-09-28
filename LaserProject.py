@@ -274,7 +274,6 @@ class ImageElement(LaserElement):
         LaserElement.__init__(self)
         self.box = [0, 0, image.width, image.height]
         self.image = image
-        mode = self.image.mode
         self.cache = None
         self.cut.update({VARIABLE_NAME_RASTER_STEP: 1,
                          VARIABLE_NAME_SPEED: 100,
@@ -341,6 +340,7 @@ class ImageElement(LaserElement):
             traverse |= X_AXIS
             traverse |= BOTTOM
         width, height = self.image.size
+
         mode = self.image.mode
         if mode == "1":
             image_filter = self.modulate_filter_1_bit
@@ -352,7 +352,7 @@ class ImageElement(LaserElement):
             image_filter = self.modulate_filter_rgb
         else:
             # Other modes we force it to become an RGB.
-            self.image = self.image.convert("RGB")
+            self.image = self.image.convert("RGBA")
             image_filter = self.modulate_filter_rgb
 
         data = self.image.load()

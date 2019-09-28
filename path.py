@@ -9,18 +9,27 @@ try:
 except ImportError:
     tau = pi * 2
 
+"""
+This file is derived from regebro's svg.path project ( https://github.com/regebro/svg.path )
+some of the math is from mathandy's svgpathtools project ( https://github.com/mathandy/svgpathtools ).
+The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"
+( http://members.chello.at/easyfilter/bresenham.html ). They are all MIT Licensed and this library is
+also MIT licensed. In the case of Zingl's work this isn't explicit from his website, however from personal
+correspondence "'Free and open source' means you can do anything with it like the MIT licence."
 
-# This file is derived from regebro's svg.path project ( https://github.com/regebro/svg.path )
-# some of the math is from mathandy's svgpathtools project ( https://github.com/mathandy/svgpathtools ).
-# The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"
-# ( http://members.chello.at/easyfilter/bresenham.html ). They are all MIT Licensed and this library is
-# also MIT licensed. In the case of Zingl's work this isn't explicit from his website, however from personal
-# correspondence "'Free and open source' means you can do anything with it like the MIT licence."
+The goal is to provide svg like path objects and structures. The svg standard 1.1 and elements of 2.0 will
+be used to provide much of the decisions within path objects. Such that if there is a question on
+implementation if the SVG documentation has a methodology it should be used.
+"""
 
 
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
-    For compatibility it accepts complex numbers as x + yj"""
+    For compatibility with regbro svg.path we accept complex numbers as x + yj
+
+    With regard to SGV 7.15.1 defining SVGPoint this class provides for matrix transformations.
+
+    """
 
     def __init__(self, x, y=None):
         if y is None:
@@ -121,6 +130,9 @@ class Point:
             self[1] -= other[1]
         return self
 
+    def matrix_transform(self, matrix):
+        return self * matrix
+
     def distance_to(self, p2):
         return Point.distance(self, p2)
 
@@ -182,86 +194,216 @@ class Point:
         return atan2(p2[1] - p1[1], p2[0] - p1[0])
 
 
-class Matrix:
-    def __init__(self, m=None):
-        if m is None:
-            self.m = self.get_identity()
-        else:
-            self.m = m
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __eq__(self, other):
-        return self.m == other.m
-
-    def __matmul__(self, other):
-        return Matrix(Matrix.matrix_multiply(self.m, other.m))
-
-    def __rmatmul__(self, other):
-        return Matrix(Matrix.matrix_multiply(self.m, other.m))
-
-    def __imatmul__(self, other):
-        self.m = Matrix.matrix_multiply(self.m, other.m)
-
-    def __getitem__(self, item):
-        return self.m[item]
+class Angle(float):
+    """CSS Angle defines as used in SVG"""
 
     def __repr__(self):
-        m = self.m
-        return "Matrix([%3f, %3f, %3f, %3f, %3f, %3f, %3f, %3f, %3f])" % \
-               (m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8])
+        return "Angle(%f)" % self
+
+    @classmethod
+    def parse(cls, angle_string):
+        if not isinstance(angle_string, str):
+            return
+        angle_string = angle_string.lower()
+        if angle_string.endswith('deg'):
+            return Angle.degrees(float(angle_string[:-3]))
+        if angle_string.endswith('rad'):
+            return Angle.radians(float(angle_string[:-3]))
+        if angle_string.endswith('grad'):
+            return Angle.gradians(float(angle_string[:-4]))
+        if angle_string.endswith('turn'):
+            return Angle.turns(float(angle_string[:-4]))
+        return Angle.degrees(float(angle_string))
+
+    @classmethod
+    def radians(cls, radians):
+        return cls(radians)
+
+    @classmethod
+    def degrees(cls, degrees):
+        return cls(tau * degrees / 360.0)
+
+    @classmethod
+    def gradians(cls, gradians):
+        return cls(tau * gradians / 400.0)
+
+    @classmethod
+    def turns(cls, turns):
+        return cls(tau * turns)
+
+    @property
+    def as_radians(self):
+        return self
+
+    @property
+    def as_degrees(self):
+        return self * 360.0 / tau
+
+    @property
+    def as_gradians(self):
+        return self * 400.0 / tau
+
+    @property
+    def as_turns(self):
+        return self / tau
+
+
+class Matrix:
+    """"
+    Provides svg matrix interfacing.
+
+    SVG 7.15.3 defines the matrix form as:
+    [a c  e]
+    [b d  f]
+    """
+
+    def __init__(self, *components):
+        if len(components) == 0:
+            self.a = 1.0
+            self.b = 0.0
+            self.c = 0.0
+            self.d = 1.0
+            self.e = 0.0
+            self.f = 0.0
+        elif len(components) == 1:
+            m = components[0]
+            self.a = m[0]
+            self.b = m[1]
+            self.c = m[2]
+            self.d = m[3]
+            self.e = m[4]
+            self.f = m[5]
+        else:
+            self.a = components[0]
+            self.b = components[1]
+            self.c = components[2]
+            self.d = components[3]
+            self.e = components[4]
+            self.f = components[5]
+
+    def __ne__(self, other):
+        return other is None or \
+               not isinstance(other, Matrix) or \
+               self.a != other.a or self.b != other.b or \
+               self.c != other.c or self.d != other.d or \
+               self.e != other.e or self.f != other.f
+
+    def __eq__(self, other):
+        return not self.__ne__(other)
+
+    def __len__(self):
+        return 6
+
+    def __matmul__(self, other):
+        m = copy(self)
+        m.__imatmul__(other)
+        return m
+
+    def __rmatmul__(self, other):
+        m = copy(other)
+        m.__imatmul__(self)
+        return m
+
+    def __imatmul__(self, other):
+        self.a, self.b, self.c, self.d, self.e, self.f = Matrix.matrix_multiply(self, other)
+        return self
+
+    def __getitem__(self, item):
+        if item == 0:
+            return self.a
+        elif item == 1:
+            return self.b
+        elif item == 2:
+            return self.c
+        elif item == 3:
+            return self.d
+        elif item == 4:
+            return self.e
+        elif item == 5:
+            return self.f
+
+    def __setitem__(self, key, value):
+        if key == 0:
+            self.a = value
+        elif key == 1:
+            self.b = value
+        elif key == 2:
+            self.c = value
+        elif key == 3:
+            self.d = value
+        elif key == 4:
+            self.e = value
+        elif key == 5:
+            self.f = value
+
+    def __repr__(self):
+        return "Matrix(%3f, %3f, %3f, %3f, %3f, %3f)" % \
+               (self.a, self.b, self.c, self.d, self.e, self.f)
 
     def __copy__(self):
-        return Matrix(self.m)
+        return Matrix(self.a, self.b, self.c, self.d, self.e, self.f)
 
     def __str__(self):
-        m = self.m
-        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % \
-               (m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8])
+        """
+        Many of SVG's graphics operations utilize 2x3 matrices of the form:
 
-    def get_matrix(self):
-        return self.m
+        :returns string representation of matrix.
+        """
+        return "[%3f, %3f,\n %3f, %3f,   %3f, %3f]" % \
+               (self.a, self.c, self.b, self.d, self.e, self.f)
 
     def value_trans_x(self):
-        return self[6]
+        return self.e
 
     def value_trans_y(self):
-        return self[7]
+        return self.f
 
     def value_scale_x(self):
-        return self[0]
+        return self.a
 
     def value_scale_y(self):
-        return self[4]
+        return self.d
 
     def value_skew_x(self):
-        return self[1]
+        return self.b
 
     def value_skew_y(self):
-        return self[3]
+        return self.c
 
     def reset(self):
-        self.m = self.get_identity()
+        """Resets matrix to identity."""
+        self.a = 1.0
+        self.b = 0.0
+        self.c = 0.0
+        self.d = 1.0
+
+        self.e = 0.0
+        self.f = 0.0
 
     def inverse(self):
-        m = self.m
-        m48s75 = m[4] * m[8] - m[7] * m[5]
-        m38s56 = m[5] * m[6] - m[3] * m[8]
-        m37s46 = m[3] * m[7] - m[4] * m[6]
-        det = m[0] * m48s75 + m[1] * m38s56 + m[2] * m37s46
+        """
+        [a c e]
+        [b d f]
+        """
+        m48s75 = self.d * 1 - self.f * 0
+        m38s56 = 0 * self.e - self.c * 1
+        m37s46 = self.c * self.f - self.d * self.e
+        det = self.a * m48s75 + self.c * m38s56 + 0 * m37s46
         inverse_det = 1.0 / float(det)
-        self.m = [
-            m48s75 * inverse_det,
-            (m[2] * m[7] - m[1] * m[8]) * inverse_det,
-            (m[1] * m[5] - m[2] * m[4]) * inverse_det,
-            m38s56 * inverse_det,
-            (m[0] * m[8] - m[2] * m[6]) * inverse_det,
-            (m[3] * m[2] - m[0] * m[5]) * inverse_det,
-            m37s46 * inverse_det,
-            (m[6] * m[1] - m[0] * m[7]) * inverse_det,
-            (m[0] * m[4] - m[3] * m[1]) * inverse_det,
-        ]
+
+        self.a = m48s75 * inverse_det
+        self.b = (0 * self.f - self.c * 1) * inverse_det
+        # self.g = (self.c * self.h - self.g * self.d) * inverse_det
+        self.c = m38s56 * inverse_det
+        self.d = (self.a * 1 - 0 * self.e) * inverse_det
+        # self.h = (self.c * self.g - self.a * self.h) * inverse_det
+        self.e = m37s46 * inverse_det
+        self.f = (0 * self.c - self.a * self.f) * inverse_det
+        # self.i = (self.a * self.d - self.c * self.c) * inverse_det
+
+    def post_cat(self, *components):
+        mx = Matrix(*components)
+        self.__imatmul__(mx)
 
     def post_scale(self, sx=1, sy=None, x=0, y=0):
         if sy is None:
@@ -271,219 +413,186 @@ class Matrix:
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.m = self.matrix_multiply(self.m, self.get_scale(sx, sy))
+            self.post_cat(Matrix.scale(sx, sy))
         else:
-            self.post_translate(x, y)
-            self.post_scale(sx, sy)
             self.post_translate(-x, -y)
+            self.post_scale(sx, sy)
+            self.post_translate(x, y)
 
     def post_translate(self, tx, ty):
-        self.m = self.matrix_multiply(self.m, self.get_translate(tx, ty))
+        self.post_cat(Matrix.translate(tx, ty))
 
-    def post_rotate(self, theta, x=0, y=0):
+    def post_rotate(self, radians, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.m = self.matrix_multiply(self.m, self.get_rotate(theta))
+            self.post_cat(Matrix.rotate(radians))  # self %= self.get_rotate(theta)
         else:
-            self.post_translate(x, y)
-            self.post_rotate(theta)
             self.post_translate(-x, -y)
+            self.post_rotate(radians)
+            self.post_translate(x, y)
 
-    post_rotate_rad = post_rotate
-
-    def post_rotate_deg(self, theta, x=0, y=0):
-        self.post_rotate(theta * tau / 360.0, x, y)
-
-    def post_rotate_grad(self, theta, x=0, y=0):
-        self.post_rotate(theta * tau / 400.0, x, y)
-
-    def post_rotate_turn(self, theta, x=0, y=0):
-        self.post_rotate(theta * tau, x, y)
-
-    def post_skew_x(self, theta, x=0, y=0):
+    def post_skew_x(self, radians, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.m = self.matrix_multiply(self.m, self.get_skew_x(theta))
+            self.post_cat(Matrix.skew_x(radians))
         else:
-            self.post_translate(x, y)
-            self.post_skew_x(theta)
             self.post_translate(-x, -y)
+            self.post_skew_x(radians)
+            self.post_translate(x, y)
 
-    post_skew_x_rad = post_skew_x
-
-    def post_skew_x_deg(self, theta, x=0, y=0):
-        self.post_skew_x(theta * tau / 360.0, x, y)
-
-    def post_skew_x_grad(self, theta, x=0, y=0):
-        self.post_skew_x(theta * tau / 400.0, x, y)
-
-    def post_skew_x_turn(self, theta, x=0, y=0):
-        self.post_skew_x(theta * tau, x, y)
-
-    def post_skew_y(self, theta, x=0, y=0):
+    def post_skew_y(self, radians, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.m = self.matrix_multiply(self.m, self.get_skew_y(theta))
+            self.post_cat(Matrix.skew_y(radians))
         else:
-            self.post_translate(x, y)
-            self.post_skew_y(theta)
             self.post_translate(-x, -y)
+            self.post_skew_y(radians)
+            self.post_translate(x, y)
 
-    post_skew_y_rad = post_skew_y
+    def pre_cat(self, *components):
+        mx = Matrix(*components)
+        self.a, self.b, self.c, self.d, self.e, self.f = Matrix.matrix_multiply(mx, self)
 
-    def post_skew_y_deg(self, theta, x=0, y=0):
-        self.post_skew_y(theta * tau / 360.0, x, y)
+    def pre_skew_x(self, radians, x=0, y=0):
+        if x is None:
+            x = 0
+        if y is None:
+            y = 0
+        if x == 0 and y == 0:
+            self.pre_cat(Matrix.skew_x(radians))
+        else:
+            self.pre_translate(x, y)
+            self.pre_skew_x(radians)
+            self.pre_translate(-x, -y)
 
-    def post_skew_y_grad(self, theta, x=0, y=0):
-        self.post_skew_y(theta * tau / 400.0, x, y)
+    def pre_skew_y(self, radians, x=0, y=0):
+        if x is None:
+            x = 0
+        if y is None:
+            y = 0
+        if x == 0 and y == 0:
+            self.pre_cat(Matrix.skew_y(radians))
+        else:
+            self.pre_translate(x, y)
+            self.pre_skew_y(radians)
+            self.pre_translate(-x, -y)
 
-    def post_skew_y_turn(self, theta, x=0, y=0):
-        self.post_skew_y(theta * tau, x, y)
-
-    def post_cat(self, a, b, c, d, e, f):
-        """SVG Matrix:
-        [a c e]
-        [b d f]
-        [0 0 1]
-        """
-        mx = [a, b, 0,
-              c, d, 0,
-              e, f, 1]
-        self.m = self.matrix_multiply(self.m, mx)
-
-    def pre_scale(self, sx=1, sy=None):
+    def pre_scale(self, sx=1, sy=None, x=0, y=0):
         if sy is None:
             sy = sx
-        self.m = self.matrix_multiply(self.get_scale(sx, sy), self.m)
+        if x is None:
+            x = 0
+        if y is None:
+            y = 0
+        if x == 0 and y == 0:
+            self.pre_cat(Matrix.scale(sx, sy))
+        else:
+            self.pre_translate(x, y)
+            self.pre_scale(sx, sy)
+            self.pre_translate(-x, -y)
 
     def pre_translate(self, tx, ty):
-        self.m = self.matrix_multiply(self.get_translate(tx, ty), self.m)
+        self.pre_cat(Matrix.translate(tx, ty))
 
-    def pre_rotate(self, theta):
-        self.m = self.matrix_multiply(self.get_rotate(theta), self.m)
+    def pre_rotate(self, radians, x=0, y=0):
+        if x is None:
+            x = 0
+        if y is None:
+            y = 0
+        if x == 0 and y == 0:
+            self.pre_cat(Matrix.rotate(radians))
+        else:
+            self.pre_translate(x, y)
+            self.pre_rotate(radians)
+            self.pre_translate(-x, -y)
 
-    def pre_cat(self,  a, b, c, d, e, f):
-        mx = [a, b, 0,
-              c, d, 0,
-              e, f, 1]
-        self.m = self.matrix_multiply(mx, self.m)
-
-    def point_in_inverse_space(self, v0, v1=None):
+    def point_in_inverse_space(self, v0):
         inverse = Matrix(self)
         inverse.inverse()
-        return inverse.point_in_matrix_space(v0, v1)
+        return inverse.point_in_matrix_space(v0)
 
-    def point_in_matrix_space(self, v0, v1=None):
-        m = self.m
-        if v1 is None:
-            try:
-                return [
-                    v0[0] * m[0] + v0[1] * m[3] + 1 * m[6],
-                    v0[0] * m[1] + v0[1] * m[4] + 1 * m[7],
-                    v0[2]
-                ]
-            except IndexError:
-                return [
-                    v0[0] * m[0] + v0[1] * m[3] + 1 * m[6],
-                    v0[0] * m[1] + v0[1] * m[4] + 1 * m[7]
-                    # Must not have had a 3rd element.
-                ]
-        return [
-            v0 * m[0] + v1 * m[3] + 1 * m[6],
-            v0 * m[1] + v1 * m[4] + 1 * m[7]
-        ]
+    def point_in_matrix_space(self, v0):
+        return Point(v0[0] * self.a + v0[1] * self.c + 1 * self.e,
+                     v0[0] * self.b + v0[1] * self.d + 1 * self.f)
 
-    def apply(self, v):
-        m = self.m
-        nx = v[0] * m[0] + v[1] * m[3] + 1 * m[6]
-        ny = v[0] * m[1] + v[1] * m[4] + 1 * m[7]
+    def transform_point(self, v):
+        nx = v[0] * self.a + v[1] * self.c + 1 * self.e
+        ny = v[0] * self.b + v[1] * self.d + 1 * self.f
         v[0] = nx
         v[1] = ny
 
     @classmethod
     def scale(cls, sx, sy=None):
-        cls().post_scale(sx, sy)
-        return cls
+        if sy is None:
+            sy = sx
+        return cls(sx, 0,
+                   0, sy, 0, 0)
 
     @classmethod
     def translate(cls, tx, ty):
-        cls().post_translate(tx, ty)
-        return cls
+        """SVG Matrix:
+                [a c e]
+                [b d f]
+                """
+        return cls(1, 0,
+                   0, 1, tx, ty)
 
     @classmethod
     def rotate(cls, angle):
-        cls().post_rotate(angle)
-        return cls
+        ct = cos(angle)
+        st = sin(angle)
+        return cls(ct, st,
+                   -st, ct, 0, 0)
+
+    @classmethod
+    def skew_x(cls, angle):
+        tt = tan(angle)
+        return cls(1, 0,
+                   tt, 1, 0, 0)
+
+    @classmethod
+    def skew_y(cls, angle):
+        tt = tan(angle)
+        return cls(1, tt,
+                   0, 1, 0, 0)
+
+    @classmethod
+    def identity(cls):
+        """
+        1, 0, 0,
+        0, 1, 0,
+        """
+        return cls()
 
     @staticmethod
-    def get_identity():
-        return \
-            1, 0, 0, \
-            0, 1, 0, \
-            0, 0, 1  # identity
+    def matrix_multiply(m, s):
+        """
+        [a c e]      [a c e]   [a b 0]
+        [b d f]   %  [b d f] = [c d 0]
+        [0 0 1]      [0 0 1]   [e f 1]
 
-    @staticmethod
-    def get_scale(sx, sy=None):
-        if sy is None:
-            sy = sx
-        return \
-            sx, 0, 0, \
-            0, sy, 0, \
-            0, 0, 1
+        :param m0: matrix operand
+        :param m1: matrix operand
+        :return: muliplied matrix.
+        """
+        r0 = s.a * m.a + s.c * m.b + s.e * 0, \
+             s.a * m.c + s.c * m.d + s.e * 0, \
+             s.a * m.e + s.c * m.f + s.e * 1
 
-    @staticmethod
-    def get_translate(tx, ty):
-        return \
-            1, 0, 0, \
-            0, 1, 0, \
-            tx, ty, 1
+        r1 = s.b * m.a + s.d * m.b + s.f * 0, \
+             s.b * m.c + s.d * m.d + s.f * 0, \
+             s.b * m.e + s.d * m.f + s.f * 1
 
-    @staticmethod
-    def get_rotate(theta):
-        ct = cos(theta)
-        st = sin(theta)
-        return \
-            ct, st, 0, \
-            -st, ct, 0, \
-            0, 0, 1
-
-    @staticmethod
-    def get_skew_x(theta):
-        tt = tan(theta)
-        return \
-            1, 0, 0, \
-            tt, 1, 0, \
-            0, 0, 1
-
-    @staticmethod
-    def get_skew_y(theta):
-        tt = tan(theta)
-        return \
-            1, tt, 0, \
-            0, 1, 0, \
-            0, 0, 1
-
-    @staticmethod
-    def matrix_multiply(m0, m1):
-        return [
-            m1[0] * m0[0] + m1[1] * m0[3] + m1[2] * m0[6],
-            m1[0] * m0[1] + m1[1] * m0[4] + m1[2] * m0[7],
-            m1[0] * m0[2] + m1[1] * m0[5] + m1[2] * m0[8],
-            m1[3] * m0[0] + m1[4] * m0[3] + m1[5] * m0[6],
-            m1[3] * m0[1] + m1[4] * m0[4] + m1[5] * m0[7],
-            m1[3] * m0[2] + m1[4] * m0[5] + m1[5] * m0[8],
-            m1[6] * m0[0] + m1[7] * m0[3] + m1[8] * m0[6],
-            m1[6] * m0[1] + m1[7] * m0[4] + m1[8] * m0[7],
-            m1[6] * m0[2] + m1[7] * m0[5] + m1[8] * m0[8]]
+        return r0[0], r1[0], r0[1], r1[1], r0[2], r1[2]
 
 
 class Segment:
