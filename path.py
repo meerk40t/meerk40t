@@ -430,9 +430,14 @@ class Matrix:
         if x == 0 and y == 0:
             self.post_cat(Matrix.rotate(radians))  # self %= self.get_rotate(theta)
         else:
-            self.post_translate(-x, -y)
-            self.post_rotate(radians)
-            self.post_translate(x, y)
+            matrix = Matrix()
+            matrix.post_translate(-x, -y)
+            matrix.post_cat(Matrix.rotate(radians))
+            matrix.post_translate(x, y)
+            self.post_cat(matrix)
+            # self.post_translate(-x, -y)
+            # self.post_rotate(radians)
+            # self.post_translate(x, y)
 
     def post_skew_x(self, radians, x=0, y=0):
         if x is None:

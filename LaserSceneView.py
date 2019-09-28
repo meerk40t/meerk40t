@@ -5,6 +5,7 @@
 
 import wx
 
+from LaserProject import PathElement
 from ElementProperty import ElementProperty
 # begin wxGlade: dependencies
 # end wxGlade
@@ -56,6 +57,7 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus()) # Focus follows mouse.
         self.project = None
 
     def set_project(self, project):
@@ -270,6 +272,8 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, convert)
         menu_remove = menu.Append(wx.ID_ANY, "Remove", "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_popup_menu_remove, menu_remove)
+        self.Bind(wx.EVT_MENU, self.on_reify_popup, menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
+        self.Bind(wx.EVT_MENU, self.on_reset_popup, menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
         self.Bind(wx.EVT_MENU, self.on_scale_popup(3.0), menu.Append(wx.ID_ANY, "Scale 300%", "", wx.ITEM_NORMAL))
         self.Bind(wx.EVT_MENU, self.on_scale_popup(2.0), menu.Append(wx.ID_ANY, "Scale 200%", "", wx.ITEM_NORMAL))
         self.Bind(wx.EVT_MENU, self.on_scale_popup(1.5), menu.Append(wx.ID_ANY, "Scale 150%", "", wx.ITEM_NORMAL))
@@ -295,8 +299,17 @@ class LaserSceneView(wx.Panel):
         def specific(event):
             self.project.menu_scale(value, value, self.popup_scene_position)
             self.update_buffer()
-
         return specific
+
+    def on_reify_popup(self, value):
+        for e in self.project.flat_elements(types=(PathElement)):
+            e.reify_matrix()
+        self.update_buffer()
+
+    def on_reset_popup(self, value):
+        for e in self.project.flat_elements():
+            e.matrix.reset()
+        self.update_buffer()
 
     def on_rotate_popup(self, value):
         def specific(event):

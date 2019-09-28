@@ -11,7 +11,7 @@ from PIL import Image
 
 import svg_parser
 from EgvParser import parse_egv
-from LaserProject import LaserProject, ImageElement, PathElement, LaserElement, LaserGroup
+from LaserProject import LaserProject, ImageElement, PathElement, TextElement, LaserElement, LaserGroup
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
 from icons import *
@@ -24,7 +24,10 @@ except ImportError:
 
     tau = pi * 2
 
-MEERK40T_VERSION = "0.1.5"
+MEERK40T_VERSION = "0.1.6"
+MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
+MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
+
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -239,7 +242,6 @@ class MeerK40t(wx.Frame):
 
         self.__set_properties()
         self.__do_layout()
-
         # end wxGlade
 
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
@@ -328,14 +330,25 @@ class MeerK40t(wx.Frame):
         self.tree.refresh_tree_elements()
 
     def load_svg(self, pathname):
-        svg = svg_parser.parse_svg_file(pathname)
+        svg = svg_parser.parse_svg_file(pathname, viewport_transform=True)
         context = self.project
         for element in svg:
+            pe = None
+            if 'text' in element:
+                pe = TextElement(element['text'])
+                if 'x' in element:
+                    pe.matrix.post_translate(float(element['x']), 0)
+                if 'y' in element:
+                    pe.matrix.post_translate(0, float(element['y']))
             if 'd' in element:
-                pathd = element['d']
-                pe = PathElement(pathd)
+                pe = PathElement(element['d'])
+
+            if pe is not None:
                 if 'transform' in element:
+                    # Scale svg_px to meerk40t_px. 1000 px/in / 96 px/in
+                    pe.matrix.pre_scale(1000.0 / 96.0)
                     pe.svg_transform(element['transform'])
+
                 if 'fill' in element:
                     if element['fill'] != "none":
                         pe.cut['fill'] = svg_parser.parse_svg_color(element['fill'])
@@ -526,7 +539,7 @@ class MeerK40t(wx.Frame):
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         import webbrowser
-        webbrowser.open("https://github.com/meerk40t/meerk40t", new=0, autoraise=True)
+        webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
 
 # end of class MeerK40t
@@ -632,7 +645,12 @@ class CutConfiguration(wx.Panel):
         project.close_old_window("jobinfo")
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project, [e for e in project.flat_elements_with_passes()])
+        item = self.element_tree.GetSelection()
+        if item is not None and item.ID is not None and item in self.item_lookup:
+            element = self.item_lookup[item]
+            window.set_project(project, [e for e in project.flat_elements_with_passes(element)])
+        else:
+            window.set_project(project, [e for e in project.flat_elements_with_passes()])
         window.Show()
         project.windows["jobinfo"] = window
 
@@ -768,6 +786,17 @@ class MeerK40tGui(wx.App):
 def handleGUIException(exc_type, exc_value, exc_traceback):
     err_msg = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print(err_msg)
+    try:
+        import datetime
+        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+        print("Saving Log: %s" % filename)
+        with open(filename, "w") as file:
+            file.write("MeerK40t crash log. Version: %s" % MEERK40T_VERSION)
+            file.write("Please report to: %s" % MEERK40T_ISSUES)
+            file.write(err_msg)
+            print(file)
+    except:  # I already crashed once, if there's another here just ignore it.
+        pass
     dlg = wx.MessageDialog(None, err_msg, 'Error encountered', wx.OK | wx.ICON_ERROR)
     dlg.ShowModal()
     dlg.Destroy()

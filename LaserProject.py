@@ -263,10 +263,13 @@ class LaserElement(LaserNode):
         return self.matrix.point_in_inverse_space(position)
 
     def generate(self, m=None):
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_DEFAULT, 0
 
     def move(self, dx, dy):
         self.matrix.post_translate(dx, dy)  # Apply translate after all the other events.
+
+    def svg_transform(self, transform_str):
+        svg_parser.parse_svg_transform(transform_str, self.matrix)
 
 
 class ImageElement(LaserElement):
@@ -369,6 +372,42 @@ class ImageElement(LaserElement):
         yield COMMAND_MODE_DEFAULT, 0
 
 
+class TextElement(LaserElement):
+    def __init__(self, text):
+        LaserElement.__init__(self)
+        self.text = text
+        self.cut.update({VARIABLE_NAME_COLOR: 0x000000, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
+
+    def __str__(self):
+        string = "NOT IMPLEMENTED: \"%s\"" % (self.text)
+        if len(string) < 100:
+            return string
+        return string[:97] + '...'
+
+    def draw(self, dc):
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        dc.DrawText(self.text, self.matrix.value_trans_x(), self.matrix.value_trans_y())
+
+    # def generate(self, m=None):
+    #     if m is None:
+    #         m = self.matrix
+    #     if VARIABLE_NAME_SPEED in self.cut:
+    #         speed = self.cut.get(VARIABLE_NAME_SPEED)
+    #         yield COMMAND_SET_SPEED, speed
+    #     if VARIABLE_NAME_POWER in self.cut:
+    #         power = self.cut.get(VARIABLE_NAME_POWER)
+    #         yield COMMAND_SET_POWER, power
+    #     if VARIABLE_NAME_DRATIO in self.cut:
+    #         d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
+    #         yield COMMAND_SET_D_RATIO, d_ratio
+    #     yield COMMAND_SET_STEP, 0
+    #     yield COMMAND_MODE_COMPACT, 0
+    #     yield COMMAND_MODE_DEFAULT, 0
+    #     yield COMMAND_SET_SPEED, None
+    #     yield COMMAND_SET_D_RATIO, None
+
+
 class PathElement(LaserElement):
     def __init__(self, path_d):
         LaserElement.__init__(self)
@@ -382,6 +421,15 @@ class PathElement(LaserElement):
         if len(string) < 100:
             return string
         return string[:97] + '...'
+
+    def reify_matrix(self):
+        """Apply the matrix to the path and reset matrix."""
+        object_path = path.Path()
+        svg_parser.parse_svg_path(object_path, self.path)
+        object_path *= self.matrix
+        self.path = object_path.d()
+        self.matrix.reset()
+        self.cache = None
 
     def generate(self, m=None):
         if m is None:
@@ -407,10 +455,6 @@ class PathElement(LaserElement):
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, None
         yield COMMAND_SET_D_RATIO, None
-
-    def svg_transform(self, transform_str):
-        svg_parser.parse_svg_transform(transform_str, self.matrix)
-
 
 class RawElement(LaserElement):
     def __init__(self, element):
