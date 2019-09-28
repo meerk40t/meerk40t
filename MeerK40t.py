@@ -791,8 +791,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
         print("Saving Log: %s" % filename)
         with open(filename, "w") as file:
-            file.write("MeerK40t crash log. Version: %s" % MEERK40T_VERSION)
-            file.write("Please report to: %s" % MEERK40T_ISSUES)
+            file.write("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION)
+            file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
     except:  # I already crashed once, if there's another here just ignore it.
