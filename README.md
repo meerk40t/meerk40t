@@ -1,7 +1,7 @@
-# meerk40t
+# MeerK40t
 Laser software for the Stock-LIHUIYU laserboard.
 
-MeerK40t "MeerK" (provisional name) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
 
 
 # Philosophy
