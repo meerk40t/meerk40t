@@ -24,7 +24,7 @@ except ImportError:
 
     tau = pi * 2
 
-MEERK40T_VERSION = "0.1.6"
+MEERK40T_VERSION = "0.1.7"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -77,6 +77,7 @@ ID_MENU_ROTATE_CCW = idinc.new()
 ID_MENU_HFLIP = idinc.new()
 ID_MENU_VFLIP = idinc.new()
 
+ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
@@ -186,6 +187,7 @@ class MeerK40t(wx.Frame):
 
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
+        wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, "Alignment Ally", "")
 
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, "Controller", "")
@@ -218,6 +220,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.transform_mirror_hflip, id=ID_MENU_HFLIP)
         self.Bind(wx.EVT_MENU, self.transform_mirror_vflip, id=ID_MENU_VFLIP)
 
+        self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
@@ -488,6 +491,14 @@ class MeerK40t(wx.Frame):
         window.set_project(project)
         window.Show()
         project.windows["preferences"] = window
+
+    def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("alignment")
+        from Alignment import Alignment
+        window = Alignment(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["alignment"] = window
 
     def open_keymap(self, event):  # wxGlade: MeerK40t.<event_handler>
         project.close_old_window("keymap")

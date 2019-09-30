@@ -431,6 +431,7 @@ class K40Controller:
                         pass
                     if self.usb is not None:
                         break
+                # TODO: will sometimes crash here after failing to actually reclaim USB connection.
                 self.usb.write(0x02, [160], 10000)
                 self.log("Sending original status check.")
             self.status = self.usb.read(0x82, 6, 10000)

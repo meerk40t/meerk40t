@@ -91,8 +91,16 @@ class LaserThread(threading.Thread):
                 if element is None:
                     raise StopIteration
                 self.thread_pause_check()
-                for e in element.generate():
-                    command, values = e
+                try:
+                    gen = element.generate
+                except AttributeError:
+                    gen = element
+                for e in gen():
+                    try:
+                        command, values = e
+                    except TypeError:
+                        command = e
+                        values = 0
                     command_index += 1
                     self.thread_pause_check()
                     self.project("command", command_index)
@@ -192,6 +200,14 @@ class LhymicroWriter:
     def add_queue(self, elements):
         self.queue_lock.acquire()
         self.queue += elements
+        self.queue_lock.release()
+        if self.autostart:
+            self.start_queue_consumer()
+        self.project("spooler", 0)
+
+    def send_job(self, element):
+        self.queue_lock.acquire()
+        self.queue.append(element)
         self.queue_lock.release()
         if self.autostart:
             self.start_queue_consumer()
@@ -518,6 +534,13 @@ class LhymicroWriter:
             self.to_default_mode()
         elif command == COMMAND_MODE_CONCAT:
             self.to_concat_mode()
+        elif command == COMMAND_WAIT:
+            t = values
+            time.sleep(t)
+        elif command == COMMAND_WAIT_BUFFER_EMPTY:
+            if self.thread is not None:
+                while self.thread.buffer_size > 0:
+                    time.sleep(0.05)
 
     def move(self, x, y):
         if self.is_relative:

@@ -1,7 +1,6 @@
 import wx
 
-from LaserProject import PathElement, ImageElement, RawElement, \
-    VARIABLE_NAME_SPEED, VARIABLE_NAME_RASTER_STEP, VARIABLE_NAME_POWER
+from LaserProject import *
 from ThreadConstants import *
 from icons import icons8_connected_50, icons8_play_50
 
@@ -136,8 +135,9 @@ class JobSpooler(wx.Frame):
                             settings += " step=%d" % (e.cut[VARIABLE_NAME_RASTER_STEP])
                     elif isinstance(e, RawElement):
                         self.list_job_spool.SetItem(m, 4, "Raw")
-                    if VARIABLE_NAME_SPEED in e.cut:
-                        self.list_job_spool.SetItem(m, 5, "%.1fmm/s" % (e.cut[VARIABLE_NAME_SPEED]))
+                    if isinstance(e, LaserElement):
+                        if VARIABLE_NAME_SPEED in e.cut:
+                            self.list_job_spool.SetItem(m, 5, "%.1fmm/s" % (e.cut[VARIABLE_NAME_SPEED]))
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, "n/a")
                     self.list_job_spool.SetItem(m, 8, "unknown")

@@ -56,8 +56,6 @@ class Controller(wx.Frame):
 
         self.update_packet_string = False
         self.update_packet_data = False
-        self.update_packet_count = False
-        self.update_rejected_count = False
         self.update_status_data = False
         self.update_buffer_size = False
         self.update_control_state = False
@@ -232,11 +230,6 @@ class Controller(wx.Frame):
             self.last_packet_text.SetValue(str(self.packet_data))
             update = True
 
-        if self.update_packet_count:
-            self.update_packet_count = False
-            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-            self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
-
         if self.update_status_data:
             self.update_status_data = False
             status_data = self.status_data
@@ -253,6 +246,8 @@ class Controller(wx.Frame):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
+            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
             update = True
         if self.update_buffer_size:
             self.update_buffer_size = False
