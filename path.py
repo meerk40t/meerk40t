@@ -2,7 +2,7 @@ from __future__ import division
 
 from collections import MutableSequence
 from copy import copy
-from math import cos, sin, acos, atan2, floor, tan, sqrt, ceil, radians, pi
+from math import *
 
 try:
     from math import tau
@@ -22,23 +22,50 @@ be used to provide much of the decisions within path objects. Such that if there
 implementation if the SVG documentation has a methodology it should be used.
 """
 
+MIN_DEPTH = 5
+ERROR = 1e-12
+
+
+def segment_length(curve, start, end, start_point, end_point, error, min_depth, depth):
+    """Recursively approximates the length by straight lines"""
+    mid = (start + end) / 2
+    mid_point = curve.point(mid)
+    length = abs(end_point - start_point)
+    first_half = abs(mid_point - start_point)
+    second_half = abs(end_point - mid_point)
+
+    length2 = first_half + second_half
+    if (length2 - length > error) or (depth < min_depth):
+        # Calculate the length of each segment:
+        depth += 1
+        return (segment_length(curve, start, mid, start_point, mid_point,
+                               error, min_depth, depth) +
+                segment_length(curve, mid, end, mid_point, end_point,
+                               error, min_depth, depth))
+    # This is accurate enough.
+    return length2
+
 
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
-    For compatibility with regbro svg.path we accept complex numbers as x + yj
+
+    For compatibility with regbro svg.path we accept complex numbers as x + yj,
+    and provide .real and .imag as properties. As well as float and integer values as (v,0) elements.
 
     With regard to SGV 7.15.1 defining SVGPoint this class provides for matrix transformations.
-
     """
 
     def __init__(self, x, y=None):
         if y is None:
-            if isinstance(x, complex):
-                y = x.imag
-                x = x.real
-            else:
+            try:
                 y = x[1]
                 x = x[0]
+            except TypeError:  # not subscriptable, must be a legacy complex
+                if isinstance(x, complex):
+                    y = x.imag
+                    x = x.real
+                else:
+                    y = 0
         self.x = x
         self.y = y
 
@@ -49,11 +76,19 @@ class Point:
         return hash(self.__key())
 
     def __eq__(self, other):
+        a0 = self[0]
+        a1 = self[1]
         if isinstance(other, (Point, list, tuple)):
-            return self[0] == other[0] and self[1] == other[1]
+            b0 = other[0]
+            b1 = other[1]
         elif isinstance(other, complex):
-            return self[0] == other.real and self[1] == other.imag
-        return NotImplemented
+            b0 = other.real
+            b1 = other.imag
+        else:
+            return NotImplemented
+        c0 = abs(a0 - b0) <= ERROR
+        c1 = abs(a1 - b1) <= ERROR
+        return c0 and c1
 
     def __ne__(self, other):
         return not self == other
@@ -75,63 +110,121 @@ class Point:
             raise IndexError
 
     def __repr__(self):
-        return "Point(%f,%f)" % (self.x, self.y)
+        return "Point(%.12f,%.12f)" % (self.x, self.y)
 
     def __copy__(self):
         return Point(self.x, self.y)
 
     def __str__(self):
-        return "(%f,%f)" % (self.x, self.y)
-
-    def __mul__(self, other):
-        if isinstance(other, Matrix):
-            n = copy(self)
-            n *= other
-            return n
-
-    __rmul__ = __mul__
+        return "(%g,%g)" % (self.x, self.y)
 
     def __imul__(self, other):
         if isinstance(other, Matrix):
             v = other.point_in_matrix_space(self)
             self[0] = v[0]
             self[1] = v[1]
+        elif isinstance(other, (int, float)):  # Emulates complex point multiplication by real.
+            self.x *= other
+            self.y *= other
+        else:
+            return NotImplemented
         return self
 
-    def __add__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            x = self[0] + other[0]
-            y = self[1] + other[1]
-            return Point(x, y)
+    def __mul__(self, other):
+        if isinstance(other, (Matrix, int, float)):
+            n = copy(self)
+            n *= other
+            return n
 
-    __radd__ = __add__
+    __rmul__ = __mul__
 
     def __iadd__(self, other):
         if isinstance(other, (Point, tuple, list)):
             self[0] += other[0]
             self[1] += other[1]
+        elif isinstance(other, complex):
+            self[0] += other.real
+            self[1] += other.imag
+        elif isinstance(other, (float, int)):
+            self[0] += other
+        else:
+            return NotImplemented
         return self
 
-    def __rsub__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            x = other[0] - self[0]
-            y = other[1] - self[1]
-            return Point(x, y)
+    def __add__(self, other):
+        if isinstance(other, (Point, tuple, list, complex, int, float)):
+            n = copy(self)
+            n += other
+            return n
 
-    def __sub__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            x = self[0] - other[0]
-            y = self[1] - other[1]
-            return Point(x, y)
+    __radd__ = __add__
 
     def __isub__(self, other):
         if isinstance(other, (Point, tuple, list)):
             self[0] -= other[0]
             self[1] -= other[1]
+        elif isinstance(other, complex):
+            self[0] -= other.real
+            self[1] -= other.imag
+        elif isinstance(other, (float, int)):
+            self[0] -= other
+        else:
+            return NotImplemented
         return self
 
+    def __sub__(self, other):
+        if isinstance(other, (Point, tuple, list, complex, int, float)):
+            n = copy(self)
+            n -= other
+            return n
+
+    def __rsub__(self, other):
+        if isinstance(other, (Point, tuple, list)):
+            x = other[0] - self[0]
+            y = other[1] - self[1]
+        elif isinstance(other, complex):
+            x = other.real - self[0]
+            y = other.imag - self[1]
+        elif isinstance(other, (float, int)):
+            x = other - self[0]
+            y = self[1]
+        else:
+            return NotImplemented
+        return Point(x, y)
+
+    def __abs__(self):
+        return hypot(self.x, self.y)
+
+    def __pow__(self, other):
+        r_raised = abs(self) ** other
+        argz_multiplied = self.argz() * other
+
+        real_part = round(r_raised * cos(argz_multiplied))
+        imag_part = round(r_raised * sin(argz_multiplied))
+        return self.__class__(real_part, imag_part)
+
+    def conjugate(self):
+        return self.__class__(self.real, -self.imag)
+
+    def argz(self):
+        return atan(self.imag / self.real)
+
+    @property
+    def real(self):
+        """Emulate svg.path use of complex numbers"""
+        return self.x
+
+    @property
+    def imag(self):
+        """Emulate svg.path use of complex numbers"""
+        return self.y
+
     def matrix_transform(self, matrix):
-        return self * matrix
+        self *= matrix
+
+    def move_towards(self, p2, amount=1):
+        self.x = amount * (p2[0] - self[0]) + self[0]
+        self.y = amount * (p2[1] - self[1]) + self[1]
 
     def distance_to(self, p2):
         return Point.distance(self, p2)
@@ -178,8 +271,8 @@ class Point:
     @staticmethod
     def distance(p1, p2):
         dx = p1[0] - p2[0]
-        dx *= dx
         dy = p1[1] - p2[1]
+        dx *= dx
         dy *= dy
         return sqrt(dx + dy)
 
@@ -191,7 +284,13 @@ class Point:
 
     @staticmethod
     def angle(p1, p2):
-        return atan2(p2[1] - p1[1], p2[0] - p1[0])
+        return Angle.radians(atan2(p2[1] - p1[1], p2[0] - p1[0]))
+
+    @staticmethod
+    def towards(p1, p2, amount):
+        tx = amount * (p2[0] - p1[0]) + p1[0]
+        ty = amount * (p2[1] - p1[1]) + p1[1]
+        return Point(tx, ty)
 
 
 class Angle(float):
@@ -238,6 +337,13 @@ class Angle(float):
     @property
     def as_degrees(self):
         return self * 360.0 / tau
+
+    @property
+    def as_positive_degrees(self):
+        v = self * 360.0 / tau
+        while v < 0:
+            v += 360.0
+        return v
 
     @property
     def as_gradians(self):
@@ -422,45 +528,42 @@ class Matrix:
     def post_translate(self, tx, ty):
         self.post_cat(Matrix.translate(tx, ty))
 
-    def post_rotate(self, radians, x=0, y=0):
+    def post_rotate(self, angle, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.post_cat(Matrix.rotate(radians))  # self %= self.get_rotate(theta)
+            self.post_cat(Matrix.rotate(angle))  # self %= self.get_rotate(theta)
         else:
             matrix = Matrix()
             matrix.post_translate(-x, -y)
-            matrix.post_cat(Matrix.rotate(radians))
+            matrix.post_cat(Matrix.rotate(angle))
             matrix.post_translate(x, y)
             self.post_cat(matrix)
-            # self.post_translate(-x, -y)
-            # self.post_rotate(radians)
-            # self.post_translate(x, y)
 
-    def post_skew_x(self, radians, x=0, y=0):
+    def post_skew_x(self, angle, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.post_cat(Matrix.skew_x(radians))
+            self.post_cat(Matrix.skew_x(angle))
         else:
             self.post_translate(-x, -y)
-            self.post_skew_x(radians)
+            self.post_skew_x(angle)
             self.post_translate(x, y)
 
-    def post_skew_y(self, radians, x=0, y=0):
+    def post_skew_y(self, angle, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.post_cat(Matrix.skew_y(radians))
+            self.post_cat(Matrix.skew_y(angle))
         else:
             self.post_translate(-x, -y)
-            self.post_skew_y(radians)
+            self.post_skew_y(angle)
             self.post_translate(x, y)
 
     def pre_cat(self, *components):
@@ -508,16 +611,16 @@ class Matrix:
     def pre_translate(self, tx, ty):
         self.pre_cat(Matrix.translate(tx, ty))
 
-    def pre_rotate(self, radians, x=0, y=0):
+    def pre_rotate(self, angle, x=0, y=0):
         if x is None:
             x = 0
         if y is None:
             y = 0
         if x == 0 and y == 0:
-            self.pre_cat(Matrix.rotate(radians))
+            self.pre_cat(Matrix.rotate(angle))
         else:
             self.pre_translate(x, y)
-            self.pre_rotate(radians)
+            self.pre_rotate(angle)
             self.pre_translate(-x, -y)
 
     def point_in_inverse_space(self, v0):
@@ -636,16 +739,42 @@ class Move(Segment):
     with non-drawn sections.
     """
 
-    def __init__(self, start=None, end=None):
+    def __init__(self, *args, **kwargs):
+        """
+        Move commands most importantly go to a place. So if one location is given, that's the end point.
+        If two locations are given then first is the start location.
+
+        Move(p) where p is the End point.
+        Move(s,e) where s is the Start point, e is the End point.
+        Move(p, start=s) where p is End point, s is the Start point.
+        Move(p, end=e) where p is the Start point, e is the End point.
+        Move(start=s, end=e) where s is the Start point, e is the End point.
+        """
         Segment.__init__(self)
-        if start is not None:
-            self.start = Point(start)
-        else:
-            self.start = None
-        if end is not None:
-            self.end = Point(end)
-        else:
-            self.end = None
+        self.end = None
+        self.start = None
+        if len(args) == 0:
+            if 'end' in kwargs:
+                self.end = kwargs['end']
+            if 'start' in kwargs:
+                self.start = kwargs['start']
+        elif len(args) == 1:
+            if len(kwargs) == 0:
+                self.end = args[0]
+            else:
+                if 'end' in kwargs:
+                    self.start = args[0]
+                    self.end = kwargs['end']
+                elif 'start' in kwargs:
+                    self.start = kwargs['start']
+                    self.end = args[0]
+        elif len(args) == 2:
+            self.start = args[0]
+            self.end = args[1]
+        if self.start is not None:
+            self.start = Point(self.start)
+        if self.end is not None:
+            self.end = Point(self.end)
 
     def __imul__(self, other):
         if isinstance(other, Matrix):
@@ -660,9 +789,9 @@ class Move(Segment):
 
     def __repr__(self):
         if self.start is None:
-            return 'Move(end=%s)' % self.end
+            return 'Move(end=%s)' % repr(self.end)
         else:
-            return 'Move(start=%s, end=%s)' % (self.start, self.end)
+            return 'Move(start=%s, end=%s)' % (repr(self.start), repr(self.end))
 
     def __eq__(self, other):
         if not isinstance(other, Move):
@@ -684,6 +813,12 @@ class Move(Segment):
             return self.end
         else:
             raise IndexError
+
+    def point(self, pos):
+        return self.start
+
+    def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        return 0
 
     def plot(self):
         if self.start is not None:
@@ -738,7 +873,13 @@ class Close(Segment):
     def __repr__(self):
         if self.start is None and self.end is None:
             return 'Close()'
-        return 'Close(start=%s, end=%s)' % (self.start, self.end)
+        s = self.start
+        if s is not None:
+            s = repr(s)
+        e = self.end
+        if e is not None:
+            e = repr(e)
+        return 'Close(start=%s, end=%s)' % (s,e)
 
     def __eq__(self, other):
         if not isinstance(other, Close):
@@ -773,7 +914,7 @@ class Close(Segment):
         """returns the bounding box for the segment in the form
         (xmin, ymin, ymax, ymax)."""
         if self.start is None and self.end is None:
-            return None
+            return None  # TODO: needs to know what it's closing to provide bbox.
         return self.start[0], self.start[1], self.end[0], self.end[1]
 
 
@@ -784,7 +925,7 @@ class Line(Segment):
         self.end = Point(end)
 
     def __repr__(self):
-        return 'Line(start=%s, end=%s)' % (self.start, self.end)
+        return 'Line(start=%s, end=%s)' % (repr(self.start), repr(self.end))
 
     def __eq__(self, other):
         if not isinstance(other, Line):
@@ -812,6 +953,12 @@ class Line(Segment):
             return self.end
         else:
             raise IndexError
+
+    def point(self, pos):
+        return Point.towards(self.start, self.end, pos)
+
+    def length(self, error=None, min_depth=None):
+        return Point.distance(self.end, self.start)
 
     def reverse(self):
         return Line(self.end, self.start)
@@ -873,7 +1020,7 @@ class QuadraticBezier(Segment):
 
     def __repr__(self):
         return 'QuadraticBezier(start=%s, control=%s, end=%s)' % (
-            self.start, self.control, self.end)
+            repr(self.start), repr(self.control), repr(self.end))
 
     def __eq__(self, other):
         if not isinstance(other, QuadraticBezier):
@@ -904,6 +1051,46 @@ class QuadraticBezier(Segment):
         elif item == 2:
             return self.end
         raise IndexError
+
+    def point(self, t):
+        """Calculate the x,y position at a certain position of the path"""
+        x0, y0 = self.start
+        x1, y1 = self.control
+        x2, y2 = self.end
+        x = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * x1 + t * t * x2
+        y = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * y1 + t * t * y2
+        return Point(x, y)
+
+    def length(self, error=None, min_depth=None):
+        """Calculate the length of the path up to a certain position"""
+        a = self.start - 2 * self.control + self.end
+        b = 2 * (self.control - self.start)
+        a_dot_b = a.real * b.real + a.imag * b.imag
+
+        if abs(a) < 1e-12:
+            s = abs(b)
+        elif abs(a_dot_b + abs(a) * abs(b)) < 1e-12:
+            k = abs(b) / abs(a)
+            if k >= 2:
+                s = abs(b) - abs(a)
+            else:
+                s = abs(a) * (k ** 2 / 2 - k + 1)
+        else:
+            # For an explanation of this case, see
+            # http://www.malczak.info/blog/quadratic-bezier-curve-length/
+            A = 4 * (a.real ** 2 + a.imag ** 2)
+            B = 4 * (a.real * b.real + a.imag * b.imag)
+            C = b.real ** 2 + b.imag ** 2
+
+            Sabc = 2 * sqrt(A + B + C)
+            A2 = sqrt(A)
+            A32 = 2 * A * A2
+            C2 = 2 * sqrt(C)
+            BA = B / A2
+
+            s = (A32 * Sabc + A2 * B * (Sabc - C2) + (4 * C * A - B ** 2) *
+                 log((2 * A2 + BA + Sabc) / (BA + C2))) / (4 * A32)
+        return s
 
     def reverse(self):
         return QuadraticBezier(self.end, self.control, self.start)
@@ -1077,7 +1264,7 @@ class CubicBezier(Segment):
 
     def __repr__(self):
         return 'CubicBezier(start=%s, control1=%s, control2=%s, end=%s)' % (
-            self.start, self.control1, self.control2, self.end)
+            repr(self.start), repr(self.control1), repr(self.control2), repr(self.end))
 
     def __eq__(self, other):
         if not isinstance(other, CubicBezier):
@@ -1112,6 +1299,24 @@ class CubicBezier(Segment):
             return self.end
         else:
             raise IndexError
+
+    def point(self, t):
+        """Calculate the x,y position at a certain position of the path"""
+        x0, y0 = self.start
+        x1, y1 = self.control1
+        x2, y2 = self.control2
+        x3, y3 = self.end
+        x = (1 - t) * (1 - t) * (1 - t) * x0 + 3 * (1 - t) * (1 - t) * t * x1 + 3 * (
+                1 - t) * t * t * x2 + t * t * t * x3
+        y = (1 - t) * (1 - t) * (1 - t) * y0 + 3 * (1 - t) * (1 - t) * t * y1 + 3 * (
+                1 - t) * t * t * y2 + t * t * t * y3
+        return Point(x, y)
+
+    def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        """Calculate the length of the path up to a certain position"""
+        start_point = self.point(0)
+        end_point = self.point(1)
+        return segment_length(self, 0, 1, start_point, end_point, error, min_depth, 0)
 
     def reverse(self):
         return CubicBezier(self.end, self.control2, self.control1, self.start)
@@ -1406,15 +1611,17 @@ class Arc(Segment):
         start, rx, ry, rotation, arc_flag, sweep_flag, end.
 
         To do matrix transitions, the native parameterization is start, end, center, prx, pry, sweep
+
         'start, end, center, prx, pry' are points and sweep amount is a value in tau radians.
-        If points are modified by an affine transformation, the arc is thusly transformed.
+        If points are modified by an affine transformation, the arc is transformed.
+        There is a special case for when the scale factor inverts, it inverts the sweep.
 
         prx is the point at angle 0 of the non-rotated ellipse.
         pry is the point at angle tau/4 of the non-rotated ellipse.
         The theta-rotation can be defined as the angle from center to prx
 
         The sweep angle can be a value greater than tau and less than -tau.
-        However if this is the case the Path.d() is expected to fail.
+        However if this is the case conversion back to Path.d() is expected to fail.
 
         prx -> center -> pry should form a right triangle.
         angle(center,end) - angle(center, start) should equal sweep or mod thereof.
@@ -1428,9 +1635,15 @@ class Arc(Segment):
         self.prx = None
         self.pry = None
         self.sweep = None
-        if len(args) == 7:
+        if len(args) == 6 and isinstance(args[1], complex):
+            self.svg_complex_parameterize(*args)
+            return
+        elif len(kwargs) == 6 and 'rotation' in kwargs:
+            self.svg_complex_parameterize(**kwargs)
+            return
+        elif len(args) == 7:
             # This is an svg parameterized call.
-            # A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+            # A: rx ry x-axis-rotation large-arc-flag sweep-flag x y
             self.svg_parameterize(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
             return
         len_args = len(args)
@@ -1485,12 +1698,12 @@ class Arc(Segment):
                         self.pry = [self.center[0], self.center[1] + ry]
             if self.start is not None and (self.prx is None or self.pry is None):
                 radius_s = Point.distance(self.center, self.start)
-                self.prx = [self.center[0] + radius_s, self.center[1]]
-                self.pry = [self.center[0], self.center[1] + radius_s]
+                self.prx = Point(self.center[0] + radius_s, self.center[1])
+                self.pry = Point(self.center[0], self.center[1] + radius_s)
             if self.end is not None and (self.prx is None or self.pry is None):
                 radius_e = Point.distance(self.center, self.end)
-                self.prx = [self.center[0] + radius_e, self.center[1]]
-                self.pry = [self.center[0], self.center[1] + radius_e]
+                self.prx = Point(self.center[0] + radius_e, self.center[1])
+                self.pry = Point(self.center[0], self.center[1] + radius_e)
             if self.sweep is None and self.start is not None and self.end is not None:
                 start_angle = Point.angle(self.center, self.start)
                 end_angle = Point.angle(self.center, self.end)
@@ -1510,7 +1723,7 @@ class Arc(Segment):
 
     def __repr__(self):
         return 'Arc(%s, %s, %s, %s, %s, %s)' % (
-            self.start, self.end, self.center, self.prx, self.pry, self.sweep)
+            repr(self.start), repr(self.end), repr(self.center), repr(self.prx), repr(self.pry), self.sweep)
 
     def __eq__(self, other):
         if not isinstance(other, Arc):
@@ -1556,20 +1769,76 @@ class Arc(Segment):
             return self.pry
         raise IndexError
 
+    @property
+    def theta(self):
+        """legacy property"""
+        return self.get_start_angle().as_positive_degrees
+
+    @property
+    def delta(self):
+        """legacy property"""
+        return Angle.radians(self.sweep).as_degrees
+
+    def point_at_angle(self, angle):
+        rotation = self.get_rotation()
+        cosr = cos(rotation)
+        sinr = sin(rotation)
+        cos_angle = cos(angle)
+        sin_angle = sin(angle)
+        rx = self.rx
+        ry = self.ry
+        x = (cosr * cos_angle * rx - sinr * sin_angle * ry + self.center[0])
+        y = (sinr * cos_angle * rx + cosr * sin_angle * ry + self.center[1])
+        return Point(x, y)
+
+    def point(self, t):
+        if self.start == self.end and self.sweep == 0:
+            # This is equivalent of omitting the segment
+            return self.start
+        angle = self.get_start_angle() + self.get_rotation() + self.sweep * t
+        return self.point_at_angle(angle)
+
+    def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        """The length of an elliptical arc segment requires numerical
+        integration, and in that case it's simpler to just do a geometric
+        approximation, as for cubic bezier curves.
+        """
+        if self.start == self.end and self.sweep == 0:
+            # This is equivalent of omitting the segment
+            return 0
+        start_point = self.point(0)
+        end_point = self.point(1)
+        return segment_length(self, 0, 1, start_point, end_point, error, min_depth, 0)
+
     def reverse(self):
         return Arc(self.end, self.start, self.center, self.prx, self.pry, -self.sweep)
 
-    def svg_parameterize(self, start, rx, ry, rotation_degrees, large_arc_flag, sweep_flag, end):
-        """Conversion from endpoint to center parameterization
-        http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes """
-        rotation_radians = radians(rotation_degrees)
-        large_arc_flag = bool(large_arc_flag)
-        sweep_flag = bool(sweep_flag)
+    def svg_complex_parameterize(self, start, radius, rotation, arc, sweep, end):
+        """Parameterization with complex radius and having rotation factors."""
+        self.svg_parameterize(Point(start), radius.real, radius.imag, rotation, bool(arc), bool(sweep), Point(end))
 
-        cosr = cos(rotation_radians)
-        sinr = sin(rotation_radians)
-        dx = (start[0] - end[0]) / 2.0
-        dy = (start[1] - end[1]) / 2.0
+    def svg_parameterize(self, start, i_rx, i_ry, rotation, large_arc_flag, sweep_flag, end):
+        """Conversion from svg parameterization, our chosen native native form.
+        http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes """
+
+        start = Point(start)
+        self.start = start
+        end = Point(end)
+        self.end = end
+        if start == end:
+            # If start is equal to end, there are infinite number of circles so these void out.
+            # We still permit this kind of arc, but SVG parameterization cannot be used to achieve it.
+            self.sweep = 0
+            self.prx = Point(start)
+            self.pry = Point(start)
+            self.center = Point(start)
+            return
+        rx = i_rx
+        ry = i_ry
+        cosr = cos(radians(rotation))
+        sinr = sin(radians(rotation))
+        dx = (start.real - end.real) / 2
+        dy = (start.imag - end.imag) / 2
         x1prim = cosr * dx + sinr * dy
         x1prim_sq = x1prim * x1prim
         y1prim = -sinr * dx + cosr * dy
@@ -1585,21 +1854,20 @@ class Arc(Segment):
             ry *= sqrt(radius_check)
             rx_sq = rx * rx
             ry_sq = ry * ry
+
         t1 = rx_sq * y1prim_sq
         t2 = ry_sq * x1prim_sq
-
-        try:
-            c = sqrt(abs((rx_sq * ry_sq - t1 - t2) / (t1 + t2)))
-        except ZeroDivisionError:
-            c = 0
+        c = sqrt(abs((rx_sq * ry_sq - t1 - t2) / (t1 + t2)))
 
         if large_arc_flag == sweep_flag:
             c = -c
         cxprim = c * rx * y1prim / ry
         cyprim = -c * ry * x1prim / rx
 
-        center = [(cosr * cxprim - sinr * cyprim) + ((start[0] + end[0]) / 2),
-                  (sinr * cxprim + cosr * cyprim) + ((start[1] + end[1]) / 2)]
+        center = Point((cosr * cxprim - sinr * cyprim) +
+                              ((start.real + end.real) / 2),
+                              (sinr * cxprim + cosr * cyprim) +
+                              ((start.imag + end.imag) / 2))
 
         ux = (x1prim - cxprim) / rx
         uy = (y1prim - cyprim) / ry
@@ -1607,37 +1875,38 @@ class Arc(Segment):
         vy = (-y1prim - cyprim) / ry
         n = sqrt(ux * ux + uy * uy)
         p = ux
-        try:
-            theta_radians = acos(p / n)
-        except ZeroDivisionError:
-            theta_radians = 0
+        theta = degrees(acos(p / n))
         if uy < 0:
-            theta_radians = -theta_radians
-        theta_radians = theta_radians % tau
+            theta = -theta
+        theta = theta % 360
 
         n = sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
         p = ux * vx + uy * vy
-        try:
-            d = p / n
-        except ZeroDivisionError:
-            d = 0
+        d = p / n
         # In certain cases the above calculation can through inaccuracies
         # become just slightly out of range, f ex -1.0000000000000002.
         if d > 1.0:
             d = 1.0
         elif d < -1.0:
             d = -1.0
-        delta_radians = acos(d)
+        delta = degrees(acos(d))
         if (ux * vy - uy * vx) < 0:
-            delta_radians = -delta_radians
-        self.sweep = delta_radians % tau
-        if not sweep_flag:
-            self.sweep -= tau
-        self.start = Point(start)
-        self.prx = Point.polar(center, rotation_radians, rx)
-        self.pry = Point.polar(center, rotation_radians + tau / 4.0, ry)
-        self.center = Point(center)
-        self.end = Point(end)
+            delta = -delta
+        delta = delta % 360
+        if not self.sweep:
+            delta -= 360
+        # built parameters, delta, theta, center
+
+        rotate_matrix = Matrix()
+        rotate_matrix.post_rotate(Angle(rotation).as_radians, center[0], center[1])
+
+        self.center = center
+        self.prx = Point(center[0] + i_rx, center[1])
+        self.pry = Point(center[0], center[1] + i_ry)
+
+        self.prx.matrix_transform(rotate_matrix)
+        self.pry.matrix_transform(rotate_matrix)
+        self.sweep = Angle(delta).as_radians
 
     def as_cubic_curves(self):
         sweep_limit = tau / 12
@@ -1646,8 +1915,8 @@ class Arc(Segment):
 
         start_angle = self.get_start_angle()
         theta = self.get_rotation()
-        rx = self.get_radius_x()
-        ry = self.get_radius_y()
+        rx = self.rx
+        ry = self.ry
         p_start = self.start
         current_angle = start_angle - theta
         x0 = self.center[0]
@@ -1686,17 +1955,24 @@ class Arc(Segment):
             current_angle = next_angle
 
     def is_circular(self):
-        a = self.get_radius_x()
-        b = self.get_radius_y()
+        a = self.rx
+        b = self.ry
         return a == b
 
-    def get_radius(self):
-        return self.get_radius_x()
+    @property
+    def radius(self):
+        """Legacy complex radius property
 
-    def get_radius_x(self):
+        Point will work like a complex for legacy reasons.
+        """
+        return Point(self.rx, self.ry)
+
+    @property
+    def rx(self):
         return Point.distance(self.center, self.prx)
 
-    def get_radius_y(self):
+    @property
+    def ry(self):
         return Point.distance(self.center, self.pry)
 
     def get_rotation(self):
@@ -2042,6 +2318,38 @@ class Path(MutableSequence):
         end_pos = self.z_point
         self.append(Close(start_pos, end_pos))
 
+    def _calc_lengths(self, error=ERROR, min_depth=MIN_DEPTH):
+        if self._length is not None:
+            return
+
+        lengths = [each.length(error=error, min_depth=min_depth) for each in self._segments]
+        self._length = sum(lengths)
+        self._lengths = [each / self._length for each in lengths]
+
+    def point(self, pos, error=ERROR):
+        # Shortcuts
+        if pos == 0.0:
+            return self._segments[0].point(pos)
+        if pos == 1.0:
+            return self._segments[-1].point(pos)
+
+        self._calc_lengths(error=error)
+        # Find which segment the point we search for is located on:
+        segment_start = 0
+        for index, segment in enumerate(self._segments):
+            segment_end = segment_start + self._lengths[index]
+            if segment_end >= pos:
+                # This is the segment! How far in on the segment is the point?
+                segment_pos = (pos - segment_start) / (segment_end - segment_start)
+                break
+            segment_start = segment_end
+
+        return segment.point(segment_pos)
+
+    def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        self._calc_lengths(error, min_depth)
+        return self._length
+
     def plot(self):
         for segment in self._segments:
             for e in segment.plot():
@@ -2129,7 +2437,7 @@ class Path(MutableSequence):
 
             elif isinstance(segment, Arc):
                 parts.append('A {0:G},{1:G} {2:G} {3:d},{4:d} {5:G},{6:G}'.format(
-                    segment.get_radius_x(), segment.get_radius_y(), segment.get_rotation(),
+                    segment.rx, segment.ry, segment.get_rotation().as_degrees,
                     int(abs(segment.sweep) > (tau / 2.0)), int(segment.sweep >= 0),
                     segment.end[0], segment.end[1])
                 )
