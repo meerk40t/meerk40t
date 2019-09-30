@@ -16,6 +16,8 @@ COMMAND_CUT_QUAD = 23  # From current position. At speed, performs a quadratic b
 COMMAND_CUT_CUBIC = 24  # From current position. At speed, performs a cubic bezier cut
 COMMAND_HSTEP = 30  # Causes horizontal raster step
 COMMAND_VSTEP = 40  # Causes a vertical raster step
+COMMAND_WAIT = 50  # Pauses the given time in seconds. (floats accepted).
+COMMAND_WAIT_BUFFER_EMPTY = 51  # WAIT until the buffer is empty or below 1 sendable packet.
 
 COMMAND_PLOT = 100
 COMMAND_RASTER = 101
