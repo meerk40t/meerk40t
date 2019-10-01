@@ -387,7 +387,8 @@ class TextElement(LaserElement):
     def draw(self, dc):
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        dc.DrawText(self.text, self.matrix.value_trans_x(), self.matrix.value_trans_y())
+        if self.text is not None:
+            dc.DrawText(self.text, self.matrix.value_trans_x(), self.matrix.value_trans_y())
 
     # def generate(self, m=None):
     #     if m is None:
