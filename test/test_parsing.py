@@ -176,3 +176,10 @@ class TestParser(unittest.TestCase):
 
         path = parse_path("M10.236,100.184")
         self.assertEqual(path.d(), 'M 10.236,100.184')
+
+    def test_issue_47(self):
+        arc_path_declared = Path(Move(0 + 25j), Arc(0 + 25j, 25 + 25j, 0.0, 0, 0, 0 - 25j))
+        arc_path_parsed = parse_path('M 0 25 A25,25 0.0 0 0 0,-25')
+        arc_path_parsed_scaled = parse_path('M 0 25 A1,1 0.0 0 0 0,-25')
+        self.assertEqual(arc_path_declared, arc_path_parsed)
+        self.assertEqual(arc_path_parsed_scaled, arc_path_declared)

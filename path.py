@@ -25,6 +25,8 @@ implementation if the SVG documentation has a methodology it should be used.
 MIN_DEPTH = 5
 ERROR = 1e-12
 
+max_depth = 0
+
 
 def segment_length(curve, start, end, start_point, end_point, error, min_depth, depth):
     """Recursively approximates the length by straight lines"""
@@ -879,7 +881,7 @@ class Close(Segment):
         e = self.end
         if e is not None:
             e = repr(e)
-        return 'Close(start=%s, end=%s)' % (s,e)
+        return 'Close(start=%s, end=%s)' % (s, e)
 
     def __eq__(self, other):
         if not isinstance(other, Close):
@@ -962,6 +964,26 @@ class Line(Segment):
 
     def reverse(self):
         return Line(self.end, self.start)
+
+    def closest_segment_point(self, p, respect_bounds=True):
+        """ Gives the t value of the point on the line closest to the given point. """
+        a = self.start
+        b = self.end
+        vAPx = p[0] - a[0]
+        vAPy = p[1] - a[1]
+        vABx = b[0] - a[0]
+        vABy = b[1] - a[1]
+        sqDistanceAB = vABx * vABx + vABy * vABy
+        ABAPproduct = vABx * vAPx + vABy * vAPy
+        if sqDistanceAB == 0:
+            return 0  # Line is point.
+        amount = ABAPproduct / sqDistanceAB
+        if respect_bounds:
+            if amount > 1:
+                amount = 1
+            if amount < 0:
+                amount = 0
+        return self.point(amount)
 
     def bbox(self):
         """returns the bounding box for the segment.
@@ -1646,6 +1668,13 @@ class Arc(Segment):
             # A: rx ry x-axis-rotation large-arc-flag sweep-flag x y
             self.svg_parameterize(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
             return
+        # TODO: account for L, T, R, B, startAngle, endAngle, theta parameters.
+        # cx = (left + right) / 2
+        # cy = (top + bottom) / 2
+        #
+        # rx = (right - left) / 2
+        # cy = (bottom - top) / 2
+        # startAngle, endAngle, theta
         len_args = len(args)
         if len_args > 0:
             self.start = Point(args[0])
@@ -1779,23 +1808,23 @@ class Arc(Segment):
         """legacy property"""
         return Angle.radians(self.sweep).as_degrees
 
-    def point_at_angle(self, angle):
+    def point_at_angle(self, t):
         rotation = self.get_rotation()
-        cosr = cos(rotation)
-        sinr = sin(rotation)
-        cos_angle = cos(angle)
-        sin_angle = sin(angle)
+        cos_theta_rotation = cos(rotation)
+        sin_theta_rotation = sin(rotation)
+        cos_angle = cos(t)
+        sin_angle = sin(t)
         rx = self.rx
         ry = self.ry
-        x = (cosr * cos_angle * rx - sinr * sin_angle * ry + self.center[0])
-        y = (sinr * cos_angle * rx + cosr * sin_angle * ry + self.center[1])
+        x = (cos_theta_rotation * cos_angle * rx - sin_theta_rotation * sin_angle * ry + self.center[0])
+        y = (sin_theta_rotation * cos_angle * rx + cos_theta_rotation * sin_angle * ry + self.center[1])
         return Point(x, y)
 
     def point(self, t):
         if self.start == self.end and self.sweep == 0:
             # This is equivalent of omitting the segment
             return self.start
-        angle = self.get_start_angle() + self.get_rotation() + self.sweep * t
+        angle = self.get_start_angle() - self.get_rotation() + self.sweep * t
         return self.point_at_angle(angle)
 
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
@@ -1817,7 +1846,7 @@ class Arc(Segment):
         """Parameterization with complex radius and having rotation factors."""
         self.svg_parameterize(Point(start), radius.real, radius.imag, rotation, bool(arc), bool(sweep), Point(end))
 
-    def svg_parameterize(self, start, i_rx, i_ry, rotation, large_arc_flag, sweep_flag, end):
+    def svg_parameterize(self, start, rx, ry, rotation, large_arc_flag, sweep_flag, end):
         """Conversion from svg parameterization, our chosen native native form.
         http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes """
 
@@ -1833,8 +1862,6 @@ class Arc(Segment):
             self.pry = Point(start)
             self.center = Point(start)
             return
-        rx = i_rx
-        ry = i_ry
         cosr = cos(radians(rotation))
         sinr = sin(radians(rotation))
         dx = (start.real - end.real) / 2
@@ -1865,9 +1892,9 @@ class Arc(Segment):
         cyprim = -c * ry * x1prim / rx
 
         center = Point((cosr * cxprim - sinr * cyprim) +
-                              ((start.real + end.real) / 2),
-                              (sinr * cxprim + cosr * cyprim) +
-                              ((start.imag + end.imag) / 2))
+                       ((start.real + end.real) / 2),
+                       (sinr * cxprim + cosr * cyprim) +
+                       ((start.imag + end.imag) / 2))
 
         ux = (x1prim - cxprim) / rx
         uy = (y1prim - cyprim) / ry
@@ -1893,20 +1920,20 @@ class Arc(Segment):
         if (ux * vy - uy * vx) < 0:
             delta = -delta
         delta = delta % 360
-        if not self.sweep:
+        if not sweep_flag:
             delta -= 360
         # built parameters, delta, theta, center
 
         rotate_matrix = Matrix()
-        rotate_matrix.post_rotate(Angle(rotation).as_radians, center[0], center[1])
+        rotate_matrix.post_rotate(Angle.degrees(rotation).as_radians, center[0], center[1])
 
         self.center = center
-        self.prx = Point(center[0] + i_rx, center[1])
-        self.pry = Point(center[0], center[1] + i_ry)
+        self.prx = Point(center[0] + rx, center[1])
+        self.pry = Point(center[0], center[1] + ry)
 
         self.prx.matrix_transform(rotate_matrix)
         self.pry.matrix_transform(rotate_matrix)
-        self.sweep = Angle(delta).as_radians
+        self.sweep = Angle.degrees(delta).as_radians
 
     def as_cubic_curves(self):
         sweep_limit = tau / 12

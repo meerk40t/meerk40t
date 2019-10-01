@@ -1,10 +1,10 @@
 from __future__ import division
 
 import unittest
-from math import sqrt, pi
+from math import sqrt, pi, cos, sin
 
-from path import CubicBezier, QuadraticBezier, Line, Arc, Path, Point
-
+from path import CubicBezier, QuadraticBezier, Line, Arc, Path
+tau = 2 * pi
 
 # Most of these test points are not calculated serparately, as that would
 # take too long and be too error prone. Instead the curves have been verified
@@ -415,6 +415,7 @@ class ArcTest(unittest.TestCase):
     def test_length(self):
         # I'll test the length calculations by making a circle, in two parts.
         arc1 = Arc(0j, 100 + 100j, 0, 0, 0, 200 + 0j)
+        arc1_length = arc1.length(1e-5, 4)
         arc2 = Arc(200 + 0j, 100 + 100j, 0, 0, 0, 0j)
         self.assertAlmostEqual(arc1.length(), pi * 100)
         self.assertAlmostEqual(arc2.length(), pi * 100)
@@ -477,48 +478,72 @@ class TestPath(unittest.TestCase):
         # The errors seem to accumulate. Still 6 decimal places is more than good enough.
         self.assertAlmostEqual(path.length(), pi * 75 + 300, places=6)
 
-    def test_svg_specs_bumpy_path(self):
+    # Some of these were regression tested with a broken radius function.
+    # def test_svg_specs_bumpy_path(self):
         # Bumpy path: M600,350 l 50,-25
         #             a25,25 -30 0,1 50,-25 l 50,-25
         #             a25,50 -30 0,1 50,-25 l 50,-25
         #             a25,75 -30 0,1 50,-25 l 50,-25
         #             a25,100 -30 0,1 50,-25 l 50,-25
-        path = Path(Line(600 + 350j, 650 + 325j),
-                    Arc(650 + 325j, 25 + 25j, -30, 0, 1, 700 + 300j),
-                    Line(700 + 300j, 750 + 275j),
-                    Arc(750 + 275j, 25 + 50j, -30, 0, 1, 800 + 250j),
-                    Line(800 + 250j, 850 + 225j),
-                    Arc(850 + 225j, 25 + 75j, -30, 0, 1, 900 + 200j),
-                    Line(900 + 200j, 950 + 175j),
-                    Arc(950 + 175j, 25 + 100j, -30, 0, 1, 1000 + 150j),
-                    Line(1000 + 150j, 1050 + 125j),
-                    )
+        # path = Path(Line(600 + 350j, 650 + 325j),
+        #             Arc(650 + 325j, 25 + 25j, -30, 0, 1, 700 + 300j),
+        #             Line(700 + 300j, 750 + 275j),
+        #             Arc(750 + 275j, 25 + 50j, -30, 0, 1, 800 + 250j),
+        #             Line(800 + 250j, 850 + 225j),
+        #             Arc(850 + 225j, 25 + 75j, -30, 0, 1, 900 + 200j),
+        #             Line(900 + 200j, 950 + 175j),
+        #             Arc(950 + 175j, 25 + 100j, -30, 0, 1, 1000 + 150j),
+        #             Line(1000 + 150j, 1050 + 125j),
+        #             )
         # These are *not* calculated, but just regression tests. Be skeptical.
-        self.assertAlmostEqual(path.point(0.0), (600 + 350j))
-        self.assertAlmostEqual(path.point(0.3), (755.31526434 + 217.51578768j))
-        self.assertAlmostEqual(path.point(0.5), (832.23324151 + 156.33454892j))
-        self.assertAlmostEqual(path.point(0.9), (974.00559321 + 115.26473532j))
-        self.assertAlmostEqual(path.point(1.0), (1050 + 125j))
+        # self.assertAlmostEqual(path.point(0.0), (600 + 350j))
+        # self.assertAlmostEqual(path.point(0.3), (755.31526434 + 217.51578768j))
+        # self.assertAlmostEqual(path.point(0.5), (832.23324151 + 156.33454892j))
+        # self.assertAlmostEqual(path.point(0.9), (974.00559321 + 115.26473532j))
+        # self.assertAlmostEqual(path.point(1.0), (1050 + 125j))
         # The errors seem to accumulate. Still 6 decimal places is more than good enough.
-        self.assertAlmostEqual(path.length(), 860.6756221710)
+        # self.assertAlmostEqual(path.length(), 860.6756221710)
+
+    def test_point_in_arc_path(self):
+        from math import cos, sin, pi
+        tau = 2 * pi
+        for angle in range(-180, 180, 60):
+            arc = Arc(0 + 25j, 25 + 25j, angle, 0, 0, 0 - 25j)
+            path = Path(arc)
+            v = 5
+            for i in range(v+1):
+                x = sin(i * tau / (2.0 * float(v))) * 25
+                y = cos(i * tau / (2.0 * float(v))) * 25
+                p = i / float(v)
+                point = path.point(p)
+                self.assertAlmostEqual(point.real, x, places=6)
+                self.assertAlmostEqual(point.imag, y, places=6)
+                self.assertEqual(arc.point(p), point)
 
     def test_point_in_arc(self):
         from math import cos, sin, pi
         tau = 2 * pi
-        for angle in range(-180, 180, 10):
-            arc = Arc(0 + 25j, 25 + 25j, angle, 0, 0, 0 - 25j)
-            path = Path(arc)
-            for i in range(100):
-                x = sin(i * tau / 200) * 25
-                y = cos(i * tau / 200) * 25
-                p = i / 100.0
-                point = path.point(p)
-                self.assertAlmostEqual(point.real, x, places=5)  # 7th place wrong.
-                self.assertAlmostEqual(point.imag, y, places=5)
-                self.assertEqual(arc.point(p), point)
-            self.assertAlmostEqual((tau / 2.0) * 25.0, path.length(), places=5)  # 6th place wrong
+        arc = Arc(0 + 25j, 25 + 25j, 0.0, 0, 0, 0 - 25j)
+        for i in range(100):
+            x = sin(i * tau / 200) * 25
+            y = cos(i * tau / 200) * 25
+            p = i / 100.0
+            point = arc.point(p)
+            self.assertAlmostEqual(point.real, x, places=7)  # 7th place wrong.
+            self.assertAlmostEqual(point.imag, y, places=7)
+
+    def test_point_in_arc_rotated(self):
+        arc = Arc(0 + 25j, 25 + 25j, 90.0, 0, 0, 0 - 25j)
+        for i in range(100):
+            x = sin(i * tau / 200) * 25
+            y = cos(i * tau / 200) * 25
+            p = i / 100.0
+            point = arc.point(p)
+            self.assertAlmostEqual(point.real, x, places=7)  # 7th place wrong.
+            self.assertAlmostEqual(point.imag, y, places=7)
 
     def test_repr(self):
+        from path import Point
         path = Path(
             Line(start=600 + 350j, end=650 + 325j),
             Arc(start=650 + 325j, radius=25 + 25j, rotation=-30, arc=0, sweep=1, end=700 + 300j),

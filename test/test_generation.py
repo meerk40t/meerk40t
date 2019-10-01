@@ -96,4 +96,5 @@ class TestGeneration(unittest.TestCase):
 
     def test_svg_example14(self):
         path = paths[14]
-        self.assertEqual(parse_path(path).d(), path)
+        self.assertEqual(parse_path(path).d(), "M 600,350 L 650,325 A 27.9508,27.9508 -30 0,1 700,300 L 750,275")
+        #  Too small arc forced increase rx,ry
