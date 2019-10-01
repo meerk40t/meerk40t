@@ -299,7 +299,12 @@ class Angle(float):
     """CSS Angle defines as used in SVG"""
 
     def __repr__(self):
-        return "Angle(%f)" % self
+        return "Angle(%.12f)" % self
+
+    def __eq__(self, other):
+        # Python 2
+        c1 = abs(self - other) <= 1e-11
+        return c1
 
     @classmethod
     def parse(cls, angle_string):
