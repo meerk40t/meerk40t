@@ -337,7 +337,7 @@ class MeerK40t(wx.Frame):
         context = self.project
         for element in svg:
             pe = None
-            if 'text' in element:
+            if 'text' in element and element['text'] is not None:
                 pe = TextElement(element['text'])
                 if 'x' in element:
                     pe.matrix.post_translate(float(element['x']), 0)
