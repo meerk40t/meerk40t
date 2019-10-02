@@ -5,19 +5,22 @@
 
 import wx
 
-from LaserProject import PathElement
 from ElementProperty import ElementProperty
+from LaserProject import LaserCommandPathParser, LaserGroup, PathElement, ImageElement
 # begin wxGlade: dependencies
 # end wxGlade
 from ZMatrix import ZMatrix
-
+from path import Angle
 
 # begin wxGlade: extracode
+
+MILS_IN_MM = 39.3701
+
 
 class LaserSceneView(wx.Panel):
     def __init__(self, *args, **kwds):
         # begin wxGlade: MainView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
         wx.Panel.__init__(self, *args, **kwds)
 
         self.matrix = ZMatrix()
@@ -34,12 +37,10 @@ class LaserSceneView(wx.Panel):
         self.__set_properties()
         self.__do_layout()
         self.overlay = wx.Overlay()
-        self.draw_grid = True
-        self.draw_guides = True
+
         self.grid = None
         self.guide_lines = None
-        self.draw_laserhead = True
-        self.draw_laserpath = True
+
         self.laserpath = [(0, 0, 0, 0)] * 1000
         self.laserpath_index = 0
 
@@ -57,13 +58,14 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus()) # Focus follows mouse.
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus())  # Focus follows mouse.
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.project = None
 
     def set_project(self, project):
         self.project = project
         bedwidth, bedheight = project.size
-        self.focus_viewport_scene((0, 0, bedwidth * 39.37, bedheight * 39.37), 0.1)
+        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
         self.project["position", self.update_position] = self
         self.project["units", self.space_changed] = self
         self.project["selection", self.selection_changed] = self
@@ -271,35 +273,117 @@ class LaserSceneView(wx.Panel):
         convert = menu.Append(wx.ID_ANY, "Convert Raw", "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_popup_menu_convert, convert)
         menu_remove = menu.Append(wx.ID_ANY, "Remove", "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_popup_menu_remove, menu_remove)
-        self.Bind(wx.EVT_MENU, self.on_reify_popup, menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_reset_popup, menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(3.0), menu.Append(wx.ID_ANY, "Scale 300%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(2.0), menu.Append(wx.ID_ANY, "Scale 200%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(1.5), menu.Append(wx.ID_ANY, "Scale 150%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(1.5), menu.Append(wx.ID_ANY, "Scale 125%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(1.1), menu.Append(wx.ID_ANY, "Scale 110%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.9), menu.Append(wx.ID_ANY, "Scale 90%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.8), menu.Append(wx.ID_ANY, "Scale 80%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.75), menu.Append(wx.ID_ANY, "Scale 75%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.5), menu.Append(wx.ID_ANY, "Scale 50%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_scale_popup(0.333), menu.Append(wx.ID_ANY, "Scale 33%", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.25),
-                  menu.Append(wx.ID_ANY, u"Rotate \u03c4/4", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.25),
-                  menu.Append(wx.ID_ANY, u"Rotate -\u03c4/4", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(0.125),
-                  menu.Append(wx.ID_ANY, u"Rotate \u03c4/8", "", wx.ITEM_NORMAL))
-        self.Bind(wx.EVT_MENU, self.on_rotate_popup(-0.125),
-                  menu.Append(wx.ID_ANY, u"Rotate -\u03c4/8", "", wx.ITEM_NORMAL))
-        self.PopupMenu(menu)
-        menu.Destroy()
+        if self.project.selected is not None:
+            self.Bind(wx.EVT_MENU, self.on_popup_menu_remove, menu_remove)
+            self.Bind(wx.EVT_MENU, self.on_reset_popup,
+                      menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
+            if self.project.selected.contains_type(PathElement):
+                path_sub_menu = wx.Menu()
+                self.Bind(wx.EVT_MENU, self.on_reify_popup,
+                          path_sub_menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
+                self.Bind(wx.EVT_MENU, self.on_raster_popup(),
+                          path_sub_menu.Append(wx.ID_ANY, "Make Raster Image", "", wx.ITEM_NORMAL))
+                path_scale_sub_menu = wx.Menu()
+                for i in range(1, 13):
+                    self.Bind(wx.EVT_MENU, self.on_scale_popup(3.0 / float(i)),
+                              path_scale_sub_menu.Append(wx.ID_ANY, "Scale %.0f%%" % (300.0 / float(i)), "",
+                                                         wx.ITEM_NORMAL))
+                path_sub_menu.Append(wx.ID_ANY, "Scale", path_scale_sub_menu)
+
+                path_rotate_sub_menu = wx.Menu()
+                for i in range(2, 13):
+                    angle = Angle.turns(1.0 / float(i))
+                    self.Bind(wx.EVT_MENU, self.on_rotate_popup(1.0 / float(i)),
+                              path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate \u03c4/%d, %.0f°" % (i, angle.as_degrees),
+                                                          "", wx.ITEM_NORMAL))
+                for i in range(2, 13):
+                    angle = Angle.turns(1.0 / float(i))
+                    self.Bind(wx.EVT_MENU, self.on_rotate_popup(-1.0 / float(i)),
+                              path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                          u"Rotate -\u03c4/%d, -%.0f°" % (i, angle.as_degrees), "",
+                                                          wx.ITEM_NORMAL))
+                path_sub_menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
+
+                menu.Append(wx.ID_ANY, "Vector", path_sub_menu)
+            if self.project.selected.contains_type(ImageElement):
+                image_sub_menu = wx.Menu()
+                image_sub_menu_step = wx.Menu()
+                for i in range(1, 7):
+                    self.Bind(wx.EVT_MENU, self.on_step_popup(i),
+                              image_sub_menu_step.Append(wx.ID_ANY, "Step %d" % i, "", wx.ITEM_NORMAL))
+                self.Bind(wx.EVT_MENU, self.on_dither_popup(None),
+                          image_sub_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
+                image_sub_menu.Append(wx.ID_ANY, "Step", image_sub_menu_step)
+                menu.Append(wx.ID_ANY, "Raster", image_sub_menu)
+            self.PopupMenu(menu)
+            menu.Destroy()
+
+    def on_key_press(self, event):
+        keycode = event.GetKeyCode()
+        if keycode in [wx.WXK_ESCAPE]:
+            pass
+        elif keycode in [ord('1')]:
+            self.project.writer.home()
+        elif keycode in [wx.WXK_RIGHT, wx.WXK_NUMPAD6]:
+            self.project.writer.move_relative(MILS_IN_MM * 1, 0)
+        elif keycode in [wx.WXK_LEFT, wx.WXK_NUMPAD4]:
+            self.project.writer.move_relative(MILS_IN_MM * -1, 0)
+        elif keycode in [wx.WXK_UP, wx.WXK_NUMPAD8]:
+            self.project.writer.move_relative(0, MILS_IN_MM * -1)
+        elif keycode in [wx.WXK_DOWN, wx.WXK_NUMPAD2]:
+            self.project.writer.move_relative(0, MILS_IN_MM * 1)
 
     def on_scale_popup(self, value):
         def specific(event):
             self.project.menu_scale(value, value, self.popup_scene_position)
             self.update_buffer()
+
         return specific
+
+    def on_step_popup(self, value):
+        def specific(event):
+            self.project.menu_step(value, self.popup_scene_position)
+            self.update_buffer()
+
+        return specific
+
+    def on_dither_popup(self, element):
+        def specific(event):
+            self.project.menu_dither(element)
+            self.update_buffer()
+
+        return specific
+
+    def on_raster_popup(self):
+
+        def raster(event):
+            elems = list(self.project.flat_elements(types=(PathElement)))
+            xmin, ymin, xmax, ymax = self.project.selected.bounds
+            width = int(xmax - xmin)
+            height = int(ymax - ymin)
+            bitmap = wx.Bitmap(width, height)
+            dc = wx.MemoryDC()
+            dc.SelectObject(bitmap)
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            p = gc.CreatePath()
+            parse = LaserCommandPathParser(p)
+            for e in elems:
+                e.matrix.post_translate(-xmin, -ymin)
+                for event in e.generate():
+                    parse.command(event)
+                e.matrix.post_translate(+xmin, +ymin)
+            gc.SetBrush(wx.BLACK_BRUSH)
+            gc.FillPath(p)
+
+            image_element = ImageElement(bitmap)
+            self.project.selected.append(image_element)
+            image_element.matrix.post_translate(xmin, ymin)
+            dc.Destroy()
+            self.update_buffer()
+
+        return raster
 
     def on_reify_popup(self, value):
         for e in self.project.flat_elements(types=(PathElement)):
@@ -453,9 +537,9 @@ class LaserSceneView(wx.Panel):
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
         pen.SetCap(wx.CAP_BUTT)
-        if self.draw_guides:
+        if self.project.draw_mode & 4 == 0:
             self.on_draw_guides(dc)
-        if self.draw_laserhead:
+        if self.project.draw_mode & 16 == 0:
             dc.SetPen(wx.RED_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             x = self.project.writer.current_x
@@ -473,7 +557,7 @@ class LaserSceneView(wx.Panel):
     def on_draw_scene(self, dc):
         self.on_draw_bed(dc)
         dc.SetPen(wx.BLACK_PEN)
-        if self.draw_grid:
+        if self.project.draw_mode & 2 == 0:
             self.on_draw_grid(dc)
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
@@ -488,8 +572,8 @@ class LaserSceneView(wx.Panel):
             x0, y0, x1, y1 = self.project.selected.bounds
             dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
         for element in self.project.flat_elements():
-            element.draw(dc)
-        if self.draw_laserpath:
+            element.draw(dc, self.project.draw_mode & 1 == 0)
+        if self.project.draw_mode & 8 == 0:
             dc.SetPen(wx.BLUE_PEN)
             dc.DrawLineList(self.laserpath)
 

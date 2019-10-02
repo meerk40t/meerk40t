@@ -921,7 +921,7 @@ class Close(Segment):
         """returns the bounding box for the segment in the form
         (xmin, ymin, ymax, ymax)."""
         if self.start is None and self.end is None:
-            return None  # TODO: needs to know what it's closing to provide bbox.
+            return None
         return self.start[0], self.start[1], self.end[0], self.end[1]
 
 
@@ -1943,6 +1943,8 @@ class Arc(Segment):
     def as_cubic_curves(self):
         sweep_limit = tau / 12
         arc_required = int(ceil(abs(self.sweep) / sweep_limit))
+        if arc_required == 0:
+            return
         slice = self.sweep / float(arc_required)
 
         start_angle = self.get_start_angle()
@@ -2421,7 +2423,7 @@ class Path(MutableSequence):
 
     def bbox(self):
         """returns a bounding box for the input Path"""
-        bbs = [seg.bbox() for seg in self._segments]
+        bbs = [seg.bbox() for seg in self._segments if not isinstance(seg, (Close, Move))]
         xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
         xmin = min(xmins)
         xmax = max(xmaxs)
@@ -2435,9 +2437,6 @@ class Path(MutableSequence):
         if len(self) == 0:
             return ''
         for segment in self:
-            # If the start of this segment does not coincide with the end of
-            # the last segment or if this segment is actually the close point
-            # of a closed path, then we should start a new subpath here.
             if isinstance(segment, Move):
                 parts.append('M {0:G},{1:G}'.format(segment.end[0], segment.end[1]))
             elif isinstance(segment, Line):

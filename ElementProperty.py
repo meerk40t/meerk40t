@@ -54,19 +54,19 @@ class ElementProperty(wx.Frame):
         self.project = project
         self.element = element
         self.text_name.SetValue(str(element))
-        cut = element.cut
-        if VARIABLE_NAME_SPEED in cut:
-            self.spin_speed_set.SetValue(cut[VARIABLE_NAME_SPEED])
-        if VARIABLE_NAME_POWER in cut:
-            self.spin_power_set.SetValue(cut[VARIABLE_NAME_POWER])
-        if VARIABLE_NAME_DRATIO in cut:
-            self.spin_speed_dratio.SetValue(cut[VARIABLE_NAME_DRATIO])
-        if VARIABLE_NAME_PASSES in cut:
-            self.spin_passes.SetValue(cut[VARIABLE_NAME_PASSES])
-        if VARIABLE_NAME_RASTER_STEP in cut:
-            self.spin_step_size.SetValue(cut[VARIABLE_NAME_RASTER_STEP])
-        if VARIABLE_NAME_RASTER_DIRECTION in cut:
-            self.combo_raster_direction.SetSelection(cut[VARIABLE_NAME_RASTER_DIRECTION])
+        props = element.properties
+        if VARIABLE_NAME_SPEED in props:
+            self.spin_speed_set.SetValue(props[VARIABLE_NAME_SPEED])
+        if VARIABLE_NAME_POWER in props:
+            self.spin_power_set.SetValue(props[VARIABLE_NAME_POWER])
+        if VARIABLE_NAME_DRATIO in props:
+            self.spin_speed_dratio.SetValue(props[VARIABLE_NAME_DRATIO])
+        if VARIABLE_NAME_PASSES in props:
+            self.spin_passes.SetValue(props[VARIABLE_NAME_PASSES])
+        if VARIABLE_NAME_RASTER_STEP in props:
+            self.spin_step_size.SetValue(props[VARIABLE_NAME_RASTER_STEP])
+        if VARIABLE_NAME_RASTER_DIRECTION in props:
+            self.combo_raster_direction.SetSelection(props[VARIABLE_NAME_RASTER_DIRECTION])
 
     def __set_properties(self):
         # begin wxGlade: ElementProperty.__set_properties
@@ -142,27 +142,27 @@ class ElementProperty(wx.Frame):
 
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_NAME] = self.text_name.GetValue()
+            e.properties[VARIABLE_NAME_NAME] = self.text_name.GetValue()
         self.project("elements", 0)
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_SPEED] = self.spin_speed_set.GetValue()
+            e.properties[VARIABLE_NAME_SPEED] = self.spin_speed_set.GetValue()
         self.project("elements", 0)
 
     def on_spin_power(self, event):
         for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_POWER] = self.spin_power_set.GetValue()
+            e.properties[VARIABLE_NAME_POWER] = self.spin_power_set.GetValue()
 
     def on_check_speed_dratio(self, event):
         self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue())
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_DRATIO] = self.spin_speed_dratio.GetValue()
+            e.properties[VARIABLE_NAME_DRATIO] = self.spin_speed_dratio.GetValue()
 
     def on_spin_passes(self, event):  # wxGlade: ElementProperty.<event_handler>
-        self.element.cut[VARIABLE_NAME_PASSES] = self.spin_passes.GetValue()
+        self.element.properties[VARIABLE_NAME_PASSES] = self.spin_passes.GetValue()
         self.project("elements", 0)
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
