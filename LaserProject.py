@@ -1,3 +1,6 @@
+from math import ceil
+from PIL import Image
+
 import wx
 
 # TODO: Move the draw requirements of the elements outside this class so the writer can be tested without wx.
@@ -11,6 +14,7 @@ from ZMatrix import ZMatrix
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
+VARIABLE_NAME_FILL_COLOR = 'fill'
 VARIABLE_NAME_SPEED = 'speed'
 VARIABLE_NAME_POWER = 'power'
 VARIABLE_NAME_PASSES = 'passes'
@@ -92,7 +96,7 @@ class LaserCommandPathParser:
                 elif isinstance(e, path.Line):
                     self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
                 elif isinstance(e, path.Close):
-                    self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
+                    self.graphic_path.CloseSubpath()
                 elif isinstance(e, path.QuadraticBezier):
                     self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
                                                           e.end[0], e.end[1])
@@ -161,7 +165,7 @@ class LaserCommandPathParser:
 class LaserNode(list):
     def __init__(self):
         list.__init__(self)
-        self.cut = {}
+        self.properties = {}
         self.parent = None
         self.box = None
         self.bounds = None
@@ -170,9 +174,9 @@ class LaserNode(list):
         return other is self
 
     def set_color(self, color):
-        self.cut[VARIABLE_NAME_COLOR] = color
+        self.properties[VARIABLE_NAME_COLOR] = color
 
-    def draw(self, dc):
+    def draw(self, dc, drawfills=False):
         pass
 
     def generate(self, dc):
@@ -219,33 +223,49 @@ class LaserGroup(LaserNode):
         LaserNode.__init__(self)
 
     def __str__(self):
-        if VARIABLE_NAME_PASSES in self.cut:
-            return "%d Group" % (self.cut[VARIABLE_NAME_PASSES])
+        name = "Group"
+        if VARIABLE_NAME_NAME in self.properties:
+            name = self.properties[VARIABLE_NAME_NAME]
+        if VARIABLE_NAME_PASSES in self.properties:
+            return "%d pass, %s" % (self.properties[VARIABLE_NAME_PASSES], name)
         else:
-            return "Group"
+            return name
+
+    def all_children_of_type(self, type):
+        return [e for e in self if isinstance(e, type)]
+
+    def contains_type(self, type):
+        results = [e for e in self if isinstance(e, type)]
+        return len(results) != 0
+
+    def not_contains_type(self, type):
+        results = [e for e in self if isinstance(e, type)]
+        return len(results) == 0
 
 
 class LaserElement(LaserNode):
     def __init__(self):
         LaserNode.__init__(self)
         self.matrix = path.Matrix()
-        self.cut = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_SPEED: 60, VARIABLE_NAME_PASSES: 1,
-                    VARIABLE_NAME_POWER: 1000.0}
+        self.properties = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_FILL_COLOR: 0, VARIABLE_NAME_SPEED: 60,
+                           VARIABLE_NAME_PASSES: 1,
+                           VARIABLE_NAME_POWER: 1000.0}
         self.cache = None
         self.pen = wx.Pen()
+        self.brush = wx.Brush()
         self.color = wx.Colour()
-        self.color.SetRGB(self.cut['color'])
+        self.color.SetRGB(self.properties['color'])
 
     def set_color(self, color):
-        self.cut[VARIABLE_NAME_COLOR] = color
+        self.properties[VARIABLE_NAME_COLOR] = color
 
-    def draw(self, dc):
+    def draw(self, dc, drawfills=False):
         """Default draw routine for the laser element.
         If the generate is defined this will draw the
         element as a series of lines, as defined by generate."""
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        self.color.SetRGB(self.cut[VARIABLE_NAME_COLOR])
+        self.color.SetRGB(self.properties[VARIABLE_NAME_COLOR])
         self.pen.SetColour(self.color)
         gc.SetPen(self.pen)
         if self.cache is None:
@@ -254,6 +274,13 @@ class LaserElement(LaserNode):
             for event in self.generate(path.Matrix()):
                 parse.command(event)
             self.cache = p
+        if drawfills and VARIABLE_NAME_FILL_COLOR in self.properties:
+            c = self.properties[VARIABLE_NAME_FILL_COLOR]
+            swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
+            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+            self.brush.SetColour(self.color)
+            gc.SetBrush(self.brush)
+            gc.FillPath(self.cache)
         gc.StrokePath(self.cache)
 
     def convert_absolute_to_affinespace(self, position):
@@ -275,19 +302,32 @@ class LaserElement(LaserNode):
 class ImageElement(LaserElement):
     def __init__(self, image):
         LaserElement.__init__(self)
+        if isinstance(image,wx.Bitmap):
+            image = self.wx2PIL(image)
         self.box = [0, 0, image.width, image.height]
+
         self.image = image
         self.cache = None
-        self.cut.update({VARIABLE_NAME_RASTER_STEP: 1,
-                         VARIABLE_NAME_SPEED: 100,
-                         VARIABLE_NAME_POWER: 1000.0})
+        self.properties.update({VARIABLE_NAME_RASTER_STEP: 1,
+                                VARIABLE_NAME_SPEED: 100,
+                                VARIABLE_NAME_POWER: 1000.0})
 
     def __str__(self):
-        return "%d Image %dX s@%3f" % (self.cut[VARIABLE_NAME_PASSES],
-                                       self.cut[VARIABLE_NAME_RASTER_STEP],
-                                       self.cut[VARIABLE_NAME_SPEED])
+        return "%d Image %dX s@%3f" % (self.properties[VARIABLE_NAME_PASSES],
+                                       self.properties[VARIABLE_NAME_RASTER_STEP],
+                                       self.properties[VARIABLE_NAME_SPEED])
 
-    def draw(self, dc):
+    def wx2PIL(self, bitmap):
+        size = tuple(bitmap.GetSize())
+        try:
+            buf = size[0] * size[1] * 3 * "\x00"
+            bitmap.CopyToBuffer(buf)
+        except:
+            del buf
+            buf = bitmap.ConvertToImage().GetData()
+        return Image.frombuffer("RGB", size, bytes(buf), "raw", "RGB", 0, 1)
+
+    def draw(self, dc, drawfills=False):
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         if self.cache is None:
@@ -318,20 +358,20 @@ class ImageElement(LaserElement):
         if m is None:
             m = self.matrix
         speed = 100
-        if VARIABLE_NAME_SPEED in self.cut:
-            speed = self.cut[VARIABLE_NAME_SPEED]
+        if VARIABLE_NAME_SPEED in self.properties:
+            speed = self.properties[VARIABLE_NAME_SPEED]
         if speed is None:
             speed = 100
         yield COMMAND_SET_SPEED, speed
 
         direction = 0
-        if VARIABLE_NAME_RASTER_DIRECTION in self.cut:
-            direction = self.cut[VARIABLE_NAME_RASTER_DIRECTION]
+        if VARIABLE_NAME_RASTER_DIRECTION in self.properties:
+            direction = self.properties[VARIABLE_NAME_RASTER_DIRECTION]
         step = 1
-        if VARIABLE_NAME_RASTER_STEP in self.cut:
-            step = self.cut[VARIABLE_NAME_RASTER_STEP]
-        if VARIABLE_NAME_POWER in self.cut:
-            power = self.cut.get(VARIABLE_NAME_POWER)
+        if VARIABLE_NAME_RASTER_STEP in self.properties:
+            step = self.properties[VARIABLE_NAME_RASTER_STEP]
+        if VARIABLE_NAME_POWER in self.properties:
+            power = self.properties.get(VARIABLE_NAME_POWER)
             yield COMMAND_SET_POWER, power
         traverse = 0
         if direction == 0:
@@ -376,7 +416,7 @@ class TextElement(LaserElement):
     def __init__(self, text):
         LaserElement.__init__(self)
         self.text = text
-        self.cut.update({VARIABLE_NAME_COLOR: 0x000000, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
+        self.properties.update({VARIABLE_NAME_COLOR: 0x000000, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
 
     def __str__(self):
         string = "NOT IMPLEMENTED: \"%s\"" % (self.text)
@@ -384,7 +424,7 @@ class TextElement(LaserElement):
             return string
         return string[:97] + '...'
 
-    def draw(self, dc):
+    def draw(self, dc, drawfills=False):
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         if self.text is not None:
@@ -413,11 +453,12 @@ class PathElement(LaserElement):
     def __init__(self, path_d):
         LaserElement.__init__(self)
         self.path = path_d
-        self.cut.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
+        self.properties.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
 
     def __str__(self):
         string = "%d Path @%.1f mm/s %.1fx path=%s" % \
-                 (self.cut[VARIABLE_NAME_PASSES], self.cut[VARIABLE_NAME_SPEED], self.matrix.value_scale_x(),
+                 (self.properties[VARIABLE_NAME_PASSES], self.properties[VARIABLE_NAME_SPEED],
+                  self.matrix.value_scale_x(),
                   str(hash(self.path)))
         if len(string) < 100:
             return string
@@ -438,14 +479,14 @@ class PathElement(LaserElement):
         object_path = path.Path()
         svg_parser.parse_svg_path(object_path, self.path)
         self.box = object_path.bbox()
-        if VARIABLE_NAME_SPEED in self.cut:
-            speed = self.cut.get(VARIABLE_NAME_SPEED)
+        if VARIABLE_NAME_SPEED in self.properties:
+            speed = self.properties.get(VARIABLE_NAME_SPEED)
             yield COMMAND_SET_SPEED, speed
-        if VARIABLE_NAME_POWER in self.cut:
-            power = self.cut.get(VARIABLE_NAME_POWER)
+        if VARIABLE_NAME_POWER in self.properties:
+            power = self.properties.get(VARIABLE_NAME_POWER)
             yield COMMAND_SET_POWER, power
-        if VARIABLE_NAME_DRATIO in self.cut:
-            d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
+        if VARIABLE_NAME_DRATIO in self.properties:
+            d_ratio = self.properties.get(VARIABLE_NAME_DRATIO)
             yield COMMAND_SET_D_RATIO, d_ratio
         plot = object_path * m
         first_point = plot.first_point
@@ -456,6 +497,7 @@ class PathElement(LaserElement):
         yield COMMAND_MODE_DEFAULT, 0
         yield COMMAND_SET_SPEED, None
         yield COMMAND_SET_D_RATIO, None
+
 
 class RawElement(LaserElement):
     def __init__(self, element):
@@ -489,6 +531,9 @@ class LaserProject(LaserNode):
         self.units = (39.37, "mm", 10, 0)
         self.config = None
         self.windows = {}
+        self.draw_mode = 0
+        self.window_width = 600
+        self.window_height = 600
 
         self.selected = None
         self.thread = None
@@ -552,6 +597,9 @@ class LaserProject(LaserNode):
         return self.config.Read(item)
 
     def load_config(self):
+        self.window_width = self[int, "window_width"]  # TODO: hookup, so window size stays.
+        self.window_height = self[int, "window_height"]
+        self.draw_mode = self[int, "mode"]
         self.autohome = self[bool, "autohome"]
         self.autobeep = self[bool, "autobeep"]
         self.autostart = self[bool, "autostart"]
@@ -577,6 +625,9 @@ class LaserProject(LaserNode):
         self("bed_size", self.size)
 
     def save_config(self):
+        self["window_width"] = int(self.window_width)
+        self["window_height"] = int(self.window_height)
+        self["mode"] = int(self.draw_mode)
         self["autohome"] = bool(self.autohome)
         self["autobeep"] = bool(self.autobeep)
         self["autostart"] = bool(self.autostart)
@@ -629,8 +680,8 @@ class LaserProject(LaserNode):
             ty = node.matrix.value_trans_y()
             node.matrix.reset()
             node.matrix.post_translate(tx, ty)
-            if VARIABLE_NAME_RASTER_STEP in node.cut:
-                step = float(node.cut[VARIABLE_NAME_RASTER_STEP])
+            if VARIABLE_NAME_RASTER_STEP in node.properties:
+                step = float(node.properties[VARIABLE_NAME_RASTER_STEP])
                 node.matrix.pre_scale(step, step)
 
     def validate(self, node=None):
@@ -684,8 +735,8 @@ class LaserProject(LaserNode):
         if elements is None:
             elements = self.elements
         passes = 1
-        if VARIABLE_NAME_PASSES in elements.cut:
-            passes = elements.cut[VARIABLE_NAME_PASSES]
+        if VARIABLE_NAME_PASSES in elements.properties:
+            passes = elements.properties[VARIABLE_NAME_PASSES]
         if isinstance(elements, types):
             for q in range(0, passes):
                 yield elements
@@ -798,6 +849,28 @@ class LaserProject(LaserNode):
                         e.matrix.post_scale(scale, scale_y, position[0], position[1])
                     else:
                         e.matrix.post_scale(scale, scale_y)
+        self("elements", 0)
+
+    def menu_dither(self, op=None, position=None):
+        self.validate()
+        if position is not None:
+            self.set_selected_by_position(position)
+        if self.selected is not None:
+            for e in self.selected:
+                if isinstance(e, ImageElement):
+                    e.image = e.image.convert("1")
+                    e.cache = None
+        self("elements", 0)
+
+    def menu_step(self, step_value, position=None):
+        self.validate()
+        if position is not None:
+            self.set_selected_by_position(position)
+        if self.selected is not None:
+            for e in self.selected:
+                if isinstance(e, ImageElement):
+                    e.properties[VARIABLE_NAME_RASTER_STEP] = step_value
+                    self.validate_matrix(e)
         self("elements", 0)
 
     def menu_rotate(self, radians, position=None):
