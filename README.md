@@ -26,15 +26,17 @@ If you have any bug reports or feature requests raise an issue. They might not b
 # Phases:
 Phase 0. Building. - Done.
 
-Phase 1. Testing.
+Phase 1. Expected Features.
 * Make sure the program is stable and there should be no known major bugs
-* Make sure it runs consistently and allow all the stuff it should need to be viable.
 * Document everything and add test suites.
-* Add instructions to how to install for savvy people to use it and try to get some feedback on bugs or issues. 
+* Make sure all the expected features people have are included. So that typical design methodologies work.
+* If you are doing your projects in a certain way, the features after Phase 1 should permit that same design methods to work.
+* If Meerk40t's lack of something makes the way you do things harder than it needs to be, that's an issue for Phase 1.
 
 Phase 2. Bundle.
-* More success requires easier installing and utilizing.
+* Easier installing and utilizing.
 * Bundle program in an installable form with libusb driver so that it can just be installed and work.
+* Bundles should include most major OSes: Windows, Mac, Linux.
 
 Phase 3. Collaborate and Listen.
 * Try to get stronger collaboration and feedback
@@ -42,7 +44,7 @@ Phase 3. Collaborate and Listen.
 
 ---
 
-Currently at Phase 1-2. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be hooked up and working. It has some killer features and some elements that are great.
+Currently working on Phase 1. You can use it, there are no know giant gaps in functionality. It is not perfect, but it should be functional. It has some killer features and some elements that are great. And mostly it has solid hackable bones.
 
 ---
 
