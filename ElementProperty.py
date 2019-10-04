@@ -1,4 +1,7 @@
+import wx
+
 from LaserProject import *
+from LaserRender import swizzlecolor
 
 
 class ElementProperty(wx.Frame):
@@ -29,8 +32,8 @@ class ElementProperty(wx.Frame):
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_power, self.spin_power_set)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_power, self.spin_power_set)
         self.Bind(wx.EVT_COMBOBOX, self.on_combobox_rasterdirection, self.combo_raster_direction)
-        self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_name)
+        # self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_speed, self.spin_speed_set)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_speed, self.spin_speed_set)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_speed_dratio, self.spin_speed_dratio)
@@ -67,6 +70,9 @@ class ElementProperty(wx.Frame):
             self.spin_step_size.SetValue(props[VARIABLE_NAME_RASTER_STEP])
         if VARIABLE_NAME_RASTER_DIRECTION in props:
             self.combo_raster_direction.SetSelection(props[VARIABLE_NAME_RASTER_DIRECTION])
+        if VARIABLE_NAME_COLOR in props:
+            color = wx.Colour(swizzlecolor(props[VARIABLE_NAME_COLOR]))
+            self.text_name.SetBackgroundColour(color)
 
     def __set_properties(self):
         # begin wxGlade: ElementProperty.__set_properties
@@ -134,52 +140,53 @@ class ElementProperty(wx.Frame):
         self.Centre()
         # end wxGlade
 
-    def flat_element(self, element):
-        yield element
-        for e in element:
-            for flat_e in self.flat_element(e):
-                yield flat_e
-
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.flat_element(self.element):
-            e.properties[VARIABLE_NAME_NAME] = self.text_name.GetValue()
-        self.project("elements", 0)
+        self.element.properties[VARIABLE_NAME_NAME] = self.text_name.GetValue()
+        if self.project is not None:
+            self.project("elements", 0)
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.flat_element(self.element):
+        for e in self.element.flat_elements():
             e.properties[VARIABLE_NAME_SPEED] = self.spin_speed_set.GetValue()
-        self.project("elements", 0)
+        if self.project is not None:
+            self.project("elements", 0)
 
     def on_spin_power(self, event):
-        for e in self.flat_element(self.element):
+        for e in self.element.flat_elements():
             e.properties[VARIABLE_NAME_POWER] = self.spin_power_set.GetValue()
 
     def on_check_speed_dratio(self, event):
         self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue())
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.flat_element(self.element):
+        for e in self.element.flat_elements():
             e.properties[VARIABLE_NAME_DRATIO] = self.spin_speed_dratio.GetValue()
 
     def on_spin_passes(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.element.properties[VARIABLE_NAME_PASSES] = self.spin_passes.GetValue()
-        self.project("elements", 0)
+        if self.project is not None:
+            self.project("elements", 0)
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_RASTER_STEP] = self.spin_step_size.GetValue()
+        for e in self.element.flat_elements():
+            e.properties[VARIABLE_NAME_RASTER_STEP] = self.spin_step_size.GetValue()
             self.project.validate_matrix(e)
-        self.project("elements", 0)
+        if self.project is not None:
+            self.project("elements", 0)
 
     def on_combobox_rasterdirection(self, event):  # wxGlade: Preferences.<event_handler>
-        for e in self.flat_element(self.element):
-            e.cut[VARIABLE_NAME_RASTER_DIRECTION] = self.combo_raster_direction.GetSelection()
+        for e in self.element.flat_elements():
+            e.properties[VARIABLE_NAME_RASTER_DIRECTION] = self.combo_raster_direction.GetSelection()
 
     def on_button_color(self, event):  # wxGlade: ElementProperty.<event_handler>
         button = event.EventObject
-        color = button.GetBackgroundColour().GetRGB()
-        for e in self.flat_element(self.element):
+        self.text_name.SetBackgroundColour(button.GetBackgroundColour())
+        self.text_name.Refresh()
+        color = swizzlecolor(button.GetBackgroundColour().GetRGB())
+
+        for e in self.element.flat_elements():
             e.set_color(color)
-        self.project("elements", 0)
+        if self.project is not None:
+            self.project("elements", 0)
 
 # end of class ElementProperty
