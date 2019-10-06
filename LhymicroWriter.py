@@ -264,6 +264,10 @@ class LhymicroWriter:
                 dy = -1
             else:
                 dy = 0
+            total_dx = next_x - current_x
+            total_dy = next_y - current_y
+            if total_dy * dx != total_dx * dy:
+                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
             while current_x != next_x or current_y != next_y:
                 current_x += dx
                 current_y += dy
@@ -394,12 +398,12 @@ class LhymicroWriter:
                 sy = y
                 if dy != 0:
                     if self.is_top:
-                        if dy > self.raster_step:
-                            self.move_relative(0, dy - self.raster_step)
+                        if abs(dy) > self.raster_step:
+                            self.move_relative(0, dy + self.raster_step)
                         self.h_switch()
                     else:
-                        if dy > self.raster_step:
-                            self.move_relative(0, dy + self.raster_step)
+                        if abs(dy) > self.raster_step:
+                            self.move_relative(0, dy - self.raster_step)
                         self.h_switch()
                 if on == 0:
                     self.up()

@@ -25,30 +25,14 @@ class RasterPlotter:
         self.offset_y = int(offset_y)
         self.step = step
         self.px_filter = px_filter
-        y = 0
-        dy = 1
-        if (self.traversal & BOTTOM) != 0:
-            y = self.height - 1
-            dy = -1
-
-        x = 0
-        try:
-            if (self.traversal & RIGHT) != 0:
-                while True:
-                    x = self.rightmost_not_equal(y)
-                    if x != self.width:
-                        break
-                    y += dy
-            else:
-                while True:
-                    x = self.leftmost_not_equal(y)
-                    if x != -1:
-                        break
-                    y += dy
-        except IndexError:
-            pass  # This entire image is white.
+        x, y = self.calculate_first_pixel()
         self.initial_x = x
         self.initial_y = y
+
+    def px(self, x, y):
+        if 0 <= y < self.height and 0 <= x < self.width:
+            return self.px_filter(self.data[x, y])
+        raise IndexError  # For some unknown reason -y pixel access values work for a while
 
     def null_filter(self, p):
         """Default no op filter."""
@@ -57,7 +41,7 @@ class RasterPlotter:
     def leftmost_not_equal(self, y):
         """"Determine the leftmost pixel that is not equal to the skip_pixel value."""
         for x in range(0, self.width):
-            pixel = self.px_filter(self.data[x, y])
+            pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
         return -1
@@ -65,7 +49,7 @@ class RasterPlotter:
     def topmost_not_equal(self, x):
         """Determine the topmost pixel that is not equal to the skip_pixel value"""
         for y in range(0, self.height):
-            pixel = self.px_filter(self.data[x, y])
+            pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
         return -1
@@ -73,7 +57,7 @@ class RasterPlotter:
     def rightmost_not_equal(self, y):
         """Determine the rightmost pixel that is not equal to the skip_pixel value"""
         for x in range(self.width - 1, -1, -1):
-            pixel = self.px_filter(self.data[x, y])
+            pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
         return self.width
@@ -81,7 +65,7 @@ class RasterPlotter:
     def bottommost_not_equal(self, x):
         """Determine the bottommost pixel that is not equal to teh skip_pixel value"""
         for y in range(self.height - 1, -1, -1):
-            pixel = self.px_filter(self.data[x, y])
+            pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
         return self.height
@@ -98,9 +82,9 @@ class RasterPlotter:
         if self.width < x:
             return self.width
 
-        v = self.px_filter(self.data[x, y])
+        v = self.px(x, y)
         for ix in range(x, -1, -1):
-            pixel = self.px_filter(self.data[ix, y])
+            pixel = self.px(ix, y)
             if pixel != v:
                 return ix
         return 0
@@ -117,9 +101,9 @@ class RasterPlotter:
         if self.height < y:
             return self.height
 
-        v = self.px_filter(self.data[x, y])
+        v = self.px(x, y)
         for iy in range(y, -1, -1):
-            pixel = self.px_filter(self.data[x, iy])
+            pixel = self.px(x, iy)
             if pixel != v:
                 return iy
         return 0
@@ -136,9 +120,9 @@ class RasterPlotter:
         if self.width <= x:
             return default
 
-        v = self.px_filter(self.data[x, y])
+        v = self.px(x, y)
         for ix in range(x, self.width):
-            pixel = self.px_filter(self.data[ix, y])
+            pixel = self.px(ix, y)
             if pixel != v:
                 return ix
         return self.width - 1
@@ -155,18 +139,51 @@ class RasterPlotter:
         if self.height <= y:
             return default
 
-        v = self.px_filter(self.data[x, y])
+        v = self.px(x, y)
         for iy in range(y, self.height):
-            pixel = self.px_filter(self.data[x, iy])
+            pixel = self.px(x, iy)
             if pixel != v:
                 return iy
         return self.width - 1
+
+    def calculate_next_horizontal_pixel(self, y, dy=1, right=False):
+        try:
+            if right:
+                while True:
+                    x = self.rightmost_not_equal(y)
+                    if x != self.width:
+                        break
+                    y += dy
+            else:
+                while True:
+                    x = self.leftmost_not_equal(y)
+                    if x != -1:
+                        break
+                    y += dy
+        except IndexError:
+            # Remaining image is blank
+            return None, None
+        return x, y
+
+    def calculate_first_pixel(self):
+        if (self.traversal & Y_AXIS) != 0:
+            pass
+        else:
+            y = 0
+            dy = 1
+            if (self.traversal & BOTTOM) != 0:
+                y = self.height - 1
+                dy = -1
+            x, y = self.calculate_next_horizontal_pixel(y, dy, self.traversal & RIGHT != 0)
+            return x, y
 
     def initial_position(self):
         return self.initial_x, self.initial_y
 
     def initial_position_in_scene(self):
-        return self.offset_x + self.initial_x, self.offset_y + self.initial_y
+        if self.initial_x is None: # image is blank.
+            return self.offset_x, self.offset_y
+        return self.offset_x + self.initial_x * self.step, self.offset_y + self.initial_y * self.step
 
     def initial_direction(self):
         dx = 1
@@ -183,7 +200,9 @@ class RasterPlotter:
         px_filter is called to transform the pixels into their real values.
         Skip_pixel determines the pixel value that should not be traversed.
         """
-        data = self.data
+        if self.initial_x is None:
+            # There is no image.
+            return
         width = self.width
         height = self.height
 
@@ -193,47 +212,13 @@ class RasterPlotter:
         offset_x = int(self.offset_x)
         offset_y = int(self.offset_y)
         step = self.step
-        px_filter = self.px_filter
 
-        offset_x = int(offset_x)
-        offset_y = int(offset_y)
         x, y = self.initial_position()
         dx, dy = self.initial_direction()
         yield offset_x + x * step, offset_y + y * step, 0
         if (traversal & Y_AXIS) != 0:
             # This code is for up/down across rastering.
-            while 0 <= x < width:
-                lower_bound = self.topmost_not_equal(x)
-                if lower_bound == -1:
-                    x += dx
-                    yield offset_x + x * step, offset_y + y * step, 0
-                    continue
-                upper_bound = self.bottommost_not_equal(x)
-                while (dy > 0 and y <= upper_bound) or (dy < 0 and lower_bound <= y):
-                    if dy > 0:  # going bottom
-                        end = upper_bound + overscan
-                        if 0 <= x + dx < width:
-                            end = max(end,
-                                      self.bottommost_not_equal(x + dx))
-                        pixel = px_filter(data[x, y])
-                        y = self.nextcolor_bottom(x, y, end)
-                        y = min(y, end)
-                    else:
-                        end = lower_bound - overscan
-                        if 0 <= x + dx < width:
-                            end = min(end, self.topmost_not_equal(x + dx))
-                        pixel = px_filter(data[x, y])
-                        y = self.nextcolor_top(x, y, end)
-                        y = max(y, end)
-                    if pixel == skip_pixel:
-                        yield offset_x + x * step, offset_y + y * step, 0
-                    else:
-                        yield offset_x + x * step, offset_y + y * step, pixel
-                    if y == end:
-                        break
-                x += dx
-                yield offset_x + x * step, offset_y + y * step, 0
-                dy = -dy
+            raise ValueError("This code is gone for now.")
         else:
             # This code is for top to bottom or bottom to top rastering.
             while 0 <= y < height:
@@ -243,33 +228,38 @@ class RasterPlotter:
                     yield offset_x + x * step, offset_y + y * step, 0
                     continue
                 upper_bound = self.rightmost_not_equal(y)
+
+                next_x, next_y = self.calculate_next_horizontal_pixel(y+dy, dy, dx > 0)
+                if next_x is not None:
+                    upper_bound = max(next_x, upper_bound) + overscan
+                    lower_bound = min(next_x, lower_bound) - overscan
+
                 while (dx > 0 and x <= upper_bound) or (dx < 0 and lower_bound <= x):
                     if dx > 0:  # going right
-                        end = upper_bound + overscan
-                        if 0 <= y + dy < height:
-                            end = max(end, self.rightmost_not_equal(y + dy))
+                        bound = upper_bound
                         try:
-                            pixel = px_filter(data[x, y])
+                            pixel = self.px(x, y)
                         except IndexError:
                             pixel = 0
-                        x = self.nextcolor_right(x, y, end)
-                        x = min(x, end)
+                        x = self.nextcolor_right(x, y, upper_bound)
+                        x = min(x, upper_bound)
                     else:
-                        end = lower_bound - overscan
-                        if 0 <= y + dy < height:
-                            end = min(end, self.leftmost_not_equal(y + dy))
+                        bound = lower_bound
                         try:
-                            pixel = px_filter(data[x, y])
+                            pixel = self.px(x, y)
                         except IndexError:
                             pixel = 0
-                        x = self.nextcolor_left(x, y, end)
-                        x = max(x, end)
+                        x = self.nextcolor_left(x, y, lower_bound)
+                        x = max(x, lower_bound)
                     if pixel == skip_pixel:
                         yield offset_x + x * step, offset_y + y * step, 0
                     else:
                         yield offset_x + x * step, offset_y + y * step, pixel
-                    if x == end:
+                    if x == bound:
                         break
-                y += dy
+                if next_y is None:
+                    # remaining image is blank, we stop right here.
+                    break
+                y = next_y
                 yield offset_x + x * step, offset_y + y * step, 0
                 dx = -dx

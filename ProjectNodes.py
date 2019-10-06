@@ -250,7 +250,7 @@ class ImageElement(LaserElement):
             raise ValueError  # this shouldn't happen.
 
         data = self.image.load()
-        raster = RasterPlotter(data, width, height, traverse, 0, 0,
+        raster = RasterPlotter(data, width, height, traverse, 0, 20,
                                m.value_trans_x(),
                                m.value_trans_y(),
                                step, image_filter)
