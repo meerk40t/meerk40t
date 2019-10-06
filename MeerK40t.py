@@ -264,7 +264,7 @@ class MeerK40t(wx.Frame):
         self.project["control_thread", self.on_control_state] = self
         self.project["writer", self.on_writer_state] = self
 
-        m = self.MenuBar.FindItemById(ID_MENU_HIDE_GRID)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.project.draw_mode & 4 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
         m.Check(self.project.draw_mode & 2 != 0)
@@ -880,3 +880,4 @@ sys.excepthook = handleGUIException
 if __name__ == "__main__":
     MeerK40tApp = MeerK40tGui(0)
     MeerK40tApp.MainLoop()
+

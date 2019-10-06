@@ -182,6 +182,8 @@ class ImageElement(LaserElement):
         LaserElement.__init__(self)
         self.box = [0, 0, image.width, image.height]
         self.image = image
+        # Converting all images to RGBA.
+        self.image = image.convert("RGBA")
         self.cache = None
         self.properties.update({VARIABLE_NAME_RASTER_STEP: 1,
                                 VARIABLE_NAME_SPEED: 100,
@@ -192,20 +194,6 @@ class ImageElement(LaserElement):
             return self.properties[VARIABLE_NAME_NAME]
         return "Image %dX s@%3f" % (self.properties[VARIABLE_NAME_RASTER_STEP],
                                     self.properties[VARIABLE_NAME_SPEED])
-
-    def modulate_filter_1_bit(self, pixel):
-        return (255 - pixel) / 255.0
-
-    def modulate_filter_8_bit(self, pixel):
-        return (255 - pixel) / 255.0
-
-    def modulate_filter_palette(self, pixel):
-        p = self.image.getpalette()
-        v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-        return 1.0 - v / 765.0
-
-    def modulate_filter_rgb(self, pixel):
-        return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
 
     def generate(self, m=None):
         if m is None:
@@ -238,26 +226,34 @@ class ImageElement(LaserElement):
         width, height = self.image.size
 
         mode = self.image.mode
-        if mode == "1":
-            image_filter = self.modulate_filter_1_bit
-        elif mode == "P":
-            image_filter = self.modulate_filter_palette
-        elif mode == "L":
-            image_filter = self.modulate_filter_8_bit
-        elif mode == "RGB" or mode == "RGBA":
-            image_filter = self.modulate_filter_rgb
-        else:
-            # Other modes we force it to become an RGB.
+
+        if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
+            # Any mode without a filter should get converted.
             self.image = self.image.convert("RGBA")
-            image_filter = self.modulate_filter_rgb
+            mode = self.image.mode
+        if mode == "1":
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+        elif mode == "P":
+            p = self.image.getpalette()
+
+            def image_filter(pixel):
+                v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
+                return 1.0 - v / 765.0
+        elif mode == "L":
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+        elif mode == "RGB" or mode == "RGBA":
+            def image_filter(pixel):
+                return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
+        else:
+            raise ValueError  # this shouldn't happen.
 
         data = self.image.load()
-
         raster = RasterPlotter(data, width, height, traverse, 0, 0,
                                m.value_trans_x(),
                                m.value_trans_y(),
                                step, image_filter)
-
         yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
         yield COMMAND_SET_DIRECTION, raster.initial_direction()
         yield COMMAND_MODE_COMPACT, 0

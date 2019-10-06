@@ -25,6 +25,30 @@ class RasterPlotter:
         self.offset_y = int(offset_y)
         self.step = step
         self.px_filter = px_filter
+        y = 0
+        dy = 1
+        if (self.traversal & BOTTOM) != 0:
+            y = self.height - 1
+            dy = -1
+
+        x = 0
+        try:
+            if (self.traversal & RIGHT) != 0:
+                while True:
+                    x = self.rightmost_not_equal(y)
+                    if x != self.width:
+                        break
+                    y += dy
+            else:
+                while True:
+                    x = self.leftmost_not_equal(y)
+                    if x != -1:
+                        break
+                    y += dy
+        except IndexError:
+            pass  # This entire image is white.
+        self.initial_x = x
+        self.initial_y = y
 
     def null_filter(self, p):
         """Default no op filter."""
@@ -139,22 +163,10 @@ class RasterPlotter:
         return self.width - 1
 
     def initial_position(self):
-        x = 0
-        y = 0
-        if (self.traversal & RIGHT) != 0:
-            x = self.width - 1
-        if (self.traversal & BOTTOM) != 0:
-            y = self.height - 1
-        return x, y
+        return self.initial_x, self.initial_y
 
     def initial_position_in_scene(self):
-        x = 0
-        y = 0
-        if (self.traversal & RIGHT) != 0:
-            x = self.width - 1
-        if (self.traversal & BOTTOM) != 0:
-            y = self.height - 1
-        return self.offset_x + x, self.offset_y + y
+        return self.offset_x + self.initial_x, self.offset_y + self.initial_y
 
     def initial_direction(self):
         dx = 1
@@ -254,13 +266,10 @@ class RasterPlotter:
                         x = max(x, end)
                     if pixel == skip_pixel:
                         yield offset_x + x * step, offset_y + y * step, 0
-                        #print("(%d, %d) %f" % (offset_x + x * step, offset_y + y * step, 0.0))
                     else:
                         yield offset_x + x * step, offset_y + y * step, pixel
-                        #print("(%d, %d) %f" % (offset_x + x * step, offset_y + y * step, pixel))
                     if x == end:
                         break
                 y += dy
                 yield offset_x + x * step, offset_y + y * step, 0
-                #print("(%d, %d) %f" % (offset_x + x * step, offset_y + y * step, 0))
                 dx = -dx

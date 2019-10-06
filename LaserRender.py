@@ -45,7 +45,7 @@ class LaserRender:
         xmin, ymin, xmax, ymax = group.bounds
         width = int(xmax - xmin)
         height = int(ymax - ymin)
-        bitmap = wx.Bitmap(width, height)
+        bitmap = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bitmap)
         dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -69,8 +69,9 @@ class LaserRender:
             gc.SetBrush(self.brush)
             gc.FillPath(p)
             del p
-
-        image = self.wx2PIL(bitmap)
+        img = bitmap.ConvertToImage()
+        buf = img.GetData()
+        image = Image.frombuffer("RGB", tuple(bitmap.GetSize()), bytes(buf), "raw", "RGB", 0, 1)
         gc.Destroy()
         del dc
         return image
@@ -121,28 +122,25 @@ class LaserRender:
         except AttributeError:
             pass
         if cache is None:
-            myPilImage = node.image
-            myWxImage = wx.Image(*myPilImage.size)
-            myPilImageCopy = myPilImage.copy()
-            myPilImageCopyRGB = myPilImageCopy.convert('RGB')  # Discard any alpha from the PIL image.
-            myPilImageRgbData = myPilImageCopyRGB.tobytes()
-            myWxImage.SetData(myPilImageRgbData)
-            node.cache = myWxImage.ConvertToBitmap()
-        gc.DrawBitmap(node.cache, 0, 0, node.image.width, node.image.height)
-
-    def wx2PIL(self, bitmap):
-        size = tuple(bitmap.GetSize())
-        try:
-            buf = size[0] * size[1] * 3 * "\x00"
-            bitmap.CopyToBuffer(buf)
-        except:
-            del buf
-            buf = bitmap.ConvertToImage().GetData()
-        return Image.frombuffer("RGB", size, bytes(buf), "raw", "RGB", 0, 1)
-
-    def convert(self, image):
-        if isinstance(image,wx.Bitmap):
-            image = self.wx2PIL(image)
+            try:
+                max_allowed = node.max_allowed
+            except AttributeError:
+                max_allowed = 2048
+            pil_data = node.image
+            node.c_width, node.c_height = pil_data.size
+            width, height = pil_data.size
+            dim = max(width, height)
+            if dim > max_allowed or max_allowed == -1:
+                width = int(round(width * max_allowed / float(dim)))
+                height = int(round(height * max_allowed / float(dim)))
+                pil_data = pil_data.copy().resize((width, height))
+            else:
+                pil_data = pil_data.copy()
+            if pil_data.mode != "RGBA":
+                pil_data = pil_data.convert('RGBA')
+            pil_bytes = pil_data.tobytes()
+            node.cache = wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
+        gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
 
 
 class LaserCommandPathParser:

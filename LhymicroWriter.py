@@ -243,84 +243,6 @@ class LhymicroWriter:
         except AttributeError:
             pass
 
-    def raster_pulse_modulate(self, start_x, start_y, generate):
-        if not self.pulse_modulation:
-            for x, y, on in generate:
-                yield x, y, int(round(on))
-            return
-        current_x = start_x
-        current_y = start_y
-        dest_x = start_x
-        dest_y = start_y
-        current_on = 0
-        dx = 0
-        dy = 0
-
-        changed_direction = False
-        changed_laser = False
-        for event in generate:
-            dest_x = event[0]
-            dest_y = event[1]
-            try:
-                modulated_on = event[2]
-            except IndexError:
-                modulated_on = 1  # modulated_on didn't exist.
-            total_dx = dest_x - current_x
-            total_dy = dest_y - current_y
-            print("event: %d, %d == %d" % (total_dx, total_dy, modulated_on))
-            sub_steps = max(abs(total_dx), abs(total_dy))
-            if total_dx > 0:
-                if dx != 1:
-                    changed_direction = True
-                dx = 1
-            elif total_dx < 0:
-                if dx != -1:
-                    changed_direction = True
-                dx = -1
-            else:
-                if dx != 0:
-                    changed_direction = True
-                dx = 0
-            if total_dy > 0:
-                if dy != 1:
-                    changed_direction = True
-                dy = 1
-            elif total_dy < 0:
-                if dy != -1:
-                    changed_direction = True
-                dy = -1
-            else:
-                if dy != 0:
-                    changed_direction = True
-                dy = 0
-            if changed_direction:
-                yield current_x, current_y, current_on
-                changed_direction = False
-            for i in range(0, sub_steps):
-                if changed_laser:
-                    yield current_x, current_y, current_on
-                    changed_laser = False
-                self.pulse_total += self.power * modulated_on
-                if self.pulse_total >= 1000.0:
-                    self.pulse_total -= 1000.0
-                    if current_on != 1:
-                        changed_laser = True
-                    current_on = 1
-                else:
-                    if current_on != 0:
-                        changed_laser = True
-                    current_on = 0
-                current_x += dx
-                current_y += dy
-                # subcycle current is updated.
-                # print("Changed? on=%s" % (str(changed_laser)))
-                # yield current_x, current_y, current_on
-                # changed_laser = False
-        yield current_x, current_y, current_on  # Final point.
-        # final elements
-        # if self.on_plot is not None:
-        #     self.on_plot(last_x, last_y, last_on)
-
     def ungroup_plots(self, generate):
         current_x = None
         current_y = None
@@ -471,11 +393,14 @@ class LhymicroWriter:
                 sx = x
                 sy = y
                 if dy != 0:
-                    self.h_switch()
                     if self.is_top:
-                        dy += self.raster_step
+                        if dy > self.raster_step:
+                            self.move_relative(0, dy - self.raster_step)
+                        self.h_switch()
                     else:
-                        dy -= self.raster_step
+                        if dy > self.raster_step:
+                            self.move_relative(0, dy + self.raster_step)
+                        self.h_switch()
                 if on == 0:
                     self.up()
                 else:
