@@ -1,532 +1,15 @@
-from math import ceil
-from PIL import Image
 
-import wx
-
-# TODO: Move the draw requirements of the elements outside this class so the writer can be tested without wx.
-import path
-import svg_parser
 from K40Controller import K40Controller
-from LaserCommandConstants import *
 from LhymicroWriter import LhymicroWriter
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
-from ZMatrix import ZMatrix
-
-VARIABLE_NAME_NAME = 'name'
-VARIABLE_NAME_COLOR = 'color'
-VARIABLE_NAME_FILL_COLOR = 'fill'
-VARIABLE_NAME_SPEED = 'speed'
-VARIABLE_NAME_POWER = 'power'
-VARIABLE_NAME_PASSES = 'passes'
-VARIABLE_NAME_DRATIO = 'd_ratio'
-VARIABLE_NAME_RASTER_STEP = "raster_step"
-VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
+from ProjectNodes import *
 
 
-class LaserCommandPathParser:
-    """This class converts a set of laser commands into a
-     graphical representation of those commands."""
-
-    def __init__(self, graphic_path):
-        self.graphic_path = graphic_path
-        self.on = False
-        self.relative = False
-        self.x = 0
-        self.y = 0
-
-    def command(self, event):
-        command, values = event
-        if command == COMMAND_LASER_OFF:
-            self.on = False
-        elif command == COMMAND_LASER_ON:
-            self.on = True
-        elif command == COMMAND_RAPID_MOVE:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_SET_SPEED:
-            pass
-        elif command == COMMAND_SET_POWER:
-            pass
-        elif command == COMMAND_SET_STEP:
-            pass
-        elif command == COMMAND_SET_DIRECTION:
-            pass
-        elif command == COMMAND_MODE_COMPACT:
-            pass
-        elif command == COMMAND_MODE_DEFAULT:
-            pass
-        elif command == COMMAND_MODE_CONCAT:
-            pass
-        elif command == COMMAND_SET_ABSOLUTE:
-            self.relative = False
-        elif command == COMMAND_SET_INCREMENTAL:
-            self.relative = True
-        elif command == COMMAND_HSTEP:
-            x = values
-            y = self.y
-            x += self.x
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_VSTEP:
-            x = self.x
-            y = values
-            y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_HOME:
-            self.graphic_path.MoveToPoint(0, 0)
-            self.x = 0
-            self.y = 0
-        elif command == COMMAND_LOCK:
-            pass
-        elif command == COMMAND_UNLOCK:
-            pass
-        elif command == COMMAND_PLOT:
-            plot = values
-            for e in plot:
-                if isinstance(e, path.Move):
-                    self.graphic_path.MoveToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Line):
-                    self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Close):
-                    self.graphic_path.CloseSubpath()
-                elif isinstance(e, path.QuadraticBezier):
-                    self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
-                                                          e.end[0], e.end[1])
-                elif isinstance(e, path.CubicBezier):
-                    self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
-                                                      e.control2[0], e.control2[1],
-                                                      e.end[0], e.end[1])
-                elif isinstance(e, path.Arc):
-                    for curve in e.as_cubic_curves():
-                        self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
-                                                          curve.control2[0], curve.control2[1],
-                                                          curve.end[0], curve.end[1])
-
-        elif command == COMMAND_SHIFT:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_MOVE:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            if self.on:
-                self.graphic_path.MoveToPoint(x, y)
-            else:
-                self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT_QUAD:
-            cx, cy, x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-                cx += self.x
-                cy += self.y
-
-            self.graphic_path.AddQuadCurveToPoint(cx, cy, x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT_CUBIC:
-            c1x, c1y, c2x, c2y, x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-                c1x += self.x
-                c1y += self.y
-                c2x += self.x
-                c2y += self.y
-            self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, x, y)
-            self.x = x
-            self.y = y
-
-
-class LaserNode(list):
+class LaserProject:
     def __init__(self):
-        list.__init__(self)
-        self.properties = {}
-        self.parent = None
-        self.box = None
-        self.bounds = None
-
-    def __eq__(self, other):
-        return other is self
-
-    def set_color(self, color):
-        self.properties[VARIABLE_NAME_COLOR] = color
-
-    def draw(self, dc, drawfills=False):
-        pass
-
-    def generate(self, dc):
-        pass
-
-    def append(self, obj):
-        if obj.parent is not None:
-            raise ValueError("Still has a parent.")
-        if obj in self:
-            raise ValueError("Already part of list.")
-        list.append(self, obj)
-        obj.parent = self
-        self.notify_change()
-
-    def remove(self, obj):
-        list.remove(self, obj)
-        obj.parent = None
-        self.notify_change()
-
-    def detach(self):
-        if self.parent is not None:
-            self.parent.remove(self)
-
-    def notify_change(self):
-        if self.parent == self:
-            raise ValueError
-        if self.parent is not None:
-            self.parent.notify_change()
-
-    def contains(self, x, y=None):
-        if y is None:
-            x, y = x
-        if self.bounds is None:
-            return False
-        return self.bounds[0] <= x <= self.bounds[2] and self.bounds[1] <= y <= self.bounds[3]
-
-    @property
-    def center(self):
-        return (self.bounds[2] - self.bounds[0]) / 2.0, (self.bounds[3] - self.bounds[1]) / 2.0
-
-
-class LaserGroup(LaserNode):
-    def __init__(self):
-        LaserNode.__init__(self)
-
-    def __str__(self):
-        name = "Group"
-        if VARIABLE_NAME_NAME in self.properties:
-            name = self.properties[VARIABLE_NAME_NAME]
-        if VARIABLE_NAME_PASSES in self.properties:
-            return "%d pass, %s" % (self.properties[VARIABLE_NAME_PASSES], name)
-        else:
-            return name
-
-    def all_children_of_type(self, type):
-        return [e for e in self if isinstance(e, type)]
-
-    def contains_type(self, type):
-        results = [e for e in self if isinstance(e, type)]
-        return len(results) != 0
-
-    def not_contains_type(self, type):
-        results = [e for e in self if isinstance(e, type)]
-        return len(results) == 0
-
-
-class LaserElement(LaserNode):
-    def __init__(self):
-        LaserNode.__init__(self)
-        self.matrix = path.Matrix()
-        self.properties = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_FILL_COLOR: 0, VARIABLE_NAME_SPEED: 60,
-                           VARIABLE_NAME_PASSES: 1,
-                           VARIABLE_NAME_POWER: 1000.0}
-        self.cache = None
-        self.pen = wx.Pen()
-        self.brush = wx.Brush()
-        self.color = wx.Colour()
-        self.color.SetRGB(self.properties['color'])
-
-    def set_color(self, color):
-        self.properties[VARIABLE_NAME_COLOR] = color
-
-    def draw(self, dc, drawfills=False):
-        """Default draw routine for the laser element.
-        If the generate is defined this will draw the
-        element as a series of lines, as defined by generate."""
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        self.color.SetRGB(self.properties[VARIABLE_NAME_COLOR])
-        self.pen.SetColour(self.color)
-        gc.SetPen(self.pen)
-        if self.cache is None:
-            p = gc.CreatePath()
-            parse = LaserCommandPathParser(p)
-            for event in self.generate(path.Matrix()):
-                parse.command(event)
-            self.cache = p
-        if drawfills and VARIABLE_NAME_FILL_COLOR in self.properties:
-            c = self.properties[VARIABLE_NAME_FILL_COLOR]
-            swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
-            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
-            self.brush.SetColour(self.color)
-            gc.SetBrush(self.brush)
-            gc.FillPath(self.cache)
-        gc.StrokePath(self.cache)
-
-    def convert_absolute_to_affinespace(self, position):
-        return self.matrix.point_in_matrix_space(position)
-
-    def convert_affinespace_to_absolute(self, position):
-        return self.matrix.point_in_inverse_space(position)
-
-    def generate(self, m=None):
-        yield COMMAND_MODE_DEFAULT, 0
-
-    def move(self, dx, dy):
-        self.matrix.post_translate(dx, dy)  # Apply translate after all the other events.
-
-    def svg_transform(self, transform_str):
-        svg_parser.parse_svg_transform(transform_str, self.matrix)
-
-
-class ImageElement(LaserElement):
-    def __init__(self, image):
-        LaserElement.__init__(self)
-        if isinstance(image,wx.Bitmap):
-            image = self.wx2PIL(image)
-        self.box = [0, 0, image.width, image.height]
-
-        self.image = image
-        self.cache = None
-        self.properties.update({VARIABLE_NAME_RASTER_STEP: 1,
-                                VARIABLE_NAME_SPEED: 100,
-                                VARIABLE_NAME_POWER: 1000.0})
-
-    def __str__(self):
-        return "%d Image %dX s@%3f" % (self.properties[VARIABLE_NAME_PASSES],
-                                       self.properties[VARIABLE_NAME_RASTER_STEP],
-                                       self.properties[VARIABLE_NAME_SPEED])
-
-    def wx2PIL(self, bitmap):
-        size = tuple(bitmap.GetSize())
-        try:
-            buf = size[0] * size[1] * 3 * "\x00"
-            bitmap.CopyToBuffer(buf)
-        except:
-            del buf
-            buf = bitmap.ConvertToImage().GetData()
-        return Image.frombuffer("RGB", size, bytes(buf), "raw", "RGB", 0, 1)
-
-    def draw(self, dc, drawfills=False):
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        if self.cache is None:
-            myPilImage = self.image
-            myWxImage = wx.Image(*myPilImage.size)
-            myPilImageCopy = myPilImage.copy()
-            myPilImageCopyRGB = myPilImageCopy.convert('RGB')  # Discard any alpha from the PIL image.
-            myPilImageRgbData = myPilImageCopyRGB.tobytes()
-            myWxImage.SetData(myPilImageRgbData)
-            self.cache = myWxImage.ConvertToBitmap()
-        gc.DrawBitmap(self.cache, 0, 0, self.image.width, self.image.height)
-
-    def modulate_filter_1_bit(self, pixel):
-        return (255 - pixel) / 255.0
-
-    def modulate_filter_8_bit(self, pixel):
-        return (255 - pixel) / 255.0
-
-    def modulate_filter_palette(self, pixel):
-        p = self.image.getpalette()
-        v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-        return 1.0 - v / 765.0
-
-    def modulate_filter_rgb(self, pixel):
-        return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
-
-    def generate(self, m=None):
-        if m is None:
-            m = self.matrix
-        speed = 100
-        if VARIABLE_NAME_SPEED in self.properties:
-            speed = self.properties[VARIABLE_NAME_SPEED]
-        if speed is None:
-            speed = 100
-        yield COMMAND_SET_SPEED, speed
-
-        direction = 0
-        if VARIABLE_NAME_RASTER_DIRECTION in self.properties:
-            direction = self.properties[VARIABLE_NAME_RASTER_DIRECTION]
-        step = 1
-        if VARIABLE_NAME_RASTER_STEP in self.properties:
-            step = self.properties[VARIABLE_NAME_RASTER_STEP]
-        if VARIABLE_NAME_POWER in self.properties:
-            power = self.properties.get(VARIABLE_NAME_POWER)
-            yield COMMAND_SET_POWER, power
-        traverse = 0
-        if direction == 0:
-            yield COMMAND_SET_STEP, step
-            traverse |= X_AXIS
-            traverse |= TOP
-        elif direction == 1:
-            yield COMMAND_SET_STEP, step
-            traverse |= X_AXIS
-            traverse |= BOTTOM
-        width, height = self.image.size
-
-        mode = self.image.mode
-        if mode == "1":
-            image_filter = self.modulate_filter_1_bit
-        elif mode == "P":
-            image_filter = self.modulate_filter_palette
-        elif mode == "L":
-            image_filter = self.modulate_filter_8_bit
-        elif mode == "RGB" or mode == "RGBA":
-            image_filter = self.modulate_filter_rgb
-        else:
-            # Other modes we force it to become an RGB.
-            self.image = self.image.convert("RGBA")
-            image_filter = self.modulate_filter_rgb
-
-        data = self.image.load()
-
-        raster = RasterPlotter(data, width, height, traverse, 0, 0,
-                               m.value_trans_x(),
-                               m.value_trans_y(),
-                               step, image_filter)
-
-        yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
-        yield COMMAND_SET_DIRECTION, raster.initial_direction()
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_RASTER, raster
-        yield COMMAND_MODE_DEFAULT, 0
-
-
-class TextElement(LaserElement):
-    def __init__(self, text):
-        LaserElement.__init__(self)
-        self.text = text
-        self.properties.update({VARIABLE_NAME_COLOR: 0x000000, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
-
-    def __str__(self):
-        string = "NOT IMPLEMENTED: \"%s\"" % (self.text)
-        if len(string) < 100:
-            return string
-        return string[:97] + '...'
-
-    def draw(self, dc, drawfills=False):
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
-        if self.text is not None:
-            dc.DrawText(self.text, self.matrix.value_trans_x(), self.matrix.value_trans_y())
-
-    # def generate(self, m=None):
-    #     if m is None:
-    #         m = self.matrix
-    #     if VARIABLE_NAME_SPEED in self.cut:
-    #         speed = self.cut.get(VARIABLE_NAME_SPEED)
-    #         yield COMMAND_SET_SPEED, speed
-    #     if VARIABLE_NAME_POWER in self.cut:
-    #         power = self.cut.get(VARIABLE_NAME_POWER)
-    #         yield COMMAND_SET_POWER, power
-    #     if VARIABLE_NAME_DRATIO in self.cut:
-    #         d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
-    #         yield COMMAND_SET_D_RATIO, d_ratio
-    #     yield COMMAND_SET_STEP, 0
-    #     yield COMMAND_MODE_COMPACT, 0
-    #     yield COMMAND_MODE_DEFAULT, 0
-    #     yield COMMAND_SET_SPEED, None
-    #     yield COMMAND_SET_D_RATIO, None
-
-
-class PathElement(LaserElement):
-    def __init__(self, path_d):
-        LaserElement.__init__(self)
-        self.path = path_d
-        self.properties.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
-
-    def __str__(self):
-        string = "%d Path @%.1f mm/s %.1fx path=%s" % \
-                 (self.properties[VARIABLE_NAME_PASSES], self.properties[VARIABLE_NAME_SPEED],
-                  self.matrix.value_scale_x(),
-                  str(hash(self.path)))
-        if len(string) < 100:
-            return string
-        return string[:97] + '...'
-
-    def reify_matrix(self):
-        """Apply the matrix to the path and reset matrix."""
-        object_path = path.Path()
-        svg_parser.parse_svg_path(object_path, self.path)
-        object_path *= self.matrix
-        self.path = object_path.d()
-        self.matrix.reset()
-        self.cache = None
-
-    def generate(self, m=None):
-        if m is None:
-            m = self.matrix
-        object_path = path.Path()
-        svg_parser.parse_svg_path(object_path, self.path)
-        self.box = object_path.bbox()
-        if VARIABLE_NAME_SPEED in self.properties:
-            speed = self.properties.get(VARIABLE_NAME_SPEED)
-            yield COMMAND_SET_SPEED, speed
-        if VARIABLE_NAME_POWER in self.properties:
-            power = self.properties.get(VARIABLE_NAME_POWER)
-            yield COMMAND_SET_POWER, power
-        if VARIABLE_NAME_DRATIO in self.properties:
-            d_ratio = self.properties.get(VARIABLE_NAME_DRATIO)
-            yield COMMAND_SET_D_RATIO, d_ratio
-        plot = object_path * m
-        first_point = plot.first_point
-        yield COMMAND_RAPID_MOVE, first_point
-        yield COMMAND_SET_STEP, 0
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_PLOT, plot
-        yield COMMAND_MODE_DEFAULT, 0
-        yield COMMAND_SET_SPEED, None
-        yield COMMAND_SET_D_RATIO, None
-
-
-class RawElement(LaserElement):
-    def __init__(self, element):
-        LaserElement.__init__(self)
-        self.command_list = []
-        for command in element.generate():
-            self.command_list.append(command)
-
-    def generate(self, m=None):
-        if m is None:
-            m = self.matrix
-            # Raw cannot have matrix.
-        for command in self.command_list:
-            yield command
-
-    def __str__(self):
-        string = "Raw #%d cmd=%s" % \
-                 (len(self.command_list), str(self.command_list))
-        if len(string) < 100:
-            return string
-        return string[:97] + '...'
-
-
-class LaserProject(LaserNode):
-    def __init__(self):
-        LaserNode.__init__(self)
         self.listeners = {}
         self.last_message = {}
-        self.elements = self
+        self.elements = ProjectRoot()
+        self.elements.parent = self
         self.size = 320, 220
         self.units = (39.37, "mm", 10, 0)
         self.config = None
@@ -536,11 +19,11 @@ class LaserProject(LaserNode):
         self.window_height = 600
 
         self.selected = None
-        self.thread = None
         self.autohome = False
         self.autobeep = True
         self.autostart = True
         self.mouse_zoom_invert = False
+        self.keymap = {}
         self.controller = K40Controller(self)
         self.writer = LhymicroWriter(self, controller=self.controller)
 
@@ -687,7 +170,7 @@ class LaserProject(LaserNode):
     def validate(self, node=None):
         if node is None:
             # Default call.
-            node = self
+            node = self.elements
 
         node.bounds = None  # delete bounds
         for element in node:
@@ -731,38 +214,6 @@ class LaserProject(LaserNode):
             return
         node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
 
-    def flat_elements_with_passes(self, elements=None, types=LaserElement):
-        if elements is None:
-            elements = self.elements
-        passes = 1
-        if VARIABLE_NAME_PASSES in elements.properties:
-            passes = elements.properties[VARIABLE_NAME_PASSES]
-        if isinstance(elements, types):
-            for q in range(0, passes):
-                yield elements
-        for element in elements:
-            for q in range(0, passes):
-                for flat_element in self.flat_elements_with_passes(element, types=types):
-                    yield flat_element
-
-    @staticmethod
-    def flatten(elements, types=LaserElement):
-        if isinstance(elements, types):
-            yield elements
-        for element in elements:
-            for flat_element in LaserProject.flatten(element, types=types):
-                yield flat_element
-
-    def flat_elements(self, elements=None, types=(LaserElement)):
-        if elements is None:
-            elements = self.elements
-        for element in elements:
-            element.parent = elements
-            if isinstance(element, types):
-                yield element
-            for flat_element in self.flat_elements(element, types=types):
-                yield flat_element
-
     def size_in_native_units(self):
         return self.size[0] * 39.37, self.size[1] * 39.37
 
@@ -789,7 +240,7 @@ class LaserProject(LaserNode):
     def set_selected_by_position(self, position):
         self.selected = None
         self.validate()
-        for e in self.flat_elements(types=LaserGroup):
+        for e in self.elements.flat_elements(types=LaserGroup):
             bounds = e.bounds
             if bounds is None:
                 continue
@@ -799,7 +250,7 @@ class LaserProject(LaserNode):
 
     def bbox(self):
         boundary_points = []
-        for e in self.flat_elements():
+        for e in self.elements.flat_elements(LaserNode):
             box = e.box
             if box is None:
                 continue
@@ -828,7 +279,7 @@ class LaserProject(LaserNode):
         if self.selected is not None:
             for e in self.selected:
                 e.detach()
-                self.append(RawElement(e))
+                self.elements.append(RawElement(e))
 
     def menu_remove(self, position):
         self.validate()
@@ -878,7 +329,7 @@ class LaserProject(LaserNode):
         if position is not None:
             self.set_selected_by_position(position)
         else:
-            position = self.center
+            position = self.selected.center
         if self.selected is not None:
             self.validate()
             for e in self.selected:

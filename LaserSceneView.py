@@ -5,16 +5,28 @@
 
 import wx
 
+from LaserCommandConstants import *
 from ElementProperty import ElementProperty
-from LaserProject import LaserCommandPathParser, LaserGroup, PathElement, ImageElement
+from LaserProject import PathElement, ImageElement, LaserNode
+from LaserRender import LaserRender
 # begin wxGlade: dependencies
 # end wxGlade
 from ZMatrix import ZMatrix
 from path import Angle
+from svg_parser import parse_svg_distance
 
 # begin wxGlade: extracode
 
 MILS_IN_MM = 39.3701
+
+
+class MappedKey:
+    def __init__(self, key, command):
+        self.key = key
+        self.command = command
+
+    def __str__(self):
+        return self.key
 
 
 class LaserSceneView(wx.Panel):
@@ -22,6 +34,7 @@ class LaserSceneView(wx.Panel):
         # begin wxGlade: MainView.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
         wx.Panel.__init__(self, *args, **kwds)
+        self.SetDoubleBuffered(True)
 
         self.matrix = ZMatrix()
         self.identity = ZMatrix()
@@ -32,7 +45,7 @@ class LaserSceneView(wx.Panel):
         self.popup_window_position = None
         self.popup_scene_position = None
         self._Buffer = None
-        self.dirty_draw = False
+        self.dirty = False
 
         self.__set_properties()
         self.__do_layout()
@@ -61,9 +74,11 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus())  # Focus follows mouse.
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.project = None
+        self.renderer = None
 
     def set_project(self, project):
         self.project = project
+        self.renderer = LaserRender(project)
         bedwidth, bedheight = project.size
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
         self.project["position", self.update_position] = self
@@ -71,6 +86,8 @@ class LaserSceneView(wx.Panel):
         self.project["selection", self.selection_changed] = self
         self.project["bed_size", self.bed_changed] = self
         self.project["elements", self.elements_changed] = self
+
+        self.default_keymap()
 
     def on_close(self, event):
         self.project["position", self.update_position] = None
@@ -99,7 +116,7 @@ class LaserSceneView(wx.Panel):
         self.guide_lines = None
         bedwidth, bedheight = self.project.size_in_native_units()
         self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
-        self.update_buffer()
+        self.post_buffer_update()
 
     def update_position(self, pos):
         # x, y, old_x, old_y = pos
@@ -126,12 +143,12 @@ class LaserSceneView(wx.Panel):
         pass
 
     def post_buffer_update(self):
-        if not self.dirty_draw:
-            self.dirty_draw = True
-            wx.CallAfter(self.update_buffer)
+        if not self.dirty:
+            self.dirty = True
+            wx.CallAfter(self.update_buffer_ui_thread)
 
-    def update_buffer(self):
-        self.dirty_draw = False
+    def update_buffer_ui_thread(self):
+        self.dirty = False
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         self.on_draw_background(dc)
@@ -141,6 +158,7 @@ class LaserSceneView(wx.Panel):
         self.on_draw_interface(dc)
         del dc  # need to get rid of the MemoryDC before Update() is called.
         self.Refresh()
+        #self.Update()
 
     def on_matrix_change(self):
         self.guide_lines = None
@@ -200,7 +218,7 @@ class LaserSceneView(wx.Panel):
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
         elif rotation < -1:
             self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
-        self.update_buffer()
+        self.post_buffer_update()
 
     def on_mouse_middle_down(self, event):
         self.CaptureMouse()
@@ -318,106 +336,127 @@ class LaserSceneView(wx.Panel):
             self.PopupMenu(menu)
             menu.Destroy()
 
+    def default_keymap(self):
+        self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
+        self.project.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
+        self.project.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
+        self.project.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
+        q = ord('Q')
+        self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
+
+    def execute_string_action(self, action, *args):
+        writer = self.project.writer
+        if action == 'move':
+            writer.send_job(self.execute_move_action(*args))
+        elif action == 'move_to':
+            writer.send_job(self.execute_move_to_action(*args))
+        elif action == 'set_position':
+            self.execute_set_position_action(*args)
+
+    def execute_set_position_action(self, index):
+        x = self.project.writer.current_x
+        y = self.project.writer.current_y
+        self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
+
+    def execute_move_action(self, direction, amount):
+        amount = parse_svg_distance(amount)
+        amount = 1000.0 * amount / 96.0
+        x = 0
+        y = 0
+        if direction == 'right':
+            x = amount
+        elif direction == 'left':
+            x = -amount
+        elif direction == 'up':
+            y = -amount
+        elif direction == 'down':
+            y = amount
+
+        def move():
+            yield COMMAND_SET_INCREMENTAL
+            yield COMMAND_RAPID_MOVE, (x, y)
+            yield COMMAND_SET_ABSOLUTE
+        return move
+
+    def execute_move_to_action(self, position_x, position_y):
+        # self.project.writer.move_absolute(int(position_x), int(position_y))
+
+        def move():
+            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
+        return move
+
     def on_key_press(self, event):
         keycode = event.GetKeyCode()
-        if keycode in [wx.WXK_ESCAPE]:
-            pass
-        elif keycode in [ord('1')]:
-            self.project.writer.home()
-        elif keycode in [wx.WXK_RIGHT, wx.WXK_NUMPAD6]:
-            self.project.writer.move_relative(MILS_IN_MM * 1, 0)
-        elif keycode in [wx.WXK_LEFT, wx.WXK_NUMPAD4]:
-            self.project.writer.move_relative(MILS_IN_MM * -1, 0)
-        elif keycode in [wx.WXK_UP, wx.WXK_NUMPAD8]:
-            self.project.writer.move_relative(0, MILS_IN_MM * -1)
-        elif keycode in [wx.WXK_DOWN, wx.WXK_NUMPAD2]:
-            self.project.writer.move_relative(0, MILS_IN_MM * 1)
+        if keycode in self.project.keymap:
+            action = self.project.keymap[keycode].command
+            args = str(action).split(' ')
+            self.execute_string_action(*args)
 
     def on_scale_popup(self, value):
         def specific(event):
             self.project.menu_scale(value, value, self.popup_scene_position)
-            self.update_buffer()
+            self.post_buffer_update()
 
         return specific
 
     def on_step_popup(self, value):
         def specific(event):
             self.project.menu_step(value, self.popup_scene_position)
-            self.update_buffer()
+            self.post_buffer_update()
 
         return specific
 
     def on_dither_popup(self, element):
         def specific(event):
             self.project.menu_dither(element)
-            self.update_buffer()
+            self.post_buffer_update()
 
         return specific
 
     def on_raster_popup(self):
-
         def raster(event):
-            elems = list(self.project.flat_elements(types=(PathElement)))
+            image = self.renderer.make_raster(self.project.selected)
             xmin, ymin, xmax, ymax = self.project.selected.bounds
-            width = int(xmax - xmin)
-            height = int(ymax - ymin)
-            bitmap = wx.Bitmap(width, height)
-            dc = wx.MemoryDC()
-            dc.SelectObject(bitmap)
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            p = gc.CreatePath()
-            parse = LaserCommandPathParser(p)
-            for e in elems:
-                e.matrix.post_translate(-xmin, -ymin)
-                for event in e.generate():
-                    parse.command(event)
-                e.matrix.post_translate(+xmin, +ymin)
-            gc.SetBrush(wx.BLACK_BRUSH)
-            gc.FillPath(p)
-
-            image_element = ImageElement(bitmap)
+            image_element = ImageElement(image)
             self.project.selected.append(image_element)
             image_element.matrix.post_translate(xmin, ymin)
-            dc.Destroy()
-            self.update_buffer()
+            self.post_buffer_update()
 
         return raster
 
     def on_reify_popup(self, value):
-        for e in self.project.flat_elements(types=(PathElement)):
+        for e in self.project.elements.flat_elements(types=(PathElement)):
             e.reify_matrix()
-        self.update_buffer()
+        self.post_buffer_update()
 
     def on_reset_popup(self, value):
-        for e in self.project.flat_elements():
+        for e in self.project.elements.flat_elements(types=(LaserNode)):
             e.matrix.reset()
-        self.update_buffer()
+        self.post_buffer_update()
 
     def on_rotate_popup(self, value):
         def specific(event):
             from math import pi
             tau = pi * 2
             self.project.menu_rotate(value * tau, self.popup_scene_position)
-            self.update_buffer()
+            self.post_buffer_update()
 
         return specific
 
     def on_popup_menu_remove(self, event):
         self.project.menu_remove(self.popup_scene_position)
-        self.update_buffer()
+        self.post_buffer_update()
 
     def on_popup_menu_convert(self, event):
         self.project.menu_convert_raw(self.popup_scene_position)
-        self.update_buffer()
+        self.post_buffer_update()
 
     def focus_on_project(self):
         bbox = self.project.bbox()
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
-        self.update_buffer()
+        self.post_buffer_update()
 
     def focus_position_scene(self, scene_point):
         window_width, window_height = self.ClientSize
@@ -571,8 +610,7 @@ class LaserSceneView(wx.Panel):
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             x0, y0, x1, y1 = self.project.selected.bounds
             dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
-        for element in self.project.flat_elements():
-            element.draw(dc, self.project.draw_mode & 1 == 0)
+        self.renderer.render(dc, self.project.draw_mode)
         if self.project.draw_mode & 8 == 0:
             dc.SetPen(wx.BLUE_PEN)
             dc.DrawLineList(self.laserpath)

@@ -12,11 +12,11 @@ from PIL import Image
 
 import svg_parser
 from EgvParser import parse_egv
-from LaserProject import LaserProject, ImageElement, PathElement, TextElement, LaserElement, LaserGroup
+from LaserProject import LaserProject, ImageElement, PathElement, TextElement, LaserElement, LaserGroup, ProjectRoot
 from LaserSceneView import LaserSceneView
 from ThreadConstants import *
 from icons import *
-from path import Path, Point
+from path import Path, Point, Matrix
 
 try:
     from math import tau
@@ -25,7 +25,7 @@ except ImportError:
 
     tau = pi * 2
 
-MEERK40T_VERSION = "0.1.8"
+MEERK40T_VERSION = "0.1.9"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -264,7 +264,7 @@ class MeerK40t(wx.Frame):
         self.project["control_thread", self.on_control_state] = self
         self.project["writer", self.on_writer_state] = self
 
-        m = self.MenuBar.FindItemById(ID_MENU_HIDE_GRID)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.project.draw_mode & 4 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
         m.Check(self.project.draw_mode & 2 != 0)
@@ -365,7 +365,7 @@ class MeerK40t(wx.Frame):
 
     def load_svg(self, pathname, group=None):
         svg = svg_parser.parse_svg_file(pathname, viewport_transform=True)
-        context = self.project
+        context = self.project.elements
 
         if group is None:
             group = LaserGroup()
@@ -404,10 +404,10 @@ class MeerK40t(wx.Frame):
             #     group = LaserGroup()
             #     context.append(group)
             #     context = group
-        self.scene.update_buffer()
+        self.scene.post_buffer_update()
 
     def load_egv(self, pathname, group=None):
-        context = self.project
+        context = self.project.elements
         if group is None:
             group = LaserGroup()
             group.properties['filepath'] = pathname
@@ -430,28 +430,28 @@ class MeerK40t(wx.Frame):
                     context.append(element)
                     if 'speed' in event:
                         element.properties['speed'] = event['speed']
-        self.scene.update_buffer()
+        self.scene.post_buffer_update()
 
     def load_image(self, pathname, group=None):
         image = Image.open(pathname)
-        context = self.project
+        context = self.project.elements
+        element = ImageElement(image)
         if group is None:
             group = LaserGroup()
+            group.properties.update(element.properties)
             group.properties['filepath'] = pathname
             group.properties['name'] = os.path.basename(pathname)
             context.append(group)
         context = group
-        context.append(ImageElement(image))
-        # width, height = image.size
-        # context.append(PathElement("M0,0 {0},0 {0},{1} 0,{1}z".format(width, height)))
-        self.scene.update_buffer()
+        context.append(element)
+        self.scene.post_buffer_update()
 
     def tree_update(self):
         self.tree.refresh_tree_elements()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.elements = []
-        self.scene.update_buffer()
+        self.scene.post_buffer_update()
         self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -493,12 +493,12 @@ class MeerK40t(wx.Frame):
     def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
-        self.scene.update_buffer()
+        self.scene.post_buffer_update()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
         m = self.scene.ClientSize / 2
         self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
-        self.scene.update_buffer()
+        self.scene.post_buffer_update()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.scene.focus_on_project()
@@ -506,7 +506,7 @@ class MeerK40t(wx.Frame):
     def toggle_draw_mode(self, bits):
         def toggle(event):
             self.project.draw_mode ^= bits
-            self.scene.update_buffer()
+            self.scene.post_buffer_update()
 
         return toggle
 
@@ -582,7 +582,7 @@ class MeerK40t(wx.Frame):
         project.close_old_window("jobinfo")
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project, [e for e in project.flat_elements_with_passes()])
+        window.set_project(project, [e for e in self.project.elements.flat_elements(types=LaserElement, passes=True)])
         window.Show()
         project.windows["jobinfo"] = window
 
@@ -675,10 +675,11 @@ class CutConfiguration(wx.Panel):
         if len(drag_parent) == 0 and isinstance(drag_parent, LaserGroup) and 'name' not in drag_parent.properties:
             drag_parent.parent.remove(drag_parent)
 
-        if isinstance(drop_element, LaserProject):  # Project
+        if isinstance(drop_element, ProjectRoot):  # Project
             if not isinstance(drag_element, LaserGroup):
                 group = LaserGroup()
                 group.append(drag_element)
+                group.properties.update(drag_element.properties)  # Group gets element property.
                 drop_element.append(group)
             else:
                 drop_element.append(drag_element)
@@ -697,24 +698,25 @@ class CutConfiguration(wx.Panel):
         item = self.element_tree.GetSelection()
         if item is not None and item.ID is not None and item in self.item_lookup:
             element = self.item_lookup[item]
-            window.set_project(project, [e for e in project.flat_elements_with_passes(element)])
+            window.set_project(project, [e for e in element.flat_elements(types=(LaserElement), passes=True)])
         else:
-            window.set_project(project, [e for e in project.flat_elements_with_passes()])
+            window.set_project(project, [e for e in project.elements.flat_elements(types=(LaserElement), passes=True)])
         window.Show()
         project.windows["jobinfo"] = window
 
     def on_item_right_click(self, event):
-        item = self.element_tree.GetSelection()
+        item = event.GetItem()
         if item is None:
             return
         if item.ID is None:
             return
         if item in self.item_lookup:
             element = self.item_lookup[item]
+            project.set_selected(element)
             menu = wx.Menu()
             if not isinstance(element, LaserProject):
-                convert = menu.Append(wx.ID_ANY, "Delete", "", wx.ITEM_NORMAL)
-                self.Bind(wx.EVT_MENU, self.on_tree_popup_delete, convert)
+                convert = menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
 
                 if isinstance(element, LaserGroup):
                     if 'filepath' in element.properties:
@@ -723,12 +725,12 @@ class CutConfiguration(wx.Panel):
                         self.Bind(wx.EVT_MENU, self.on_tree_popup_reload(filepath, element),
                                   menu.Append(wx.ID_ANY, "Reload %s" % name, "", wx.ITEM_NORMAL))
                 if isinstance(element, PathElement):
-                    self.Bind(wx.EVT_MENU, self.on_tree_popup_subpath,
+                    self.Bind(wx.EVT_MENU, self.on_tree_popup_subpath(element),
                               menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL))
 
-                self.Bind(wx.EVT_MENU, self.on_tree_popup_hull,
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_hull(element),
                           menu.Append(wx.ID_ANY, "Convex Hull", "", wx.ITEM_NORMAL))
-                self.Bind(wx.EVT_MENU, self.on_tree_popup_burn,
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_burn(element),
                           menu.Append(wx.ID_ANY, "Execute Job", "", wx.ITEM_NORMAL))
             if menu.MenuItemCount != 0:
                 self.PopupMenu(menu)
@@ -743,40 +745,45 @@ class CutConfiguration(wx.Panel):
 
         return reloadfile
 
-    def on_tree_popup_delete(self, event):
-        item = self.element_tree.GetSelection()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            element.parent.remove(element)
+    def on_tree_popup_delete(self, element):
+        def delete_element(event):
+            try:
+                element.parent.remove(element)
+            except AttributeError:
+                pass
             project.set_selected(None)
+        return delete_element
 
-    def on_tree_popup_subpath(self, event):
-        item = self.element_tree.GetSelection()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
+    def on_tree_popup_subpath(self, element):
+        def subpath_element(event):
             context = element.parent
             if isinstance(element, PathElement):
                 element.detach()
                 path = Path()
                 svg_parser.parse_svg_path(path, element.path)
+                add = []
                 for subpath in path.as_subpaths():
-                    context.append(PathElement(subpath.d()))
-        project.set_selected(None)
+                    subelement = PathElement(subpath.d())
+                    subelement.properties.update(element.properties)
+                    subelement.matrix = Matrix(element.matrix)
+                    add.append(subelement)
+                context.append_all(add)
+            project.set_selected(None)
+        return subpath_element
 
-    def on_tree_popup_burn(self, event):
-        item = self.element_tree.GetSelection()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
+    def on_tree_popup_burn(self, element):
+        def burn_element(event):
             project.close_old_window("jobinfo")
             from JobInfo import JobInfo
             window = JobInfo(None, wx.ID_ANY, "")
-            window.set_project(project, [e for e in project.flat_elements_with_passes(element)])
+            window.set_project(project, [e for e in element.flat_elements(types=LaserElement, passes=True)])
             window.Show()
             project.windows["jobinfo"] = window
+        return burn_element
 
     def get_convex_hull(self, element):
         pts = []
-        for e in LaserProject.flatten(element):
+        for e in element.flat_elements((PathElement, ImageElement)):
             if isinstance(e, PathElement):
                 epath = Path()
                 svg_parser.parse_svg_path(epath, e.path)
@@ -790,10 +797,8 @@ class CutConfiguration(wx.Panel):
             return None
         return hull
 
-    def on_tree_popup_hull(self, event):
-        item = self.element_tree.GetSelection()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
+    def on_tree_popup_hull(self, element):
+        def convex_hull(event):
             path = Path()
             pts = self.get_convex_hull(element)
             if pts is None:
@@ -802,7 +807,8 @@ class CutConfiguration(wx.Panel):
             path.closed()
             context = element.parent
             context.append(PathElement(path.d()))
-        project.set_selected(None)
+            project.set_selected(None)
+        return convex_hull
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
         item = event.GetItem()
@@ -822,7 +828,10 @@ class CutConfiguration(wx.Panel):
             project.set_selected(element)
 
     def add_element(self, tree, node, element):
-        item = tree.AppendItem(node, str(element))
+        if element.passes == 1:
+            item = tree.AppendItem(node, str(element))
+        else:
+            item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
         self.item_lookup[item] = element
         for subitem in element:
             self.add_element(tree, item, subitem)
@@ -831,10 +840,10 @@ class CutConfiguration(wx.Panel):
         tree = self.element_tree
         tree.DeleteAllItems()
         self.item_lookup = {}
-        root = self.element_tree.AddRoot("Job Parts")
-        self.item_lookup[root] = project
-        self.add_element(tree, root, project.elements)
-
+        root = self.element_tree.AddRoot(str(project.elements))
+        self.item_lookup[root] = project.elements
+        for subitem in project.elements:
+            self.add_element(tree, root, subitem)
         tree.CollapseAll()
         tree.ExpandAll()
 
@@ -872,3 +881,4 @@ sys.excepthook = handleGUIException
 if __name__ == "__main__":
     MeerK40tApp = MeerK40tGui(0)
     MeerK40tApp.MainLoop()
+

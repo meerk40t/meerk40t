@@ -1940,6 +1940,26 @@ class Arc(Segment):
         self.pry.matrix_transform(rotate_matrix)
         self.sweep = Angle.degrees(delta).as_radians
 
+    def as_quad_curves(self):
+        sweep_limit = tau / 12
+        arc_required = int(ceil(abs(self.sweep) / sweep_limit))
+        if arc_required == 0:
+            return
+        slice = self.sweep / float(arc_required)
+
+        start_angle = self.get_start_angle()
+        theta = self.get_rotation()
+        p_start = self.start
+
+        current_angle = start_angle - theta
+
+        for i in range(0, arc_required):
+            next_angle = current_angle + slice
+            q = Point(p_start[0] + tan((p_end[0] - p_start[0]) / 2.0))
+            yield QuadraticBezier(p_start, q, p_end)
+            p_start = Point(p_end)
+            current_angle = next_angle
+
     def as_cubic_curves(self):
         sweep_limit = tau / 12
         arc_required = int(ceil(abs(self.sweep) / sweep_limit))
@@ -2423,8 +2443,11 @@ class Path(MutableSequence):
 
     def bbox(self):
         """returns a bounding box for the input Path"""
-        bbs = [seg.bbox() for seg in self._segments if not isinstance(seg, (Close, Move))]
-        xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
+        bbs = [seg.bbox() for seg in self._segments if not isinstance(Close, Move)]
+        try:
+            xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
+        except ValueError:
+            return None  # No bounding box items existed. So no bounding box.
         xmin = min(xmins)
         xmax = max(xmaxs)
         ymin = min(ymins)

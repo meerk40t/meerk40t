@@ -23,6 +23,8 @@ class JobSpooler(wx.Frame):
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_limit_packet_buffer, self.checkbox_limit_buffer)
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
@@ -41,6 +43,7 @@ class JobSpooler(wx.Frame):
         self.elements_progress_total = 0
         self.command_index = 0
         self.listener_list = None
+        self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def set_project(self, project):
@@ -141,6 +144,38 @@ class JobSpooler(wx.Frame):
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, "n/a")
                     self.list_job_spool.SetItem(m, 8, "unknown")
+
+    def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
+        event.Skip()
+
+    def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
+        index = event.Index
+        if index == 0:
+            event.Skip()
+            return # We can't delete the running element.
+        try:
+            element = self.project.writer.queue[index]
+        except IndexError:
+            return
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, "Clear All", "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_tree_popup_clear(self, element):
+        def delete(event):
+            self.project.writer.queue = []
+            self.refresh_spooler_list()
+        return delete
+
+    def on_tree_popup_delete(self, element):
+        def delete(event):
+            self.project.writer.queue.remove(element)
+            self.refresh_spooler_list()
+        return delete
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
         self.project.writer.thread.limit_buffer = not self.project.writer.thread.limit_buffer
