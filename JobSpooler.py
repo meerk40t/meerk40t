@@ -160,8 +160,16 @@ class JobSpooler(wx.Frame):
         menu = wx.Menu()
         convert = menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, "Clear All", "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
         self.PopupMenu(menu)
         menu.Destroy()
+
+    def on_tree_popup_clear(self, element):
+        def delete(event):
+            self.project.writer.queue = []
+            self.refresh_spooler_list()
+        return delete
 
     def on_tree_popup_delete(self, element):
         def delete(event):

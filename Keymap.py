@@ -58,7 +58,7 @@ class Keymap(wx.Frame):
             m = self.list_keymap.InsertItem(i, str(action))
             i += 1
             if m != -1:
-                self.list_keymap.SetItem(m, 1, str(key))
+                self.list_keymap.SetItem(m, 1, str(action.command))
 
     def on_check_mouse_zoom_invert(self, event):  # wxGlade: Keymap.<event_handler>
         self.project.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()

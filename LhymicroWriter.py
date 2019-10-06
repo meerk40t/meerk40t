@@ -399,11 +399,15 @@ class LhymicroWriter:
                 if dy != 0:
                     if self.is_top:
                         if abs(dy) > self.raster_step:
+                            self.to_concat_mode()
                             self.move_relative(0, dy + self.raster_step)
+                            self.to_compact_mode()
                         self.h_switch()
                     else:
                         if abs(dy) > self.raster_step:
+                            self.to_concat_mode()
                             self.move_relative(0, dy - self.raster_step)
+                            self.to_compact_mode()
                         self.h_switch()
                 if on == 0:
                     self.up()

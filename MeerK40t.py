@@ -435,15 +435,15 @@ class MeerK40t(wx.Frame):
     def load_image(self, pathname, group=None):
         image = Image.open(pathname)
         context = self.project.elements
+        element = ImageElement(image)
         if group is None:
             group = LaserGroup()
+            group.properties.update(element.properties)
             group.properties['filepath'] = pathname
             group.properties['name'] = os.path.basename(pathname)
             context.append(group)
         context = group
-        context.append(ImageElement(image))
-        # width, height = image.size
-        # context.append(PathElement("M0,0 {0},0 {0},{1} 0,{1}z".format(width, height)))
+        context.append(element)
         self.scene.post_buffer_update()
 
     def tree_update(self):
@@ -679,6 +679,7 @@ class CutConfiguration(wx.Panel):
             if not isinstance(drag_element, LaserGroup):
                 group = LaserGroup()
                 group.append(drag_element)
+                group.properties.update(drag_element.properties)  # Group gets element property.
                 drop_element.append(group)
             else:
                 drop_element.append(drag_element)

@@ -379,10 +379,10 @@ class LaserSceneView(wx.Panel):
         return move
 
     def execute_move_to_action(self, position_x, position_y):
-        self.project.writer.move_absolute(int(position_x), int(position_y))
+        # self.project.writer.move_absolute(int(position_x), int(position_y))
 
         def move():
-            yield COMMAND_RAPID_MOVE, (position_x, position_y)
+            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
         return move
 
     def on_key_press(self, event):
