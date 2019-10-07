@@ -75,6 +75,7 @@ class LaserSceneView(wx.Panel):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.project = None
         self.renderer = None
+        self.background_brush = wx.Brush("Grey")
 
     def set_project(self, project):
         self.project = project
@@ -86,8 +87,15 @@ class LaserSceneView(wx.Panel):
         self.project["selection", self.selection_changed] = self
         self.project["bed_size", self.bed_changed] = self
         self.project["elements", self.elements_changed] = self
-
         self.default_keymap()
+        project["writer_mode", self.on_writer_mode] = self
+
+    def on_writer_mode(self, state):
+        if state == 0:
+            self.background_brush = wx.Brush("Grey")
+        else:
+            self.background_brush = wx.Brush("Red")
+        self.post_buffer_update()
 
     def on_close(self, event):
         self.project["position", self.update_position] = None
@@ -569,7 +577,7 @@ class LaserSceneView(wx.Panel):
         dc.DrawLineList(lines)
 
     def on_draw_background(self, dc):
-        dc.SetBackground(wx.Brush("Grey"))
+        dc.SetBackground(self.background_brush)
         dc.Clear()
 
     def on_draw_interface(self, dc):

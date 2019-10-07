@@ -112,7 +112,7 @@ class Controller(wx.Frame):
         self.text_byte_3.SetMinSize((77, 23))
         self.text_byte_4.SetMinSize((77, 23))
         self.text_byte_5.SetMinSize((77, 23))
-        self.button_stop.SetBackgroundColour(wx.Colour(255, 0, 0))
+        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         self.button_stop.SetSize(self.button_stop.GetBestSize())
         # end wxGlade
 
@@ -278,8 +278,8 @@ class Controller(wx.Frame):
         elif state == THREAD_STATE_STARTED:
             self.project.controller.pause()
         elif state == THREAD_STATE_ABORT:
-            self.project.controller.reset_thread()
             self.project("abort", 0)
+            self.project.controller.reset_thread()
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
         if self.project.controller.usb is None:
@@ -334,7 +334,7 @@ class Controller(wx.Frame):
     def set_usb_button_by_state(self):
         status = self.usb_status
         if status == "Not Found" or "No Driver":
-            self.button_usb_connect.SetBackgroundColour("#ff0000")
+            self.button_usb_connect.SetBackgroundColour("#dfdf00")
             self.button_usb_connect.SetLabel(status)
             self.button_usb_connect.SetValue(True)
             self.button_usb_connect.Enable()
@@ -354,7 +354,7 @@ class Controller(wx.Frame):
             self.button_usb_connect.SetValue(False)
             self.button_usb_connect.Enable()
         elif status == "Connecting":
-            self.button_usb_connect.SetBackgroundColour("#00ff00")
+            self.button_usb_connect.SetBackgroundColour("#ffff00")
             self.button_usb_connect.SetLabel("Connecting...")
             self.button_usb_connect.SetValue(False)
             self.button_usb_connect.Disable()
@@ -364,7 +364,7 @@ class Controller(wx.Frame):
     def set_controller_button_by_state(self):
         state = self.control_state
         if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.button_controller_control.SetBackgroundColour("#00ff00")
+            self.button_controller_control.SetBackgroundColour("#009900")
             self.button_controller_control.SetLabel("Start Controller")
             self.button_controller_control.SetValue(False)
         elif state == THREAD_STATE_PAUSED:
@@ -372,11 +372,11 @@ class Controller(wx.Frame):
             self.button_controller_control.SetLabel("Resume Controller")
             self.button_controller_control.SetValue(False)
         elif state == THREAD_STATE_STARTED:
-            self.button_controller_control.SetBackgroundColour("#ffff00")
+            self.button_controller_control.SetBackgroundColour("#00ff00")
             self.button_controller_control.SetLabel("Pause Controller")
             self.button_controller_control.SetValue(True)
         elif state == THREAD_STATE_ABORT:
-            self.button_controller_control.SetBackgroundColour("#ff0000")
+            self.button_controller_control.SetBackgroundColour("#00ffff")
             self.button_controller_control.SetLabel("Manual Reset")
             self.button_controller_control.SetValue(True)
 

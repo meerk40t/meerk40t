@@ -206,7 +206,7 @@ class JobSpooler(wx.Frame):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         state = self.project.writer.thread.state
-        if state == THREAD_STATE_STARTED :
+        if state == THREAD_STATE_STARTED:
             self.project.writer.thread.pause()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_PAUSED:
@@ -216,21 +216,22 @@ class JobSpooler(wx.Frame):
             self.project.writer.start_queue_consumer()
             self.set_writer_button_by_state()
         elif state == THREAD_STATE_ABORT:
+            self.project("abort", 0)
             self.project.writer.reset_thread()
 
     def set_writer_button_by_state(self):
         state = self.project.writer.thread.state
         if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
-            self.button_writer_control.SetBackgroundColour("#00ff00")
+            self.button_writer_control.SetBackgroundColour("#009900")
             self.button_writer_control.SetLabel("Start Job")
         elif state == THREAD_STATE_PAUSED:
-            self.button_writer_control.SetBackgroundColour("#00ff00")
+            self.button_writer_control.SetBackgroundColour("#00dd00")
             self.button_writer_control.SetLabel("Resume Job")
         elif state == THREAD_STATE_STARTED:
-            self.button_writer_control.SetBackgroundColour("#ffff00")
+            self.button_writer_control.SetBackgroundColour("#00ff00")
             self.button_writer_control.SetLabel("Pause Job")
         elif state == THREAD_STATE_ABORT:
-            self.button_writer_control.SetBackgroundColour("#ff0000")
+            self.button_writer_control.SetBackgroundColour("#00ffff")
             self.button_writer_control.SetLabel("Manual Reset")
 
     def post_update(self):

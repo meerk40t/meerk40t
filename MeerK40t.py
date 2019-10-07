@@ -25,7 +25,7 @@ except ImportError:
 
     tau = pi * 2
 
-MEERK40T_VERSION = "0.1.9"
+MEERK40T_VERSION = "0.1.10"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -752,6 +752,7 @@ class CutConfiguration(wx.Panel):
             except AttributeError:
                 pass
             project.set_selected(None)
+
         return delete_element
 
     def on_tree_popup_subpath(self, element):
@@ -769,6 +770,7 @@ class CutConfiguration(wx.Panel):
                     add.append(subelement)
                 context.append_all(add)
             project.set_selected(None)
+
         return subpath_element
 
     def on_tree_popup_burn(self, element):
@@ -779,6 +781,7 @@ class CutConfiguration(wx.Panel):
             window.set_project(project, [e for e in element.flat_elements(types=LaserElement, passes=True)])
             window.Show()
             project.windows["jobinfo"] = window
+
         return burn_element
 
     def get_convex_hull(self, element):
@@ -808,6 +811,7 @@ class CutConfiguration(wx.Panel):
             context = element.parent
             context.append(PathElement(path.d()))
             project.set_selected(None)
+
         return convex_hull
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
@@ -881,4 +885,3 @@ sys.excepthook = handleGUIException
 if __name__ == "__main__":
     MeerK40tApp = MeerK40tGui(0)
     MeerK40tApp.MainLoop()
-
