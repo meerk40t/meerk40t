@@ -115,6 +115,8 @@ class LaserThread(threading.Thread):
         self.project["buffer", self.update_buffer_size] = None
         if self.state == THREAD_STATE_ABORT:
             self.writer.clear_queue()
+            self.writer.state = STATE_DEFAULT
+            self.project("writer_mode", self.writer.state)
             return  # Must no do anything else. Just die as fast as possible.
         if self.writer.autohome:
             self.project.writer.command(COMMAND_HOME, 0)
@@ -186,10 +188,10 @@ class LhymicroWriter:
         if len(self.queue) == 0:
             return None
         self.queue_lock.acquire()
-        e = self.queue[0]
+        queue_head = self.queue[0]
         del self.queue[0]
         self.queue_lock.release()
-        return e
+        return queue_head
 
     def clear_queue(self):
         self.queue_lock.acquire()
@@ -644,11 +646,13 @@ class LhymicroWriter:
             self.controller += b'FNSE-\n'
             self.reset_modes()
         self.state = STATE_DEFAULT
+        self.project("writer_mode", self.state)
 
     def to_concat_mode(self):
         self.to_default_mode()
         self.controller += b'I'
         self.state = STATE_CONCAT
+        self.project("writer_mode", self.state)
 
     def to_compact_mode(self):
         self.to_concat_mode()
@@ -665,6 +669,7 @@ class LhymicroWriter:
         self.declare_directions()
         self.controller += b'S1E'
         self.state = STATE_COMPACT
+        self.project("writer_mode", self.state)
 
     def h_switch(self):
         if self.is_left:
