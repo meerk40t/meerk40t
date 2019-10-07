@@ -546,7 +546,8 @@ class LaserSceneView(wx.Panel):
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
         # tweak the scaled points into being useful.
-        points = scaled_conversion * round(points / scaled_conversion * 10) / 10.0
+        #points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
+        points = scaled_conversion * float('{:.1g}'.format(points/scaled_conversion))
         sx, sy = self.convert_scene_to_window([0, 0])
         if points == 0:
             return
@@ -562,7 +563,7 @@ class LaserSceneView(wx.Panel):
             mark_point = (x - sx) / scaled_conversion
             if round(mark_point * 1000) == 0:
                 mark_point = 0.0  # prevents -0
-            dc.DrawRotatedText("%.2f %s" % (mark_point, name), x, 0, -90)
+            dc.DrawRotatedText("%g %s" % (mark_point, name), x, 0, -90)
             x += points
 
         y = offset_y
@@ -572,7 +573,7 @@ class LaserSceneView(wx.Panel):
             mark_point = (y - sy) / scaled_conversion
             if round(mark_point * 1000) == 0:
                 mark_point = 0.0  # prevents -0
-            dc.DrawText("%.2f %s" % (mark_point + 0, name), 0, y + 0)
+            dc.DrawText("%g %s" % (mark_point + 0, name), 0, y + 0)
             y += points
         dc.DrawLineList(lines)
 
