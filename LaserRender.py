@@ -1,12 +1,7 @@
 from PIL import Image
 import wx
 from ZMatrix import ZMatrix
-import path
-import svg_parser
-from K40Controller import K40Controller
-from LaserCommandConstants import *
-from LhymicroWriter import LhymicroWriter
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
+
 from ProjectNodes import *
 
 

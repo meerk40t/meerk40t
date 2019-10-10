@@ -5,6 +5,8 @@
 import os
 import sys
 import traceback
+from base64 import b64decode
+from io import BytesIO
 
 import wx
 import wx.ribbon as RB
@@ -363,6 +365,15 @@ class MeerK40t(wx.Frame):
             dlg.Destroy()
         self.tree.refresh_tree_elements()
 
+    def get_image_from_url(self, image_url):
+        if image_url.startswith("data:image/png;base64,"):
+            data = b64decode(image_url[22:])
+            return Image.open(BytesIO(data))
+        elif image_url.startswith("data:image/jpg;base64,"):
+            data = b64decode(image_url[22:])
+            return Image.open(BytesIO(data))
+        return None
+
     def load_svg(self, pathname, group=None):
         svg = svg_parser.parse_svg_file(pathname, viewport_transform=True)
         context = self.project.elements
@@ -381,9 +392,18 @@ class MeerK40t(wx.Frame):
                     pe.matrix.post_translate(float(element['x']), 0)
                 if 'y' in element:
                     pe.matrix.post_translate(0, float(element['y']))
-            if 'd' in element:
+            elif 'd' in element:
                 pe = PathElement(element['d'])
-
+            elif 'image' in element:
+                image_url = element['image']
+                image = self.get_image_from_url(image_url)
+                if image is None:
+                    continue
+                pe = ImageElement(image)
+                if 'x' in element:
+                    pe.matrix.post_translate(float(element['x']), 0)
+                if 'y' in element:
+                    pe.matrix.post_translate(0, float(element['y']))
             if pe is not None:
                 if 'transform' in element:
                     # Scale svg_px to meerk40t_px. 1000 px/in / 96 px/in
@@ -400,10 +420,6 @@ class MeerK40t(wx.Frame):
                     if element['stroke'] != "none":
                         pe.properties['color'] = svg_parser.parse_svg_color(element['stroke'])
                 context.append(pe)
-            # else:
-            #     group = LaserGroup()
-            #     context.append(group)
-            #     context = group
         self.scene.post_buffer_update()
 
     def load_egv(self, pathname, group=None):

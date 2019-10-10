@@ -14,6 +14,8 @@ SVG_VALUE_XLINK = 'http://www.w3.org/1999/xlink'
 SVG_ATTR_XMLNS_EV = 'xmlns:ev'
 SVG_VALUE_XMLNS_EV = 'http://www.w3.org/2001/xml-events'
 
+XLINK_HREF = '{http://www.w3.org/1999/xlink}href'
+SVG_HREF = "href"
 SVG_ATTR_WIDTH = 'width'
 SVG_ATTR_HEIGHT = 'height'
 SVG_ATTR_VIEWBOX = 'viewBox'
@@ -27,6 +29,7 @@ SVG_TAG_POLYLINE = 'polyline'
 SVG_TAG_POLYGON = 'polygon'
 SVG_TAG_TEXT = 'text'
 SVG_TAG_IMAGE = 'image'
+SVG_TAG_DESC = 'desc'
 SVG_ATTR_DATA = 'd'
 SVG_ATTR_FILL = 'fill'
 SVG_ATTR_STROKE = 'stroke'
@@ -364,7 +367,7 @@ def _tokenize_transform(transform_str):
         yield sub_element[0], tuple(map(float, float_re.findall(sub_element[1])))
 
 
-def parse_viewbox_transform(svg_element):
+def parse_viewbox_transform(svg_element, ppi=96.0):
     """
     SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
     With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
@@ -390,23 +393,23 @@ def parse_viewbox_transform(svg_element):
         vb_height = 100.0
     # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
     if SVG_ATTR_X in svg_element:
-        e_x = parse_svg_distance(svg_element[SVG_ATTR_X])
+        e_x = parse_svg_distance(svg_element[SVG_ATTR_X], ppi)
     else:
         e_x = 0
     if SVG_ATTR_Y in svg_element:
-        e_y = parse_svg_distance(svg_element[SVG_ATTR_Y])
+        e_y = parse_svg_distance(svg_element[SVG_ATTR_Y], ppi)
     else:
         e_y = 0
     if SVG_ATTR_WIDTH in svg_element:
-        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH])
+        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH], ppi)
     else:
         e_width = 100.0
     if SVG_ATTR_WIDTH in svg_element:
-        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH])
+        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH], ppi)
     else:
         e_width = 100.0
     if SVG_ATTR_HEIGHT in svg_element:
-        e_height = parse_svg_distance(svg_element[SVG_ATTR_HEIGHT])
+        e_height = parse_svg_distance(svg_element[SVG_ATTR_HEIGHT], ppi)
     else:
         e_height = e_width
 
@@ -471,13 +474,16 @@ def parse_viewbox_transform(svg_element):
             return "scale(%f, %f) translate(%f, %f)" % (scale_x, scale_y, translate_x, translate_y)
 
 
-def parse_svg_distance(distance_str):
+def parse_svg_distance(distance_str, ppi=96.0):
+    """Convert svg length to set distances.
+    96 is the typical pixels per inch.
+    Other values have been used."""
     if distance_str.endswith('mm'):
-        return float(distance_str[:-2]) * 3.7795
+        return float(distance_str[:-2]) * ppi * 0.0393701
     if distance_str.endswith('cm'):
-        return float(distance_str[:-2]) * 37.795
+        return float(distance_str[:-2]) * ppi * 0.393701
     if distance_str.endswith('in'):
-        return float(distance_str[:-2]) * 96.0
+        return float(distance_str[:-2]) * ppi
     if distance_str.endswith('px'):
         return float(distance_str[:-2])
     if distance_str.endswith('pt'):
@@ -571,10 +577,14 @@ def parse_svg_file(f, viewport_transform=False):
                 values[SVG_ATTR_DATA] = polygon2pathd(values)
             elif SVG_TAG_RECT == tag:
                 values[SVG_ATTR_DATA] = rect2pathd(values)
-            elif SVG_TAG_IMAGE == tag:
-                values[SVG_TAG_IMAGE] = True
-                # Has no pathd data, but yields as element.
-                pass
+            elif SVG_TAG_IMAGE == tag:  # Has no pathd data, but yields as element.
+                if XLINK_HREF in values:
+                    image = values[XLINK_HREF]
+                elif SVG_HREF in values:
+                    image = values[SVG_HREF]
+                else:
+                    continue
+                values[SVG_TAG_IMAGE] = image
             else:
                 continue
             values[SVG_ATTR_TAG] = tag
@@ -587,6 +597,10 @@ def parse_svg_file(f, viewport_transform=False):
             if SVG_TAG_TEXT == tag:
                 values[SVG_ATTR_TAG] = tag
                 values[SVG_TAG_TEXT] = elem.text
+                yield values
+            elif SVG_TAG_DESC == tag:
+                values[SVG_ATTR_TAG] = tag
+                values[SVG_TAG_DESC] = elem.text
                 yield values
             values = stack.pop()
 

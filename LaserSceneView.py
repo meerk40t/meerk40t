@@ -292,7 +292,6 @@ class LaserSceneView(wx.Panel):
     def on_right_mouse_down(self, event):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-
         self.project.set_selected_by_position(self.popup_scene_position)
 
         menu = wx.Menu()
@@ -343,62 +342,6 @@ class LaserSceneView(wx.Panel):
                 menu.Append(wx.ID_ANY, "Raster", image_sub_menu)
             self.PopupMenu(menu)
             menu.Destroy()
-
-    def default_keymap(self):
-        self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
-        self.project.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
-        self.project.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
-        self.project.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
-        q = ord('Q')
-        self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
-
-    def execute_string_action(self, action, *args):
-        writer = self.project.writer
-        if action == 'move':
-            writer.send_job(self.execute_move_action(*args))
-        elif action == 'move_to':
-            writer.send_job(self.execute_move_to_action(*args))
-        elif action == 'set_position':
-            self.execute_set_position_action(*args)
-
-    def execute_set_position_action(self, index):
-        x = self.project.writer.current_x
-        y = self.project.writer.current_y
-        self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
-
-    def execute_move_action(self, direction, amount):
-        amount = parse_svg_distance(amount)
-        amount = 1000.0 * amount / 96.0
-        x = 0
-        y = 0
-        if direction == 'right':
-            x = amount
-        elif direction == 'left':
-            x = -amount
-        elif direction == 'up':
-            y = -amount
-        elif direction == 'down':
-            y = amount
-
-        def move():
-            yield COMMAND_SET_INCREMENTAL
-            yield COMMAND_RAPID_MOVE, (x, y)
-            yield COMMAND_SET_ABSOLUTE
-        return move
-
-    def execute_move_to_action(self, position_x, position_y):
-        # self.project.writer.move_absolute(int(position_x), int(position_y))
-
-        def move():
-            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
-        return move
-
-    def on_key_press(self, event):
-        keycode = event.GetKeyCode()
-        if keycode in self.project.keymap:
-            action = self.project.keymap[keycode].command
-            args = str(action).split(' ')
-            self.execute_string_action(*args)
 
     def on_scale_popup(self, value):
         def specific(event):
@@ -458,6 +401,62 @@ class LaserSceneView(wx.Panel):
     def on_popup_menu_convert(self, event):
         self.project.menu_convert_raw(self.popup_scene_position)
         self.post_buffer_update()
+
+    def default_keymap(self):
+        self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
+        self.project.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
+        self.project.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
+        self.project.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
+        q = ord('Q')
+        self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
+
+    def execute_string_action(self, action, *args):
+        writer = self.project.writer
+        if action == 'move':
+            writer.send_job(self.execute_move_action(*args))
+        elif action == 'move_to':
+            writer.send_job(self.execute_move_to_action(*args))
+        elif action == 'set_position':
+            self.execute_set_position_action(*args)
+
+    def execute_set_position_action(self, index):
+        x = self.project.writer.current_x
+        y = self.project.writer.current_y
+        self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
+
+    def execute_move_action(self, direction, amount):
+        amount = parse_svg_distance(amount)
+        amount = 1000.0 * amount / 96.0
+        x = 0
+        y = 0
+        if direction == 'right':
+            x = amount
+        elif direction == 'left':
+            x = -amount
+        elif direction == 'up':
+            y = -amount
+        elif direction == 'down':
+            y = amount
+
+        def move():
+            yield COMMAND_SET_INCREMENTAL
+            yield COMMAND_RAPID_MOVE, (x, y)
+            yield COMMAND_SET_ABSOLUTE
+        return move
+
+    def execute_move_to_action(self, position_x, position_y):
+        # self.project.writer.move_absolute(int(position_x), int(position_y))
+
+        def move():
+            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
+        return move
+
+    def on_key_press(self, event):
+        keycode = event.GetKeyCode()
+        if keycode in self.project.keymap:
+            action = self.project.keymap[keycode].command
+            args = str(action).split(' ')
+            self.execute_string_action(*args)
 
     def focus_on_project(self):
         bbox = self.project.bbox()
