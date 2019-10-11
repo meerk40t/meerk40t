@@ -3,6 +3,7 @@ import svg_parser
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 
+VARIABLE_NAME_TYPE = 'type'
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
 VARIABLE_NAME_FILL_COLOR = 'fill'
@@ -10,7 +11,7 @@ VARIABLE_NAME_SPEED = 'speed'
 VARIABLE_NAME_POWER = 'power'
 VARIABLE_NAME_PASSES = 'passes'
 VARIABLE_NAME_DRATIO = 'd_ratio'
-VARIABLE_NAME_RASTER_STEP = "raster_step"
+VARIABLE_NAME_RASTER_STEP = 'raster_step'
 VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 
@@ -154,7 +155,9 @@ class LaserElement(LaserNode):
     def __init__(self):
         LaserNode.__init__(self)
         self.matrix = path.Matrix()
-        self.properties = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_FILL_COLOR: 0, VARIABLE_NAME_SPEED: 60,
+        self.properties = {VARIABLE_NAME_COLOR: 0,
+                           VARIABLE_NAME_FILL_COLOR: 0,
+                           VARIABLE_NAME_SPEED: 60,
                            VARIABLE_NAME_PASSES: 1,
                            VARIABLE_NAME_POWER: 1000.0}
 

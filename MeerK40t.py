@@ -27,7 +27,7 @@ except ImportError:
 
     tau = pi * 2
 
-MEERK40T_VERSION = "0.1.10"
+MEERK40T_VERSION = "0.1.11"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -83,6 +83,7 @@ ID_MENU_VFLIP = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
+ID_MENU_COLORDEFINE = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
@@ -192,6 +193,7 @@ class MeerK40t(wx.Frame):
 
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
+        wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, "Alignment Ally", "")
 
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
@@ -228,6 +230,7 @@ class MeerK40t(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, self.open_colordefine, id=ID_MENU_COLORDEFINE)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
@@ -561,6 +564,14 @@ class MeerK40t(wx.Frame):
         window.set_project(project)
         window.Show()
         project.windows["keymap"] = window
+
+    def open_colordefine(self, event):  # wxGlade: MeerK40t.<event_handler>
+        project.close_old_window("colordefine")
+        from ColorDefine import ColorDefine
+        window = ColorDefine(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["colordefine"] = window
 
     def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
         project.close_old_window("usbconnect")
