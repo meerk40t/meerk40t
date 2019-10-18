@@ -11,7 +11,6 @@ def swizzlecolor(c):
     swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
     return swizzle_color
 
-
 class LaserRender:
     def __init__(self, project):
         self.project = project

@@ -121,6 +121,15 @@ class LaserNode(list):
                 for flat_element in element.flat_elements(types=types):
                     yield flat_element
 
+    def all_children_of_type(self, types):
+        if isinstance(self, types):
+            return [self]
+        return [e for e in self if isinstance(e, types)]
+
+    def contains_type(self, types):
+        results = self.all_children_of_type(types)
+        return len(results) != 0
+
     @property
     def center(self):
         return (self.bounds[2] - self.bounds[0]) / 2.0, (self.bounds[3] - self.bounds[1]) / 2.0
@@ -138,17 +147,6 @@ class LaserGroup(LaserNode):
             return "%d pass, %s" % (self.properties[VARIABLE_NAME_PASSES], name)
         else:
             return name
-
-    def all_children_of_type(self, type):
-        return [e for e in self if isinstance(e, type)]
-
-    def contains_type(self, type):
-        results = [e for e in self if isinstance(e, type)]
-        return len(results) != 0
-
-    def not_contains_type(self, type):
-        results = [e for e in self if isinstance(e, type)]
-        return len(results) == 0
 
 
 class LaserElement(LaserNode):
@@ -307,9 +305,9 @@ class PathElement(LaserElement):
         if VARIABLE_NAME_NAME in self.properties:
             return self.properties[VARIABLE_NAME_NAME]
         name = "Path @%.1f mm/s %.1fx path=%s" % \
-                 (self.properties[VARIABLE_NAME_SPEED],
-                  self.matrix.value_scale_x(),
-                  str(hash(self.path)))
+               (self.properties[VARIABLE_NAME_SPEED],
+                self.matrix.value_scale_x(),
+                str(hash(self.path)))
         if len(name) >= 100:
             name = name[:97] + '...'
         return name
