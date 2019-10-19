@@ -79,12 +79,6 @@ ID_MENU_HIDE_FILLS = idinc.new()
 ID_MENU_HIDE_GUIDES = idinc.new()
 ID_MENU_HIDE_GRID = idinc.new()
 
-ID_MENU_ROTATE_CW = idinc.new()
-ID_MENU_ROTATE_CCW = idinc.new()
-
-ID_MENU_HFLIP = idinc.new()
-ID_MENU_VFLIP = idinc.new()
-
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_COLORDEFINE = idinc.new()
@@ -184,13 +178,6 @@ class MeerK40t(wx.Frame):
         self.main_menubar.Append(wxglade_tmp_menu, "View")
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu_sub = wx.Menu()
-        wxglade_tmp_menu_sub.Append(ID_MENU_ROTATE_CW, u"Rotate \u03c4/4", "")
-        wxglade_tmp_menu_sub.Append(ID_MENU_ROTATE_CCW, u"Rotate -\u03c4/4", "")
-        wxglade_tmp_menu_sub.Append(ID_MENU_HFLIP, "H-Flip", "")
-        wxglade_tmp_menu_sub.Append(ID_MENU_VFLIP, "V-Flip", "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Transform", wxglade_tmp_menu_sub, "")
-
         self.main_menubar.Append(wxglade_tmp_menu, "Design")
 
         wxglade_tmp_menu = wx.Menu()
@@ -227,10 +214,6 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(4), id=ID_MENU_HIDE_GRID)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(2), id=ID_MENU_HIDE_GUIDES)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(1), id=ID_MENU_HIDE_FILLS)
-        self.Bind(wx.EVT_MENU, self.transform_rotate_right, id=ID_MENU_ROTATE_CW)
-        self.Bind(wx.EVT_MENU, self.transform_rotate_left, id=ID_MENU_ROTATE_CCW)
-        self.Bind(wx.EVT_MENU, self.transform_mirror_hflip, id=ID_MENU_HFLIP)
-        self.Bind(wx.EVT_MENU, self.transform_mirror_vflip, id=ID_MENU_VFLIP)
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
@@ -372,13 +355,23 @@ class MeerK40t(wx.Frame):
             dlg.Destroy()
         self.tree.refresh_tree_elements()
 
-    def get_image_from_url(self, image_url):
+    def get_image_from_url(self, image_url, current_directory):
         if image_url.startswith("data:image/png;base64,"):
             data = b64decode(image_url[22:])
             return Image.open(BytesIO(data))
         elif image_url.startswith("data:image/jpg;base64,"):
             data = b64decode(image_url[22:])
             return Image.open(BytesIO(data))
+        else:
+            try:
+                return Image.open(image_url)
+            except IOError:
+                pass
+            try:
+                relpath = os.path.join(current_directory, image_url)
+                return Image.open(relpath)
+            except IOError:
+                pass
         return None
 
     def load_svg(self, pathname, group=None):
@@ -402,8 +395,9 @@ class MeerK40t(wx.Frame):
             elif 'd' in element:
                 pe = PathElement(element['d'])
             elif 'image' in element:
+                svg_directory = os.path.dirname(pathname)
                 image_url = element['image']
-                image = self.get_image_from_url(image_url)
+                image = self.get_image_from_url(image_url, svg_directory)
                 if image is None:
                     continue
                 pe = ImageElement(image)
@@ -532,18 +526,6 @@ class MeerK40t(wx.Frame):
             self.scene.post_buffer_update()
 
         return toggle
-
-    def transform_rotate_right(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.project.menu_rotate(0.25 * tau)
-
-    def transform_rotate_left(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.project.menu_rotate(-0.25 * tau)
-
-    def transform_mirror_hflip(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.project.menu_scale(-1, 1)
-
-    def transform_mirror_vflip(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.project.menu_scale(1, -1)
 
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
         project.close_old_window("preferences")
@@ -801,31 +783,31 @@ def create_menu(element):
         gui.Bind(wx.EVT_MENU, menu_hull(element), menu.Append(wx.ID_ANY, "Convex Hull", "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_execute(element), menu.Append(wx.ID_ANY, "Execute Job", "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_raw(element), menu.Append(wx.ID_ANY, "Convert Raw", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, on_reset_popup(element),
+        gui.Bind(wx.EVT_MENU, menu_reset(element),
                  menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
 
     if element.contains_type(PathElement):
         vector_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_subpath(element), menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, on_reify_popup(element),
+        gui.Bind(wx.EVT_MENU, menu_reify(element),
                  vector_menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, on_raster_popup(element),
+        gui.Bind(wx.EVT_MENU, menu_raster(element),
                  vector_menu.Append(wx.ID_ANY, "Make Raster Image", "", wx.ITEM_NORMAL))
         path_scale_sub_menu = wx.Menu()
-        for i in range(1, 13):
-            gui.Bind(wx.EVT_MENU, on_scale_popup(element, 3.0 / float(i)),
-                     path_scale_sub_menu.Append(wx.ID_ANY, "Scale %.0f%%" % (300.0 / float(i)), "", wx.ITEM_NORMAL))
+        for i in range(1, 25):
+            gui.Bind(wx.EVT_MENU, menu_scale(element, 6.0 / float(i)),
+                     path_scale_sub_menu.Append(wx.ID_ANY, "Scale %.0f%%" % (600.0 / float(i)), "", wx.ITEM_NORMAL))
         vector_menu.Append(wx.ID_ANY, "Scale", path_scale_sub_menu)
 
         path_rotate_sub_menu = wx.Menu()
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
-            gui.Bind(wx.EVT_MENU, on_rotate_popup(element, 1.0 / float(i)),
+            gui.Bind(wx.EVT_MENU, menu_rotate(element, 1.0 / float(i)),
                      path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate \u03c4/%d, %.0f°" % (i, angle.as_degrees), "",
                                                  wx.ITEM_NORMAL))
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
-            gui.Bind(wx.EVT_MENU, on_rotate_popup(element, -1.0 / float(i)),
+            gui.Bind(wx.EVT_MENU, menu_rotate(element, -1.0 / float(i)),
                      path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate -\u03c4/%d, -%.0f°" % (i, angle.as_degrees), "",
                                                  wx.ITEM_NORMAL))
         vector_menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
@@ -834,9 +816,9 @@ def create_menu(element):
         image_menu = wx.Menu()
         image_sub_menu_step = wx.Menu()
         for i in range(1, 8):
-            gui.Bind(wx.EVT_MENU, on_step_popup(element, i),
+            gui.Bind(wx.EVT_MENU, menu_step(element, i),
                      image_sub_menu_step.Append(wx.ID_ANY, "Step %d" % i, "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, on_dither_popup(element),
+        gui.Bind(wx.EVT_MENU, menu_dither(element),
                  image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
         image_menu.Append(wx.ID_ANY, "Step", image_sub_menu_step)
         menu.Append(wx.ID_ANY, "Raster", image_menu)
@@ -845,17 +827,17 @@ def create_menu(element):
         menu.Destroy()
 
 
-def on_scale_popup(element, value):
+def menu_scale(element, value):
     def specific(event):
         center = element.center
         for e in element.flat_elements(types=(PathElement)):
-            e.matrix.post_scale(value, center[0], center[1])
+            e.matrix.post_scale(value, value, center[0], center[1])
         project("elements", 0)
 
     return specific
 
 
-def on_step_popup(element, step_value):
+def menu_step(element, step_value):
     def specific(event):
         for e in element.flat_elements(types=(ImageElement)):
             e.properties[VARIABLE_NAME_RASTER_STEP] = step_value
@@ -865,7 +847,7 @@ def on_step_popup(element, step_value):
     return specific
 
 
-def on_dither_popup(element):
+def menu_dither(element):
     def specific(event):
         for e in element.flat_elements(types=(ImageElement)):
             e.image = e.image.convert("1")
@@ -875,7 +857,7 @@ def on_dither_popup(element):
     return specific
 
 
-def on_raster_popup(element):
+def menu_raster(element):
     def specific(event):
         renderer = LaserRender(project)
         image = renderer.make_raster(element)
@@ -888,7 +870,7 @@ def on_raster_popup(element):
     return specific
 
 
-def on_reify_popup(element):
+def menu_reify(element):
     def specific(event):
         for e in element.flat_elements(types=(PathElement)):
             e.reify_matrix()
@@ -897,7 +879,7 @@ def on_reify_popup(element):
     return specific
 
 
-def on_reset_popup(element):
+def menu_reset(element):
     def specific(event):
         for e in element.flat_elements(types=(LaserElement)):
             e.matrix.reset()
@@ -906,7 +888,7 @@ def on_reset_popup(element):
     return specific
 
 
-def on_rotate_popup(element, value):
+def menu_rotate(element, value):
     value *= tau
 
     def specific(event):
