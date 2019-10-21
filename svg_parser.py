@@ -19,6 +19,7 @@ SVG_HREF = "href"
 SVG_ATTR_WIDTH = 'width'
 SVG_ATTR_HEIGHT = 'height'
 SVG_ATTR_VIEWBOX = 'viewBox'
+SVG_VIEWBOX_TRANSFORM = 'viewbox_transform'
 SVG_TAG_PATH = 'path'
 SVG_TAG_GROUP = 'g'
 SVG_TAG_RECT = 'rect'
@@ -367,7 +368,7 @@ def _tokenize_transform(transform_str):
         yield sub_element[0], tuple(map(float, float_re.findall(sub_element[1])))
 
 
-def parse_viewbox_transform(svg_element, ppi=96.0):
+def parse_viewbox_transform(svg_element, ppi=96.0, viewbox=None):
     """
     SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
     With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
@@ -377,21 +378,19 @@ def parse_viewbox_transform(svg_element, ppi=96.0):
     :param svg_element: dict containing the relevant svg entries.
     :return: string of the SVG transform commands to account for the viewbox.
     """
-    if SVG_ATTR_VIEWBOX in svg_element:
-        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
-        # width and height values of the viewBox attribute respectively.
-        viewbox = svg_element[SVG_ATTR_VIEWBOX]
-        vb = viewbox.split(" ")
-        vb_x = float(vb[0])
-        vb_y = float(vb[1])
-        vb_width = float(vb[2])
-        vb_height = float(vb[3])
-    else:
-        vb_x = 0.0
-        vb_y = 0.0
-        vb_width = 100.0
-        vb_height = 100.0
+    if viewbox is None:
+        if SVG_ATTR_VIEWBOX in svg_element:
+            # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
+            # width and height values of the viewBox attribute respectively.
+            viewbox = svg_element[SVG_ATTR_VIEWBOX]
+        else:
+            viewbox = "0 0 100 100"
     # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+    vb = viewbox.split(" ")
+    vb_x = float(vb[0])
+    vb_y = float(vb[1])
+    vb_width = float(vb[2])
+    vb_height = float(vb[3])
     if SVG_ATTR_X in svg_element:
         e_x = parse_svg_distance(svg_element[SVG_ATTR_X], ppi)
     else:
@@ -400,10 +399,6 @@ def parse_viewbox_transform(svg_element, ppi=96.0):
         e_y = parse_svg_distance(svg_element[SVG_ATTR_Y], ppi)
     else:
         e_y = 0
-    if SVG_ATTR_WIDTH in svg_element:
-        e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH], ppi)
-    else:
-        e_width = 100.0
     if SVG_ATTR_WIDTH in svg_element:
         e_width = parse_svg_distance(svg_element[SVG_ATTR_WIDTH], ppi)
     else:
@@ -418,7 +413,7 @@ def parse_viewbox_transform(svg_element, ppi=96.0):
     # or if meetOrSlice is missing from this value.
     if SVG_ATTR_PRESERVEASPECTRATIO in svg_element:
         aspect = svg_element[SVG_ATTR_PRESERVEASPECTRATIO]
-        aspect_slice = aspect.slice(' ')
+        aspect_slice = aspect.split(' ')
         try:
             align = aspect_slice[0]
         except IndexError:
@@ -471,7 +466,8 @@ def parse_viewbox_transform(svg_element, ppi=96.0):
         if scale_x == 1 and scale_y == 1:
             return "translate(%f, %f)" % (translate_x, translate_y)
         else:
-            return "scale(%f, %f) translate(%f, %f)" % (scale_x, scale_y, translate_x, translate_y)
+            return "translate(%f, %f) scale(%f, %f)" % (translate_x, translate_y, scale_x, scale_y)
+            # return "scale(%f, %f) translate(%f, %f)" % (scale_x, scale_y, translate_x, translate_y)
 
 
 def parse_svg_distance(distance_str, ppi=96.0):
@@ -547,7 +543,6 @@ def parse_svg_file(f, viewport_transform=False):
                 else:
                     attributes[SVG_ATTR_TRANSFORM] = new_transform
                 # will be used to update values.
-
             values.update(attributes)
             tag = elem.tag
             if tag.startswith('{'):
@@ -555,6 +550,7 @@ def parse_svg_file(f, viewport_transform=False):
             if SVG_NAME_TAG == tag:
                 if viewport_transform:
                     new_transform = parse_viewbox_transform(values)
+                    values[SVG_VIEWBOX_TRANSFORM] = new_transform
                     if SVG_ATTR_TRANSFORM in attributes:
                         values[SVG_ATTR_TRANSFORM] += " " + new_transform
                     else:

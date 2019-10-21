@@ -392,8 +392,20 @@ class MeerK40t(wx.Frame):
                     pe.matrix.post_translate(float(element['x']), 0)
                 if 'y' in element:
                     pe.matrix.post_translate(0, float(element['y']))
+                if 'transform' in element:
+                    # Scale svg_px to meerk40t_px. 1000 px/in / 96 px/in
+                    pe.svg_transform(element['transform'])
+                    pe.matrix.pre_scale(1000.0 / 96.0)
             elif 'd' in element:
                 pe = PathElement(element['d'])
+                if 'transform' in element:
+                    # Scale svg_px to meerk40t_px. 1000 px/in / 96 px/in
+                    pe.svg_transform(element['transform'])
+                    try:
+                        pe.reify_matrix()
+                    except AttributeError:
+                        pass
+                    pe.matrix.pre_scale(1000.0 / 96.0)
             elif 'image' in element:
                 svg_directory = os.path.dirname(pathname)
                 image_url = element['image']
@@ -401,19 +413,14 @@ class MeerK40t(wx.Frame):
                 if image is None:
                     continue
                 pe = ImageElement(image)
-                if 'x' in element:
-                    pe.matrix.post_translate(float(element['x']), 0)
-                if 'y' in element:
-                    pe.matrix.post_translate(0, float(element['y']))
-            if pe is not None:
+                viewbox = "0 0 %d %d" % (image.width, image.height)
+                pe.matrix.pre_scale(1000.0 / 96.0)
+                transform_str = svg_parser.parse_viewbox_transform(element, viewbox=viewbox)
+                pe.svg_transform(transform_str)
                 if 'transform' in element:
-                    # Scale svg_px to meerk40t_px. 1000 px/in / 96 px/in
-                    pe.matrix.pre_scale(1000.0 / 96.0)
                     pe.svg_transform(element['transform'])
-                    try:
-                        pe.reify_matrix()
-                    except AttributeError:
-                        pass
+
+            if pe is not None:
                 if 'fill' in element:
                     if element['fill'] != "none":
                         pe.properties['fill'] = svg_parser.parse_svg_color(element['fill'])
