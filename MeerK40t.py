@@ -413,12 +413,13 @@ class MeerK40t(wx.Frame):
                 if image is None:
                     continue
                 pe = ImageElement(image)
+                if 'transform' in element:
+                    pe.svg_transform(element['transform'])
                 viewbox = "0 0 %d %d" % (image.width, image.height)
                 pe.matrix.pre_scale(1000.0 / 96.0)
                 transform_str = svg_parser.parse_viewbox_transform(element, viewbox=viewbox)
                 pe.svg_transform(transform_str)
-                if 'transform' in element:
-                    pe.svg_transform(element['transform'])
+
 
             if pe is not None:
                 if 'fill' in element:
