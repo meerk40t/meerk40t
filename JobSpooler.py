@@ -246,8 +246,10 @@ class JobSpooler(wx.Frame):
         if self.update_buffer_size:
             self.update_buffer_size = False
             self.text_packet_buffer.SetValue(str(self.buffer_size))
-            self.gauge_controller.SetValue(self.buffer_size)
             self.gauge_controller.SetRange(self.spin_packet_buffer_max.GetValue())
+            max = self.gauge_controller.GetRange()
+            value = min(self.buffer_size,max)
+            self.gauge_controller.SetValue(value)
 
         if self.update_writer_state:
             self.update_writer_state = False

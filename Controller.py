@@ -251,9 +251,10 @@ class Controller(wx.Frame):
             update = True
         if self.update_buffer_size:
             self.update_buffer_size = False
-            self.text_buffer_length.SetValue(str(self.buffer_size))
-            self.gauge_buffer.SetValue(self.buffer_size)
             self.gauge_buffer.SetRange(self.buffer_max)
+            max = self.gauge_buffer.GetRange()
+            value = min(self.buffer_size,max)
+            self.gauge_buffer.SetValue(value)
             update = True
         if self.update_control_state:
             self.update_control_state = False
