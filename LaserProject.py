@@ -2,6 +2,7 @@
 from K40Controller import K40Controller
 from LhymicroWriter import LhymicroWriter
 from ProjectNodes import *
+import wx
 
 
 class LaserProject:
@@ -34,7 +35,8 @@ class LaserProject:
         if code in self.listeners:
             listeners = self.listeners[code]
             for listener in listeners:
-                listener(message)
+                wx.CallAfter(listener,message)
+                # listener(message)
         self.last_message[code] = message
 
     def __setitem__(self, key, value):
