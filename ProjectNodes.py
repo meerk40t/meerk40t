@@ -1,5 +1,5 @@
-import path
-import svg_parser
+from svg.elements import *
+
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 
@@ -152,7 +152,7 @@ class LaserGroup(LaserNode):
 class LaserElement(LaserNode):
     def __init__(self):
         LaserNode.__init__(self)
-        self.matrix = path.Matrix()
+        self.matrix = svg_elements.Matrix()
         self.properties = {VARIABLE_NAME_COLOR: 0,
                            VARIABLE_NAME_FILL_COLOR: 0,
                            VARIABLE_NAME_SPEED: 60,
@@ -175,7 +175,9 @@ class LaserElement(LaserNode):
         self.matrix.post_translate(dx, dy)  # Apply translate after all the other events.
 
     def svg_transform(self, transform_str):
-        svg_parser.parse_svg_transform(transform_str, self.matrix)
+        t = Matrix(transform_str)
+        self.matrix.post_cat(t)
+        # svg_parser.parse_svg_transform(transform_str, self.matrix)
 
 
 class ImageElement(LaserElement):
@@ -314,17 +316,15 @@ class PathElement(LaserElement):
 
     def reify_matrix(self):
         """Apply the matrix to the path and reset matrix."""
-        object_path = path.Path()
-        svg_parser.parse_svg_path(object_path, self.path)
+        object_path = Path(self.path)
         object_path *= self.matrix
-        self.path = object_path.d()
+        self.path = str(object_path)
         self.matrix.reset()
 
     def generate(self, m=None):
         if m is None:
             m = self.matrix
-        object_path = path.Path()
-        svg_parser.parse_svg_path(object_path, self.path)
+        object_path = svg_elements.Path(self.path)
         self.box = object_path.bbox()
         if VARIABLE_NAME_SPEED in self.properties:
             speed = self.properties.get(VARIABLE_NAME_SPEED)

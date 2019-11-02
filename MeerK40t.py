@@ -20,8 +20,6 @@ from ProjectNodes import PathElement
 from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
-from path import Path, Point, Matrix, Angle
-from svg_parser import parse_svg_distance
 
 try:
     from math import tau
@@ -375,7 +373,7 @@ class MeerK40t(wx.Frame):
         return None
 
     def load_svg(self, pathname, group=None):
-        svg = svg_parser.parse_svg_file(pathname, viewport_transform=True)
+        svg = SVG(pathname).nodes(viewport_transform=True)
         context = self.project.elements
 
         if group is None:
@@ -417,17 +415,16 @@ class MeerK40t(wx.Frame):
                     pe.svg_transform(element['transform'])
                 viewbox = "0 0 %d %d" % (image.width, image.height)
                 pe.matrix.pre_scale(1000.0 / 96.0)
-                transform_str = svg_parser.parse_viewbox_transform(element, viewbox=viewbox)
+                transform_str = parse_viewbox_transform(element, viewbox=viewbox)
                 pe.svg_transform(transform_str)
-
 
             if pe is not None:
                 if 'fill' in element:
                     if element['fill'] != "none":
-                        pe.properties['fill'] = svg_parser.parse_svg_color(element['fill'])
+                        pe.properties['fill'] = Color.parse(element['fill'])
                 if 'stroke' in element:
                     if element['stroke'] != "none":
-                        pe.properties['color'] = svg_parser.parse_svg_color(element['stroke'])
+                        pe.properties['color'] = Color.parse(element['stroke'])
                 context.append(pe)
         self.scene.post_buffer_update()
 

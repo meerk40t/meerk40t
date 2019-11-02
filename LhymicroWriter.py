@@ -5,7 +5,7 @@ from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
 from ThreadConstants import *
-from path import *
+from svg.elements import *
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'

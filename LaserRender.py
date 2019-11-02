@@ -89,7 +89,7 @@ class LaserRender:
         if cache is None:
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
-            for event in node.generate(path.Matrix()):
+            for event in node.generate(svg_elements.Matrix()):
                 parse.command(event)
             node.cache = p
         if drawfills and VARIABLE_NAME_FILL_COLOR in node.properties:
@@ -205,20 +205,20 @@ class LaserCommandPathParser:
         elif command == COMMAND_PLOT:
             plot = values
             for e in plot:
-                if isinstance(e, path.Move):
+                if isinstance(e, svg_elements.Move):
                     self.graphic_path.MoveToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Line):
+                elif isinstance(e, svg_elements.Line):
                     self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Close):
+                elif isinstance(e, svg_elements.Close):
                     self.graphic_path.CloseSubpath()
-                elif isinstance(e, path.QuadraticBezier):
+                elif isinstance(e, svg_elements.QuadraticBezier):
                     self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
                                                           e.end[0], e.end[1])
-                elif isinstance(e, path.CubicBezier):
+                elif isinstance(e, svg_elements.CubicBezier):
                     self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
                                                       e.control2[0], e.control2[1],
                                                       e.end[0], e.end[1])
-                elif isinstance(e, path.Arc):
+                elif isinstance(e, svg_elements.Arc):
                     for curve in e.as_cubic_curves():
                         self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
                                                           curve.control2[0], curve.control2[1],
