@@ -973,8 +973,7 @@ def get_convex_hull(element):
     pts = []
     for e in element.flat_elements((PathElement, ImageElement)):
         if isinstance(e, PathElement):
-            epath = Path()
-            svg_parser.parse_svg_path(epath, e.path)
+            epath = Path(epath)
             epath *= e.matrix
             pts += [q for q in epath.as_points()]
         elif isinstance(e, ImageElement):
