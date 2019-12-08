@@ -36,8 +36,11 @@ class Keymap(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle("Keymap Settings")
+        self.check_invert_mouse_zoom.SetToolTip("Invert the zoom direction from the mouse wheel.")
+        self.list_keymap.SetToolTip("What keys are bound to which actions?")
         self.list_keymap.AppendColumn("Action", format=wx.LIST_FORMAT_LEFT, width=100)
         self.list_keymap.AppendColumn("Hotkey", format=wx.LIST_FORMAT_LEFT, width=279)
+        self.button_add.SetToolTip("Add a new hotkey")
         self.button_add.Enable(False)
         # end wxGlade
 
@@ -64,5 +67,4 @@ class Keymap(wx.Frame):
         self.project.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
 
     def on_button_add_hotkey(self, event):  # wxGlade: Keymap.<event_handler>
-        print("Event handler 'on_button_add_hotkey' not implemented!")
-        event.Skip()
+        pass

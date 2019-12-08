@@ -1,18 +1,18 @@
-from PIL import Image
 import wx
-from ZMatrix import ZMatrix
-import path
-import svg_parser
-from K40Controller import K40Controller
-from LaserCommandConstants import *
-from LhymicroWriter import LhymicroWriter
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
-from ProjectNodes import *
+from PIL import Image
 
+from ProjectNodes import *
+from ZMatrix import ZMatrix
+
+"""
+Laser Render provides GUI relevant methods of displaying the given project nodes.
+"""
 
 # TODO: Raw typically uses path, but could just use a 1 bit image to visualize it.
 
 def swizzlecolor(c):
+    if c is None:
+        return None
     swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
     return swizzle_color
 
@@ -82,10 +82,15 @@ class LaserRender:
         element as a series of lines, as defined by generate."""
         drawfills = draw_mode & 1 == 0
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(node.matrix)))
-
-        self.color.SetRGB(swizzlecolor(node.properties[VARIABLE_NAME_COLOR]))
-        self.pen.SetColour(self.color)
+        #zmatrix = ZMatrix(node.matrix)
+        zmatrix = ZMatrix()
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, zmatrix))
+        c = swizzlecolor(node.properties[VARIABLE_NAME_COLOR])
+        if c is None:
+            self.pen.SetColour(None)
+        else:
+            self.color.SetRGB(c)
+            self.pen.SetColour(self.color)
         gc.SetPen(self.pen)
         cache = None
         try:
@@ -95,16 +100,17 @@ class LaserRender:
         if cache is None:
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
-            for event in node.generate(path.Matrix()):
+            for event in node.generate(Matrix()):
                 parse.command(event)
             node.cache = p
         if drawfills and VARIABLE_NAME_FILL_COLOR in node.properties:
             c = node.properties[VARIABLE_NAME_FILL_COLOR]
-            swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
-            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
-            self.brush.SetColour(self.color)
-            gc.SetBrush(self.brush)
-            gc.FillPath(node.cache)
+            if c is not None:
+                swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
+                self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+                self.brush.SetColour(self.color)
+                gc.SetBrush(self.brush)
+                gc.FillPath(node.cache)
         gc.StrokePath(node.cache)
 
     def draw_text(self, node, dc, draw_mode):
@@ -211,20 +217,20 @@ class LaserCommandPathParser:
         elif command == COMMAND_PLOT:
             plot = values
             for e in plot:
-                if isinstance(e, path.Move):
+                if isinstance(e, Move):
                     self.graphic_path.MoveToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Line):
+                elif isinstance(e, Line):
                     self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Close):
+                elif isinstance(e, Close):
                     self.graphic_path.CloseSubpath()
-                elif isinstance(e, path.QuadraticBezier):
+                elif isinstance(e, QuadraticBezier):
                     self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
                                                           e.end[0], e.end[1])
-                elif isinstance(e, path.CubicBezier):
+                elif isinstance(e, CubicBezier):
                     self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
                                                       e.control2[0], e.control2[1],
                                                       e.end[0], e.end[1])
-                elif isinstance(e, path.Arc):
+                elif isinstance(e, Arc):
                     for curve in e.as_cubic_curves():
                         self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
                                                           curve.control2[0], curve.control2[1],

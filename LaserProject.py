@@ -1,11 +1,20 @@
-
 from K40Controller import K40Controller
 from LhymicroWriter import LhymicroWriter
 from ProjectNodes import *
 
+"""
+LaserProject is a bit of a grabbag of different functions. Serving as a sort of God object.
+It serves as a hub of communication between different windows, as the storage container for the elements root.
+As the chief provider of many settings used in the program.
+
+Storing and loading settings.
+ 
+"""
+
 
 class LaserProject:
     def __init__(self):
+        self.call_after = None
         self.listeners = {}
         self.last_message = {}
         self.elements = ProjectRoot()
@@ -24,6 +33,69 @@ class LaserProject:
         self.autostart = True
         self.mouse_zoom_invert = False
         self.keymap = {}
+        self.properties = {
+            0xFF0000: {
+                VARIABLE_NAME_COLOR: 0xFF0000,
+                VARIABLE_NAME_FILL_COLOR: 0xFF0000,
+                VARIABLE_NAME_SPEED: 10,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 1000.0},
+            0x00FF00: {
+                VARIABLE_NAME_COLOR: 0x00FF00,
+                VARIABLE_NAME_FILL_COLOR: 0x00FF00,
+                VARIABLE_NAME_SPEED: 30,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 1000.0},
+            0x0000FF: {
+                VARIABLE_NAME_COLOR: 0x0000FF,
+                VARIABLE_NAME_FILL_COLOR: 0x0000FF,
+                VARIABLE_NAME_SPEED: 40,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 1000.0},
+            0xFFFF00: {
+                VARIABLE_NAME_COLOR: 0xFFFF00,
+                VARIABLE_NAME_FILL_COLOR: 0xFFFF00,
+                VARIABLE_NAME_SPEED: 15,
+                VARIABLE_NAME_PASSES: 2,
+                VARIABLE_NAME_POWER: 500.0},
+            0xFF00FF: {
+                VARIABLE_NAME_COLOR: 0xFF00FF,
+                VARIABLE_NAME_FILL_COLOR: 0xFF00FF,
+                VARIABLE_NAME_SPEED: 35,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 800.0},
+            0x00FFFF: {
+                VARIABLE_NAME_COLOR: 0x00FFFF,
+                VARIABLE_NAME_FILL_COLOR: 0x00FFFF,
+                VARIABLE_NAME_SPEED: 6,
+                VARIABLE_NAME_PASSES: 4,
+                VARIABLE_NAME_POWER: 1000.0},
+            "Raster": {
+                VARIABLE_NAME_COLOR: 0x000000,
+                VARIABLE_NAME_FILL_COLOR: 0x000000,
+                VARIABLE_NAME_SPEED: 80,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 1000.0
+            },
+            "Vector": {
+                VARIABLE_NAME_COLOR: 0x000000,
+                VARIABLE_NAME_FILL_COLOR: 0x000000,
+                VARIABLE_NAME_SPEED: 20,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 1000.0
+            },
+            None: {
+                VARIABLE_NAME_COLOR: 0x000000,
+                VARIABLE_NAME_FILL_COLOR: 0x000000,
+                VARIABLE_NAME_SPEED: 20,
+                VARIABLE_NAME_PASSES: 1,
+                VARIABLE_NAME_POWER: 1000.0,
+                VARIABLE_NAME_NAME: '',
+                VARIABLE_NAME_DRATIO: 0.271,
+                VARIABLE_NAME_RASTER_STEP: 1,
+                VARIABLE_NAME_RASTER_DIRECTION: 0
+            }
+        }
         self.controller = K40Controller(self)
         self.writer = LhymicroWriter(self, controller=self.controller)
 
@@ -34,7 +106,7 @@ class LaserProject:
         if code in self.listeners:
             listeners = self.listeners[code]
             for listener in listeners:
-                listener(message)
+                self.call_after(listener, message)
         self.last_message[code] = message
 
     def __setitem__(self, key, value):
@@ -80,13 +152,14 @@ class LaserProject:
         return self.config.Read(item)
 
     def load_config(self):
-        self.window_width = self[int, "window_width"]  # TODO: hookup, so window size stays.
-        self.window_height = self[int, "window_height"]
-        self.draw_mode = self[int, "mode"]
-        self.autohome = self[bool, "autohome"]
-        self.autobeep = self[bool, "autobeep"]
-        self.autostart = self[bool, "autostart"]
-        self.mouse_zoom_invert = self[bool, "mouse_zoom_invert"]
+        self.properties = eval(self[str, "properties", repr(self.properties)])
+        self.window_width = self[int, "window_width", self.window_width]  # TODO: hookup, so window size stays.
+        self.window_height = self[int, "window_height", self.window_height]
+        self.draw_mode = self[int, "mode", self.draw_mode]
+        self.autohome = self[bool, "autohome", self.autobeep]
+        self.autobeep = self[bool, "autobeep", self.autobeep]
+        self.autostart = self[bool, "autostart", self.autostart]
+        self.mouse_zoom_invert = self[bool, "mouse_zoom_invert", self.mouse_zoom_invert]
         convert = self[float, "units-convert", self.units[0]]
         name = self[str, "units-name", self.units[1]]
         marks = self[int, "units-marks", self.units[2]]
@@ -108,6 +181,7 @@ class LaserProject:
         self("bed_size", self.size)
 
     def save_config(self):
+        self["properties"] = repr(self.properties)
         self["window_width"] = int(self.window_width)
         self["window_height"] = int(self.window_height)
         self["mode"] = int(self.draw_mode)
@@ -271,71 +345,6 @@ class LaserProject:
         return xmin, ymin, xmax, ymax
 
     def notify_change(self):
-        self("elements", 0)
-
-    def menu_convert_raw(self, position):
-        self.validate()
-        self.set_selected_by_position(position)
-        if self.selected is not None:
-            for e in self.selected:
-                e.detach()
-                self.elements.append(RawElement(e))
-
-    def menu_remove(self, position):
-        self.validate()
-        self.set_selected_by_position(position)
-        if self.selected is not None:
-            self.selected.detach()
-
-    def menu_scale(self, scale, scale_y=None, position=None):
-        if scale_y is None:
-            scale_y = scale
-        self.validate()
-        if position is not None:
-            self.set_selected_by_position(position)
-        if self.selected is not None:
-            for e in self.selected:
-                if isinstance(e, PathElement):
-                    if position is not None:
-                        e.matrix.post_scale(scale, scale_y, position[0], position[1])
-                    else:
-                        e.matrix.post_scale(scale, scale_y)
-        self("elements", 0)
-
-    def menu_dither(self, op=None, position=None):
-        self.validate()
-        if position is not None:
-            self.set_selected_by_position(position)
-        if self.selected is not None:
-            for e in self.selected:
-                if isinstance(e, ImageElement):
-                    e.image = e.image.convert("1")
-                    e.cache = None
-        self("elements", 0)
-
-    def menu_step(self, step_value, position=None):
-        self.validate()
-        if position is not None:
-            self.set_selected_by_position(position)
-        if self.selected is not None:
-            for e in self.selected:
-                if isinstance(e, ImageElement):
-                    e.properties[VARIABLE_NAME_RASTER_STEP] = step_value
-                    self.validate_matrix(e)
-        self("elements", 0)
-
-    def menu_rotate(self, radians, position=None):
-        self.validate()
-        if position is not None:
-            self.set_selected_by_position(position)
-        else:
-            position = self.selected.center
-        if self.selected is not None:
-            self.validate()
-            for e in self.selected:
-                if isinstance(e, PathElement):
-                    p = position
-                    e.matrix.post_rotate(radians, position[0], position[1])
         self("elements", 0)
 
     def move_selected(self, dx, dy):

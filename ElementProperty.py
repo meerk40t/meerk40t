@@ -78,21 +78,35 @@ class ElementProperty(wx.Frame):
         # begin wxGlade: ElementProperty.__set_properties
         self.SetTitle("Element Properties")
         self.spin_speed_set.SetMinSize((100, 23))
+        self.spin_speed_set.SetToolTip("Speed at which to perform the action in mm/s.")
         self.spin_power_set.SetMinSize((100, 23))
         self.spin_power_set.SetToolTip(
             "1000 always on. 500 it's half power (fire every other step). This is software PPI control.")
+        self.checkbox_custom_d_ratio.SetToolTip("Enables the ability to modify the diagonal ratio.")
         self.spin_speed_dratio.SetMinSize((100, 23))
+        self.spin_speed_dratio.SetToolTip(
+            "Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step.")
         self.spin_speed_dratio.Enable(False)
         self.spin_speed_dratio.SetIncrement(0.01)
         self.spin_passes.SetMinSize((100, 23))
+        self.spin_passes.SetToolTip("How many times should this action be performed?")
         self.spin_step_size.SetMinSize((100, 23))
+        self.spin_step_size.SetToolTip(
+            "Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch.")
+        self.combo_raster_direction.SetToolTip("Direction to perform a raster")
         self.combo_raster_direction.SetSelection(0)
         self.button_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
+        self.button_F00.SetToolTip("#FF0000 defined values.")
         self.button_0F0.SetBackgroundColour(wx.Colour(0, 255, 0))
+        self.button_0F0.SetToolTip("#00FF00 defined values.")
         self.button_00F.SetBackgroundColour(wx.Colour(0, 0, 255))
+        self.button_00F.SetToolTip("#00FF00 defined values.")
         self.button_F0F.SetBackgroundColour(wx.Colour(255, 0, 255))
+        self.button_F0F.SetToolTip("#FF00FF defined values.")
         self.button_0FF.SetBackgroundColour(wx.Colour(0, 255, 255))
+        self.button_0FF.SetToolTip("#00FFFF defined values.")
         self.button_FF0.SetBackgroundColour(wx.Colour(255, 255, 0))
+        self.button_FF0.SetToolTip("#FFFF00 defined values.")
         # end wxGlade
 
     def __do_layout(self):

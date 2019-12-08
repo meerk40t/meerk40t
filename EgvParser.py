@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from LaserSpeed import LaserSpeed
-from path import Path
 
 CMD_RIGHT = ord(b'B')
 CMD_LEFT = ord(b'T')

@@ -5,7 +5,15 @@ from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
 from ThreadConstants import *
-from path import *
+from svg.elements import *
+
+
+"""
+Lhymicro provides Lhystudio specific coding for elements and sends it to the K40Controller backend to write to the usb
+the intent is that this class could be switched out for a different class and control a different type of laser if need
+be. The middle language of generated commands from the ProjectNodes are able to be interpreted by a different driver
+or methodology. 
+"""
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'

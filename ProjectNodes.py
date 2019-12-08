@@ -1,8 +1,16 @@
-import path
-import svg_parser
+from svg.elements import *
+
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 
+"""
+Project Nodes is a tree based set of wrappers for various objects which are converted into code to be processed by the 
+LhymicroWriter or any compatible writer.
+
+Each element wraps its respective object and provides a generate function as well as a properties dict. 
+"""
+
+VARIABLE_NAME_TYPE = 'type'
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_COLOR = 'color'
 VARIABLE_NAME_FILL_COLOR = 'fill'
@@ -10,7 +18,7 @@ VARIABLE_NAME_SPEED = 'speed'
 VARIABLE_NAME_POWER = 'power'
 VARIABLE_NAME_PASSES = 'passes'
 VARIABLE_NAME_DRATIO = 'd_ratio'
-VARIABLE_NAME_RASTER_STEP = "raster_step"
+VARIABLE_NAME_RASTER_STEP = 'raster_step'
 VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 
@@ -120,6 +128,15 @@ class LaserNode(list):
                 for flat_element in element.flat_elements(types=types):
                     yield flat_element
 
+    def all_children_of_type(self, types):
+        if isinstance(self, types):
+            return [self]
+        return [e for e in self if isinstance(e, types)]
+
+    def contains_type(self, types):
+        results = self.all_children_of_type(types)
+        return len(results) != 0
+
     @property
     def center(self):
         return (self.bounds[2] - self.bounds[0]) / 2.0, (self.bounds[3] - self.bounds[1]) / 2.0
@@ -138,23 +155,14 @@ class LaserGroup(LaserNode):
         else:
             return name
 
-    def all_children_of_type(self, type):
-        return [e for e in self if isinstance(e, type)]
-
-    def contains_type(self, type):
-        results = [e for e in self if isinstance(e, type)]
-        return len(results) != 0
-
-    def not_contains_type(self, type):
-        results = [e for e in self if isinstance(e, type)]
-        return len(results) == 0
-
 
 class LaserElement(LaserNode):
     def __init__(self):
         LaserNode.__init__(self)
-        self.matrix = path.Matrix()
-        self.properties = {VARIABLE_NAME_COLOR: 0, VARIABLE_NAME_FILL_COLOR: 0, VARIABLE_NAME_SPEED: 60,
+        self.matrix = Matrix()
+        self.properties = {VARIABLE_NAME_COLOR: 0,
+                           VARIABLE_NAME_FILL_COLOR: 0,
+                           VARIABLE_NAME_SPEED: 60,
                            VARIABLE_NAME_PASSES: 1,
                            VARIABLE_NAME_POWER: 1000.0}
 
@@ -173,13 +181,12 @@ class LaserElement(LaserNode):
     def move(self, dx, dy):
         self.matrix.post_translate(dx, dy)  # Apply translate after all the other events.
 
-    def svg_transform(self, transform_str):
-        svg_parser.parse_svg_transform(transform_str, self.matrix)
-
 
 class ImageElement(LaserElement):
-    def __init__(self, image):
+    def __init__(self, image_element):
         LaserElement.__init__(self)
+        image = image_element.image
+        self.matrix = image_element.transform
         self.box = [0, 0, image.width, image.height]
         self.image = image
         # Converting all images to RGBA.
@@ -262,10 +269,17 @@ class ImageElement(LaserElement):
 
 
 class TextElement(LaserElement):
-    def __init__(self, text):
+    def __init__(self, element):
         LaserElement.__init__(self)
-        self.text = text
         self.properties.update({VARIABLE_NAME_COLOR: 0x000000, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
+        if isinstance(element, SVGText):
+            self.matrix = Matrix(element.transform)
+            self.matrix.pre_translate(element.x, element.y)
+            self.properties[VARIABLE_NAME_FILL_COLOR] = element.fill
+            self.properties[VARIABLE_NAME_COLOR] = element.stroke
+            self.text = element.text
+        else:
+            self.text = element
 
     def __str__(self):
         if VARIABLE_NAME_NAME in self.properties:
@@ -275,55 +289,37 @@ class TextElement(LaserElement):
             return string
         return string[:97] + '...'
 
-    # def generate(self, m=None):
-    #     if m is None:
-    #         m = self.matrix
-    #     if VARIABLE_NAME_SPEED in self.cut:
-    #         speed = self.cut.get(VARIABLE_NAME_SPEED)
-    #         yield COMMAND_SET_SPEED, speed
-    #     if VARIABLE_NAME_POWER in self.cut:
-    #         power = self.cut.get(VARIABLE_NAME_POWER)
-    #         yield COMMAND_SET_POWER, power
-    #     if VARIABLE_NAME_DRATIO in self.cut:
-    #         d_ratio = self.cut.get(VARIABLE_NAME_DRATIO)
-    #         yield COMMAND_SET_D_RATIO, d_ratio
-    #     yield COMMAND_SET_STEP, 0
-    #     yield COMMAND_MODE_COMPACT, 0
-    #     yield COMMAND_MODE_DEFAULT, 0
-    #     yield COMMAND_SET_SPEED, None
-    #     yield COMMAND_SET_D_RATIO, None
-
 
 class PathElement(LaserElement):
-    def __init__(self, path_d):
+    def __init__(self, element):
         LaserElement.__init__(self)
-        self.path = path_d
         self.properties.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
+        if isinstance(element, Path):
+            self.matrix = element.transform
+            self.properties[VARIABLE_NAME_FILL_COLOR] = element.fill
+            self.properties[VARIABLE_NAME_COLOR] = element.stroke
+        self.path = element
 
     def __str__(self):
         if VARIABLE_NAME_NAME in self.properties:
             return self.properties[VARIABLE_NAME_NAME]
         name = "Path @%.1f mm/s %.1fx path=%s" % \
-                 (self.properties[VARIABLE_NAME_SPEED],
-                  self.matrix.value_scale_x(),
-                  str(hash(self.path)))
+               (self.properties[VARIABLE_NAME_SPEED],
+                self.matrix.value_scale_x(),
+                str(hash(self.path.d())))
         if len(name) >= 100:
             name = name[:97] + '...'
         return name
 
     def reify_matrix(self):
         """Apply the matrix to the path and reset matrix."""
-        object_path = path.Path()
-        svg_parser.parse_svg_path(object_path, self.path)
-        object_path *= self.matrix
-        self.path = object_path.d()
+        self.path *= self.matrix
         self.matrix.reset()
 
     def generate(self, m=None):
         if m is None:
             m = self.matrix
-        object_path = path.Path()
-        svg_parser.parse_svg_path(object_path, self.path)
+        object_path = self.path
         self.box = object_path.bbox()
         if VARIABLE_NAME_SPEED in self.properties:
             speed = self.properties.get(VARIABLE_NAME_SPEED)
@@ -336,6 +332,8 @@ class PathElement(LaserElement):
             yield COMMAND_SET_D_RATIO, d_ratio
         plot = object_path * m
         first_point = plot.first_point
+        if first_point is None:
+            return
         yield COMMAND_RAPID_MOVE, first_point
         yield COMMAND_SET_STEP, 0
         yield COMMAND_MODE_COMPACT, 0
