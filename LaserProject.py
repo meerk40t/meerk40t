@@ -328,8 +328,10 @@ class LaserProject:
         self.validate()
         if position is not None:
             self.set_selected_by_position(position)
-        else:
+        elif self.selected is not None:
             position = self.selected.center
+        else:
+            return
         if self.selected is not None:
             self.validate()
             for e in self.selected:
