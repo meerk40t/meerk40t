@@ -232,14 +232,15 @@ class LaserProject:
             listeners.remove(listener)
 
     def validate_matrix(self, node):
-        if isinstance(node, ImageElement):
-            tx = node.matrix.value_trans_x()
-            ty = node.matrix.value_trans_y()
-            node.matrix.reset()
-            node.matrix.post_translate(tx, ty)
-            if VARIABLE_NAME_RASTER_STEP in node.properties:
-                step = float(node.properties[VARIABLE_NAME_RASTER_STEP])
-                node.matrix.pre_scale(step, step)
+        pass
+        # if isinstance(node, ImageElement):
+        #     tx = node.matrix.value_trans_x()
+        #     ty = node.matrix.value_trans_y()
+        #     node.matrix.reset()
+        #     node.matrix.post_translate(tx, ty)
+        #     if VARIABLE_NAME_RASTER_STEP in node.properties:
+        #         step = float(node.properties[VARIABLE_NAME_RASTER_STEP])
+        #         node.matrix.pre_scale(step, step)
 
     def validate(self, node=None):
         if node is None:
@@ -249,7 +250,6 @@ class LaserProject:
         node.bounds = None  # delete bounds
         for element in node:
             self.validate(element)  # validate all subelements.
-        self.validate_matrix(node)
         if len(node) == 0:  # Leaf Node.
             node.bounds = node.box
             if isinstance(node, LaserElement):

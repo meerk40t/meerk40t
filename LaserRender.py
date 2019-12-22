@@ -10,11 +10,13 @@ Laser Render provides GUI relevant methods of displaying the given project nodes
 
 # TODO: Raw typically uses path, but could just use a 1 bit image to visualize it.
 
+
 def swizzlecolor(c):
     if c is None:
         return None
-    swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
-    return swizzle_color
+    if isinstance(c, int):
+        c = Color(c)
+    return c.blue << 16 | c.green << 8 | c.red
 
 
 class LaserRender:
@@ -31,17 +33,17 @@ class LaserRender:
                 element.draw(element, dc, draw_mode)
             except AttributeError:
                 if isinstance(element, PathElement):
-                    element.draw = self.draw
+                    element.draw = self.draw_path
                 elif isinstance(element, ImageElement):
                     element.draw = self.draw_image
                 elif isinstance(element, TextElement):
                     element.draw = self.draw_text
                 else:
-                    element.draw = self.draw
+                    element.draw = self.draw_path
                 element.draw(element, dc, draw_mode)
 
     def make_raster(self, group):
-        elems = list(group.flat_elements(types=(PathElement)))
+        flat_elements = list(group.flat_elements(types=(PathElement)))
         xmin, ymin, xmax, ymax = group.bounds
         width = int(xmax - xmin)
         height = int(ymax - ymin)
@@ -52,17 +54,19 @@ class LaserRender:
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
 
-        for e in elems:
+        for e in flat_elements:
+            element = e.element
+            matrix = element.transform
             fill_color = e.fill
             if fill_color is None:
                 continue
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
 
-            e.matrix.post_translate(-xmin, -ymin)
+            matrix.post_translate(-xmin, -ymin)
             for event in e.generate():
                 parse.command(event)
-            e.matrix.post_translate(+xmin, +ymin)
+            matrix.post_translate(+xmin, +ymin)
 
             self.color.SetRGB(swizzlecolor(fill_color))
             self.brush.SetColour(self.color)
@@ -76,15 +80,17 @@ class LaserRender:
         del dc
         return image
 
-    def draw(self, node, dc, draw_mode):
+    def draw_path(self, node, dc, draw_mode):
         """Default draw routine for the laser element.
         If the generate is defined this will draw the
         element as a series of lines, as defined by generate."""
+        try:
+            matrix = node.element.transform
+        except AttributeError:
+            matrix = Matrix()
         drawfills = draw_mode & 1 == 0
         gc = wx.GraphicsContext.Create(dc)
-        #zmatrix = ZMatrix(node.matrix)
-        zmatrix = ZMatrix()
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, zmatrix))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         c = swizzlecolor(node.properties[VARIABLE_NAME_COLOR])
         if c is None:
             self.pen.SetColour(None)
@@ -106,7 +112,7 @@ class LaserRender:
         if drawfills and VARIABLE_NAME_FILL_COLOR in node.properties:
             c = node.properties[VARIABLE_NAME_FILL_COLOR]
             if c is not None:
-                swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
+                swizzle_color = swizzlecolor(c)
                 self.color.SetRGB(swizzle_color)  # wx has BBGGRR
                 self.brush.SetColour(self.color)
                 gc.SetBrush(self.brush)
@@ -114,14 +120,22 @@ class LaserRender:
         gc.StrokePath(node.cache)
 
     def draw_text(self, node, dc, draw_mode):
+        try:
+            matrix = node.element.transform
+        except AttributeError:
+            matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(node.matrix)))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if node.text is not None:
-            dc.DrawText(node.text, node.matrix.value_trans_x(), node.matrix.value_trans_y())
+            dc.DrawText(node.text, matrix.value_trans_x(), matrix.value_trans_y())
 
     def draw_image(self, node, dc, draw_mode):
+        try:
+            matrix = node.element.transform
+        except AttributeError:
+            matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(node.matrix)))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         cache = None
         try:
             cache = node.cache
@@ -132,7 +146,7 @@ class LaserRender:
                 max_allowed = node.max_allowed
             except AttributeError:
                 max_allowed = 2048
-            pil_data = node.image
+            pil_data = node.element.image
             node.c_width, node.c_height = pil_data.size
             width, height = pil_data.size
             dim = max(width, height)

@@ -349,7 +349,8 @@ class MeerK40t(wx.Frame):
         self.tree.refresh_tree_elements()
 
     def load_svg(self, pathname, group=None):
-        svg = SVG(pathname).elements(width=Distance.cm(project.size[0]), height=Distance.cm(project.size[1]))
+        ppi = 1000.0
+        svg = SVG(pathname).elements(width='%dmm' % project.size[0], height='%dmm' % project.size[1], ppi=ppi)
         context = self.project.elements
 
         if group is None:
@@ -363,18 +364,21 @@ class MeerK40t(wx.Frame):
                 pe = TextElement(element)
                 context.append(pe)
             elif isinstance(element, Path):
-                element.reify()
                 pe = PathElement(element)
                 context.append(pe)
             elif isinstance(element, Shape):
                 e = Path(element)
+                e.reify()  # In some cases the shape could not have reified, the path must.
                 pe = PathElement(e)
                 context.append(pe)
             elif isinstance(element, SVGImage):
-                element.load(os.path.dirname(pathname))
-                if element.image is not None:
-                    pe = ImageElement(element)
-                    context.append(pe)
+                try:
+                    element.load(os.path.dirname(pathname))
+                    if element.image is not None:
+                        pe = ImageElement(element)
+                        context.append(pe)
+                except OSError:
+                    pass
         self.scene.post_buffer_update()
 
     def load_egv(self, pathname, group=None):
@@ -388,8 +392,7 @@ class MeerK40t(wx.Frame):
         for event in parse_egv(pathname):
             path = event['path']
             if len(path) > 0:
-                path_d = path.d()
-                element = PathElement(path_d)
+                element = PathElement(path)
                 context.append(element)
                 if 'speed' in event:
                     element.properties['speed'] = event['speed']
@@ -404,8 +407,9 @@ class MeerK40t(wx.Frame):
         self.scene.post_buffer_update()
 
     def load_image(self, pathname, group=None):
-        image = Image.open(pathname)
         context = self.project.elements
+        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
+        image.load()
         element = ImageElement(image)
         if group is None:
             group = LaserGroup()
@@ -777,7 +781,7 @@ def menu_scale(element, value):
     def specific(event):
         center = element.center
         for e in element.flat_elements(types=(PathElement)):
-            e.matrix.post_scale(value, value, center[0], center[1])
+            e.element.transform.post_scale(value, value, center[0], center[1])
         project("elements", 0)
 
     return specific
@@ -796,7 +800,7 @@ def menu_step(element, step_value):
 def menu_dither(element):
     def specific(event):
         for e in element.flat_elements(types=(ImageElement)):
-            e.image = e.image.convert("1")
+            e.element.image = e.element.image.convert("1")
             e.cache = None
         project("elements", 0)
 
@@ -808,9 +812,9 @@ def menu_raster(element):
         renderer = LaserRender(project)
         image = renderer.make_raster(element)
         xmin, ymin, xmax, ymax = project.selected.bounds
-        image_element = ImageElement(image)
+        image_element = ImageElement(SVGImage(image=image))
         project.selected.append(image_element)
-        image_element.matrix.post_translate(xmin, ymin)
+        image_element.element.transform.post_translate(xmin, ymin)
         project("elements", 0)
 
     return specific
@@ -828,7 +832,7 @@ def menu_reify(element):
 def menu_reset(element):
     def specific(event):
         for e in element.flat_elements(types=(LaserElement)):
-            e.matrix.reset()
+            e.element.transform.reset()
             project("elements", 0)
 
     return specific
@@ -886,7 +890,7 @@ def menu_subpath(element):
             p = Path(e.path)
             add = []
             for subpath in p.as_subpaths():
-                subelement = PathElement(subpath.d())
+                subelement = PathElement(Path(subpath))
                 subelement.properties.update(e.properties)
                 subelement.matrix = Matrix(e.matrix)
                 add.append(subelement)
@@ -913,8 +917,7 @@ def get_convex_hull(element):
     pts = []
     for e in element.flat_elements((PathElement, ImageElement)):
         if isinstance(e, PathElement):
-            epath = Path(epath)
-            epath *= e.matrix
+            epath = abs(e.element)
             pts += [q for q in epath.as_points()]
         elif isinstance(e, ImageElement):
             bounds = e.bounds
@@ -934,7 +937,7 @@ def menu_hull(element):
         path.move(*pts)
         path.closed()
         context = element.parent
-        context.append(PathElement(path.d()))
+        context.append(PathElement(path))
         project.set_selected(None)
 
     return convex_hull
@@ -1238,7 +1241,7 @@ class LaserSceneView(wx.Panel):
         self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
 
     def execute_move_action(self, direction, amount):
-        amount = Distance.parse(amount, 1000.0, min(project.size))
+        amount = Length(amount).value(ppi=1000.0, relative_length=min(project.size))
         amount = 1000.0 * amount / 96.0
         x = 0
         y = 0
