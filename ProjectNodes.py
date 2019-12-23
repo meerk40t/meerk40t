@@ -25,6 +25,7 @@ VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 class LaserNode(list):
     def __init__(self):
         list.__init__(self)
+        self.element = None
         self.properties = {}
         self.parent = None
         self.box = None
@@ -193,6 +194,10 @@ class LaserElement(LaserNode):
             except AttributeError:
                 pass
 
+    def reify_matrix(self):
+        """Apply the matrix to the path and reset matrix."""
+        self.element = abs(self.element)
+
 
 class ImageElement(LaserElement):
     def __init__(self, image_element):
@@ -212,6 +217,28 @@ class ImageElement(LaserElement):
             return self.properties[VARIABLE_NAME_NAME]
         return "Image %dX s@%3f" % (self.properties[VARIABLE_NAME_RASTER_STEP],
                                     self.properties[VARIABLE_NAME_SPEED])
+
+    def set_native(self):
+        tx = self.element.transform.value_trans_x()
+        ty = self.element.transform.value_trans_y()
+        self.element.transform.reset()
+        self.element.transform.post_translate(tx, ty)
+        if VARIABLE_NAME_RASTER_STEP in self.properties:
+            step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
+            self.element.transform.pre_scale(step, step)
+
+    def make_actual(self):
+        image = self.element.image
+        e.cache = None
+        tx = self.element.transform.value_trans_x()
+        ty = self.element.transform.value_trans_y()
+        self.element.transform.reset()
+        self.element.transform.post_translate(tx, ty)
+        if VARIABLE_NAME_RASTER_STEP in self.properties:
+            step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
+            self.element.transform.pre_scale(step, step)
+        self.element = image
+        #todo: set bounds by value again.
 
     def generate(self, m=None):
         if m is None:
@@ -323,9 +350,6 @@ class PathElement(LaserElement):
             name = name[:97] + '...'
         return name
 
-    def reify_matrix(self):
-        """Apply the matrix to the path and reset matrix."""
-        self.element = abs(self.element)
 
     def generate(self, m=None):
         object_path = abs(self.element)

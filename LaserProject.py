@@ -233,14 +233,6 @@ class LaserProject:
 
     def validate_matrix(self, node):
         pass
-        # if isinstance(node, ImageElement):
-        #     tx = node.matrix.value_trans_x()
-        #     ty = node.matrix.value_trans_y()
-        #     node.matrix.reset()
-        #     node.matrix.post_translate(tx, ty)
-        #     if VARIABLE_NAME_RASTER_STEP in node.properties:
-        #         step = float(node.properties[VARIABLE_NAME_RASTER_STEP])
-        #         node.matrix.pre_scale(step, step)
 
     def validate(self, node=None):
         if node is None:
