@@ -228,17 +228,39 @@ class ImageElement(LaserElement):
             self.element.transform.pre_scale(step, step)
 
     def make_actual(self):
+        """
+        Makes PIL image actual in that it manipulates the pixels to actually exist
+        rather than simply apply the transform on the image to give the resulting image.
+        Since our goal is to raster the images real pixels this is required.
+
+        SVG matrices are defined as follows.
+        [a c e]
+        [b d f]
+
+        Pil requires a, c, e, b, d, f accordingly.
+        """
+        from PIL import Image
+
         image = self.element.image
-        e.cache = None
-        tx = self.element.transform.value_trans_x()
-        ty = self.element.transform.value_trans_y()
+        self.cache = None
+        m = self.element.transform
+        tx = m.value_trans_x()
+        ty = m.value_trans_y()
+        m.e = 0.0
+        m.f = 0.0
+        bbox = self.element.bbox()
+        width = int(ceil(bbox[2] - bbox[0]))
+        height = int(ceil(bbox[3] - bbox[1]))
+        m.inverse()
+        image = image.transform((width, height), Image.AFFINE, (m.a, m.c, m.e, m.b, m.d, m.f), resample=Image.BICUBIC)
         self.element.transform.reset()
         self.element.transform.post_translate(tx, ty)
-        if VARIABLE_NAME_RASTER_STEP in self.properties:
-            step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
-            self.element.transform.pre_scale(step, step)
-        self.element = image
-        #todo: set bounds by value again.
+        # if VARIABLE_NAME_RASTER_STEP in self.properties:
+        #     step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
+        #     self.element.transform.pre_scale(step, step)
+        self.element.image = image
+        self.bounds = self.element.bbox()
+        self.box = self.element.bbox()
 
     def generate(self, m=None):
         if m is None:
