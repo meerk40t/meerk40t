@@ -6,5 +6,6 @@ python:
 install:
   - pip install Pillow
   - pip install pyusb
+  - pip install svg.elements
 script:
   - python -m unittest discover test

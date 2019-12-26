@@ -5,7 +5,15 @@ from K40Controller import K40Controller
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
 from ThreadConstants import *
-from path import *
+from svg.elements import *
+
+
+"""
+Lhymicro provides Lhystudio specific coding for elements and sends it to the K40Controller backend to write to the usb
+the intent is that this class could be switched out for a different class and control a different type of laser if need
+be. The middle language of generated commands from the ProjectNodes are able to be interpreted by a different driver
+or methodology. 
+"""
 
 COMMAND_RIGHT = b'B'
 COMMAND_LEFT = b'T'
@@ -392,31 +400,34 @@ class LhymicroWriter:
             sx = self.current_x
             sy = self.current_y
             self.pulse_modulation = True
-            for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
-                x, y, on = e
-                dx = x - sx
-                dy = y - sy
-                sx = x
-                sy = y
-                if dy != 0:
-                    if self.is_top:
-                        if abs(dy) > self.raster_step:
-                            self.to_concat_mode()
-                            self.move_relative(0, dy + self.raster_step)
-                            self.to_compact_mode()
-                        self.h_switch()
+            try:
+                for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
+                    x, y, on = e
+                    dx = x - sx
+                    dy = y - sy
+                    sx = x
+                    sy = y
+                    if dy != 0:
+                        if self.is_top:
+                            if abs(dy) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(0, dy + self.raster_step)
+                                self.to_compact_mode()
+                            self.h_switch()
+                        else:
+                            if abs(dy) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(0, dy - self.raster_step)
+                                self.to_compact_mode()
+                            self.h_switch()
+                    if on == 0:
+                        self.up()
                     else:
-                        if abs(dy) > self.raster_step:
-                            self.to_concat_mode()
-                            self.move_relative(0, dy - self.raster_step)
-                            self.to_compact_mode()
-                        self.h_switch()
-                if on == 0:
-                    self.up()
-                else:
-                    self.down()
-                if dx != 0:
-                    self.move_relative(dx, dy)
+                        self.down()
+                    if dx != 0:
+                        self.move_relative(dx, dy)
+            except StopIteration:
+                return
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
             sx = self.current_x

@@ -1,20 +1,22 @@
-from PIL import Image
 import wx
-from ZMatrix import ZMatrix
-import path
-import svg_parser
-from K40Controller import K40Controller
-from LaserCommandConstants import *
-from LhymicroWriter import LhymicroWriter
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
-from ProjectNodes import *
+from PIL import Image
 
+from ProjectNodes import *
+from ZMatrix import ZMatrix
+
+"""
+Laser Render provides GUI relevant methods of displaying the given project nodes.
+"""
 
 # TODO: Raw typically uses path, but could just use a 1 bit image to visualize it.
 
+
 def swizzlecolor(c):
-    swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
-    return swizzle_color
+    if c is None:
+        return None
+    if isinstance(c, int):
+        c = Color(c)
+    return c.blue << 16 | c.green << 8 | c.red
 
 
 class LaserRender:
@@ -26,22 +28,22 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render(self, dc, draw_mode):
-        for element in self.project.elements.flat_elements(LaserElement):
+        for element in self.project.elements.flat_elements(types=('image', 'path', 'text')):
             try:
                 element.draw(element, dc, draw_mode)
             except AttributeError:
-                if isinstance(element, PathElement):
-                    element.draw = self.draw
-                elif isinstance(element, ImageElement):
+                if isinstance(element.element, Path):
+                    element.draw = self.draw_path
+                elif isinstance(element.element, SVGImage):
                     element.draw = self.draw_image
-                elif isinstance(element, TextElement):
+                elif isinstance(element.element, SVGText):
                     element.draw = self.draw_text
                 else:
-                    element.draw = self.draw
+                    element.draw = self.draw_path
                 element.draw(element, dc, draw_mode)
 
     def make_raster(self, group):
-        elems = list(group.flat_elements(types=(PathElement)))
+        flat_elements = list(group.flat_elements(types='path'))
         xmin, ymin, xmax, ymax = group.bounds
         width = int(xmax - xmin)
         height = int(ymax - ymin)
@@ -52,17 +54,19 @@ class LaserRender:
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
 
-        for e in elems:
+        for e in flat_elements:
+            element = e.element
+            matrix = element.transform
             fill_color = e.fill
             if fill_color is None:
                 continue
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
 
-            e.matrix.post_translate(-xmin, -ymin)
+            matrix.post_translate(-xmin, -ymin)
             for event in e.generate():
                 parse.command(event)
-            e.matrix.post_translate(+xmin, +ymin)
+            matrix.post_translate(+xmin, +ymin)
 
             self.color.SetRGB(swizzlecolor(fill_color))
             self.brush.SetColour(self.color)
@@ -76,16 +80,23 @@ class LaserRender:
         del dc
         return image
 
-    def draw(self, node, dc, draw_mode):
+    def draw_path(self, node, dc, draw_mode):
         """Default draw routine for the laser element.
         If the generate is defined this will draw the
         element as a series of lines, as defined by generate."""
+        try:
+            matrix = node.element.transform
+        except AttributeError:
+            matrix = Matrix()
         drawfills = draw_mode & 1 == 0
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(node.matrix)))
-
-        self.color.SetRGB(swizzlecolor(node.properties[VARIABLE_NAME_COLOR]))
-        self.pen.SetColour(self.color)
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        c = swizzlecolor(node.stroke)
+        if c is None:
+            self.pen.SetColour(None)
+        else:
+            self.color.SetRGB(c)
+            self.pen.SetColour(self.color)
         gc.SetPen(self.pen)
         cache = None
         try:
@@ -95,27 +106,36 @@ class LaserRender:
         if cache is None:
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
-            for event in node.generate(path.Matrix()):
+            for event in node.generate():
                 parse.command(event)
             node.cache = p
-        if drawfills and VARIABLE_NAME_FILL_COLOR in node.properties:
-            c = node.properties[VARIABLE_NAME_FILL_COLOR]
-            swizzle_color = (c & 0xFF) << 16 | ((c >> 8) & 0xFF) << 8 | ((c >> 16) & 0xFF)
-            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
-            self.brush.SetColour(self.color)
-            gc.SetBrush(self.brush)
-            gc.FillPath(node.cache)
+        if drawfills and node.fill is not None:
+            c = node.fill
+            if c is not None and c != 'none':
+                swizzle_color = swizzlecolor(c)
+                self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+                self.brush.SetColour(self.color)
+                gc.SetBrush(self.brush)
+                gc.FillPath(node.cache)
         gc.StrokePath(node.cache)
 
     def draw_text(self, node, dc, draw_mode):
+        try:
+            matrix = node.element.transform
+        except AttributeError:
+            matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(node.matrix)))
-        if node.text is not None:
-            dc.DrawText(node.text, node.matrix.value_trans_x(), node.matrix.value_trans_y())
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if node.element.text is not None:
+            dc.DrawText(node.element.text, matrix.value_trans_x(), matrix.value_trans_y())
 
     def draw_image(self, node, dc, draw_mode):
+        try:
+            matrix = node.element.transform
+        except AttributeError:
+            matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(node.matrix)))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         cache = None
         try:
             cache = node.cache
@@ -126,7 +146,7 @@ class LaserRender:
                 max_allowed = node.max_allowed
             except AttributeError:
                 max_allowed = 2048
-            pil_data = node.image
+            pil_data = node.element.image
             node.c_width, node.c_height = pil_data.size
             width, height = pil_data.size
             dim = max(width, height)
@@ -211,20 +231,20 @@ class LaserCommandPathParser:
         elif command == COMMAND_PLOT:
             plot = values
             for e in plot:
-                if isinstance(e, path.Move):
+                if isinstance(e, Move):
                     self.graphic_path.MoveToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Line):
+                elif isinstance(e, Line):
                     self.graphic_path.AddLineToPoint(e.end[0], e.end[1])
-                elif isinstance(e, path.Close):
+                elif isinstance(e, Close):
                     self.graphic_path.CloseSubpath()
-                elif isinstance(e, path.QuadraticBezier):
+                elif isinstance(e, QuadraticBezier):
                     self.graphic_path.AddQuadCurveToPoint(e.control[0], e.control[1],
                                                           e.end[0], e.end[1])
-                elif isinstance(e, path.CubicBezier):
+                elif isinstance(e, CubicBezier):
                     self.graphic_path.AddCurveToPoint(e.control1[0], e.control1[1],
                                                       e.control2[0], e.control2[1],
                                                       e.end[0], e.end[1])
-                elif isinstance(e, path.Arc):
+                elif isinstance(e, Arc):
                     for curve in e.as_cubic_curves():
                         self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
                                                           curve.control2[0], curve.control2[1],

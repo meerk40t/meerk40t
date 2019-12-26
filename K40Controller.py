@@ -192,7 +192,10 @@ class K40Controller:
         self.thread.state = THREAD_STATE_ABORT
         packet = b'I' + b'F' * 29
         if self.usb is not None:
-            self.send_packet(packet)
+            try:
+                self.send_packet(packet)
+            except usb.core.USBError:
+                pass  # Emergency stop was a failure.
         self.buffer = b''
         self.add_queue = b''
         self.listener("buffer", len(self.buffer))

@@ -3287,4 +3287,4 @@ class TestLaserSpeeds(unittest.TestCase):
             speed_code = LaserSpeed.get_code_from_speed(speed, board="M2")
             determined_speed = LaserSpeed.get_speed_from_code(speed_code, board="LASER-M2")
             determined_speed /= flaw
-            self.assertAlmostEquals(speed, determined_speed, delta=speed / 100)
+            self.assertAlmostEqual(speed, determined_speed, delta=speed / 100)
