@@ -28,22 +28,22 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render(self, dc, draw_mode):
-        for element in self.project.elements.flat_elements(LaserElement):
+        for element in self.project.elements.flat_elements(types=('image', 'path', 'text')):
             try:
                 element.draw(element, dc, draw_mode)
             except AttributeError:
-                if isinstance(element, PathElement):
+                if isinstance(element.element, Path):
                     element.draw = self.draw_path
-                elif isinstance(element, ImageElement):
+                elif isinstance(element.element, SVGImage):
                     element.draw = self.draw_image
-                elif isinstance(element, TextElement):
+                elif isinstance(element.element, SVGText):
                     element.draw = self.draw_text
                 else:
                     element.draw = self.draw_path
                 element.draw(element, dc, draw_mode)
 
     def make_raster(self, group):
-        flat_elements = list(group.flat_elements(types=(PathElement)))
+        flat_elements = list(group.flat_elements(types='path'))
         xmin, ymin, xmax, ymax = group.bounds
         width = int(xmax - xmin)
         height = int(ymax - ymin)
@@ -91,7 +91,7 @@ class LaserRender:
         drawfills = draw_mode & 1 == 0
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        c = swizzlecolor(node.properties[VARIABLE_NAME_COLOR])
+        c = swizzlecolor(node.stroke)
         if c is None:
             self.pen.SetColour(None)
         else:
@@ -106,12 +106,12 @@ class LaserRender:
         if cache is None:
             p = gc.CreatePath()
             parse = LaserCommandPathParser(p)
-            for event in node.generate(Matrix()):
+            for event in node.generate():
                 parse.command(event)
             node.cache = p
-        if drawfills and VARIABLE_NAME_FILL_COLOR in node.properties:
-            c = node.properties[VARIABLE_NAME_FILL_COLOR]
-            if c is not None:
+        if drawfills and node.fill is not None:
+            c = node.fill
+            if c is not None and c != 'none':
                 swizzle_color = swizzlecolor(c)
                 self.color.SetRGB(swizzle_color)  # wx has BBGGRR
                 self.brush.SetColour(self.color)

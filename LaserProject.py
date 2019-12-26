@@ -17,8 +17,7 @@ class LaserProject:
         self.call_after = None
         self.listeners = {}
         self.last_message = {}
-        self.elements = ProjectRoot()
-        self.elements.parent = self
+        self.elements = LaserNode(parent=self)
         self.size = 320, 220
         self.units = (39.37, "mm", 10, 0)
         self.config = None
@@ -35,57 +34,57 @@ class LaserProject:
         self.keymap = {}
         self.properties = {
             0xFF0000: {
-                VARIABLE_NAME_COLOR: 0xFF0000,
+                VARIABLE_NAME_STROKE_COLOR: 0xFF0000,
                 VARIABLE_NAME_FILL_COLOR: 0xFF0000,
                 VARIABLE_NAME_SPEED: 10,
                 VARIABLE_NAME_PASSES: 1,
                 VARIABLE_NAME_POWER: 1000.0},
             0x00FF00: {
-                VARIABLE_NAME_COLOR: 0x00FF00,
+                VARIABLE_NAME_STROKE_COLOR: 0x00FF00,
                 VARIABLE_NAME_FILL_COLOR: 0x00FF00,
                 VARIABLE_NAME_SPEED: 30,
                 VARIABLE_NAME_PASSES: 1,
                 VARIABLE_NAME_POWER: 1000.0},
             0x0000FF: {
-                VARIABLE_NAME_COLOR: 0x0000FF,
+                VARIABLE_NAME_STROKE_COLOR: 0x0000FF,
                 VARIABLE_NAME_FILL_COLOR: 0x0000FF,
                 VARIABLE_NAME_SPEED: 40,
                 VARIABLE_NAME_PASSES: 1,
                 VARIABLE_NAME_POWER: 1000.0},
             0xFFFF00: {
-                VARIABLE_NAME_COLOR: 0xFFFF00,
+                VARIABLE_NAME_STROKE_COLOR: 0xFFFF00,
                 VARIABLE_NAME_FILL_COLOR: 0xFFFF00,
                 VARIABLE_NAME_SPEED: 15,
                 VARIABLE_NAME_PASSES: 2,
                 VARIABLE_NAME_POWER: 500.0},
             0xFF00FF: {
-                VARIABLE_NAME_COLOR: 0xFF00FF,
+                VARIABLE_NAME_STROKE_COLOR: 0xFF00FF,
                 VARIABLE_NAME_FILL_COLOR: 0xFF00FF,
                 VARIABLE_NAME_SPEED: 35,
                 VARIABLE_NAME_PASSES: 1,
                 VARIABLE_NAME_POWER: 800.0},
             0x00FFFF: {
-                VARIABLE_NAME_COLOR: 0x00FFFF,
+                VARIABLE_NAME_STROKE_COLOR: 0x00FFFF,
                 VARIABLE_NAME_FILL_COLOR: 0x00FFFF,
                 VARIABLE_NAME_SPEED: 6,
                 VARIABLE_NAME_PASSES: 4,
                 VARIABLE_NAME_POWER: 1000.0},
             "Raster": {
-                VARIABLE_NAME_COLOR: 0x000000,
+                VARIABLE_NAME_STROKE_COLOR: 0x000000,
                 VARIABLE_NAME_FILL_COLOR: 0x000000,
                 VARIABLE_NAME_SPEED: 80,
                 VARIABLE_NAME_PASSES: 1,
                 VARIABLE_NAME_POWER: 1000.0
             },
             "Vector": {
-                VARIABLE_NAME_COLOR: 0x000000,
+                VARIABLE_NAME_STROKE_COLOR: 0x000000,
                 VARIABLE_NAME_FILL_COLOR: 0x000000,
                 VARIABLE_NAME_SPEED: 20,
                 VARIABLE_NAME_PASSES: 1,
                 VARIABLE_NAME_POWER: 1000.0
             },
             None: {
-                VARIABLE_NAME_COLOR: 0x000000,
+                VARIABLE_NAME_STROKE_COLOR: 0x000000,
                 VARIABLE_NAME_FILL_COLOR: 0x000000,
                 VARIABLE_NAME_SPEED: 20,
                 VARIABLE_NAME_PASSES: 1,
@@ -239,37 +238,40 @@ class LaserProject:
             # Default call.
             node = self.elements
 
-        node.bounds = None  # delete bounds
+        node.scene_bound = None  # delete bounds
         for element in node:
             self.validate(element)  # validate all subelements.
         if len(node) == 0:  # Leaf Node.
-            node.bounds = node.box
-            if isinstance(node, LaserElement):
-                # Perform matrix conversion of box into bounds.
-                boundary_points = []
-                box = node.box
-                if box is None:
-                    return
-                left_top = node.convert_absolute_to_affinespace([box[0], box[1]])
-                right_top = node.convert_absolute_to_affinespace([box[2], box[1]])
-                left_bottom = node.convert_absolute_to_affinespace([box[0], box[3]])
-                right_bottom = node.convert_absolute_to_affinespace([box[2], box[3]])
-                boundary_points.append(left_top)
-                boundary_points.append(right_top)
-                boundary_points.append(left_bottom)
-                boundary_points.append(right_bottom)
-                xmin = min([e[0] for e in boundary_points])
-                ymin = min([e[1] for e in boundary_points])
-                xmax = max([e[0] for e in boundary_points])
-                ymax = max([e[1] for e in boundary_points])
-                node.bounds = [xmin, ymin, xmax, ymax]
+            try:
+                node.scene_bounds = node.element.bbox()
+            except AttributeError:
+                return
+            # if isinstance(node, LaserElement):
+            #     # Perform matrix conversion of box into bounds.
+            #     boundary_points = []
+            #     box = node.box
+            #     if box is None:
+            #         return
+            #     left_top = node.convert_absolute_to_affinespace([box[0], box[1]])
+            #     right_top = node.convert_absolute_to_affinespace([box[2], box[1]])
+            #     left_bottom = node.convert_absolute_to_affinespace([box[0], box[3]])
+            #     right_bottom = node.convert_absolute_to_affinespace([box[2], box[3]])
+            #     boundary_points.append(left_top)
+            #     boundary_points.append(right_top)
+            #     boundary_points.append(left_bottom)
+            #     boundary_points.append(right_bottom)
+            #     xmin = min([e[0] for e in boundary_points])
+            #     ymin = min([e[1] for e in boundary_points])
+            #     xmax = max([e[0] for e in boundary_points])
+            #     ymax = max([e[1] for e in boundary_points])
+            #     node.bounds = [xmin, ymin, xmax, ymax]
             return
 
         # Group node.
         xvals = []
         yvals = []
         for e in node:
-            bounds = e.bounds
+            bounds = e.scene_bounds
             if bounds is None:
                 continue
             xvals.append(bounds[0])
@@ -278,7 +280,7 @@ class LaserProject:
             yvals.append(bounds[3])
         if len(xvals) == 0:
             return
-        node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+        node.scene_bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
 
     def size_in_native_units(self):
         return self.size[0] * 39.37, self.size[1] * 39.37
@@ -306,8 +308,8 @@ class LaserProject:
     def set_selected_by_position(self, position):
         self.selected = None
         self.validate()
-        for e in self.elements.flat_elements(types=LaserGroup):
-            bounds = e.bounds
+        for e in self.elements.flat_elements(types=('image', 'path', 'text')):
+            bounds = e.scene_bounds
             if bounds is None:
                 continue
             if e.contains(position):
@@ -316,7 +318,7 @@ class LaserProject:
 
     def bbox(self):
         boundary_points = []
-        for e in self.elements.flat_elements(LaserNode):
+        for e in self.elements.flat_elements(types=('image', 'path', 'text')):
             box = e.box
             if box is None:
                 continue
@@ -342,11 +344,6 @@ class LaserProject:
     def move_selected(self, dx, dy):
         if self.selected is None:
             return
+        self.selected.move(dx,dy)
         for e in self.selected:
-            if isinstance(e, LaserElement):
-                e.move(dx, dy)
-        if self.selected is not None and self.selected.bounds is not None:
-            self.selected.bounds[0] += dx
-            self.selected.bounds[2] += dx
-            self.selected.bounds[1] += dy
-            self.selected.bounds[3] += dy
+            e.move(dx, dy)

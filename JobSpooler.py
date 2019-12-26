@@ -121,6 +121,7 @@ class JobSpooler(wx.Frame):
             for i, e in enumerate(self.project.writer.queue):
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
+                    t = e.type
                     self.list_job_spool.SetItem(m, 1, str(e))
                     settings = ""
                     if m == 0:
@@ -128,19 +129,16 @@ class JobSpooler(wx.Frame):
                     else:
                         self.list_job_spool.SetItem(m, 2, "Queued")
                     self.list_job_spool.SetItem(m, 3, self.project.writer.board)
-                    if isinstance(e, PathElement):
+                    if t == 'path':
                         self.list_job_spool.SetItem(m, 4, "Path")
-                        if VARIABLE_NAME_POWER in e.properties:
-                            settings += " power=%.0f" % (e.properties[VARIABLE_NAME_POWER])
-                    elif isinstance(e, ImageElement):
+                        settings += " power=%.0f" % (e.speed)
+                    elif t == 'image':
                         self.list_job_spool.SetItem(m, 4, "Raster")
-                        if VARIABLE_NAME_RASTER_STEP in e.properties:
-                            settings += " step=%d" % (e.properties[VARIABLE_NAME_RASTER_STEP])
-                    elif isinstance(e, RawElement):
-                        self.list_job_spool.SetItem(m, 4, "Raw")
-                    if isinstance(e, LaserElement):
-                        if VARIABLE_NAME_SPEED in e.properties:
-                            self.list_job_spool.SetItem(m, 5, "%.1fmm/s" % (e.properties[VARIABLE_NAME_SPEED]))
+                        settings += " step=%d" % (e.raster_step)
+                    # elif isinstance(e, RawElement):
+                    #     self.list_job_spool.SetItem(m, 4, "Raw")
+                    if t in ('image', 'path', 'text'):
+                        self.list_job_spool.SetItem(m, 5, "%.1fmm/s" % (e.speed))
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, "n/a")
                     self.list_job_spool.SetItem(m, 8, "unknown")

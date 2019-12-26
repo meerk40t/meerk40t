@@ -13,7 +13,7 @@ from EgvParser import parse_egv
 from ElementProperty import ElementProperty
 from LaserProject import *
 from LaserRender import LaserRender
-from ProjectNodes import PathElement
+from ProjectNodes import *
 from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
@@ -370,28 +370,29 @@ class MeerK40t(wx.Frame):
         context = self.project.elements
 
         if group is None:
-            group = LaserGroup()
-            group.properties['filepath'] = pathname
-            group.properties['name'] = os.path.basename(pathname)
+            group = LaserNode()
+            group['filepath'] = pathname
+            group['name'] = os.path.basename(pathname)
             context.append(group)
+
         context = group
         for element in svg:
             if isinstance(element, SVGText):
-                pe = TextElement(element)
+                pe = LaserNode(element)
                 context.append(pe)
             elif isinstance(element, Path):
-                pe = PathElement(element)
+                pe = LaserNode(element)
                 context.append(pe)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
-                pe = PathElement(e)
+                pe = LaserNode(e)
                 context.append(pe)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
-                        pe = ImageElement(element)
+                        pe = LaserNode(element)
                         context.append(pe)
                 except OSError:
                     pass
@@ -403,26 +404,26 @@ class MeerK40t(wx.Frame):
         """
         context = self.project.elements
         if group is None:
-            group = LaserGroup()
-            group.properties['filepath'] = pathname
-            group.properties['name'] = os.path.basename(pathname)
+            group = LaserNode()
+            group['filepath'] = pathname
+            group['name'] = os.path.basename(pathname)
             context.append(group)
         context = group
         for event in parse_egv(pathname):
             path = event['path']
             if len(path) > 0:
-                element = PathElement(path)
+                element = LaserNode(path)
                 context.append(element)
                 if 'speed' in event:
-                    element.properties['speed'] = event['speed']
+                    element['speed'] = event['speed']
             if 'raster' in event:
                 raster = event['raster']
                 image = raster.get_image()
                 if image is not None:
-                    element = ImageElement(image)
+                    element = LaserNode(image)
                     context.append(element)
                     if 'speed' in event:
-                        element.properties['speed'] = event['speed']
+                        element['speed'] = event['speed']
         self.scene.post_buffer_update()
 
     def load_image(self, pathname, group=None):
@@ -432,12 +433,12 @@ class MeerK40t(wx.Frame):
         context = self.project.elements
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
-        element = ImageElement(image)
+        element = LaserNode(image)
         if group is None:
-            group = LaserGroup()
-            group.properties.update(element.properties)
-            group.properties['filepath'] = pathname
-            group.properties['name'] = os.path.basename(pathname)
+            group = LaserNode()
+            group.element.values.update(element.element.values)
+            group['filepath'] = pathname
+            group['name'] = os.path.basename(pathname)
             context.append(group)
         context = group
         context.append(element)
@@ -637,7 +638,8 @@ class MeerK40t(wx.Frame):
         project.close_old_window("jobinfo")
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project, [e for e in self.project.elements.flat_elements(types=LaserElement, passes=True)])
+        window.set_project(project, [e for e in self.project.elements.flat_elements(types=('image', 'path', 'text'),
+                                                                                    passes=True)])
         window.Show()
         project.windows["jobinfo"] = window
 
@@ -750,26 +752,26 @@ class CutConfiguration(wx.Panel):
             return
         drop_element = self.item_lookup[item]
 
-        if drag_element == drop_element or isinstance(drop_element, LaserElement):
+        if drag_element == drop_element or drop_element.type not in ('group', 'root'):
             # Cannot drop into other laser elements.
             event.Skip()
             return
 
         drag_parent.remove(drag_element)
-        if len(drag_parent) == 0 and isinstance(drag_parent, LaserGroup) and 'name' not in drag_parent.properties:
+        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent['name'] is None: # todo: empty group
             drag_parent.parent.remove(drag_parent)
 
-        if isinstance(drop_element, ProjectRoot):  # Project
-            if not isinstance(drag_element, LaserGroup):
-                group = LaserGroup()
+        if drop_element.type == 'root':  # Project
+            if drag_element.type != 'group':
+                group = LaserNode()
                 group.append(drag_element)
-                group.properties.update(drag_element.properties)  # Group gets element property.
+                group.update(drag_element)  # Group gets element property.
                 drop_element.append(group)
             else:
                 drop_element.append(drag_element)
             event.Allow()
             return
-        if isinstance(drop_element, LaserGroup):  # Group
+        if drop_element.type == 'group':  # Group
             drop_element.append(drag_element)
             event.Allow()
             return
@@ -788,9 +790,11 @@ class CutConfiguration(wx.Panel):
         item = self.element_tree.GetSelection()
         if item is not None and item.ID is not None and item in self.item_lookup:
             element = self.item_lookup[item]
-            window.set_project(project, [e for e in element.flat_elements(types=(LaserElement), passes=True)])
+            window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
+                                                                          passes=True)])
         else:
-            window.set_project(project, [e for e in project.elements.flat_elements(types=(LaserElement), passes=True)])
+            window.set_project(project, [e for e in project.elements.flat_elements(types=('image', 'path', 'text'),
+                                                                                   passes=True)])
         window.Show()
         project.windows["jobinfo"] = window
 
@@ -881,12 +885,14 @@ def create_menu(element):
         return
     gui = MeerK40tApp.MeerK40t
     menu = wx.Menu()
-    if not isinstance(element, LaserProject):
+    t = element.type
+    if t != 'root':
         gui.Bind(wx.EVT_MENU, menu_remove(element),
                  menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL))
-        if isinstance(element, LaserGroup):
-            if 'filepath' in element.properties:
-                name = os.path.basename(element.properties['filepath'])
+        if t == 'group':
+            fpath = element['filepath']
+            if fpath is not None:
+                name = os.path.basename(fpath)
                 gui.Bind(wx.EVT_MENU, menu_reload(element),
                          menu.Append(wx.ID_ANY, "Reload %s" % name, "", wx.ITEM_NORMAL))
                 if len(element) > 1:
@@ -914,7 +920,7 @@ def create_menu(element):
                                                  wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
 
-    if element.contains_type(PathElement):
+    if element.contains_type('path'):
         vector_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_subpath(element),
                  vector_menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL))
@@ -923,7 +929,7 @@ def create_menu(element):
         gui.Bind(wx.EVT_MENU, menu_reify(element),
                  menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, "Vector", vector_menu)
-    if element.contains_type(ImageElement):
+    if element.contains_type('image'):
         image_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_dither(element),
                  image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
@@ -937,9 +943,9 @@ def create_menu(element):
                      image_sub_menu_step.Append(wx.ID_ANY, "Step %d" % i, "", wx.ITEM_NORMAL))
         image_menu.Append(wx.ID_ANY, "Step", image_sub_menu_step)
         menu.Append(wx.ID_ANY, "Raster", image_menu)
-    if element.contains_type(TextElement):
+    if element.contains_type('text'):
         text_menu = wx.Menu()
-        gui.Bind(wx.EVT_MENU, menu_remove(element, types=(TextElement)),
+        gui.Bind(wx.EVT_MENU, menu_remove(element, types=(SVGText)),
                  text_menu.Append(wx.ID_ANY, "Remove Text", "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, "Text", text_menu)
     if menu.MenuItemCount != 0:
@@ -958,9 +964,10 @@ def menu_scale(element, value):
 
     def specific(event):
         center = element.center
-        for e in element.flat_elements(types=(LaserElement)):
-            e.element.transform.post_scale(value, value, center[0], center[1])
-        project("elements", 0)
+        if center is not None:
+            for e in element.flat_elements(types=('image', 'path', 'text')):
+                e.element.transform.post_scale(value, value, center[0], center[1])
+            project("elements", 0)
 
     return specific
 
@@ -975,8 +982,8 @@ def menu_step(element, step_value):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=(ImageElement)):
-            e.properties[VARIABLE_NAME_RASTER_STEP] = step_value
+        for e in element.flat_elements(types=('image')):
+            e.raster_step = step_value
             e.validate_matrix()
         project("elements", 0)
 
@@ -992,7 +999,7 @@ def menu_raster_actualize(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=(ImageElement)):
+        for e in element.flat_elements(types=('image')):
             e.make_actual()
         project("elements", 0)
 
@@ -1008,7 +1015,7 @@ def menu_raster_native(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=(ImageElement)):
+        for e in element.flat_elements(types=('image')):
             e.set_native()
         project("elements", 0)
 
@@ -1024,7 +1031,7 @@ def menu_dither(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=(ImageElement)):
+        for e in element.flat_elements(types=('image')):
             e.element.image = e.element.image.convert("1")
             e.cache = None
         project("elements", 0)
@@ -1044,7 +1051,7 @@ def menu_raster(element):
         renderer = LaserRender(project)
         image = renderer.make_raster(element)
         xmin, ymin, xmax, ymax = project.selected.bounds
-        image_element = ImageElement(SVGImage(image=image))
+        image_element = LaserNode(SVGImage(image=image))
         project.selected.append(image_element)
         image_element.element.transform.post_translate(xmin, ymin)
         project("elements", 0)
@@ -1061,7 +1068,7 @@ def menu_reify(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=(PathElement)):
+        for e in element.flat_elements(types=('path')):
             e.reify_matrix()
             project("elements", 0)
 
@@ -1077,7 +1084,7 @@ def menu_reset(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=(LaserElement)):
+        for e in element.flat_elements(types=('image', 'path', 'text')):
             e.element.transform.reset()
             project("elements", 0)
 
@@ -1097,28 +1104,11 @@ def menu_rotate(element, value):
 
     def specific(event):
         center = element.center
-        for e in element.flat_elements(types=(LaserElement)):
-            e.element.transform.post_rotate(value, center[0], center[1])
+        for e in element.flat_elements(types=('image', 'path', 'text')):
+            e.transform.post_rotate(value, center[0], center[1])
         project("elements", 0)
 
     return specific
-
-
-def menu_raw(element):
-    """
-    Menu to convert elements to raw form.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        parent = element.parent
-        element.detach()
-        parent.append(RawElement(element))
-
-    return specific
-
 
 def menu_reload(element):
     """
@@ -1128,7 +1118,7 @@ def menu_reload(element):
     :return:
     """
 
-    filepath = element.properties['filepath']
+    filepath = element['filepath']
 
     def specific(event):
         for e in reversed(element):
@@ -1174,13 +1164,13 @@ def menu_subpath(element):
 
     def specific(event):
         context = element
-        for e in element.all_children_of_type(types=(PathElement)):
+        for e in element.all_children_of_type(types=('path')):
             e.detach()
             p = abs(e.element)
             add = []
             for subpath in p.as_subpaths():
-                subelement = PathElement(Path(subpath))
-                subelement.properties.update(e.properties)
+                subelement = LaserNode(Path(subpath))
+                subelement.element.values.update(e.element.values)
                 add.append(subelement)
             context.append_all(add)
         project("elements", 0)
@@ -1201,7 +1191,7 @@ def menu_execute(element):
         project.close_old_window("jobinfo")
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project, [e for e in element.flat_elements(types=LaserElement, passes=True)])
+        window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'), passes=True)])
         window.Show()
         project.windows["jobinfo"] = window
 
@@ -1216,12 +1206,12 @@ def get_convex_hull(element):
     :return:
     """
     pts = []
-    for e in element.flat_elements((PathElement, ImageElement)):
-        if isinstance(e, PathElement):
+    for e in element.flat_elements(types=('image', 'path')):
+        if isinstance(e.element, Path):
             epath = abs(e.element)
             pts += [q for q in epath.as_points()]
-        elif isinstance(e, ImageElement):
-            bounds = e.bounds
+        elif isinstance(e.element, SVGImage):
+            bounds = e.scene_bounds
             pts += [(bounds[0], bounds[1]), (bounds[0], bounds[3]), (bounds[2], bounds[1]), (bounds[2], bounds[3])]
     hull = [p for p in Point.convex_hull(pts)]
     if len(hull) == 0:
@@ -1246,7 +1236,7 @@ def menu_hull(element):
         path.closed()
         path.stroke = Color('black')
         context = element.parent
-        context.append(PathElement(path))
+        context.append(LaserNode(path))
         project.set_selected(None)
 
     return convex_hull
@@ -1757,10 +1747,10 @@ class LaserSceneView(wx.Panel):
         if self.project is None:
             return
 
-        if self.project.selected is not None and self.project.selected.bounds is not None:
+        if self.project.selected is not None and self.project.selected.scene_bounds is not None:
             dc.SetPen(wx.BLUE_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x0, y0, x1, y1 = self.project.selected.bounds
+            x0, y0, x1, y1 = self.project.selected.scene_bounds
             dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
         self.renderer.render(dc, self.project.draw_mode)
         if self.project.draw_mode & 8 == 0:

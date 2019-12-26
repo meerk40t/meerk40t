@@ -4,15 +4,13 @@ from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
 
 """
-Project Nodes is a tree based set of wrappers for various objects which are converted into code to be processed by the 
-LhymicroWriter or any compatible writer.
-
-Each element wraps its respective object and provides a generate function as well as a properties dict. 
+ Tree building class for projects. This class is intended to take SVGElement class objects and give them a MeerK40t
+ presentation as well as the methods for turning these objects into functional commands to be executed by a writer.
 """
 
 VARIABLE_NAME_TYPE = 'type'
 VARIABLE_NAME_NAME = 'name'
-VARIABLE_NAME_COLOR = 'color'
+VARIABLE_NAME_STROKE_COLOR = 'stroke'
 VARIABLE_NAME_FILL_COLOR = 'fill'
 VARIABLE_NAME_SPEED = 'speed'
 VARIABLE_NAME_POWER = 'power'
@@ -23,58 +21,321 @@ VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 
 class LaserNode(list):
-    def __init__(self):
+    """
+    LaserNodes wrap an SVGElement. And maintains an tree like datastructure which is converted
+    into code to be processed by the LhymicroWriter or any compatible writer.
+
+    All LaserNodes contain:
+    'parent' refers to the parent object.
+    'element' contains a SVGElement classed object.
+    'cache' contains cached information for the project render.
+    'scene_bounds' contain the object's bounds within the scene.
+    """
+
+    def __init__(self, element=None, parent=None):
         list.__init__(self)
-        self.element = None
-        self.properties = {}
-        self.parent = None
-        self.box = None
-        self.bounds = None
+        self.parent = parent
+        self.cache = None
+        self.scene_bounds = None
+        if element is not None:
+            if not isinstance(element, SVGElement):
+                raise ValueError('Must be SVGElement classed object')
+            self.element = element
+        else:
+            self.element = SVGElement
+        if self.speed is None:
+            self.speed = 60.0
+        if self.passes is None:
+            self.passes = 1
+        if self.power is None:
+            self.power = 1000.0
+        if self.raster_step is None:
+            self.raster_step = 1
+        if self.raster_direction is None:
+            self.raster_direction = 0
+        if isinstance(element, SVGImage):
+            # Converting all images to RGBA.
+            element.image = element.image.convert("RGBA")
+            self.raster_step = 1
+            self.speed = 100.0
+            self.power = 1000.0
+        elif isinstance(element, SVGText):
+            self.stroke = 'black'
+            self.speed = 20.0
+            self.power = 1000.0
+            self.transform.pre_translate(element.x, element.y)
+            self.element.x = 0
+            self.element.y = 0
+        elif isinstance(element, Path):
+            self.stroke = 'green'
+            self.speed = 20.0
+            self.power = 1000.0
 
     def __eq__(self, other):
         return other is self
 
-    @property
-    def passes(self):
-        if VARIABLE_NAME_PASSES in self.properties:
-            return self.properties[VARIABLE_NAME_PASSES]
-        return 1
+    def __setitem__(self, key, value):
+        try:
+            self.element.values[key] = value
+        except AttributeError:
+            self.element.values = {key: value}
 
-    @property
-    def name(self):
-        if VARIABLE_NAME_NAME in self.properties:
-            return self.properties[VARIABLE_NAME_NAME]
+    def __getitem__(self, item):
+        try:
+            return self.element.values[item]
+        except KeyError:
+            return None
+        except AttributeError:
+            return None
+
+    def __str__(self):
+        if self.parent is None or not isinstance(self.parent, LaserNode):
+            return "Project"
+        if len(self) != 0:
+            name = "Group"
+            if self.element is not None:
+                name2 = self.name
+                if name2 is not None:
+                    return name2
+                return "%d pass, %s" % (self.passes, name)
+            return name
+        if isinstance(self.element, SVGImage):
+            name = self.name
+            if name is not None:
+                return name
+            return "Image %dX s@%3f" % (self.raster_step,
+                                        self.speed)
+        if isinstance(self.element, SVGText):
+            if VARIABLE_NAME_NAME in self.element.values:
+                return self.element.values[VARIABLE_NAME_NAME]
+            string = "NOT IMPLEMENTED: \"%s\"" % (self.element.text)
+            if len(string) < 100:
+                return string
+            return string[:97] + '...'
+        if isinstance(self.element, Path):
+            name = self.name
+            if name is not None:
+                return name
+            name = "Path @%.1f mm/s %.1fx path=%s" % \
+                   (self.speed,
+                    self.element.transform.value_scale_x(),
+                    str(hash(self.element.d())))
+            if len(name) >= 100:
+                name = name[:97] + '...'
+            return name
         return str(self)
 
     @property
+    def type(self):
+        if self.parent is None or not isinstance(self.parent, LaserNode):
+            return 'root'
+        if len(self) > 0:
+            return 'group'
+        if isinstance(self.element, Path):
+            return 'path'
+        if isinstance(self.element, SVGImage):
+            return 'image'
+        if isinstance(self.element, SVGText):
+            return 'text'
+        return 'node'
+
+    @property
+    def passes(self):
+        return self[VARIABLE_NAME_PASSES]
+
+    @passes.setter
+    def passes(self, value):
+        self[VARIABLE_NAME_PASSES] = value
+
+    @property
+    def name(self):
+        return self[VARIABLE_NAME_NAME]
+
+    @name.setter
+    def name(self, value):
+        self[VARIABLE_NAME_NAME] = value
+
+    @property
     def speed(self):
-        if VARIABLE_NAME_SPEED in self.properties:
-            return self.properties[VARIABLE_NAME_SPEED]
-        return 20
+        return self[VARIABLE_NAME_SPEED]
+
+    @speed.setter
+    def speed(self, value):
+        self[VARIABLE_NAME_SPEED] = value
+
+    @property
+    def dratio(self):
+        return self[VARIABLE_NAME_DRATIO]
+
+    @dratio.setter
+    def dratio(self, value):
+        self[VARIABLE_NAME_DRATIO] = value
 
     @property
     def power(self):
-        if VARIABLE_NAME_POWER in self.properties:
-            return self.properties[VARIABLE_NAME_POWER]
-        return 1000
+        return self[VARIABLE_NAME_POWER]
+
+    @power.setter
+    def power(self, value):
+        self[VARIABLE_NAME_POWER] = value
+
+    @property
+    def raster_step(self):
+        return self[VARIABLE_NAME_RASTER_STEP]
+
+    @raster_step.setter
+    def raster_step(self, value):
+        self[VARIABLE_NAME_RASTER_STEP] = value
+
+    @property
+    def raster_direction(self):
+        return self[VARIABLE_NAME_RASTER_DIRECTION]
+
+    @raster_direction.setter
+    def raster_direction(self, value):
+        self[VARIABLE_NAME_RASTER_DIRECTION] = value
 
     @property
     def stroke(self):
-        if VARIABLE_NAME_COLOR in self.properties:
-            return self.properties[VARIABLE_NAME_COLOR]
-        return None
+        try:
+            return self.element.stroke
+        except AttributeError:
+            return None
+
+    @stroke.setter
+    def stroke(self, value):
+        self.element.stroke = Color(value)
 
     @property
     def fill(self):
-        if VARIABLE_NAME_FILL_COLOR in self.properties:
-            return self.properties[VARIABLE_NAME_FILL_COLOR]
-        return None
+        try:
+            return self.element.fill
+        except AttributeError:
+            return None
 
-    def set_color(self, color):
-        self.properties[VARIABLE_NAME_COLOR] = color
+    @fill.setter
+    def fill(self, value):
+        self.element.fill = Color(value)
 
-    def generate(self, dc):
-        pass
+    @property
+    def id(self):
+        try:
+            return self.element.id
+        except AttributeError:
+            return None
+
+    @id.setter
+    def id(self, value):
+        self.element.id = value
+
+    @property
+    def transform(self):
+        try:
+            return self.element.transform
+        except AttributeError:
+            return Matrix()
+
+    @transform.setter
+    def transform(self, value):
+        self.element.transform = value
+
+    @property
+    def center(self):
+        if self.scene_bounds is None:
+            if self.element is None:
+                return None
+            else:
+                try:
+                    self.scene_bounds = self.element.bbox()
+                except AttributeError:
+                    return None
+                if self.scene_bounds is None:
+                    return None
+        return (self.scene_bounds[2] - self.scene_bounds[0]) / 2.0, (self.scene_bounds[3] - self.scene_bounds[1]) / 2.0
+
+    def generate(self):
+        if isinstance(self.element, SVGImage):
+            for g in self.generate_image():
+                yield g
+        elif isinstance(self.element, Path):
+            for g in self.generate_path():
+                yield g
+        elif isinstance(self.element, SVGText):
+            for g in self.generate_text():
+                yield g
+
+    def generate_text(self):
+        yield COMMAND_MODE_DEFAULT, 0
+
+    def generate_path(self):
+        object_path = abs(self.element)
+        yield COMMAND_SET_SPEED, self.speed
+        yield COMMAND_SET_POWER, self.power
+        yield COMMAND_SET_D_RATIO, self.dratio
+        plot = object_path
+        first_point = plot.first_point
+        if first_point is None:
+            return
+        yield COMMAND_RAPID_MOVE, first_point
+        yield COMMAND_SET_STEP, 0
+        yield COMMAND_MODE_COMPACT, 0
+        yield COMMAND_PLOT, plot
+        yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_SET_SPEED, None
+        yield COMMAND_SET_D_RATIO, None
+
+    def generate_image(self):
+        image = self.element.image
+        yield COMMAND_SET_SPEED, self.speed
+
+        direction = self.raster_direction
+        step = self.raster_step
+        yield COMMAND_SET_POWER, self.power
+
+        traverse = 0
+        if direction == 0:
+            yield COMMAND_SET_STEP, step
+            traverse |= X_AXIS
+            traverse |= TOP
+        elif direction == 1:
+            yield COMMAND_SET_STEP, step
+            traverse |= X_AXIS
+            traverse |= BOTTOM
+        width, height = image.size
+        mode = image.mode
+
+        if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
+            # Any mode without a filter should get converted.
+            image = self.element.image = image.convert("RGBA")
+            mode = image.mode
+        if mode == "1":
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+        elif mode == "P":
+            p = image.getpalette()
+
+            def image_filter(pixel):
+                v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
+                return 1.0 - v / 765.0
+        elif mode == "L":
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+        elif mode == "RGB" or mode == "RGBA":
+            def image_filter(pixel):
+                return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
+        else:
+            raise ValueError  # this shouldn't happen.
+        m = self.transform
+        data = image.load()
+        raster = RasterPlotter(data, width, height, traverse, 0, 20,
+                               m.value_trans_x(),
+                               m.value_trans_y(),
+                               step, image_filter)
+        yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
+        yield COMMAND_SET_DIRECTION, raster.initial_direction()
+        yield COMMAND_MODE_COMPACT, 0
+        yield COMMAND_RASTER, raster
+        yield COMMAND_MODE_DEFAULT, 0
 
     def append_all(self, obj_list):
         """Group append to trigger the notification only once."""
@@ -114,118 +375,74 @@ class LaserNode(list):
     def contains(self, x, y=None):
         if y is None:
             x, y = x
-        if self.bounds is None:
-            return False
-        return self.bounds[0] <= x <= self.bounds[2] and self.bounds[1] <= y <= self.bounds[3]
+        if self.scene_bounds is None:
+            if self.element is None:
+                return False
+            else:
+                try:
+                    self.scene_bounds = self.element.bbox()
+                except AttributeError:
+                    return False
+                if self.scene_bounds is None:
+                    return False
+        return self.scene_bounds[0] <= x <= self.scene_bounds[2] and self.scene_bounds[1] <= y <= self.scene_bounds[3]
 
-    def flat_elements(self, types=None, passes=False):
+    def flat_elements(self, types=None, passes=True):
         if types is None:
-            types = LaserNode
+            types = ('image', 'path', 'text')
         pass_count = self.passes
+        if not passes:
+            pass_count = 1
         for i in range(0, pass_count):
-            if isinstance(self, types):
+            if self.type in tuple(types):
                 yield self
             for element in self:
                 for flat_element in element.flat_elements(types=types):
                     yield flat_element
 
     def all_children_of_type(self, types):
-        if isinstance(self, types):
+        if self.type in types:
             return [self]
-        return [e for e in self if isinstance(e, types)]
+        return [e for e in self if e.type in types]
 
     def contains_type(self, types):
         results = self.all_children_of_type(types)
         return len(results) != 0
 
-    @property
-    def center(self):
-        return (self.bounds[2] - self.bounds[0]) / 2.0, (self.bounds[3] - self.bounds[1]) / 2.0
-
-
-class LaserGroup(LaserNode):
-    def __init__(self):
-        LaserNode.__init__(self)
-
-    def __str__(self):
-        if VARIABLE_NAME_NAME in self.properties:
-            return self.properties[VARIABLE_NAME_NAME]
-        name = "Group"
-        if VARIABLE_NAME_PASSES in self.properties:
-            return "%d pass, %s" % (self.properties[VARIABLE_NAME_PASSES], name)
-        else:
-            return name
-
-
-class LaserElement(LaserNode):
-    def __init__(self):
-        LaserNode.__init__(self)
-        self.element = None
-        self.properties = {VARIABLE_NAME_COLOR: 0,
-                           VARIABLE_NAME_FILL_COLOR: 0,
-                           VARIABLE_NAME_SPEED: 60,
-                           VARIABLE_NAME_PASSES: 1,
-                           VARIABLE_NAME_POWER: 1000.0}
-
-    def set_color(self, color):
-        self.properties[VARIABLE_NAME_COLOR] = color
-
-    def generate(self, m=None):
-        yield COMMAND_MODE_DEFAULT, 0
-
     def convert_absolute_to_affinespace(self, position):
         if self.element is not None:
             try:
-                return self.element.transform.point_in_matrix_space(position)
+                return self.transform.point_in_matrix_space(position)
             except AttributeError:
                 return position
 
     def convert_affinespace_to_absolute(self, position):
         if self.element is not None:
             try:
-                return self.element.transform.point_in_inverse_space(position)
+                return self.transform.point_in_inverse_space(position)
             except AttributeError:
                 return position
 
     def move(self, dx, dy):
         if self.element is not None:
             try:
-                self.element.transform.post_translate(dx, dy)   # Apply translate after all the other events.
+                self.transform.post_translate(dx, dy)  # Apply translate after all the other events.
             except AttributeError:
                 pass
+            self.scene_bounds = None
 
     def reify_matrix(self):
         """Apply the matrix to the path and reset matrix."""
         self.element = abs(self.element)
-
-
-class ImageElement(LaserElement):
-    def __init__(self, image_element):
-        LaserElement.__init__(self)
-        self.box = image_element.bbox()
-        self.box = [0, 0, image_element.image_width, image_element.image_height]
-        self.element = image_element
-        # Converting all images to RGBA.
-        image_element.image = image_element.image.convert("RGBA")
-        self.cache = None
-        self.properties.update({VARIABLE_NAME_RASTER_STEP: 1,
-                                VARIABLE_NAME_SPEED: 100,
-                                VARIABLE_NAME_POWER: 1000.0})
-
-    def __str__(self):
-        if VARIABLE_NAME_NAME in self.properties:
-            return self.properties[VARIABLE_NAME_NAME]
-        return "Image %dX s@%3f" % (self.properties[VARIABLE_NAME_RASTER_STEP],
-                                    self.properties[VARIABLE_NAME_SPEED])
+        self.scene_bounds = None
 
     def set_native(self):
-        tx = self.element.transform.value_trans_x()
-        ty = self.element.transform.value_trans_y()
-        self.element.transform.reset()
-        self.element.transform.post_translate(tx, ty)
-        if VARIABLE_NAME_RASTER_STEP in self.properties:
-            step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
-            self.element.transform.pre_scale(step, step)
+        tx = self.transform.value_trans_x()
+        ty = self.transform.value_trans_y()
+        self.transform.reset()
+        self.transform.post_translate(tx, ty)
+        step = float(self.raster_step)
+        self.transform.pre_scale(step, step)
 
     def make_actual(self):
         """
@@ -239,11 +456,14 @@ class ImageElement(LaserElement):
 
         Pil requires a, c, e, b, d, f accordingly.
         """
+        if not isinstance(self.element, SVGImage):
+            return
+
         from PIL import Image
 
         image = self.element.image
         self.cache = None
-        m = self.element.transform
+        m = self.transform
         tx = m.value_trans_x()
         ty = m.value_trans_y()
         m.e = 0.0
@@ -252,179 +472,26 @@ class ImageElement(LaserElement):
         width = int(ceil(bbox[2] - bbox[0]))
         height = int(ceil(bbox[3] - bbox[1]))
         m.inverse()
-        image = image.transform((width, height), Image.AFFINE, (m.a, m.c, m.e, m.b, m.d, m.f), resample=Image.BICUBIC)
-        self.element.transform.reset()
-        self.element.transform.post_translate(tx, ty)
+        image = image.transform((width, height), Image.AFFINE, (m.a, m.c, m.e, m.b, m.d, m.f),
+                                resample=Image.BICUBIC)
+        self.transform.reset()
+        self.transform.post_translate(tx, ty)
         # if VARIABLE_NAME_RASTER_STEP in self.properties:
         #     step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
         #     self.element.transform.pre_scale(step, step)
         self.element.image = image
-        self.bounds = self.element.bbox()
-        self.box = self.element.bbox()
+        self.element.image_width = width
+        self.element.image_height = height
+        self.scene_bounds = None
 
-    def generate(self, m=None):
-        if m is None:
-            m = self.element.transform
-        image = self.element.image
-        speed = 100
-        if VARIABLE_NAME_SPEED in self.properties:
-            speed = self.properties[VARIABLE_NAME_SPEED]
-        if speed is None:
-            speed = 100
-        yield COMMAND_SET_SPEED, speed
-
-        direction = 0
-        if VARIABLE_NAME_RASTER_DIRECTION in self.properties:
-            direction = self.properties[VARIABLE_NAME_RASTER_DIRECTION]
-        step = 1
-        if VARIABLE_NAME_RASTER_STEP in self.properties:
-            step = self.properties[VARIABLE_NAME_RASTER_STEP]
-        if VARIABLE_NAME_POWER in self.properties:
-            power = self.properties.get(VARIABLE_NAME_POWER)
-            yield COMMAND_SET_POWER, power
-        traverse = 0
-        if direction == 0:
-            yield COMMAND_SET_STEP, step
-            traverse |= X_AXIS
-            traverse |= TOP
-        elif direction == 1:
-            yield COMMAND_SET_STEP, step
-            traverse |= X_AXIS
-            traverse |= BOTTOM
-        width, height = image.size
-        mode = image.mode
-
-        if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
-            # Any mode without a filter should get converted.
-            self.element = self.element.convert("RGBA")
-            mode = image.mode
-        if mode == "1":
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-        elif mode == "P":
-            p = self.element.getpalette()
-
-            def image_filter(pixel):
-                v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-                return 1.0 - v / 765.0
-        elif mode == "L":
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-        elif mode == "RGB" or mode == "RGBA":
-            def image_filter(pixel):
-                return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
-        else:
-            raise ValueError  # this shouldn't happen.
-
-        data = image.load()
-        raster = RasterPlotter(data, width, height, traverse, 0, 20,
-                               m.value_trans_x(),
-                               m.value_trans_y(),
-                               step, image_filter)
-        yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
-        yield COMMAND_SET_DIRECTION, raster.initial_direction()
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_RASTER, raster
-        yield COMMAND_MODE_DEFAULT, 0
-
-
-class TextElement(LaserElement):
-    def __init__(self, element):
-        LaserElement.__init__(self)
-        self.element = element
-        self.properties.update({VARIABLE_NAME_COLOR: 0x000000, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
-        if isinstance(element, SVGText):
-            self.element.transform.pre_translate(element.x, element.y)
-            self.element.x = 0
-            self.element.y = 0
-            self.properties[VARIABLE_NAME_FILL_COLOR] = element.fill
-            self.properties[VARIABLE_NAME_COLOR] = element.stroke
-            self.text = element.text
-        else:
-            self.text = element
-
-    def __str__(self):
-        if VARIABLE_NAME_NAME in self.properties:
-            return self.properties[VARIABLE_NAME_NAME]
-        string = "NOT IMPLEMENTED: \"%s\"" % (self.text)
-        if len(string) < 100:
-            return string
-        return string[:97] + '...'
-
-
-class PathElement(LaserElement):
-    def __init__(self, element):
-        LaserElement.__init__(self)
-        self.element = element
-        self.properties.update({VARIABLE_NAME_COLOR: 0x00FF00, VARIABLE_NAME_SPEED: 20, VARIABLE_NAME_POWER: 1000.0})
-        if isinstance(element, Path):
-            self.properties[VARIABLE_NAME_FILL_COLOR] = element.fill
-            self.properties[VARIABLE_NAME_COLOR] = element.stroke
-
-    def __str__(self):
-        if VARIABLE_NAME_NAME in self.properties:
-            return self.properties[VARIABLE_NAME_NAME]
-        name = "Path @%.1f mm/s %.1fx path=%s" % \
-               (self.properties[VARIABLE_NAME_SPEED],
-                self.element.transform.value_scale_x(),
-                str(hash(self.element.d())))
-        if len(name) >= 100:
-            name = name[:97] + '...'
-        return name
-
-
-    def generate(self, m=None):
-        object_path = abs(self.element)
-        self.box = object_path.bbox()
-        if VARIABLE_NAME_SPEED in self.properties:
-            speed = self.properties.get(VARIABLE_NAME_SPEED)
-            yield COMMAND_SET_SPEED, speed
-        if VARIABLE_NAME_POWER in self.properties:
-            power = self.properties.get(VARIABLE_NAME_POWER)
-            yield COMMAND_SET_POWER, power
-        if VARIABLE_NAME_DRATIO in self.properties:
-            d_ratio = self.properties.get(VARIABLE_NAME_DRATIO)
-            yield COMMAND_SET_D_RATIO, d_ratio
-        plot = object_path
-        first_point = plot.first_point
-        if first_point is None:
-            return
-        yield COMMAND_RAPID_MOVE, first_point
-        yield COMMAND_SET_STEP, 0
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_PLOT, plot
-        yield COMMAND_MODE_DEFAULT, 0
-        yield COMMAND_SET_SPEED, None
-        yield COMMAND_SET_D_RATIO, None
-
-
-class RawElement(LaserElement):
-    def __init__(self, element):
-        LaserElement.__init__(self)
-        self.command_list = []
-        for command in element.generate():
-            self.command_list.append(command)
-
-    def generate(self, m=None):
-        if m is None:
-            pass
-            # Raw cannot have matrix.
-        for command in self.command_list:
-            yield command
-
-    def __str__(self):
-        if VARIABLE_NAME_NAME in self.properties:
-            return self.properties[VARIABLE_NAME_NAME]
-        string = "Raw #%d cmd=%s" % \
-                 (len(self.command_list), str(self.command_list))
-        if len(string) < 100:
-            return string
-        return string[:97] + '...'
-
-
-class ProjectRoot(LaserNode):
-    def __init__(self):
-        LaserNode.__init__(self)
-
-    def __str__(self):
-        return "Project"
+    def update(self, element):
+        if isinstance(element,LaserNode):
+            try:
+                self.element.values.update(element.values)
+            except AttributeError:
+                pass
+        elif isinstance(element, dict):
+            try:
+                self.element.values.update(element)
+            except AttributeError:
+                pass
