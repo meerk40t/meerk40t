@@ -400,31 +400,34 @@ class LhymicroWriter:
             sx = self.current_x
             sy = self.current_y
             self.pulse_modulation = True
-            for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
-                x, y, on = e
-                dx = x - sx
-                dy = y - sy
-                sx = x
-                sy = y
-                if dy != 0:
-                    if self.is_top:
-                        if abs(dy) > self.raster_step:
-                            self.to_concat_mode()
-                            self.move_relative(0, dy + self.raster_step)
-                            self.to_compact_mode()
-                        self.h_switch()
+            try:
+                for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
+                    x, y, on = e
+                    dx = x - sx
+                    dy = y - sy
+                    sx = x
+                    sy = y
+                    if dy != 0:
+                        if self.is_top:
+                            if abs(dy) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(0, dy + self.raster_step)
+                                self.to_compact_mode()
+                            self.h_switch()
+                        else:
+                            if abs(dy) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(0, dy - self.raster_step)
+                                self.to_compact_mode()
+                            self.h_switch()
+                    if on == 0:
+                        self.up()
                     else:
-                        if abs(dy) > self.raster_step:
-                            self.to_concat_mode()
-                            self.move_relative(0, dy - self.raster_step)
-                            self.to_compact_mode()
-                        self.h_switch()
-                if on == 0:
-                    self.up()
-                else:
-                    self.down()
-                if dx != 0:
-                    self.move_relative(dx, dy)
+                        self.down()
+                    if dx != 0:
+                        self.move_relative(dx, dy)
+            except StopIteration:
+                return
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
             sx = self.current_x

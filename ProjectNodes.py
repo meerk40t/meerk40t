@@ -42,34 +42,45 @@ class LaserNode(list):
                 raise ValueError('Must be SVGElement classed object')
             self.element = element
         else:
-            self.element = SVGElement
-        if self.speed is None:
-            self.speed = 60.0
-        if self.passes is None:
+            self.element = SVGElement()
+        if self.speed is not None:
+            self.speed = float(self.speed)
+        else:
+            if isinstance(element, SVGImage):
+                self.speed = 70.0
+            else:
+                self.speed = 20.0
+        if self.passes is not None:
+            self.passes = int(self.passes)
+        else:
             self.passes = 1
-        if self.power is None:
+        if self.power is not None:
+            self.power = float(self.power)
+        else:
             self.power = 1000.0
-        if self.raster_step is None:
+        if self.raster_step is not None:
+            self.raster_step = int(self.raster_step)
+        else:
             self.raster_step = 1
-        if self.raster_direction is None:
+        if self.raster_direction is not None:
+            self.raster_direction = int(self.raster_direction)
+        else:
             self.raster_direction = 0
+        if self.stroke is None or self.stroke == 'none':
+            if isinstance(element, SVGElement):
+                self.stroke = Color('blue')
+            elif isinstance(element, SVGText):
+                self.stroke = Color('black')
+            else:
+                self.stroke = Color('green')
         if isinstance(element, SVGImage):
             # Converting all images to RGBA.
             element.image = element.image.convert("RGBA")
-            self.raster_step = 1
-            self.speed = 100.0
-            self.power = 1000.0
         elif isinstance(element, SVGText):
-            self.stroke = 'black'
-            self.speed = 20.0
-            self.power = 1000.0
+            # Converting x and y value into matrix values.
             self.transform.pre_translate(element.x, element.y)
             self.element.x = 0
             self.element.y = 0
-        elif isinstance(element, Path):
-            self.stroke = 'green'
-            self.speed = 20.0
-            self.power = 1000.0
 
     def __eq__(self, other):
         return other is self
@@ -89,33 +100,39 @@ class LaserNode(list):
             return None
 
     def __str__(self):
+        name = self.name
+        if name is not None:
+            return name
         if self.parent is None or not isinstance(self.parent, LaserNode):
             return "Project"
         if len(self) != 0:
             name = "Group"
             if self.element is not None:
-                name2 = self.name
-                if name2 is not None:
-                    return name2
                 return "%d pass, %s" % (self.passes, name)
             return name
         if isinstance(self.element, SVGImage):
-            name = self.name
-            if name is not None:
-                return name
-            return "Image %dX s@%3f" % (self.raster_step,
-                                        self.speed)
+            id = self.id
+            if id is None:
+                id = "Image"
+            else:
+                id = str(id)
+            wi = self.element.image_width
+            hi = self.element.image_height
+            bbox = self.element.bbox()
+            wr = bbox[2] - bbox[1]
+            hr = bbox[3] - bbox[0]
+            m = self.transform
+            s = self.raster_step
+            if m.a == s and m.b == 0.0 and m.c == 0.0 and m.d == s:
+                return "%s %dx%d %d@%3f" % (id, wi, hi, self.raster_step, self.speed)
+            else:
+                return "*** %s (%dx%d) -> (%dx%d) %d@%3f" % (id, wi, hi, wr, hr, self.raster_step, self.speed)
         if isinstance(self.element, SVGText):
-            if VARIABLE_NAME_NAME in self.element.values:
-                return self.element.values[VARIABLE_NAME_NAME]
             string = "NOT IMPLEMENTED: \"%s\"" % (self.element.text)
             if len(string) < 100:
                 return string
             return string[:97] + '...'
         if isinstance(self.element, Path):
-            name = self.name
-            if name is not None:
-                return name
             name = "Path @%.1f mm/s %.1fx path=%s" % \
                    (self.speed,
                     self.element.transform.value_scale_x(),
@@ -123,7 +140,7 @@ class LaserNode(list):
             if len(name) >= 100:
                 name = name[:97] + '...'
             return name
-        return str(self)
+        return 'unknown'
 
     @property
     def type(self):
@@ -181,7 +198,10 @@ class LaserNode(list):
 
     @property
     def raster_step(self):
-        return self[VARIABLE_NAME_RASTER_STEP]
+        v = self[VARIABLE_NAME_RASTER_STEP]
+        if isinstance(v, str):
+            v = int(v)
+        return v
 
     @raster_step.setter
     def raster_step(self, value):
@@ -327,7 +347,15 @@ class LaserNode(list):
             raise ValueError  # this shouldn't happen.
         m = self.transform
         data = image.load()
-        raster = RasterPlotter(data, width, height, traverse, 0, 20,
+        overscan = self['overscan']
+        if overscan is None:
+            overscan = 20
+        else:
+            try:
+                overscan = int(overscan)
+            except ValueError:
+                overscan = 20
+        raster = RasterPlotter(data, width, height, traverse, 0, overscan,
                                m.value_trans_x(),
                                m.value_trans_y(),
                                step, image_filter)
@@ -394,7 +422,7 @@ class LaserNode(list):
         if not passes:
             pass_count = 1
         for i in range(0, pass_count):
-            if self.type in tuple(types):
+            if self.type in (types):
                 yield self
             for element in self:
                 for flat_element in element.flat_elements(types=types):
@@ -436,10 +464,20 @@ class LaserNode(list):
         self.element = abs(self.element)
         self.scene_bounds = None
 
+    def needs_actualization(self):
+        if self.type != 'image':
+            return False
+        m = self.transform
+        s = self.raster_step
+        return m.a != s or m.b != 0.0 or m.c != 0.0 or m.d != s
+
     def set_native(self):
         tx = self.transform.value_trans_x()
         ty = self.transform.value_trans_y()
+        step = float(self.raster_step)
+
         self.transform.reset()
+        self.transform.post_scale(step, step)
         self.transform.post_translate(tx, ty)
         step = float(self.raster_step)
         self.transform.pre_scale(step, step)
@@ -464,10 +502,13 @@ class LaserNode(list):
         image = self.element.image
         self.cache = None
         m = self.transform
+        step = float(self.raster_step)
+
         tx = m.value_trans_x()
         ty = m.value_trans_y()
         m.e = 0.0
         m.f = 0.0
+        self.element.transform.pre_scale(1.0 / step, 1.0 / step)
         bbox = self.element.bbox()
         width = int(ceil(bbox[2] - bbox[0]))
         height = int(ceil(bbox[3] - bbox[1]))
@@ -475,17 +516,15 @@ class LaserNode(list):
         image = image.transform((width, height), Image.AFFINE, (m.a, m.c, m.e, m.b, m.d, m.f),
                                 resample=Image.BICUBIC)
         self.transform.reset()
+        self.transform.post_scale(step, step)
         self.transform.post_translate(tx, ty)
-        # if VARIABLE_NAME_RASTER_STEP in self.properties:
-        #     step = float(self.properties[VARIABLE_NAME_RASTER_STEP])
-        #     self.element.transform.pre_scale(step, step)
         self.element.image = image
         self.element.image_width = width
         self.element.image_height = height
         self.scene_bounds = None
 
     def update(self, element):
-        if isinstance(element,LaserNode):
+        if isinstance(element, LaserNode):
             try:
                 self.element.values.update(element.values)
             except AttributeError:

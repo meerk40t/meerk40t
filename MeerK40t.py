@@ -216,7 +216,7 @@ class MeerK40t(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, self.open_colordefine, id=ID_MENU_COLORDEFINE)
+        # self.Bind(wx.EVT_MENU, self.open_colordefine, id=ID_MENU_COLORDEFINE)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
@@ -372,30 +372,32 @@ class MeerK40t(wx.Frame):
         if group is None:
             group = LaserNode()
             group['filepath'] = pathname
-            group['name'] = os.path.basename(pathname)
+            group.name = os.path.basename(pathname)
             context.append(group)
 
         context = group
+        append_list = []
         for element in svg:
             if isinstance(element, SVGText):
                 pe = LaserNode(element)
-                context.append(pe)
+                append_list.append(pe)
             elif isinstance(element, Path):
                 pe = LaserNode(element)
-                context.append(pe)
+                append_list.append(pe)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
                 pe = LaserNode(e)
-                context.append(pe)
+                append_list.append(pe)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
                         pe = LaserNode(element)
-                        context.append(pe)
+                        append_list.append(pe)
                 except OSError:
                     pass
+        context.append_all(append_list)
         self.scene.post_buffer_update()
 
     def load_egv(self, pathname, group=None):
@@ -406,7 +408,7 @@ class MeerK40t(wx.Frame):
         if group is None:
             group = LaserNode()
             group['filepath'] = pathname
-            group['name'] = os.path.basename(pathname)
+            group.name = os.path.basename(pathname)
             context.append(group)
         context = group
         for event in parse_egv(pathname):
@@ -438,7 +440,7 @@ class MeerK40t(wx.Frame):
             group = LaserNode()
             group.element.values.update(element.element.values)
             group['filepath'] = pathname
-            group['name'] = os.path.basename(pathname)
+            group.name = os.path.basename(pathname)
             context.append(group)
         context = group
         context.append(element)
@@ -758,7 +760,7 @@ class CutConfiguration(wx.Panel):
             return
 
         drag_parent.remove(drag_element)
-        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent['name'] is None: # todo: empty group
+        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:  # todo: empty group
             drag_parent.parent.remove(drag_parent)
 
         if drop_element.type == 'root':  # Project
@@ -919,7 +921,6 @@ def create_menu(element):
                      path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate -\u03c4/%d, -%.0f°" % (i, angle.as_degrees), "",
                                                  wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
-
     if element.contains_type('path'):
         vector_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_subpath(element),
@@ -931,10 +932,10 @@ def create_menu(element):
         menu.Append(wx.ID_ANY, "Vector", vector_menu)
     if element.contains_type('image'):
         image_menu = wx.Menu()
-        gui.Bind(wx.EVT_MENU, menu_dither(element),
-                 image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_raster_actualize(element),
                  image_menu.Append(wx.ID_ANY, "Actualize Pixels", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_dither(element),
+                 image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_raster_native(element),
                  image_menu.Append(wx.ID_ANY, "Set to Native", "", wx.ITEM_NORMAL))
         image_sub_menu_step = wx.Menu()
@@ -983,8 +984,11 @@ def menu_step(element, step_value):
 
     def specific(event):
         for e in element.flat_elements(types=('image')):
+            old_step = e.raster_step
             e.raster_step = step_value
-            e.validate_matrix()
+            scale = float(step_value) / float(old_step)
+            m = e.transform
+            e.transform.post_scale(scale, scale, m.e, m.f)
         project("elements", 0)
 
     return specific
@@ -1109,6 +1113,7 @@ def menu_rotate(element, value):
         project("elements", 0)
 
     return specific
+
 
 def menu_reload(element):
     """
@@ -1766,7 +1771,11 @@ class MeerK40tGui(wx.App):
     """
 
     def OnInit(self):
-        project.call_after = wx.CallAfter
+        # def call_after(listener, message):
+        #     listener(message)
+        #
+        # # project.call_after = call_after
+        project.call_after = wx.CallAfter  # Linux routine to prevent errors.
         self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
         self.SetTopWindow(self.MeerK40t)
         self.MeerK40t.Show()

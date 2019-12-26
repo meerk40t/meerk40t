@@ -33,6 +33,18 @@ class JobInfo(wx.Frame):
         self.elements = None
 
     def set_project(self, project, elements):
+        warn = False
+        for e in elements:
+            if e.needs_actualization():
+                e.make_actual()
+                warn = True
+        if warn:
+            project('elements', 0)
+            msg = 'Some images had to be force actualized. Spooling requires real pixels not merely transformed values.'
+            dlg = wx.MessageDialog(None, msg, 'Forced Actualization', wx.OK | wx.ICON_WARNING)
+            dlg.ShowModal()
+            dlg.Destroy()
+
         self.project = project
         self.elements = elements
         self.checkbox_autobeep.SetValue(self.project.writer.autobeep)

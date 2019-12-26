@@ -126,8 +126,8 @@ class LaserRender:
             matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if node.text is not None:
-            dc.DrawText(node.text, matrix.value_trans_x(), matrix.value_trans_y())
+        if node.element.text is not None:
+            dc.DrawText(node.element.text, matrix.value_trans_x(), matrix.value_trans_y())
 
     def draw_image(self, node, dc, draw_mode):
         try:

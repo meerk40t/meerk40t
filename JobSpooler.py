@@ -1,6 +1,5 @@
 import wx
 
-from LaserProject import *
 from ThreadConstants import *
 from icons import icons8_connected_50, icons8_play_50
 
@@ -123,22 +122,28 @@ class JobSpooler(wx.Frame):
                 if m != -1:
                     t = e.type
                     self.list_job_spool.SetItem(m, 1, str(e))
-                    settings = ""
                     if m == 0:
                         self.list_job_spool.SetItem(m, 2, "Executing")
                     else:
                         self.list_job_spool.SetItem(m, 2, "Queued")
                     self.list_job_spool.SetItem(m, 3, self.project.writer.board)
+                    settings = []
                     if t == 'path':
                         self.list_job_spool.SetItem(m, 4, "Path")
-                        settings += " power=%.0f" % (e.speed)
+                        settings.append("power=%.0f" % (e.power))
                     elif t == 'image':
                         self.list_job_spool.SetItem(m, 4, "Raster")
-                        settings += " step=%d" % (e.raster_step)
+                        settings.append("step=%d" % (e.raster_step))
+                        if e['overscan'] is not None:
+                            try:
+                                settings.append("overscan=%d" % int(e['overscan']))
+                            except ValueError:
+                                pass
                     # elif isinstance(e, RawElement):
                     #     self.list_job_spool.SetItem(m, 4, "Raw")
                     if t in ('image', 'path', 'text'):
                         self.list_job_spool.SetItem(m, 5, "%.1fmm/s" % (e.speed))
+                    settings = " ".join(settings)
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, "n/a")
                     self.list_job_spool.SetItem(m, 8, "unknown")
