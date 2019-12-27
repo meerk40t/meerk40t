@@ -1,4 +1,4 @@
-from svg.elements import *
+from svgelements import *
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
