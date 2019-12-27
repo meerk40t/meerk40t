@@ -116,9 +116,11 @@ class MeerK40t(wx.Frame):
         self.SetSize((1200, 600))
         self.DragAcceptFiles(True)
         self.project = project
+
+        self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
         self.scene = LaserSceneView(self, wx.ID_ANY)
         self.scene.set_project(self.project)
-        self.tree = CutConfiguration(self, ID_CUT_CONFIGURATION)
+        # self.tree = CutConfiguration(self, ID_CUT_CONFIGURATION)
 
         panel = wx.Panel(self)
 
@@ -153,7 +155,7 @@ class MeerK40t(wx.Frame):
         s = wx.BoxSizer(wx.VERTICAL)
         s.Add(self._ribbon, 0, wx.EXPAND)
         ss = wx.BoxSizer(wx.HORIZONTAL)
-        ss.Add(self.tree, 1, wx.EXPAND)
+        ss.Add(self.element_tree, 1, wx.EXPAND)
         ss.Add(self.scene, 4, wx.EXPAND)
         s.Add(ss, 1, wx.EXPAND)
 
@@ -184,7 +186,7 @@ class MeerK40t(wx.Frame):
 
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
-        wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
+        # wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, "Alignment Ally", "")
 
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
@@ -261,6 +263,195 @@ class MeerK40t(wx.Frame):
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.project.draw_mode & 1 != 0)
 
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.element_tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.element_tree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
+        # end wxGlade
+        self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
+        self.refresh_tree_elements()
+        # end wxGlade
+        self.item_lookup = {}
+        project["elements", self.on_elements_update] = self
+        self.dragging_element = None
+
+    def on_elements_update(self, *args):
+        """
+        Called by 'elements' change. To refresh tree.
+
+        :param args:
+        :return:
+        """
+        self.refresh_tree_elements()
+        self.Update()
+
+    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Drag handler begin for the tree.
+
+        :param event:
+        :return:
+        """
+        self.dragging_element = None
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            self.dragging_element = element
+            event.Allow()
+
+    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Drag handler end for the tree
+
+        :param event:
+        :return:
+        """
+        if self.dragging_element is None:
+            event.Skip()
+            return
+        drag_element = self.dragging_element
+        drag_parent = self.dragging_element.parent
+        self.dragging_element = None
+
+        item = event.GetItem()
+        if item is None:
+            event.Skip()
+            return
+        if item.ID is None:
+            event.Skip()
+            return
+        if item not in self.item_lookup:
+            event.Skip()
+            return
+        drop_element = self.item_lookup[item]
+
+        if drag_element == drop_element or drop_element.type not in ('group', 'root'):
+            # Cannot drop into other laser elements.
+            event.Skip()
+            return
+
+        drag_parent.remove(drag_element)
+        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:  # todo: empty group
+            drag_parent.parent.remove(drag_parent)
+
+        if drop_element.type == 'root':  # Project
+            if drag_element.type != 'group':
+                group = LaserNode()
+                group.append(drag_element)
+                group.update(drag_element)  # Group gets element property.
+                drop_element.append(group)
+            else:
+                drop_element.append(drag_element)
+            event.Allow()
+            return
+        if drop_element.type == 'group':  # Group
+            drop_element.append(drag_element)
+            event.Allow()
+            return
+        event.Skip()
+
+    def on_clicked_burn(self, event):
+        """
+        Clicked the Job Execute button.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("jobinfo")
+        from JobInfo import JobInfo
+        window = JobInfo(None, wx.ID_ANY, "")
+        item = self.element_tree.GetSelection()
+        if item is not None and item.ID is not None and item in self.item_lookup:
+            element = self.item_lookup[item]
+            window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
+                                                                          passes=True)])
+        else:
+            window.set_project(project, [e for e in project.elements.flat_elements(types=('image', 'path', 'text'),
+                                                                                   passes=True)])
+        window.Show()
+        project.windows["jobinfo"] = window
+
+    def on_item_right_click(self, event):
+        """
+        Right click of element in tree.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item is None:
+            return
+        if item.ID is None:
+            return
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            project.set_selected(element)
+            create_menu(element)
+        event.Skip()
+
+    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Tree item is double-clicked. Launches ElementProperty dialog.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item in self.item_lookup:
+            project.close_old_window("elementproperty")
+            element = self.item_lookup[item]
+            from ElementProperty import ElementProperty
+            window = ElementProperty(None, wx.ID_ANY, "")
+            window.set_project_element(project, element)
+            window.Show()
+            project.windows["elementproperty"] = window
+
+    def on_item_changed(self, event):
+        """
+        Tree menu item is changed. Modify the selection.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            project.set_selected(element)
+
+    def add_element(self, tree, node, element):
+        """
+        Add a element to the tree.
+
+        :param tree:
+        :param node:
+        :param element:
+        :return:
+        """
+        if element.passes == 1:
+            item = tree.AppendItem(node, str(element))
+        else:
+            item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
+        self.item_lookup[item] = element
+        for subitem in element:
+            self.add_element(tree, item, subitem)
+
+    def refresh_tree_elements(self):
+        """
+        Rebuild tree elements
+
+        :return:
+        """
+        tree = self.element_tree
+        tree.DeleteAllItems()
+        self.item_lookup = {}
+        root = self.element_tree.AddRoot(str(project.elements))
+        self.item_lookup[root] = project.elements
+        for subitem in project.elements:
+            self.add_element(tree, root, subitem)
+        tree.CollapseAll()
+        tree.ExpandAll()
+
     def on_usb_status(self, value):
         self.main_statusbar.SetStatusText("Usb: %s" % value, 0)
 
@@ -311,19 +502,24 @@ class MeerK40t(wx.Frame):
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
         # self.main_toolbar.Realize()
+
         self.scene.SetMinSize((1000, 880))
         self.scene.SetBackgroundColour(wx.Colour(112, 219, 147))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: MeerK40t.__do_layout
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.panel)
-        self.SetSizer(sizer)
+        # main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # main_sizer.Add(self.tree, 1, wx.ALIGN_RIGHT | wx.EXPAND, 0)
+        # main_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
+        # self.SetSizer(main_sizer)
+        # main_sizer.Fit(self)
         self.Layout()
+
         # end wxGlade
 
     def load_file(self, pathname, group=None):
+        print(pathname)
         if pathname.lower().endswith(".svg"):
             self.load_svg(pathname, group)
             return True
@@ -356,7 +552,7 @@ class MeerK40t(wx.Frame):
             dlg = wx.MessageDialog(None, err_msg, 'Error encountered', wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
-        self.tree.refresh_tree_elements()
+        self.refresh_tree_elements()
 
     def load_svg(self, pathname, group=None):
         """
@@ -447,7 +643,7 @@ class MeerK40t(wx.Frame):
         self.scene.post_buffer_update()
 
     def tree_update(self):
-        self.tree.refresh_tree_elements()
+        self.element_tree.refresh_tree_elements()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.elements = []
