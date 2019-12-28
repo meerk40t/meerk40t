@@ -117,14 +117,10 @@ class MeerK40t(wx.Frame):
         self.DragAcceptFiles(True)
         self.project = project
 
-        self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.scene = LaserSceneView(self, wx.ID_ANY)
-        self.scene.set_project(self.project)
-        # self.tree = CutConfiguration(self, ID_CUT_CONFIGURATION)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
+        self.scene = wx.Panel()
 
-        panel = wx.Panel(self)
-
-        self._ribbon = RB.RibbonBar(panel, style=RB.RIBBON_BAR_DEFAULT_STYLE
+        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
                                                  | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
 
         self._bitmap_creation_dc = wx.MemoryDC()
@@ -151,16 +147,6 @@ class MeerK40t(wx.Frame):
 
         self._bitmap_creation_dc.SetFont(label_font)
         self._ribbon.Realize()
-
-        s = wx.BoxSizer(wx.VERTICAL)
-        s.Add(self._ribbon, 0, wx.EXPAND)
-        ss = wx.BoxSizer(wx.HORIZONTAL)
-        ss.Add(self.element_tree, 1, wx.EXPAND)
-        ss.Add(self.scene, 4, wx.EXPAND)
-        s.Add(ss, 1, wx.EXPAND)
-
-        panel.SetSizer(s)
-        self.panel = panel
 
         self.CenterOnScreen()
 
@@ -263,11 +249,11 @@ class MeerK40t(wx.Frame):
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.project.draw_mode & 1 != 0)
 
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.element_tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.element_tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.tree)
         # end wxGlade
         self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh_tree_elements()
@@ -275,6 +261,58 @@ class MeerK40t(wx.Frame):
         self.item_lookup = {}
         project["elements", self.on_elements_update] = self
         self.dragging_element = None
+        self.SetDoubleBuffered(True)
+
+        self.matrix = ZMatrix()
+        self.identity = ZMatrix()
+        self.matrix.Reset()
+        self.identity.Reset()
+        self.previous_window_position = None
+        self.previous_scene_position = None
+        self.popup_window_position = None
+        self.popup_scene_position = None
+        self._Buffer = None
+        self.dirty = False
+
+        self.overlay = wx.Overlay()
+
+        self.grid = None
+        self.guide_lines = None
+
+        self.laserpath = [(0, 0, 0, 0)] * 1000
+        self.laserpath_index = 0
+
+        self.Bind(wx.EVT_PAINT, self.on_paint)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+
+        self.Bind(wx.EVT_MOTION, self.on_mouse_move)
+        self.move_function = self.move_pan
+        self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
+        self.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
+        self.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
+
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
+        self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus())  # Focus follows mouse.
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.background_brush = wx.Brush("Grey")
+        self.project = project
+        self.renderer = LaserRender(project)
+        bedwidth, bedheight = project.size
+        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
+        self.project["position", self.update_position] = self
+        self.project["units", self.space_changed] = self
+        self.project["selection", self.selection_changed] = self
+        self.project["bed_size", self.bed_changed] = self
+        self.project["elements", self.elements_changed] = self
+        self.default_keymap()
+        project["writer_mode", self.on_writer_mode] = self
+
+        self.__set_properties()
+        self.__do_layout()
 
     def on_elements_update(self, *args):
         """
@@ -361,7 +399,7 @@ class MeerK40t(wx.Frame):
         project.close_old_window("jobinfo")
         from JobInfo import JobInfo
         window = JobInfo(None, wx.ID_ANY, "")
-        item = self.element_tree.GetSelection()
+        item = self.tree.GetSelection()
         if item is not None and item.ID is not None and item in self.item_lookup:
             element = self.item_lookup[item]
             window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
@@ -442,10 +480,10 @@ class MeerK40t(wx.Frame):
 
         :return:
         """
-        tree = self.element_tree
+        tree = self.tree
         tree.DeleteAllItems()
         self.item_lookup = {}
-        root = self.element_tree.AddRoot(str(project.elements))
+        root = self.tree.AddRoot(str(project.elements))
         self.item_lookup[root] = project.elements
         for subitem in project.elements:
             self.add_element(tree, root, subitem)
@@ -460,6 +498,13 @@ class MeerK40t(wx.Frame):
 
     def on_writer_state(self, value):
         self.main_statusbar.SetStatusText("Spooler: %s" % get_state_string_from_state(value), 2)
+
+    def on_writer_mode(self, state):
+        if state == 0:
+            self.background_brush = wx.Brush("Grey")
+        else:
+            self.background_brush = wx.Brush("Red")
+        self.post_buffer_update()
 
     def on_close(self, event):
         if self.project.writer.thread.state == THREAD_STATE_STARTED or \
@@ -478,7 +523,11 @@ class MeerK40t(wx.Frame):
         self.project["writer", self.on_writer_state] = None
         self.project.save_config()
         self.project.shutdown()
-        self.scene.on_close(event)
+        self.project["position", self.update_position] = None
+        self.project["units", self.space_changed] = None
+        self.project["selection", self.selection_changed] = None
+        self.project["bed_size", self.bed_changed] = None
+        self.project["elements", self.elements_changed] = None
         try:
             for key, value in self.project.windows.items():
                 value.Close()
@@ -503,18 +552,36 @@ class MeerK40t(wx.Frame):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
         # self.main_toolbar.Realize()
 
-        self.scene.SetMinSize((1000, 880))
+        # self.scene.SetMinSize((1000, 880))
         self.scene.SetBackgroundColour(wx.Colour(112, 219, 147))
         # end wxGlade
 
     def __do_layout(self):
+        # s = wx.BoxSizer(wx.VERTICAL)
+        # s.Add(self._ribbon, 0, wx.EXPAND)
+        # ss = wx.BoxSizer(wx.HORIZONTAL)
+        # ss.Add(self.tree, 1, wx.EXPAND)
+        # ss.Add(self.scene, 4, wx.EXPAND)
+        # s.Add(ss, 1, wx.EXPAND)
+        # self.panel.SetSizer(s)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
+        widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        widget_sizer.Add(self.tree, 1, wx.ALIGN_RIGHT | wx.EXPAND, 0)
+        widget_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
+        main_sizer.Add(widget_sizer, 5, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        # main_sizer.Fit(self)
+        self.Layout()
+
         # begin wxGlade: MeerK40t.__do_layout
         # main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # main_sizer.Add(self.tree, 1, wx.ALIGN_RIGHT | wx.EXPAND, 0)
         # main_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
         # self.SetSizer(main_sizer)
         # main_sizer.Fit(self)
-        self.Layout()
+        # self.Layout()
 
         # end wxGlade
 
@@ -594,7 +661,7 @@ class MeerK40t(wx.Frame):
                 except OSError:
                     pass
         context.append_all(append_list)
-        self.scene.post_buffer_update()
+        self.post_buffer_update()
 
     def load_egv(self, pathname, group=None):
         """
@@ -622,7 +689,7 @@ class MeerK40t(wx.Frame):
                     context.append(element)
                     if 'speed' in event:
                         element['speed'] = event['speed']
-        self.scene.post_buffer_update()
+        self.post_buffer_update()
 
     def load_image(self, pathname, group=None):
         """
@@ -640,922 +707,10 @@ class MeerK40t(wx.Frame):
             context.append(group)
         context = group
         context.append(element)
-        self.scene.post_buffer_update()
-
-    def tree_update(self):
-        self.element_tree.refresh_tree_elements()
-
-    def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.project.elements = []
-        self.scene.post_buffer_update()
-        self.Refresh()
-
-    def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
-        # This code should load just specific project files rather than all importable formats.
-        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
-                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
-                "Engrave egv (*.egv)|*.egv|" \
-                "Portable Network Graphics png (*.png)|*.png"
-        with wx.FileDialog(self, "Open", wildcard=files,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            self.load_file(pathname)
-
-    def on_click_import(self, event):  # wxGlade: MeerK40t.<event_handler>
-        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
-                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
-                "Engrave egv (*.egv)|*.egv|" \
-                "Portable Ne/twork Graphics png (*.png)|*.png"
-        with wx.FileDialog(self, "Open", wildcard=files,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            self.load_file(pathname)
-
-    def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.Close()
-
-    def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Zoomout button press
-        """
-        m = self.scene.ClientSize / 2
-        self.scene.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
-        self.scene.post_buffer_update()
-
-    def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Zoomin button press
-        """
-        m = self.scene.ClientSize / 2
-        self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
-        self.scene.post_buffer_update()
-
-    def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Zoom size button press.
-        """
-        self.scene.focus_on_project()
-
-    def toggle_draw_mode(self, bits):
-        """
-        Toggle the draw mode.
-        :param bits: Bit to toggle.
-        :return: Toggle function.
-        """
-
-        def toggle(event):
-            self.project.draw_mode ^= bits
-            self.scene.post_buffer_update()
-
-        return toggle
-
-    def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open preference dialog.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("preferences")
-        from Preferences import Preferences
-        window = Preferences(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["preferences"] = window
-
-    def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Alignment Ally dialog.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("alignment")
-        from Alignment import Alignment
-        window = Alignment(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["alignment"] = window
-
-    def open_keymap(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Keymap dialog.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("keymap")
-        from Keymap import Keymap
-        window = Keymap(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["keymap"] = window
-
-    def open_colordefine(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open ColorDefine dialog
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("colordefine")
-        from ColorDefine import ColorDefine
-        window = ColorDefine(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["colordefine"] = window
-
-    def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open USB Log dialog.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("usbconnect")
-        from UsbConnect import UsbConnect
-        window = UsbConnect(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["usbconnect"] = window
-
-    def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Navigation dialog.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("navigation")
-        from Navigation import Navigation
-        window = Navigation(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["navigation"] = window
-
-    def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Controller dialog.
-
-        :param event:
-        :return:
-        """
-
-        project.close_old_window("controller")
-        from Controller import Controller
-        window = Controller(None, wx.ID_ANY, "")
-        window.set_project(project)
-        window.Show()
-        project.windows["controller"] = window
-
-    def open_spooler(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Job Spooler.
-
-        :param event:
-        :return:
-        """
-        self.project.close_old_window("jobspooler")
-        from JobSpooler import JobSpooler
-        window = JobSpooler(None, wx.ID_ANY, "")
-        window.set_project(self.project)
-        window.Show()
-        self.project.windows["jobspooler"] = window
-
-    def open_job(self, event=None):
-        """
-        Open Execute Job dialog.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("jobinfo")
-        from JobInfo import JobInfo
-        window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project, [e for e in self.project.elements.flat_elements(types=('image', 'path', 'text'),
-                                                                                    passes=True)])
-        window.Show()
-        project.windows["jobinfo"] = window
-
-    def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Launch webpage
-
-        :param event:
-        :return:
-        """
-        import webbrowser
-        webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
-
-
-# end of class MeerK40t
-
-
-class CutConfiguration(wx.Panel):
-    """
-    Cut configuration panel is the left side panel of the main window containing
-    a Job Execute button and the project tree.
-    """
-
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: CutConfiguration.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.FULL_REPAINT_ON_RESIZE | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.SetSize((503, -1))
-        self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_laser_beam_52.GetBitmap())
-
-        self.__set_properties()
-        self.__do_layout()
-
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.element_tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.element_tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
-        # end wxGlade
-        self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
-        self.refresh_tree_elements()
-        # end wxGlade
-        self.item_lookup = {}
-        project["elements", self.on_elements_update] = self
-        self.dragging_element = None
-
-    def on_elements_update(self, *args):
-        """
-        Called by 'elements' change. To refresh tree.
-
-        :param args:
-        :return:
-        """
-        self.refresh_tree_elements()
-        self.Update()
-
-    def __set_properties(self):
-        # begin wxGlade: CutConfiguration.__set_properties
-        self.SetSize((503, -1))
-        self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: CutConfiguration.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.element_tree, 1, wx.EXPAND, 0)
-        sizer_1.Add(self.bitmap_button_1, 0, 0, 0)
-        self.SetSizer(sizer_1)
-        self.Layout()
-        # end wxGlade
-
-    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler begin for the tree.
-
-        :param event:
-        :return:
-        """
-        self.dragging_element = None
-        item = event.GetItem()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            self.dragging_element = element
-            event.Allow()
-
-    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler end for the tree
-
-        :param event:
-        :return:
-        """
-        if self.dragging_element is None:
-            event.Skip()
-            return
-        drag_element = self.dragging_element
-        drag_parent = self.dragging_element.parent
-        self.dragging_element = None
-
-        item = event.GetItem()
-        if item is None:
-            event.Skip()
-            return
-        if item.ID is None:
-            event.Skip()
-            return
-        if item not in self.item_lookup:
-            event.Skip()
-            return
-        drop_element = self.item_lookup[item]
-
-        if drag_element == drop_element or drop_element.type not in ('group', 'root'):
-            # Cannot drop into other laser elements.
-            event.Skip()
-            return
-
-        drag_parent.remove(drag_element)
-        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:  # todo: empty group
-            drag_parent.parent.remove(drag_parent)
-
-        if drop_element.type == 'root':  # Project
-            if drag_element.type != 'group':
-                group = LaserNode()
-                group.append(drag_element)
-                group.update(drag_element)  # Group gets element property.
-                drop_element.append(group)
-            else:
-                drop_element.append(drag_element)
-            event.Allow()
-            return
-        if drop_element.type == 'group':  # Group
-            drop_element.append(drag_element)
-            event.Allow()
-            return
-        event.Skip()
-
-    def on_clicked_burn(self, event):
-        """
-        Clicked the Job Execute button.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("jobinfo")
-        from JobInfo import JobInfo
-        window = JobInfo(None, wx.ID_ANY, "")
-        item = self.element_tree.GetSelection()
-        if item is not None and item.ID is not None and item in self.item_lookup:
-            element = self.item_lookup[item]
-            window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
-                                                                          passes=True)])
-        else:
-            window.set_project(project, [e for e in project.elements.flat_elements(types=('image', 'path', 'text'),
-                                                                                   passes=True)])
-        window.Show()
-        project.windows["jobinfo"] = window
-
-    def on_item_right_click(self, event):
-        """
-        Right click of element in tree.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item is None:
-            return
-        if item.ID is None:
-            return
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            project.set_selected(element)
-            create_menu(element)
-        event.Skip()
-
-    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Tree item is double-clicked. Launches ElementProperty dialog.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item in self.item_lookup:
-            project.close_old_window("elementproperty")
-            element = self.item_lookup[item]
-            from ElementProperty import ElementProperty
-            window = ElementProperty(None, wx.ID_ANY, "")
-            window.set_project_element(project, element)
-            window.Show()
-            project.windows["elementproperty"] = window
-
-    def on_item_changed(self, event):
-        """
-        Tree menu item is changed. Modify the selection.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            project.set_selected(element)
-
-    def add_element(self, tree, node, element):
-        """
-        Add a element to the tree.
-
-        :param tree:
-        :param node:
-        :param element:
-        :return:
-        """
-        if element.passes == 1:
-            item = tree.AppendItem(node, str(element))
-        else:
-            item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
-        self.item_lookup[item] = element
-        for subitem in element:
-            self.add_element(tree, item, subitem)
-
-    def refresh_tree_elements(self):
-        """
-        Rebuild tree elements
-
-        :return:
-        """
-        tree = self.element_tree
-        tree.DeleteAllItems()
-        self.item_lookup = {}
-        root = self.element_tree.AddRoot(str(project.elements))
-        self.item_lookup[root] = project.elements
-        for subitem in project.elements:
-            self.add_element(tree, root, subitem)
-        tree.CollapseAll()
-        tree.ExpandAll()
-
-
-def create_menu(element):
-    """Create menu items. This is used for both the scene and the tree to create menu items."""
-    if element is None:
-        return
-    gui = MeerK40tApp.MeerK40t
-    menu = wx.Menu()
-    t = element.type
-    if t != 'root':
-        gui.Bind(wx.EVT_MENU, menu_remove(element),
-                 menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL))
-        if t == 'group':
-            fpath = element['filepath']
-            if fpath is not None:
-                name = os.path.basename(fpath)
-                gui.Bind(wx.EVT_MENU, menu_reload(element),
-                         menu.Append(wx.ID_ANY, "Reload %s" % name, "", wx.ITEM_NORMAL))
-                if len(element) > 1:
-                    gui.Bind(wx.EVT_MENU, menu_reverse_order(element),
-                             menu.Append(wx.ID_ANY, "Reverse Layer Order", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_hull(element), menu.Append(wx.ID_ANY, "Convex Hull", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_execute(element), menu.Append(wx.ID_ANY, "Execute Job", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_reset(element),
-                 menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
-        path_scale_sub_menu = wx.Menu()
-        for i in range(1, 25):
-            gui.Bind(wx.EVT_MENU, menu_scale(element, 6.0 / float(i)),
-                     path_scale_sub_menu.Append(wx.ID_ANY, "Scale %.0f%%" % (600.0 / float(i)), "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Scale", path_scale_sub_menu)
-        path_rotate_sub_menu = wx.Menu()
-        for i in range(2, 13):
-            angle = Angle.turns(1.0 / float(i))
-            gui.Bind(wx.EVT_MENU, menu_rotate(element, 1.0 / float(i)),
-                     path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate \u03c4/%d, %.0f°" % (i, angle.as_degrees), "",
-                                                 wx.ITEM_NORMAL))
-        for i in range(2, 13):
-            angle = Angle.turns(1.0 / float(i))
-            gui.Bind(wx.EVT_MENU, menu_rotate(element, -1.0 / float(i)),
-                     path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate -\u03c4/%d, -%.0f°" % (i, angle.as_degrees), "",
-                                                 wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
-    if element.contains_type('path'):
-        vector_menu = wx.Menu()
-        gui.Bind(wx.EVT_MENU, menu_subpath(element),
-                 vector_menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_raster(element),
-                 vector_menu.Append(wx.ID_ANY, "Make Raster Image", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_reify(element),
-                 menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Vector", vector_menu)
-    if element.contains_type('image'):
-        image_menu = wx.Menu()
-        gui.Bind(wx.EVT_MENU, menu_raster_actualize(element),
-                 image_menu.Append(wx.ID_ANY, "Actualize Pixels", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_dither(element),
-                 image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_raster_native(element),
-                 image_menu.Append(wx.ID_ANY, "Set to Native", "", wx.ITEM_NORMAL))
-        image_sub_menu_step = wx.Menu()
-        for i in range(1, 8):
-            gui.Bind(wx.EVT_MENU, menu_step(element, i),
-                     image_sub_menu_step.Append(wx.ID_ANY, "Step %d" % i, "", wx.ITEM_NORMAL))
-        image_menu.Append(wx.ID_ANY, "Step", image_sub_menu_step)
-        menu.Append(wx.ID_ANY, "Raster", image_menu)
-    if element.contains_type('text'):
-        text_menu = wx.Menu()
-        gui.Bind(wx.EVT_MENU, menu_remove(element, types=(SVGText)),
-                 text_menu.Append(wx.ID_ANY, "Remove Text", "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Text", text_menu)
-    if menu.MenuItemCount != 0:
-        gui.PopupMenu(menu)
-        menu.Destroy()
-
-
-def menu_scale(element, value):
-    """
-    Menu scale.
-
-    :param element:
-    :param value:
-    :return:
-    """
-
-    def specific(event):
-        center = element.center
-        if center is not None:
-            for e in element.flat_elements(types=('image', 'path', 'text')):
-                e.element.transform.post_scale(value, value, center[0], center[1])
-            project("elements", 0)
-
-    return specific
-
-
-def menu_step(element, step_value):
-    """
-    Change raster step values of subelements.
-
-    :param element:
-    :param step_value:
-    :return:
-    """
-
-    def specific(event):
-        for e in element.flat_elements(types=('image')):
-            old_step = e.raster_step
-            e.raster_step = step_value
-            scale = float(step_value) / float(old_step)
-            m = e.transform
-            e.transform.post_scale(scale, scale, m.e, m.f)
-        project("elements", 0)
-
-    return specific
-
-
-def menu_raster_actualize(element):
-    """
-    Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        for e in element.flat_elements(types=('image')):
-            e.make_actual()
-        project("elements", 0)
-
-    return specific
-
-
-def menu_raster_native(element):
-    """
-    Reset the raster to native form validating the matrix for the given step value.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        for e in element.flat_elements(types=('image')):
-            e.set_native()
-        project("elements", 0)
-
-    return specific
-
-
-def menu_dither(element):
-    """
-    Change raster dither forcing raster elements to 1 bit.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        for e in element.flat_elements(types=('image')):
-            e.element.image = e.element.image.convert("1")
-            e.cache = None
-        project("elements", 0)
-
-    return specific
-
-
-def menu_raster(element):
-    """
-    Convert a vector element into a raster element.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        renderer = LaserRender(project)
-        image = renderer.make_raster(element)
-        xmin, ymin, xmax, ymax = project.selected.bounds
-        image_element = LaserNode(SVGImage(image=image))
-        project.selected.append(image_element)
-        image_element.element.transform.post_translate(xmin, ymin)
-        project("elements", 0)
-
-    return specific
-
-
-def menu_reify(element):
-    """
-    Reify elements so that the translations apply direct to the object.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        for e in element.flat_elements(types=('path')):
-            e.reify_matrix()
-            project("elements", 0)
-
-    return specific
-
-
-def menu_reset(element):
-    """
-    Menu to reset transformations applied to elements.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        for e in element.flat_elements(types=('image', 'path', 'text')):
-            e.element.transform.reset()
-            project("elements", 0)
-
-    return specific
-
-
-def menu_rotate(element, value):
-    """
-    Menu to rotate an element.
-
-    :param element:
-    :param value:
-    :return:
-    """
-
-    value *= tau
-
-    def specific(event):
-        center = element.center
-        for e in element.flat_elements(types=('image', 'path', 'text')):
-            e.transform.post_rotate(value, center[0], center[1])
-        project("elements", 0)
-
-    return specific
-
-
-def menu_reload(element):
-    """
-    Menu to reload the element from the file on disk.
-
-    :param element:
-    :return:
-    """
-
-    filepath = element['filepath']
-
-    def specific(event):
-        for e in reversed(element):
-            e.detach()
-        MeerK40tApp.MeerK40t.load_file(filepath, group=element)
-
-    return specific
-
-
-def menu_remove(element, types=None):
-    """
-    Menu to remove an element from the scene.
-
-    :param element:
-    :return:
-    """
-
-    def delete_element(event):
-        if types is None:
-            try:
-                element.parent.remove(element)
-            except AttributeError:
-                pass
-            project.set_selected(None)
-        else:
-            for e in element.all_children_of_type(types=types):
-                try:
-                    e.parent.remove(e)
-                except AttributeError:
-                    pass
-            project.set_selected(None)
-
-    return delete_element
-
-
-def menu_subpath(element):
-    """
-    Menu to break element into subpath.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        context = element
-        for e in element.all_children_of_type(types=('path')):
-            e.detach()
-            p = abs(e.element)
-            add = []
-            for subpath in p.as_subpaths():
-                subelement = LaserNode(Path(subpath))
-                subelement.element.values.update(e.element.values)
-                add.append(subelement)
-            context.append_all(add)
-        project("elements", 0)
-        project.set_selected(None)
-
-    return specific
-
-
-def menu_execute(element):
-    """
-    Menu to launch Execute Job for the particular element.
-
-    :param element:
-    :return:
-    """
-
-    def burn_element(event):
-        project.close_old_window("jobinfo")
-        from JobInfo import JobInfo
-        window = JobInfo(None, wx.ID_ANY, "")
-        window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'), passes=True)])
-        window.Show()
-        project.windows["jobinfo"] = window
-
-    return burn_element
-
-
-def get_convex_hull(element):
-    """
-    Processing function for menu_hull(element) to return the hull points.
-
-    :param element:
-    :return:
-    """
-    pts = []
-    for e in element.flat_elements(types=('image', 'path')):
-        if isinstance(e.element, Path):
-            epath = abs(e.element)
-            pts += [q for q in epath.as_points()]
-        elif isinstance(e.element, SVGImage):
-            bounds = e.scene_bounds
-            pts += [(bounds[0], bounds[1]), (bounds[0], bounds[3]), (bounds[2], bounds[1]), (bounds[2], bounds[3])]
-    hull = [p for p in Point.convex_hull(pts)]
-    if len(hull) == 0:
-        return None
-    return hull
-
-
-def menu_hull(element):
-    """
-    Menu to return and add the convex hull of the element to the scene.
-
-    :param element:
-    :return:
-    """
-
-    def convex_hull(event):
-        path = Path()
-        pts = get_convex_hull(element)
-        if pts is None:
-            return
-        path.move(*pts)
-        path.closed()
-        path.stroke = Color('black')
-        context = element.parent
-        context.append(LaserNode(path))
-        project.set_selected(None)
-
-    return convex_hull
-
-
-def menu_reverse_order(element):
-    """
-    Menu to return and add the convex hull of the element to the scene.
-
-    :param element:
-    :return:
-    """
-
-    def specific(event):
-        element.reverse()
-        project("elements", 0)
-
-    return specific
-
-
-class MappedKey:
-    """
-    Mapped key class containing the key and the command.
-    """
-
-    def __init__(self, key, command):
-        self.key = key
-        self.command = command
-
-    def __str__(self):
-        return self.key
-
-
-class LaserSceneView(wx.Panel):
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: MainView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
-        wx.Panel.__init__(self, *args, **kwds)
-        self.SetDoubleBuffered(True)
-
-        self.matrix = ZMatrix()
-        self.identity = ZMatrix()
-        self.matrix.Reset()
-        self.identity.Reset()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-        self.popup_window_position = None
-        self.popup_scene_position = None
-        self._Buffer = None
-        self.dirty = False
-
-        self.__set_properties()
-        self.__do_layout()
-        self.overlay = wx.Overlay()
-
-        self.grid = None
-        self.guide_lines = None
-
-        self.laserpath = [(0, 0, 0, 0)] * 1000
-        self.laserpath_index = 0
-
-        self.Bind(wx.EVT_PAINT, self.on_paint)
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
-
-        self.Bind(wx.EVT_MOTION, self.on_mouse_move)
-        self.move_function = self.move_pan
-        self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-        self.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
-        self.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
-        self.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
-
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
-        self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus())  # Focus follows mouse.
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.project = None
-        self.renderer = None
-        self.background_brush = wx.Brush("Grey")
-
-    def set_project(self, project):
-        self.project = project
-        self.renderer = LaserRender(project)
-        bedwidth, bedheight = project.size
-        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
-        self.project["position", self.update_position] = self
-        self.project["units", self.space_changed] = self
-        self.project["selection", self.selection_changed] = self
-        self.project["bed_size", self.bed_changed] = self
-        self.project["elements", self.elements_changed] = self
-        self.default_keymap()
-        project["writer_mode", self.on_writer_mode] = self
-
-    def on_writer_mode(self, state):
-        if state == 0:
-            self.background_brush = wx.Brush("Grey")
-        else:
-            self.background_brush = wx.Brush("Red")
         self.post_buffer_update()
 
-    def on_close(self, event):
-        self.project["position", self.update_position] = None
-        self.project["units", self.space_changed] = None
-        self.project["selection", self.selection_changed] = None
-        self.project["bed_size", self.bed_changed] = None
-        self.project["elements", self.elements_changed] = None
-        event.Skip()
-
-    def __set_properties(self):
-        # begin wxGlade: MainView.__set_properties
-        pass
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: MainView.__do_layout
-        self.Layout()
-        # end wxGlade
+    def tree_update(self):
+        self.refresh_tree_elements()
 
     def on_paint(self, event):
         wx.BufferedPaintDC(self, self._Buffer)
@@ -1957,6 +1112,629 @@ class LaserSceneView(wx.Panel):
         if self.project.draw_mode & 8 == 0:
             dc.SetPen(wx.BLUE_PEN)
             dc.DrawLineList(self.laserpath)
+
+    def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
+        self.project.elements = []
+        self.post_buffer_update()
+        self.Refresh()
+
+    def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
+        # This code should load just specific project files rather than all importable formats.
+        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
+                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
+                "Engrave egv (*.egv)|*.egv|" \
+                "Portable Network Graphics png (*.png)|*.png"
+        with wx.FileDialog(self, "Open", wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.load_file(pathname)
+
+    def on_click_import(self, event):  # wxGlade: MeerK40t.<event_handler>
+        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
+                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
+                "Engrave egv (*.egv)|*.egv|" \
+                "Portable Ne/twork Graphics png (*.png)|*.png"
+        with wx.FileDialog(self, "Open", wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.load_file(pathname)
+
+    def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
+        self.Close()
+
+    def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Zoomout button press
+        """
+        m = self.scene.ClientSize / 2
+        self.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.post_buffer_update()
+
+    def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Zoomin button press
+        """
+        m = self.scene.ClientSize / 2
+        self.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.post_buffer_update()
+
+    def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Zoom size button press.
+        """
+        self.scene.focus_on_project()
+
+    def toggle_draw_mode(self, bits):
+        """
+        Toggle the draw mode.
+        :param bits: Bit to toggle.
+        :return: Toggle function.
+        """
+
+        def toggle(event):
+            self.project.draw_mode ^= bits
+            self.post_buffer_update()
+
+        return toggle
+
+    def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open preference dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("preferences")
+        from Preferences import Preferences
+        window = Preferences(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["preferences"] = window
+
+    def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open Alignment Ally dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("alignment")
+        from Alignment import Alignment
+        window = Alignment(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["alignment"] = window
+
+    def open_keymap(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open Keymap dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("keymap")
+        from Keymap import Keymap
+        window = Keymap(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["keymap"] = window
+
+    def open_colordefine(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open ColorDefine dialog
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("colordefine")
+        from ColorDefine import ColorDefine
+        window = ColorDefine(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["colordefine"] = window
+
+    def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open USB Log dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("usbconnect")
+        from UsbConnect import UsbConnect
+        window = UsbConnect(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["usbconnect"] = window
+
+    def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open Navigation dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("navigation")
+        from Navigation import Navigation
+        window = Navigation(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["navigation"] = window
+
+    def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open Controller dialog.
+
+        :param event:
+        :return:
+        """
+
+        project.close_old_window("controller")
+        from Controller import Controller
+        window = Controller(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["controller"] = window
+
+    def open_spooler(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open Job Spooler.
+
+        :param event:
+        :return:
+        """
+        self.project.close_old_window("jobspooler")
+        from JobSpooler import JobSpooler
+        window = JobSpooler(None, wx.ID_ANY, "")
+        window.set_project(self.project)
+        window.Show()
+        self.project.windows["jobspooler"] = window
+
+    def open_job(self, event=None):
+        """
+        Open Execute Job dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("jobinfo")
+        from JobInfo import JobInfo
+        window = JobInfo(None, wx.ID_ANY, "")
+        window.set_project(project, [e for e in self.project.elements.flat_elements(types=('image', 'path', 'text'),
+                                                                                    passes=True)])
+        window.Show()
+        project.windows["jobinfo"] = window
+
+    def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Launch webpage
+
+        :param event:
+        :return:
+        """
+        import webbrowser
+        webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
+
+
+# end of class MeerK40t
+
+
+def create_menu(element):
+    """Create menu items. This is used for both the scene and the tree to create menu items."""
+    if element is None:
+        return
+    gui = MeerK40tApp.MeerK40t
+    menu = wx.Menu()
+    t = element.type
+    if t != 'root':
+        gui.Bind(wx.EVT_MENU, menu_remove(element),
+                 menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL))
+        if t == 'group':
+            fpath = element['filepath']
+            if fpath is not None:
+                name = os.path.basename(fpath)
+                gui.Bind(wx.EVT_MENU, menu_reload(element),
+                         menu.Append(wx.ID_ANY, "Reload %s" % name, "", wx.ITEM_NORMAL))
+                if len(element) > 1:
+                    gui.Bind(wx.EVT_MENU, menu_reverse_order(element),
+                             menu.Append(wx.ID_ANY, "Reverse Layer Order", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_hull(element), menu.Append(wx.ID_ANY, "Convex Hull", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_execute(element), menu.Append(wx.ID_ANY, "Execute Job", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_reset(element),
+                 menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
+        path_scale_sub_menu = wx.Menu()
+        for i in range(1, 25):
+            gui.Bind(wx.EVT_MENU, menu_scale(element, 6.0 / float(i)),
+                     path_scale_sub_menu.Append(wx.ID_ANY, "Scale %.0f%%" % (600.0 / float(i)), "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, "Scale", path_scale_sub_menu)
+        path_rotate_sub_menu = wx.Menu()
+        for i in range(2, 13):
+            angle = Angle.turns(1.0 / float(i))
+            gui.Bind(wx.EVT_MENU, menu_rotate(element, 1.0 / float(i)),
+                     path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate \u03c4/%d, %.0f°" % (i, angle.as_degrees), "",
+                                                 wx.ITEM_NORMAL))
+        for i in range(2, 13):
+            angle = Angle.turns(1.0 / float(i))
+            gui.Bind(wx.EVT_MENU, menu_rotate(element, -1.0 / float(i)),
+                     path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate -\u03c4/%d, -%.0f°" % (i, angle.as_degrees), "",
+                                                 wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
+    if element.contains_type('path'):
+        vector_menu = wx.Menu()
+        gui.Bind(wx.EVT_MENU, menu_subpath(element),
+                 vector_menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_raster(element),
+                 vector_menu.Append(wx.ID_ANY, "Make Raster Image", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_reify(element),
+                 menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, "Vector", vector_menu)
+    if element.contains_type('image'):
+        image_menu = wx.Menu()
+        gui.Bind(wx.EVT_MENU, menu_raster_actualize(element),
+                 image_menu.Append(wx.ID_ANY, "Actualize Pixels", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_dither(element),
+                 image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_raster_native(element),
+                 image_menu.Append(wx.ID_ANY, "Set to Native", "", wx.ITEM_NORMAL))
+        image_sub_menu_step = wx.Menu()
+        for i in range(1, 8):
+            gui.Bind(wx.EVT_MENU, menu_step(element, i),
+                     image_sub_menu_step.Append(wx.ID_ANY, "Step %d" % i, "", wx.ITEM_NORMAL))
+        image_menu.Append(wx.ID_ANY, "Step", image_sub_menu_step)
+        menu.Append(wx.ID_ANY, "Raster", image_menu)
+    if element.contains_type('text'):
+        text_menu = wx.Menu()
+        gui.Bind(wx.EVT_MENU, menu_remove(element, types=(SVGText)),
+                 text_menu.Append(wx.ID_ANY, "Remove Text", "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, "Text", text_menu)
+    if menu.MenuItemCount != 0:
+        gui.PopupMenu(menu)
+        menu.Destroy()
+
+
+def menu_scale(element, value):
+    """
+    Menu scale.
+
+    :param element:
+    :param value:
+    :return:
+    """
+
+    def specific(event):
+        center = element.center
+        if center is not None:
+            for e in element.flat_elements(types=('image', 'path', 'text')):
+                e.element.transform.post_scale(value, value, center[0], center[1])
+            project("elements", 0)
+
+    return specific
+
+
+def menu_step(element, step_value):
+    """
+    Change raster step values of subelements.
+
+    :param element:
+    :param step_value:
+    :return:
+    """
+
+    def specific(event):
+        for e in element.flat_elements(types=('image')):
+            old_step = e.raster_step
+            e.raster_step = step_value
+            scale = float(step_value) / float(old_step)
+            m = e.transform
+            e.transform.post_scale(scale, scale, m.e, m.f)
+        project("elements", 0)
+
+    return specific
+
+
+def menu_raster_actualize(element):
+    """
+    Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        for e in element.flat_elements(types=('image')):
+            e.make_actual()
+        project("elements", 0)
+
+    return specific
+
+
+def menu_raster_native(element):
+    """
+    Reset the raster to native form validating the matrix for the given step value.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        for e in element.flat_elements(types=('image')):
+            e.set_native()
+        project("elements", 0)
+
+    return specific
+
+
+def menu_dither(element):
+    """
+    Change raster dither forcing raster elements to 1 bit.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        for e in element.flat_elements(types=('image')):
+            e.element.image = e.element.image.convert("1")
+            e.cache = None
+        project("elements", 0)
+
+    return specific
+
+
+def menu_raster(element):
+    """
+    Convert a vector element into a raster element.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        renderer = LaserRender(project)
+        image = renderer.make_raster(element)
+        xmin, ymin, xmax, ymax = project.selected.bounds
+        image_element = LaserNode(SVGImage(image=image))
+        project.selected.append(image_element)
+        image_element.element.transform.post_translate(xmin, ymin)
+        project("elements", 0)
+
+    return specific
+
+
+def menu_reify(element):
+    """
+    Reify elements so that the translations apply direct to the object.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        for e in element.flat_elements(types=('path')):
+            e.reify_matrix()
+            project("elements", 0)
+
+    return specific
+
+
+def menu_reset(element):
+    """
+    Menu to reset transformations applied to elements.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        for e in element.flat_elements(types=('image', 'path', 'text')):
+            e.element.transform.reset()
+            project("elements", 0)
+
+    return specific
+
+
+def menu_rotate(element, value):
+    """
+    Menu to rotate an element.
+
+    :param element:
+    :param value:
+    :return:
+    """
+
+    value *= tau
+
+    def specific(event):
+        center = element.center
+        for e in element.flat_elements(types=('image', 'path', 'text')):
+            e.transform.post_rotate(value, center[0], center[1])
+        project("elements", 0)
+
+    return specific
+
+
+def menu_reload(element):
+    """
+    Menu to reload the element from the file on disk.
+
+    :param element:
+    :return:
+    """
+
+    filepath = element['filepath']
+
+    def specific(event):
+        for e in reversed(element):
+            e.detach()
+        MeerK40tApp.MeerK40t.load_file(filepath, group=element)
+
+    return specific
+
+
+def menu_remove(element, types=None):
+    """
+    Menu to remove an element from the scene.
+
+    :param element:
+    :return:
+    """
+
+    def delete_element(event):
+        if types is None:
+            try:
+                element.parent.remove(element)
+            except AttributeError:
+                pass
+            project.set_selected(None)
+        else:
+            for e in element.all_children_of_type(types=types):
+                try:
+                    e.parent.remove(e)
+                except AttributeError:
+                    pass
+            project.set_selected(None)
+
+    return delete_element
+
+
+def menu_subpath(element):
+    """
+    Menu to break element into subpath.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        context = element
+        for e in element.all_children_of_type(types=('path')):
+            e.detach()
+            p = abs(e.element)
+            add = []
+            for subpath in p.as_subpaths():
+                subelement = LaserNode(Path(subpath))
+                subelement.element.values.update(e.element.values)
+                add.append(subelement)
+            context.append_all(add)
+        project("elements", 0)
+        project.set_selected(None)
+
+    return specific
+
+
+def menu_execute(element):
+    """
+    Menu to launch Execute Job for the particular element.
+
+    :param element:
+    :return:
+    """
+
+    def burn_element(event):
+        project.close_old_window("jobinfo")
+        from JobInfo import JobInfo
+        window = JobInfo(None, wx.ID_ANY, "")
+        window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'), passes=True)])
+        window.Show()
+        project.windows["jobinfo"] = window
+
+    return burn_element
+
+
+def get_convex_hull(element):
+    """
+    Processing function for menu_hull(element) to return the hull points.
+
+    :param element:
+    :return:
+    """
+    pts = []
+    for e in element.flat_elements(types=('image', 'path')):
+        if isinstance(e.element, Path):
+            epath = abs(e.element)
+            pts += [q for q in epath.as_points()]
+        elif isinstance(e.element, SVGImage):
+            bounds = e.scene_bounds
+            pts += [(bounds[0], bounds[1]), (bounds[0], bounds[3]), (bounds[2], bounds[1]), (bounds[2], bounds[3])]
+    hull = [p for p in Point.convex_hull(pts)]
+    if len(hull) == 0:
+        return None
+    return hull
+
+
+def menu_hull(element):
+    """
+    Menu to return and add the convex hull of the element to the scene.
+
+    :param element:
+    :return:
+    """
+
+    def convex_hull(event):
+        path = Path()
+        pts = get_convex_hull(element)
+        if pts is None:
+            return
+        path.move(*pts)
+        path.closed()
+        path.stroke = Color('black')
+        context = element.parent
+        context.append(LaserNode(path))
+        project.set_selected(None)
+
+    return convex_hull
+
+
+def menu_reverse_order(element):
+    """
+    Menu to return and add the convex hull of the element to the scene.
+
+    :param element:
+    :return:
+    """
+
+    def specific(event):
+        element.reverse()
+        project("elements", 0)
+
+    return specific
+
+
+class MappedKey:
+    """
+    Mapped key class containing the key and the command.
+    """
+
+    def __init__(self, key, command):
+        self.key = key
+        self.command = command
+
+    def __str__(self):
+        return self.key
+
+
+class LaserSceneView(wx.Panel):
+    def __init__(self, *args, **kwds):
+        # begin wxGlade: MainView.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
+        wx.Panel.__init__(self, *args, **kwds)
+
+
+
+    def __set_properties(self):
+        # begin wxGlade: MainView.__set_properties
+        pass
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: MainView.__do_layout
+        self.Layout()
+        # end wxGlade
+
 
 
 # end of class MainView
