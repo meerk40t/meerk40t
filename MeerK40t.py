@@ -118,7 +118,7 @@ class MeerK40t(wx.Frame):
         self.project = project
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.scene = wx.Panel()
+        self.scene = wx.Panel(self)
 
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
                                                  | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
