@@ -118,12 +118,11 @@ class MeerK40t(wx.Frame):
         self.project = project
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.scene = wx.Panel(self)
+        self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
+        self.scene.SetDoubleBuffered(True)
 
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
                                                  | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
-
-        self._bitmap_creation_dc = wx.MemoryDC()
 
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples", icons8_opened_folder_50.GetBitmap())
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, "Toolbar",
@@ -142,10 +141,6 @@ class MeerK40t(wx.Frame):
         windows.AddButton(ID_SPOOLER, "Spooler", icons8_route_50.GetBitmap(), "")
         windows.AddButton(ID_CONTROLLER, "Controller", icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, "Preferences", icons8_administrative_tools_50.GetBitmap(), "")
-
-        label_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
-
-        self._bitmap_creation_dc.SetFont(label_font)
         self._ribbon.Realize()
 
         self.CenterOnScreen()
@@ -225,22 +220,14 @@ class MeerK40t(wx.Frame):
 
         self.main_statusbar = self.CreateStatusBar(3)
 
-        self.__set_properties()
-        self.__do_layout()
         # end wxGlade
 
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
-
-        self.Bind(wx.EVT_SIZE, self.on_size_set)
 
         self.previous_position = None
         self.project.elements_change_listener = self.tree_update
         self.project.config = wx.Config("MeerK40t")
         self.project.load_config()
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.project["usb_status", self.on_usb_status] = self
-        self.project["control_thread", self.on_control_state] = self
-        self.project["writer", self.on_writer_state] = self
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.project.draw_mode & 4 != 0)
@@ -255,13 +242,12 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.tree)
         # end wxGlade
-        self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
+        # self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh_tree_elements()
         # end wxGlade
         self.item_lookup = {}
-        project["elements", self.on_elements_update] = self
         self.dragging_element = None
-        self.SetDoubleBuffered(True)
+        # self.SetDoubleBuffered(True)
 
         self.matrix = ZMatrix()
         self.identity = ZMatrix()
@@ -274,33 +260,51 @@ class MeerK40t(wx.Frame):
         self._Buffer = None
         self.dirty = False
 
+        self.on_size(None)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.__set_properties()
+        self.__do_layout()
+
         self.grid = None
         self.guide_lines = None
 
         self.laserpath = [(0, 0, 0, 0)] * 1000
         self.laserpath_index = 0
 
-        self.Bind(wx.EVT_PAINT, self.on_paint)
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
-
-        self.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.move_function = self.move_pan
-        self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-        self.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
-        self.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
-        self.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
 
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
-        self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus())  # Focus follows mouse.
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.scene.Bind(wx.EVT_PAINT, self.on_paint)
+        self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+
+        self.scene.Bind(wx.EVT_MOTION, self.on_mouse_move)
+
+        self.scene.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
+
+        self.scene.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
+        self.scene.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+
+        self.scene.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
+
+        self.scene.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
+        self.scene.Bind(wx.EVT_RIGHT_UP, self.on_right_mouse_up)
+
+        self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
+        self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+
+        self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
+        self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
+        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.background_brush = wx.Brush("Grey")
         self.project = project
         self.renderer = LaserRender(project)
         bedwidth, bedheight = project.size
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
+
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.project["usb_status", self.on_usb_status] = self
+        self.project["control_thread", self.on_control_state] = self
+        self.project["writer", self.on_writer_state] = self
+        self.project["elements", self.on_elements_update] = self
         self.project["position", self.update_position] = self
         self.project["units", self.space_changed] = self
         self.project["selection", self.selection_changed] = self
@@ -308,9 +312,6 @@ class MeerK40t(wx.Frame):
         self.project["elements", self.elements_changed] = self
         self.default_keymap()
         project["writer_mode", self.on_writer_mode] = self
-
-        self.__set_properties()
-        self.__do_layout()
 
     def on_elements_update(self, *args):
         """
@@ -533,10 +534,6 @@ class MeerK40t(wx.Frame):
             pass
         event.Skip()  # Call destroy as regular.
 
-    def on_size_set(self, event):
-        self.Size = self.ClientSize
-        self.Update()
-
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
         self.SetTitle("MeerK40t v%s" % MEERK40T_VERSION)
@@ -555,14 +552,6 @@ class MeerK40t(wx.Frame):
         # end wxGlade
 
     def __do_layout(self):
-        # s = wx.BoxSizer(wx.VERTICAL)
-        # s.Add(self._ribbon, 0, wx.EXPAND)
-        # ss = wx.BoxSizer(wx.HORIZONTAL)
-        # ss.Add(self.tree, 1, wx.EXPAND)
-        # ss.Add(self.scene, 4, wx.EXPAND)
-        # s.Add(ss, 1, wx.EXPAND)
-        # self.panel.SetSizer(s)
-
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
         widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -573,18 +562,7 @@ class MeerK40t(wx.Frame):
         # main_sizer.Fit(self)
         self.Layout()
 
-        # begin wxGlade: MeerK40t.__do_layout
-        # main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        # main_sizer.Add(self.tree, 1, wx.ALIGN_RIGHT | wx.EXPAND, 0)
-        # main_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
-        # self.SetSizer(main_sizer)
-        # main_sizer.Fit(self)
-        # self.Layout()
-
-        # end wxGlade
-
     def load_file(self, pathname, group=None):
-        print(pathname)
         if pathname.lower().endswith(".svg"):
             self.load_svg(pathname, group)
             return True
@@ -711,15 +689,19 @@ class MeerK40t(wx.Frame):
         self.refresh_tree_elements()
 
     def on_paint(self, event):
-        wx.BufferedPaintDC(self, self._Buffer)
+        try:
+            wx.BufferedPaintDC(self.scene, self._Buffer)
+        except RuntimeError:
+            pass
 
     def on_size(self, event):
-        Size = self.ClientSize
-        self._Buffer = wx.Bitmap(*Size)
+        self.Layout()
+        self._Buffer = wx.Bitmap(*self.ClientSize)
         self.guide_lines = None
         bedwidth, bedheight = self.project.size_in_native_units()
-        self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
+        # self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
         self.post_buffer_update()
+        self.Update()
 
     def update_position(self, pos):
         # x, y, old_x, old_y = pos
@@ -833,26 +815,26 @@ class MeerK40t(wx.Frame):
         self.post_buffer_update()
 
     def on_mouse_middle_down(self, event):
-        self.CaptureMouse()
+        self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
 
     def on_mouse_middle_up(self, event):
-        if self.HasCapture():
-            self.ReleaseMouse()
+        if self.scene.HasCapture():
+            self.scene.ReleaseMouse()
         self.previous_window_position = None
         self.previous_scene_position = None
 
     def on_left_mouse_down(self, event):
-        self.CaptureMouse()
+        self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
         self.project.set_selected_by_position(self.previous_scene_position)
         self.move_function = self.move_selected
 
     def on_left_mouse_up(self, event):
-        if self.HasCapture():
-            self.ReleaseMouse()
+        if self.scene.HasCapture():
+            self.scene.ReleaseMouse()
         self.previous_window_position = None
         self.previous_scene_position = None
         self.move_function = self.move_pan
@@ -898,6 +880,9 @@ class MeerK40t(wx.Frame):
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
         self.project.set_selected_by_position(self.popup_scene_position)
         create_menu(self.project.selected)
+
+    def on_right_mouse_up(self, event):
+        pass
 
     def default_keymap(self):
         self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
@@ -1722,29 +1707,6 @@ class MappedKey:
 
     def __str__(self):
         return self.key
-
-
-class LaserSceneView(wx.Panel):
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: MainView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
-        wx.Panel.__init__(self, *args, **kwds)
-
-
-
-    def __set_properties(self):
-        # begin wxGlade: MainView.__set_properties
-        pass
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: MainView.__do_layout
-        self.Layout()
-        # end wxGlade
-
-
-
-# end of class MainView
 
 class MeerK40tGui(wx.App):
     """
