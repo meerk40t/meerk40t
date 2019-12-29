@@ -124,7 +124,6 @@ class MeerK40t(wx.Frame):
                                                  | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
 
         self._bitmap_creation_dc = wx.MemoryDC()
-        self._colour_data = wx.ColourData()
 
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples", icons8_opened_folder_50.GetBitmap())
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, "Toolbar",
@@ -132,6 +131,7 @@ class MeerK40t(wx.Frame):
 
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
+
         toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap())  # "Open",
         toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
 
@@ -273,8 +273,6 @@ class MeerK40t(wx.Frame):
         self.popup_scene_position = None
         self._Buffer = None
         self.dirty = False
-
-        self.overlay = wx.Overlay()
 
         self.grid = None
         self.guide_lines = None
@@ -536,8 +534,8 @@ class MeerK40t(wx.Frame):
         event.Skip()  # Call destroy as regular.
 
     def on_size_set(self, event):
-        self.panel.Size = self.ClientSize
-        self.panel.Update()
+        self.Size = self.ClientSize
+        self.Update()
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
@@ -553,7 +551,7 @@ class MeerK40t(wx.Frame):
         # self.main_toolbar.Realize()
 
         # self.scene.SetMinSize((1000, 880))
-        self.scene.SetBackgroundColour(wx.Colour(112, 219, 147))
+        # self.scene.SetBackgroundColour(wx.Colour(200,200,200))
         # end wxGlade
 
     def __do_layout(self):
@@ -757,9 +755,18 @@ class MeerK40t(wx.Frame):
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         self.on_draw_background(dc)
-        dc.SetTransformMatrix(self.matrix)
-        self.on_draw_scene(dc)
-        dc.SetTransformMatrix(self.identity)
+        if dc.CanUseTransformMatrix():
+            dc.SetTransformMatrix(self.matrix)
+            self.on_draw_scene(dc)
+            dc.SetTransformMatrix(self.identity)
+        else:
+            original_font = dc.GetFont()
+            font = wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
+            dc.SetFont(font)
+            dc.SetPen(wx.BLACK_PEN)
+            s = dc.GetSize() / 2
+            dc.DrawText("Current OS cannot use transformation matrix. Skipping scene draw.", s[0]-350, s[1])
+            dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc  # need to get rid of the MemoryDC before Update() is called.
         self.Refresh()
@@ -1166,7 +1173,7 @@ class MeerK40t(wx.Frame):
         """
         Zoom size button press.
         """
-        self.scene.focus_on_project()
+        self.focus_on_project()
 
     def toggle_draw_mode(self, bits):
         """
