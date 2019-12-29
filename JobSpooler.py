@@ -120,7 +120,10 @@ class JobSpooler(wx.Frame):
             for i, e in enumerate(self.project.writer.queue):
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
-                    t = e.type
+                    try:
+                        t = e.type
+                    except AttributeError:
+                        t = "function"
                     self.list_job_spool.SetItem(m, 1, str(e))
                     if m == 0:
                         self.list_job_spool.SetItem(m, 2, "Executing")

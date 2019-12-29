@@ -35,7 +35,7 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.2.0"
+MEERK40T_VERSION = "0.2.1"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -116,17 +116,13 @@ class MeerK40t(wx.Frame):
         self.SetSize((1200, 600))
         self.DragAcceptFiles(True)
         self.project = project
-        self.scene = LaserSceneView(self, wx.ID_ANY)
-        self.scene.set_project(self.project)
-        self.tree = CutConfiguration(self, ID_CUT_CONFIGURATION)
 
-        panel = wx.Panel(self)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
+        self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
+        self.scene.SetDoubleBuffered(True)
 
-        self._ribbon = RB.RibbonBar(panel, style=RB.RIBBON_BAR_DEFAULT_STYLE
+        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
                                                  | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
-
-        self._bitmap_creation_dc = wx.MemoryDC()
-        self._colour_data = wx.ColourData()
 
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples", icons8_opened_folder_50.GetBitmap())
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, "Toolbar",
@@ -134,6 +130,7 @@ class MeerK40t(wx.Frame):
 
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
+
         toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap())  # "Open",
         toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
 
@@ -144,21 +141,7 @@ class MeerK40t(wx.Frame):
         windows.AddButton(ID_SPOOLER, "Spooler", icons8_route_50.GetBitmap(), "")
         windows.AddButton(ID_CONTROLLER, "Controller", icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, "Preferences", icons8_administrative_tools_50.GetBitmap(), "")
-
-        label_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
-
-        self._bitmap_creation_dc.SetFont(label_font)
         self._ribbon.Realize()
-
-        s = wx.BoxSizer(wx.VERTICAL)
-        s.Add(self._ribbon, 0, wx.EXPAND)
-        ss = wx.BoxSizer(wx.HORIZONTAL)
-        ss.Add(self.tree, 1, wx.EXPAND)
-        ss.Add(self.scene, 4, wx.EXPAND)
-        s.Add(ss, 1, wx.EXPAND)
-
-        panel.SetSizer(s)
-        self.panel = panel
 
         self.CenterOnScreen()
 
@@ -184,7 +167,7 @@ class MeerK40t(wx.Frame):
 
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
-        wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
+        # wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, "Alignment Ally", "")
 
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
@@ -237,22 +220,14 @@ class MeerK40t(wx.Frame):
 
         self.main_statusbar = self.CreateStatusBar(3)
 
-        self.__set_properties()
-        self.__do_layout()
         # end wxGlade
 
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
-
-        self.Bind(wx.EVT_SIZE, self.on_size_set)
 
         self.previous_position = None
         self.project.elements_change_listener = self.tree_update
         self.project.config = wx.Config("MeerK40t")
         self.project.load_config()
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.project["usb_status", self.on_usb_status] = self
-        self.project["control_thread", self.on_control_state] = self
-        self.project["writer", self.on_writer_state] = self
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.project.draw_mode & 4 != 0)
@@ -260,6 +235,259 @@ class MeerK40t(wx.Frame):
         m.Check(self.project.draw_mode & 2 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.project.draw_mode & 1 != 0)
+
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.tree)
+        # end wxGlade
+        # self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
+        self.refresh_tree_elements()
+        # end wxGlade
+        self.item_lookup = {}
+        self.dragging_element = None
+        # self.SetDoubleBuffered(True)
+
+        self.matrix = ZMatrix()
+        self.identity = ZMatrix()
+        self.matrix.Reset()
+        self.identity.Reset()
+        self.previous_window_position = None
+        self.previous_scene_position = None
+        self.popup_window_position = None
+        self.popup_scene_position = None
+        self._Buffer = None
+        self.dirty = False
+
+        self.on_size(None)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.__set_properties()
+        self.__do_layout()
+
+        self.grid = None
+        self.guide_lines = None
+
+        self.laserpath = [(0, 0, 0, 0)] * 1000
+        self.laserpath_index = 0
+
+        self.move_function = self.move_pan
+
+        self.scene.Bind(wx.EVT_PAINT, self.on_paint)
+        self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+
+        self.scene.Bind(wx.EVT_MOTION, self.on_mouse_move)
+
+        self.scene.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
+
+        self.scene.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
+        self.scene.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+
+        self.scene.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
+
+        self.scene.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
+        self.scene.Bind(wx.EVT_RIGHT_UP, self.on_right_mouse_up)
+
+        self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
+        self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+
+        self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
+        self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
+        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.background_brush = wx.Brush("Grey")
+        self.project = project
+        self.renderer = LaserRender(project)
+        bedwidth, bedheight = project.size
+        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
+
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.project["usb_status", self.on_usb_status] = self
+        self.project["control_thread", self.on_control_state] = self
+        self.project["writer", self.on_writer_state] = self
+        self.project["elements", self.on_elements_update] = self
+        self.project["position", self.update_position] = self
+        self.project["units", self.space_changed] = self
+        self.project["selection", self.selection_changed] = self
+        self.project["bed_size", self.bed_changed] = self
+        self.project["elements", self.elements_changed] = self
+        self.default_keymap()
+        project["writer_mode", self.on_writer_mode] = self
+
+    def on_elements_update(self, *args):
+        """
+        Called by 'elements' change. To refresh tree.
+
+        :param args:
+        :return:
+        """
+        self.refresh_tree_elements()
+        self.Update()
+
+    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Drag handler begin for the tree.
+
+        :param event:
+        :return:
+        """
+        self.dragging_element = None
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            self.dragging_element = element
+            event.Allow()
+
+    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Drag handler end for the tree
+
+        :param event:
+        :return:
+        """
+        if self.dragging_element is None:
+            event.Skip()
+            return
+        drag_element = self.dragging_element
+        drag_parent = self.dragging_element.parent
+        self.dragging_element = None
+
+        item = event.GetItem()
+        if item is None:
+            event.Skip()
+            return
+        if item.ID is None:
+            event.Skip()
+            return
+        if item not in self.item_lookup:
+            event.Skip()
+            return
+        drop_element = self.item_lookup[item]
+
+        if drag_element == drop_element or drop_element.type not in ('group', 'root'):
+            # Cannot drop into other laser elements.
+            event.Skip()
+            return
+
+        drag_parent.remove(drag_element)
+        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:  # todo: empty group
+            drag_parent.parent.remove(drag_parent)
+
+        if drop_element.type == 'root':  # Project
+            if drag_element.type != 'group':
+                group = LaserNode()
+                group.append(drag_element)
+                group.update(drag_element)  # Group gets element property.
+                drop_element.append(group)
+            else:
+                drop_element.append(drag_element)
+            event.Allow()
+            return
+        if drop_element.type == 'group':  # Group
+            drop_element.append(drag_element)
+            event.Allow()
+            return
+        event.Skip()
+
+    def on_clicked_burn(self, event):
+        """
+        Clicked the Job Execute button.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("jobinfo")
+        from JobInfo import JobInfo
+        window = JobInfo(None, wx.ID_ANY, "")
+        item = self.tree.GetSelection()
+        if item is not None and item.ID is not None and item in self.item_lookup:
+            element = self.item_lookup[item]
+            window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
+                                                                          passes=True)])
+        else:
+            window.set_project(project, [e for e in project.elements.flat_elements(types=('image', 'path', 'text'),
+                                                                                   passes=True)])
+        window.Show()
+        project.windows["jobinfo"] = window
+
+    def on_item_right_click(self, event):
+        """
+        Right click of element in tree.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item is None:
+            return
+        if item.ID is None:
+            return
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            project.set_selected(element)
+            create_menu(element)
+        event.Skip()
+
+    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Tree item is double-clicked. Launches ElementProperty dialog.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item in self.item_lookup:
+            project.close_old_window("elementproperty")
+            element = self.item_lookup[item]
+            from ElementProperty import ElementProperty
+            window = ElementProperty(None, wx.ID_ANY, "")
+            window.set_project_element(project, element)
+            window.Show()
+            project.windows["elementproperty"] = window
+
+    def on_item_changed(self, event):
+        """
+        Tree menu item is changed. Modify the selection.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item in self.item_lookup:
+            element = self.item_lookup[item]
+            project.set_selected(element)
+
+    def add_element(self, tree, node, element):
+        """
+        Add a element to the tree.
+
+        :param tree:
+        :param node:
+        :param element:
+        :return:
+        """
+        if element.passes == 1:
+            item = tree.AppendItem(node, str(element))
+        else:
+            item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
+        self.item_lookup[item] = element
+        for subitem in element:
+            self.add_element(tree, item, subitem)
+
+    def refresh_tree_elements(self):
+        """
+        Rebuild tree elements
+
+        :return:
+        """
+        tree = self.tree
+        tree.DeleteAllItems()
+        self.item_lookup = {}
+        root = self.tree.AddRoot(str(project.elements))
+        self.item_lookup[root] = project.elements
+        for subitem in project.elements:
+            self.add_element(tree, root, subitem)
+        tree.CollapseAll()
+        tree.ExpandAll()
 
     def on_usb_status(self, value):
         self.main_statusbar.SetStatusText("Usb: %s" % value, 0)
@@ -269,6 +497,13 @@ class MeerK40t(wx.Frame):
 
     def on_writer_state(self, value):
         self.main_statusbar.SetStatusText("Spooler: %s" % get_state_string_from_state(value), 2)
+
+    def on_writer_mode(self, state):
+        if state == 0:
+            self.background_brush = wx.Brush("Grey")
+        else:
+            self.background_brush = wx.Brush("Red")
+        self.post_buffer_update()
 
     def on_close(self, event):
         if self.project.writer.thread.state == THREAD_STATE_STARTED or \
@@ -287,17 +522,17 @@ class MeerK40t(wx.Frame):
         self.project["writer", self.on_writer_state] = None
         self.project.save_config()
         self.project.shutdown()
-        self.scene.on_close(event)
+        self.project["position", self.update_position] = None
+        self.project["units", self.space_changed] = None
+        self.project["selection", self.selection_changed] = None
+        self.project["bed_size", self.bed_changed] = None
+        self.project["elements", self.elements_changed] = None
         try:
             for key, value in self.project.windows.items():
                 value.Close()
         except RuntimeError:  # close runtime error, as well as dictionary size change during iteration.
             pass
         event.Skip()  # Call destroy as regular.
-
-    def on_size_set(self, event):
-        self.panel.Size = self.ClientSize
-        self.panel.Update()
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
@@ -311,17 +546,21 @@ class MeerK40t(wx.Frame):
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
         # self.main_toolbar.Realize()
-        self.scene.SetMinSize((1000, 880))
-        self.scene.SetBackgroundColour(wx.Colour(112, 219, 147))
+
+        # self.scene.SetMinSize((1000, 880))
+        # self.scene.SetBackgroundColour(wx.Colour(200,200,200))
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: MeerK40t.__do_layout
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.panel)
-        self.SetSizer(sizer)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
+        widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        widget_sizer.Add(self.tree, 1, wx.ALIGN_RIGHT | wx.EXPAND, 0)
+        widget_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
+        main_sizer.Add(widget_sizer, 5, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        # main_sizer.Fit(self)
         self.Layout()
-        # end wxGlade
 
     def load_file(self, pathname, group=None):
         if pathname.lower().endswith(".svg"):
@@ -356,7 +595,7 @@ class MeerK40t(wx.Frame):
             dlg = wx.MessageDialog(None, err_msg, 'Error encountered', wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
-        self.tree.refresh_tree_elements()
+        self.refresh_tree_elements()
 
     def load_svg(self, pathname, group=None):
         """
@@ -398,7 +637,7 @@ class MeerK40t(wx.Frame):
                 except OSError:
                     pass
         context.append_all(append_list)
-        self.scene.post_buffer_update()
+        self.post_buffer_update()
 
     def load_egv(self, pathname, group=None):
         """
@@ -426,7 +665,7 @@ class MeerK40t(wx.Frame):
                     context.append(element)
                     if 'speed' in event:
                         element['speed'] = event['speed']
-        self.scene.post_buffer_update()
+        self.post_buffer_update()
 
     def load_image(self, pathname, group=None):
         """
@@ -444,14 +683,431 @@ class MeerK40t(wx.Frame):
             context.append(group)
         context = group
         context.append(element)
-        self.scene.post_buffer_update()
+        self.post_buffer_update()
 
     def tree_update(self):
-        self.tree.refresh_tree_elements()
+        self.refresh_tree_elements()
+
+    def on_paint(self, event):
+        try:
+            wx.BufferedPaintDC(self.scene, self._Buffer)
+        except RuntimeError:
+            pass
+
+    def on_size(self, event):
+        self.Layout()
+        self._Buffer = wx.Bitmap(*self.ClientSize)
+        self.guide_lines = None
+        bedwidth, bedheight = self.project.size_in_native_units()
+        # self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
+        self.post_buffer_update()
+        self.Update()
+
+    def update_position(self, pos):
+        # x, y, old_x, old_y = pos
+        self.laserpath[self.laserpath_index] = pos
+        self.laserpath_index += 1
+        self.laserpath_index %= len(self.laserpath)
+        self.post_buffer_update()
+
+    def space_changed(self, units):
+        self.grid = None
+        self.on_size(None)
+
+    def bed_changed(self, size):
+        self.grid = None
+        self.on_size(None)
+
+    def selection_changed(self, selection):
+        self.post_buffer_update()
+
+    def elements_changed(self, e):
+        self.post_buffer_update()
+
+    def on_erase(self, event):
+        pass
+
+    def post_buffer_update(self):
+        if not self.dirty:
+            self.dirty = True
+            wx.CallAfter(self.update_buffer_ui_thread)
+
+    def update_buffer_ui_thread(self):
+        self.dirty = False
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        self.on_draw_background(dc)
+        if dc.CanUseTransformMatrix():
+            dc.SetTransformMatrix(self.matrix)
+            self.on_draw_scene(dc)
+            dc.SetTransformMatrix(self.identity)
+        else:
+            original_font = dc.GetFont()
+            font = wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
+            dc.SetFont(font)
+            dc.SetPen(wx.BLACK_PEN)
+            s = dc.GetSize() / 2
+            dc.DrawText("Current OS cannot use transformation matrix. Skipping scene draw.", s[0]-350, s[1])
+            dc.SetFont(original_font)
+        self.on_draw_interface(dc)
+        del dc  # need to get rid of the MemoryDC before Update() is called.
+        self.Refresh()
+        # self.Update()
+
+    def on_matrix_change(self):
+        self.guide_lines = None
+
+    def scene_matrix_reset(self):
+        self.matrix.Reset()
+        self.on_matrix_change()
+
+    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
+        self.matrix.PostScale(sx, sy, ax, ay)
+        self.on_matrix_change()
+
+    def scene_post_pan(self, px, py):
+        self.matrix.PostTranslate(px, py)
+        self.on_matrix_change()
+
+    def scene_post_rotate(self, angle, rx=0, ry=0):
+        self.matrix.PostRotate(angle, rx, ry)
+        self.on_matrix_change()
+
+    def scene_pre_scale(self, sx, sy=None, ax=0, ay=0):
+        self.matrix.PreScale(sx, sy, ax, ay)
+        self.on_matrix_change()
+
+    def scene_pre_pan(self, px, py):
+        self.matrix.PreTranslate(px, py)
+        self.on_matrix_change()
+
+    def scene_pre_rotate(self, angle, rx=0, ry=0):
+        self.matrix.PreRotate(angle, rx, ry)
+        self.on_matrix_change()
+
+    def get_scale_x(self):
+        return self.matrix.GetScaleX()
+
+    def get_scale_y(self):
+        return self.matrix.GetScaleY()
+
+    def get_skew_x(self):
+        return self.matrix.GetSkewX()
+
+    def get_skew_y(self):
+        return self.matrix.GetSkewY()
+
+    def get_translate_x(self):
+        return self.matrix.GetTranslateX()
+
+    def get_translate_y(self):
+        return self.matrix.GetTranslateY()
+
+    def on_mousewheel(self, event):
+        rotation = event.GetWheelRotation()
+        mouse = event.GetPosition()
+        if self.project.mouse_zoom_invert:
+            rotation = -rotation
+        if rotation > 1:
+            self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
+        elif rotation < -1:
+            self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
+        self.post_buffer_update()
+
+    def on_mouse_middle_down(self, event):
+        self.scene.CaptureMouse()
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+
+    def on_mouse_middle_up(self, event):
+        if self.scene.HasCapture():
+            self.scene.ReleaseMouse()
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
+    def on_left_mouse_down(self, event):
+        self.scene.CaptureMouse()
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+        self.project.set_selected_by_position(self.previous_scene_position)
+        self.move_function = self.move_selected
+
+    def on_left_mouse_up(self, event):
+        if self.scene.HasCapture():
+            self.scene.ReleaseMouse()
+        self.previous_window_position = None
+        self.previous_scene_position = None
+        self.move_function = self.move_pan
+        self.project.validate()
+
+    def on_mouse_double_click(self, event):
+        position = event.GetPosition()
+        position = self.convert_window_to_scene(position)
+        self.project.set_selected_by_position(position)
+        if self.project.selected is not None:
+            self.project.close_old_window("elementproperty")
+            window = ElementProperty(None, wx.ID_ANY, "")
+            window.set_project_element(self.project, self.project.selected)
+            window.Show()
+            self.project.windows["elementproperty"] = window
+
+    def move_pan(self, wdx, wdy, sdx, sdy):
+        self.scene_post_pan(wdx, wdy)
+        self.post_buffer_update()
+
+    def move_selected(self, wdx, wdy, sdx, sdy):
+        self.project.move_selected(sdx, sdy)
+        self.post_buffer_update()
+
+    def on_mouse_move(self, event):
+        if not event.Dragging():
+            return
+        if self.previous_window_position is None:
+            return
+        pos = event.GetPosition()
+        window_position = pos.x, pos.y
+        scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
+        sdx = (scene_position[0] - self.previous_scene_position[0])
+        sdy = (scene_position[1] - self.previous_scene_position[1])
+        wdx = (window_position[0] - self.previous_window_position[0])
+        wdy = (window_position[1] - self.previous_window_position[1])
+        self.move_function(wdx, wdy, sdx, sdy)
+        self.previous_window_position = window_position
+        self.previous_scene_position = scene_position
+
+    def on_right_mouse_down(self, event):
+        self.popup_window_position = event.GetPosition()
+        self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
+        self.project.set_selected_by_position(self.popup_scene_position)
+        create_menu(self.project.selected)
+
+    def on_right_mouse_up(self, event):
+        pass
+
+    def default_keymap(self):
+        self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
+        self.project.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
+        self.project.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
+        self.project.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
+        q = ord('Q')
+        self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
+
+    def execute_string_action(self, action, *args):
+        writer = self.project.writer
+        if action == 'move':
+            writer.send_job(self.execute_move_action(*args))
+        elif action == 'move_to':
+            writer.send_job(self.execute_move_to_action(*args))
+        elif action == 'set_position':
+            self.execute_set_position_action(*args)
+
+    def execute_set_position_action(self, index):
+        x = self.project.writer.current_x
+        y = self.project.writer.current_y
+        self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
+
+    def execute_move_action(self, direction, amount):
+        amount = Length(amount).value(ppi=1000.0, relative_length=min(project.size))
+        amount = 1000.0 * amount / 96.0
+        x = 0
+        y = 0
+        if direction == 'right':
+            x = amount
+        elif direction == 'left':
+            x = -amount
+        elif direction == 'up':
+            y = -amount
+        elif direction == 'down':
+            y = amount
+
+        def move():
+            yield COMMAND_SET_INCREMENTAL
+            yield COMMAND_RAPID_MOVE, (x, y)
+            yield COMMAND_SET_ABSOLUTE
+
+        return move
+
+    def execute_move_to_action(self, position_x, position_y):
+        def move():
+            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
+
+        return move
+
+    def on_key_press(self, event):
+        keycode = event.GetKeyCode()
+        if keycode in self.project.keymap:
+            action = self.project.keymap[keycode].command
+            args = str(action).split(' ')
+            self.execute_string_action(*args)
+
+    def focus_on_project(self):
+        bbox = self.project.bbox()
+        if bbox is None:
+            return
+        self.focus_viewport_scene(bbox)
+        self.post_buffer_update()
+
+    def focus_position_scene(self, scene_point):
+        window_width, window_height = self.ClientSize
+        scale_x = self.get_scale_x()
+        scale_y = self.get_scale_y()
+        self.scene_matrix_reset()
+        self.scene_post_pan(-scene_point[0], -scene_point[1])
+        self.scene_post_scale(scale_x, scale_y)
+        self.scene_post_pan(window_width / 2.0, window_height / 2.0)
+
+    def focus_viewport_scene(self, new_scene_viewport, buffer=0.0, lock=True):
+        window_width, window_height = self.ClientSize
+        left = new_scene_viewport[0]
+        top = new_scene_viewport[1]
+        right = new_scene_viewport[2]
+        bottom = new_scene_viewport[3]
+        viewport_width = right - left
+        viewport_height = bottom - top
+
+        left -= viewport_width * buffer
+        right += viewport_width * buffer
+        top -= viewport_height * buffer
+        bottom += viewport_height * buffer
+
+        if right == left:
+            scale_x = 100
+        else:
+            scale_x = window_width / float(right - left)
+        if bottom == top:
+            scale_y = 100
+        else:
+            scale_y = window_height / float(bottom - top)
+
+        cx = ((right + left) / 2)
+        cy = ((top + bottom) / 2)
+        self.matrix.Reset()
+        self.matrix.PostTranslate(-cx, -cy)
+        if lock:
+            scale = min(scale_x, scale_y)
+            if scale != 0:
+                self.matrix.PostScale(scale)
+        else:
+            if scale_x != 0 and scale_y != 0:
+                self.matrix.PostScale(scale_x, scale_y)
+        self.matrix.PostTranslate(window_width / 2.0, window_height / 2.0)
+
+    def convert_scene_to_window(self, position):
+        return self.matrix.TransformPoint([position[0], position[1]])
+
+    def convert_window_to_scene(self, position):
+        return self.matrix.InverseTransformPoint([position[0], position[1]])
+
+    def calculate_grid(self):
+        lines = []
+        wmils, hmils = self.project.size_in_native_units()
+        conversion, name, marks, index = self.project.units
+        x = 0.0
+        while x < wmils:
+            lines.append((x, 0, x, hmils))
+            x += conversion * marks
+        y = 0.0
+        while y < hmils:
+            lines.append((0, y, wmils, y))
+            y += conversion * marks
+        self.grid = lines
+
+    def on_draw_grid(self, dc):
+        if self.grid is None:
+            self.calculate_grid()
+        dc.DrawLineList(self.grid)
+
+    def on_draw_guides(self, dc):
+        lines = []
+        w, h = self.Size
+        conversion, name, marks, index = self.project.units
+        scaled_conversion = conversion * self.matrix.GetScaleX()
+
+        wpoints = w / 15.0
+        hpoints = h / 15.0
+        points = min(wpoints, hpoints)
+        # tweak the scaled points into being useful.
+        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
+        points = scaled_conversion * float('{:.1g}'.format(points / scaled_conversion))
+        sx, sy = self.convert_scene_to_window([0, 0])
+        if points == 0:
+            return
+        offset_x = sx % points
+        offset_y = sy % points
+
+        x = offset_x
+        length = 50
+
+        while x < w:
+            lines.append((x, 0, x, length))
+            lines.append((x, h, x, h - length))
+            mark_point = (x - sx) / scaled_conversion
+            if round(mark_point * 1000) == 0:
+                mark_point = 0.0  # prevents -0
+            dc.DrawRotatedText("%g %s" % (mark_point, name), x, 0, -90)
+            x += points
+
+        y = offset_y
+        while y < h:
+            lines.append((0, y, length, y))
+            lines.append((w, y, w - length, y))
+            mark_point = (y - sy) / scaled_conversion
+            if round(mark_point * 1000) == 0:
+                mark_point = 0.0  # prevents -0
+            dc.DrawText("%g %s" % (mark_point + 0, name), 0, y + 0)
+            y += points
+        dc.DrawLineList(lines)
+
+    def on_draw_background(self, dc):
+        dc.SetBackground(self.background_brush)
+        dc.Clear()
+
+    def on_draw_interface(self, dc):
+        pen = wx.Pen(wx.BLACK)
+        pen.SetWidth(1)
+        pen.SetCap(wx.CAP_BUTT)
+        if self.project.draw_mode & 2 == 0:
+            self.on_draw_guides(dc)
+        if self.project.draw_mode & 16 == 0:
+            dc.SetPen(wx.RED_PEN)
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x = self.project.writer.current_x
+            y = self.project.writer.current_y
+            x, y = self.convert_scene_to_window([x, y])
+            dc.DrawCircle(x, y, 10)
+
+    def on_draw_bed(self, dc):
+        bedwidth, bedheight = self.project.size
+        wmils = bedwidth * 39.37
+        hmils = bedheight * 39.37
+        dc.SetPen(wx.WHITE_PEN)
+        dc.DrawRectangle(0, 0, wmils, hmils)
+
+    def on_draw_scene(self, dc):
+        self.on_draw_bed(dc)
+        dc.SetPen(wx.BLACK_PEN)
+        if self.project.draw_mode & 4 == 0:
+            self.on_draw_grid(dc)
+        pen = wx.Pen(wx.BLACK)
+        pen.SetWidth(1)
+        pen.SetCap(wx.CAP_BUTT)
+        dc.SetPen(pen)
+        if self.project is None:
+            return
+
+        if self.project.selected is not None and self.project.selected.scene_bounds is not None:
+            dc.SetPen(wx.BLUE_PEN)
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x0, y0, x1, y1 = self.project.selected.scene_bounds
+            dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
+        self.renderer.render(dc, self.project.draw_mode)
+        if self.project.draw_mode & 8 == 0:
+            dc.SetPen(wx.BLUE_PEN)
+            dc.DrawLineList(self.laserpath)
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.elements = []
-        self.scene.post_buffer_update()
+        self.post_buffer_update()
         self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -487,22 +1143,22 @@ class MeerK40t(wx.Frame):
         Zoomout button press
         """
         m = self.scene.ClientSize / 2
-        self.scene.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
-        self.scene.post_buffer_update()
+        self.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.post_buffer_update()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoomin button press
         """
         m = self.scene.ClientSize / 2
-        self.scene.scene_post_scale(1.5, 1.5, m[0], m[1])
-        self.scene.post_buffer_update()
+        self.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.post_buffer_update()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom size button press.
         """
-        self.scene.focus_on_project()
+        self.focus_on_project()
 
     def toggle_draw_mode(self, bits):
         """
@@ -513,7 +1169,7 @@ class MeerK40t(wx.Frame):
 
         def toggle(event):
             self.project.draw_mode ^= bits
-            self.scene.post_buffer_update()
+            self.post_buffer_update()
 
         return toggle
 
@@ -657,228 +1313,6 @@ class MeerK40t(wx.Frame):
 
 
 # end of class MeerK40t
-
-
-class CutConfiguration(wx.Panel):
-    """
-    Cut configuration panel is the left side panel of the main window containing
-    a Job Execute button and the project tree.
-    """
-
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: CutConfiguration.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.FULL_REPAINT_ON_RESIZE | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.SetSize((503, -1))
-        self.element_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
-        self.bitmap_button_1 = wx.BitmapButton(self, ID_CUT_BURN_BUTTON, icons8_laser_beam_52.GetBitmap())
-
-        self.__set_properties()
-        self.__do_layout()
-
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.element_tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.element_tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.element_tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.element_tree)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.element_tree)
-        # end wxGlade
-        self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
-        self.refresh_tree_elements()
-        # end wxGlade
-        self.item_lookup = {}
-        project["elements", self.on_elements_update] = self
-        self.dragging_element = None
-
-    def on_elements_update(self, *args):
-        """
-        Called by 'elements' change. To refresh tree.
-
-        :param args:
-        :return:
-        """
-        self.refresh_tree_elements()
-        self.Update()
-
-    def __set_properties(self):
-        # begin wxGlade: CutConfiguration.__set_properties
-        self.SetSize((503, -1))
-        self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: CutConfiguration.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.element_tree, 1, wx.EXPAND, 0)
-        sizer_1.Add(self.bitmap_button_1, 0, 0, 0)
-        self.SetSizer(sizer_1)
-        self.Layout()
-        # end wxGlade
-
-    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler begin for the tree.
-
-        :param event:
-        :return:
-        """
-        self.dragging_element = None
-        item = event.GetItem()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            self.dragging_element = element
-            event.Allow()
-
-    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler end for the tree
-
-        :param event:
-        :return:
-        """
-        if self.dragging_element is None:
-            event.Skip()
-            return
-        drag_element = self.dragging_element
-        drag_parent = self.dragging_element.parent
-        self.dragging_element = None
-
-        item = event.GetItem()
-        if item is None:
-            event.Skip()
-            return
-        if item.ID is None:
-            event.Skip()
-            return
-        if item not in self.item_lookup:
-            event.Skip()
-            return
-        drop_element = self.item_lookup[item]
-
-        if drag_element == drop_element or drop_element.type not in ('group', 'root'):
-            # Cannot drop into other laser elements.
-            event.Skip()
-            return
-
-        drag_parent.remove(drag_element)
-        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:  # todo: empty group
-            drag_parent.parent.remove(drag_parent)
-
-        if drop_element.type == 'root':  # Project
-            if drag_element.type != 'group':
-                group = LaserNode()
-                group.append(drag_element)
-                group.update(drag_element)  # Group gets element property.
-                drop_element.append(group)
-            else:
-                drop_element.append(drag_element)
-            event.Allow()
-            return
-        if drop_element.type == 'group':  # Group
-            drop_element.append(drag_element)
-            event.Allow()
-            return
-        event.Skip()
-
-    def on_clicked_burn(self, event):
-        """
-        Clicked the Job Execute button.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("jobinfo")
-        from JobInfo import JobInfo
-        window = JobInfo(None, wx.ID_ANY, "")
-        item = self.element_tree.GetSelection()
-        if item is not None and item.ID is not None and item in self.item_lookup:
-            element = self.item_lookup[item]
-            window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
-                                                                          passes=True)])
-        else:
-            window.set_project(project, [e for e in project.elements.flat_elements(types=('image', 'path', 'text'),
-                                                                                   passes=True)])
-        window.Show()
-        project.windows["jobinfo"] = window
-
-    def on_item_right_click(self, event):
-        """
-        Right click of element in tree.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item is None:
-            return
-        if item.ID is None:
-            return
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            project.set_selected(element)
-            create_menu(element)
-        event.Skip()
-
-    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Tree item is double-clicked. Launches ElementProperty dialog.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item in self.item_lookup:
-            project.close_old_window("elementproperty")
-            element = self.item_lookup[item]
-            from ElementProperty import ElementProperty
-            window = ElementProperty(None, wx.ID_ANY, "")
-            window.set_project_element(project, element)
-            window.Show()
-            project.windows["elementproperty"] = window
-
-    def on_item_changed(self, event):
-        """
-        Tree menu item is changed. Modify the selection.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            project.set_selected(element)
-
-    def add_element(self, tree, node, element):
-        """
-        Add a element to the tree.
-
-        :param tree:
-        :param node:
-        :param element:
-        :return:
-        """
-        if element.passes == 1:
-            item = tree.AppendItem(node, str(element))
-        else:
-            item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
-        self.item_lookup[item] = element
-        for subitem in element:
-            self.add_element(tree, item, subitem)
-
-    def refresh_tree_elements(self):
-        """
-        Rebuild tree elements
-
-        :return:
-        """
-        tree = self.element_tree
-        tree.DeleteAllItems()
-        self.item_lookup = {}
-        root = self.element_tree.AddRoot(str(project.elements))
-        self.item_lookup[root] = project.elements
-        for subitem in project.elements:
-            self.add_element(tree, root, subitem)
-        tree.CollapseAll()
-        tree.ExpandAll()
 
 
 def create_menu(element):
@@ -1273,497 +1707,6 @@ class MappedKey:
 
     def __str__(self):
         return self.key
-
-
-class LaserSceneView(wx.Panel):
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: MainView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.WANTS_CHARS
-        wx.Panel.__init__(self, *args, **kwds)
-        self.SetDoubleBuffered(True)
-
-        self.matrix = ZMatrix()
-        self.identity = ZMatrix()
-        self.matrix.Reset()
-        self.identity.Reset()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-        self.popup_window_position = None
-        self.popup_scene_position = None
-        self._Buffer = None
-        self.dirty = False
-
-        self.__set_properties()
-        self.__do_layout()
-        self.overlay = wx.Overlay()
-
-        self.grid = None
-        self.guide_lines = None
-
-        self.laserpath = [(0, 0, 0, 0)] * 1000
-        self.laserpath_index = 0
-
-        self.Bind(wx.EVT_PAINT, self.on_paint)
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
-
-        self.Bind(wx.EVT_MOTION, self.on_mouse_move)
-        self.move_function = self.move_pan
-        self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-        self.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
-        self.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
-        self.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
-
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
-        self.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.SetFocus())  # Focus follows mouse.
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.project = None
-        self.renderer = None
-        self.background_brush = wx.Brush("Grey")
-
-    def set_project(self, project):
-        self.project = project
-        self.renderer = LaserRender(project)
-        bedwidth, bedheight = project.size
-        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
-        self.project["position", self.update_position] = self
-        self.project["units", self.space_changed] = self
-        self.project["selection", self.selection_changed] = self
-        self.project["bed_size", self.bed_changed] = self
-        self.project["elements", self.elements_changed] = self
-        self.default_keymap()
-        project["writer_mode", self.on_writer_mode] = self
-
-    def on_writer_mode(self, state):
-        if state == 0:
-            self.background_brush = wx.Brush("Grey")
-        else:
-            self.background_brush = wx.Brush("Red")
-        self.post_buffer_update()
-
-    def on_close(self, event):
-        self.project["position", self.update_position] = None
-        self.project["units", self.space_changed] = None
-        self.project["selection", self.selection_changed] = None
-        self.project["bed_size", self.bed_changed] = None
-        self.project["elements", self.elements_changed] = None
-        event.Skip()
-
-    def __set_properties(self):
-        # begin wxGlade: MainView.__set_properties
-        pass
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: MainView.__do_layout
-        self.Layout()
-        # end wxGlade
-
-    def on_paint(self, event):
-        wx.BufferedPaintDC(self, self._Buffer)
-
-    def on_size(self, event):
-        Size = self.ClientSize
-        self._Buffer = wx.Bitmap(*Size)
-        self.guide_lines = None
-        bedwidth, bedheight = self.project.size_in_native_units()
-        self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
-        self.post_buffer_update()
-
-    def update_position(self, pos):
-        # x, y, old_x, old_y = pos
-        self.laserpath[self.laserpath_index] = pos
-        self.laserpath_index += 1
-        self.laserpath_index %= len(self.laserpath)
-        self.post_buffer_update()
-
-    def space_changed(self, units):
-        self.grid = None
-        self.on_size(None)
-
-    def bed_changed(self, size):
-        self.grid = None
-        self.on_size(None)
-
-    def selection_changed(self, selection):
-        self.post_buffer_update()
-
-    def elements_changed(self, e):
-        self.post_buffer_update()
-
-    def on_erase(self, event):
-        pass
-
-    def post_buffer_update(self):
-        if not self.dirty:
-            self.dirty = True
-            wx.CallAfter(self.update_buffer_ui_thread)
-
-    def update_buffer_ui_thread(self):
-        self.dirty = False
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        self.on_draw_background(dc)
-        dc.SetTransformMatrix(self.matrix)
-        self.on_draw_scene(dc)
-        dc.SetTransformMatrix(self.identity)
-        self.on_draw_interface(dc)
-        del dc  # need to get rid of the MemoryDC before Update() is called.
-        self.Refresh()
-        # self.Update()
-
-    def on_matrix_change(self):
-        self.guide_lines = None
-
-    def scene_matrix_reset(self):
-        self.matrix.Reset()
-        self.on_matrix_change()
-
-    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.PostScale(sx, sy, ax, ay)
-        self.on_matrix_change()
-
-    def scene_post_pan(self, px, py):
-        self.matrix.PostTranslate(px, py)
-        self.on_matrix_change()
-
-    def scene_post_rotate(self, angle, rx=0, ry=0):
-        self.matrix.PostRotate(angle, rx, ry)
-        self.on_matrix_change()
-
-    def scene_pre_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.PreScale(sx, sy, ax, ay)
-        self.on_matrix_change()
-
-    def scene_pre_pan(self, px, py):
-        self.matrix.PreTranslate(px, py)
-        self.on_matrix_change()
-
-    def scene_pre_rotate(self, angle, rx=0, ry=0):
-        self.matrix.PreRotate(angle, rx, ry)
-        self.on_matrix_change()
-
-    def get_scale_x(self):
-        return self.matrix.GetScaleX()
-
-    def get_scale_y(self):
-        return self.matrix.GetScaleY()
-
-    def get_skew_x(self):
-        return self.matrix.GetSkewX()
-
-    def get_skew_y(self):
-        return self.matrix.GetSkewY()
-
-    def get_translate_x(self):
-        return self.matrix.GetTranslateX()
-
-    def get_translate_y(self):
-        return self.matrix.GetTranslateY()
-
-    def on_mousewheel(self, event):
-        rotation = event.GetWheelRotation()
-        mouse = event.GetPosition()
-        if self.project.mouse_zoom_invert:
-            rotation = -rotation
-        if rotation > 1:
-            self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
-        elif rotation < -1:
-            self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
-        self.post_buffer_update()
-
-    def on_mouse_middle_down(self, event):
-        self.CaptureMouse()
-        self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-
-    def on_mouse_middle_up(self, event):
-        if self.HasCapture():
-            self.ReleaseMouse()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-
-    def on_left_mouse_down(self, event):
-        self.CaptureMouse()
-        self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.project.set_selected_by_position(self.previous_scene_position)
-        self.move_function = self.move_selected
-
-    def on_left_mouse_up(self, event):
-        if self.HasCapture():
-            self.ReleaseMouse()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-        self.move_function = self.move_pan
-        self.project.validate()
-
-    def on_mouse_double_click(self, event):
-        position = event.GetPosition()
-        position = self.convert_window_to_scene(position)
-        self.project.set_selected_by_position(position)
-        if self.project.selected is not None:
-            self.project.close_old_window("elementproperty")
-            window = ElementProperty(None, wx.ID_ANY, "")
-            window.set_project_element(self.project, self.project.selected)
-            window.Show()
-            self.project.windows["elementproperty"] = window
-
-    def move_pan(self, wdx, wdy, sdx, sdy):
-        self.scene_post_pan(wdx, wdy)
-        self.post_buffer_update()
-
-    def move_selected(self, wdx, wdy, sdx, sdy):
-        self.project.move_selected(sdx, sdy)
-        self.post_buffer_update()
-
-    def on_mouse_move(self, event):
-        if not event.Dragging():
-            return
-        if self.previous_window_position is None:
-            return
-        pos = event.GetPosition()
-        window_position = pos.x, pos.y
-        scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
-        sdx = (scene_position[0] - self.previous_scene_position[0])
-        sdy = (scene_position[1] - self.previous_scene_position[1])
-        wdx = (window_position[0] - self.previous_window_position[0])
-        wdy = (window_position[1] - self.previous_window_position[1])
-        self.move_function(wdx, wdy, sdx, sdy)
-        self.previous_window_position = window_position
-        self.previous_scene_position = scene_position
-
-    def on_right_mouse_down(self, event):
-        self.popup_window_position = event.GetPosition()
-        self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-        self.project.set_selected_by_position(self.popup_scene_position)
-        create_menu(self.project.selected)
-
-    def default_keymap(self):
-        self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
-        self.project.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
-        self.project.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
-        self.project.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
-        q = ord('Q')
-        self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
-
-    def execute_string_action(self, action, *args):
-        writer = self.project.writer
-        if action == 'move':
-            writer.send_job(self.execute_move_action(*args))
-        elif action == 'move_to':
-            writer.send_job(self.execute_move_to_action(*args))
-        elif action == 'set_position':
-            self.execute_set_position_action(*args)
-
-    def execute_set_position_action(self, index):
-        x = self.project.writer.current_x
-        y = self.project.writer.current_y
-        self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
-
-    def execute_move_action(self, direction, amount):
-        amount = Length(amount).value(ppi=1000.0, relative_length=min(project.size))
-        amount = 1000.0 * amount / 96.0
-        x = 0
-        y = 0
-        if direction == 'right':
-            x = amount
-        elif direction == 'left':
-            x = -amount
-        elif direction == 'up':
-            y = -amount
-        elif direction == 'down':
-            y = amount
-
-        def move():
-            yield COMMAND_SET_INCREMENTAL
-            yield COMMAND_RAPID_MOVE, (x, y)
-            yield COMMAND_SET_ABSOLUTE
-
-        return move
-
-    def execute_move_to_action(self, position_x, position_y):
-        def move():
-            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
-
-        return move
-
-    def on_key_press(self, event):
-        keycode = event.GetKeyCode()
-        if keycode in self.project.keymap:
-            action = self.project.keymap[keycode].command
-            args = str(action).split(' ')
-            self.execute_string_action(*args)
-
-    def focus_on_project(self):
-        bbox = self.project.bbox()
-        if bbox is None:
-            return
-        self.focus_viewport_scene(bbox)
-        self.post_buffer_update()
-
-    def focus_position_scene(self, scene_point):
-        window_width, window_height = self.ClientSize
-        scale_x = self.get_scale_x()
-        scale_y = self.get_scale_y()
-        self.scene_matrix_reset()
-        self.scene_post_pan(-scene_point[0], -scene_point[1])
-        self.scene_post_scale(scale_x, scale_y)
-        self.scene_post_pan(window_width / 2.0, window_height / 2.0)
-
-    def focus_viewport_scene(self, new_scene_viewport, buffer=0.0, lock=True):
-        window_width, window_height = self.ClientSize
-        left = new_scene_viewport[0]
-        top = new_scene_viewport[1]
-        right = new_scene_viewport[2]
-        bottom = new_scene_viewport[3]
-        viewport_width = right - left
-        viewport_height = bottom - top
-
-        left -= viewport_width * buffer
-        right += viewport_width * buffer
-        top -= viewport_height * buffer
-        bottom += viewport_height * buffer
-
-        if right == left:
-            scale_x = 100
-        else:
-            scale_x = window_width / float(right - left)
-        if bottom == top:
-            scale_y = 100
-        else:
-            scale_y = window_height / float(bottom - top)
-
-        cx = ((right + left) / 2)
-        cy = ((top + bottom) / 2)
-        self.matrix.Reset()
-        self.matrix.PostTranslate(-cx, -cy)
-        if lock:
-            scale = min(scale_x, scale_y)
-            if scale != 0:
-                self.matrix.PostScale(scale)
-        else:
-            if scale_x != 0 and scale_y != 0:
-                self.matrix.PostScale(scale_x, scale_y)
-        self.matrix.PostTranslate(window_width / 2.0, window_height / 2.0)
-
-    def convert_scene_to_window(self, position):
-        return self.matrix.TransformPoint([position[0], position[1]])
-
-    def convert_window_to_scene(self, position):
-        return self.matrix.InverseTransformPoint([position[0], position[1]])
-
-    def calculate_grid(self):
-        lines = []
-        wmils, hmils = self.project.size_in_native_units()
-        conversion, name, marks, index = self.project.units
-        x = 0.0
-        while x < wmils:
-            lines.append((x, 0, x, hmils))
-            x += conversion * marks
-        y = 0.0
-        while y < hmils:
-            lines.append((0, y, wmils, y))
-            y += conversion * marks
-        self.grid = lines
-
-    def on_draw_grid(self, dc):
-        if self.grid is None:
-            self.calculate_grid()
-        dc.DrawLineList(self.grid)
-
-    def on_draw_guides(self, dc):
-        lines = []
-        w, h = self.Size
-        conversion, name, marks, index = self.project.units
-        scaled_conversion = conversion * self.matrix.GetScaleX()
-
-        wpoints = w / 15.0
-        hpoints = h / 15.0
-        points = min(wpoints, hpoints)
-        # tweak the scaled points into being useful.
-        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        points = scaled_conversion * float('{:.1g}'.format(points / scaled_conversion))
-        sx, sy = self.convert_scene_to_window([0, 0])
-        if points == 0:
-            return
-        offset_x = sx % points
-        offset_y = sy % points
-
-        x = offset_x
-        length = 50
-
-        while x < w:
-            lines.append((x, 0, x, length))
-            lines.append((x, h, x, h - length))
-            mark_point = (x - sx) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            dc.DrawRotatedText("%g %s" % (mark_point, name), x, 0, -90)
-            x += points
-
-        y = offset_y
-        while y < h:
-            lines.append((0, y, length, y))
-            lines.append((w, y, w - length, y))
-            mark_point = (y - sy) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            dc.DrawText("%g %s" % (mark_point + 0, name), 0, y + 0)
-            y += points
-        dc.DrawLineList(lines)
-
-    def on_draw_background(self, dc):
-        dc.SetBackground(self.background_brush)
-        dc.Clear()
-
-    def on_draw_interface(self, dc):
-        pen = wx.Pen(wx.BLACK)
-        pen.SetWidth(1)
-        pen.SetCap(wx.CAP_BUTT)
-        if self.project.draw_mode & 2 == 0:
-            self.on_draw_guides(dc)
-        if self.project.draw_mode & 16 == 0:
-            dc.SetPen(wx.RED_PEN)
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x = self.project.writer.current_x
-            y = self.project.writer.current_y
-            x, y = self.convert_scene_to_window([x, y])
-            dc.DrawCircle(x, y, 10)
-
-    def on_draw_bed(self, dc):
-        bedwidth, bedheight = self.project.size
-        wmils = bedwidth * 39.37
-        hmils = bedheight * 39.37
-        dc.SetPen(wx.WHITE_PEN)
-        dc.DrawRectangle(0, 0, wmils, hmils)
-
-    def on_draw_scene(self, dc):
-        self.on_draw_bed(dc)
-        dc.SetPen(wx.BLACK_PEN)
-        if self.project.draw_mode & 4 == 0:
-            self.on_draw_grid(dc)
-        pen = wx.Pen(wx.BLACK)
-        pen.SetWidth(1)
-        pen.SetCap(wx.CAP_BUTT)
-        dc.SetPen(pen)
-        if self.project is None:
-            return
-
-        if self.project.selected is not None and self.project.selected.scene_bounds is not None:
-            dc.SetPen(wx.BLUE_PEN)
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x0, y0, x1, y1 = self.project.selected.scene_bounds
-            dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
-        self.renderer.render(dc, self.project.draw_mode)
-        if self.project.draw_mode & 8 == 0:
-            dc.SetPen(wx.BLUE_PEN)
-            dc.DrawLineList(self.laserpath)
-
-
-# end of class MainView
 
 class MeerK40tGui(wx.App):
     """

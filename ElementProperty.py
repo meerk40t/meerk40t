@@ -9,7 +9,7 @@ class ElementProperty(wx.Frame):
         # begin wxGlade: ElementProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((290, 312))
+        self.SetSize((330, 312))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=240.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
