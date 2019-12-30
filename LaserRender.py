@@ -44,7 +44,7 @@ class LaserRender:
 
     def make_raster(self, group):
         flat_elements = list(group.flat_elements(types='path'))
-        xmin, ymin, xmax, ymax = group.bounds
+        xmin, ymin, xmax, ymax = group.scene_bounds
         width = int(xmax - xmin)
         height = int(ymax - ymin)
         bitmap = wx.Bitmap(width, height, 32)
