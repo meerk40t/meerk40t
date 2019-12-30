@@ -245,28 +245,8 @@ class LaserProject:
             try:
                 node.scene_bounds = node.element.bbox()
             except AttributeError:
-                return
-            # if isinstance(node, LaserElement):
-            #     # Perform matrix conversion of box into bounds.
-            #     boundary_points = []
-            #     box = node.box
-            #     if box is None:
-            #         return
-            #     left_top = node.convert_absolute_to_affinespace([box[0], box[1]])
-            #     right_top = node.convert_absolute_to_affinespace([box[2], box[1]])
-            #     left_bottom = node.convert_absolute_to_affinespace([box[0], box[3]])
-            #     right_bottom = node.convert_absolute_to_affinespace([box[2], box[3]])
-            #     boundary_points.append(left_top)
-            #     boundary_points.append(right_top)
-            #     boundary_points.append(left_bottom)
-            #     boundary_points.append(right_bottom)
-            #     xmin = min([e[0] for e in boundary_points])
-            #     ymin = min([e[1] for e in boundary_points])
-            #     xmax = max([e[0] for e in boundary_points])
-            #     ymax = max([e[1] for e in boundary_points])
-            #     node.bounds = [xmin, ymin, xmax, ymax]
+                pass
             return
-
         # Group node.
         xvals = []
         yvals = []
