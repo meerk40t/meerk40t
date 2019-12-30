@@ -1,7 +1,7 @@
 import wx
 from PIL import Image
 
-from ProjectNodes import *
+from LaserNode import *
 from ZMatrix import ZMatrix
 
 """
@@ -97,6 +97,8 @@ class LaserRender:
         else:
             self.color.SetRGB(c)
             self.pen.SetColour(self.color)
+
+        self.pen.SetWidth(node.stroke_width)
         gc.SetPen(self.pen)
         cache = None
         try:

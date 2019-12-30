@@ -13,7 +13,7 @@ from EgvParser import parse_egv
 from ElementProperty import ElementProperty
 from LaserProject import *
 from LaserRender import LaserRender
-from ProjectNodes import *
+from LaserNode import *
 from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
