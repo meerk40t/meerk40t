@@ -66,6 +66,7 @@ class LaserNode(list):
             self.raster_direction = int(self.raster_direction)
         else:
             self.raster_direction = 0
+
         if self.stroke is None or self.stroke == 'none':
             if isinstance(element, SVGElement):
                 self.stroke = Color('blue')
@@ -214,6 +215,22 @@ class LaserNode(list):
     @raster_direction.setter
     def raster_direction(self, value):
         self[VARIABLE_NAME_RASTER_DIRECTION] = value
+
+    @property
+    def stroke_width(self):
+        v = self['stroke-width']
+        sw = 1000 / 96.0
+        if v is None:
+            return sw
+        v = Length(v).value(ppi=96.0)
+        if isinstance(v, Length):
+            return sw
+        else:
+            return v * sw
+
+    @stroke_width.setter
+    def stroke_width(self, value):
+        self['stroke-width'] = value
 
     @property
     def stroke(self):

@@ -1,6 +1,6 @@
 from K40Controller import K40Controller
 from LhymicroWriter import LhymicroWriter
-from ProjectNodes import *
+from LaserNode import *
 
 """
 LaserProject is a bit of a grabbag of different functions. Serving as a sort of God object.

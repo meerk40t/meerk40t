@@ -13,7 +13,7 @@ from EgvParser import parse_egv
 from ElementProperty import ElementProperty
 from LaserProject import *
 from LaserRender import LaserRender
-from ProjectNodes import *
+from LaserNode import *
 from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
@@ -35,7 +35,7 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.2.1"
+MEERK40T_VERSION = "0.2.2"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -90,6 +90,7 @@ ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_COLORDEFINE = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
+ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
 ID_MENU_USB = idinc.new()
@@ -166,6 +167,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
 
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
+        wxglade_tmp_menu.Append(ID_MENU_ROTARY, "Rotary Settings", "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
         # wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, "Alignment Ally", "")
@@ -201,6 +203,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
         # self.Bind(wx.EVT_MENU, self.open_colordefine, id=ID_MENU_COLORDEFINE)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
+        self.Bind(wx.EVT_MENU, self.open_rotary, id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
         self.Bind(wx.EVT_MENU, self.open_usb, id=ID_MENU_USB)
@@ -555,7 +558,7 @@ class MeerK40t(wx.Frame):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
         widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        widget_sizer.Add(self.tree, 1, wx.ALIGN_RIGHT | wx.EXPAND, 0)
+        widget_sizer.Add(self.tree, 1,  wx.EXPAND, 0)
         widget_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
         main_sizer.Add(widget_sizer, 5, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
@@ -1187,6 +1190,20 @@ class MeerK40t(wx.Frame):
         window.Show()
         project.windows["preferences"] = window
 
+    def open_rotary(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open rotary dialog.
+
+        :param event:
+        :return:
+        """
+        project.close_old_window("rotary")
+        from RotarySettings import RotarySettings
+        window = RotarySettings(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.windows["rotary"] = window
+
     def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Open Alignment Ally dialog.
@@ -1488,7 +1505,7 @@ def menu_raster(element):
     def specific(event):
         renderer = LaserRender(project)
         image = renderer.make_raster(element)
-        xmin, ymin, xmax, ymax = project.selected.bounds
+        xmin, ymin, xmax, ymax = project.selected.scene_bounds
         image_element = LaserNode(SVGImage(image=image))
         project.selected.append(image_element)
         image_element.element.transform.post_translate(xmin, ymin)
