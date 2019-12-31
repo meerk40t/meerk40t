@@ -13,7 +13,6 @@ from EgvParser import parse_egv
 from ElementProperty import ElementProperty
 from LaserProject import *
 from LaserRender import LaserRender
-from LaserNode import *
 from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
@@ -123,7 +122,7 @@ class MeerK40t(wx.Frame):
         self.scene.SetDoubleBuffered(True)
 
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
-                                                 | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
+                                                | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
 
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples", icons8_opened_folder_50.GetBitmap())
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, "Toolbar",
@@ -268,6 +267,11 @@ class MeerK40t(wx.Frame):
         self.__set_properties()
         self.__do_layout()
 
+        self.selection_pen = wx.Pen()
+        self.selection_pen.SetColour(wx.BLUE)
+        self.selection_pen.SetWidth(25)
+        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+
         self.grid = None
         self.guide_lines = None
 
@@ -313,8 +317,8 @@ class MeerK40t(wx.Frame):
         self.project["selection", self.selection_changed] = self
         self.project["bed_size", self.bed_changed] = self
         self.project["elements", self.elements_changed] = self
+        self.project["writer_mode", self.on_writer_mode] = self
         self.default_keymap()
-        project["writer_mode", self.on_writer_mode] = self
 
     def on_elements_update(self, *args):
         """
@@ -390,27 +394,6 @@ class MeerK40t(wx.Frame):
             event.Allow()
             return
         event.Skip()
-
-    def on_clicked_burn(self, event):
-        """
-        Clicked the Job Execute button.
-
-        :param event:
-        :return:
-        """
-        project.close_old_window("jobinfo")
-        from JobInfo import JobInfo
-        window = JobInfo(None, wx.ID_ANY, "")
-        item = self.tree.GetSelection()
-        if item is not None and item.ID is not None and item in self.item_lookup:
-            element = self.item_lookup[item]
-            window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'),
-                                                                          passes=True)])
-        else:
-            window.set_project(project, [e for e in project.elements.flat_elements(types=('image', 'path', 'text'),
-                                                                                   passes=True)])
-        window.Show()
-        project.windows["jobinfo"] = window
 
     def on_item_right_click(self, event):
         """
@@ -558,7 +541,7 @@ class MeerK40t(wx.Frame):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
         widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        widget_sizer.Add(self.tree, 1,  wx.EXPAND, 0)
+        widget_sizer.Add(self.tree, 1, wx.EXPAND, 0)
         widget_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
         main_sizer.Add(widget_sizer, 5, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
@@ -750,7 +733,7 @@ class MeerK40t(wx.Frame):
             dc.SetFont(font)
             dc.SetPen(wx.BLACK_PEN)
             s = dc.GetSize() / 2
-            dc.DrawText("Current OS cannot use transformation matrix. Skipping scene draw.", s[0]-350, s[1])
+            dc.DrawText("Current OS cannot use transformation matrix. Skipping scene draw.", s[0] - 350, s[1])
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc  # need to get rid of the MemoryDC before Update() is called.
@@ -818,17 +801,20 @@ class MeerK40t(wx.Frame):
         self.post_buffer_update()
 
     def on_mouse_middle_down(self, event):
+        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
 
     def on_mouse_middle_up(self, event):
         if self.scene.HasCapture():
+            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.scene.ReleaseMouse()
         self.previous_window_position = None
         self.previous_scene_position = None
 
     def on_left_mouse_down(self, event):
+        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
@@ -837,6 +823,7 @@ class MeerK40t(wx.Frame):
 
     def on_left_mouse_up(self, event):
         if self.scene.HasCapture():
+            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.scene.ReleaseMouse()
         self.previous_window_position = None
         self.previous_scene_position = None
@@ -865,8 +852,11 @@ class MeerK40t(wx.Frame):
     def on_mouse_move(self, event):
         if not event.Dragging():
             return
+        else:
+            self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         if self.previous_window_position is None:
             return
+
         pos = event.GetPosition()
         window_position = pos.x, pos.y
         scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
@@ -885,7 +875,7 @@ class MeerK40t(wx.Frame):
         create_menu(self.project.selected)
 
     def on_right_mouse_up(self, event):
-        pass
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def default_keymap(self):
         self.project.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
@@ -1086,6 +1076,39 @@ class MeerK40t(wx.Frame):
         dc.SetPen(wx.WHITE_PEN)
         dc.DrawRectangle(0, 0, wmils, hmils)
 
+    def on_draw_selection(self, dc, draw_mode):
+        if self.project.selected is not None and self.project.selected.scene_bounds is not None:
+            linewidth = 3.0 / self.matrix.GetScaleX()
+            f = 2 * linewidth
+            g = 2 * f
+            self.selection_pen.SetWidth(linewidth)
+            dc.SetPen(self.selection_pen)
+            dc.SetBrush(wx.BLACK_BRUSH)
+            x0, y0, x1, y1 = self.project.selected.scene_bounds
+            center_x = (x0 + x1) / 2.0
+            center_y = (y0 + y1) / 2.0
+            dc.DrawLine(center_x, 0, center_x, y0)
+            dc.DrawLine(0, center_y, x0, center_y)
+            dc.DrawLine(x0, y0, x1, y0)
+            dc.DrawLine(x1, y0, x1, y1)
+            dc.DrawLine(x1, y1, x0, y1)
+            dc.DrawLine(x0, y1, x0, y0)
+            dc.SetPen(wx.TRANSPARENT_PEN)
+            dc.DrawRectangle((x0 - f, y0 - f, g, g))
+            dc.DrawRectangle((x0 - f, y1 - f, g, g))
+            dc.DrawRectangle((x1 - f, y0 - f, g, g))
+            dc.DrawRectangle((x1 - f, y1 - f, g, g))
+            dc.DrawRectangle((x0 - f, center_y - f, g, g))
+            dc.DrawRectangle((center_x - f, y0 - f, g, g))
+            dc.DrawRectangle((x1 - f, center_y - f, g, g))
+            dc.DrawRectangle((center_x - f, y1 - f, g, g))
+            if draw_mode & 128 == 0:
+                conversion, name, marks, index = self.project.units
+                dc.DrawText("%.1f%s" % (y0 / conversion, name), center_x + 50, y0 + 50)
+                dc.DrawText("%.1f%s" % (x0 / conversion, name), x0 + 50, center_y + 50)
+                dc.DrawText("%.1f%s" % ((x1-x0) / conversion, name), x1 + 50, center_y)
+                dc.DrawText("%.1f%s" % ((y1 - y0) /conversion, name), center_x, y1 + 50)
+
     def on_draw_scene(self, dc):
         self.on_draw_bed(dc)
         dc.SetPen(wx.BLACK_PEN)
@@ -1097,13 +1120,9 @@ class MeerK40t(wx.Frame):
         dc.SetPen(pen)
         if self.project is None:
             return
-
-        if self.project.selected is not None and self.project.selected.scene_bounds is not None:
-            dc.SetPen(wx.BLUE_PEN)
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x0, y0, x1, y1 = self.project.selected.scene_bounds
-            dc.DrawRectangle((x0, y0, x1 - x0, y1 - y0))
         self.renderer.render(dc, self.project.draw_mode)
+        if self.project.draw_mode & 32 == 0:
+            self.on_draw_selection(dc, self.project.draw_mode)
         if self.project.draw_mode & 8 == 0:
             dc.SetPen(wx.BLUE_PEN)
             dc.DrawLineList(self.laserpath)
@@ -1724,6 +1743,7 @@ class MappedKey:
 
     def __str__(self):
         return self.key
+
 
 class MeerK40tGui(wx.App):
     """

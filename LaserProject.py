@@ -22,7 +22,7 @@ class LaserProject:
         self.units = (39.37, "mm", 10, 0)
         self.config = None
         self.windows = {}
-        self.draw_mode = 0
+        self.draw_mode = 0  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         self.window_width = 600
         self.window_height = 600
 

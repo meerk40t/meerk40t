@@ -1,9 +1,10 @@
 # Rapid move is move performed in default mode. This implicitly converts to default mode.
-# Move does imply anything about the laser mode.
+# Move doesn't imply anything about the laser mode.
 # Cut means the laser is on for this process.
 # Shift means the laser is off for this process.
 # Simple means the move must be an octent change. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
 # COMMAND_PLOT takes a plot object with a .plot() function which generates single pixel plot commands.
+# COMMAND_RASTER takes a plot object with a .plot() function which generates raster commands.
 
 COMMAND_LASER_OFF = 1  # Turns laser off
 COMMAND_LASER_ON = 2  # Tuns laser on
@@ -38,3 +39,4 @@ COMMAND_SET_POSITION = 210  # Without moving sets the current position to the gi
 COMMAND_HOME = 300  # Homes the device
 COMMAND_LOCK = 301  # Locks the rail
 COMMAND_UNLOCK = 302  # Unlocks the rail.
+COMMAND_BEEP = 320  # Beep.
