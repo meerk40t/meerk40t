@@ -34,7 +34,7 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.2.3"
+MEERK40T_VERSION = "0.2.4"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -84,6 +84,7 @@ ID_MENU_ZOOM_SIZE = idinc.new()
 ID_MENU_HIDE_FILLS = idinc.new()
 ID_MENU_HIDE_GUIDES = idinc.new()
 ID_MENU_HIDE_GRID = idinc.new()
+ID_MENU_SCREEN_REFRESH = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
@@ -162,6 +163,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, "Hide Grid", "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, "Hide Guides", "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_FILLS, "Hide Fills", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, "Do Not Refresh", "", wx.ITEM_CHECK)
         self.main_menubar.Append(wxglade_tmp_menu, "View")
         wxglade_tmp_menu = wx.Menu()
 
@@ -197,6 +199,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(4), id=ID_MENU_HIDE_GRID)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(2), id=ID_MENU_HIDE_GUIDES)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(1), id=ID_MENU_HIDE_FILLS)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(256), id=ID_MENU_SCREEN_REFRESH)
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
@@ -237,6 +240,8 @@ class MeerK40t(wx.Frame):
         m.Check(self.project.draw_mode & 2 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.project.draw_mode & 1 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_REFRESH)
+        m.Check(self.project.draw_mode & 256 != 0)
 
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.tree)
@@ -714,7 +719,7 @@ class MeerK40t(wx.Frame):
         pass
 
     def post_buffer_update(self):
-        if not self.dirty:
+        if not self.dirty and self.project.draw_mode & 256 == 0:
             self.dirty = True
             wx.CallAfter(self.update_buffer_ui_thread)
 
