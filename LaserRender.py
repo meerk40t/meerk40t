@@ -93,6 +93,7 @@ class LaserRender:
         except AttributeError:
             matrix = Matrix()
         drawfills = draw_mode & 1 == 0
+        drawstrokes = draw_mode & 64 == 0
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         c = swizzlecolor(node.stroke)
@@ -123,7 +124,8 @@ class LaserRender:
                 self.brush.SetColour(self.color)
                 gc.SetBrush(self.brush)
                 gc.FillPath(node.cache)
-        gc.StrokePath(node.cache)
+        if drawstrokes:
+            gc.StrokePath(node.cache)
 
     def draw_text(self, node, dc, draw_mode):
         try:
