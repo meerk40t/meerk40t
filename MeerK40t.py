@@ -17,6 +17,9 @@ from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
 
+import gettext
+gettext.install('ivcm', './locale')
+
 try:
     from math import tau
 except ImportError:
@@ -105,10 +108,12 @@ ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
 
 ID_MENU_WEBPAGE = idinc.new()
+ID_MENU_ENGLISH = idinc.new()
 ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
 project = LaserProject()
+_ = wx.GetTranslation
 
 
 class MeerK40t(wx.Frame):
@@ -120,6 +125,7 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
+        _ = wx.GetTranslation
         self.SetSize((1200, 600))
         self.DragAcceptFiles(True)
         self.project = project
@@ -131,8 +137,8 @@ class MeerK40t(wx.Frame):
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
                                                 | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
 
-        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, "Examples", icons8_opened_folder_50.GetBitmap())
-        toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, "Toolbar",
+        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Examples"), icons8_opened_folder_50.GetBitmap())
+        toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Toolbar"),
                                        style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_EXT_BUTTON)
 
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
@@ -141,59 +147,68 @@ class MeerK40t(wx.Frame):
         toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap())  # "Open",
         toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
 
-        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, "Windows", icons8_opened_folder_50.GetBitmap())
+        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap())
         windows = RB.RibbonButtonBar(windows_panel)
-        windows.AddButton(ID_NAV, "Navigation", icons8_move_32.GetBitmap(), "")
-        windows.AddButton(ID_USB, "Usb", icons8_usb_connector_50.GetBitmap(), "")
-        windows.AddButton(ID_SPOOLER, "Spooler", icons8_route_50.GetBitmap(), "")
-        windows.AddButton(ID_CONTROLLER, "Controller", icons8_connected_50.GetBitmap(), "")
-        windows.AddButton(ID_PREFERENCES, "Preferences", icons8_administrative_tools_50.GetBitmap(), "")
+        windows.AddButton(ID_NAV, _("Navigation"), icons8_move_32.GetBitmap(), "")
+        windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
+        windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
+        windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
+        windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         self._ribbon.Realize()
 
         self.CenterOnScreen()
-
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, "Open Project", "")
-        wxglade_tmp_menu.Append(ID_MENU_IMPORT, "Import File", "")
+        wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, _("Open Project"), "")
+        wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_EXIT, "Exit", "")
-        self.main_menubar.Append(wxglade_tmp_menu, "File")
+        wxglade_tmp_menu.Append(ID_MENU_EXIT, _("Exit"), "")
+        self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, "Zoom Out", "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, "Zoom In", "")
-        wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, "Zoom To Size", "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom Out"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_IN, _("Zoom In"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, "Hide Grid", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, "Hide Guides", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_FILLS, "Hide Fills", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_STROKES, "Hide Strokes", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_LASERPATH, "Hide Laserpath", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_RETICLE, "Hide Reticle", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_HIDE_SELECTION, "Hide Selection", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, "Do Not Refresh", "", wx.ITEM_CHECK)
-        self.main_menubar.Append(wxglade_tmp_menu, "View")
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
+        self.main_menubar.Append(wxglade_tmp_menu, _("View"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, "Preferences", "")
-        wxglade_tmp_menu.Append(ID_MENU_ROTARY, "Rotary Settings", "")
-        wxglade_tmp_menu.Append(ID_MENU_KEYMAP, "Keymap Settings", "")
+        wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, _("Preferences"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
+        wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
         # wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
-        wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, "Alignment Ally", "")
+        wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
 
-        wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, "Navigation", "")
-        wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, "Controller", "")
-        wxglade_tmp_menu.Append(ID_MENU_USB, "USB", "")
-        wxglade_tmp_menu.Append(ID_MENU_SPOOLER, "Job Spooler", "")
-        wxglade_tmp_menu.Append(ID_MENU_JOB, "Execute Job", "")
+        wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
+        wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
+        wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
+        wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
+        wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
 
-        self.main_menubar.Append(wxglade_tmp_menu, "Windows")
+        self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(ID_MENU_WEBPAGE, "Webpage", "")
-        self.main_menubar.Append(wxglade_tmp_menu, "Help")
+        wxglade_tmp_menu.Append(ID_MENU_WEBPAGE, _("Webpage"), "")
+        self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
+
+        wxglade_tmp_menu = wx.Menu()
+        for file in os.listdir('.\\locale'):
+            filename = str(file)
+
+            if filename.endswith('.mo'):
+                filename = filename[:-3]
+                m = wxglade_tmp_menu.Append(wx.ID_ANY, filename, "")
+                self.Bind(wx.EVT_MENU, self.language_to(filename), id=m.GetId())
+        self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
@@ -229,6 +244,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.open_job, id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
+        self.Bind(wx.EVT_MENU, self.language_to("English"), id=ID_MENU_ENGLISH)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.open_job, id=ID_JOB)
@@ -505,13 +521,13 @@ class MeerK40t(wx.Frame):
         tree.ExpandAll()
 
     def on_usb_status(self, value):
-        self.main_statusbar.SetStatusText("Usb: %s" % value, 0)
+        self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
 
     def on_control_state(self, value):
-        self.main_statusbar.SetStatusText("Controller: %s" % get_state_string_from_state(value), 1)
+        self.main_statusbar.SetStatusText(_("Controller: %s" % get_state_string_from_state(value)), 1)
 
     def on_writer_state(self, value):
-        self.main_statusbar.SetStatusText("Spooler: %s" % get_state_string_from_state(value), 2)
+        self.main_statusbar.SetStatusText(_("Spooler: %s" % get_state_string_from_state(value)), 2)
 
     def on_writer_mode(self, state):
         if state == 0:
@@ -523,8 +539,8 @@ class MeerK40t(wx.Frame):
     def on_close(self, event):
         if self.project.writer.thread.state == THREAD_STATE_STARTED or \
                 self.project.controller.thread.state == THREAD_STATE_STARTED:
-            dlg = wx.MessageDialog(None, "Issue emergency stop and close?",
-                                   'Processes are still running.', wx.OK | wx.CANCEL | wx.ICON_WARNING)
+            dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
+                                   _('Processes are still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
             if result == wx.ID_OK:
@@ -551,7 +567,7 @@ class MeerK40t(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle("MeerK40t v%s" % MEERK40T_VERSION)
+        self.SetTitle(_("MeerK40t v%s" % MEERK40T_VERSION))
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
@@ -606,8 +622,8 @@ class MeerK40t(wx.Frame):
                 rejected_files.append(pathname)
         if rejected != 0:
             reject = "\n".join(rejected_files)
-            err_msg = "Some files were unrecognized:\n%s" % reject
-            dlg = wx.MessageDialog(None, err_msg, 'Error encountered', wx.OK | wx.ICON_ERROR)
+            err_msg = _("Some files were unrecognized:\n%s" % reject)
+            dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
         self.refresh_tree_elements()
@@ -762,7 +778,7 @@ class MeerK40t(wx.Frame):
             dc.SetFont(font)
             dc.SetPen(wx.BLACK_PEN)
             s = dc.GetSize() / 2
-            dc.DrawText("Current OS cannot use transformation matrix. Skipping scene draw.", s[0] - 350, s[1])
+            dc.DrawText(_("Current OS cannot use transformation matrix. Skipping scene draw."), s[0] - 350, s[1])
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc  # need to get rid of the MemoryDC before Update() is called.
@@ -1167,7 +1183,7 @@ class MeerK40t(wx.Frame):
                 "Scalable Vector Graphics svg (*.svg)|*.svg|" \
                 "Engrave egv (*.egv)|*.egv|" \
                 "Portable Network Graphics png (*.png)|*.png"
-        with wx.FileDialog(self, "Open", wildcard=files,
+        with wx.FileDialog(self, _("Open"), wildcard=files,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
@@ -1179,7 +1195,7 @@ class MeerK40t(wx.Frame):
                 "Scalable Vector Graphics svg (*.svg)|*.svg|" \
                 "Engrave egv (*.egv)|*.egv|" \
                 "Portable Ne/twork Graphics png (*.png)|*.png"
-        with wx.FileDialog(self, "Open", wildcard=files,
+        with wx.FileDialog(self, _("Open"), wildcard=files,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
@@ -1377,6 +1393,22 @@ class MeerK40t(wx.Frame):
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
 
+    def language_to(self, lang):
+        """
+        Returns a function to change the language to the language specified.
+        :param lang: language to switch to
+        :return:
+        """
+        def update_language(event):
+            """
+            Update the language to the requested one.
+            """
+            mylocale = wx.Locale()
+            mylocale.AddCatalogLookupPathPrefix('.')
+            mylocale.AddCatalog(".\\locale\\%s.mo" % lang)
+
+        return update_language
+
 # end of class MeerK40t
 
 
@@ -1389,64 +1421,64 @@ def create_menu(element):
     t = element.type
     if t != 'root':
         gui.Bind(wx.EVT_MENU, menu_remove(element),
-                 menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL))
         if t == 'group':
             fpath = element['filepath']
             if fpath is not None:
                 name = os.path.basename(fpath)
                 gui.Bind(wx.EVT_MENU, menu_reload(element),
-                         menu.Append(wx.ID_ANY, "Reload %s" % name, "", wx.ITEM_NORMAL))
+                         menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
                 if len(element) > 1:
                     gui.Bind(wx.EVT_MENU, menu_reverse_order(element),
-                             menu.Append(wx.ID_ANY, "Reverse Layer Order", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_hull(element), menu.Append(wx.ID_ANY, "Convex Hull", "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, menu_execute(element), menu.Append(wx.ID_ANY, "Execute Job", "", wx.ITEM_NORMAL))
+                             menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_hull(element), menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, menu_execute(element), menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_reset(element),
-                 menu.Append(wx.ID_ANY, "Reset User Changes", "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
         path_scale_sub_menu = wx.Menu()
         for i in range(1, 25):
             gui.Bind(wx.EVT_MENU, menu_scale(element, 6.0 / float(i)),
-                     path_scale_sub_menu.Append(wx.ID_ANY, "Scale %.0f%%" % (600.0 / float(i)), "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Scale", path_scale_sub_menu)
+                     path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, _("Scale"), path_scale_sub_menu)
         path_rotate_sub_menu = wx.Menu()
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
             gui.Bind(wx.EVT_MENU, menu_rotate(element, 1.0 / float(i)),
-                     path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate \u03c4/%d, %.0f°" % (i, angle.as_degrees), "",
+                     path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)), "",
                                                  wx.ITEM_NORMAL))
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
             gui.Bind(wx.EVT_MENU, menu_rotate(element, -1.0 / float(i)),
-                     path_rotate_sub_menu.Append(wx.ID_ANY, u"Rotate -\u03c4/%d, -%.0f°" % (i, angle.as_degrees), "",
+                     path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
                                                  wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Rotate", path_rotate_sub_menu)
+        menu.Append(wx.ID_ANY, _("Rotate"), path_rotate_sub_menu)
     if element.contains_type('path'):
         vector_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_subpath(element),
-                 vector_menu.Append(wx.ID_ANY, "Break Subpaths", "", wx.ITEM_NORMAL))
+                 vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_raster(element),
-                 vector_menu.Append(wx.ID_ANY, "Make Raster Image", "", wx.ITEM_NORMAL))
+                 vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_reify(element),
-                 menu.Append(wx.ID_ANY, "Reify User Changes", "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Vector", vector_menu)
+                 menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, _("Vector"), vector_menu)
     if element.contains_type('image'):
         image_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_raster_actualize(element),
-                 image_menu.Append(wx.ID_ANY, "Actualize Pixels", "", wx.ITEM_NORMAL))
+                 image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_dither(element),
-                 image_menu.Append(wx.ID_ANY, "Dither to 1 bit", "", wx.ITEM_NORMAL))
+                 image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_raster_native(element),
-                 image_menu.Append(wx.ID_ANY, "Set to Native", "", wx.ITEM_NORMAL))
+                 image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
         image_sub_menu_step = wx.Menu()
         for i in range(1, 8):
             gui.Bind(wx.EVT_MENU, menu_step(element, i),
-                     image_sub_menu_step.Append(wx.ID_ANY, "Step %d" % i, "", wx.ITEM_NORMAL))
-        image_menu.Append(wx.ID_ANY, "Step", image_sub_menu_step)
-        menu.Append(wx.ID_ANY, "Raster", image_menu)
+                     image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+        image_menu.Append(wx.ID_ANY, _("Step"), image_sub_menu_step)
+        menu.Append(wx.ID_ANY, _("Raster"), image_menu)
     if element.contains_type('text'):
         text_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_remove(element, types=(SVGText)),
-                 text_menu.Append(wx.ID_ANY, "Remove Text", "", wx.ITEM_NORMAL))
+                 text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, "Text", text_menu)
     if menu.MenuItemCount != 0:
         gui.PopupMenu(menu)
@@ -1504,7 +1536,7 @@ def menu_raster_actualize(element):
     def specific(event):
         for e in element.flat_elements(types=('image')):
             e.make_actual()
-        project("elements", 0)
+        project(_("elements"), 0)
 
     return specific
 
@@ -1806,15 +1838,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     try:
         import datetime
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-        print("Saving Log: %s" % filename)
+        print(_("Saving Log: %s" % filename))
         with open(filename, "w") as file:
-            file.write("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION)
-            file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
+            file.write(_("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION))
+            file.write(("Please report to: %s\n\n" % MEERK40T_ISSUES))
             file.write(err_msg)
             print(file)
     except:  # I already crashed once, if there's another here just ignore it.
         pass
-    dlg = wx.MessageDialog(None, err_msg, 'Error encountered', wx.OK | wx.ICON_ERROR)
+    dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
     dlg.ShowModal()
     dlg.Destroy()
 

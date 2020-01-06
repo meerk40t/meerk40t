@@ -93,6 +93,11 @@ class LaserNode(list):
             self.element.values = {key: value}
 
     def __getitem__(self, item):
+        if isinstance(item, tuple):
+            try:
+                return self.element.values[item[0]]
+            except KeyError:
+                return item[1]
         try:
             return self.element.values[item]
         except KeyError:
@@ -134,10 +139,14 @@ class LaserNode(list):
                 return string
             return string[:97] + '...'
         if isinstance(self.element, Path):
+            try:
+                h = str(hash(self.element.d()))
+            except TypeError:
+                h = "None"
             name = "Path @%.1f mm/s %.1fx path=%s" % \
                    (self.speed,
                     self.element.transform.value_scale_x(),
-                    str(hash(self.element.d())))
+                    h)
             if len(name) >= 100:
                 name = name[:97] + '...'
             return name

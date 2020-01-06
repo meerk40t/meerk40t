@@ -1,6 +1,8 @@
 import wx
 from LaserCommandConstants import *
 from icons import icons8_laser_beam_52, icons8_route_50
+from svgelements import *
+_ = wx.GetTranslation
 
 
 class JobInfo(wx.Frame):
@@ -14,7 +16,7 @@ class JobInfo(wx.Frame):
         self.elements_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.operations_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.button_job_spooler = wx.BitmapButton(self, wx.ID_ANY, icons8_route_50.GetBitmap())
-        self.button_writer_control = wx.Button(self, wx.ID_ANY, "Start Job")
+        self.button_writer_control = wx.Button(self, wx.ID_ANY, _("Start Job"))
         self.button_writer_control.SetBitmap(icons8_laser_beam_52.GetBitmap())
         self.button_writer_control.SetFont(
             wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
@@ -22,19 +24,19 @@ class JobInfo(wx.Frame):
         # Menu Bar
         self.JobInfo_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Trace Simple", "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Trace Hull", "")
-        self.JobInfo_menubar.Append(wxglade_tmp_menu, "Run")
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Simple"), "")
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Hull"), "")
+        self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Run"))
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Start Spooler", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Home After", "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Beep After", "", wx.ITEM_CHECK)
-        self.JobInfo_menubar.Append(wxglade_tmp_menu, "Automatic")
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep After"), "", wx.ITEM_CHECK)
+        self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Automatic"))
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Home", "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Wait", "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, "Beep", "")
-        self.JobInfo_menubar.Append(wxglade_tmp_menu, "Add")
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Home"), "")
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Wait"), "")
+        wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep"), "")
+        self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Add"))
         self.SetMenuBar(self.JobInfo_menubar)
         # Menu Bar end
 
@@ -75,6 +77,7 @@ class JobInfo(wx.Frame):
             self.elements.append(home)
 
         for e in self.elements:
+            t = e.type
             try:
                 if e.needs_actualization():
                     def actualize():
@@ -85,6 +88,28 @@ class JobInfo(wx.Frame):
                             except AttributeError:
                                 pass
                     self.operations.append(actualize)
+                    break
+            except AttributeError:
+                pass
+            try:
+                if t == 'text':
+                    def convert_text():
+                        import freetype
+                        face = freetype.Face("Vera.ttf")
+                        for e in self.elements:
+                            try:
+                                if e.type != 'text':
+                                    continue
+                            except AttributeError:
+                                continue
+                            face.set_char_size(int(e['font_size', 12]))
+                            text = e.element.text
+                            e.element = Path(**e.element.values)
+                            for character in text:
+                                face.load_char(character)
+                                outline = face.glyph.outline
+                                e.element += abs(Polygon(outline.points) * "translate(50,0)")
+                    self.operations.append(convert_text)
                     break
             except AttributeError:
                 pass
@@ -101,19 +126,19 @@ class JobInfo(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: JobInfo.__set_properties
         self.SetTitle("Job")
-        self.elements_listbox.SetToolTip("Element List")
-        self.operations_listbox.SetToolTip("Operation List")
-        self.button_writer_control.SetToolTip("Start the Job")
+        self.elements_listbox.SetToolTip(_("Element List"))
+        self.operations_listbox.SetToolTip(_("Operation List"))
+        self.button_writer_control.SetToolTip(_("Start the Job"))
 
         self.button_job_spooler.SetMinSize((50, 50))
-        self.button_job_spooler.SetToolTip("View Spooler")
+        self.button_job_spooler.SetToolTip(_("View Spooler"))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: JobInfo.__do_layout
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Elements and Operations"), wx.HORIZONTAL)
+        sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Elements and Operations")), wx.HORIZONTAL)
         sizer_1.Add(self.elements_listbox, 10, wx.EXPAND, 0)
         sizer_1.Add(self.operations_listbox, 3, wx.EXPAND, 0)
         sizer_2.Add(sizer_1, 10, wx.EXPAND, 0)
@@ -190,9 +215,9 @@ class JobInfo(wx.Frame):
         if operations is not None and len(operations) != 0:
             self.operations_listbox.InsertItems([name_str(e) for e in self.operations], 0)
 
-            self.button_writer_control.SetLabelText("Execute Operations")
+            self.button_writer_control.SetLabelText(_("Execute Operations"))
             self.button_writer_control.SetBackgroundColour(wx.Colour(255, 255, 102))
         else:
-            self.button_writer_control.SetLabelText("Start Job")
+            self.button_writer_control.SetLabelText(_("Start Job"))
             self.button_writer_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.Refresh()

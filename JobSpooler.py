@@ -2,7 +2,7 @@ import wx
 
 from ThreadConstants import *
 from icons import icons8_connected_50, icons8_play_50
-
+_ = wx.GetTranslation
 
 class JobSpooler(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -13,10 +13,10 @@ class JobSpooler(wx.Frame):
         self.list_job_spool = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.panel_controller = wx.Panel(self, wx.ID_ANY, style=wx.BORDER_RAISED)
         self.gauge_controller = wx.Gauge(self.panel_controller, wx.ID_ANY, 100)
-        self.checkbox_limit_buffer = wx.CheckBox(self.panel_controller, wx.ID_ANY, "Limit Write Buffer")
+        self.checkbox_limit_buffer = wx.CheckBox(self.panel_controller, wx.ID_ANY, _("Limit Write Buffer"))
         self.text_packet_buffer = wx.TextCtrl(self.panel_controller, wx.ID_ANY, "")
         self.spin_packet_buffer_max = wx.SpinCtrl(self.panel_controller, wx.ID_ANY, "1500", min=1, max=100000)
-        self.button_writer_control = wx.Button(self, wx.ID_ANY, "Start Job")
+        self.button_writer_control = wx.Button(self, wx.ID_ANY, _("Start Job"))
         self.button_controller = wx.BitmapButton(self, wx.ID_ANY, icons8_connected_50.GetBitmap())
 
         self.__set_properties()
@@ -69,15 +69,15 @@ class JobSpooler(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: JobSpooler.__set_properties
         self.SetTitle("Spooler")
-        self.list_job_spool.AppendColumn("#", format=wx.LIST_FORMAT_LEFT, width=29)
-        self.list_job_spool.AppendColumn("Name", format=wx.LIST_FORMAT_LEFT, width=90)
-        self.list_job_spool.AppendColumn("Status", format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_spool.AppendColumn("Device", format=wx.LIST_FORMAT_LEFT, width=53)
-        self.list_job_spool.AppendColumn("Type", format=wx.LIST_FORMAT_LEFT, width=50)
-        self.list_job_spool.AppendColumn("Speed", format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_spool.AppendColumn("Settings", format=wx.LIST_FORMAT_LEFT, width=82)
-        self.list_job_spool.AppendColumn("Submitted", format=wx.LIST_FORMAT_LEFT, width=70)
-        self.list_job_spool.AppendColumn("Time Estimate", format=wx.LIST_FORMAT_LEFT, width=92)
+        self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=29)
+        self.list_job_spool.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=90)
+        self.list_job_spool.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
+        self.list_job_spool.AppendColumn(_("Device"), format=wx.LIST_FORMAT_LEFT, width=53)
+        self.list_job_spool.AppendColumn(_("Type"), format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_job_spool.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=73)
+        self.list_job_spool.AppendColumn(_("Settings"), format=wx.LIST_FORMAT_LEFT, width=82)
+        self.list_job_spool.AppendColumn(_("Submitted"), format=wx.LIST_FORMAT_LEFT, width=70)
+        self.list_job_spool.AppendColumn(_("Time Estimate"), format=wx.LIST_FORMAT_LEFT, width=92)
         self.checkbox_limit_buffer.SetValue(1)
         self.panel_controller.SetBackgroundColour(wx.Colour(204, 204, 204))
         self.button_writer_control.SetBackgroundColour(wx.Colour(102, 255, 102))
@@ -126,30 +126,30 @@ class JobSpooler(wx.Frame):
                         t = "function"
                     self.list_job_spool.SetItem(m, 1, str(e))
                     if m == 0:
-                        self.list_job_spool.SetItem(m, 2, "Executing")
+                        self.list_job_spool.SetItem(m, 2, _("Executing"))
                     else:
-                        self.list_job_spool.SetItem(m, 2, "Queued")
+                        self.list_job_spool.SetItem(m, 2, _("Queued"))
                     self.list_job_spool.SetItem(m, 3, self.project.writer.board)
                     settings = []
                     if t == 'path':
-                        self.list_job_spool.SetItem(m, 4, "Path")
-                        settings.append("power=%.0f" % (e.power))
+                        self.list_job_spool.SetItem(m, 4, _("Path"))
+                        settings.append(_("power=%.0f" % (e.power)))
                     elif t == 'image':
-                        self.list_job_spool.SetItem(m, 4, "Raster")
-                        settings.append("step=%d" % (e.raster_step))
+                        self.list_job_spool.SetItem(m, 4, _("Raster"))
+                        settings.append(_("step=%d" % (e.raster_step)))
                         if e['overscan'] is not None:
                             try:
-                                settings.append("overscan=%d" % int(e['overscan']))
+                                settings.append(_("overscan=%d" % int(e['overscan'])))
                             except ValueError:
                                 pass
                     # elif isinstance(e, RawElement):
                     #     self.list_job_spool.SetItem(m, 4, "Raw")
                     if t in ('image', 'path', 'text'):
-                        self.list_job_spool.SetItem(m, 5, "%.1fmm/s" % (e.speed))
+                        self.list_job_spool.SetItem(m, 5, _("%.1fmm/s" % (e.speed)))
                     settings = " ".join(settings)
                     self.list_job_spool.SetItem(m, 6, settings)
-                    self.list_job_spool.SetItem(m, 7, "n/a")
-                    self.list_job_spool.SetItem(m, 8, "unknown")
+                    self.list_job_spool.SetItem(m, 7, _("n/a"))
+                    self.list_job_spool.SetItem(m, 8, _("unknown"))
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         event.Skip()
@@ -164,9 +164,9 @@ class JobSpooler(wx.Frame):
         except IndexError:
             return
         menu = wx.Menu()
-        convert = menu.Append(wx.ID_ANY, "Remove %s" % str(element)[:16], "", wx.ITEM_NORMAL)
+        convert = menu.Append(wx.ID_ANY, _("Remove %s" % str(element)[:16]), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
-        convert = menu.Append(wx.ID_ANY, "Clear All", "", wx.ITEM_NORMAL)
+        convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
         self.PopupMenu(menu)
         menu.Destroy()
@@ -229,16 +229,16 @@ class JobSpooler(wx.Frame):
         state = self.project.writer.thread.state
         if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
             self.button_writer_control.SetBackgroundColour("#009900")
-            self.button_writer_control.SetLabel("Start Job")
+            self.button_writer_control.SetLabel(_("Start Job"))
         elif state == THREAD_STATE_PAUSED:
             self.button_writer_control.SetBackgroundColour("#00dd00")
-            self.button_writer_control.SetLabel("Resume Job")
+            self.button_writer_control.SetLabel(_("Resume Job"))
         elif state == THREAD_STATE_STARTED:
             self.button_writer_control.SetBackgroundColour("#00ff00")
-            self.button_writer_control.SetLabel("Pause Job")
+            self.button_writer_control.SetLabel(_("Pause Job"))
         elif state == THREAD_STATE_ABORT:
             self.button_writer_control.SetBackgroundColour("#00ffff")
-            self.button_writer_control.SetLabel("Manual Reset")
+            self.button_writer_control.SetLabel(_("Manual Reset"))
 
     def post_update(self):
         if not self.dirty:

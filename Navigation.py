@@ -7,7 +7,7 @@ import time
 
 import wx
 from icons import *
-
+_ = wx.GetTranslation
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -21,7 +21,7 @@ class Navigation(wx.Frame):
         self.SetSize((237, 401))
         self.button_top = wx.BitmapButton(self, wx.ID_ANY, icons8up.GetBitmap())
         self.button_left = wx.BitmapButton(self, wx.ID_ANY, icons8_left.GetBitmap())
-        self.button_home = wx.BitmapButton(self, wx.ID_ANY,icons8_home_filled_50.GetBitmap())
+        self.button_home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         self.button_right = wx.BitmapButton(self, wx.ID_ANY, icons8_right.GetBitmap())
         self.button_bottom = wx.BitmapButton(self, wx.ID_ANY, icons8_down.GetBitmap())
         self.button_unlock = wx.BitmapButton(self, wx.ID_ANY,icons8_padlock_50.GetBitmap())

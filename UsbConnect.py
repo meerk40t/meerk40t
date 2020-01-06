@@ -1,4 +1,5 @@
 import wx
+_ = wx.GetTranslation
 
 
 class UsbConnect(wx.Frame):
@@ -52,7 +53,7 @@ class UsbConnect(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: UsbConnect.__set_properties
-        self.SetTitle("UsbConnect")
+        self.SetTitle(_("UsbConnect"))
         # end wxGlade
 
     def __do_layout(self):

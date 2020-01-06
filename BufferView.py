@@ -7,6 +7,8 @@ import wx
 # begin wxGlade: extracode
 # end wxGlade
 
+_ = wx.GetTranslation
+
 
 class BufferView(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -44,7 +46,7 @@ class BufferView(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: BufferView.__set_properties
-        self.SetTitle("BufferView")
+        self.SetTitle(_("BufferView"))
         self.text_buffer_length.SetMinSize((165, 23))
         # end wxGlade
 
@@ -52,7 +54,7 @@ class BufferView(wx.Frame):
         # begin wxGlade: BufferView.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "Buffer")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("Buffer"))
         sizer_5.Add(label_8, 0, 0, 0)
         sizer_5.Add(self.text_buffer_length, 10, 0, 0)
         sizer_1.Add(sizer_5, 0, wx.EXPAND, 0)

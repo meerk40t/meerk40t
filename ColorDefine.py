@@ -3,6 +3,8 @@ import wx
 import LaserRender
 from LaserProject import *
 
+_ = wx.GetTranslation
+
 
 class ColorDefine(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -13,11 +15,11 @@ class ColorDefine(wx.Frame):
         self.list_colors = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=240.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
-        self.checkbox_custom_d_ratio = wx.CheckBox(self, wx.ID_ANY, "Custom D-Ratio")
+        self.checkbox_custom_d_ratio = wx.CheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
         self.spin_speed_dratio = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.261", min=0.0, max=1.0)
         self.spin_passes = wx.SpinCtrl(self, wx.ID_ANY, "1", min=0, max=63)
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=0, max=63)
-        self.combo_raster_direction = wx.ComboBox(self, wx.ID_ANY, choices=["Top To Bottom", "Bottom To Top"], style=wx.CB_DROPDOWN)
+        self.combo_raster_direction = wx.ComboBox(self, wx.ID_ANY, choices=[_("Top To Bottom"), _("Bottom To Top")], style=wx.CB_DROPDOWN)
 
         self.__set_properties()
         self.__do_layout()
@@ -46,28 +48,28 @@ class ColorDefine(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: ColorDefine.__set_properties
-        self.SetTitle("ColorDefine")
-        self.list_colors.AppendColumn("Color", format=wx.LIST_FORMAT_LEFT, width=75)
-        self.list_colors.AppendColumn("Speed", format=wx.LIST_FORMAT_LEFT, width=70)
-        self.list_colors.AppendColumn("Power", format=wx.LIST_FORMAT_LEFT, width=63)
-        self.list_colors.AppendColumn("D-Ratio", format=wx.LIST_FORMAT_LEFT, width=58)
-        self.list_colors.AppendColumn("Passes", format=wx.LIST_FORMAT_LEFT, width=46)
-        self.list_colors.AppendColumn("Step", format=wx.LIST_FORMAT_LEFT, width=39)
-        self.list_colors.AppendColumn("Direction", format=wx.LIST_FORMAT_LEFT, width=87)
+        self.SetTitle(_("ColorDefine"))
+        self.list_colors.AppendColumn(_("Color"), format=wx.LIST_FORMAT_LEFT, width=75)
+        self.list_colors.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=70)
+        self.list_colors.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=63)
+        self.list_colors.AppendColumn(_("D-Ratio"), format=wx.LIST_FORMAT_LEFT, width=58)
+        self.list_colors.AppendColumn(_("Passes"), format=wx.LIST_FORMAT_LEFT, width=46)
+        self.list_colors.AppendColumn(_("Step"), format=wx.LIST_FORMAT_LEFT, width=39)
+        self.list_colors.AppendColumn(_("Direction"), format=wx.LIST_FORMAT_LEFT, width=87)
         self.spin_speed_set.SetMinSize((100, 23))
-        self.spin_speed_set.SetToolTip("Speed at which to perform the action in mm/s.")
+        self.spin_speed_set.SetToolTip(_("Speed at which to perform the action in mm/s."))
         self.spin_power_set.SetMinSize((100, 23))
-        self.spin_power_set.SetToolTip("1000 always on. 500 it's half power (fire every other step). This is software PPI control.")
-        self.checkbox_custom_d_ratio.SetToolTip("Enables the ability to modify the diagonal ratio.")
+        self.spin_power_set.SetToolTip(_("1000 always on. 500 it's half power (fire every other step). This is software PPI control."))
+        self.checkbox_custom_d_ratio.SetToolTip(_("Enables the ability to modify the diagonal ratio."))
         self.spin_speed_dratio.SetMinSize((100, 23))
-        self.spin_speed_dratio.SetToolTip("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step.")
+        self.spin_speed_dratio.SetToolTip(_("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step."))
         self.spin_speed_dratio.Enable(False)
         self.spin_speed_dratio.SetIncrement(0.01)
         self.spin_passes.SetMinSize((100, 23))
-        self.spin_passes.SetToolTip("How many times should this action be performed?")
+        self.spin_passes.SetToolTip(_("How many times should this action be performed?"))
         self.spin_step_size.SetMinSize((100, 23))
-        self.spin_step_size.SetToolTip("Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch.")
-        self.combo_raster_direction.SetToolTip("Direction to perform a raster")
+        self.spin_step_size.SetToolTip(_("Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch."))
+        self.combo_raster_direction.SetToolTip(_("Direction to perform a raster"))
         self.combo_raster_direction.SetSelection(0)
         # end wxGlade
 
@@ -76,29 +78,29 @@ class ColorDefine(wx.Frame):
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         grid_sizer_1 = wx.FlexGridSizer(6, 3, 10, 10)
         sizer_1.Add(self.list_colors, 0, wx.EXPAND, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "Speed")
+        label_1 = wx.StaticText(self, wx.ID_ANY, _("Speed"))
         grid_sizer_1.Add(label_1, 0, 0, 0)
         grid_sizer_1.Add(self.spin_speed_set, 0, 0, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, "mm/s")
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         grid_sizer_1.Add(label_2, 0, 0, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, "Power")
+        label_3 = wx.StaticText(self, wx.ID_ANY, _("Power"))
         grid_sizer_1.Add(label_3, 0, 0, 0)
         grid_sizer_1.Add(self.spin_power_set, 0, 0, 0)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "ppi")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("ppi"))
         grid_sizer_1.Add(label_8, 0, 0, 0)
         grid_sizer_1.Add(self.checkbox_custom_d_ratio, 0, 0, 0)
         grid_sizer_1.Add(self.spin_speed_dratio, 0, 0, 0)
         grid_sizer_1.Add((0, 0), 0, 0, 0)
-        label_6 = wx.StaticText(self, wx.ID_ANY, "Passes")
+        label_6 = wx.StaticText(self, wx.ID_ANY, _("Passes"))
         grid_sizer_1.Add(label_6, 0, 0, 0)
         grid_sizer_1.Add(self.spin_passes, 0, 0, 0)
         grid_sizer_1.Add((0, 0), 0, 0, 0)
-        label_7 = wx.StaticText(self, wx.ID_ANY, "Raster Step")
+        label_7 = wx.StaticText(self, wx.ID_ANY, _("Raster Step"))
         grid_sizer_1.Add(label_7, 0, 0, 0)
         grid_sizer_1.Add(self.spin_step_size, 0, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, " mil")
+        label_4 = wx.StaticText(self, wx.ID_ANY, _(" mil"))
         grid_sizer_1.Add(label_4, 0, 0, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, "Raster Direction")
+        label_5 = wx.StaticText(self, wx.ID_ANY, _("Raster Direction"))
         grid_sizer_1.Add(label_5, 0, 0, 0)
         grid_sizer_1.Add(self.combo_raster_direction, 0, 0, 0)
         grid_sizer_1.Add((0, 0), 0, 0, 0)
@@ -119,9 +121,9 @@ class ColorDefine(wx.Frame):
             elif isinstance(key, str):
                 m = self.list_colors.InsertItem(i, key)
             elif key is None:
-                m = self.list_colors.InsertItem(i, "Default")
+                m = self.list_colors.InsertItem(i, _("Default"))
             else:
-                m = self.list_colors.InsertItem(i, "Error")
+                m = self.list_colors.InsertItem(i, _("Error"))
             i += 1
             if VARIABLE_NAME_SPEED in action:
                 self.list_colors.SetItem(m, 1, str(action[VARIABLE_NAME_SPEED]))

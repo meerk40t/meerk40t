@@ -1,0 +1,1023 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-01-05 18:09-0800\n"
+"PO-Revision-Date: 2020-01-05 22:01-0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"X-Generator: Poedit 2.2.4\n"
+
+#: Alignment.py:18
+msgid "Vertical Alignment Finished"
+msgstr "adf"
+
+#: Alignment.py:21
+msgid "Horizontal Alignment Finished"
+msgstr "adf"
+
+#: Alignment.py:73
+msgid "Alignment."
+msgstr "adf"
+
+#: Alignment.py:74
+msgid "Perform vertical near-far alignment test"
+msgstr "adf"
+
+#: Alignment.py:77
+msgid "Perform a vertical line alignment test"
+msgstr "adf"
+
+#: Alignment.py:80
+msgid "How far down should we move to test?"
+msgstr "adsf"
+
+#: Alignment.py:83 Alignment.py:97
+msgid ""
+"Heavily misaligned mirrors will need more power to see the line. Once you "
+"can see the line. Turn this down."
+msgstr "adsf"
+
+#: Alignment.py:84
+msgid "We are done with vertical alignment."
+msgstr "asdf"
+
+#: Alignment.py:85
+msgid "Perform horizontal near-far alignment test"
+msgstr "sadf"
+
+#: Alignment.py:89
+msgid "Perform horizontal line alignment test"
+msgstr "asdf"
+
+#: Alignment.py:93
+msgid "How far right should we move to test?"
+msgstr "asdf"
+
+#: Alignment.py:100
+msgid "Perform 4 corners confirmation test"
+msgstr "asdf"
+
+#: Alignment.py:104
+msgid "Perform square confirmation test"
+msgstr "adsf"
+
+#: Alignment.py:120
+msgid ""
+"You are not centering. The misalignment increases over distance.\n"
+"Get the beam to hit the same point regardless of distance. (Usually not the "
+"center)\n"
+"All beam points should overlap at exactly 1 point, when misalignment is "
+"zero.\n"
+"The overlap point should be nearer to the close point. Aim for that. "
+"Repeat.\n"
+msgstr "asdf\n"
+
+#: Alignment.py:128
+msgid "Testing width in mm"
+msgstr "asdf"
+
+#: Alignment.py:134 Alignment.py:150
+msgid "Testing power"
+msgstr "asdf"
+
+#: Alignment.py:139
+msgid "Get the movement of the beam going right to overlap. "
+msgstr "asdf"
+
+#: Alignment.py:145
+msgid "Testing height in mm"
+msgstr "asdf"
+
+#: BufferView.py:49
+msgid "BufferView"
+msgstr "asdf"
+
+#: BufferView.py:57 Controller.py:156
+msgid "Buffer"
+msgstr "asdf"
+
+#: ColorDefine.py:18 ElementProperty.py:16
+msgid "Custom D-Ratio"
+msgstr "asdf"
+
+#: ColorDefine.py:22 ElementProperty.py:20
+msgid "Top To Bottom"
+msgstr "asdf"
+
+#: ColorDefine.py:22 ElementProperty.py:20
+msgid "Bottom To Top"
+msgstr "asdf"
+
+#: ColorDefine.py:51
+msgid "ColorDefine"
+msgstr "fafssf"
+
+#: ColorDefine.py:52
+msgid "Color"
+msgstr "sdfa"
+
+#: ColorDefine.py:53 ColorDefine.py:81 ElementProperty.py:117 JobSpooler.py:77
+msgid "Speed"
+msgstr "stss"
+
+#: ColorDefine.py:54 ColorDefine.py:86 ElementProperty.py:122
+msgid "Power"
+msgstr ""
+
+#: ColorDefine.py:55
+msgid "D-Ratio"
+msgstr ""
+
+#: ColorDefine.py:56 ColorDefine.py:94 ElementProperty.py:130
+msgid "Passes"
+msgstr ""
+
+#: ColorDefine.py:57 MeerK40t.py:1444
+msgid "Step"
+msgstr ""
+
+#: ColorDefine.py:58
+msgid "Direction"
+msgstr ""
+
+#: ColorDefine.py:60 ElementProperty.py:80
+msgid "Speed at which to perform the action in mm/s."
+msgstr ""
+
+#: ColorDefine.py:62 ElementProperty.py:83
+msgid ""
+"1000 always on. 500 it's half power (fire every other step). This is "
+"software PPI control."
+msgstr ""
+
+#: ColorDefine.py:63 ElementProperty.py:84
+msgid "Enables the ability to modify the diagonal ratio."
+msgstr ""
+
+#: ColorDefine.py:65 ElementProperty.py:87
+msgid ""
+"Diagonal ratio is the ratio of additional time needed to perform a diagonal "
+"step rather than an orthogonal step."
+msgstr ""
+
+#: ColorDefine.py:69 ElementProperty.py:91
+msgid "How many times should this action be performed?"
+msgstr ""
+
+#: ColorDefine.py:71 ElementProperty.py:94
+msgid ""
+"Scan gap / step size, is the distance between scanlines in a raster engrave. "
+"Distance here is in 1/1000th of an inch."
+msgstr ""
+
+#: ColorDefine.py:72 ElementProperty.py:95
+msgid "Direction to perform a raster"
+msgstr ""
+
+#: ColorDefine.py:84 ElementProperty.py:120 Preferences.py:183
+#: Preferences.py:189
+msgid "mm/s"
+msgstr ""
+
+#: ColorDefine.py:89 ElementProperty.py:125
+msgid "ppi"
+msgstr ""
+
+#: ColorDefine.py:98 ElementProperty.py:134
+msgid "Raster Step"
+msgstr ""
+
+#: ColorDefine.py:101 ElementProperty.py:137
+msgid " mil"
+msgstr ""
+
+#: ColorDefine.py:103 ElementProperty.py:139
+msgid "Raster Direction"
+msgstr ""
+
+#: ColorDefine.py:124
+msgid "Default"
+msgstr ""
+
+#: ColorDefine.py:126
+msgid "Error"
+msgstr ""
+
+#: Controller.py:18 Controller.py:370
+msgid "Start Controller"
+msgstr ""
+
+#: Controller.py:20
+msgid "Connect Usb"
+msgstr ""
+
+#: Controller.py:90 Controller.py:140 MeerK40t.py:150 MeerK40t.py:187
+msgid "Controller"
+msgstr ""
+
+#: Controller.py:147
+msgid "Usb Status"
+msgstr ""
+
+#: Controller.py:163
+msgid "Packet Count  "
+msgstr ""
+
+#: Controller.py:167
+msgid "Rejected Packets"
+msgstr ""
+
+#: Controller.py:172
+msgid "Packet Text  "
+msgstr ""
+
+#: Controller.py:176
+msgid "Last Packet  "
+msgstr ""
+
+#: Controller.py:181
+msgid "Byte 0"
+msgstr "b1"
+
+#: Controller.py:185
+msgid "Byte 1"
+msgstr "b1"
+
+#: Controller.py:190
+msgid "Byte 2"
+msgstr "b3"
+
+#: Controller.py:194
+msgid "Byte 3"
+msgstr "b4"
+
+#: Controller.py:198
+msgid "Byte 4"
+msgstr "b4"
+
+#: Controller.py:202
+msgid "Byte 5"
+msgstr "b4"
+
+#: Controller.py:374
+msgid "Resume Controller"
+msgstr ""
+
+#: Controller.py:378
+msgid "Pause Controller"
+msgstr ""
+
+#: Controller.py:382 JobSpooler.py:241
+msgid "Manual Reset"
+msgstr ""
+
+#: ElementProperty.py:78
+msgid "Element Properties"
+msgstr ""
+
+#: ElementProperty.py:98
+msgid "#FF0000 defined values."
+msgstr ""
+
+#: ElementProperty.py:100 ElementProperty.py:102
+msgid "#00FF00 defined values."
+msgstr ""
+
+#: ElementProperty.py:104
+msgid "#FF00FF defined values."
+msgstr ""
+
+#: ElementProperty.py:106
+msgid "#00FFFF defined values."
+msgstr ""
+
+#: ElementProperty.py:108
+msgid "#FFFF00 defined values."
+msgstr ""
+
+#: JobInfo.py:19 JobInfo.py:221 JobSpooler.py:19 JobSpooler.py:232
+msgid "Start Job"
+msgstr ""
+
+#: JobInfo.py:27
+msgid "Trace Simple"
+msgstr ""
+
+#: JobInfo.py:28
+msgid "Trace Hull"
+msgstr ""
+
+#: JobInfo.py:29
+msgid "Run"
+msgstr ""
+
+#: JobInfo.py:31
+msgid "Start Spooler"
+msgstr ""
+
+#: JobInfo.py:32
+msgid "Home After"
+msgstr ""
+
+#: JobInfo.py:33
+msgid "Beep After"
+msgstr ""
+
+#: JobInfo.py:34
+msgid "Automatic"
+msgstr ""
+
+#: JobInfo.py:36
+msgid "Home"
+msgstr ""
+
+#: JobInfo.py:37
+msgid "Wait"
+msgstr ""
+
+#: JobInfo.py:38
+msgid "Beep"
+msgstr ""
+
+#: JobInfo.py:39
+msgid "Add"
+msgstr ""
+
+#: JobInfo.py:129
+msgid "Element List"
+msgstr ""
+
+#: JobInfo.py:130
+msgid "Operation List"
+msgstr ""
+
+#: JobInfo.py:131
+msgid "Start the Job"
+msgstr ""
+
+#: JobInfo.py:134
+msgid "View Spooler"
+msgstr ""
+
+#: JobInfo.py:141
+msgid "Elements and Operations"
+msgstr ""
+
+#: JobInfo.py:218
+msgid "Execute Operations"
+msgstr ""
+
+#: JobSpooler.py:16
+msgid "Limit Write Buffer"
+msgstr ""
+
+#: JobSpooler.py:72
+msgid "#"
+msgstr ""
+
+#: JobSpooler.py:73
+msgid "Name"
+msgstr ""
+
+#: JobSpooler.py:74
+msgid "Status"
+msgstr ""
+
+#: JobSpooler.py:75
+msgid "Device"
+msgstr ""
+
+#: JobSpooler.py:76
+msgid "Type"
+msgstr ""
+
+#: JobSpooler.py:78
+msgid "Settings"
+msgstr ""
+
+#: JobSpooler.py:79
+msgid "Submitted"
+msgstr ""
+
+#: JobSpooler.py:80
+msgid "Time Estimate"
+msgstr ""
+
+#: JobSpooler.py:129
+msgid "Executing"
+msgstr ""
+
+#: JobSpooler.py:131
+msgid "Queued"
+msgstr ""
+
+#: JobSpooler.py:135
+msgid "Path"
+msgstr ""
+
+#: JobSpooler.py:136
+#, python-format
+msgid "power=%.0f"
+msgstr ""
+
+#: JobSpooler.py:138 MeerK40t.py:1445 Preferences.py:186
+msgid "Raster"
+msgstr ""
+
+#: JobSpooler.py:139
+#, python-format
+msgid "step=%d"
+msgstr ""
+
+#: JobSpooler.py:142
+#, python-format
+msgid "overscan=%d"
+msgstr ""
+
+#: JobSpooler.py:148
+#, python-format
+msgid "%.1fmm/s"
+msgstr ""
+
+#: JobSpooler.py:151
+msgid "n/a"
+msgstr ""
+
+#: JobSpooler.py:152
+msgid "unknown"
+msgstr ""
+
+#: JobSpooler.py:167 MeerK40t.py:1392
+#, python-format
+msgid "Remove %s"
+msgstr ""
+
+#: JobSpooler.py:169
+msgid "Clear All"
+msgstr ""
+
+#: JobSpooler.py:235
+msgid "Resume Job"
+msgstr ""
+
+#: JobSpooler.py:238
+msgid "Pause Job"
+msgstr ""
+
+#: Keymap.py:11
+msgid "Invert Mouse Wheel Zoom"
+msgstr ""
+
+#: Keymap.py:13
+msgid "Add Hotkey"
+msgstr ""
+
+#: Keymap.py:39 MeerK40t.py:182
+msgid "Keymap Settings"
+msgstr ""
+
+#: Keymap.py:40
+msgid "Invert the zoom direction from the mouse wheel."
+msgstr ""
+
+#: Keymap.py:41
+msgid "What keys are bound to which actions?"
+msgstr ""
+
+#: Keymap.py:42
+msgid "Action"
+msgstr ""
+
+#: Keymap.py:43
+msgid "Hotkey"
+msgstr ""
+
+#: Keymap.py:44
+msgid "Add a new hotkey"
+msgstr ""
+
+#: MeerK40t.py:135
+msgid "Examples"
+msgstr ""
+
+#: MeerK40t.py:136
+msgid "Toolbar"
+msgstr ""
+
+#: MeerK40t.py:145 MeerK40t.py:192
+msgid "Windows"
+msgstr ""
+
+#: MeerK40t.py:147 MeerK40t.py:186
+msgid "Navigation"
+msgstr ""
+
+#: MeerK40t.py:148
+msgid "Usb"
+msgstr ""
+
+#: MeerK40t.py:149
+msgid "Spooler"
+msgstr ""
+
+#: MeerK40t.py:151 MeerK40t.py:180 Preferences.py:105
+msgid "Preferences"
+msgstr ""
+
+#: MeerK40t.py:158
+msgid "Open Project"
+msgstr ""
+
+#: MeerK40t.py:159
+msgid "Import File"
+msgstr ""
+
+#: MeerK40t.py:161
+msgid "Exit"
+msgstr ""
+
+#: MeerK40t.py:162
+msgid "File"
+msgstr ""
+
+#: MeerK40t.py:165
+msgid "Zoom Out"
+msgstr ""
+
+#: MeerK40t.py:166
+msgid "Zoom In"
+msgstr ""
+
+#: MeerK40t.py:167
+msgid "Zoom To Size"
+msgstr ""
+
+#: MeerK40t.py:169
+msgid "Hide Grid"
+msgstr ""
+
+#: MeerK40t.py:170
+msgid "Hide Guides"
+msgstr ""
+
+#: MeerK40t.py:171
+msgid "Hide Fills"
+msgstr ""
+
+#: MeerK40t.py:172
+msgid "Hide Strokes"
+msgstr ""
+
+#: MeerK40t.py:173
+msgid "Hide Laserpath"
+msgstr ""
+
+#: MeerK40t.py:174
+msgid "Hide Reticle"
+msgstr ""
+
+#: MeerK40t.py:175
+msgid "Hide Selection"
+msgstr ""
+
+#: MeerK40t.py:176
+msgid "Do Not Refresh"
+msgstr ""
+
+#: MeerK40t.py:177
+msgid "View"
+msgstr ""
+
+#: MeerK40t.py:181
+msgid "Rotary Settings"
+msgstr ""
+
+#: MeerK40t.py:184
+msgid "Alignment Ally"
+msgstr ""
+
+#: MeerK40t.py:188
+msgid "USB"
+msgstr ""
+
+#: MeerK40t.py:189
+msgid "Job Spooler"
+msgstr ""
+
+#: MeerK40t.py:190 MeerK40t.py:1403
+msgid "Execute Job"
+msgstr ""
+
+#: MeerK40t.py:195
+msgid "Webpage"
+msgstr ""
+
+#: MeerK40t.py:196
+msgid "Help"
+msgstr ""
+
+#: MeerK40t.py:508
+#, python-format
+msgid "Usb: %s"
+msgstr ""
+
+#: MeerK40t.py:511
+#, python-format
+msgid "Controller: %s"
+msgstr ""
+
+#: MeerK40t.py:514
+#, python-format
+msgid "Spooler: %s"
+msgstr ""
+
+#: MeerK40t.py:526
+msgid "Issue emergency stop and close?"
+msgstr ""
+
+#: MeerK40t.py:527
+msgid "Processes are still running."
+msgstr ""
+
+#: MeerK40t.py:554
+#, python-format
+msgid "MeerK40t v%s"
+msgstr ""
+
+#: MeerK40t.py:609
+#, python-format
+msgid ""
+"Some files were unrecognized:\n"
+"%s"
+msgstr ""
+
+#: MeerK40t.py:610 MeerK40t.py:1817
+msgid "Error encountered"
+msgstr ""
+
+#: MeerK40t.py:765
+msgid "Current OS cannot use transformation matrix. Skipping scene draw."
+msgstr ""
+
+#: MeerK40t.py:1170 MeerK40t.py:1182
+msgid "Open"
+msgstr ""
+
+#: MeerK40t.py:1398
+#, python-format
+msgid "Reload %s"
+msgstr ""
+
+#: MeerK40t.py:1401
+msgid "Reverse Layer Order"
+msgstr ""
+
+#: MeerK40t.py:1402
+msgid "Convex Hull"
+msgstr ""
+
+#: MeerK40t.py:1405
+msgid "Reset User Changes"
+msgstr ""
+
+#: MeerK40t.py:1409
+#, python-format
+msgid "Scale %.0f%%"
+msgstr ""
+
+#: MeerK40t.py:1410
+msgid "Scale"
+msgstr ""
+
+#: MeerK40t.py:1415
+#, python-format
+msgid "Rotate turn/%d, %.0f°"
+msgstr ""
+
+#: MeerK40t.py:1420
+#, python-format
+msgid "Rotate turn/%d, -%.0f°"
+msgstr ""
+
+#: MeerK40t.py:1422
+msgid "Rotate"
+msgstr ""
+
+#: MeerK40t.py:1426
+msgid "Break Subpaths"
+msgstr ""
+
+#: MeerK40t.py:1428
+msgid "Make Raster Image"
+msgstr ""
+
+#: MeerK40t.py:1430
+msgid "Reify User Changes"
+msgstr ""
+
+#: MeerK40t.py:1431 Preferences.py:180
+msgid "Vector"
+msgstr ""
+
+#: MeerK40t.py:1435
+msgid "Actualize Pixels"
+msgstr ""
+
+#: MeerK40t.py:1437
+msgid "Dither to 1 bit"
+msgstr ""
+
+#: MeerK40t.py:1439
+msgid "Set to Native"
+msgstr ""
+
+#: MeerK40t.py:1443
+#, python-format
+msgid "Step %d"
+msgstr ""
+
+#: MeerK40t.py:1449
+msgid "Remove Text"
+msgstr ""
+
+#: MeerK40t.py:1507
+msgid "elements"
+msgstr ""
+
+#: MeerK40t.py:1809
+#, python-format
+msgid "Saving Log: %s"
+msgstr ""
+
+#: MeerK40t.py:1811
+#, python-format
+msgid "MeerK40t crash log. Version: %s\n"
+msgstr ""
+
+#: Preferences.py:21
+msgid "Flip X"
+msgstr ""
+
+#: Preferences.py:22
+msgid "Home Right"
+msgstr ""
+
+#: Preferences.py:23
+msgid "Flip Y"
+msgstr ""
+
+#: Preferences.py:24
+msgid "Home Bottom"
+msgstr ""
+
+#: Preferences.py:29
+msgid "Set Current"
+msgstr ""
+
+#: Preferences.py:30
+msgid "Units"
+msgstr ""
+
+#: Preferences.py:30 Preferences.py:210 Preferences.py:216
+#: RotarySettings.py:114 RotarySettings.py:118
+msgid "mm"
+msgstr ""
+
+#: Preferences.py:30
+msgid "cm"
+msgstr ""
+
+#: Preferences.py:30
+msgid "inch"
+msgstr ""
+
+#: Preferences.py:30
+msgid "mils"
+msgstr ""
+
+#: Preferences.py:33
+msgid "Automatically lock rail"
+msgstr ""
+
+#: Preferences.py:34
+msgid "Home after job complete"
+msgstr ""
+
+#: Preferences.py:35
+msgid "Beep after job complete"
+msgstr ""
+
+#: Preferences.py:36
+msgid "Mock USB Connection Mode"
+msgstr ""
+
+#: Preferences.py:37
+msgid "Multiple Devices"
+msgstr ""
+
+#: Preferences.py:109
+msgid "Select the board to use. This has an effects the speedcodes used."
+msgstr ""
+
+#: Preferences.py:111
+msgid "Flip the Right and Left commands sent to the controller"
+msgstr ""
+
+#: Preferences.py:113
+msgid "Indicates the device Home is on the right"
+msgstr ""
+
+#: Preferences.py:115
+msgid "Flip the Top and Bottom commands sent to the controller"
+msgstr ""
+
+#: Preferences.py:117
+msgid "Indicates the device Home is on the bottom"
+msgstr ""
+
+#: Preferences.py:120
+msgid "Speedcode permitted maximum set for vectors"
+msgstr ""
+
+#: Preferences.py:123
+msgid "Speedcode permitted maximum set for rasters"
+msgstr ""
+
+#: Preferences.py:126
+msgid "Translate Home X"
+msgstr ""
+
+#: Preferences.py:129
+msgid "Translate Home Y"
+msgstr ""
+
+#: Preferences.py:131
+msgid "Set Home Position based on the current position"
+msgstr ""
+
+#: Preferences.py:134
+msgid "Set default units for guides"
+msgstr ""
+
+#: Preferences.py:137
+msgid "Width of the laser bed."
+msgstr ""
+
+#: Preferences.py:139
+msgid "Height of the laser bed."
+msgstr ""
+
+#: Preferences.py:140
+msgid "Lock rail after operations are finished."
+msgstr ""
+
+#: Preferences.py:142
+msgid "Home the machine after job is finished"
+msgstr ""
+
+#: Preferences.py:143
+msgid "Beep after the job is finished."
+msgstr ""
+
+#: Preferences.py:146
+msgid ""
+"DEBUG. Without a K40 connected continue to process things as if there was "
+"one."
+msgstr ""
+
+#: Preferences.py:148
+msgid ""
+"Specify matching criteria for the K40 to be used. Only matching K40 will be "
+"used."
+msgstr ""
+
+#: Preferences.py:149 Preferences.py:151 Preferences.py:153
+msgid "-1 match anything. 0-5 match exactly that value."
+msgstr ""
+
+#: Preferences.py:160
+msgid "USB Settings"
+msgstr ""
+
+#: Preferences.py:164
+msgid "General Options"
+msgstr ""
+
+#: Preferences.py:165
+msgid "Bed Dimensions"
+msgstr ""
+
+#: Preferences.py:166
+msgid "Shift Home Position"
+msgstr ""
+
+#: Preferences.py:167
+msgid "Speed Maximums"
+msgstr ""
+
+#: Preferences.py:168
+msgid "Board Setup"
+msgstr ""
+
+#: Preferences.py:192
+msgid "X"
+msgstr ""
+
+#: Preferences.py:195 Preferences.py:201
+msgid "mil"
+msgstr ""
+
+#: Preferences.py:198
+msgid "Y"
+msgstr ""
+
+#: Preferences.py:207
+msgid "Width"
+msgstr ""
+
+#: Preferences.py:213
+msgid "Height"
+msgstr ""
+
+#: Preferences.py:225
+msgid "Device Index:"
+msgstr ""
+
+#: Preferences.py:229
+msgid "Device Address:"
+msgstr ""
+
+#: Preferences.py:233
+msgid "Device Bus:"
+msgstr ""
+
+#: RotarySettings.py:22
+msgid "Rotary"
+msgstr ""
+
+#: RotarySettings.py:25
+msgid "Field Loop"
+msgstr ""
+
+#: RotarySettings.py:27
+msgid "Uses Roller"
+msgstr ""
+
+#: RotarySettings.py:69 RotarySettings.py:79
+msgid "Use Rotary Settings"
+msgstr ""
+
+#: RotarySettings.py:71 RotarySettings.py:75
+msgid "Rotary Scale Factor X"
+msgstr ""
+
+#: RotarySettings.py:81
+msgid "Steps required for a full rotation"
+msgstr ""
+
+#: RotarySettings.py:84
+msgid "Circumference of roller"
+msgstr ""
+
+#: RotarySettings.py:88
+msgid "Circumference of object in rotary"
+msgstr ""
+
+#: RotarySettings.py:96
+msgid "Object Circumference"
+msgstr ""
+
+#: RotarySettings.py:97
+msgid "Roller Circumference"
+msgstr ""
+
+#: RotarySettings.py:98
+msgid "Rotation Steps"
+msgstr ""
+
+#: RotarySettings.py:99
+msgid "Scale X"
+msgstr ""
+
+#: RotarySettings.py:100
+msgid "Scale Y"
+msgstr ""
+
+#: RotarySettings.py:109
+msgid "steps"
+msgstr ""
+
+#: UsbConnect.py:56
+msgid "UsbConnect"
+msgstr ""
