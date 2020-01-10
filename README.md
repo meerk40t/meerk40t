@@ -112,7 +112,7 @@ You will need Meerk40t:
 
 ### Linux:
 * `ImportError: libpng12.so.0: cannot open shared object file: No such file or directory .` libpng is not installed.
-  * Type: `sudo apt-get libpng`
+  * Type: `sudo apt-get install libpng`
 
 
 # Pulse Modulation
