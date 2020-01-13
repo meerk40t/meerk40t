@@ -77,7 +77,10 @@ class JobInfo(wx.Frame):
             self.elements.append(home)
 
         for e in self.elements:
-            t = e.type
+            try:
+                t = e.type
+            except AttributeError:
+                t = 'function'
             try:
                 if e.needs_actualization():
                     def actualize():

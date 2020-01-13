@@ -17,9 +17,6 @@ from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
 
-import gettext
-gettext.install('ivcm', './locale')
-
 try:
     from math import tau
 except ImportError:
@@ -108,12 +105,17 @@ ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
 
 ID_MENU_WEBPAGE = idinc.new()
-ID_MENU_ENGLISH = idinc.new()
 ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
+
 project = LaserProject()
 _ = wx.GetTranslation
+
+supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
+                        ('fr', u'français', wx.LANGUAGE_FRENCH),
+                        ('de',  u'Deutsch', wx.LANGUAGE_GERMAN),
+                        ('es',  u'español', wx.LANGUAGE_SPANISH))
 
 
 class MeerK40t(wx.Frame):
@@ -125,10 +127,18 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-        _ = wx.GetTranslation
+
+        self.project = project
+        self.project.config = wx.Config("MeerK40t")
+        self.project.load_config()
+        self.locale = None
+        wx.Locale.AddCatalogLookupPathPrefix('locale')
+        language = project[int, 'language']
+        if language is not None and language != 0:
+            self.language_to(language)(None)
+
         self.SetSize((1200, 600))
         self.DragAcceptFiles(True)
-        self.project = project
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
@@ -200,16 +210,17 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_WEBPAGE, _("Webpage"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
-        wxglade_tmp_menu = wx.Menu()
-        for file in os.listdir('.\\locale'):
-            filename = str(file)
-
-            if filename.endswith('.mo'):
-                filename = filename[:-3]
-                m = wxglade_tmp_menu.Append(wx.ID_ANY, filename, "")
-                self.Bind(wx.EVT_MENU, self.language_to(filename), id=m.GetId())
-        self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
-
+        if os.path.exists('./locale'):
+            wxglade_tmp_menu = wx.Menu()
+            for i, lang in enumerate(supported_languages):
+                language_code, language_name, language_index = lang
+                m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
+                if i == language:
+                    m.Check(True)
+                self.Bind(wx.EVT_MENU, self.language_to(i), id=m.GetId())
+                if not os.path.exists('./locale/%s' % language_code) and i != 0:
+                    m.Enable(False)
+            self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
 
@@ -244,7 +255,6 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.open_job, id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
-        self.Bind(wx.EVT_MENU, self.language_to("English"), id=ID_MENU_ENGLISH)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.open_job, id=ID_JOB)
@@ -263,8 +273,6 @@ class MeerK40t(wx.Frame):
 
         self.previous_position = None
         self.project.elements_change_listener = self.tree_update
-        self.project.config = wx.Config("MeerK40t")
-        self.project.load_config()
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.project.draw_mode & 4 != 0)
@@ -1392,7 +1400,6 @@ class MeerK40t(wx.Frame):
         import webbrowser
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
-
     def language_to(self, lang):
         """
         Returns a function to change the language to the language specified.
@@ -1401,12 +1408,20 @@ class MeerK40t(wx.Frame):
         """
         def update_language(event):
             """
-            Update the language to the requested one.
+            Update language to the requested language.
             """
-            mylocale = wx.Locale()
-            mylocale.AddCatalogLookupPathPrefix('.')
-            mylocale.AddCatalog(".\\locale\\%s.mo" % lang)
+            language_code, language_name, language_index = supported_languages[lang]
+            project['language'] = lang
 
+            if self.locale:
+                assert sys.getrefcount(self.locale) <= 2
+                del self.locale
+            self.locale = wx.Locale(language_index)
+            if self.locale.IsOk():
+                self.locale.AddCatalog('meerk40t')
+            else:
+                self.locale = None
+            project('language', (lang, language_code, language_name, language_index))
         return update_language
 
 # end of class MeerK40t
@@ -1812,10 +1827,6 @@ class MeerK40tGui(wx.App):
     """
 
     def OnInit(self):
-        # def call_after(listener, message):
-        #     listener(message)
-        #
-        # # project.call_after = call_after
         project.call_after = wx.CallAfter  # Linux routine to prevent errors.
         self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
         self.SetTopWindow(self.MeerK40t)
