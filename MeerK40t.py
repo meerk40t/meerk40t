@@ -12,7 +12,7 @@ import wx.ribbon as RB
 from EgvParser import parse_egv
 from ElementProperty import ElementProperty
 from LaserProject import *
-from LaserRender import LaserRender
+from LaserRender import LaserRender, swizzlecolor
 from ThreadConstants import *
 from ZMatrix import ZMatrix
 from icons import *
@@ -140,7 +140,10 @@ class MeerK40t(wx.Frame):
         self.SetSize((1200, 600))
         self.DragAcceptFiles(True)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE | wx.TR_MULTIPLE)
+        self.tree_images = wx.ImageList()
+        self.tree_images.Create(width=20, height=20)
+        self.tree.SetImageList(self.tree_images)
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 
@@ -300,7 +303,6 @@ class MeerK40t(wx.Frame):
         # self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
         self.refresh_tree_elements()
         # end wxGlade
-        self.item_lookup = {}
         self.dragging_element = None
         # self.SetDoubleBuffered(True)
 
@@ -392,10 +394,9 @@ class MeerK40t(wx.Frame):
         """
         self.dragging_element = None
         item = event.GetItem()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
-            self.dragging_element = element
-            event.Allow()
+        element = self.tree.GetItemData(item)
+        self.dragging_element = element
+        event.Allow()
 
     def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
         """
@@ -418,10 +419,10 @@ class MeerK40t(wx.Frame):
         if item.ID is None:
             event.Skip()
             return
-        if item not in self.item_lookup:
+        drop_element = self.tree.GetItemData(item)
+        if drop_element is None:
             event.Skip()
             return
-        drop_element = self.item_lookup[item]
 
         if drag_element == drop_element or drop_element.type not in ('group', 'root'):
             # Cannot drop into other laser elements.
@@ -460,8 +461,8 @@ class MeerK40t(wx.Frame):
             return
         if item.ID is None:
             return
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
+        element = self.tree.GetItemData(item)
+        if element is not None:
             project.set_selected(element)
             create_menu(element)
         event.Skip()
@@ -474,9 +475,9 @@ class MeerK40t(wx.Frame):
         :return:
         """
         item = event.GetItem()
-        if item in self.item_lookup:
+        element = self.tree.GetItemData(item)
+        if element is not None:
             project.close_old_window("elementproperty")
-            element = self.item_lookup[item]
             from ElementProperty import ElementProperty
             window = ElementProperty(None, wx.ID_ANY, "")
             window.set_project_element(project, element)
@@ -491,8 +492,8 @@ class MeerK40t(wx.Frame):
         :return:
         """
         item = event.GetItem()
-        if item in self.item_lookup:
-            element = self.item_lookup[item]
+        element = self.tree.GetItemData(item)
+        if element is not None:
             project.set_selected(element)
 
     def add_element(self, tree, node, element):
@@ -508,7 +509,22 @@ class MeerK40t(wx.Frame):
             item = tree.AppendItem(node, str(element))
         else:
             item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
-        self.item_lookup[item] = element
+        tree.SetItemData(item, element)
+        try:
+            tree.SetItemBackgroundColour(item, wx.Colour(swizzlecolor(element.fill)))
+        except AttributeError:
+            pass
+        try:
+            tree.SetItemTextColour(item, wx.Colour(swizzlecolor(element.stroke)))
+        except AttributeError:
+            pass
+        t = element.type
+        if t == 'image':
+            image = self.renderer.make_thumbnail(element, width=20, height=20)
+        else:
+            image = self.renderer.make_raster(element, width=20, height=20, bitmap=True)
+        id = self.tree_images.Add(bitmap=image)
+        tree.SetItemImage(item, image=id)
         for subitem in element:
             self.add_element(tree, item, subitem)
 
@@ -520,9 +536,8 @@ class MeerK40t(wx.Frame):
         """
         tree = self.tree
         tree.DeleteAllItems()
-        self.item_lookup = {}
         root = self.tree.AddRoot(str(project.elements))
-        self.item_lookup[root] = project.elements
+        self.tree.SetItemData(root, project.elements)
         for subitem in project.elements:
             self.add_element(tree, root, subitem)
         tree.CollapseAll()
@@ -677,6 +692,7 @@ class MeerK40t(wx.Frame):
                     pass
         context.append_all(append_list)
         self.post_buffer_update()
+
 
     def load_egv(self, pathname, group=None):
         """
@@ -1599,7 +1615,7 @@ def menu_raster(element):
 
     def specific(event):
         renderer = LaserRender(project)
-        image = renderer.make_raster(element)
+        image = renderer.make_raster(element, types='path')
         xmin, ymin, xmax, ymax = project.selected.scene_bounds
         image_element = LaserNode(SVGImage(image=image))
         project.selected.append(image_element)

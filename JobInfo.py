@@ -75,7 +75,6 @@ class JobInfo(wx.Frame):
             def home():
                 yield COMMAND_HOME
             self.elements.append(home)
-
         for e in self.elements:
             try:
                 t = e.type
@@ -94,28 +93,17 @@ class JobInfo(wx.Frame):
                     break
             except AttributeError:
                 pass
+        for e in self.elements:
             try:
-                if t == 'text':
-                    def convert_text():
-                        import freetype
-                        face = freetype.Face("Vera.ttf")
-                        for e in self.elements:
-                            try:
-                                if e.type != 'text':
-                                    continue
-                            except AttributeError:
-                                continue
-                            face.set_char_size(int(e['font_size', 12]))
-                            text = e.element.text
-                            e.element = Path(**e.element.values)
-                            for character in text:
-                                face.load_char(character)
-                                outline = face.glyph.outline
-                                e.element += abs(Polygon(outline.points) * "translate(50,0)")
-                    self.operations.append(convert_text)
-                    break
+                t = e.type
             except AttributeError:
-                pass
+                t = 'function'
+            if t == 'text':
+                def remove_text():
+                    self.elements = [e for e in self.elements if not hasattr(e, 'type') or e.type != 'text']
+                    self.update_gui()
+                self.operations.append(remove_text)
+                break
         self.update_gui()
 
     def on_close(self, event):

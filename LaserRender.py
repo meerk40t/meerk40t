@@ -42,47 +42,92 @@ class LaserRender:
                     element.draw = self.draw_path
                 element.draw(element, dc, draw_mode)
 
-    def make_raster(self, group):
-        flat_elements = list(group.flat_elements(types='path'))
+    def make_path(self, gc, element):
+        p = gc.CreatePath()
+        parse = LaserCommandPathParser(p)
+
+        for event in element.generate():
+            parse.command(event)
+        return p
+
+    def make_raster(self, group, width=None, height=None, bitmap=False, types=('path', 'text', 'image')):
+        flat_elements = list(group.flat_elements(types=types))
         bounds = group.scene_bounds
         if bounds is None:
             self.project.validate()
             bounds = group.scene_bounds
         xmin, ymin, xmax, ymax = bounds
-        width = int(xmax - xmin)
-        height = int(ymax - ymin)
-        bitmap = wx.Bitmap(width, height, 32)
+        image_width = int(xmax - xmin)
+        if image_width == 0:
+            image_width = 1
+        image_height = int(ymax - ymin)
+        if image_height == 0:
+            image_height = 1
+        if width is None:
+            width = image_width
+        else:
+            width = int(width)
+        if height is None:
+            height = image_height
+        else:
+            height = int(height)
+        bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
-        dc.SelectObject(bitmap)
-        dc.SetBrush(wx.TRANSPARENT_BRUSH)
+        dc.SelectObject(bmp)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
 
         for e in flat_elements:
             element = e.element
             matrix = element.transform
-            fill_color = e.fill
-            if fill_color is None:
-                continue
-            p = gc.CreatePath()
-            parse = LaserCommandPathParser(p)
+            old_matrix = Matrix(matrix)
 
             matrix.post_translate(-xmin, -ymin)
-            for event in e.generate():
-                parse.command(event)
-            matrix.post_translate(+xmin, +ymin)
+            scale_x = width / float(image_width)
+            scale_y = height / float(image_height)
+            scale = min(scale_x, scale_y)
+            matrix.post_scale(scale)
+            if e.type == 'path':
+                p = self.make_path(gc, e)
+                self.set_brush(gc, e.fill)
+                self.set_pen(gc, e.stroke, width=e.stroke_width * scale)
+                gc.FillPath(p)
+                gc.StrokePath(p)
+                del p
+            # elif e.type == 'image':
+            #     p = self.make_thumbnail(e, maximum=20)
+            #     gc.DrawBitmap(p, 0, 0, width, height)
+            element.transform = old_matrix
 
-            self.color.SetRGB(swizzlecolor(fill_color))
-            self.brush.SetColour(self.color)
-            gc.SetBrush(self.brush)
-            gc.FillPath(p)
-            del p
-        img = bitmap.ConvertToImage()
+        img = bmp.ConvertToImage()
         buf = img.GetData()
-        image = Image.frombuffer("RGB", tuple(bitmap.GetSize()), bytes(buf), "raw", "RGB", 0, 1)
+        image = Image.frombuffer("RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1)
         gc.Destroy()
         del dc
+        if bitmap:
+            return bmp
         return image
+
+    def set_pen(self, gc, stroke, width=1.0):
+        c = swizzlecolor(stroke)
+        if c is None:
+            self.pen.SetColour(None)
+        else:
+            self.color.SetRGB(c)
+            self.pen.SetColour(self.color)
+
+        self.pen.SetWidth(width)
+        gc.SetPen(self.pen)
+
+    def set_brush(self, gc, fill):
+        c = fill
+        if c is not None and c != 'none':
+            swizzle_color = swizzlecolor(c)
+            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+            self.brush.SetColour(self.color)
+        else:
+            self.brush.SetColour(None)
+        gc.SetBrush(self.brush)
 
     def draw_path(self, node, dc, draw_mode):
         """Default draw routine for the laser element.
@@ -96,35 +141,18 @@ class LaserRender:
         drawstrokes = draw_mode & 64 == 0
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        c = swizzlecolor(node.stroke)
-        if c is None:
-            self.pen.SetColour(None)
-        else:
-            self.color.SetRGB(c)
-            self.pen.SetColour(self.color)
-
-        self.pen.SetWidth(node.stroke_width)
-        gc.SetPen(self.pen)
+        self.set_pen(gc, node.stroke, width=node.stroke_width)
+        self.set_brush(gc, node.fill)
         cache = None
         try:
             cache = node.cache
         except AttributeError:
             pass
         if cache is None:
-            p = gc.CreatePath()
-            parse = LaserCommandPathParser(p)
-            for event in node.generate():
-                parse.command(event)
-            node.cache = p
+            node.cache = self.make_path(gc, node)
         if drawfills and node.fill is not None:
-            c = node.fill
-            if c is not None and c != 'none':
-                swizzle_color = swizzlecolor(c)
-                self.color.SetRGB(swizzle_color)  # wx has BBGGRR
-                self.brush.SetColour(self.color)
-                gc.SetBrush(self.brush)
-                gc.FillPath(node.cache)
-        if drawstrokes:
+            gc.FillPath(node.cache)
+        if drawstrokes and node.stroke is not None:
             gc.StrokePath(node.cache)
 
     def draw_text(self, node, dc, draw_mode):
@@ -136,6 +164,31 @@ class LaserRender:
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if node.element.text is not None:
             dc.DrawText(node.element.text, matrix.value_trans_x(), matrix.value_trans_y())
+
+    def make_thumbnail(self, node, maximum=None, width=None, height=None):
+        pil_data = node.element.image
+        image_width, image_height = pil_data.size
+        if width is not None and height is None:
+            height = width * image_height / float(image_width)
+        if width is None and height is not None:
+            width = height * image_width / float(image_height)
+        if width is None and height is None:
+            width = image_width
+            height = image_height
+        if maximum is not None and (width > maximum or height > maximum):
+            scale_x = maximum / width
+            scale_y = maximum / height
+            scale = min(scale_x, scale_y)
+            width = int(round(width * scale))
+            height = int(round(height * scale))
+        if image_width != width or image_height != height:
+            pil_data = pil_data.copy().resize((width, height))
+        else:
+            pil_data = pil_data.copy()
+        if pil_data.mode != "RGBA":
+            pil_data = pil_data.convert('RGBA')
+        pil_bytes = pil_data.tobytes()
+        return wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
 
     def draw_image(self, node, dc, draw_mode):
         try:
@@ -154,20 +207,8 @@ class LaserRender:
                 max_allowed = node.max_allowed
             except AttributeError:
                 max_allowed = 2048
-            pil_data = node.element.image
-            node.c_width, node.c_height = pil_data.size
-            width, height = pil_data.size
-            dim = max(width, height)
-            if dim > max_allowed or max_allowed == -1:
-                width = int(round(width * max_allowed / float(dim)))
-                height = int(round(height * max_allowed / float(dim)))
-                pil_data = pil_data.copy().resize((width, height))
-            else:
-                pil_data = pil_data.copy()
-            if pil_data.mode != "RGBA":
-                pil_data = pil_data.convert('RGBA')
-            pil_bytes = pil_data.tobytes()
-            node.cache = wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
+            node.c_width, node.c_height = node.element.image.size
+            node.cache = self.make_thumbnail(node, maximum=max_allowed)
         gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
 
 

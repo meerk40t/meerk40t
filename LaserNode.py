@@ -366,9 +366,12 @@ class LaserNode(list):
         elif mode == "L":
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
-        elif mode == "RGB" or mode == "RGBA":
+        elif mode == "RGB":
             def image_filter(pixel):
                 return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
+        elif mode == "RGBA":
+            def image_filter(pixel):
+                return (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
         else:
             raise ValueError  # this shouldn't happen.
         m = self.transform
