@@ -163,7 +163,7 @@ class JobSpooler(wx.Frame):
             event.Skip()
             return  # We can't delete the running element.
         try:
-            element = self.project.queue[index]
+            element = self.project.spooler.queue[index]
         except IndexError:
             return
         menu = wx.Menu()
