@@ -993,7 +993,8 @@ class MeerK40t(wx.Frame):
         self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
 
     def execute_move_action(self, direction, amount):
-        amount = Length(amount).value(ppi=1000.0, relative_length=min(project.size))
+        min_dim = min(project.window_width, project.window_height)
+        amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
         amount = 1000.0 * amount / 96.0
         x = 0
         y = 0

@@ -138,6 +138,7 @@ class LhymicroWriter:
         self.project = project
         project.setting(str, "board", board)
         project.setting(bool, "autolock", True)
+        project.setting(bool, "autostart", True)
         project.setting(bool, "rotary", False)
         project.setting(float, "scale_x", 1.0)
         project.setting(float, "scale_y", 1.0)
