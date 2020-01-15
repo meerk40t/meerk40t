@@ -209,7 +209,7 @@ class LaserRender:
         gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
 
     def set_selected_by_position(self, position):
-        self.project.selected = None
+        self.project.set_selected(None)
         self.validate()
         for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text')))):
             bounds = e.scene_bounds
