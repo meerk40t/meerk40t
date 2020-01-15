@@ -144,10 +144,10 @@ class MeerK40t(wx.Frame):
         project.setting(int, "units_marks", 10)
         project.setting(int, "units_index", 0)
         project.setting(bool, "mouse_zoom_invert", False)
+        project.setting(int, 'language', None)
 
         self.locale = None
         wx.Locale.AddCatalogLookupPathPrefix('locale')
-        project.setting(int, 'language', None)
         language = project.language
         if language is not None and language != 0:
             self.language_to(language)(None)
@@ -379,16 +379,16 @@ class MeerK40t(wx.Frame):
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.project["usb_status", self.on_usb_status] = self
-        self.project["control_thread", self.on_control_state] = self
-        self.project["writer", self.on_writer_state] = self
-        self.project["elements", self.on_elements_update] = self
-        self.project["position", self.update_position] = self
-        self.project["units", self.space_changed] = self
-        self.project["selection", self.selection_changed] = self
-        self.project["bed_size", self.bed_changed] = self
-        self.project["elements", self.elements_changed] = self
-        self.project["writer_mode", self.on_writer_mode] = self
+        self.project.listen("usb_status", self.on_usb_status)
+        self.project.listen("control_thread", self.on_control_state)
+        self.project.listen("writer", self.on_writer_state)
+        self.project.listen("elements", self.on_elements_update)
+        self.project.listen("position", self.update_position)
+        self.project.listen("units", self.space_changed)
+        self.project.listen("selection", self.selection_changed)
+        self.project.listen("bed_size", self.bed_changed)
+        self.project.listen("elements", self.elements_changed)
+        self.project.listen("writer_mode", self.on_writer_mode)
         self.space_changed(0)
         self.default_keymap()
 
@@ -588,16 +588,16 @@ class MeerK40t(wx.Frame):
                 self.project("abort", 1)
             else:
                 return
-        self.project["usb_status", self.on_usb_status] = None
-        self.project["control_thread", self.on_control_state] = None
-        self.project["writer", self.on_writer_state] = None
+        self.project.unlisten("usb_status", self.on_usb_status)
+        self.project.unlisten("control_thread", self.on_control_state)
+        self.project.unlisten("writer", self.on_writer_state)
         self.project.flush()
         self.project.shutdown()
-        self.project["position", self.update_position] = None
-        self.project["units", self.space_changed] = None
-        self.project["selection", self.selection_changed] = None
-        self.project["bed_size", self.bed_changed] = None
-        self.project["elements", self.elements_changed] = None
+        self.project.unlisten("position", self.update_position)
+        self.project.unlisten("units", self.space_changed)
+        self.project.unlisten("selection", self.selection_changed)
+        self.project.unlisten("bed_size", self.bed_changed)
+        self.project.unlisten("elements", self.elements_changed)
         try:
             for key, value in self.project.windows.items():
                 value.Close()
@@ -1018,7 +1018,7 @@ class MeerK40t(wx.Frame):
             self.execute_string_action(*args)
 
     def focus_on_project(self):
-        bbox = self.project.bbox()
+        bbox = self.renderer.bbox(self.project.elements)
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
@@ -1452,7 +1452,7 @@ class MeerK40t(wx.Frame):
             Update language to the requested language.
             """
             language_code, language_name, language_index = supported_languages[lang]
-            project['language'] = lang
+            project.language = lang
 
             if self.locale:
                 assert sys.getrefcount(self.locale) <= 2

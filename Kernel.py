@@ -273,29 +273,6 @@ class Kernel:
         self.selected = selected
         self("selection", self.selected)
 
-
-    def bbox(self):
-        boundary_points = []
-        for e in self.elements.flat_elements(types=('image', 'path', 'text')):
-            box = e.box
-            if box is None:
-                continue
-            top_left = e.matrix.point_in_matrix_space([box[0], box[1]])
-            top_right = e.matrix.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.matrix.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.matrix.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
-
     def notify_change(self):
         self("elements", 0)
 

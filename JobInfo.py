@@ -104,12 +104,12 @@ class JobInfo(wx.Frame):
         self.project = project
         self.elements = elements
         self.operations = operations
-        autohome = project[bool, "autohome", False]
-        autobeep = project[bool, "autobeep", True]
-        autostart = project[bool, "autostart", True]
-        self.menu_autohome.Check(autohome)
-        self.menu_autobeep.Check(autobeep)
-        self.menu_autostart.Check(autostart)
+        project.setting(bool, "autohome", False)
+        project.setting(bool, "autobeep", True)
+        project.setting(bool, "autostart", True)
+        self.menu_autohome.Check(project.autohome)
+        self.menu_autobeep.Check(project.autobeep)
+        self.menu_autostart.Check(project.autostart)
         if self.elements is None:
             self.elements = []
         if self.operations is None:

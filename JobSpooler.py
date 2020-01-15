@@ -49,18 +49,19 @@ class JobSpooler(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        project["spooler", self.on_spooler_update] = self
-        project["buffer", self.on_buffer_update] = self
-        project["writer", self.on_spooler_state] = self
+
+        project.listen("spooler", self.on_spooler_update)
+        project.listen("buffer", self.on_buffer_update)
+        project.listen("writer", self.on_spooler_state)
         self.set_spooler_button_by_state()
         self.checkbox_limit_buffer.SetValue(self.project.spooler.thread.limit_buffer)
         self.spin_packet_buffer_max.SetValue(self.project.spooler.thread.buffer_max)
         self.refresh_spooler_list()
 
     def on_close(self, event):
-        self.project["spooler", self.on_spooler_update] = None
-        self.project["buffer", self.on_buffer_update] = None
-        self.project["writer", self.on_spooler_state] = None
+        self.project.unlisten("spooler", self.on_spooler_update)
+        self.project.unlisten("buffer", self.on_buffer_update)
+        self.project.unlisten("writer", self.on_spooler_state)
         try:
             del self.project.windows["jobspooler"]
         except KeyError:

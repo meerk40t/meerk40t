@@ -89,9 +89,9 @@ class LaserThread(threading.Thread):
 
     def run(self):
         command_index = 0
-        self.project["buffer", self.update_buffer_size] = self
-        self.project["abort", self.abort] = self
-        self.project.spooler.on_plot = self.thread_pause_check
+        self.project.listen("buffer", self.update_buffer_size)
+        self.project.listen("abort", self.abort)
+        self.spooler.on_plot = self.thread_pause_check
         try:
             while True:
                 element = self.spooler.peek()
@@ -117,9 +117,9 @@ class LaserThread(threading.Thread):
         except StopIteration:
             pass  # We aborted the loop.
         # Final listener calls.
-        self.project.spooler.on_plot = None
-        self.project["abort", self.abort] = None
-        self.project["buffer", self.update_buffer_size] = None
+        self.spooler.on_plot = None
+        self.project.unlisten("abort", self.abort)
+        self.project.unlisten("buffer", self.update_buffer_size)
         if self.state == THREAD_STATE_ABORT:
             self.spooler.clear_queue()
             self.spooler.state = STATE_DEFAULT
@@ -204,7 +204,7 @@ class LhymicroWriter:
         self.queue_lock.acquire()
         self.queue += elements
         self.queue_lock.release()
-        if self.project[bool, 'autostart']:
+        if self.project.autostart:
             self.start_queue_consumer()
         self.project("spooler", 0)
 
@@ -212,7 +212,7 @@ class LhymicroWriter:
         self.queue_lock.acquire()
         self.queue.append(element)
         self.queue_lock.release()
-        if self.project[bool, 'autostart']:
+        if self.project.autostart:
             self.start_queue_consumer()
         self.project("spooler", 0)
 
@@ -504,7 +504,7 @@ class LhymicroWriter:
             if dy != 0:
                 self.move_y(dy)
             self.controller += b'S1P\n'
-            if not self.project[bool, 'autolock']:
+            if not self.project.autolock:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
@@ -616,7 +616,7 @@ class LhymicroWriter:
             self.controller += b'I'
             self.controller += COMMAND_ON
             self.controller += b'S1P\n'
-            if not self.project[bool, 'autolock']:
+            if not self.project.autolock:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_ON
@@ -633,7 +633,7 @@ class LhymicroWriter:
             self.controller += b'I'
             self.controller += COMMAND_OFF
             self.controller += b'S1P\n'
-            if not self.project[bool, 'autolock']:
+            if not self.project.autolock:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_OFF
@@ -646,7 +646,7 @@ class LhymicroWriter:
     def to_default_mode(self):
         if self.state == STATE_CONCAT:
             self.controller += b'S1P\n'
-            if not self.project[bool, 'autolock']:
+            if not self.project.autolock:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += b'FNSE-\n'
