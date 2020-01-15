@@ -115,10 +115,10 @@ class JobInfo(wx.Frame):
         if self.operations is None:
             self.operations = []
 
-        if autobeep:
+        if project.autobeep:
             self.jobadd_beep(None)
 
-        if autohome:
+        if project.autohome:
             self.jobadd_home(None)
         for e in self.elements:
             try:
