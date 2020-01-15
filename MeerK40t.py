@@ -145,6 +145,10 @@ class MeerK40t(wx.Frame):
         project.setting(int, "units_index", 0)
         project.setting(bool, "mouse_zoom_invert", False)
         project.setting(int, 'language', None)
+        if project.window_width < 300:
+            project.window_width = 300
+        if project.window_height < 300:
+            project.window_height = 300
 
         self.locale = None
         wx.Locale.AddCatalogLookupPathPrefix('locale')
