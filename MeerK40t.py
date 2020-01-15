@@ -767,7 +767,12 @@ class MeerK40t(wx.Frame):
 
     def on_size(self, event):
         self.Layout()
-        self._Buffer = wx.Bitmap(*self.ClientSize)
+        width, height = self.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
         self.project.window_width, self.project.window_height = self.Size
         self.guide_lines = None
         self.post_buffer_update()
@@ -1152,6 +1157,7 @@ class MeerK40t(wx.Frame):
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
         pen.SetCap(wx.CAP_BUTT)
+        dc.SetPen(pen)
         if self.project.draw_mode & 2 == 0:
             self.on_draw_guides(dc)
         if self.project.draw_mode & 16 == 0:
@@ -1165,14 +1171,14 @@ class MeerK40t(wx.Frame):
     def on_draw_bed(self, dc):
         wmils = self.project.bed_width * 39.37
         hmils = self.project.bed_height * 39.37
-        dc.SetPen(wx.WHITE_PEN)
+        dc.SetBrush(wx.WHITE_BRUSH)
         dc.DrawRectangle(0, 0, wmils, hmils)
 
     def on_draw_selection(self, dc, draw_mode):
         if self.project.selected is not None and self.project.selected.scene_bounds is not None:
             linewidth = 3.0 / self.matrix.GetScaleX()
-            f = 2 * linewidth
-            g = 2 * f
+            # f = 2 * linewidth
+            # g = 2 * f
             self.selection_pen.SetWidth(linewidth)
             dc.SetPen(self.selection_pen)
             dc.SetBrush(wx.BLACK_BRUSH)
@@ -1185,22 +1191,25 @@ class MeerK40t(wx.Frame):
             dc.DrawLine(x1, y0, x1, y1)
             dc.DrawLine(x1, y1, x0, y1)
             dc.DrawLine(x0, y1, x0, y0)
-            dc.SetPen(wx.TRANSPARENT_PEN)
-            dc.DrawRectangle((x0 - f, y0 - f, g, g))
-            dc.DrawRectangle((x0 - f, y1 - f, g, g))
-            dc.DrawRectangle((x1 - f, y0 - f, g, g))
-            dc.DrawRectangle((x1 - f, y1 - f, g, g))
-            dc.DrawRectangle((x0 - f, center_y - f, g, g))
-            dc.DrawRectangle((center_x - f, y0 - f, g, g))
-            dc.DrawRectangle((x1 - f, center_y - f, g, g))
-            dc.DrawRectangle((center_x - f, y1 - f, g, g))
+            # dc.DrawRectangle((x0 - f, y0 - f, g, g))
+            # dc.DrawRectangle((x0 - f, y1 - f, g, g))
+            # dc.DrawRectangle((x1 - f, y0 - f, g, g))
+            # dc.DrawRectangle((x1 - f, y1 - f, g, g))
+            # dc.DrawRectangle((x0 - f, center_y - f, g, g))
+            # dc.DrawRectangle((center_x - f, y0 - f, g, g))
+            # dc.DrawRectangle((x1 - f, center_y - f, g, g))
+            # dc.DrawRectangle((center_x - f, y1 - f, g, g))
             if draw_mode & 128 == 0:
                 p = self.project
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
-                dc.DrawText("%.1f%s" % (y0 / conversion, name), center_x + 50, y0 + 50)
-                dc.DrawText("%.1f%s" % (x0 / conversion, name), x0 + 50, center_y + 50)
-                dc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), x1 + 50, center_y)
-                dc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), center_x, y1 + 50)
+                dc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
+                dc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
+                dc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), x1, center_y)
+                dc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), center_x, y1)
+
+    def on_draw_laserpath(self, dc, draw_mode):
+        dc.SetPen(wx.BLUE_PEN)
+        dc.DrawLineList(self.laserpath)
 
     def on_draw_scene(self, dc):
         self.on_draw_bed(dc)
@@ -1217,8 +1226,7 @@ class MeerK40t(wx.Frame):
         if self.project.draw_mode & 32 == 0:
             self.on_draw_selection(dc, self.project.draw_mode)
         if self.project.draw_mode & 8 == 0:
-            dc.SetPen(wx.BLUE_PEN)
-            dc.DrawLineList(self.laserpath)
+            self.on_draw_laserpath(dc, self.project.draw_mode)
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.elements = []

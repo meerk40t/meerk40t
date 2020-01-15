@@ -92,9 +92,8 @@ class LaserRender:
                 gc.FillPath(p)
                 gc.StrokePath(p)
                 del p
-            # elif e.type == 'image':
-            #     p = self.make_thumbnail(e, maximum=20)
-            #     gc.DrawBitmap(p, 0, 0, width, height)
+            # TODO: There is a need to raster a fragment of scene, including images.
+            # Such that make_raster and actualize are two sides of the same coin.
             element.transform = old_matrix
 
         img = bmp.ConvertToImage()

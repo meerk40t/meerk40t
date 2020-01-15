@@ -28,9 +28,11 @@ class JobInfo(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Simple"), "")
         self.Bind(wx.EVT_MENU, self.spool_trace_simple, id=t.GetId())
+        t.Enable(False)
 
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Hull"), "")
         self.Bind(wx.EVT_MENU, self.spool_trace_hull, id=t.GetId())
+        t.Enable(False)
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Run"))
 
         wxglade_tmp_menu = wx.Menu()
