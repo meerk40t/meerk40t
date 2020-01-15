@@ -4,10 +4,13 @@
 #
 
 import wx
-from icons import *
+
 from K40Controller import get_code_string_from_code
-from ThreadConstants import *
+from Kernel import *
+from icons import *
+
 _ = wx.GetTranslation
+
 
 class Controller(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -63,21 +66,23 @@ class Controller(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        project["status", self.update_status] = self
-        project["packet", self.update_packet] = self
-        project["packet_text", self.update_packet_text] = self
-        project["buffer", self.on_buffer_update] = self
-        project["usb_status", self.on_usbstatus] = self
-        project["control_thread", self.on_control_state] = self
+        self.project.setting(int, "packet_count", 0)
+        self.project.setting(str, "_usb_state", None)
+        self.project.listen("status", self.update_status)
+        self.project.listen("packet", self.update_packet)
+        self.project.listen("packet_text", self.update_packet_text)
+        self.project.listen("buffer", self.on_buffer_update)
+        self.project.listen("usb_state", self.on_usb_state)
+        self.project.listen("control_thread", self.on_control_state)
         self.set_controller_button_by_state()
 
     def on_close(self, event):
-        self.project["status", self.update_status] = None
-        self.project["packet", self.update_packet] = None
-        self.project["packet_text", self.update_packet_text] = None
-        self.project["buffer", self.on_buffer_update] = None
-        self.project["usb_status", self.on_usbstatus] = None
-        self.project["control_thread", self.on_control_state] = None
+        self.project.unlisten("status", self.update_status)
+        self.project.unlisten("packet", self.update_packet)
+        self.project.unlisten("packet_text", self.update_packet_text)
+        self.project.unlisten("buffer", self.on_buffer_update)
+        self.project.unlisten("usb_state", self.on_usb_state)
+        self.project.unlisten("control_thread", self.on_control_state)
         try:
             del self.project.windows["controller"]
         except KeyError:
@@ -246,8 +251,8 @@ class Controller(wx.Frame):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
-            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-            self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
+            self.packet_count_text.SetValue(str(self.project.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.project.rejected_count))
             update = True
         if self.update_buffer_size:
             self.update_buffer_size = False
@@ -272,26 +277,27 @@ class Controller(wx.Frame):
         self.dirty = False
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.control_state
+        state = self.project.get_state("K40Controller")
         if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.project.controller.start_queue_consumer()
+            self.project.start("K40Controller")
         elif state == THREAD_STATE_PAUSED:
-            self.project.controller.resume()
+            self.project.resume("K40Controller")
         elif state == THREAD_STATE_STARTED:
-            self.project.controller.pause()
+            self.project.pause("K40Controller")
         elif state == THREAD_STATE_ABORT:
             self.project("abort", 0)
-            self.project.controller.reset_thread()
+            self.project.reset("K40Controller")
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        if self.project.controller.usb is None:
-            self.project.controller.start_usb()
+        state = self.project._usb_state
+        if state is None or state == "Disconnected" or state == "Uninitialized":
+            self.project.execute("K40Usb-Start")
         else:
-            self.project.controller.stop_usb()
+            self.project.execute("K40Usb-Stop")
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         self.project("abort", 1)
-        self.project.controller.emergency_stop()
+        self.project.abort("K40Controller")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
         self.project.close_old_window("bufferview")
@@ -316,7 +322,7 @@ class Controller(wx.Frame):
         self.packet_string = string_data
         self.post_update()
 
-    def on_usbstatus(self, status):
+    def on_usb_state(self, status):
         self.update_usb_status = True
         self.usb_status = status
         self.post_update()

@@ -4,8 +4,11 @@
 #
 
 import wx
+
 from icons import icons8_administrative_tools_50
+
 _ = wx.GetTranslation
+
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -17,7 +20,8 @@ class Preferences(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((381, 523))
-        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
+        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"],
+                                          style=wx.CB_DROPDOWN)
         self.checkbox_1 = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
         self.checkbox_3 = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_2 = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
@@ -27,7 +31,8 @@ class Preferences(wx.Frame):
         self.spin_home_x = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
         self.spin_home_y = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
-        self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=[_("mm"), _("cm"), _("inch"), _("mils")], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=[_("mm"), _("cm"), _("inch"), _("mils")],
+                                       majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.spin_bedwidth = wx.SpinCtrlDouble(self, wx.ID_ANY, "330.0", min=1.0, max=1000.0)
         self.spin_bedheight = wx.SpinCtrlDouble(self, wx.ID_ANY, "230.0", min=1.0, max=1000.0)
         self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, _("Automatically lock rail"))
@@ -83,18 +88,30 @@ class Preferences(wx.Frame):
         event.Skip()  # Call destroy.
 
     def set_project(self, project):
+        project.setting(bool, "mock", False)
+        project.setting(bool, "autobeep", False)
+        project.setting(bool, "autohome", False)
+        project.setting(bool, "autolock", True)
+        project.setting(str, "board", 'M2')
+        project.setting(int, "bed_width", 280)
+        project.setting(int, "bed_height", 200)
+        project.setting(int, "units_index", 0)
+        project.setting(int, "usb_index", -1)
+        project.setting(int, "usb_bus", -1)
+        project.setting(int, "usb_address", -1)
+
         self.project = project
-        self.checkbox_mock_usb.SetValue(self.project.controller.mock)
+        self.checkbox_mock_usb.SetValue(self.project.mock)
         self.checkbox_autobeep.SetValue(self.project.autobeep)
         self.checkbox_autohome.SetValue(self.project.autohome)
-        self.checkbox_autolock.SetValue(self.project.writer.autolock)
-        self.combobox_board.SetValue(self.project.writer.board)
-        self.spin_bedwidth.SetValue(self.project.size[0])
-        self.spin_bedheight.SetValue(self.project.size[1])
-        self.radio_units.SetSelection(self.project.units[3])
-        self.spin_device_index.SetValue(self.project.controller.usb_index)
-        self.spin_device_bus.SetValue(self.project.controller.usb_bus)
-        self.spin_device_address.SetValue(self.project.controller.usb_address)
+        self.checkbox_autolock.SetValue(self.project.autolock)
+        self.combobox_board.SetValue(self.project.board)
+        self.spin_bedwidth.SetValue(self.project.bed_width)
+        self.spin_bedheight.SetValue(self.project.bed_height)
+        self.radio_units.SetSelection(self.project.units_index)
+        self.spin_device_index.SetValue(self.project.usb_index)
+        self.spin_device_bus.SetValue(self.project.usb_bus)
+        self.spin_device_address.SetValue(self.project.usb_address)
         self.checkbox_multiple_devices.SetValue(self.spin_device_index.GetValue() != -1 or
                                                 self.spin_device_bus.GetValue() != -1 or
                                                 self.spin_device_address.GetValue() != -1)
@@ -240,7 +257,7 @@ class Preferences(wx.Frame):
         # end wxGlade
 
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.writer.board = self.combobox_board.GetValue()
+        self.project.board = self.combobox_board.GetValue()
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
         print("Event handler 'on_check_flip_x' not implemented!")
@@ -280,24 +297,46 @@ class Preferences(wx.Frame):
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
         if event.Int == 0:
-            self.project.set_mm()
+            self.set_mm()
         elif event.Int == 1:
-            self.project.set_cm()
+            self.set_cm()
         elif event.Int == 2:
-            self.project.set_inch()
+            self.set_inch()
         elif event.Int == 3:
-            self.project.set_mil()
+            self.set_mil()
+
+    def set_inch(self):
+        p = self.project
+        p.units_convert, p.units_name, p.units_marks, p.units_index = (1000.0, "inch", 1, 2)
+        p("units", 0)
+
+    def set_mil(self):
+        p = self.project
+        p.units_convert, p.units_name, p.units_marks, p.units_index = (1.0, "mil", 1000, 3)
+        p("units", 0)
+
+    def set_cm(self):
+        p = self.project
+        p.units_convert, p.units_name, p.units_marks, p.units_index = (393.7, "cm", 1, 1)
+        p("units", 0)
+
+    def set_mm(self):
+        p = self.project
+        p.units_convert, p.units_name, p.units_marks, p.units_index = (39.37, "mm", 10, 0)
+        p("units", 0)
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.size = self.spin_bedwidth.GetValue(), self.spin_bedheight.GetValue()
-        self.project("bed_size", self.project.size)
+        self.project.bed_width = int(self.spin_bedwidth.GetValue())
+        self.project.bed_height = int(self.spin_bedheight.GetValue())
+        self.project("bed_size", 0)
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.size = self.spin_bedwidth.GetValue(), self.spin_bedheight.GetValue()
-        self.project("bed_size", self.project.size)
+        self.project.bed_width = int(self.spin_bedwidth.GetValue())
+        self.project.bed_height = int(self.spin_bedheight.GetValue())
+        self.project("bed_size", 0)
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.writer.autolock = self.checkbox_autolock.GetValue()
+        self.project.autolock = self.checkbox_autolock.GetValue()
 
     def on_check_autohome(self, event):  # wxGlade: Preferences.<event_handler>
         self.project.autohome = self.checkbox_autohome.GetValue()
@@ -306,16 +345,16 @@ class Preferences(wx.Frame):
         self.project.autobeep = self.checkbox_autobeep.GetValue()
 
     def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.controller.usb_index = int(self.spin_device_index.GetValue())
+        self.project.usb_index = int(self.spin_device_index.GetValue())
 
     def spin_on_device_address(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.controller.usb_address = int(self.spin_device_address.GetValue())
+        self.project.usb_address = int(self.spin_device_address.GetValue())
 
     def spin_on_device_bus(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.controller.usb_bus = int(self.spin_device_bus.GetValue())
+        self.project.usb_bus = int(self.spin_device_bus.GetValue())
 
     def on_checkbox_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
-        self.project.controller.mock = self.checkbox_mock_usb.GetValue()
+        self.project.mock = self.checkbox_mock_usb.GetValue()
 
     def on_checkbox_multiple_devices(self, event):  # wxGlade: Preferences.<event_handler>
         self.spin_device_index.Enable(self.checkbox_multiple_devices.GetValue())

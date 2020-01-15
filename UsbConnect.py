@@ -1,4 +1,5 @@
 import wx
+
 _ = wx.GetTranslation
 
 
@@ -20,11 +21,13 @@ class UsbConnect(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        self.usblog_text.SetValue(self.project.controller.device_log)
-        self.project["usb_log", self.update_log] = self
+        self.project.setting(str, "_device_log", '')
+        self.usblog_text.SetValue(self.project._device_log)
+
+        self.project.listen("usb_log", self.update_log)
 
     def on_close(self, event):
-        self.project["usb_log", self.update_log] = None
+        self.project.unlisten("usb_log", self.update_log)
         try:
             del self.project.windows["usbconnect"]
         except KeyError:
@@ -43,7 +46,7 @@ class UsbConnect(wx.Frame):
             self.usblog_text.AppendText(self.append_text)
             self.append_text = ""
         except RuntimeError:
-            self.project.controller.usblog_listener = None
+            self.project.unlisten("usb_log", self.update_log)
         self.dirty = False
 
     def post_update(self):

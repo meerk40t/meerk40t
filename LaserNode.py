@@ -1,7 +1,6 @@
-from svgelements import *
-
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
+from svgelements import *
 
 """
  Tree building class for projects. This class is intended to take SVGElement class objects and give them a MeerK40t

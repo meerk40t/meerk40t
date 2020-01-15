@@ -1,7 +1,8 @@
 import wx
 
 import LaserRender
-from LaserProject import *
+from Kernel import *
+from LaserCommandConstants import *
 
 _ = wx.GetTranslation
 

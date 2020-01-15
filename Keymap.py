@@ -1,4 +1,5 @@
 import wx
+
 _ = wx.GetTranslation
 
 
@@ -31,6 +32,7 @@ class Keymap(wx.Frame):
 
     def set_project(self, project):
         self.project = project
+        project.setting(bool, "mouse_zoom_invert", False)
         self.check_invert_mouse_zoom.SetValue(self.project.mouse_zoom_invert)
         self.reload_keymap()
 

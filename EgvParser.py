@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from LaserSpeed import LaserSpeed
+from svgelements import *
 
 CMD_RIGHT = ord(b'B')
 CMD_LEFT = ord(b'T')

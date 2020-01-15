@@ -1,102 +1,95 @@
-from K40Controller import K40Controller
-from LhymicroWriter import LhymicroWriter
-from LaserNode import *
+from LaserNode import LaserNode
 
-"""
-LaserProject is a bit of a grabbag of different functions. Serving as a sort of God object.
-It serves as a hub of communication between different windows, as the storage container for the elements root.
-As the chief provider of many settings used in the program.
-
-Storing and loading settings.
- 
-"""
+THREAD_STATE_UNSTARTED = 0
+THREAD_STATE_STARTED = 1
+THREAD_STATE_PAUSED = 2
+THREAD_STATE_FINISHED = 3
+THREAD_STATE_ABORT = 10
 
 
-class LaserProject:
-    def __init__(self):
-        self.call_after = None
+def get_state_string_from_state(state):
+    if state == THREAD_STATE_UNSTARTED:
+        return "Unstarted"
+    elif state == THREAD_STATE_ABORT:
+        return "Aborted"
+    elif state == THREAD_STATE_FINISHED:
+        return "Finished"
+    elif state == THREAD_STATE_PAUSED:
+        return "Paused"
+    elif state == THREAD_STATE_STARTED:
+        return "Started"
+
+
+class Kernel:
+    """
+    The kernel is the software framework that is tasked with the API implementation.
+
+    The class serves as:
+    * a hub of communications between different processes.
+    * implementation of event listeners
+    * persistent saving and loading settings data
+    * the threading of different events
+    * interactions between different modules
+
+    Since most parts of the system are intended to allow swapping between the different modules a level of API
+    abstraction is required. The hackability of various systems depends on a robust code that is agnostic to the state
+    of the rest of modules.
+
+    LaserNode data is primarily of three types: path, image, and text.
+    Readers convert some file or streams being read into LaserNode data.
+    Writers convert LaserNode data into some types of files or streams.
+    Effects convert LaserNode data into different LaserNode data.
+    Operations are functions that can be arbitrarily added to spoolers.
+    Controls are functions that can simply be called, typically for very light threads.
+    A spooler is a processing queue for LaserNode data and other command generators.
+    Command generators use the LaserCommandConstant middle language to facilitate controller events.
+    LaserNode are command generators.
+
+    Most MeerK40t objects will have a direct reference to the Kernel. However, the Kernel should not directly reference
+    any object.
+
+    kernel.setting(type, name, default): Registers kernel.name as a persistent setting.
+    kernel.flush(): push out persistent settings
+    kernel.listen(signal, function): Registers function as a listener for the given signal.
+    kernel.unlisten(signal, function): Unregister function as a listener for the signal.
+    kernel.add_loader(loader): Registers a qualified loader function.
+    kernel.add_writer(file): Registers a qualified saver function.
+    kernel.add_effect(effect): registers a qualified effect.
+    kernel.add_operation(op): registers a spooler operation
+    kernel.add_thread(thread, object): Registers a thread.
+    kernel.remove_thread(thread)
+
+    kernel.load(file): Loads the given file and turns it into laser nodes.
+    kernel.write(file): Saves the laser nodes to the given filename or stream.
+    kernel.tick(seconds, function): tick each x seconds until function returns False.
+    kernel.shutdown(): shuts down kernel.
+
+    kernel(signal, value): Calls the signal with the given value.
+    """
+
+    def __init__(self, spooler=None, config=None):
+        self.spooler = spooler  # Class responsible for spooling commands
+        self.elements = LaserNode(parent=self)
+
+        self.config = None
+        self.loaders = []
+        self.writers = []
+        self.effects = []
+        self.operations = []
+        self.threads = {}
+        self.controls = {}
+
         self.listeners = {}
         self.last_message = {}
-        self.elements = LaserNode(parent=self)
-        self.size = 320, 220
-        self.units = (39.37, "mm", 10, 0)
-        self.config = None
-        self.windows = {}
-        self.draw_mode = 0  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
-        self.window_width = 600
-        self.window_height = 600
-
         self.selected = None
-        self.autohome = False
-        self.autobeep = True
-        self.autostart = True
-        self.mouse_zoom_invert = False
+        self.windows = {}
         self.keymap = {}
-        # self.properties = {
-        #     0xFF0000: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0xFF0000,
-        #         VARIABLE_NAME_FILL_COLOR: 0xFF0000,
-        #         VARIABLE_NAME_SPEED: 10,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 1000.0},
-        #     0x00FF00: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0x00FF00,
-        #         VARIABLE_NAME_FILL_COLOR: 0x00FF00,
-        #         VARIABLE_NAME_SPEED: 30,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 1000.0},
-        #     0x0000FF: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0x0000FF,
-        #         VARIABLE_NAME_FILL_COLOR: 0x0000FF,
-        #         VARIABLE_NAME_SPEED: 40,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 1000.0},
-        #     0xFFFF00: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0xFFFF00,
-        #         VARIABLE_NAME_FILL_COLOR: 0xFFFF00,
-        #         VARIABLE_NAME_SPEED: 15,
-        #         VARIABLE_NAME_PASSES: 2,
-        #         VARIABLE_NAME_POWER: 500.0},
-        #     0xFF00FF: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0xFF00FF,
-        #         VARIABLE_NAME_FILL_COLOR: 0xFF00FF,
-        #         VARIABLE_NAME_SPEED: 35,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 800.0},
-        #     0x00FFFF: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0x00FFFF,
-        #         VARIABLE_NAME_FILL_COLOR: 0x00FFFF,
-        #         VARIABLE_NAME_SPEED: 6,
-        #         VARIABLE_NAME_PASSES: 4,
-        #         VARIABLE_NAME_POWER: 1000.0},
-        #     "Raster": {
-        #         VARIABLE_NAME_STROKE_COLOR: 0x000000,
-        #         VARIABLE_NAME_FILL_COLOR: 0x000000,
-        #         VARIABLE_NAME_SPEED: 80,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 1000.0
-        #     },
-        #     "Vector": {
-        #         VARIABLE_NAME_STROKE_COLOR: 0x000000,
-        #         VARIABLE_NAME_FILL_COLOR: 0x000000,
-        #         VARIABLE_NAME_SPEED: 20,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 1000.0
-        #     },
-        #     None: {
-        #         VARIABLE_NAME_STROKE_COLOR: 0x000000,
-        #         VARIABLE_NAME_FILL_COLOR: 0x000000,
-        #         VARIABLE_NAME_SPEED: 20,
-        #         VARIABLE_NAME_PASSES: 1,
-        #         VARIABLE_NAME_POWER: 1000.0,
-        #         VARIABLE_NAME_NAME: '',
-        #         VARIABLE_NAME_DRATIO: 0.271,
-        #         VARIABLE_NAME_RASTER_STEP: 1,
-        #         VARIABLE_NAME_RASTER_DIRECTION: 0
-        #     }
-        # }
-        self.controller = K40Controller(self)
-        self.writer = LhymicroWriter(self, controller=self.controller)
+
+        self.signal_dispatcher = lambda listener, message: listener(message)
+        self.translation = None
+
+        if config is not None:
+            self.set_config(config)
 
     def __str__(self):
         return "Project"
@@ -105,104 +98,114 @@ class LaserProject:
         if code in self.listeners:
             listeners = self.listeners[code]
             for listener in listeners:
-                self.call_after(listener, message)
+                self.signal_dispatcher(listener, message)
         self.last_message[code] = message
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
             if value is None:
                 key, value = key
-                self.remove_listener(value, key)
+                self.unlisten(key, value)
             else:
                 key, value = key
-                self.add_listener(value, key)
+                self.listen(key, value)
         elif isinstance(key, str):
-            if isinstance(value, str):
-                self.config.Write(key, value)
-            elif isinstance(value, int):
-                self.config.WriteInt(key, value)
-            elif isinstance(value, float):
-                self.config.WriteFloat(key, value)
-            elif isinstance(value, bool):
-                self.config.WriteBool(key, value)
+            self.write_config(key, value)
 
     def __getitem__(self, item):
         if isinstance(item, tuple):
             if len(item) == 2:
                 t, key = item
-                if t == str:
-                    return self.config.Read(key)
-                elif t == int:
-                    return self.config.ReadInt(key)
-                elif t == float:
-                    return self.config.ReadFloat(key)
-                elif t == bool:
-                    return self.config.ReadBool(key)
+                return self.read_config(t, key)
             else:
                 t, key, default = item
-                if t == str:
-                    return self.config.Read(key, default)
-                elif t == int:
-                    return self.config.ReadInt(key, default)
-                elif t == float:
-                    return self.config.ReadFloat(key, default)
-                elif t == bool:
-                    return self.config.ReadBool(key, default)
+                return self.read_config(t, key, default)
         return self.config.Read(item)
 
-    def load_config(self):
-        # self.properties = eval(self[str, "properties", repr(self.properties)])
-        self.window_width = self[int, "window_width", self.window_width]  # TODO: hookup, so window size stays.
-        self.window_height = self[int, "window_height", self.window_height]
-        self.draw_mode = self[int, "mode", self.draw_mode]
-        self.autohome = self[bool, "autohome", self.autobeep]
-        self.autobeep = self[bool, "autobeep", self.autobeep]
-        self.autostart = self[bool, "autostart", self.autostart]
-        self.mouse_zoom_invert = self[bool, "mouse_zoom_invert", self.mouse_zoom_invert]
-        convert = self[float, "units-convert", self.units[0]]
-        name = self[str, "units-name", self.units[1]]
-        marks = self[int, "units-marks", self.units[2]]
-        unitindex = self[int, "units-index", self.units[3]]
-        self.units = (convert, name, marks, unitindex)
-        width = self[int, "bed_width", self.size[0]]
-        height = self[int, "bed_height", self.size[1]]
-        self.size = width, height
-        self.writer.board = self[str, "board", self.writer.board]
-        self.writer.autolock = self[bool, "autolock", self.writer.autolock]
-        self.writer.rotary = self[bool, "rotary", self.writer.rotary]
-        self.writer.scale_x = self[float, "scale_x", self.writer.scale_x]
-        self.writer.scale_y = self[float, "scale_y", self.writer.scale_y]
-        self.controller.mock = self[bool, "mock", self.controller.mock]
-        self.controller.usb_index = self[int, "usb_index", self.controller.usb_index]
-        self.controller.usb_bus = self[int, "usb_bus", self.controller.usb_bus]
-        self.controller.usb_address = self[int, "usb_address", self.controller.usb_address]
-        self("units", self.units)
-        self("bed_size", self.size)
+    def read_config(self, t, key, default=None):
+        if default is not None:
+            if t == str:
+                return self.config.Read(key, default)
+            elif t == int:
+                return self.config.ReadInt(key, default)
+            elif t == float:
+                return self.config.ReadFloat(key, default)
+            elif t == bool:
+                return self.config.ReadBool(key, default)
+        if t == str:
+            return self.config.Read(key)
+        elif t == int:
+            return self.config.ReadInt(key)
+        elif t == float:
+            return self.config.ReadFloat(key)
+        elif t == bool:
+            return self.config.ReadBool(key)
 
-    def save_config(self):
-        # self["properties"] = repr(self.properties)
-        self["window_width"] = int(self.window_width)
-        self["window_height"] = int(self.window_height)
-        self["mode"] = int(self.draw_mode)
-        self["autohome"] = bool(self.autohome)
-        self["autobeep"] = bool(self.autobeep)
-        self["autostart"] = bool(self.autostart)
-        self["mouse_zoom_invert"] = bool(self.mouse_zoom_invert)
-        self["units-convert"] = float(self.units[0])
-        self["units-name"] = str(self.units[1])
-        self["units-marks"] = int(self.units[2])
-        self["units-index"] = int(self.units[3])
-        self["bed_width"] = int(self.size[0])
-        self["bed_height"] = int(self.size[1])
-        self["board"] = str(self.writer.board)
-        self["autolock"] = bool(self.writer.autolock)
-        self["rotary"] = bool(self.writer.rotary)
-        self["scale_x"] = float(self.writer.scale_x)
-        self["scale_y"] = float(self.writer.scale_y)
-        self["mock"] = bool(self.controller.mock)
-        self["usb_index"] = int(self.controller.usb_index)
-        self["usb_bus"] = int(self.controller.usb_bus)
-        self["usb_address"] = int(self.controller.usb_address)
+    def write_config(self, key, value):
+        if isinstance(value, str):
+            self.config.Write(key, value)
+        elif isinstance(value, int):
+            self.config.WriteInt(key, value)
+        elif isinstance(value, float):
+            self.config.WriteFloat(key, value)
+        elif isinstance(value, bool):
+            self.config.WriteBool(key, value)
+
+    def set_config(self, config):
+        self.config = config
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, float, str)):
+                self.write_config(attr, value)
+        more, value, index = config.GetFirstEntry()
+        while more:
+            if not value.startswith('_'):
+                if not hasattr(self, value):
+                    setattr(self, value, None)
+            more, value, index = config.GetNextEntry(index)
+
+    def setting(self, setting_type, setting_name, default=None):
+        """
+        Registers a setting to be used between modules.
+
+        If the setting exists, it's value remains unchanged.
+        If the setting exists in the persistent storage that value is used.
+        If there is no settings value, the default will be used.
+
+        :param setting_type: int, float, str, or bool value
+        :param setting_name: name of the setting
+        :param default: default value for the setting to have.
+        :return:
+        """
+        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
+            return
+        if not setting_name.startswith('_') and self.config is not None:
+            load_value = self[setting_type, setting_name, default]
+        else:
+            load_value = default
+        setattr(self, setting_name, load_value)
+
+    def flush(self):
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, str, float)):
+                self[attr] = value
+
+    def update(self, setting_name, value):
+        if hasattr(self, setting_name):
+            old_value = getattr(self, setting_name)
+        else:
+            old_value = None
+        setattr(self, setting_name, value)
+        self(setting_name, (value, old_value))
 
     def close_old_window(self, name):
         if name in self.windows:
@@ -213,90 +216,63 @@ class LaserProject:
                 pass  # already closed.
 
     def shutdown(self):
-        pass
+        self('shutdown', 0)
 
-    def add_listener(self, listener, code):
-        if code in self.listeners:
-            listeners = self.listeners[code]
-            listeners.append(listener)
+    def listen(self, signal, function):
+        if signal in self.listeners:
+            listeners = self.listeners[signal]
+            listeners.append(function)
         else:
-            self.listeners[code] = [listener]
-        if code in self.last_message:
-            last_message = self.last_message[code]
-            listener(last_message)
+            self.listeners[signal] = [function]
+        if signal in self.last_message:
+            last_message = self.last_message[signal]
+            function(last_message)
 
-    def remove_listener(self, listener, code):
+    def unlisten(self, listener, code):
         if code in self.listeners:
             listeners = self.listeners[code]
             listeners.remove(listener)
 
-    def validate_matrix(self, node):
-        pass
+    def add_control(self, control_name, function):
+        self.controls[control_name] = function
 
-    def validate(self, node=None):
-        if node is None:
-            # Default call.
-            node = self.elements
+    def remove_control(self, control_name):
+        del self.controls[control_name]
 
-        node.scene_bound = None  # delete bounds
-        for element in node:
-            self.validate(element)  # validate all subelements.
-        if len(node) == 0:  # Leaf Node.
-            try:
-                node.scene_bounds = node.element.bbox()
-            except AttributeError:
-                pass
-            return
-        # Group node.
-        xvals = []
-        yvals = []
-        for e in node:
-            bounds = e.scene_bounds
-            if bounds is None:
-                continue
-            xvals.append(bounds[0])
-            xvals.append(bounds[2])
-            yvals.append(bounds[1])
-            yvals.append(bounds[3])
-        if len(xvals) == 0:
-            return
-        node.scene_bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+    def execute(self, control_name, *args):
+        self.controls[control_name](*args)
 
-    def size_in_native_units(self):
-        return self.size[0] * 39.37, self.size[1] * 39.37
+    def add_thread(self, thread_name, object):
+        self.threads[thread_name] = object
 
-    def set_inch(self):
-        self.units = (1000, "inch", 1, 2)
-        self("units", self.units)
+    def remove_thread(self, thread_name):
+        del self.threads[thread_name]
 
-    def set_mil(self):
-        self.units = (1, "mil", 1000, 3)
-        self("units", self.units)
+    def get_state(self, thread_name):
+        return self.threads[thread_name].state()
 
-    def set_cm(self):
-        self.units = (393.7, "cm", 1, 1)
-        self("units", self.units)
+    def start(self, thread_name):
+        self.threads[thread_name].start()
 
-    def set_mm(self):
-        self.units = (39.37, "mm", 10, 0)
-        self("units", self.units)
+    def resume(self, thread_name):
+        self.threads[thread_name].resume()
+
+    def pause(self, thread_name):
+        self.threads[thread_name].pause()
+
+    def abort(self, thread_name):
+        self.threads[thread_name].abort()
+
+    def reset(self, thread_name):
+        self.threads[thread_name].reset()
+
+    def stop(self, thread_name):
+        self.threads[thread_name].stop()
 
     def set_selected(self, selected):
         self.selected = selected
         self("selection", self.selected)
 
-    def set_selected_by_position(self, position):
-        self.selected = None
-        self.validate()
-        for e in reversed(list(self.elements.flat_elements(types=('image', 'path', 'text')))):
-            bounds = e.scene_bounds
-            if bounds is None:
-                continue
-            if e.contains(position):
-                if e.parent is not None:
-                    e = e.parent
-                self.set_selected(e)
-                break
 
     def bbox(self):
         boundary_points = []
@@ -326,6 +302,6 @@ class LaserProject:
     def move_selected(self, dx, dy):
         if self.selected is None:
             return
-        self.selected.move(dx,dy)
+        self.selected.move(dx, dy)
         for e in self.selected:
             e.move(dx, dy)

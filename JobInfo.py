@@ -1,11 +1,13 @@
 import wx
+
 from LaserCommandConstants import *
 from icons import icons8_laser_beam_52, icons8_route_50
-from svgelements import *
+
 _ = wx.GetTranslation
 
 
 class JobInfo(wx.Frame):
+
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobInfo.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
@@ -24,18 +26,29 @@ class JobInfo(wx.Frame):
         # Menu Bar
         self.JobInfo_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Simple"), "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Hull"), "")
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Simple"), "")
+        self.Bind(wx.EVT_MENU, self.spool_trace_simple, id=t.GetId())
+
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Hull"), "")
+        self.Bind(wx.EVT_MENU, self.spool_trace_hull, id=t.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Run"))
+
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep After"), "", wx.ITEM_CHECK)
+        self.menu_autostart = wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_auto_start_controller, id=self.menu_autostart.GetId())
+        self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_home_after, id=self.menu_autohome.GetId())
+        self.menu_autobeep = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep After"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_beep_after, id=self.menu_autobeep.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Automatic"))
+
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Home"), "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Wait"), "")
-        wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep"), "")
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home"), "")
+        self.Bind(wx.EVT_MENU, self.jobadd_home, id=t.GetId())
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Wait"), "")
+        self.Bind(wx.EVT_MENU, self.jobadd_wait, id=t.GetId())
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep"), "")
+        self.Bind(wx.EVT_MENU, self.jobadd_beep, id=t.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Add"))
         self.SetMenuBar(self.JobInfo_menubar)
         # Menu Bar end
@@ -56,25 +69,57 @@ class JobInfo(wx.Frame):
         self.elements = None
         self.operations = None
 
+    def spool_trace_simple(self, event):
+        print("Spool Simple.")
+
+    def spool_trace_hull(self, event):
+        print("Spool Hull.")
+
+    def jobadd_home(self, event):
+        def home():
+            yield COMMAND_HOME
+
+        self.elements.append(home)
+        self.update_gui()
+
+    def jobadd_wait(self, event):
+        wait_amount = 5.0
+
+        def wait():
+            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT, wait_amount
+
+        self.elements.append(wait)
+        self.update_gui()
+
+    def jobadd_beep(self, event):
+        def beep():
+            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_BEEP
+
+        self.elements.append(beep)
+        self.update_gui()
+
     def set_project(self, project, elements=None, operations=None):
         self.project = project
         self.elements = elements
         self.operations = operations
+        autohome = project[bool, "autohome", False]
+        autobeep = project[bool, "autobeep", True]
+        autostart = project[bool, "autostart", True]
+        self.menu_autohome.Check(autohome)
+        self.menu_autobeep.Check(autobeep)
+        self.menu_autostart.Check(autostart)
         if self.elements is None:
             self.elements = []
         if self.operations is None:
             self.operations = []
 
-        if self.project.writer.autobeep:
-            def beep():
-                yield COMMAND_WAIT_BUFFER_EMPTY
-                yield COMMAND_BEEP
-            self.elements.append(beep)
+        if autobeep:
+            self.jobadd_beep(None)
 
-        if self.project.writer.autohome:
-            def home():
-                yield COMMAND_HOME
-            self.elements.append(home)
+        if autohome:
+            self.jobadd_home(None)
         for e in self.elements:
             try:
                 t = e.type
@@ -89,6 +134,7 @@ class JobInfo(wx.Frame):
                                     e.make_actual()
                             except AttributeError:
                                 pass
+
                     self.operations.append(actualize)
                     break
             except AttributeError:
@@ -102,6 +148,7 @@ class JobInfo(wx.Frame):
                 def remove_text():
                     self.elements = [e for e in self.elements if not hasattr(e, 'type') or e.type != 'text']
                     self.update_gui()
+
                 self.operations.append(remove_text)
                 break
         self.update_gui()
@@ -142,16 +189,16 @@ class JobInfo(wx.Frame):
         # end wxGlade
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.thread.limit_buffer = not self.project.writer.thread.limit_buffer
+        self.project.spooler.thread.limit_buffer = not self.project.spooler.thread.limit_buffer
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.autostart = not self.project.writer.autostart
+        self.project.autostart = self.menu_autostart.IsChecked()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.autohome = not self.project.writer.autohome
+        self.project.autohome = self.menu_autohome.IsChecked()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.writer.autobeep = not self.project.writer.autobeep
+        self.project.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.project.close_old_window("jobspooler")
@@ -163,14 +210,14 @@ class JobInfo(wx.Frame):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.operations) == 0:
-            self.project.writer.add_queue(self.elements)
+            self.project.spooler.add_queue(self.elements)
             self.on_button_job_spooler()
             self.Close()
         else:
             for op in self.operations:
                 op()
             self.operations = []
-            self.project('elements',0)
+            self.project('elements', 0)
             self.update_gui()
 
     def on_listbox_element_click(self, event):  # wxGlade: JobInfo.<event_handler>

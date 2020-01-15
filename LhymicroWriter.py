@@ -2,11 +2,10 @@ import threading
 import time
 
 from K40Controller import K40Controller
+from Kernel import *
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
-from ThreadConstants import *
 from svgelements import *
-
 
 """
 Lhymicro provides Lhystudio specific coding for elements and sends it to the K40Controller backend to write to the usb
@@ -48,10 +47,10 @@ def lhymicro_distance(v):
 
 
 class LaserThread(threading.Thread):
-    def __init__(self, project, writer, controller):
+    def __init__(self, project, spooler, controller):
         threading.Thread.__init__(self)
         self.project = project
-        self.writer = writer
+        self.spooler = spooler
         self.controller = controller
         self.limit_buffer = True
         self.buffer_max = 20 * 30
@@ -92,10 +91,10 @@ class LaserThread(threading.Thread):
         command_index = 0
         self.project["buffer", self.update_buffer_size] = self
         self.project["abort", self.abort] = self
-        self.project.writer.on_plot = self.thread_pause_check
+        self.project.spooler.on_plot = self.thread_pause_check
         try:
             while True:
-                element = self.writer.peek()
+                element = self.spooler.peek()
                 if element is None:
                     raise StopIteration
                 self.thread_pause_check()
@@ -112,26 +111,20 @@ class LaserThread(threading.Thread):
                     command_index += 1
                     self.thread_pause_check()
                     self.project("command", command_index)
-                    self.project.writer.command(command, values)
-                self.writer.pop()
+                    self.project.spooler.command(command, values)
+                self.spooler.pop()
                 self.project("spooler", element)
         except StopIteration:
             pass  # We aborted the loop.
         # Final listener calls.
-        self.project.writer.on_plot = None
+        self.project.spooler.on_plot = None
         self.project["abort", self.abort] = None
         self.project["buffer", self.update_buffer_size] = None
         if self.state == THREAD_STATE_ABORT:
-            self.writer.clear_queue()
-            self.writer.state = STATE_DEFAULT
-            self.project("writer_mode", self.writer.state)
+            self.spooler.clear_queue()
+            self.spooler.state = STATE_DEFAULT
+            self.project("writer_mode", self.spooler.state)
             return  # Must no do anything else. Just die as fast as possible.
-        if self.writer.autohome:
-            self.project.writer.command(COMMAND_HOME, 0)
-        if self.writer.autolock:
-            self.project.writer.command(COMMAND_UNLOCK, 0)
-        if self.writer.autobeep:
-            print('\a')  # Beep.
         self.controller.autostart = True
         self.state = THREAD_STATE_FINISHED
         self.project("writer", self.state)
@@ -143,25 +136,25 @@ class LaserThread(threading.Thread):
 class LhymicroWriter:
     def __init__(self, project, board="M2", current_x=0, current_y=0, controller=None):
         self.project = project
+        project.setting(str, "board", board)
+        project.setting(bool, "autolock", True)
+        project.setting(bool, "rotary", False)
+        project.setting(float, "scale_x", 1.0)
+        project.setting(float, "scale_y", 1.0)
+
+        def spool(commands):
+            self.send_job(commands)
+
+        project.add_control("Spool", spool)
         if controller is None:
             self.controller = K40Controller(project)
         else:
             self.controller = controller
+        project.add_thread("K40Controller", self.controller)
         self.thread = LaserThread(project, self, self.controller)
         self.queue_lock = threading.Lock()
         self.queue = []
 
-        self.autohome = self.project.autohome
-        self.autobeep = self.project.autobeep
-        self.autostart = self.project.autostart
-        self.autolock = True
-
-        self.board = board
-        if self.board is None:
-            self.board = "M2"
-        self.scale_x = 1.0
-        self.scale_y = 1.0
-        self.rotary = False
         self.state = STATE_DEFAULT
         self.is_on = False
         self.is_left = False
@@ -211,7 +204,7 @@ class LhymicroWriter:
         self.queue_lock.acquire()
         self.queue += elements
         self.queue_lock.release()
-        if self.autostart:
+        if self.project[bool, 'autostart']:
             self.start_queue_consumer()
         self.project("spooler", 0)
 
@@ -219,7 +212,7 @@ class LhymicroWriter:
         self.queue_lock.acquire()
         self.queue.append(element)
         self.queue_lock.release()
-        if self.autostart:
+        if self.project[bool, 'autostart']:
             self.start_queue_consumer()
         self.project("spooler", 0)
 
@@ -487,6 +480,8 @@ class LhymicroWriter:
             if self.thread is not None:
                 while self.thread.buffer_size > 0:
                     time.sleep(0.05)
+        elif command == COMMAND_BEEP:
+            print('\a')  # Beep.
 
     def move(self, x, y):
         if self.is_relative:
@@ -509,7 +504,7 @@ class LhymicroWriter:
             if dy != 0:
                 self.move_y(dy)
             self.controller += b'S1P\n'
-            if not self.autolock:
+            if not self.project[bool, 'autolock']:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
@@ -621,7 +616,7 @@ class LhymicroWriter:
             self.controller += b'I'
             self.controller += COMMAND_ON
             self.controller += b'S1P\n'
-            if not self.autolock:
+            if not self.project[bool, 'autolock']:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_ON
@@ -638,7 +633,7 @@ class LhymicroWriter:
             self.controller += b'I'
             self.controller += COMMAND_OFF
             self.controller += b'S1P\n'
-            if not self.autolock:
+            if not self.project[bool, 'autolock']:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += COMMAND_OFF
@@ -651,7 +646,7 @@ class LhymicroWriter:
     def to_default_mode(self):
         if self.state == STATE_CONCAT:
             self.controller += b'S1P\n'
-            if not self.autolock:
+            if not self.project[bool, 'autolock']:
                 self.controller += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             self.controller += b'FNSE-\n'
@@ -668,9 +663,10 @@ class LhymicroWriter:
     def to_compact_mode(self):
         self.to_concat_mode()
         if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.board, d_ratio=self.d_ratio)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board,
+                                                        d_ratio=self.d_ratio)
         else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.board)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board)
         try:
             speed_code = bytes(speed_code)
         except TypeError:

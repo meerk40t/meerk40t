@@ -4512,7 +4512,7 @@ class Path(Shape, MutableSequence):
                     self.parse(p[SVG_ATTR_DATA])
             elif isinstance(p, Subpath):
                 self._segments = list(p.segments(transformed=False))
-                Shape.__init__(self,p._path)
+                Shape.__init__(self, p._path)
             elif isinstance(args[0], Shape):
                 self._segments = list(p.segments(transformed=False))
             elif isinstance(args[0], str):

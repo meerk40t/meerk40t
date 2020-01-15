@@ -11,11 +11,14 @@ import wx.ribbon as RB
 
 from EgvParser import parse_egv
 from ElementProperty import ElementProperty
-from LaserProject import *
+from K40Controller import K40Controller
+from Kernel import *
+from LaserCommandConstants import *
 from LaserRender import LaserRender, swizzlecolor
-from ThreadConstants import *
+from LhymicroWriter import LhymicroWriter
 from ZMatrix import ZMatrix
 from icons import *
+from svgelements import *
 
 try:
     from math import tau
@@ -108,14 +111,13 @@ ID_MENU_WEBPAGE = idinc.new()
 ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
-
-project = LaserProject()
+project = Kernel()
 _ = wx.GetTranslation
 
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
-                        ('fr', u'français', wx.LANGUAGE_FRENCH),
-                        ('de',  u'Deutsch', wx.LANGUAGE_GERMAN),
-                        ('es',  u'español', wx.LANGUAGE_SPANISH))
+                       ('fr', u'français', wx.LANGUAGE_FRENCH),
+                       ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
+                       ('es', u'español', wx.LANGUAGE_SPANISH))
 
 
 class MeerK40t(wx.Frame):
@@ -127,17 +129,30 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-
         self.project = project
-        self.project.config = wx.Config("MeerK40t")
-        self.project.load_config()
+        self.project.set_config(wx.Config("MeerK40t"))  # Set kernel's persistence settings.
+        controller = K40Controller(kernel=project)
+        self.project.add_thread("K40Controller", controller)
+        self.project.spooler = LhymicroWriter(project, controller=controller)
+        project.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
+        project.setting(int, "window_width", 1200)
+        project.setting(int, "window_height", 600)
+        project.setting(int, "bed_width", 320)
+        project.setting(int, "bed_height", 220)
+        project.setting(float, "units_convert", 39.37)
+        project.setting(str, "units_name", 'mm')
+        project.setting(int, "units_marks", 10)
+        project.setting(int, "units_index", 0)
+        project.setting(bool, "mouse_zoom_invert", False)
+
         self.locale = None
         wx.Locale.AddCatalogLookupPathPrefix('locale')
-        language = project[int, 'language']
+        project.setting(int, 'language', None)
+        language = project.language
         if language is not None and language != 0:
             self.language_to(language)(None)
 
-        self.SetSize((1200, 600))
+        self.SetSize((project.window_width, project.window_height))
         self.DragAcceptFiles(True)
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE | wx.TR_MULTIPLE)
@@ -359,7 +374,8 @@ class MeerK40t(wx.Frame):
         self.background_brush = wx.Brush("Grey")
         self.project = project
         self.renderer = LaserRender(project)
-        bedwidth, bedheight = project.size
+        bedwidth = project.bed_width
+        bedheight = project.bed_height
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -373,6 +389,7 @@ class MeerK40t(wx.Frame):
         self.project["bed_size", self.bed_changed] = self
         self.project["elements", self.elements_changed] = self
         self.project["writer_mode", self.on_writer_mode] = self
+        self.space_changed(0)
         self.default_keymap()
 
     def on_elements_update(self, *args):
@@ -430,7 +447,7 @@ class MeerK40t(wx.Frame):
             return
 
         drag_parent.remove(drag_element)
-        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:  # todo: empty group
+        if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
             drag_parent.parent.remove(drag_parent)
 
         if drop_element.type == 'root':  # Project
@@ -560,21 +577,21 @@ class MeerK40t(wx.Frame):
         self.post_buffer_update()
 
     def on_close(self, event):
-        if self.project.writer.thread.state == THREAD_STATE_STARTED or \
-                self.project.controller.thread.state == THREAD_STATE_STARTED:
+        if self.project.spooler.thread.state == THREAD_STATE_STARTED or \
+                self.project.spooler.controller.thread.state == THREAD_STATE_STARTED:
             dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
                                    _('Processes are still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
             if result == wx.ID_OK:
-                project.controller.emergency_stop()
+                project.abort("K40Controller")
                 self.project("abort", 1)
             else:
                 return
         self.project["usb_status", self.on_usb_status] = None
         self.project["control_thread", self.on_control_state] = None
         self.project["writer", self.on_writer_state] = None
-        self.project.save_config()
+        self.project.flush()
         self.project.shutdown()
         self.project["position", self.update_position] = None
         self.project["units", self.space_changed] = None
@@ -656,8 +673,8 @@ class MeerK40t(wx.Frame):
         Load SVG File. Scalable Vector Graphics
         """
         scale_factor = 1000.0 / 96.0
-        svg = SVG(pathname).elements(width='%fmm' % (project.size[0]),
-                                     height='%fmm' % (project.size[1]),
+        svg = SVG(pathname).elements(width='%fmm' % (project.bed_width),
+                                     height='%fmm' % (project.bed_height),
                                      ppi=96.0,
                                      transform='scale(%f)' % scale_factor)
         context = self.project.elements
@@ -692,7 +709,6 @@ class MeerK40t(wx.Frame):
                     pass
         context.append_all(append_list)
         self.post_buffer_update()
-
 
     def load_egv(self, pathname, group=None):
         """
@@ -752,9 +768,8 @@ class MeerK40t(wx.Frame):
     def on_size(self, event):
         self.Layout()
         self._Buffer = wx.Bitmap(*self.ClientSize)
+        self.project.window_width, self.project.window_height = self.Size
         self.guide_lines = None
-        bedwidth, bedheight = self.project.size_in_native_units()
-        # self.focus_viewport_scene((0, 0, bedwidth, bedheight), 0.1)
         self.post_buffer_update()
         self.Update()
 
@@ -887,7 +902,7 @@ class MeerK40t(wx.Frame):
         self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.project.set_selected_by_position(self.previous_scene_position)
+        self.renderer.set_selected_by_position(self.previous_scene_position)
         self.move_function = self.move_selected
 
     def on_left_mouse_up(self, event):
@@ -897,12 +912,12 @@ class MeerK40t(wx.Frame):
         self.previous_window_position = None
         self.previous_scene_position = None
         self.move_function = self.move_pan
-        self.project.validate()
+        self.renderer.validate()
 
     def on_mouse_double_click(self, event):
         position = event.GetPosition()
         position = self.convert_window_to_scene(position)
-        self.project.set_selected_by_position(position)
+        self.renderer.set_selected_by_position(position)
         if self.project.selected is not None:
             self.project.close_old_window("elementproperty")
             window = ElementProperty(None, wx.ID_ANY, "")
@@ -940,7 +955,7 @@ class MeerK40t(wx.Frame):
     def on_right_mouse_down(self, event):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-        self.project.set_selected_by_position(self.popup_scene_position)
+        self.renderer.set_selected_by_position(self.popup_scene_position)
         create_menu(self.project.selected)
 
     def on_right_mouse_up(self, event):
@@ -955,7 +970,7 @@ class MeerK40t(wx.Frame):
         self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
 
     def execute_string_action(self, action, *args):
-        writer = self.project.writer
+        writer = self.project.spooler
         if action == 'move':
             writer.send_job(self.execute_move_action(*args))
         elif action == 'move_to':
@@ -964,8 +979,8 @@ class MeerK40t(wx.Frame):
             self.execute_set_position_action(*args)
 
     def execute_set_position_action(self, index):
-        x = self.project.writer.current_x
-        y = self.project.writer.current_y
+        x = self.project.spooler.current_x
+        y = self.project.spooler.current_y
         self.project.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
 
     def execute_move_action(self, direction, amount):
@@ -1062,16 +1077,23 @@ class MeerK40t(wx.Frame):
 
     def calculate_grid(self):
         lines = []
-        wmils, hmils = self.project.size_in_native_units()
-        conversion, name, marks, index = self.project.units
+        p = self.project
+        wmils = p.bed_width * 39.37
+        hmils = p.bed_height * 39.37
+        convert = p.units_convert
+        marks = p.units_marks
+        step = convert * marks
+        if step == 0:
+            self.grid = []
+            return
         x = 0.0
         while x < wmils:
             lines.append((x, 0, x, hmils))
-            x += conversion * marks
+            x += step
         y = 0.0
         while y < hmils:
             lines.append((0, y, wmils, y))
-            y += conversion * marks
+            y += step
         self.grid = lines
 
     def on_draw_grid(self, dc):
@@ -1082,8 +1104,10 @@ class MeerK40t(wx.Frame):
     def on_draw_guides(self, dc):
         lines = []
         w, h = self.Size
-        conversion, name, marks, index = self.project.units
-        scaled_conversion = conversion * self.matrix.GetScaleX()
+        p = self.project
+        scaled_conversion = p.units_convert * self.matrix.GetScaleX()
+        if scaled_conversion == 0:
+            return
 
         wpoints = w / 15.0
         hpoints = h / 15.0
@@ -1106,7 +1130,7 @@ class MeerK40t(wx.Frame):
             mark_point = (x - sx) / scaled_conversion
             if round(mark_point * 1000) == 0:
                 mark_point = 0.0  # prevents -0
-            dc.DrawRotatedText("%g %s" % (mark_point, name), x, 0, -90)
+            dc.DrawRotatedText("%g %s" % (mark_point, p.units_name), x, 0, -90)
             x += points
 
         y = offset_y
@@ -1116,7 +1140,7 @@ class MeerK40t(wx.Frame):
             mark_point = (y - sy) / scaled_conversion
             if round(mark_point * 1000) == 0:
                 mark_point = 0.0  # prevents -0
-            dc.DrawText("%g %s" % (mark_point + 0, name), 0, y + 0)
+            dc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
             y += points
         dc.DrawLineList(lines)
 
@@ -1133,15 +1157,14 @@ class MeerK40t(wx.Frame):
         if self.project.draw_mode & 16 == 0:
             dc.SetPen(wx.RED_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x = self.project.writer.current_x
-            y = self.project.writer.current_y
+            x = self.project.spooler.current_x
+            y = self.project.spooler.current_y
             x, y = self.convert_scene_to_window([x, y])
             dc.DrawCircle(x, y, 10)
 
     def on_draw_bed(self, dc):
-        bedwidth, bedheight = self.project.size
-        wmils = bedwidth * 39.37
-        hmils = bedheight * 39.37
+        wmils = self.project.bed_width * 39.37
+        hmils = self.project.bed_height * 39.37
         dc.SetPen(wx.WHITE_PEN)
         dc.DrawRectangle(0, 0, wmils, hmils)
 
@@ -1172,11 +1195,12 @@ class MeerK40t(wx.Frame):
             dc.DrawRectangle((x1 - f, center_y - f, g, g))
             dc.DrawRectangle((center_x - f, y1 - f, g, g))
             if draw_mode & 128 == 0:
-                conversion, name, marks, index = self.project.units
+                p = self.project
+                conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
                 dc.DrawText("%.1f%s" % (y0 / conversion, name), center_x + 50, y0 + 50)
                 dc.DrawText("%.1f%s" % (x0 / conversion, name), x0 + 50, center_y + 50)
-                dc.DrawText("%.1f%s" % ((x1-x0) / conversion, name), x1 + 50, center_y)
-                dc.DrawText("%.1f%s" % ((y1 - y0) /conversion, name), center_x, y1 + 50)
+                dc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), x1 + 50, center_y)
+                dc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), center_x, y1 + 50)
 
     def on_draw_scene(self, dc):
         self.on_draw_bed(dc)
@@ -1422,6 +1446,7 @@ class MeerK40t(wx.Frame):
         :param lang: language to switch to
         :return:
         """
+
         def update_language(event):
             """
             Update language to the requested language.
@@ -1438,7 +1463,9 @@ class MeerK40t(wx.Frame):
             else:
                 self.locale = None
             project('language', (lang, language_code, language_name, language_index))
+
         return update_language
+
 
 # end of class MeerK40t
 
@@ -1843,7 +1870,7 @@ class MeerK40tGui(wx.App):
     """
 
     def OnInit(self):
-        project.call_after = wx.CallAfter  # Linux routine to prevent errors.
+        project.signal_dispatcher = wx.CallAfter  # Linux routine to prevent errors.
         self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
         self.SetTopWindow(self.MeerK40t)
         self.MeerK40t.Show()

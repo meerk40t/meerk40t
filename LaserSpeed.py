@@ -279,13 +279,13 @@ class LaserSpeed:
             (6144.0, 12120.0, 4)
         ]
         BOARD_M_M1 = [
-                (5120.0, 11148.0, 0),  # M has no known suffix-C equations.
-                (5120.0, 11148.0, 1),
-                (5120.0, 11148.0, 2),
-                (5632.0, 11148.0, 3),
-                (6144.0, 11148.0, 4)
-                # The physical speed elements were guessed at with regard to the M2 that were tested
-            ]
+            (5120.0, 11148.0, 0),  # M has no known suffix-C equations.
+            (5120.0, 11148.0, 1),
+            (5120.0, 11148.0, 2),
+            (5632.0, 11148.0, 3),
+            (6144.0, 11148.0, 4)
+            # The physical speed elements were guessed at with regard to the M2 that were tested
+        ]
         speedcode_dict = {
             "A": A_B_B1,
             "B": A_B_B1,

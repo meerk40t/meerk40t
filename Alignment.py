@@ -80,7 +80,8 @@ class Alignment(wx.Frame):
         self.spin_vertical_distance.SetToolTip(_("How far down should we move to test?"))
         self.spin_vertical_power.SetMinSize((110, 23))
         self.spin_vertical_power.SetToolTip(
-            _("Heavily misaligned mirrors will need more power to see the line. Once you can see the line. Turn this down."))
+            _(
+                "Heavily misaligned mirrors will need more power to see the line. Once you can see the line. Turn this down."))
         self.check_vertical_done.SetToolTip(_("We are done with vertical alignment."))
         self.button_horizontal_align_nearfar.SetToolTip(_("Perform horizontal near-far alignment test"))
         self.button_horizontal_align_nearfar.Enable(False)
@@ -94,7 +95,8 @@ class Alignment(wx.Frame):
         self.spin_horizontal_distance.Enable(False)
         self.spin_horizontal_power.SetMinSize((110, 23))
         self.spin_horizontal_power.SetToolTip(
-            _("Heavily misaligned mirrors will need more power to see the line. Once you can see the line. Turn this down."))
+            _(
+                "Heavily misaligned mirrors will need more power to see the line. Once you can see the line. Turn this down."))
         self.spin_horizontal_power.Enable(False)
         self.check_horizontal_done.Enable(False)
         self.button_square_align_4_corner.SetToolTip(_("Perform 4 corners confirmation test"))
@@ -117,7 +119,8 @@ class Alignment(wx.Frame):
         sizer_5 = wx.BoxSizer(wx.VERTICAL)
         sizer_4 = wx.BoxSizer(wx.VERTICAL)
         text_horizontal_advise = wx.StaticText(self, wx.ID_ANY,
-                                               _("You are not centering. The misalignment increases over distance.\nGet the beam to hit the same point regardless of distance. (Usually not the center)\nAll beam points should overlap at exactly 1 point, when misalignment is zero.\nThe overlap point should be nearer to the close point. Aim for that. Repeat.\n"))
+                                               _(
+                                                   "You are not centering. The misalignment increases over distance.\nGet the beam to hit the same point regardless of distance. (Usually not the center)\nAll beam points should overlap at exactly 1 point, when misalignment is zero.\nThe overlap point should be nearer to the close point. Aim for that. Repeat.\n"))
         text_horizontal_advise.SetFont(
             wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_1.Add(text_horizontal_advise, 0, 0, 0)
@@ -136,7 +139,8 @@ class Alignment(wx.Frame):
         sizer_3.Add(sizer_5, 1, wx.EXPAND, 0)
         sizer_3.Add(self.check_vertical_done, 0, wx.ALIGN_RIGHT, 0)
         sizer_1.Add(sizer_3, 1, 0, 0)
-        text_vertical_advise = wx.StaticText(self, wx.ID_ANY, _("Get the movement of the beam going right to overlap. "))
+        text_vertical_advise = wx.StaticText(self, wx.ID_ANY,
+                                             _("Get the movement of the beam going right to overlap. "))
         sizer_1.Add(text_vertical_advise, 0, 0, 0)
         sizer_2.Add(self.button_horizontal_align_nearfar, 0, 0, 0)
         sizer_2.Add((20, 20), 0, 0, 0)
@@ -162,12 +166,10 @@ class Alignment(wx.Frame):
         # end wxGlade
 
     def on_button_vertical_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.send_job(self.vertical_near_far_test)
+        self.project.execute("Spool", self.vertical_near_far_test)
 
     def on_button_vertical_align(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.send_job(self.vertical_test)
+        self.project.execute("Spool", self.vertical_test)
 
     def on_spin_vertical_distance(self, event):  # wxGlade: Alignment.<event_handler>
         pass
@@ -183,12 +185,10 @@ class Alignment(wx.Frame):
         self.check_horizontal_done.Enable(self.check_vertical_done.GetValue())
 
     def on_button_horizontal_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.send_job(self.horizontal_near_far_test)
+        self.project.execute("Spool", self.horizontal_near_far_test)
 
     def on_button_horizontal_align(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.send_job(self.horizontal_test)
+        self.project.execute("Spool", self.horizontal_test)
 
     def on_spin_horizontal_distance(self, event):  # wxGlade: Alignment.<event_handler>
         pass
@@ -201,16 +201,14 @@ class Alignment(wx.Frame):
         self.button_square_align_4_corner.Enable(self.check_horizontal_done.GetValue())
 
     def on_slider_square_power_change(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.set_power(self.slider_square_power.GetValue())
+        spooler = self.project.spooler
+        spooler.set_power(self.slider_square_power.GetValue())
 
     def on_button_square_align_4_corners(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.send_job(self.square4_test)
+        self.project.execute("Spool", self.square4_test)
 
     def on_button_square_align(self, event):  # wxGlade: Alignment.<event_handler>
-        writer = self.project.writer
-        writer.send_job(self.square_test)
+        self.project.execute("Spool", self.square_test)
 
     def square_test(self):
         yield COMMAND_HOME, 0
@@ -233,8 +231,8 @@ class Alignment(wx.Frame):
         yield COMMAND_MODE_DEFAULT
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        y_val = self.project.writer.current_y
-        x_val = self.project.writer.current_x
+        y_val = self.project.spooler.current_y
+        x_val = self.project.spooler.current_x
         y_step = round(5 * 39.3701)
 
         while y_val < y_max:

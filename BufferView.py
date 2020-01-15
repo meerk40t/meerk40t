@@ -1,6 +1,5 @@
 import wx
 
-
 # begin wxGlade: dependencies
 # end wxGlade
 
@@ -36,7 +35,7 @@ class BufferView(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        buffer = self.project.controller.buffer + self.project.controller.add_queue
+        buffer = self.project._controller_buffer + self.project._controller_queue
         try:
             bufferstr = buffer.decode()
         except ValueError:

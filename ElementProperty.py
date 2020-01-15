@@ -1,8 +1,10 @@
 import wx
 
-from LaserProject import *
 from LaserRender import swizzlecolor
+from svgelements import *
+
 _ = wx.GetTranslation
+
 
 class ElementProperty(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -84,14 +86,16 @@ class ElementProperty(wx.Frame):
         self.checkbox_custom_d_ratio.SetToolTip(_("Enables the ability to modify the diagonal ratio."))
         self.spin_speed_dratio.SetMinSize((100, 23))
         self.spin_speed_dratio.SetToolTip(
-            _("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step."))
+            _(
+                "Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step."))
         self.spin_speed_dratio.Enable(False)
         self.spin_speed_dratio.SetIncrement(0.01)
         self.spin_passes.SetMinSize((100, 23))
         self.spin_passes.SetToolTip(_("How many times should this action be performed?"))
         self.spin_step_size.SetMinSize((100, 23))
         self.spin_step_size.SetToolTip(
-            _("Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch."))
+            _(
+                "Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch."))
         self.combo_raster_direction.SetToolTip(_("Direction to perform a raster"))
         self.combo_raster_direction.SetSelection(0)
         self.button_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
@@ -183,7 +187,6 @@ class ElementProperty(wx.Frame):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.element.flat_elements():
             e.raster_step = self.spin_step_size.GetValue()
-            self.project.validate_matrix(e)
         if self.project is not None:
             self.project("elements", 0)
 

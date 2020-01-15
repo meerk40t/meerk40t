@@ -8,8 +8,6 @@ from ZMatrix import ZMatrix
 Laser Render provides GUI relevant methods of displaying the given project nodes.
 """
 
-# TODO: Raw typically uses path, but could just use a 1 bit image to visualize it.
-
 
 def swizzlecolor(c):
     if c is None:
@@ -54,7 +52,7 @@ class LaserRender:
         flat_elements = list(group.flat_elements(types=types))
         bounds = group.scene_bounds
         if bounds is None:
-            self.project.validate()
+            self.validate()
             bounds = group.scene_bounds
         xmin, ymin, xmax, ymax = bounds
         image_width = int(xmax - xmin)
@@ -210,6 +208,48 @@ class LaserRender:
             node.c_width, node.c_height = node.element.image.size
             node.cache = self.make_thumbnail(node, maximum=max_allowed)
         gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+
+    def set_selected_by_position(self, position):
+        self.project.selected = None
+        self.validate()
+        for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text')))):
+            bounds = e.scene_bounds
+            if bounds is None:
+                continue
+            if e.contains(position):
+                if e.parent is not None:
+                    e = e.parent
+                self.project.set_selected(e)
+                break
+
+    def validate(self, node=None):
+        if node is None:
+            # Default call.
+            node = self.project.elements
+
+        node.scene_bound = None  # delete bounds
+        for element in node:
+            self.validate(element)  # validate all subelements.
+        if len(node) == 0:  # Leaf Node.
+            try:
+                node.scene_bounds = node.element.bbox()
+            except AttributeError:
+                pass
+            return
+        # Group node.
+        xvals = []
+        yvals = []
+        for e in node:
+            bounds = e.scene_bounds
+            if bounds is None:
+                continue
+            xvals.append(bounds[0])
+            xvals.append(bounds[2])
+            yvals.append(bounds[1])
+            yvals.append(bounds[3])
+        if len(xvals) == 0:
+            return
+        node.scene_bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
 
 
 class LaserCommandPathParser:

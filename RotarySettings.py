@@ -5,7 +5,10 @@
 #
 
 import wx
+
 _ = wx.GetTranslation
+
+
 # begin wxGlade: dependencies
 # end wxGlade
 
@@ -40,9 +43,11 @@ class RotarySettings(wx.Frame):
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotation, self.spin_rotary_rotation)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotation, self.spin_rotary_rotation)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_roller, self.checkbox_rotary_roller)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotary_roller_circumference, self.spin_rotary_roller_circumference)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotary_roller_circumference,
+                  self.spin_rotary_roller_circumference)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotary_roller_circumference, self.spin_rotary_roller_circumference)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotary_object_circumference, self.spin_rotary_object_circumference)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotary_object_circumference,
+                  self.spin_rotary_object_circumference)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotary_object_circumference, self.spin_rotary_object_circumference)
         # end wxGlade
         self.project = None
@@ -57,15 +62,19 @@ class RotarySettings(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        self.spin_rotary_scalex.SetValue(self.project.writer.scale_x)
-        self.spin_rotary_scaley.SetValue(self.project.writer.scale_y)
-        self.checkbox_rotary.SetValue(self.project.writer.rotary)
+        self.project.setting(bool, 'rotary', False)
+        self.project.setting(float, 'scale_x', 1.0)
+        self.project.setting(float, 'scale_y', 1.0)
+        self.spin_rotary_scalex.SetValue(self.project.spooler.scale_x)
+        self.spin_rotary_scaley.SetValue(self.project.spooler.scale_y)
+        self.checkbox_rotary.SetValue(self.project.spooler.rotary)
         self.on_check_rotary(None)
 
     def __set_properties(self):
         # begin wxGlade: RotarySettings.__set_properties
         self.SetTitle("RotarySettings")
-        self.checkbox_rotary.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.checkbox_rotary.SetFont(
+            wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         self.checkbox_rotary.SetToolTip(_("Use Rotary Settings"))
         self.spin_rotary_scaley.SetMinSize((80, 23))
         self.spin_rotary_scaley.SetToolTip(_("Rotary Scale Factor X"))
@@ -75,7 +84,8 @@ class RotarySettings(wx.Frame):
         self.spin_rotary_scalex.SetToolTip(_("Rotary Scale Factor X"))
         self.spin_rotary_scalex.Enable(False)
         self.spin_rotary_scalex.SetIncrement(0.01)
-        self.checkbox_rotary_loop.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.checkbox_rotary_loop.SetFont(
+            wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         self.checkbox_rotary_loop.SetToolTip(_("Use Rotary Settings"))
         self.spin_rotary_rotation.SetMinSize((80, 23))
         self.spin_rotary_rotation.SetToolTip(_("Steps required for a full rotation"))
@@ -123,15 +133,15 @@ class RotarySettings(wx.Frame):
         # end wxGlade
 
     def on_check_rotary(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.project.writer.rotary = self.checkbox_rotary.GetValue()
+        self.project.rotary = self.checkbox_rotary.GetValue()
         self.spin_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.spin_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_spin_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.project.writer.scale_y = self.spin_rotary_scaley.GetValue()
+        self.project.scale_y = self.spin_rotary_scaley.GetValue()
 
     def on_spin_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.project.writer.scale_x = self.spin_rotary_scalex.GetValue()
+        self.project.scale_x = self.spin_rotary_scalex.GetValue()
 
     def on_check_rotary_loop(self, event):  # wxGlade: RotarySettings.<event_handler>
         print("Event handler 'on_check_rotary_loop' not implemented!")
@@ -152,6 +162,5 @@ class RotarySettings(wx.Frame):
     def on_spin_rotary_object_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
         print("Event handler 'on_spin_rotary_object_circumference' not implemented!")
         event.Skip()
-
 
 # end of class RotarySettings
