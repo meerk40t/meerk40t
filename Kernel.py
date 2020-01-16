@@ -133,7 +133,6 @@ class Kernel:
 
         self.kernel_thread = KernelThread(self)
         self.add_thread('Ticks', self.kernel_thread)
-        self.start('Ticks')
 
     def __str__(self):
         return "Project"

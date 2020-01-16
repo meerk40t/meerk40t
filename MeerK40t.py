@@ -112,6 +112,7 @@ ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
 project = Kernel()
+project.start('Ticks')
 _ = wx.GetTranslation
 
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
