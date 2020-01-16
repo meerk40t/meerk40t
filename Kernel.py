@@ -1,5 +1,8 @@
+from threading import Lock, Thread
 from LaserNode import LaserNode
+import time
 
+THREAD_STATE_UNKNOWN = -1
 THREAD_STATE_UNSTARTED = 0
 THREAD_STATE_STARTED = 1
 THREAD_STATE_PAUSED = 2
@@ -18,6 +21,38 @@ def get_state_string_from_state(state):
         return "Paused"
     elif state == THREAD_STATE_STARTED:
         return "Started"
+    elif state == THREAD_STATE_UNKNOWN:
+        return "Unknown"
+
+
+class KernelThread(Thread):
+    def __init__(self, kernel):
+        Thread.__init__(self)
+        self.kernel = kernel
+        self.state = THREAD_STATE_UNSTARTED
+
+    def run(self):
+        self.state = THREAD_STATE_STARTED
+        while self.state != THREAD_STATE_ABORT:
+            time.sleep(0.1)
+            if self.state == THREAD_STATE_ABORT:
+                return
+            while self.state == THREAD_STATE_PAUSED:
+                time.sleep(1.0)
+            self.kernel.tick()
+        self.state = THREAD_STATE_FINISHED
+
+    def state(self):
+        return self.state
+
+    def resume(self):
+        self.state = THREAD_STATE_STARTED
+
+    def pause(self):
+        self.state = THREAD_STATE_PAUSED
+
+    def stop(self):
+        self.state = THREAD_STATE_ABORT
 
 
 class Kernel:
@@ -81,25 +116,47 @@ class Kernel:
 
         self.listeners = {}
         self.last_message = {}
+
         self.selected = None
         self.windows = {}
         self.keymap = {}
 
-        self.signal_dispatcher = lambda listener, message: listener(message)
+        self.queue_lock = Lock()
+        self.message_queue = {}
+
+        self.run_later = lambda listener, message: listener(message)
+        self.needs_queue_processed = False
         self.translation = None
 
         if config is not None:
             self.set_config(config)
 
+        self.kernel_thread = KernelThread(self)
+        self.add_thread('Ticks', self.kernel_thread)
+        self.start('Ticks')
+
     def __str__(self):
         return "Project"
 
     def __call__(self, code, message):
-        if code in self.listeners:
-            listeners = self.listeners[code]
-            for listener in listeners:
-                self.signal_dispatcher(listener, message)
-        self.last_message[code] = message
+        self.queue_lock.acquire(True)
+        self.message_queue[code] = message
+        self.queue_lock.release()
+        self.needs_queue_processed = True
+
+    def process_queue(self, *args):
+        self.queue_lock.acquire(True)
+        queue = self.message_queue
+        self.message_queue = {}
+        self.queue_lock.release()
+
+        for code, message in queue.items():
+            if code in self.listeners:
+                listeners = self.listeners[code]
+                for listener in listeners:
+                    self.run_later(listener, message)
+            self.last_message[code] = message
+        self.needs_queue_processed = False
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
@@ -216,7 +273,16 @@ class Kernel:
                 pass  # already closed.
 
     def shutdown(self):
-        self('shutdown', 0)
+        """
+        Invokes Kernel Shutdown.
+        All threads are stopped.
+        """
+        for thread_name in self.threads:
+            thread = self.threads[thread_name]
+            try:
+                thread.stop()
+            except AttributeError:
+                pass
 
     def listen(self, signal, function):
         if signal in self.listeners:
@@ -249,25 +315,51 @@ class Kernel:
         del self.threads[thread_name]
 
     def get_state(self, thread_name):
-        return self.threads[thread_name].state()
+        try:
+            return self.threads[thread_name].state()
+        except AttributeError:
+            return THREAD_STATE_UNKNOWN
 
     def start(self, thread_name):
-        self.threads[thread_name].start()
+        try:
+            self.threads[thread_name].start()
+        except AttributeError:
+            pass
 
     def resume(self, thread_name):
-        self.threads[thread_name].resume()
+        try:
+            self.threads[thread_name].resume()
+        except AttributeError:
+            pass
 
     def pause(self, thread_name):
-        self.threads[thread_name].pause()
+        try:
+            self.threads[thread_name].pause()
+        except AttributeError:
+            pass
 
     def abort(self, thread_name):
-        self.threads[thread_name].abort()
+        try:
+            self.threads[thread_name].abort()
+        except AttributeError:
+            pass
 
     def reset(self, thread_name):
-        self.threads[thread_name].reset()
+        try:
+            self.threads[thread_name].reset()
+        except AttributeError:
+            pass
 
     def stop(self, thread_name):
-        self.threads[thread_name].stop()
+        try:
+            self.threads[thread_name].stop()
+        except AttributeError:
+            pass
+
+    def tick(self):
+        """Called by KernelThread every 50ms to handle events."""
+        if self.needs_queue_processed:
+            self.run_later(self.process_queue, None)
 
     def set_selected(self, selected):
         self.selected = selected

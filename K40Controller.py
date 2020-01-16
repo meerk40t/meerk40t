@@ -144,12 +144,13 @@ class K40Controller:
             usb_thread = UsbConnectThread(self)
             usb_thread.start()
 
+        kernel.add_control("K40Usb-Start", start_usb)
+
         def stop_usb():
             self.set_usb_status("Disconnecting")
             usb_thread = UsbDisconnectThread(self)
             usb_thread.start()
 
-        kernel.add_control("K40Usb-Start", start_usb)
         kernel.add_control("K40Usb-Stop", stop_usb)
 
         self.thread = ControllerQueueThread(self)
@@ -180,7 +181,8 @@ class K40Controller:
         self.queue_lock.acquire()
         self.kernel._controller_queue += other
         self.queue_lock.release()
-        self.kernel("buffer", len(self.kernel._controller_buffer) + len(self.kernel._controller_queue))
+        buffer_size = len(self.kernel._controller_buffer) + len(self.kernel._controller_queue)
+        self.kernel("buffer", buffer_size)
         if self.kernel.autostart_controller:
             self.start()
         return self
@@ -231,7 +233,7 @@ class K40Controller:
         self.thread = ControllerQueueThread(self)
 
     def stop(self):
-        pass
+        self.abort()
 
     def process_queue(self):
         if self.process_queue_pause:

@@ -50,10 +50,13 @@ class LaserThread(threading.Thread):
     def __init__(self, project, spooler, controller):
         threading.Thread.__init__(self)
         self.project = project
+        project.setting(str, "_controller_buffer", b'')
+        project.setting(str, "_controller_queue", b'')
+        project.setting(int, "buffer_max", 900)
+        project.setting(bool, "buffer_limit", True)
         self.spooler = spooler
         self.controller = controller
-        self.limit_buffer = True
-        self.buffer_max = 20 * 30
+
         self.buffer_size = -1
         self.state = THREAD_STATE_UNSTARTED
         self.project("writer", self.state)
@@ -77,8 +80,14 @@ class LaserThread(threading.Thread):
             self.state = THREAD_STATE_ABORT
             self.project("writer", self.state)
 
+    def stop(self):
+        self.abort(1)
+
+    def get_buffer_size(self):
+        return len(self.project._controller_buffer) + len(self.project._controller_queue)
+
     def thread_pause_check(self, *args):
-        while (self.limit_buffer and self.buffer_size > self.buffer_max) or \
+        while (self.project.buffer_limit and self.get_buffer_size() > self.project.buffer_max) or\
                 self.state == THREAD_STATE_PAUSED:
             # Backend is full. Or we are paused. We're waiting.
             time.sleep(0.1)
@@ -153,6 +162,7 @@ class LhymicroWriter:
             self.controller = controller
         project.add_thread("K40Controller", self.controller)
         self.thread = LaserThread(project, self, self.controller)
+        project.add_thread("K40Spooler", self.thread)
         self.queue_lock = threading.Lock()
         self.queue = []
 
@@ -420,7 +430,7 @@ class LhymicroWriter:
                         self.down()
                     if dx != 0:
                         self.move_relative(dx, dy)
-            except StopIteration:
+            except RuntimeError:
                 return
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values

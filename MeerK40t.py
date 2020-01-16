@@ -383,7 +383,7 @@ class MeerK40t(wx.Frame):
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.project.listen("usb_status", self.on_usb_status)
+        self.project.listen("usb_state", self.on_usb_status)
         self.project.listen("control_thread", self.on_control_state)
         self.project.listen("writer", self.on_writer_state)
         self.project.listen("elements", self.on_elements_update)
@@ -592,7 +592,7 @@ class MeerK40t(wx.Frame):
                 self.project("abort", 1)
             else:
                 return
-        self.project.unlisten("usb_status", self.on_usb_status)
+        self.project.unlisten("usb_state", self.on_usb_status)
         self.project.unlisten("control_thread", self.on_control_state)
         self.project.unlisten("writer", self.on_writer_state)
         self.project.flush()
@@ -1453,6 +1453,16 @@ class MeerK40t(wx.Frame):
         import webbrowser
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
+    def language_swap(self, lang):
+        def update(event):
+            self.Unbind(wx.EVT_CLOSE, self)
+            self.language_to(lang)
+            self.project.flush()
+            self.Close(True)
+            window = MeerK40t(None, wx.ID_ANY, "")
+            window.Show()
+        return update
+
     def language_to(self, lang):
         """
         Returns a function to change the language to the language specified.
@@ -1883,7 +1893,7 @@ class MeerK40tGui(wx.App):
     """
 
     def OnInit(self):
-        project.signal_dispatcher = wx.CallAfter  # Linux routine to prevent errors.
+        project.run_later = wx.CallAfter
         self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
         self.SetTopWindow(self.MeerK40t)
         self.MeerK40t.Show()

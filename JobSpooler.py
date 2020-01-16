@@ -39,7 +39,6 @@ class JobSpooler(wx.Frame):
         self.update_spooler_state = False
         self.update_spooler = False
 
-        self.buffer_size = 0
         self.elements_progress = 0
         self.elements_progress_total = 0
         self.command_index = 0
@@ -49,13 +48,17 @@ class JobSpooler(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-
+        project.setting(str, "_controller_buffer", b'')
+        project.setting(str, "_controller_queue", b'')
+        project.setting(int, "buffer_max", 600)
+        project.setting(bool, "buffer_limit", True)
         project.listen("spooler", self.on_spooler_update)
         project.listen("buffer", self.on_buffer_update)
         project.listen("writer", self.on_spooler_state)
+
         self.set_spooler_button_by_state()
-        self.checkbox_limit_buffer.SetValue(self.project.spooler.thread.limit_buffer)
-        self.spin_packet_buffer_max.SetValue(self.project.spooler.thread.buffer_max)
+        self.checkbox_limit_buffer.SetValue(self.project.buffer_limit)
+        self.spin_packet_buffer_max.SetValue(self.project.buffer_max)
         self.refresh_spooler_list()
 
     def on_close(self, event):
@@ -189,11 +192,11 @@ class JobSpooler(wx.Frame):
         return delete
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.spooler.thread.limit_buffer = not self.project.spooler.thread.limit_buffer
+        self.project.buffer_limit = not self.project.spooler.thread.limit_buffer
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
         if self.project is not None:
-            self.project.spooler.thread.buffer_max = self.spin_packet_buffer_max.GetValue()
+            self.project.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
         if self.project is not None:
@@ -256,10 +259,11 @@ class JobSpooler(wx.Frame):
 
         if self.update_buffer_size:
             self.update_buffer_size = False
-            self.text_packet_buffer.SetValue(str(self.buffer_size))
+            buffer_size = len(self.project._controller_buffer) + len(self.project._controller_queue)
+            self.text_packet_buffer.SetValue(str(buffer_size))
             self.gauge_controller.SetRange(self.spin_packet_buffer_max.GetValue())
             max = self.gauge_controller.GetRange()
-            value = min(self.buffer_size, max)
+            value = min(buffer_size, max)
             self.gauge_controller.SetValue(value)
 
         if self.update_spooler_state:
@@ -278,7 +282,6 @@ class JobSpooler(wx.Frame):
 
     def on_buffer_update(self, value):
         self.update_buffer_size = True
-        self.buffer_size = value
         self.post_update()
 
     def on_spooler_state(self, state):

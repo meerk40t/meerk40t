@@ -35,6 +35,8 @@ class BufferView(wx.Frame):
 
     def set_project(self, project):
         self.project = project
+        project.setting(str, '_controller_queue', b'')
+        project.setting(str, '_controller_buffer', b'')
         buffer = self.project._controller_buffer + self.project._controller_queue
         try:
             bufferstr = buffer.decode()
