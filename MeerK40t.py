@@ -1162,8 +1162,8 @@ class MeerK40t(wx.Frame):
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
                 dc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
                 dc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
-                dc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), x1, center_y)
-                dc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), center_x, y1)
+                dc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
+                dc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
     def on_draw_laserpath(self, dc, draw_mode):
         dc.SetPen(wx.BLUE_PEN)
