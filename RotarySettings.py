@@ -67,7 +67,7 @@ class RotarySettings(wx.Frame):
         self.project.setting(float, 'scale_y', 1.0)
         self.spin_rotary_scalex.SetValue(self.project.scale_x)
         self.spin_rotary_scaley.SetValue(self.project.scale_y)
-        self.checkbox_rotary.SetValue(self.project.spooler.rotary)
+        self.checkbox_rotary.SetValue(self.project.rotary)
         self.on_check_rotary(None)
 
     def __set_properties(self):
