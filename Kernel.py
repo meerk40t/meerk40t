@@ -20,21 +20,24 @@ class KernelJob:
         self.args = args
         self.times = times
         self.paused = False
+        self.executing = False
 
     @property
     def scheduled(self):
-        return time.time() >= self.next_run
+        return self.next_run is not None and time.time() >= self.next_run
 
     def run(self):
         if self.paused:
             return
-        self.last_run = time.time()
+        self.next_run = None
+
         if self.times is not None:
             self.times = self.times - 1
             if self.times <= 0:
                 self.scheduler.jobs.remove(self)
-        self.next_run = self.last_run + self.interval
         self.process(*self.args)
+        self.last_run = time.time()
+        self.next_run = self.last_run + self.interval
 
 
 class Scheduler(Thread):
@@ -151,7 +154,7 @@ class Kernel:
         self.last_message = {}
         self.queue_lock = Lock()
         self.message_queue = {}
-        self.needs_queue_processed = False
+        self.is_queue_processing = False
         self.run_later = lambda listener, message: listener(message)
 
         self.selected = None
@@ -163,6 +166,7 @@ class Kernel:
             self.set_config(config)
         self.cron = None
 
+
     def __str__(self):
         return "Project"
 
@@ -173,9 +177,14 @@ class Kernel:
         self.queue_lock.acquire(True)
         self.message_queue[code] = message
         self.queue_lock.release()
-        self.needs_queue_processed = True
+
+    def delegate_messages(self):
+        if self.is_queue_processing:
+            return
+        self.run_later(self.process_queue, None)
 
     def process_queue(self, *args):
+        self.is_queue_processing = True
         self.queue_lock.acquire(True)
         queue = self.message_queue
         self.message_queue = {}
@@ -187,7 +196,7 @@ class Kernel:
                 for listener in listeners:
                     self.run_later(listener, message)
             self.last_message[code] = message
-        self.needs_queue_processed = False
+        self.is_queue_processing = False
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
@@ -212,7 +221,7 @@ class Kernel:
 
     def boot(self):
         self.cron = Scheduler(self)
-        self.cron.add_job(self.run_later, args=(self.process_queue, None), interval=0.05)
+        self.cron.add_job(self.delegate_messages, args=(), interval=0.05)
         self.add_thread('Scheduler', self.cron)
         self.cron.start()
 
