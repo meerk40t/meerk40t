@@ -406,12 +406,15 @@ class LhymicroWriter:
             sx = self.current_x
             sy = self.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy, path.plot()):
-                if on == 0:
-                    self.up()
-                else:
-                    self.down()
-                self.move_absolute(x, y)
+            try:
+                for x, y, on in self.group_plots(sx, sy, path.plot()):
+                    if on == 0:
+                        self.up()
+                    else:
+                        self.down()
+                    self.move_absolute(x, y)
+            except RuntimeError:
+                return
         elif command == COMMAND_RASTER:
             raster = values
             sx = self.current_x
