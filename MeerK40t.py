@@ -904,8 +904,11 @@ class MeerK40t(wx.Frame):
         self.project.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
         self.project.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
         self.project.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
-        q = ord('Q')
-        self.project.keymap[ord('Q')] = MappedKey('Q', "set_position Q")
+        self.project.keymap[ord('1')] = MappedKey('1', "set_position 1")
+        self.project.keymap[ord('2')] = MappedKey('2', "set_position 2")
+        self.project.keymap[ord('3')] = MappedKey('3', "set_position 3")
+        self.project.keymap[ord('4')] = MappedKey('4', "set_position 4")
+        self.project.keymap[ord('5')] = MappedKey('5', "set_position 5")
 
     def execute_string_action(self, action, *args):
         writer = self.project.spooler
@@ -924,7 +927,6 @@ class MeerK40t(wx.Frame):
     def execute_move_action(self, direction, amount):
         min_dim = min(project.window_width, project.window_height)
         amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
-        amount = 1000.0 * amount / 96.0
         x = 0
         y = 0
         if direction == 'right':
