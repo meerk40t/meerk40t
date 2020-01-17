@@ -253,13 +253,13 @@ class LaserRender:
     def bbox(self, elements):
         boundary_points = []
         for e in elements.flat_elements(types=('image', 'path', 'text')):
-            box = e.box
+            box = e.scene_bounds
             if box is None:
                 continue
-            top_left = e.matrix.point_in_matrix_space([box[0], box[1]])
-            top_right = e.matrix.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.matrix.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.matrix.point_in_matrix_space([box[2], box[3]])
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
             boundary_points.append(top_left)
             boundary_points.append(top_right)
             boundary_points.append(bottom_left)

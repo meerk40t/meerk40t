@@ -591,11 +591,17 @@ class MeerK40t(wx.Frame):
                                    _('Processes are still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
+
             if result == wx.ID_OK:
                 project.execute("Emergency Stop")
                 self.project("abort", 1)
             else:
                 return
+        try:
+            for window in [value for key, value in self.project.windows.items()]:
+                window.Close()
+        except RuntimeError:  # close runtime error
+            pass
         self.project.unlisten("usb_state", self.on_usb_status)
         self.project.unlisten("control_thread", self.on_control_state)
         self.project.unlisten("writer", self.on_writer_state)
@@ -606,11 +612,6 @@ class MeerK40t(wx.Frame):
         self.project.unlisten("selection", self.selection_changed)
         self.project.unlisten("bed_size", self.bed_changed)
         self.project.unlisten("elements", self.elements_changed)
-        try:
-            for key, value in self.project.windows.items():
-                value.Close()
-        except RuntimeError:  # close runtime error, as well as dictionary size change during iteration.
-            pass
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -699,7 +700,7 @@ class MeerK40t(wx.Frame):
 
     def on_size(self, event):
         self.Layout()
-        width, height = self.ClientSize
+        width, height = self.scene.ClientSize
         if width <= 0:
             width = 1
         if height <= 0:
@@ -963,7 +964,7 @@ class MeerK40t(wx.Frame):
         self.post_buffer_update()
 
     def focus_position_scene(self, scene_point):
-        window_width, window_height = self.ClientSize
+        window_width, window_height = self.scene.ClientSize
         scale_x = self.get_scale_x()
         scale_y = self.get_scale_y()
         self.scene_matrix_reset()
@@ -972,7 +973,7 @@ class MeerK40t(wx.Frame):
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
     def focus_viewport_scene(self, new_scene_viewport, buffer=0.0, lock=True):
-        window_width, window_height = self.ClientSize
+        window_width, window_height = self.scene.ClientSize
         left = new_scene_viewport[0]
         top = new_scene_viewport[1]
         right = new_scene_viewport[2]
@@ -1448,7 +1449,7 @@ def create_menu(element):
         for i in range(1, 25):
             gui.Bind(wx.EVT_MENU, menu_scale(element, 6.0 / float(i)),
                      path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, _("Scale"), path_scale_sub_menu)
+        menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
         path_rotate_sub_menu = wx.Menu()
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
@@ -1460,7 +1461,7 @@ def create_menu(element):
             gui.Bind(wx.EVT_MENU, menu_rotate(element, -1.0 / float(i)),
                      path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
                                                  wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, _("Rotate"), path_rotate_sub_menu)
+        menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
     if element.contains_type('path'):
         vector_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_subpath(element),
@@ -1469,7 +1470,7 @@ def create_menu(element):
                  vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_reify(element),
                  menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, _("Vector"), vector_menu)
+        menu.AppendSubMenu(vector_menu, _("Vector"))
     if element.contains_type('image'):
         image_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_raster_actualize(element),
@@ -1482,8 +1483,8 @@ def create_menu(element):
         for i in range(1, 8):
             gui.Bind(wx.EVT_MENU, menu_step(element, i),
                      image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
-        image_menu.Append(wx.ID_ANY, _("Step"), image_sub_menu_step)
-        menu.Append(wx.ID_ANY, _("Raster"), image_menu)
+        image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
+        menu.AppendSubMenu(image_menu, _("Raster"))
     if element.contains_type('text'):
         text_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_remove(element, types=(SVGText)),

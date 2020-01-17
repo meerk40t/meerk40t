@@ -46,7 +46,7 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
-class LaserThread(threading.Thread):
+class SpoolerThread(threading.Thread):
     def __init__(self, project, spooler, controller):
         threading.Thread.__init__(self)
         self.project = project
@@ -194,7 +194,7 @@ class LhymicroWriter:
 
         project.add_control("Emergency Stop", self.emergency_stop)
 
-        self.thread = LaserThread(project, self, self.project.controller)
+        self.thread = SpoolerThread(project, self, self.project.controller)
         project.add_thread("K40Spooler", self.thread)
 
     def emergency_stop(self):
@@ -241,7 +241,7 @@ class LhymicroWriter:
         self.project("spooler", 0)
 
     def reset_thread(self):
-        self.thread = LaserThread(self.project, self, self.project.controller)
+        self.thread = SpoolerThread(self.project, self, self.project.controller)
         self.project("writer", self.thread.state)
 
     def start_queue_consumer(self):
@@ -249,7 +249,7 @@ class LhymicroWriter:
             # We cannot reset an aborted thread without specifically calling reset.
             return
         if self.thread.state == THREAD_STATE_FINISHED:
-            self.thread = LaserThread(self.project, self, self.project.controller)
+            self.thread = SpoolerThread(self.project, self, self.project.controller)
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.state = THREAD_STATE_STARTED
             self.thread.start()

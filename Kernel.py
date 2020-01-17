@@ -50,6 +50,7 @@ class Scheduler(Thread):
     def add_job(self, run, args=(), interval=1.0, times=None):
         job = KernelJob(self, run, args, interval, times)
         self.jobs.append(job)
+        return job
 
     def run(self):
         self.state = THREAD_STATE_STARTED
@@ -165,7 +166,6 @@ class Kernel:
         if config is not None:
             self.set_config(config)
         self.cron = None
-
 
     def __str__(self):
         return "Project"
@@ -333,12 +333,19 @@ class Kernel:
         Invokes Kernel Shutdown.
         All threads are stopped.
         """
-        for thread_name in self.threads:
-            thread = self.threads[thread_name]
+        self.cron.stop()
+        for module_name in self.modules:
+            module = self.modules[module_name]
             try:
-                thread.stop()
+                module.stop()
             except AttributeError:
                 pass
+        for thread_name in self.threads:
+            thread = self.threads[thread_name]
+            while thread.is_alive():
+                time.sleep(0.1)
+                print("Waiting for processes to stop. %s" % (str(thread)))
+            print("Thread has Finished: %s" % (str(thread)))
 
     def listen(self, signal, function):
         if signal in self.listeners:
