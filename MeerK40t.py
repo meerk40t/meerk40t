@@ -10,10 +10,13 @@ import wx
 import wx.ribbon as RB
 
 from ElementProperty import ElementProperty
+from JobSpooler import JobSpooler
 from K40Controller import K40Controller
 from Kernel import *
 from LaserRender import LaserRender, swizzlecolor
 from LhymicroWriter import LhymicroWriter
+from Controller import Controller
+
 from DefaultModules import *
 from ZMatrix import ZMatrix
 from icons import *
@@ -120,6 +123,8 @@ project.add_module('K40Writer', LhymicroWriter())
 project.add_module('SvgLoader', SVGLoader())
 project.add_module('ImageLoader', ImageLoader())
 project.add_module('EgvLoader', EgvLoader())
+project.add_window('Controller', Controller)
+project.add_window('JobSpooler', JobSpooler)
 project.boot()
 
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
@@ -153,6 +158,8 @@ class MeerK40t(wx.Frame):
             project.window_width = 300
         if project.window_height < 300:
             project.window_height = 300
+
+        project.add_control("Path", self.open_path_dialog)
 
         self.locale = None
         wx.Locale.AddCatalogLookupPathPrefix('locale')
@@ -507,7 +514,7 @@ class MeerK40t(wx.Frame):
             window = ElementProperty(None, wx.ID_ANY, "")
             window.set_project_element(project, element)
             window.Show()
-            project.windows["elementproperty"] = window
+            project.open_windows["elementproperty"] = window
 
     def on_item_changed(self, event):
         """
@@ -598,7 +605,7 @@ class MeerK40t(wx.Frame):
             else:
                 return
         try:
-            for window in [value for key, value in self.project.windows.items()]:
+            for window in [value for key, value in self.project.open_windows.items()]:
                 window.Close()
         except RuntimeError:  # close runtime error
             pass
@@ -861,7 +868,7 @@ class MeerK40t(wx.Frame):
             window = ElementProperty(None, wx.ID_ANY, "")
             window.set_project_element(self.project, self.project.selected)
             window.Show()
-            self.project.windows["elementproperty"] = window
+            self.project.open_windows["elementproperty"] = window
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
@@ -909,6 +916,9 @@ class MeerK40t(wx.Frame):
         self.project.keymap[ord('3')] = MappedKey('3', "set_position 3")
         self.project.keymap[ord('4')] = MappedKey('4', "set_position 4")
         self.project.keymap[ord('5')] = MappedKey('5', "set_position 5")
+        self.project.keymap[wx.WXK_F6] = MappedKey('F6', "window JobSpooler")
+        self.project.keymap[wx.WXK_F7] = MappedKey('F7', "window Controller")
+        self.project.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
 
     def execute_string_action(self, action, *args):
         writer = self.project.spooler
@@ -918,6 +928,18 @@ class MeerK40t(wx.Frame):
             writer.send_job(self.execute_move_to_action(*args))
         elif action == 'set_position':
             self.execute_set_position_action(*args)
+        elif action == 'window':
+            self.execute_open_window_action(*args)
+        elif action == 'control':
+            self.execute_execute_control(*args)
+
+    def execute_execute_control(self, *args):
+        self.project.execute(args[0])
+
+    def execute_open_window_action(self, *args):
+        window_name = args[0]
+        if window_name in self.project.windows:
+            self.open_window(window_name)
 
     def execute_set_position_action(self, index):
         x = self.project.spooler.current_x
@@ -1232,6 +1254,28 @@ class MeerK40t(wx.Frame):
 
         return toggle
 
+    def open_path_dialog(self):
+        dlg = wx.TextEntryDialog(self, 'Enter SVG Path Data', 'Path Entry', '')
+        dlg.SetValue('')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            path = Path(dlg.GetValue())
+            path.fill = 'black'
+            path.stroke = 'black'
+            group = LaserNode()
+            group.name = 'Path'
+            self.project.elements.append(group)
+            group.append(LaserNode(abs(path)))
+        dlg.Destroy()
+
+    def open_window(self, window_name):
+        self.project.close_old_window(window_name)
+        w = self.project.windows[window_name]
+        window = w(None, wx.ID_ANY, "")
+        window.set_project(project)
+        window.Show()
+        project.open_windows[window_name] = window
+
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Open preference dialog.
@@ -1244,7 +1288,7 @@ class MeerK40t(wx.Frame):
         window = Preferences(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["preferences"] = window
+        project.open_windows["preferences"] = window
 
     def open_rotary(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1258,7 +1302,7 @@ class MeerK40t(wx.Frame):
         window = RotarySettings(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["rotary"] = window
+        project.open_windows["rotary"] = window
 
     def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1272,7 +1316,7 @@ class MeerK40t(wx.Frame):
         window = Alignment(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["alignment"] = window
+        project.open_windows["alignment"] = window
 
     def open_keymap(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1286,7 +1330,7 @@ class MeerK40t(wx.Frame):
         window = Keymap(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["keymap"] = window
+        project.open_windows["keymap"] = window
 
     def open_colordefine(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1300,7 +1344,7 @@ class MeerK40t(wx.Frame):
         window = ColorDefine(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["colordefine"] = window
+        project.open_windows["colordefine"] = window
 
     def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1314,7 +1358,7 @@ class MeerK40t(wx.Frame):
         window = UsbConnect(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["usbconnect"] = window
+        project.open_windows["usbconnect"] = window
 
     def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1328,7 +1372,7 @@ class MeerK40t(wx.Frame):
         window = Navigation(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["navigation"] = window
+        project.open_windows["navigation"] = window
 
     def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1343,7 +1387,7 @@ class MeerK40t(wx.Frame):
         window = Controller(None, wx.ID_ANY, "")
         window.set_project(project)
         window.Show()
-        project.windows["controller"] = window
+        project.open_windows["controller"] = window
 
     def open_spooler(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1357,7 +1401,7 @@ class MeerK40t(wx.Frame):
         window = JobSpooler(None, wx.ID_ANY, "")
         window.set_project(self.project)
         window.Show()
-        self.project.windows["jobspooler"] = window
+        self.project.open_windows["jobspooler"] = window
 
     def open_job(self, event=None):
         """
@@ -1372,7 +1416,7 @@ class MeerK40t(wx.Frame):
         window.set_project(project, [e for e in self.project.elements.flat_elements(types=('image', 'path', 'text'),
                                                                                     passes=True)])
         window.Show()
-        project.windows["jobinfo"] = window
+        project.open_windows["jobinfo"] = window
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1741,7 +1785,7 @@ def menu_execute(element):
         window = JobInfo(None, wx.ID_ANY, "")
         window.set_project(project, [e for e in element.flat_elements(types=('image', 'path', 'text'), passes=True)])
         window.Show()
-        project.windows["jobinfo"] = window
+        project.open_windows["jobinfo"] = window
 
     return burn_element
 

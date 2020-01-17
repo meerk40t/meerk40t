@@ -146,6 +146,7 @@ class Kernel:
         self.loaders = {}
         self.threads = {}
         self.controls = {}
+        self.windows = {}
         self.operations = []
 
         self.writers = []
@@ -159,7 +160,7 @@ class Kernel:
         self.run_later = lambda listener, message: listener(message)
 
         self.selected = None
-        self.windows = {}
+        self.open_windows = {}
         self.keymap = {}
 
         self.translation = lambda e: e  # Default for this code is do nothing.
@@ -320,9 +321,12 @@ class Kernel:
         setattr(self, setting_name, value)
         self(setting_name, (value, old_value))
 
+    def add_window(self, window_name, window):
+        self.windows[window_name] = window
+
     def close_old_window(self, name):
-        if name in self.windows:
-            old_window = self.windows[name]
+        if name in self.open_windows:
+            old_window = self.open_windows[name]
             try:
                 old_window.Close()
             except RuntimeError:
