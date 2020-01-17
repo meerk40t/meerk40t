@@ -63,6 +63,7 @@ class Controller(wx.Frame):
         self.update_buffer_size = False
         self.update_control_state = False
         self.update_usb_status = False
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
     def set_project(self, project):
         self.project = project
@@ -89,6 +90,23 @@ class Controller(wx.Frame):
             pass
         self.project = None
         event.Skip()  # delegate destroy to super
+
+    def kernel_execute(self, control_name):
+        def menu_element(event):
+            self.project.execute(control_name)
+
+        return menu_element
+
+    def on_controller_menu(self, event):
+        gui = self
+        menu = wx.Menu()
+        path_scale_sub_menu = wx.Menu()
+        for control_name, control in self.project.controls.items():
+            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name), path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
@@ -264,7 +282,7 @@ class Controller(wx.Frame):
             update = True
         if self.update_control_state:
             self.update_control_state = False
-            self.text_controller_status.SetValue(get_state_string_from_state(self.control_state))
+            self.text_controller_status.SetValue(self.project.get_state_string_from_state(self.control_state))
             self.set_controller_button_by_state()
             update = True
         if self.update_usb_status:
@@ -296,8 +314,7 @@ class Controller(wx.Frame):
             self.project.execute("K40Usb-Stop")
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.project("abort", 1)
-        self.project.abort("K40Controller")
+        self.project.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
         self.project.close_old_window("bufferview")

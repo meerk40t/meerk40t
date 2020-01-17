@@ -10,26 +10,43 @@ THREAD_STATE_FINISHED = 3
 THREAD_STATE_ABORT = 10
 
 
-def get_state_string_from_state(state):
-    if state == THREAD_STATE_UNSTARTED:
-        return "Unstarted"
-    elif state == THREAD_STATE_ABORT:
-        return "Aborted"
-    elif state == THREAD_STATE_FINISHED:
-        return "Finished"
-    elif state == THREAD_STATE_PAUSED:
-        return "Paused"
-    elif state == THREAD_STATE_STARTED:
-        return "Started"
-    elif state == THREAD_STATE_UNKNOWN:
-        return "Unknown"
+class KernelJob:
+    def __init__(self, scheduler, process, args, interval=1.0, times=None):
+        self.scheduler = scheduler
+        self.interval = interval
+        self.last_run = time.time()
+        self.next_run = self.last_run + self.interval
+        self.process = process
+        self.args = args
+        self.times = times
+        self.paused = False
+
+    @property
+    def scheduled(self):
+        return time.time() >= self.next_run
+
+    def run(self):
+        if self.paused:
+            return
+        self.last_run = time.time()
+        if self.times is not None:
+            self.times = self.times - 1
+            if self.times <= 0:
+                self.scheduler.jobs.remove(self)
+        self.next_run = self.last_run + self.interval
+        self.process(*self.args)
 
 
-class KernelThread(Thread):
+class Scheduler(Thread):
     def __init__(self, kernel):
         Thread.__init__(self)
         self.kernel = kernel
         self.state = THREAD_STATE_UNSTARTED
+        self.jobs = []
+
+    def add_job(self, run, args=(), interval=1.0, times=None):
+        job = KernelJob(self, run, args, interval, times)
+        self.jobs.append(job)
 
     def run(self):
         self.state = THREAD_STATE_STARTED
@@ -39,7 +56,9 @@ class KernelThread(Thread):
                 return
             while self.state == THREAD_STATE_PAUSED:
                 time.sleep(1.0)
-            self.kernel.tick()
+            for job in self.jobs:
+                if job.scheduled:
+                    job.run()
         self.state = THREAD_STATE_FINISHED
 
     def state(self):
@@ -53,6 +72,17 @@ class KernelThread(Thread):
 
     def stop(self):
         self.state = THREAD_STATE_ABORT
+
+
+class Module:
+    def __init__(self):
+        self.kernel = None
+
+    def initialize(self, kernel):
+        self.kernel = kernel
+
+    def shutdown(self, kernel):
+        self.kernel = None
 
 
 class Kernel:
@@ -107,37 +137,39 @@ class Kernel:
         self.elements = LaserNode(parent=self)
 
         self.config = None
-        self.loaders = []
-        self.writers = []
-        self.effects = []
-        self.operations = []
+
+        self.modules = {}
+        self.loaders = {}
         self.threads = {}
         self.controls = {}
+        self.operations = []
+
+        self.writers = []
+        self.effects = []
 
         self.listeners = {}
         self.last_message = {}
+        self.queue_lock = Lock()
+        self.message_queue = {}
+        self.needs_queue_processed = False
+        self.run_later = lambda listener, message: listener(message)
 
         self.selected = None
         self.windows = {}
         self.keymap = {}
 
-        self.queue_lock = Lock()
-        self.message_queue = {}
-
-        self.run_later = lambda listener, message: listener(message)
-        self.needs_queue_processed = False
-        self.translation = None
-
+        self.translation = lambda e: e  # Default for this code is do nothing.
         if config is not None:
             self.set_config(config)
-
-        self.kernel_thread = KernelThread(self)
-        self.add_thread('Ticks', self.kernel_thread)
+        self.cron = None
 
     def __str__(self):
         return "Project"
 
     def __call__(self, code, message):
+        self.signal(code, message)
+
+    def signal(self, code, message):
         self.queue_lock.acquire(True)
         self.message_queue[code] = message
         self.queue_lock.release()
@@ -177,6 +209,22 @@ class Kernel:
                 t, key, default = item
                 return self.read_config(t, key, default)
         return self.config.Read(item)
+
+    def boot(self):
+        self.cron = Scheduler(self)
+        self.cron.add_job(self.run_later, args=(self.process_queue, None), interval=0.05)
+        self.add_thread('Scheduler', self.cron)
+        self.cron.start()
+
+    def add_module(self, module_name, module):
+        self.modules[module_name] = module
+        try:
+            module.initialize(self)
+        except AttributeError:
+            pass
+
+    def add_loader(self, loader_name, loader):
+        self.loaders[loader_name] = loader
 
     def read_config(self, t, key, default=None):
         if default is not None:
@@ -313,52 +361,61 @@ class Kernel:
     def remove_thread(self, thread_name):
         del self.threads[thread_name]
 
+    def get_state_string_from_state(self, state):
+        if state == THREAD_STATE_UNSTARTED:
+            return "Unstarted"
+        elif state == THREAD_STATE_ABORT:
+            return "Aborted"
+        elif state == THREAD_STATE_FINISHED:
+            return "Finished"
+        elif state == THREAD_STATE_PAUSED:
+            return "Paused"
+        elif state == THREAD_STATE_STARTED:
+            return "Started"
+        elif state == THREAD_STATE_UNKNOWN:
+            return "Unknown"
+
     def get_state(self, thread_name):
         try:
-            return self.threads[thread_name].state()
+            return self.modules[thread_name].state()
         except AttributeError:
             return THREAD_STATE_UNKNOWN
 
     def start(self, thread_name):
         try:
-            self.threads[thread_name].start()
+            self.modules[thread_name].start()
         except AttributeError:
             pass
 
     def resume(self, thread_name):
         try:
-            self.threads[thread_name].resume()
+            self.modules[thread_name].resume()
         except AttributeError:
             pass
 
     def pause(self, thread_name):
         try:
-            self.threads[thread_name].pause()
+            self.modules[thread_name].pause()
         except AttributeError:
             pass
 
     def abort(self, thread_name):
         try:
-            self.threads[thread_name].abort()
+            self.modules[thread_name].abort()
         except AttributeError:
             pass
 
     def reset(self, thread_name):
         try:
-            self.threads[thread_name].reset()
+            self.modules[thread_name].reset()
         except AttributeError:
             pass
 
     def stop(self, thread_name):
         try:
-            self.threads[thread_name].stop()
+            self.modules[thread_name].stop()
         except AttributeError:
             pass
-
-    def tick(self):
-        """Called by KernelThread every 50ms to handle events."""
-        if self.needs_queue_processed:
-            self.run_later(self.process_queue, None)
 
     def set_selected(self, selected):
         self.selected = selected
@@ -373,3 +430,10 @@ class Kernel:
         self.selected.move(dx, dy)
         for e in self.selected:
             e.move(dx, dy)
+
+    def load(self, pathname, group=None):
+        for loader_name, loader in self.loaders.items():
+            for description, extensions, mimetype in loader.load_types():
+                if pathname.lower().endswith(extensions):
+                    loader.load(pathname, group)
+                    return True

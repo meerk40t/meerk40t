@@ -1,8 +1,8 @@
 import threading
-import time
 
 import usb.core
 import usb.util
+import time
 
 from Kernel import *
 
@@ -125,12 +125,28 @@ class UsbDisconnectThread(threading.Thread):
 
 
 class K40Controller:
-    def __init__(self, kernel, usb_index=-1, usb_address=-1, usb_bus=-1, mock=False):
+    def __init__(self):
+        self.kernel = None
+        self.status = None
+
+        self.usb = None
+        self.interface = None
+        self.detached = False
+
+        self.process_queue_pause = False
+        self.queue_lock = threading.Lock()
+        self.usb_lock = threading.Lock()
+        self.thread = None
+
+        self.abort_waiting = False
+
+    def initialize(self, kernel):
         self.kernel = kernel
-        kernel.setting(int, 'usb_index', usb_index)
-        kernel.setting(int, 'usb_bus', usb_bus)
-        kernel.setting(int, 'usb_address', usb_address)
-        kernel.setting(bool, 'mock', mock)
+        self.kernel.controller = self
+        kernel.setting(int, 'usb_index', -1)
+        kernel.setting(int, 'usb_bus', -1)
+        kernel.setting(int, 'usb_address', -1)
+        kernel.setting(bool, 'mock', False)
         kernel.setting(int, 'packet_count', 0)
         kernel.setting(int, 'rejected_count', 0)
         kernel.setting(bool, 'autostart_controller', True)
@@ -153,21 +169,15 @@ class K40Controller:
 
         kernel.add_control("K40Usb-Stop", stop_usb)
 
+        def abort_wait():
+            self.abort_waiting = True
+
+        kernel.add_control("K40-Wait Abort", abort_wait)
+
         self.thread = ControllerQueueThread(self)
-        self.kernel("control_thread", self.thread.state)
-
-        self.status = None
-
-        self.usb = None
-        self.interface = None
-        self.detached = False
-
-        self.process_queue_pause = False
-
-        self.kernel("buffer", 0)
-        self.queue_lock = threading.Lock()
-        self.usb_lock = threading.Lock()
-
+        kernel.signal("control_thread", self.thread.state)
+        kernel("buffer", 0)
+        kernel.add_thread("ControllerQueueThread", self.thread)
         self.set_usb_status("Uninitialized")
 
     def __enter__(self):
@@ -464,3 +474,6 @@ class K40Controller:
             time.sleep(0.1)
             self.kernel("wait", (value, i))
             i += 1
+            if self.abort_waiting:
+                self.abort_waiting = False
+                return  # Wait abort was requested.

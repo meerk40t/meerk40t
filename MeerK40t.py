@@ -9,13 +9,12 @@ import traceback
 import wx
 import wx.ribbon as RB
 
-from EgvParser import parse_egv
 from ElementProperty import ElementProperty
 from K40Controller import K40Controller
 from Kernel import *
-from LaserCommandConstants import *
 from LaserRender import LaserRender, swizzlecolor
 from LhymicroWriter import LhymicroWriter
+from DefaultModules import *
 from ZMatrix import ZMatrix
 from icons import *
 from svgelements import *
@@ -111,9 +110,17 @@ ID_MENU_WEBPAGE = idinc.new()
 ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
-project = Kernel()
-project.start('Ticks')
 _ = wx.GetTranslation
+project = Kernel()
+project.run_later = wx.CallAfter
+project.translation = wx.GetTranslation
+project.set_config(wx.Config("MeerK40t"))
+project.add_module('K40Controller', K40Controller())
+project.add_module('K40Writer', LhymicroWriter())
+project.add_module('SvgLoader', SVGLoader())
+project.add_module('ImageLoader', ImageLoader())
+project.add_module('EgvLoader', EgvLoader())
+project.boot()
 
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('fr', u'français', wx.LANGUAGE_FRENCH),
@@ -131,10 +138,6 @@ class MeerK40t(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.project = project
-        self.project.set_config(wx.Config("MeerK40t"))  # Set kernel's persistence settings.
-        controller = K40Controller(kernel=project)
-        self.project.add_thread("K40Controller", controller)
-        self.project.spooler = LhymicroWriter(project, controller=controller)
         project.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         project.setting(int, "window_width", 1200)
         project.setting(int, "window_height", 600)
@@ -569,10 +572,10 @@ class MeerK40t(wx.Frame):
         self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
 
     def on_control_state(self, value):
-        self.main_statusbar.SetStatusText(_("Controller: %s" % get_state_string_from_state(value)), 1)
+        self.main_statusbar.SetStatusText(_("Controller: %s" % project.get_state_string_from_state(value)), 1)
 
     def on_writer_state(self, value):
-        self.main_statusbar.SetStatusText(_("Spooler: %s" % get_state_string_from_state(value)), 2)
+        self.main_statusbar.SetStatusText(_("Spooler: %s" % project.get_state_string_from_state(value)), 2)
 
     def on_writer_mode(self, state):
         if state == 0:
@@ -583,13 +586,13 @@ class MeerK40t(wx.Frame):
 
     def on_close(self, event):
         if self.project.spooler.thread.state == THREAD_STATE_STARTED or \
-                self.project.spooler.controller.thread.state == THREAD_STATE_STARTED:
+                self.project.controller.thread.state == THREAD_STATE_STARTED:
             dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
                                    _('Processes are still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
             if result == wx.ID_OK:
-                project.abort("K40Controller")
+                project.execute("Emergency Stop")
                 self.project("abort", 1)
             else:
                 return
@@ -639,16 +642,7 @@ class MeerK40t(wx.Frame):
         self.Layout()
 
     def load_file(self, pathname, group=None):
-        if pathname.lower().endswith(".svg"):
-            self.load_svg(pathname, group)
-            return True
-        elif pathname.lower().endswith(".egv"):
-            self.load_egv(pathname, group)
-            return True
-        elif pathname.lower().endswith(('.png', '.bmp', '.eps', '.gif', '.ico', '.jpg', '.jpeg', '.jpe', '.webp')):
-            self.load_image(pathname, group)
-            return True
-        return False
+        return self.project.load(pathname, group)
 
     def on_drop_file(self, event):
         """
@@ -677,88 +671,21 @@ class MeerK40t(wx.Frame):
         """
         Load SVG File. Scalable Vector Graphics
         """
-        scale_factor = 1000.0 / 96.0
-        svg = SVG(pathname).elements(width='%fmm' % (project.bed_width),
-                                     height='%fmm' % (project.bed_height),
-                                     ppi=96.0,
-                                     transform='scale(%f)' % scale_factor)
-        context = self.project.elements
-
-        if group is None:
-            group = LaserNode()
-            group['filepath'] = pathname
-            group.name = os.path.basename(pathname)
-            context.append(group)
-
-        context = group
-        append_list = []
-        for element in svg:
-            if isinstance(element, SVGText):
-                pe = LaserNode(element)
-                append_list.append(pe)
-            elif isinstance(element, Path):
-                pe = LaserNode(element)
-                append_list.append(pe)
-            elif isinstance(element, Shape):
-                e = Path(element)
-                e.reify()  # In some cases the shape could not have reified, the path must.
-                pe = LaserNode(e)
-                append_list.append(pe)
-            elif isinstance(element, SVGImage):
-                try:
-                    element.load(os.path.dirname(pathname))
-                    if element.image is not None:
-                        pe = LaserNode(element)
-                        append_list.append(pe)
-                except OSError:
-                    pass
-        context.append_all(append_list)
+        self.project.load(pathname, group)
         self.post_buffer_update()
 
     def load_egv(self, pathname, group=None):
         """
         Load egv files. Engrave files.
         """
-        context = self.project.elements
-        if group is None:
-            group = LaserNode()
-            group['filepath'] = pathname
-            group.name = os.path.basename(pathname)
-            context.append(group)
-        context = group
-        for event in parse_egv(pathname):
-            path = event['path']
-            if len(path) > 0:
-                element = LaserNode(path)
-                context.append(element)
-                if 'speed' in event:
-                    element['speed'] = event['speed']
-            if 'raster' in event:
-                raster = event['raster']
-                image = raster.get_image()
-                if image is not None:
-                    element = LaserNode(image)
-                    context.append(element)
-                    if 'speed' in event:
-                        element['speed'] = event['speed']
+        self.project.load(pathname, group)
         self.post_buffer_update()
 
     def load_image(self, pathname, group=None):
         """
         Load image files.
         """
-        context = self.project.elements
-        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
-        image.load()
-        element = LaserNode(image)
-        if group is None:
-            group = LaserNode()
-            group.element.values.update(element.element.values)
-            group['filepath'] = pathname
-            group.name = os.path.basename(pathname)
-            context.append(group)
-        context = group
-        context.append(element)
+        self.project.load(pathname, group)
         self.post_buffer_update()
 
     def tree_update(self):
@@ -1894,7 +1821,6 @@ class MeerK40tGui(wx.App):
     """
 
     def OnInit(self):
-        project.run_later = wx.CallAfter
         self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
         self.SetTopWindow(self.MeerK40t)
         self.MeerK40t.Show()
