@@ -192,7 +192,7 @@ class JobSpooler(wx.Frame):
         return delete
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.buffer_limit = not self.project.spooler.thread.limit_buffer
+        self.project.buffer_limit = not self.project.buffer_limit
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
         if self.project is not None:
