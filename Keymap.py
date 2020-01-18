@@ -1,5 +1,7 @@
 import wx
 
+_ = wx.GetTranslation
+
 
 class Keymap(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -7,9 +9,9 @@ class Keymap(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((400, 300))
-        self.check_invert_mouse_zoom = wx.CheckBox(self, wx.ID_ANY, "Invert Mouse Wheel Zoom")
+        self.check_invert_mouse_zoom = wx.CheckBox(self, wx.ID_ANY, _("Invert Mouse Wheel Zoom"))
         self.list_keymap = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
-        self.button_add = wx.Button(self, wx.ID_ANY, "Add Hotkey")
+        self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
 
         self.__set_properties()
         self.__do_layout()
@@ -22,25 +24,23 @@ class Keymap(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        try:
-            del self.project.windows["preferences"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("Keymap")
         event.Skip()  # Call destroy.
 
     def set_project(self, project):
         self.project = project
+        project.setting(bool, "mouse_zoom_invert", False)
         self.check_invert_mouse_zoom.SetValue(self.project.mouse_zoom_invert)
         self.reload_keymap()
 
     def __set_properties(self):
         # begin wxGlade: Keymap.__set_properties
-        self.SetTitle("Keymap Settings")
-        self.check_invert_mouse_zoom.SetToolTip("Invert the zoom direction from the mouse wheel.")
-        self.list_keymap.SetToolTip("What keys are bound to which actions?")
-        self.list_keymap.AppendColumn("Action", format=wx.LIST_FORMAT_LEFT, width=100)
-        self.list_keymap.AppendColumn("Hotkey", format=wx.LIST_FORMAT_LEFT, width=279)
-        self.button_add.SetToolTip("Add a new hotkey")
+        self.SetTitle(_("Keymap Settings"))
+        self.check_invert_mouse_zoom.SetToolTip(_("Invert the zoom direction from the mouse wheel."))
+        self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
+        self.list_keymap.AppendColumn(_("Action"), format=wx.LIST_FORMAT_LEFT, width=100)
+        self.list_keymap.AppendColumn(_("Hotkey"), format=wx.LIST_FORMAT_LEFT, width=279)
+        self.button_add.SetToolTip(_("Add a new hotkey"))
         self.button_add.Enable(False)
         # end wxGlade
 

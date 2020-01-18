@@ -4,9 +4,12 @@
 #
 
 import wx
-from icons import *
+
 from K40Controller import get_code_string_from_code
-from ThreadConstants import *
+from Kernel import *
+from icons import *
+
+_ = wx.GetTranslation
 
 
 class Controller(wx.Frame):
@@ -15,9 +18,9 @@ class Controller(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((507, 507))
-        self.button_controller_control = wx.ToggleButton(self, wx.ID_ANY, "Start Controller")
+        self.button_controller_control = wx.ToggleButton(self, wx.ID_ANY, _("Start Controller"))
         self.text_controller_status = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.button_usb_connect = wx.ToggleButton(self, wx.ID_ANY, "Connect Usb")
+        self.button_usb_connect = wx.ToggleButton(self, wx.ID_ANY, _("Connect Usb"))
         self.text_usb_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -60,34 +63,52 @@ class Controller(wx.Frame):
         self.update_buffer_size = False
         self.update_control_state = False
         self.update_usb_status = False
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
     def set_project(self, project):
         self.project = project
-        project["status", self.update_status] = self
-        project["packet", self.update_packet] = self
-        project["packet_text", self.update_packet_text] = self
-        project["buffer", self.on_buffer_update] = self
-        project["usb_status", self.on_usbstatus] = self
-        project["control_thread", self.on_control_state] = self
+        self.project.setting(int, "packet_count", 0)
+        self.project.setting(str, "_usb_state", None)
+        self.project.listen("status", self.update_status)
+        self.project.listen("packet", self.update_packet)
+        self.project.listen("packet_text", self.update_packet_text)
+        self.project.listen("buffer", self.on_buffer_update)
+        self.project.listen("usb_state", self.on_usb_state)
+        self.project.listen("control_thread", self.on_control_state)
         self.set_controller_button_by_state()
 
     def on_close(self, event):
-        self.project["status", self.update_status] = None
-        self.project["packet", self.update_packet] = None
-        self.project["packet_text", self.update_packet_text] = None
-        self.project["buffer", self.on_buffer_update] = None
-        self.project["usb_status", self.on_usbstatus] = None
-        self.project["control_thread", self.on_control_state] = None
-        try:
-            del self.project.windows["controller"]
-        except KeyError:
-            pass
+        self.project.unlisten("status", self.update_status)
+        self.project.unlisten("packet", self.update_packet)
+        self.project.unlisten("packet_text", self.update_packet_text)
+        self.project.unlisten("buffer", self.on_buffer_update)
+        self.project.unlisten("usb_state", self.on_usb_state)
+        self.project.unlisten("control_thread", self.on_control_state)
+
+        self.project.mark_window_closed("Controller")
         self.project = None
         event.Skip()  # delegate destroy to super
 
+    def kernel_execute(self, control_name):
+        def menu_element(event):
+            self.project.execute(control_name)
+
+        return menu_element
+
+    def on_controller_menu(self, event):
+        gui = self
+        menu = wx.Menu()
+        path_scale_sub_menu = wx.Menu()
+        for control_name, control in self.project.controls.items():
+            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name), path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
+        menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
+
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
-        self.SetTitle("Controller")
+        self.SetTitle(_("Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
@@ -137,14 +158,14 @@ class Controller(wx.Frame):
         sizer_9 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_9.Add(self.button_controller_control, 0, wx.EXPAND, 0)
-        label_12 = wx.StaticText(self, wx.ID_ANY, "Controller")
+        label_12 = wx.StaticText(self, wx.ID_ANY, _("Controller"))
         label_12.SetMinSize((80, 16))
         sizer_17.Add(label_12, 1, 0, 0)
         sizer_17.Add(self.text_controller_status, 0, wx.EXPAND, 0)
         sizer_9.Add(sizer_17, 0, 0, 0)
         sizer_1.Add(sizer_9, 0, wx.EXPAND, 0)
         sizer_18.Add(self.button_usb_connect, 0, wx.EXPAND, 0)
-        label_7 = wx.StaticText(self, wx.ID_ANY, "Usb Status")
+        label_7 = wx.StaticText(self, wx.ID_ANY, _("Usb Status"))
         label_7.SetMinSize((80, 16))
         sizer_15.Add(label_7, 1, 0, 0)
         sizer_15.Add(self.text_usb_status, 0, 0, 0)
@@ -153,53 +174,53 @@ class Controller(wx.Frame):
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "Buffer")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("Buffer"))
         sizer_5.Add(label_8, 0, 0, 0)
         sizer_5.Add(self.text_buffer_length, 10, 0, 0)
         sizer_5.Add(self.button_buffer_viewer, 1, 0, 0)
         sizer_1.Add(sizer_5, 0, 0, 0)
         static_line_1 = wx.StaticLine(self, wx.ID_ANY)
         sizer_1.Add(static_line_1, 0, wx.EXPAND, 0)
-        label_11 = wx.StaticText(self, wx.ID_ANY, "Packet Count  ")
+        label_11 = wx.StaticText(self, wx.ID_ANY, _("Packet Count  "))
         sizer_2.Add(label_11, 0, 0, 0)
         sizer_2.Add(self.packet_count_text, 0, 0, 0)
         sizer_16.Add(sizer_2, 10, wx.EXPAND, 0)
-        label_13 = wx.StaticText(self, wx.ID_ANY, "Rejected Packets")
+        label_13 = wx.StaticText(self, wx.ID_ANY, _("Rejected Packets"))
         sizer_3.Add(label_13, 0, 0, 0)
         sizer_3.Add(self.rejected_packet_count_text, 0, 0, 0)
         sizer_16.Add(sizer_3, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_16, 0, 0, 0)
-        label_10 = wx.StaticText(self, wx.ID_ANY, "Packet Text  ")
+        label_10 = wx.StaticText(self, wx.ID_ANY, _("Packet Text  "))
         sizer_14.Add(label_10, 1, 0, 0)
         sizer_14.Add(self.packet_text_text, 11, 0, 0)
         sizer_1.Add(sizer_14, 0, 0, 0)
-        label_9 = wx.StaticText(self, wx.ID_ANY, "Last Packet  ")
+        label_9 = wx.StaticText(self, wx.ID_ANY, _("Last Packet  "))
         sizer_13.Add(label_9, 1, 0, 0)
         sizer_13.Add(self.last_packet_text, 11, 0, 0)
         sizer_1.Add(sizer_13, 0, 0, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "Byte 0")
+        label_1 = wx.StaticText(self, wx.ID_ANY, _("Byte 0"))
         byte0sizer.Add(label_1, 0, 0, 0)
         byte_data_sizer.Add(byte0sizer, 1, wx.EXPAND, 0)
         byte1sizer.Add(self.text_byte_1, 0, 0, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, "Byte 1")
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Byte 1"))
         byte1sizer.Add(label_2, 0, 0, 0)
         byte1sizer.Add(self.text_desc, 0, 0, 0)
         byte_data_sizer.Add(byte1sizer, 1, wx.EXPAND, 0)
         byte2sizer.Add(self.text_byte_2, 0, 0, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, "Byte 2")
+        label_3 = wx.StaticText(self, wx.ID_ANY, _("Byte 2"))
         byte2sizer.Add(label_3, 0, 0, 0)
         byte_data_sizer.Add(byte2sizer, 1, wx.EXPAND, 0)
         byte3sizer.Add(self.text_byte_3, 0, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, "Byte 3")
+        label_4 = wx.StaticText(self, wx.ID_ANY, _("Byte 3"))
         byte3sizer.Add(label_4, 0, 0, 0)
         byte_data_sizer.Add(byte3sizer, 1, wx.EXPAND, 0)
         byte4sizer.Add(self.text_byte_4, 0, 0, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, "Byte 4")
+        label_5 = wx.StaticText(self, wx.ID_ANY, _("Byte 4"))
         byte4sizer.Add(label_5, 0, 0, 0)
         byte_data_sizer.Add(byte4sizer, 1, wx.EXPAND, 0)
         byte5sizer.Add(self.text_byte_5, 0, 0, 0)
-        label_6 = wx.StaticText(self, wx.ID_ANY, "Byte 5")
+        label_6 = wx.StaticText(self, wx.ID_ANY, _("Byte 5"))
         byte5sizer.Add(label_6, 0, 0, 0)
         byte_data_sizer.Add(byte5sizer, 1, wx.EXPAND, 0)
         sizer_1.Add(byte_data_sizer, 0, wx.EXPAND, 0)
@@ -246,8 +267,8 @@ class Controller(wx.Frame):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
-            self.packet_count_text.SetValue(str(self.project.controller.packet_count))
-            self.rejected_packet_count_text.SetValue(str(self.project.controller.rejected_count))
+            self.packet_count_text.SetValue(str(self.project.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.project.rejected_count))
             update = True
         if self.update_buffer_size:
             self.update_buffer_size = False
@@ -259,7 +280,7 @@ class Controller(wx.Frame):
             update = True
         if self.update_control_state:
             self.update_control_state = False
-            self.text_controller_status.SetValue(get_state_string_from_state(self.control_state))
+            self.text_controller_status.SetValue(self.project.get_state_string_from_state(self.control_state))
             self.set_controller_button_by_state()
             update = True
         if self.update_usb_status:
@@ -272,34 +293,29 @@ class Controller(wx.Frame):
         self.dirty = False
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.control_state
+        state = self.project.get_state("K40Controller")
         if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.project.controller.start_queue_consumer()
+            self.project.start("K40Controller")
         elif state == THREAD_STATE_PAUSED:
-            self.project.controller.resume()
+            self.project.resume("K40Controller")
         elif state == THREAD_STATE_STARTED:
-            self.project.controller.pause()
+            self.project.pause("K40Controller")
         elif state == THREAD_STATE_ABORT:
             self.project("abort", 0)
-            self.project.controller.reset_thread()
+            self.project.reset("K40Controller")
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        if self.project.controller.usb is None:
-            self.project.controller.start_usb()
+        state = self.project._usb_state
+        if state is None or state == "Disconnected" or state == "Uninitialized":
+            self.project.execute("K40Usb-Start")
         else:
-            self.project.controller.stop_usb()
+            self.project.execute("K40Usb-Stop")
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.project("abort", 1)
-        self.project.controller.emergency_stop()
+        self.project.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.close_old_window("bufferview")
-        from BufferView import BufferView
-        window = BufferView(None, wx.ID_ANY, "")
-        window.set_project(self.project)
-        window.Show()
-        self.project.windows["bufferview"] = window
+        self.project.open_window("BufferView")
 
     def update_status(self, data):
         self.update_status_data = True
@@ -316,7 +332,7 @@ class Controller(wx.Frame):
         self.packet_string = string_data
         self.post_update()
 
-    def on_usbstatus(self, status):
+    def on_usb_state(self, status):
         self.update_usb_status = True
         self.usb_status = status
         self.post_update()
@@ -367,19 +383,19 @@ class Controller(wx.Frame):
         state = self.control_state
         if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
             self.button_controller_control.SetBackgroundColour("#009900")
-            self.button_controller_control.SetLabel("Start Controller")
+            self.button_controller_control.SetLabel(_("Start Controller"))
             self.button_controller_control.SetValue(False)
         elif state == THREAD_STATE_PAUSED:
             self.button_controller_control.SetBackgroundColour("#00dd00")
-            self.button_controller_control.SetLabel("Resume Controller")
+            self.button_controller_control.SetLabel(_("Resume Controller"))
             self.button_controller_control.SetValue(False)
         elif state == THREAD_STATE_STARTED:
             self.button_controller_control.SetBackgroundColour("#00ff00")
-            self.button_controller_control.SetLabel("Pause Controller")
+            self.button_controller_control.SetLabel(_("Pause Controller"))
             self.button_controller_control.SetValue(True)
         elif state == THREAD_STATE_ABORT:
             self.button_controller_control.SetBackgroundColour("#00ffff")
-            self.button_controller_control.SetLabel("Manual Reset")
+            self.button_controller_control.SetLabel(_("Manual Reset"))
             self.button_controller_control.SetValue(True)
 
 # end of class Controller

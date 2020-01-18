@@ -1,7 +1,6 @@
-from svgelements import *
-
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
+from svgelements import *
 
 """
  Tree building class for projects. This class is intended to take SVGElement class objects and give them a MeerK40t
@@ -93,6 +92,11 @@ class LaserNode(list):
             self.element.values = {key: value}
 
     def __getitem__(self, item):
+        if isinstance(item, tuple):
+            try:
+                return self.element.values[item[0]]
+            except KeyError:
+                return item[1]
         try:
             return self.element.values[item]
         except KeyError:
@@ -134,10 +138,14 @@ class LaserNode(list):
                 return string
             return string[:97] + '...'
         if isinstance(self.element, Path):
+            try:
+                h = str(hash(self.element.d()))
+            except TypeError:
+                h = "None"
             name = "Path @%.1f mm/s %.1fx path=%s" % \
                    (self.speed,
                     self.element.transform.value_scale_x(),
-                    str(hash(self.element.d())))
+                    h)
             if len(name) >= 100:
                 name = name[:97] + '...'
             return name
@@ -357,9 +365,12 @@ class LaserNode(list):
         elif mode == "L":
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
-        elif mode == "RGB" or mode == "RGBA":
+        elif mode == "RGB":
             def image_filter(pixel):
                 return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
+        elif mode == "RGBA":
+            def image_filter(pixel):
+                return (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
         else:
             raise ValueError  # this shouldn't happen.
         m = self.transform

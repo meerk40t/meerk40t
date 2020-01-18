@@ -181,7 +181,7 @@ class RasterPlotter:
         return self.initial_x, self.initial_y
 
     def initial_position_in_scene(self):
-        if self.initial_x is None: # image is blank.
+        if self.initial_x is None:  # image is blank.
             return self.offset_x, self.offset_y
         return self.offset_x + self.initial_x * self.step, self.offset_y + self.initial_y * self.step
 
@@ -229,7 +229,7 @@ class RasterPlotter:
                     continue
                 upper_bound = self.rightmost_not_equal(y)
 
-                next_x, next_y = self.calculate_next_horizontal_pixel(y+dy, dy, dx > 0)
+                next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, dx > 0)
                 if next_x is not None:
                     upper_bound = max(next_x, upper_bound) + overscan
                     lower_bound = min(next_x, lower_bound) - overscan

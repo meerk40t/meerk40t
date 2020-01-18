@@ -1,11 +1,12 @@
 import wx
 
-
 # begin wxGlade: dependencies
 # end wxGlade
 
 # begin wxGlade: extracode
 # end wxGlade
+
+_ = wx.GetTranslation
 
 
 class BufferView(wx.Frame):
@@ -24,17 +25,15 @@ class BufferView(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        try:
-            del self.project.windows["bufferview"]
-        except KeyError:
-            pass
-
+        self.project.mark_window_closed("BufferView")
         self.project = None
         event.Skip()  # Call destroy as regular.
 
     def set_project(self, project):
         self.project = project
-        buffer = self.project.controller.buffer + self.project.controller.add_queue
+        project.setting(str, '_controller_queue', b'')
+        project.setting(str, '_controller_buffer', b'')
+        buffer = self.project._controller_buffer + self.project._controller_queue
         try:
             bufferstr = buffer.decode()
         except ValueError:
@@ -44,7 +43,7 @@ class BufferView(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: BufferView.__set_properties
-        self.SetTitle("BufferView")
+        self.SetTitle(_("BufferView"))
         self.text_buffer_length.SetMinSize((165, 23))
         # end wxGlade
 
@@ -52,7 +51,7 @@ class BufferView(wx.Frame):
         # begin wxGlade: BufferView.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "Buffer")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("Buffer"))
         sizer_5.Add(label_8, 0, 0, 0)
         sizer_5.Add(self.text_buffer_length, 10, 0, 0)
         sizer_1.Add(sizer_5, 0, wx.EXPAND, 0)

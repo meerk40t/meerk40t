@@ -1,5 +1,7 @@
 import wx
 
+_ = wx.GetTranslation
+
 
 class UsbConnect(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -19,16 +21,14 @@ class UsbConnect(wx.Frame):
 
     def set_project(self, project):
         self.project = project
-        self.usblog_text.SetValue(self.project.controller.device_log)
-        self.project["usb_log", self.update_log] = self
+        self.project.setting(str, "_device_log", '')
+        self.usblog_text.SetValue(self.project._device_log)
+
+        self.project.listen("usb_log", self.update_log)
 
     def on_close(self, event):
-        self.project["usb_log", self.update_log] = None
-        try:
-            del self.project.windows["usbconnect"]
-        except KeyError:
-            pass
-        self.project = None
+        self.project.unlisten("usb_log", self.update_log)
+        self.project.mark_window_closed("UsbConnect")
         event.Skip()  # Call destroy as regular.
 
     def update_log(self, text):
@@ -42,7 +42,7 @@ class UsbConnect(wx.Frame):
             self.usblog_text.AppendText(self.append_text)
             self.append_text = ""
         except RuntimeError:
-            self.project.controller.usblog_listener = None
+            self.project.unlisten("usb_log", self.update_log)
         self.dirty = False
 
     def post_update(self):
@@ -52,7 +52,7 @@ class UsbConnect(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: UsbConnect.__set_properties
-        self.SetTitle("UsbConnect")
+        self.SetTitle(_("UsbConnect"))
         # end wxGlade
 
     def __do_layout(self):

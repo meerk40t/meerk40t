@@ -1,6 +1,4 @@
-
-
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 from wx.lib.embeddedimage import PyEmbeddedImage
 
 icons8_add_file_50 = PyEmbeddedImage(
@@ -21,7 +19,7 @@ icons8_add_file_50 = PyEmbeddedImage(
     b'xFJePSFigsvuiWuVeCT84KLQbqIzURVniNOien5v4o1gYWe5Fiqh2WKPuCHIYj8J7rVIO3j7'
     b'hOqdoiXEDgZ/AYB+bilw1gi8AAAAAElFTkSuQmCC')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_comments_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEcSURBVGhD7Zm7DcIwFEWzBzOwARvQ'
@@ -32,7 +30,7 @@ icons8_comments_50 = PyEmbeddedImage(
     b'jC0Ca217THHSa4VUdmJ/YAQMI7CmCYYxfZuJMNhimosw9GOajTAgoPkIQtqm634PwFqxOUO9'
     b'7wAAAABJRU5ErkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_connected_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKaSURBVGhD7ZjLrkxBFIabEIIEcyaI'
@@ -50,7 +48,7 @@ icons8_connected_50 = PyEmbeddedImage(
     b'S3NTG8BivVMXPEj2QNmicoiMBwU+Yz9AN8wF9HmiSCs+CYZxcvZ+AlipVCqVSqUVg8FvvyiE'
     b'Su2rldYAAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_down = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD7SURBVGhD7Y9JCgIxFAV77bTUe7h2'
@@ -60,7 +58,7 @@ icons8_down = PyEmbeddedImage(
     b'WCSmBaONIN9ikoggFnOC7kctZg53zhmNMoLkxeQZdQTpwU8xSUQQiznCpCPIe0ySEYQxSUeQ'
     b'Lkw+QgghhBBCJE+WPQBgjKllZBue5gAAAABJRU5ErkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_left = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADASURBVGhD7c+5DcJAAERRx1wh9EHM'
@@ -69,7 +67,7 @@ icons8_left = PyEmbeddedImage(
     b'nTmjUWf6kMpnci115oRGnelBqlacOaJRZ7qQqhVnDvCZOkud2UGu+MwNI0hWnblC9kRVODMs'
     b'p3POOVd3RfEDYnipZR7hKKAAAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_right = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVGhD7ZHJCQJREAUHvbkdNQUD'
@@ -78,7 +76,7 @@ icons8_right = PyEmbeddedImage(
     b'YirJWzQnXMbjFz3sxqMP5vjAz2tYXB/dEGzEGRVRNHkRA3RDVsQFFVE0QUcM0Q1ZEVdURNHk'
     b'RYzQDTN0H2FM8YauI1LSGIsY28IzFjOJRyGEEMILUfQCpm2nw/NYYCkAAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_home_filled_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHeSURBVGhD7dk9SxxRGMXxJUGSqBhE'
@@ -92,7 +90,7 @@ icons8_home_filled_50 = PyEmbeddedImage(
     b'1n5cFFrkO7LkBaz9uAhFXIQiOYQiLkKRHEIRF6FIDqGIi1Akh1DERSiSQ2oRfdOd52dmKbOI'
     b'vkxMzTw+5fAWWdIPaz9pPmIYISHFp1L5B9V7aqEmmt6rAAAAAElFTkSuQmCC')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_disconnected_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAMOSURBVGhD7ZlNqw9RHMf/QhQKb4Cw'
@@ -112,7 +110,7 @@ icons8_disconnected_50 = PyEmbeddedImage(
     b'hhk9XxQS9n2CBoDWjLlYv42H74JZ3rG7xs9LeQkfrs5xgfQTcVcw0JwRRQUZiuz9S9GYMWPG'
     b'VGQy+Qs7CKtFP8P3cgAAAABJRU5ErkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_gas_industry_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAVlSURBVGhD7Zl3yIVTHMdfe0cie0XI'
@@ -143,7 +141,7 @@ icons8_gas_industry_50 = PyEmbeddedImage(
     b'ElCuJ6dB3bcDKHMLE6i6z7+0lRGz/4DVfU4UqvGGmLM76AfNpdBIQ1x1vdGwuRH61lFQ/+yD'
     b'xo06k64eGhv7Fz7x+0gwmZssAAAAAElFTkSuQmCC')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_laser_beam_52 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAABmJLR0QA/wD/AP+gvaeTAAAD'
     b'0UlEQVRoge2av2sUQRTHP3cXA5IEtNPEQoOggmBh0AQLlSAo/gsxWqmNCsbGRgRFI3aChaAQ'
@@ -166,7 +164,7 @@ icons8_laser_beam_52 = PyEmbeddedImage(
     b'8qOUSXQK+yybB8i5ehHcLI6R3RyPOnzPIKLmgNN1YVcFDpDOCsYaysZAtQeqJSQ96QbeAFeA'
     b'P6FI1YL/vgFTqCh5LwAAAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_padlock_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFqSURBVGhD7dXPKgVhGMfxIcUdKG5A'
@@ -178,7 +176,7 @@ icons8_padlock_50 = PyEmbeddedImage(
     b'OcZqZIeIPmRDByK3Bh/yUz4kMB+SlQ8JzIdk5UMC8yFZ+ZDAfEhWPiQwH5JVSw65wXlk14g+'
     b'JG8+pFFjWCyIru153r9Kkk8J85i7zVovlgAAAABJRU5ErkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_opened_folder_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAK9SURBVGhD7Zk7aBRRFIYXLIKCEQux'
@@ -196,7 +194,7 @@ icons8_opened_folder_50 = PyEmbeddedImage(
     b'8LVFh58/zzpLF20PwoEUGSYi+uShUikk5AU8po7MVkmfhbvwzl3JC7gbsS2oA5LrJPrksUIp'
     b'm2XVDzRb9b6c9skudyK46mJ+jip3eKKfmbf516jVvgPWjL2OHf8X/wAAAABJRU5ErkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8up = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADySURBVGhD7c9JCsJAEIXhrJ2Weg/X'
@@ -206,7 +204,7 @@ icons8up = PyEmbeddedImage(
     b'BPOiKKKJ+aTFTLGfdbEjlv58g/mOENmYOzbDvOhhJyx0hJAYrxHCxayw0BFijnmPICIiIiIi'
     b'olxJ8gJfK6lldYiKtAAAAABJRU5ErkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_usb_connector_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAMvSURBVGhD7ZlLqE1RGMeP9yuKJPKM'
@@ -227,7 +225,7 @@ icons8_usb_connector_50 = PyEmbeddedImage(
     b'YNyheQFEr67g0jdMgGmewRwolNyQ9kloynWJ3XAh+612/b1Kpd96WyDV7qTTNwAAAABJRU5E'
     b'rkJggg==')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_stop_sign_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAALcSURBVGhD7ZlLyE1RGIYPE/dcRu4K'
@@ -246,7 +244,7 @@ icons8_stop_sign_50 = PyEmbeddedImage(
     b'mSp3UmqxiS3KXivsxeLrgU5VrNilsr1WELV40WO0oZDz1ZvGxXrsCWNxN57BshebnahYiqnY'
     b'DQ0NDbWm1foBNFf1lP84Rm0AAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icon_meerk40t = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAAA3NCSVQICAjb4U/gAAAgAElE'
     b'QVR4nGy8Wawk6XUmdv4l9oiM3Je7L9W31q7u6m51s7mIpJqkRGqGoiBpJHkkeTDSAB6PBvCD'
@@ -593,7 +591,7 @@ icon_meerk40t = PyEmbeddedImage(
     b'h1gsxow3l5TNZg8PDxHIZVkGzvv9PtuQQatMJgNyw9GRD2VZxqdYLBaM21H4qEJcAsAHPGFc'
     b'c/6VGL8CKwRqb8On6kg7QrOqqv8DjxomFsSpzQwAAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_administrative_tools_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAXWSURBVGhD1ZllqC1VGIaPjV2YYNdV'
@@ -626,7 +624,7 @@ icons8_administrative_tools_50 = PyEmbeddedImage(
     b'YoQaiSHK5PIWuLXEQ1A2RJlRuxUNsoNoZIbk1CbXaqMZZohlrklhV9gWmlBDPNx+4ai4GCZE'
     b'OgI79raduuaSsbGxKf8Badt0RMmhpAUAAAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_play_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFKSURBVGhD7dm/KsVxGMfxX4pBNjLJ'
@@ -638,7 +636,7 @@ icons8_play_50 = PyEmbeddedImage(
     b'h/hg5f6jbpjLhzDXQcr1BZ0JcWXq/hI7xNcKYb7oybIsy/57TfMMeVT4gW4EYDcAAAAASUVO'
     b'RK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_pause_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAB2SURBVGhD7dnBCcNADETRrSrFpI8U'
@@ -646,7 +644,7 @@ icons8_pause_50 = PyEmbeddedImage(
     b'kBDSJiSEtAkJIW1CQkibkBDSJiSEtAkJIW1CQkibkPibkNt8KwDADay1AZozwcm8F5lJAAAA'
     b'AElFTkSuQmCC')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_lock_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGGSURBVGhD7ZXBKkVRFIZvMeAJJHkB'
@@ -659,7 +657,7 @@ icons8_lock_50 = PyEmbeddedImage(
     b'8CCReJA8PEgkHiQPDxKJB8mjJYNc41nBXmHhQVLrQb5iGOdLUns7jvMnarUPpRqxAEGuZ3QA'
     b'AAAASUVORK5CYII=')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_move_32 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADiSURBVFhH7ZUBDsIgEAT5hH/U6HP9'
@@ -669,7 +667,7 @@ icons8_move_32 = PyEmbeddedImage(
     b'tbOjG7u3UwBjvrQ9Z0cVDeKnjik2FZXQCgknViI0nFBiSThB8LLwXyClD9l3kJtafbLiAAAA'
     b'AElFTkSuQmCC')
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 icons8_route_50 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B'
     b'AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHQSURBVGhD7dZJTgMxFIThHIIlK2Zu'

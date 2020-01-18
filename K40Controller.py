@@ -1,10 +1,10 @@
 import threading
-import time
 
 import usb.core
 import usb.util
+import time
 
-from ThreadConstants import *
+from Kernel import *
 
 STATUS_BAD_STATE = 204
 STATUS_OK = 206
@@ -30,7 +30,7 @@ def get_code_string_from_code(code):
     elif code == STATUS_BAD_STATE:
         return "Bad State"
     else:
-        return "Unknown: " + str(code)
+        return "Unknown: %d" % code
 
 
 def convert_to_list_bytes(data):
@@ -74,13 +74,13 @@ class ControllerQueueThread(threading.Thread):
         threading.Thread.__init__(self)
         self.controller = controller
         self.state = THREAD_STATE_UNSTARTED
-        self.controller.listener("control_thread", self.state)
+        self.controller.kernel("control_thread", self.state)
 
     def run(self):
         self.state = THREAD_STATE_STARTED
-        self.controller.listener("control_thread", self.state)
+        self.controller.kernel("control_thread", self.state)
         waited = 0
-        self.controller.listener("status_bar", ("Laser On!", 1))
+        self.controller.kernel("status_bar", ("Laser On!", 1))
         while self.state != THREAD_STATE_ABORT:
             if self.controller.process_queue():
                 time.sleep(0.1)
@@ -90,14 +90,14 @@ class ControllerQueueThread(threading.Thread):
             else:
                 waited = 0
             while self.state == THREAD_STATE_PAUSED:
-                self.controller.listener("control_thread", self.state)
+                self.controller.kernel("control_thread", self.state)
                 time.sleep(1)
-        self.controller.listener("status_bar", (None, 1))
+        self.controller.kernel("status_bar", (None, 1))
         if self.state == THREAD_STATE_ABORT:
-            self.controller.listener("control_thread", self.state)
+            self.controller.kernel("control_thread", self.state)
             return
         self.state = THREAD_STATE_FINISHED
-        self.controller.listener("control_thread", self.state)
+        self.controller.kernel("control_thread", self.state)
 
 
 class UsbConnectThread(threading.Thread):
@@ -125,36 +125,59 @@ class UsbDisconnectThread(threading.Thread):
 
 
 class K40Controller:
-    def __init__(self, listener, usb_index=-1, usb_address=-1, usb_bus=-1, mock=False):
-        self.listener = listener
-        self.usb_index = usb_index
-        self.usb_bus = usb_bus
-        self.usb_address = usb_address
-        self.mock = mock
-
-        self.thread = ControllerQueueThread(self)
-        self.listener("control_thread", self.thread.state)
-
+    def __init__(self):
+        self.kernel = None
         self.status = None
 
         self.usb = None
         self.interface = None
         self.detached = False
 
-        self.device_log = ""
-
         self.process_queue_pause = False
-        self.autostart = True
-
-        self.buffer = b''
-        self.add_queue = b''
-        self.listener("buffer", 0)
-        self.packet_count = 0
-        self.rejected_count = 0
         self.queue_lock = threading.Lock()
         self.usb_lock = threading.Lock()
+        self.thread = None
 
-        self.usb_status = None
+        self.abort_waiting = False
+
+    def initialize(self, kernel):
+        self.kernel = kernel
+        self.kernel.controller = self
+        kernel.setting(int, 'usb_index', -1)
+        kernel.setting(int, 'usb_bus', -1)
+        kernel.setting(int, 'usb_address', -1)
+        kernel.setting(bool, 'mock', False)
+        kernel.setting(int, 'packet_count', 0)
+        kernel.setting(int, 'rejected_count', 0)
+        kernel.setting(bool, 'autostart_controller', True)
+        kernel.setting(str, "_device_log", '')
+        kernel.setting(str, "_controller_buffer", b'')
+        kernel.setting(str, "_controller_queue", b'')
+        kernel.setting(str, "_usb_state", None)
+
+        def start_usb():
+            self.set_usb_status("Connecting")
+            usb_thread = UsbConnectThread(self)
+            usb_thread.start()
+
+        kernel.add_control("K40Usb-Start", start_usb)
+
+        def stop_usb():
+            self.set_usb_status("Disconnecting")
+            usb_thread = UsbDisconnectThread(self)
+            usb_thread.start()
+
+        kernel.add_control("K40Usb-Stop", stop_usb)
+
+        def abort_wait():
+            self.abort_waiting = True
+
+        kernel.add_control("K40-Wait Abort", abort_wait)
+
+        self.thread = ControllerQueueThread(self)
+        kernel.signal("control_thread", self.thread.state)
+        kernel("buffer", 0)
+        kernel.add_thread("ControllerQueueThread", self.thread)
         self.set_usb_status("Uninitialized")
 
     def __enter__(self):
@@ -166,45 +189,23 @@ class K40Controller:
 
     def __iadd__(self, other):
         self.queue_lock.acquire()
-        self.add_queue += other
+        self.kernel._controller_queue += other
         self.queue_lock.release()
-        self.listener("buffer", len(self.buffer) + len(self.add_queue))
-        if self.autostart:
-            self.start_queue_consumer()
+        buffer_size = len(self.kernel._controller_buffer) + len(self.kernel._controller_queue)
+        self.kernel("buffer", buffer_size)
+        if self.kernel.autostart_controller:
+            self.start()
         return self
 
     def log(self, info):
         update = str(info) + '\n'
-        self.listener("usb_log", update)
-        self.device_log += update
+        self.kernel("usb_log", update)
+        self.kernel._device_log += update
 
-    def start_usb(self):
-        self.set_usb_status("Connecting")
-        usb_thread = UsbConnectThread(self)
-        usb_thread.start()
+    def state(self):
+        return self.thread.state
 
-    def stop_usb(self):
-        self.set_usb_status("Disconnecting")
-        usb_thread = UsbDisconnectThread(self)
-        usb_thread.start()
-
-    def emergency_stop(self):
-        self.thread.state = THREAD_STATE_ABORT
-        packet = b'I' + b'F' * 29
-        if self.usb is not None:
-            try:
-                self.send_packet(packet)
-            except usb.core.USBError:
-                pass  # Emergency stop was a failure.
-        self.buffer = b''
-        self.add_queue = b''
-        self.listener("buffer", len(self.buffer))
-        self.listener("control_thread", self.thread.state)
-
-    def reset_thread(self):
-        self.thread = ControllerQueueThread(self)
-
-    def start_queue_consumer(self):
+    def start(self):
         if self.thread.state == THREAD_STATE_ABORT:
             # We cannot reset an aborted thread without specifically calling reset.
             return
@@ -213,43 +214,62 @@ class K40Controller:
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.state = THREAD_STATE_STARTED
             self.thread.start()
-            self.listener("control_thread", self.thread.state)
-
-    def pause(self):
-        self.process_queue_pause = True
-        self.thread.state = THREAD_STATE_PAUSED
-        self.listener("control_thread", self.thread.state)
+            self.kernel("control_thread", self.thread.state)
 
     def resume(self):
         self.process_queue_pause = False
         self.thread.state = THREAD_STATE_STARTED
-        self.listener("control_thread", self.thread.state)
+        self.kernel("control_thread", self.thread.state)
+
+    def pause(self):
+        self.process_queue_pause = True
+        self.thread.state = THREAD_STATE_PAUSED
+        self.kernel("control_thread", self.thread.state)
+
+    def abort(self):
+        self.thread.state = THREAD_STATE_ABORT
+        packet = b'I' + b'F' * 29
+        if self.usb is not None:
+            try:
+                self.send_packet(packet)
+            except usb.core.USBError:
+                pass  # Emergency stop was a failure.
+        self.kernel._controller_buffer = b''
+        self.kernel._controller_queue = b''
+        self.kernel("buffer", len(self.kernel._controller_buffer))
+        self.kernel("control_thread", self.thread.state)
+
+    def reset(self):
+        self.thread = ControllerQueueThread(self)
+
+    def stop(self):
+        self.abort()
 
     def process_queue(self):
         if self.process_queue_pause:
             return False
-        if self.usb is None and not self.mock:
+        if self.usb is None and not self.kernel.mock:
             try:
                 self.open()
             except usb.core.USBError:
                 return False
         wait_finish = False
-        if len(self.add_queue):
+        if len(self.kernel._controller_queue):
             self.queue_lock.acquire()
-            self.buffer += self.add_queue
-            self.add_queue = b''
+            self.kernel._controller_buffer += self.kernel._controller_queue
+            self.kernel._controller_queue = b''
             self.queue_lock.release()
-            self.listener("buffer", len(self.buffer))
-        if len(self.buffer) == 0:
+            self.kernel("buffer", len(self.kernel._controller_buffer))
+        if len(self.kernel._controller_buffer) == 0:
             return True
-        find = self.buffer.find(b'\n', 0, 30)
+        find = self.kernel._controller_buffer.find(b'\n', 0, 30)
         if find != -1:
-            length = min(30, len(self.buffer), find + 1)
+            length = min(30, len(self.kernel._controller_buffer), find + 1)
         else:
-            length = min(30, len(self.buffer))
-        packet = self.buffer[:length]
+            length = min(30, len(self.kernel._controller_buffer))
+        packet = self.kernel._controller_buffer[:length]
         if packet.endswith(b'-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
-            packet += self.buffer[length:length + 1]
+            packet += self.kernel._controller_buffer[length:length + 1]
             length += 1
         if packet.endswith(b'\n'):
             packet = packet[:-1]
@@ -263,8 +283,8 @@ class K40Controller:
             if self.process_queue_pause:
                 return False  # Paused during wait.
             if len(packet) == 30:
-                self.buffer = self.buffer[length:]
-                self.listener("buffer", len(self.buffer))
+                self.kernel._controller_buffer = self.kernel._controller_buffer[length:]
+                self.kernel("buffer", len(self.kernel._controller_buffer))
             else:
                 return True  # No valid packet was able to be produced.
             self.send_packet(packet)
@@ -275,11 +295,11 @@ class K40Controller:
             self.wait(STATUS_FINISH)
         return False
 
-    def set_usb_status(self, status):
-        if status == self.usb_status:
+    def set_usb_status(self, state):
+        if state == self.kernel._usb_state:
             return
-        self.usb_status = status
-        self.listener("usb_status", self.usb_status)
+        self.kernel._usb_state = state
+        self.kernel("usb_state", state)
 
     def open(self):
         self.usb_lock.acquire()
@@ -297,19 +317,19 @@ class K40Controller:
         for device in devices:
             self.log("K40 device detected:\n%s\n" % str(device))
             d.append(device)
-        if self.usb_index == -1:
-            if self.usb_address == -1 and self.usb_bus == -1:
+        if self.kernel.usb_index == -1:
+            if self.kernel.usb_address == -1 and self.kernel.usb_bus == -1:
                 if len(d) > 0:
                     self.usb = d[0]
             else:
                 for dev in d:
-                    if (self.usb_address == -1 or self.usb_address == dev.address) and \
-                            (self.usb_bus == -1 or self.usb_bus == dev.bus):
+                    if (self.kernel.usb_address == -1 or self.kernel.usb_address == dev.address) and \
+                            (self.kernel.usb_bus == -1 or self.kernel.usb_bus == dev.bus):
                         self.usb = dev
                         break
         else:
-            if len(d) > self.usb_index:
-                self.usb = d[self.usb_index]
+            if len(d) > self.kernel.usb_index:
+                self.usb = d[self.kernel.usb_index]
         for i, dev in enumerate(d):
             self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
         if self.usb is None:
@@ -318,13 +338,13 @@ class K40Controller:
                 self.log("K40 not found.")
             else:
                 self.log("K40 devices were found but the configuration requires #%d Bus: %d, Add: %d"
-                         % (self.usb_index, self.usb_bus, self.usb_address))
+                         % (self.kernel.usb_index, self.kernel.usb_bus, self.kernel.usb_address))
             time.sleep(1)
             self.usb_lock.release()
             raise usb.core.USBError('Unable to find device.')
         self.usb.set_configuration()
         self.log("Device found. Using device: #%d on bus: %d at address %d"
-                 % (self.usb_index, self.usb.bus, self.usb.address))
+                 % (self.kernel.usb_index, self.usb.bus, self.usb.address))
         self.interface = self.usb.get_active_configuration()[(0, 0)]
         try:
             if self.usb.is_kernel_driver_active(self.interface.bInterfaceNumber):
@@ -405,20 +425,20 @@ class K40Controller:
 
         sending = True
         while sending:
-            if self.mock:
+            if self.kernel.mock:
                 time.sleep(0.02)
             else:
                 # TODO: Under some cases it attempts to claim interface here and cannot. Sends USBError (None)
                 self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
-            self.packet_count += 1
-            self.listener("packet", packet)
-            self.listener("packet_text", packet_byte_data)
+            self.kernel.packet_count += 1
+            self.kernel("packet", packet)
+            self.kernel("packet_text", packet_byte_data)
             self.update_status()
             if self.status[1] != STATUS_PACKET_REJECTED:
                 sending = False
 
     def update_status(self):
-        if self.mock:
+        if self.kernel.mock:
             self.status = [STATUS_OK] * 6
             time.sleep(0.01)
         else:
@@ -438,19 +458,22 @@ class K40Controller:
                 self.usb.write(0x02, [160], 10000)
                 self.log("Sending original status check.")
             self.status = self.usb.read(0x82, 6, 10000)
-        self.listener("status", self.status)
+        self.kernel("status", self.status)
 
     def wait(self, value):
         i = 0
         while True:
             self.update_status()
-            if self.mock:  # Mock controller
+            if self.kernel.mock:  # Mock controller
                 self.status = [value] * 6
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
-                self.rejected_count += 1
+                self.kernel.rejected_count += 1
             if status == value:
                 break
             time.sleep(0.1)
-            self.listener("wait", (value, i))
+            self.kernel("wait", (value, i))
             i += 1
+            if self.abort_waiting:
+                self.abort_waiting = False
+                return  # Wait abort was requested.

@@ -1,7 +1,9 @@
 import wx
 
-from LaserProject import *
 from LaserRender import swizzlecolor
+from svgelements import *
+
+_ = wx.GetTranslation
 
 
 class ElementProperty(wx.Frame):
@@ -13,11 +15,11 @@ class ElementProperty(wx.Frame):
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=240.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
-        self.checkbox_custom_d_ratio = wx.CheckBox(self, wx.ID_ANY, "Custom D-Ratio")
+        self.checkbox_custom_d_ratio = wx.CheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
         self.spin_speed_dratio = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.261", min=0.0, max=1.0)
         self.spin_passes = wx.SpinCtrl(self, wx.ID_ANY, "1", min=0, max=63)
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=0, max=63)
-        self.combo_raster_direction = wx.ComboBox(self, wx.ID_ANY, choices=["Top To Bottom", "Bottom To Top"],
+        self.combo_raster_direction = wx.ComboBox(self, wx.ID_ANY, choices=[_("Top To Bottom"), _("Bottom To Top")],
                                                   style=wx.CB_DROPDOWN)
         self.button_F00 = wx.Button(self, wx.ID_ANY, "")
         self.button_0F0 = wx.Button(self, wx.ID_ANY, "")
@@ -52,9 +54,13 @@ class ElementProperty(wx.Frame):
         # end wxGlade
         self.project = None
         self.element = None
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_project_element(self, project, element):
-        self.project = project
+    def on_close(self, event):
+        self.project.mark_window_closed("ElementProperty")
+        event.Skip()  # Call destroy.
+
+    def set_elements(self, element):
         self.element = element
         self.text_name.SetValue(str(element))
         if element.speed is not None:
@@ -73,39 +79,44 @@ class ElementProperty(wx.Frame):
             color = wx.Colour(swizzlecolor(element.stroke))
             self.text_name.SetBackgroundColour(color)
 
+    def set_project(self, project):
+        self.project = project
+
     def __set_properties(self):
         # begin wxGlade: ElementProperty.__set_properties
-        self.SetTitle("Element Properties")
+        self.SetTitle(_("Element Properties"))
         self.spin_speed_set.SetMinSize((100, 23))
-        self.spin_speed_set.SetToolTip("Speed at which to perform the action in mm/s.")
+        self.spin_speed_set.SetToolTip(_("Speed at which to perform the action in mm/s."))
         self.spin_power_set.SetMinSize((100, 23))
         self.spin_power_set.SetToolTip(
-            "1000 always on. 500 it's half power (fire every other step). This is software PPI control.")
-        self.checkbox_custom_d_ratio.SetToolTip("Enables the ability to modify the diagonal ratio.")
+            _("1000 always on. 500 it's half power (fire every other step). This is software PPI control."))
+        self.checkbox_custom_d_ratio.SetToolTip(_("Enables the ability to modify the diagonal ratio."))
         self.spin_speed_dratio.SetMinSize((100, 23))
         self.spin_speed_dratio.SetToolTip(
-            "Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step.")
+            _(
+                "Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step."))
         self.spin_speed_dratio.Enable(False)
         self.spin_speed_dratio.SetIncrement(0.01)
         self.spin_passes.SetMinSize((100, 23))
-        self.spin_passes.SetToolTip("How many times should this action be performed?")
+        self.spin_passes.SetToolTip(_("How many times should this action be performed?"))
         self.spin_step_size.SetMinSize((100, 23))
         self.spin_step_size.SetToolTip(
-            "Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch.")
-        self.combo_raster_direction.SetToolTip("Direction to perform a raster")
+            _(
+                "Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch."))
+        self.combo_raster_direction.SetToolTip(_("Direction to perform a raster"))
         self.combo_raster_direction.SetSelection(0)
         self.button_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
-        self.button_F00.SetToolTip("#FF0000 defined values.")
+        self.button_F00.SetToolTip(_("#FF0000 defined values."))
         self.button_0F0.SetBackgroundColour(wx.Colour(0, 255, 0))
-        self.button_0F0.SetToolTip("#00FF00 defined values.")
+        self.button_0F0.SetToolTip(_("#00FF00 defined values."))
         self.button_00F.SetBackgroundColour(wx.Colour(0, 0, 255))
-        self.button_00F.SetToolTip("#00FF00 defined values.")
+        self.button_00F.SetToolTip(_("#00FF00 defined values."))
         self.button_F0F.SetBackgroundColour(wx.Colour(255, 0, 255))
-        self.button_F0F.SetToolTip("#FF00FF defined values.")
+        self.button_F0F.SetToolTip(_("#FF00FF defined values."))
         self.button_0FF.SetBackgroundColour(wx.Colour(0, 255, 255))
-        self.button_0FF.SetToolTip("#00FFFF defined values.")
+        self.button_0FF.SetToolTip(_("#00FFFF defined values."))
         self.button_FF0.SetBackgroundColour(wx.Colour(255, 255, 0))
-        self.button_FF0.SetToolTip("#FFFF00 defined values.")
+        self.button_FF0.SetToolTip(_("#FFFF00 defined values."))
         # end wxGlade
 
     def __do_layout(self):
@@ -114,29 +125,29 @@ class ElementProperty(wx.Frame):
         sizer_4 = wx.WrapSizer(wx.VERTICAL)
         grid_sizer_1 = wx.FlexGridSizer(6, 3, 10, 10)
         sizer_8.Add(self.text_name, 0, wx.EXPAND, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "Speed")
+        label_1 = wx.StaticText(self, wx.ID_ANY, _("Speed"))
         grid_sizer_1.Add(label_1, 0, 0, 0)
         grid_sizer_1.Add(self.spin_speed_set, 0, 0, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, "mm/s")
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         grid_sizer_1.Add(label_2, 0, 0, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, "Power")
+        label_3 = wx.StaticText(self, wx.ID_ANY, _("Power"))
         grid_sizer_1.Add(label_3, 0, 0, 0)
         grid_sizer_1.Add(self.spin_power_set, 0, 0, 0)
-        label_8 = wx.StaticText(self, wx.ID_ANY, "ppi")
+        label_8 = wx.StaticText(self, wx.ID_ANY, _("ppi"))
         grid_sizer_1.Add(label_8, 0, 0, 0)
         grid_sizer_1.Add(self.checkbox_custom_d_ratio, 0, 0, 0)
         grid_sizer_1.Add(self.spin_speed_dratio, 0, 0, 0)
         grid_sizer_1.Add((0, 0), 0, 0, 0)
-        label_6 = wx.StaticText(self, wx.ID_ANY, "Passes")
+        label_6 = wx.StaticText(self, wx.ID_ANY, _("Passes"))
         grid_sizer_1.Add(label_6, 0, 0, 0)
         grid_sizer_1.Add(self.spin_passes, 0, 0, 0)
         grid_sizer_1.Add((0, 0), 0, 0, 0)
-        label_7 = wx.StaticText(self, wx.ID_ANY, "Raster Step")
+        label_7 = wx.StaticText(self, wx.ID_ANY, _("Raster Step"))
         grid_sizer_1.Add(label_7, 0, 0, 0)
         grid_sizer_1.Add(self.spin_step_size, 0, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, " mil")
+        label_4 = wx.StaticText(self, wx.ID_ANY, _(" mil"))
         grid_sizer_1.Add(label_4, 0, 0, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, "Raster Direction")
+        label_5 = wx.StaticText(self, wx.ID_ANY, _("Raster Direction"))
         grid_sizer_1.Add(label_5, 0, 0, 0)
         grid_sizer_1.Add(self.combo_raster_direction, 0, 0, 0)
         grid_sizer_1.Add((0, 0), 0, 0, 0)
@@ -183,7 +194,6 @@ class ElementProperty(wx.Frame):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         for e in self.element.flat_elements():
             e.raster_step = self.spin_step_size.GetValue()
-            self.project.validate_matrix(e)
         if self.project is not None:
             self.project("elements", 0)
 
