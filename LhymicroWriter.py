@@ -1,5 +1,4 @@
 import threading
-import time
 
 from K40Controller import K40Controller
 from Kernel import *
@@ -88,7 +87,7 @@ class SpoolerThread(threading.Thread):
         return len(self.project._controller_buffer) + len(self.project._controller_queue)
 
     def thread_pause_check(self, *args):
-        while (self.project.buffer_limit and self.get_buffer_size() > self.project.buffer_max) or\
+        while (self.project.buffer_limit and self.get_buffer_size() > self.project.buffer_max) or \
                 self.state == THREAD_STATE_PAUSED:
             # Backend is full. Or we are paused. We're waiting.
             time.sleep(0.1)
@@ -183,6 +182,7 @@ class LhymicroWriter:
         project.setting(bool, "rotary", False)
         project.setting(float, "scale_x", 1.0)
         project.setting(float, "scale_y", 1.0)
+        project.autostart = True  # Setting still exists but false values do weird things.
 
         def spool(commands):
             self.send_job(commands)
