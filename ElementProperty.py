@@ -54,9 +54,13 @@ class ElementProperty(wx.Frame):
         # end wxGlade
         self.project = None
         self.element = None
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_project_element(self, project, element):
-        self.project = project
+    def on_close(self, event):
+        self.project.mark_window_closed("ElementProperty")
+        event.Skip()  # Call destroy.
+
+    def set_elements(self, element):
         self.element = element
         self.text_name.SetValue(str(element))
         if element.speed is not None:
@@ -74,6 +78,9 @@ class ElementProperty(wx.Frame):
         if element.stroke is not None and element.stroke != "none":
             color = wx.Colour(swizzlecolor(element.stroke))
             self.text_name.SetBackgroundColour(color)
+
+    def set_project(self, project):
+        self.project = project
 
     def __set_properties(self):
         # begin wxGlade: ElementProperty.__set_properties
