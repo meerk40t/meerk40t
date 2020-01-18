@@ -78,6 +78,7 @@ class JobInfo(wx.Frame):
 
     def jobadd_home(self, event):
         def home():
+            yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_HOME
 
         self.elements.append(home)
@@ -134,6 +135,12 @@ class JobInfo(wx.Frame):
 
                 self.operations.append(remove_text)
                 break
+
+        if self.project.autobeep:
+            self.jobadd_beep(None)
+
+        if self.project.autohome:
+            self.jobadd_home(None)
         self.update_gui()
 
     def set_project(self, project, operations=None):
@@ -149,12 +156,6 @@ class JobInfo(wx.Frame):
             self.elements = []
         if self.operations is None:
             self.operations = []
-
-        if project.autobeep:
-            self.jobadd_beep(None)
-
-        if project.autohome:
-            self.jobadd_home(None)
 
         self.update_gui()
 
