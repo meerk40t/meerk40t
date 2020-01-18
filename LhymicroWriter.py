@@ -183,6 +183,7 @@ class LhymicroWriter:
         project.setting(bool, "rotary", False)
         project.setting(float, "scale_x", 1.0)
         project.setting(float, "scale_y", 1.0)
+        project.autostart = True # Setting still exists but false values do weird things.
 
         def spool(commands):
             self.send_job(commands)
