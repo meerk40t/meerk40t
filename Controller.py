@@ -84,10 +84,8 @@ class Controller(wx.Frame):
         self.project.unlisten("buffer", self.on_buffer_update)
         self.project.unlisten("usb_state", self.on_usb_state)
         self.project.unlisten("control_thread", self.on_control_state)
-        try:
-            del self.project.windows["controller"]
-        except KeyError:
-            pass
+
+        self.project.mark_window_closed("Controller")
         self.project = None
         event.Skip()  # delegate destroy to super
 
@@ -317,12 +315,7 @@ class Controller(wx.Frame):
         self.project.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.close_old_window("bufferview")
-        from BufferView import BufferView
-        window = BufferView(None, wx.ID_ANY, "")
-        window.set_project(self.project)
-        window.Show()
-        self.project.windows["bufferview"] = window
+        self.project.open_window("BufferView")
 
     def update_status(self, data):
         self.update_status_data = True

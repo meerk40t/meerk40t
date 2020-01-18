@@ -58,10 +58,7 @@ class Alignment(wx.Frame):
         self.project = None
 
     def on_close(self, event):
-        try:
-            del self.project.windows["alignment"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("Alignment")
         self.project = None
         event.Skip()  # Call destroy as regular.
 

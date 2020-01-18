@@ -12,7 +12,6 @@ class JobInfo(wx.Frame):
         # begin wxGlade: JobInfo.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((500, 584))
 
         self.SetSize((659, 612))
         self.elements_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
@@ -102,26 +101,8 @@ class JobInfo(wx.Frame):
         self.elements.append(beep)
         self.update_gui()
 
-    def set_project(self, project, elements=None, operations=None):
-        self.project = project
+    def set_elements(self, elements):
         self.elements = elements
-        self.operations = operations
-        project.setting(bool, "autohome", False)
-        project.setting(bool, "autobeep", True)
-        project.setting(bool, "autostart", True)
-        self.menu_autohome.Check(project.autohome)
-        self.menu_autobeep.Check(project.autobeep)
-        self.menu_autostart.Check(project.autostart)
-        if self.elements is None:
-            self.elements = []
-        if self.operations is None:
-            self.operations = []
-
-        if project.autobeep:
-            self.jobadd_beep(None)
-
-        if project.autohome:
-            self.jobadd_home(None)
         for e in self.elements:
             try:
                 t = e.type
@@ -155,11 +136,30 @@ class JobInfo(wx.Frame):
                 break
         self.update_gui()
 
+    def set_project(self, project, operations=None):
+        self.project = project
+        self.operations = operations
+        project.setting(bool, "autohome", False)
+        project.setting(bool, "autobeep", True)
+        project.setting(bool, "autostart", True)
+        self.menu_autohome.Check(project.autohome)
+        self.menu_autobeep.Check(project.autobeep)
+        self.menu_autostart.Check(project.autostart)
+        if self.elements is None:
+            self.elements = []
+        if self.operations is None:
+            self.operations = []
+
+        if project.autobeep:
+            self.jobadd_beep(None)
+
+        if project.autohome:
+            self.jobadd_home(None)
+
+        self.update_gui()
+
     def on_close(self, event):
-        try:
-            del self.project.windows["jobinfo"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("JobInfo")
         self.project = None
         event.Skip()  # Call destroy as regular.
 
@@ -203,18 +203,13 @@ class JobInfo(wx.Frame):
         self.project.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.project.close_old_window("jobspooler")
-        from JobSpooler import JobSpooler
-        window = JobSpooler(None, wx.ID_ANY, "")
-        window.set_project(self.project)
-        window.Show()
-        self.project.windows["jobspooler"] = window
+        self.project.open_window("JobSpooler")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.operations) == 0:
             self.project.spooler.add_queue(self.elements)
             self.on_button_job_spooler()
-            self.Close()
+            self.project.close_old_window("JobInfo")
         else:
             for op in self.operations:
                 op()

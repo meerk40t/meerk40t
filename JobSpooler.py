@@ -65,10 +65,7 @@ class JobSpooler(wx.Frame):
         self.project.unlisten("spooler", self.on_spooler_update)
         self.project.unlisten("buffer", self.on_buffer_update)
         self.project.unlisten("writer", self.on_spooler_state)
-        try:
-            del self.project.windows["jobspooler"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("JobSpooler")
         self.project = None
         event.Skip()  # Call destroy as regular.
 
@@ -211,12 +208,7 @@ class JobSpooler(wx.Frame):
             self.project.autobeep = not self.project.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
-        self.project.close_old_window("controller")
-        from Controller import Controller
-        window = Controller(None, wx.ID_ANY, "")
-        window.set_project(self.project)
-        window.Show()
-        self.project.windows["controller"] = window
+        self.project.open_window("Controller")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         state = self.project.spooler.thread.state

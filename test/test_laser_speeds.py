@@ -3136,7 +3136,7 @@ class TestLaserSpeeds(unittest.TestCase):
                 continue
             else:
                 if "V167" not in speed_code:
-                    self.assertEquals(
+                    self.assertEqual(
                         created_speedcode[9:12],
                         speed_code[9:12])
 

@@ -24,10 +24,7 @@ class Keymap(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        try:
-            del self.project.windows["keymap"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("Keymap")
         event.Skip()  # Call destroy.
 
     def set_project(self, project):

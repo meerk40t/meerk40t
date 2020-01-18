@@ -324,13 +324,26 @@ class Kernel:
     def add_window(self, window_name, window):
         self.windows[window_name] = window
 
+    def mark_window_closed(self, name):
+        if name in self.open_windows:
+            del self.open_windows[name]
+
     def close_old_window(self, name):
         if name in self.open_windows:
-            old_window = self.open_windows[name]
             try:
-                old_window.Close()
+                self.open_windows[name].Close()
             except RuntimeError:
                 pass  # already closed.
+        self.mark_window_closed(name)
+
+    def open_window(self, window_name):
+        self.close_old_window(window_name)
+        w = self.windows[window_name]
+        window = w(None, -1, "")
+        window.set_project(self)
+        window.Show()
+        self.open_windows[window_name] = window
+        return window
 
     def shutdown(self):
         """
@@ -348,8 +361,8 @@ class Kernel:
             thread = self.threads[thread_name]
             while thread.is_alive():
                 time.sleep(0.1)
-                print("Waiting for processes to stop. %s" % (str(thread)))
-            print("Thread has Finished: %s" % (str(thread)))
+                # print("Waiting for processes to stop. %s" % (str(thread)))
+            # print("Thread has Finished: %s" % (str(thread)))
 
     def listen(self, signal, function):
         if signal in self.listeners:

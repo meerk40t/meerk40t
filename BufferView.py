@@ -25,11 +25,7 @@ class BufferView(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        try:
-            del self.project.windows["bufferview"]
-        except KeyError:
-            pass
-
+        self.project.mark_window_closed("BufferView")
         self.project = None
         event.Skip()  # Call destroy as regular.
 

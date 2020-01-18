@@ -81,10 +81,7 @@ class Preferences(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        try:
-            del self.project.windows["preferences"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("Preferences")
         event.Skip()  # Call destroy.
 
     def set_project(self, project):

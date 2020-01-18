@@ -52,10 +52,7 @@ class Navigation(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        try:
-            del self.project.windows["navigation"]
-        except KeyError:
-            pass
+        self.project.mark_window_closed("Navigation")
         event.Skip()  # Call destroy.
 
     def __set_properties(self):
