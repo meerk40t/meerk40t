@@ -38,7 +38,10 @@ class LaserRender:
                     element.draw = self.draw_text
                 else:
                     element.draw = self.draw_path
+            try:
                 element.draw(element, dc, draw_mode)
+            except AttributeError:
+                pass  # This should not have happened.
 
     def make_path(self, gc, element):
         p = gc.CreatePath()
@@ -122,9 +125,9 @@ class LaserRender:
             swizzle_color = swizzlecolor(c)
             self.color.SetRGB(swizzle_color)  # wx has BBGGRR
             self.brush.SetColour(self.color)
+            gc.SetBrush(self.brush)
         else:
-            self.brush.SetColour(None)
-        gc.SetBrush(self.brush)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
     def draw_path(self, node, dc, draw_mode):
         """Default draw routine for the laser element.
