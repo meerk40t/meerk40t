@@ -102,8 +102,21 @@ class JobInfo(wx.Frame):
         self.elements.append(beep)
         self.update_gui()
 
-    def set_elements(self, elements):
-        self.elements = elements
+    def jobadd_remove_text(self):
+        for e in self.elements:
+            try:
+                t = e.type
+            except AttributeError:
+                t = 'function'
+            if t == 'text':
+                def remove_text():
+                    self.elements = [e for e in self.elements if not hasattr(e, 'type') or e.type != 'text']
+                    self.update_gui()
+
+                self.operations.append(remove_text)
+                break
+
+    def jobadd_actualize_image(self):
         for e in self.elements:
             try:
                 t = e.type
@@ -123,18 +136,26 @@ class JobInfo(wx.Frame):
                     break
             except AttributeError:
                 pass
-        for e in self.elements:
-            try:
-                t = e.type
-            except AttributeError:
-                t = 'function'
-            if t == 'text':
-                def remove_text():
-                    self.elements = [e for e in self.elements if not hasattr(e, 'type') or e.type != 'text']
-                    self.update_gui()
 
-                self.operations.append(remove_text)
-                break
+    def jobadd_scale_rotary(self):
+        if self.project.scale_x != 1.0 or self.project.scale_y != 1.0:
+            def scale_project():
+                p = self.project
+                scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.spooler.current_x, p.spooler.current_y)
+                for e in self.elements:
+                    try:
+                        e.element *= scale_str
+                    except AttributeError:
+                        pass
+                self.jobadd_actualize_image()
+            self.operations.append(scale_project)
+
+    def set_elements(self, elements):
+        self.elements = elements
+        self.jobadd_remove_text()
+        self.jobadd_actualize_image()
+        if self.project.rotary:
+            self.jobadd_scale_rotary()
 
         if self.project.autobeep:
             self.jobadd_beep(None)
@@ -146,6 +167,9 @@ class JobInfo(wx.Frame):
     def set_project(self, project, operations=None):
         self.project = project
         self.operations = operations
+        project.setting(bool, 'rotary', False)
+        project.setting(float, 'scale_x', 1.0)
+        project.setting(float, 'scale_y', 1.0)
         project.setting(bool, "autohome", False)
         project.setting(bool, "autobeep", True)
         project.setting(bool, "autostart", True)
@@ -212,9 +236,12 @@ class JobInfo(wx.Frame):
             self.on_button_job_spooler()
             self.project.close_old_window("JobInfo")
         else:
-            for op in self.operations:
-                op()
+            # copy of operations, so operations can add ops.
+            ops = self.operations[:]
             self.operations = []
+            for op in ops:
+                op()
+
             self.project('elements', 0)
             self.update_gui()
 
