@@ -40,3 +40,4 @@ COMMAND_HOME = 300  # Homes the device
 COMMAND_LOCK = 301  # Locks the rail
 COMMAND_UNLOCK = 302  # Unlocks the rail.
 COMMAND_BEEP = 320  # Beep.
+COMMAND_FUNCTION = 350  # Execute the function given by this command.
