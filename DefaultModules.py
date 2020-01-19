@@ -2,6 +2,59 @@ import os
 from svgelements import *
 from LaserNode import *
 from EgvParser import parse_egv
+from xml.etree.cElementTree import Element, ElementTree, SubElement
+
+
+class SVGWriter:
+    def __init__(self):
+        self.project = None
+
+    def initialize(self, project):
+        self.project = project
+        project.setting(int, "bed_width", 320)
+        project.setting(int, "bed_height", 220)
+        project.add_saver("SVGWriter", self)
+
+    def save_types(self):
+        yield "Scalable Vector Graphics", "svg", "image/svg+xml"
+
+    def versions(self):
+        yield 'default'
+
+    def create_svg_dom(self):
+        root = Element(SVG_NAME_TAG)
+        root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
+        root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
+        root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
+        root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
+        root.set(SVG_ATTR_WIDTH, '%fmm' % self.project.bed_width)
+        root.set(SVG_ATTR_HEIGHT, '%fmm' % self.project.bed_height)
+        mils_per_mm = 39.3701
+        mil_width = self.project.bed_width * mils_per_mm
+        mil_height = self.project.bed_height * mils_per_mm
+        viewbox = '%d %d %d %d' % (0, 0, round(mil_width), round(mil_height))
+        root.set(SVG_ATTR_VIEWBOX, viewbox)
+        elements = self.project.elements
+        for node in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
+            element = node.element
+            if node.type == 'path':
+                path = SubElement(root, SVG_TAG_PATH)
+                path.set(SVG_ATTR_DATA, element.d())
+                path.set(SVG_ATTR_STROKE, str(element.stroke))
+                path.set(SVG_ATTR_FILL, str(element.fill))
+            elif node.type == 'text':
+                text = SubElement(root, SVG_TAG_TEXT)
+                text.set(SVG_ATTR_STROKE, str(element.stroke))
+                text.set(SVG_ATTR_FILL, str(element.fill))
+            else:  #  image
+                image = SubElement(root, SVG_TAG_IMAGE)
+                image.set(SVG_ATTR_STROKE, str(element.stroke))
+                image.set(SVG_ATTR_FILL, str(element.fill))
+        return ElementTree(root)
+
+    def save(self, f, version='default'):
+        tree = self.create_svg_dom()
+        tree.write(f)
 
 
 class SVGLoader:

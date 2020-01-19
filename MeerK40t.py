@@ -49,7 +49,7 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.3.1"
+MEERK40T_VERSION = "0.3.2"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -133,6 +133,7 @@ project.add_module('K40Writer', LhymicroWriter())
 project.add_module('SvgLoader', SVGLoader())
 project.add_module('ImageLoader', ImageLoader())
 project.add_module('EgvLoader', EgvLoader())
+project.add_module('SVGWriter', SVGWriter())
 
 project.add_window('ElementProperty', ElementProperty)
 project.add_window('Controller', Controller)
@@ -209,7 +210,8 @@ class MeerK40t(wx.Frame):
         toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
         self.toolbar = toolbar
 
-        toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap())  # "Open",
+        toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap(), "")  # "Open",
+        toolbar.AddTool(ID_SAVE, icons8_add_file_50.GetBitmap(), "")
         toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
 
         windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap())
@@ -227,6 +229,9 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, _("Open Project"), "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
+        wxglade_tmp_menu.AppendSeparator()
+        wxglade_tmp_menu.Append(ID_MENU_SAVE, "Save", "")
+        wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, "Save As", "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
@@ -282,6 +287,8 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_click_new, id=ID_MENU_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_OPEN_PROJECT)
         self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
+        self.Bind(wx.EVT_MENU, self.on_click_save, id=ID_MENU_SAVE)
+        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=ID_MENU_SAVE_AS)
 
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=ID_MENU_EXIT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
@@ -312,6 +319,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.open_job, id=ID_JOB)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_usb, id=ID_USB)
@@ -386,6 +394,7 @@ class MeerK40t(wx.Frame):
         self.laserpath_index = 0
 
         self.move_function = self.move_pan
+        self.working_file = None
 
         self.scene.Bind(wx.EVT_PAINT, self.on_paint)
         self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
@@ -1196,10 +1205,7 @@ class MeerK40t(wx.Frame):
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
-        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
-                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
-                "Engrave egv (*.egv)|*.egv|" \
-                "Portable Network Graphics png (*.png)|*.png"
+        files = self.project.load_types()
         with wx.FileDialog(self, _("Open"), wildcard=files,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -1218,6 +1224,21 @@ class MeerK40t(wx.Frame):
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
             self.load_file(pathname)
+
+    def on_click_save(self, event):
+        if self.working_file is None:
+            self.on_click_save_as(event)
+
+    def on_click_save_as(self, event):
+        files = self.project.save_types()
+        with wx.FileDialog(self, "Save Project", wildcard=files,
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            if not pathname.lower().endswith('.svg'):
+                pathname += '.svg'
+            self.project.save(pathname)
 
     def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.Close()
