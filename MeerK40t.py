@@ -130,7 +130,7 @@ project.translation = wx.GetTranslation
 project.set_config(wx.Config("MeerK40t"))
 project.add_module('K40Controller', K40Controller())
 project.add_module('K40Writer', LhymicroWriter())
-project.add_module('SvgLoader', SVGLoader())
+project.add_module('SVGLoader', SVGLoader())
 project.add_module('ImageLoader', ImageLoader())
 project.add_module('EgvLoader', EgvLoader())
 project.add_module('SVGWriter', SVGWriter())

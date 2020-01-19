@@ -27,29 +27,31 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
         root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
-        root.set(SVG_ATTR_WIDTH, '%fmm' % self.project.bed_width)
-        root.set(SVG_ATTR_HEIGHT, '%fmm' % self.project.bed_height)
         mils_per_mm = 39.3701
         mil_width = self.project.bed_width * mils_per_mm
         mil_height = self.project.bed_height * mils_per_mm
+        root.set(SVG_ATTR_WIDTH, '%fpx' % mil_width)
+        root.set(SVG_ATTR_HEIGHT, '%fpx' % mil_height)
+
         viewbox = '%d %d %d %d' % (0, 0, round(mil_width), round(mil_height))
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = self.project.elements
         for node in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
             element = node.element
             if node.type == 'path':
-                path = SubElement(root, SVG_TAG_PATH)
-                path.set(SVG_ATTR_DATA, element.d())
-                path.set(SVG_ATTR_STROKE, str(element.stroke))
-                path.set(SVG_ATTR_FILL, str(element.fill))
+                subelement = SubElement(root, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d())
             elif node.type == 'text':
-                text = SubElement(root, SVG_TAG_TEXT)
-                text.set(SVG_ATTR_STROKE, str(element.stroke))
-                text.set(SVG_ATTR_FILL, str(element.fill))
+                subelement = SubElement(root, SVG_TAG_TEXT)
             else:  #  image
-                image = SubElement(root, SVG_TAG_IMAGE)
-                image.set(SVG_ATTR_STROKE, str(element.stroke))
-                image.set(SVG_ATTR_FILL, str(element.fill))
+                subelement = SubElement(root, SVG_TAG_IMAGE)
+            subelement.set(SVG_ATTR_STROKE, str(element.stroke))
+            subelement.set(SVG_ATTR_FILL, str(element.fill))
+            for key, val in element.values.items():
+                if key == 'transform':
+                    pass
+                subelement.set(key, str(val))
+            subelement.set('transform', str(element.transform))
         return ElementTree(root)
 
     def save(self, f, version='default'):

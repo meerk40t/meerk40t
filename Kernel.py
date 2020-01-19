@@ -148,8 +148,9 @@ class Kernel:
         self.threads = {}
         self.controls = {}
         self.windows = {}
-        self.operations = []
+        self.open_windows = {}
 
+        self.operations = []
         self.effects = []
 
         self.listeners = {}
@@ -160,7 +161,6 @@ class Kernel:
         self.run_later = lambda listener, message: listener(message)
 
         self.selected = None
-        self.open_windows = {}
         self.keymap = {}
 
         self.translation = lambda e: e  # Default for this code is do nothing.
@@ -505,5 +505,5 @@ class Kernel:
         for saver_name, saver in self.savers.items():
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
-                filetypes.append(extension)
+                filetypes.append("*.%s" % (extension))
         return "|".join(filetypes)
