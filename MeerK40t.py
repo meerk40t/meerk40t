@@ -211,7 +211,7 @@ class MeerK40t(wx.Frame):
         self.toolbar = toolbar
 
         toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap(), "")  # "Open",
-        toolbar.AddTool(ID_SAVE, icons8_add_file_50.GetBitmap(), "")
+        toolbar.AddTool(ID_SAVE, icons8_save_50.GetBitmap(), "")
         toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
 
         windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap())
