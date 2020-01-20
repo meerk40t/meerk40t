@@ -185,6 +185,8 @@ class Kernel:
         self.run_later(self.process_queue, None)
 
     def process_queue(self, *args):
+        if len(self.message_queue) == 0:
+            return
         self.is_queue_processing = True
         self.queue_lock.acquire(True)
         queue = self.message_queue

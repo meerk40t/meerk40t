@@ -73,9 +73,9 @@ class LaserNode(list):
                 self.stroke = Color('black')
             else:
                 self.stroke = Color('green')
-        if isinstance(element, SVGImage):
-            # Converting all images to RGBA.
-            element.image = element.image.convert("RGBA")
+        # if isinstance(element, SVGImage):
+        #     # Converting all images to RGBA.
+        #     element.image = element.image.convert("RGBA")
         elif isinstance(element, SVGText):
             # Converting x and y value into matrix values.
             self.transform.pre_translate(element.x, element.y)

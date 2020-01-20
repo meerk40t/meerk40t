@@ -193,7 +193,7 @@ class MeerK40t(wx.Frame):
         self.SetSize((project.window_width, project.window_height))
         self.DragAcceptFiles(True)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.FULL_REPAINT_ON_RESIZE | wx.TR_MULTIPLE)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style= wx.TR_MULTIPLE) # wx.FULL_REPAINT_ON_RESIZE |
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
         self.tree.SetImageList(self.tree_images)
@@ -227,11 +227,12 @@ class MeerK40t(wx.Frame):
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
+        wxglade_tmp_menu.Append(ID_MENU_NEW, _("New"), "")
         wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, _("Open Project"), "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_SAVE, "Save", "")
-        wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, "Save As", "")
+        wxglade_tmp_menu.Append(ID_MENU_SAVE, _("Save"), "")
+        wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, _("Save As"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
@@ -581,8 +582,9 @@ class MeerK40t(wx.Frame):
             image = self.renderer.make_thumbnail(element, width=20, height=20)
         else:
             image = self.renderer.make_raster(element, width=20, height=20, bitmap=True)
-        id = self.tree_images.Add(bitmap=image)
-        tree.SetItemImage(item, image=id)
+        if image is not None:
+            id = self.tree_images.Add(bitmap=image)
+            tree.SetItemImage(item, image=id)
         for subitem in element:
             self.add_element(tree, item, subitem)
 
@@ -1199,8 +1201,9 @@ class MeerK40t(wx.Frame):
             self.on_draw_laserpath(dc, self.project.draw_mode)
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.project.elements = []
+        self.project.elements = LaserNode(parent=self.project)
         self.post_buffer_update()
+        self.tree_update()
         self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>

@@ -57,6 +57,8 @@ class LaserRender:
         if bounds is None:
             self.validate()
             bounds = group.scene_bounds
+        if bounds is None:
+            return None
         xmin, ymin, xmax, ymax = bounds
         image_width = int(xmax - xmin)
         if image_width == 0:

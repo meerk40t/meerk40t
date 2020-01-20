@@ -1,5 +1,7 @@
 import os
-from svgelements import *
+from io import BytesIO
+
+from base64 import b64encode
 from LaserNode import *
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
@@ -27,13 +29,19 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
         root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
+        # Native unit is mils, these must convert to mm and to px
         mils_per_mm = 39.3701
-        mil_width = self.project.bed_width * mils_per_mm
-        mil_height = self.project.bed_height * mils_per_mm
-        root.set(SVG_ATTR_WIDTH, '%fpx' % mil_width)
-        root.set(SVG_ATTR_HEIGHT, '%fpx' % mil_height)
+        mils_per_px = 1000.0 / 96.0
+        px_per_mils = 96.0 / 1000.0
+        mm_width = self.project.bed_width
+        mm_height = self.project.bed_height
+        root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
+        root.set(SVG_ATTR_HEIGHT, '%fmm' % mm_height)
+        px_width = mm_width * mils_per_mm * px_per_mils
+        px_height = mm_height * mils_per_mm * px_per_mils
 
-        viewbox = '%d %d %d %d' % (0, 0, round(mil_width), round(mil_height))
+        viewbox = '%d %d %d %d' % (0, 0, round(px_width), round(px_height))
+        scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = self.project.elements
         for node in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
@@ -41,17 +49,30 @@ class SVGWriter:
             if node.type == 'path':
                 subelement = SubElement(root, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d())
+                subelement.set(SVG_ATTR_TRANSFORM, scale)
             elif node.type == 'text':
                 subelement = SubElement(root, SVG_TAG_TEXT)
-            else:  #  image
+            else:
                 subelement = SubElement(root, SVG_TAG_IMAGE)
+                stream = BytesIO()
+                element.image.save(stream, format='PNG')
+                png = b64encode(stream.getvalue()).decode('utf8')
+                subelement.set('xlink:href', "data:image/png;base64,%s" % (png))
+                subelement.set(SVG_ATTR_X, '0')
+                subelement.set(SVG_ATTR_Y, '0')
+                subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
+                subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
+                subelement.set(SVG_ATTR_TRANSFORM, scale)
+                t = Matrix(element.transform)
+                t *= scale
+                subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
             subelement.set(SVG_ATTR_STROKE, str(element.stroke))
             subelement.set(SVG_ATTR_FILL, str(element.fill))
             for key, val in element.values.items():
-                if key == 'transform':
-                    pass
-                subelement.set(key, str(val))
-            subelement.set('transform', str(element.transform))
+                if key in ('stroke-width', 'fill-opacity', 'speed',
+                           'overscan', 'power', 'id', 'passes',
+                           'raster_direction', 'raster_step', 'text', 'd_ratio'):
+                    subelement.set(key, str(val))
         return ElementTree(root)
 
     def save(self, f, version='default'):
