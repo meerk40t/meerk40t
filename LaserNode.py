@@ -405,6 +405,17 @@ class LaserNode(list):
         yield COMMAND_RASTER, raster
         yield COMMAND_MODE_DEFAULT, 0
 
+    def insert_all(self, position, obj_list):
+        """Group insert to trigger the notification only once."""
+        for obj in reversed(obj_list):
+            if obj.parent is not None:
+                raise ValueError("Still has a parent.")
+            if obj in self:
+                raise ValueError("Already part of list.")
+            list.insert(self, position, obj)
+            obj.parent = self
+        self.notify_change()
+
     def append_all(self, obj_list):
         """Group append to trigger the notification only once."""
         for obj in obj_list:

@@ -1779,17 +1779,17 @@ def menu_split_passes(element):
     :return:
     """
     def specific(event):
-        context = element
         for e in element.all_children_of_type(types=('path', 'image', 'text')):
             if e.passes != 1:
                 parent = e.parent
+                position = parent.index(e)
                 e.detach()
                 passes = e.passes
                 e.passes = 1
                 all = []
                 for i in range(0, passes):
                     all.append(LaserNode(e))
-                parent.append_all(all)
+                parent.insert_all(position, all)
         project("elements", 0)
         project.set_selected(None)
 
