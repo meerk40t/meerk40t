@@ -86,8 +86,14 @@ class SVGWriter:
                                'overscan', 'power', 'id', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
-            subelement.set(SVG_ATTR_STROKE, str(element.stroke))
-            subelement.set(SVG_ATTR_FILL, str(element.fill))
+            stroke = str(element.stroke)
+            fill = str(element.fill)
+            if stroke == 'None':
+                stroke = SVG_VALUE_NONE
+            if fill == 'None':
+                stroke = SVG_VALUE_NONE
+            subelement.set(SVG_ATTR_STROKE, stroke)
+            subelement.set(SVG_ATTR_FILL, fill)
         return ElementTree(root)
 
     def save(self, f, version='default'):

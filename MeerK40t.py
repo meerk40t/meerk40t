@@ -1329,7 +1329,10 @@ class MeerK40t(wx.Frame):
 
         if dlg.ShowModal() == wx.ID_OK:
             fps = dlg.GetValue()
-            self.set_fps(int(fps))
+            try:
+                self.set_fps(int(fps))
+            except ValueError:
+                pass
         dlg.Destroy()
 
     def open_path_dialog(self):
