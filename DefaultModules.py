@@ -50,9 +50,24 @@ class SVGWriter:
                 subelement = SubElement(root, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d())
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
+                for key, val in element.values.items():
+                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio'):
+                        subelement.set(key, str(val))
             elif node.type == 'text':
                 subelement = SubElement(root, SVG_TAG_TEXT)
-            else:
+                subelement.text = element.text
+                t = Matrix(element.transform)
+                t *= scale
+                subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
+                for key, val in element.values.items():
+                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio',
+                               'font-family', 'font-size', 'font-weight'):
+                        subelement.set(key, str(val))
+            else: # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 element.image.save(stream, format='PNG')
@@ -66,13 +81,13 @@ class SVGWriter:
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
+                for key, val in element.values.items():
+                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio'):
+                        subelement.set(key, str(val))
             subelement.set(SVG_ATTR_STROKE, str(element.stroke))
             subelement.set(SVG_ATTR_FILL, str(element.fill))
-            for key, val in element.values.items():
-                if key in ('stroke-width', 'fill-opacity', 'speed',
-                           'overscan', 'power', 'id', 'passes',
-                           'raster_direction', 'raster_step', 'text', 'd_ratio'):
-                    subelement.set(key, str(val))
         return ElementTree(root)
 
     def save(self, f, version='default'):

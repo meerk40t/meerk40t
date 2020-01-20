@@ -134,7 +134,7 @@ class Alignment(wx.Frame):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Testing power"))
         sizer_5.Add(label_2, 0, 0, 0)
         sizer_3.Add(sizer_5, 1, wx.EXPAND, 0)
-        sizer_3.Add(self.check_vertical_done, 0, wx.ALIGN_RIGHT, 0)
+        sizer_3.Add(self.check_vertical_done, 0, 0, 0)
         sizer_1.Add(sizer_3, 1, 0, 0)
         text_vertical_advise = wx.StaticText(self, wx.ID_ANY,
                                              _("Get the movement of the beam going right to overlap. "))
@@ -151,7 +151,7 @@ class Alignment(wx.Frame):
         label_4 = wx.StaticText(self, wx.ID_ANY, _("Testing power"))
         sizer_7.Add(label_4, 0, 0, 0)
         sizer_2.Add(sizer_7, 1, wx.EXPAND, 0)
-        sizer_2.Add(self.check_horizontal_done, 0, wx.ALIGN_RIGHT, 0)
+        sizer_2.Add(self.check_horizontal_done, 0, 0, 0)
         sizer_1.Add(sizer_2, 1, 0, 0)
         sizer_8.Add(self.button_square_align_4_corner, 0, 0, 0)
         sizer_8.Add((20, 20), 0, 0, 0)
