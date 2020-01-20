@@ -6,14 +6,31 @@ import time
 
 from Kernel import *
 
-STATUS_BAD_STATE = 204
-STATUS_OK = 206
-STATUS_PACKET_REJECTED = 207
-STATUS_FINISH = 236
-STATUS_BUSY = 238
-STATUS_POWER = 239
+STATUS_BAD_STATE = 204          # 0xCC
+STATUS_OK = 206                 # 0xCE
+STATUS_PACKET_REJECTED = 207    # 0xCF
+STATUS_FINISH = 236             # 0xEC
+STATUS_BUSY = 238               # 0xEE
+STATUS_POWER = 239              # 0xEF
 
 STATUS_NO_DEVICE = -1
+USB_LOCK_VENDOR = 0x1a86                #Dev : (1a86) QinHeng Electronics
+USB_LOCK_PRODUCT = 0x5512               # (5512) CH341A
+BULK_WRITE_ENDPOINT = 0x02
+BULK_READ_ENDPOINT = 0x82
+mCH341_PARA_CMD_R0 = 0xAC
+mCH341_PARA_CMD_R1 = 0xAD
+mCH341_PARA_CMD_W0 = 0xA6
+mCH341_PARA_CMD_W1 = 0xA7
+mCH341_PARA_CMD_STS = 0xA0
+mCH341_PACKET_LENGTH = 32
+mCH341_PKT_LEN_SHORT = 8
+mCH341_PARA_INIT = 0xB1
+mCH341_VENDOR_READ = 0xC0
+mCH341_VENDOR_WRITE	= 0x40
+mCH341A_BUF_CLEAR = 0xB2
+mCH341A_DELAY_MS =0x5E
+mCH341A_GET_VER	= 0x5F
 
 
 def get_code_string_from_code(code):
@@ -317,7 +334,7 @@ class K40Controller:
         self.set_usb_status("Connecting")
         self.log("Attempting connection to USB.")
         try:
-            devices = usb.core.find(idVendor=0x1A86, idProduct=0x5512, find_all=True)
+            devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
         except usb.core.NoBackendError:
             self.log("PyUsb detected no backend LibUSB driver.")
             self.set_usb_status("No Driver")
@@ -378,7 +395,7 @@ class K40Controller:
         self.update_status()
         self.log(str(self.status))
         self.log("Sending control transfer.")
-        self.usb.ctrl_transfer(bmRequestType=64, bRequest=177, wValue=258,
+        self.usb.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE, bRequest=mCH341_PARA_INIT, wValue=258,
                                wIndex=0, data_or_wLength=0, timeout=5000)
         self.log("Requesting Status.")
         self.update_status()
@@ -432,7 +449,7 @@ class K40Controller:
         if len(packet_byte_data) != 30:
             raise usb.core.USBError('We can only send 30 byte packets.')
         data = convert_to_list_bytes(packet_byte_data)
-        packet = [166] + [0] + data + [166] + [onewire_crc_lookup(data)]
+        packet = [mCH341_PARA_CMD_W0] + [0] + data + [mCH341_PARA_CMD_W0] + [onewire_crc_lookup(data)]
 
         sending = True
         while sending:
@@ -440,7 +457,7 @@ class K40Controller:
                 time.sleep(0.02)
             else:
                 # TODO: Under some cases it attempts to claim interface here and cannot. Sends USBError (None)
-                self.usb.write(0x2, packet, 10000)  # usb.util.ENDPOINT_OUT | usb.util.ENDPOINT_TYPE_BULK
+                self.usb.write(BULK_WRITE_ENDPOINT, packet, 10000)  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
             self.kernel.packet_count += 1
             self.kernel("packet", packet)
             self.kernel("packet_text", packet_byte_data)
@@ -454,7 +471,7 @@ class K40Controller:
             time.sleep(0.01)
         else:
             try:
-                self.usb.write(0x02, [160], 10000)  # usb.util.ENDPOINT_IN | usb.util.ENDPOINT_TYPE_BULK
+                self.usb.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
             except usb.core.USBError as e:
                 self.log("Usb refused status check.")
                 while True:
@@ -466,9 +483,9 @@ class K40Controller:
                     if self.usb is not None:
                         break
                 # TODO: will sometimes crash here after failing to actually reclaim USB connection.
-                self.usb.write(0x02, [160], 10000)
+                self.usb.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
                 self.log("Sending original status check.")
-            self.status = self.usb.read(0x82, 6, 10000)
+            self.status = self.usb.read(BULK_READ_ENDPOINT, 6, 10000)
         self.kernel("status", self.status)
 
     def wait(self, value):
