@@ -46,7 +46,7 @@ class LaserNode(list):
             self.speed = float(self.speed)
         else:
             if isinstance(element, SVGImage):
-                self.speed = 70.0
+                self.speed = 150.0
             else:
                 self.speed = 20.0
         if self.passes is not None:

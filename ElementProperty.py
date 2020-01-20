@@ -13,7 +13,7 @@ class ElementProperty(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((330, 312))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=240.0)
+        self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=500.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
         self.checkbox_custom_d_ratio = wx.CheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
         self.spin_speed_dratio = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.261", min=0.0, max=1.0)
