@@ -1801,7 +1801,7 @@ def menu_execute(element):
     """
 
     def open_jobinfo_window(event):
-        window = MeerK40t.open_window(None, "JobInfo")
+        window = project.open_window("JobInfo")
         window.set_elements([e for e in element.flat_elements(types=('image', 'path', 'text'), passes=True)])
 
     return open_jobinfo_window
