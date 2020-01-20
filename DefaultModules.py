@@ -91,7 +91,7 @@ class SVGWriter:
             if stroke == 'None':
                 stroke = SVG_VALUE_NONE
             if fill == 'None':
-                stroke = SVG_VALUE_NONE
+                fill = SVG_VALUE_NONE
             subelement.set(SVG_ATTR_STROKE, stroke)
             subelement.set(SVG_ATTR_FILL, fill)
         return ElementTree(root)

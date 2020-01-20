@@ -298,7 +298,7 @@ class MeerK40t(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.on_click_new, id=ID_MENU_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_OPEN_PROJECT)
-        self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
+        self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
         self.Bind(wx.EVT_MENU, self.on_click_save, id=ID_MENU_SAVE)
         self.Bind(wx.EVT_MENU, self.on_click_save_as, id=ID_MENU_SAVE_AS)
 
@@ -1243,6 +1243,7 @@ class MeerK40t(wx.Frame):
             self.on_draw_laserpath(dc, self.project.draw_mode)
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
+        self.working_file = None
         self.project.elements = LaserNode(parent=self.project)
         self.request_refresh()
         self.tree_update()
@@ -1258,21 +1259,11 @@ class MeerK40t(wx.Frame):
             pathname = fileDialog.GetPath()
             self.load_file(pathname)
 
-    def on_click_import(self, event):  # wxGlade: MeerK40t.<event_handler>
-        files = "All valid types|*.svg;*.egv;*.png;*.jpg;*.jpeg|" \
-                "Scalable Vector Graphics svg (*.svg)|*.svg|" \
-                "Engrave egv (*.egv)|*.egv|" \
-                "Portable Ne/twork Graphics png (*.png)|*.png"
-        with wx.FileDialog(self, _("Open"), wildcard=files,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return  # the user changed their mind
-            pathname = fileDialog.GetPath()
-            self.load_file(pathname)
-
     def on_click_save(self, event):
         if self.working_file is None:
             self.on_click_save_as(event)
+        else:
+            self.project.save(self.working_file)
 
     def on_click_save_as(self, event):
         files = self.project.save_types()
@@ -1284,6 +1275,7 @@ class MeerK40t(wx.Frame):
             if not pathname.lower().endswith('.svg'):
                 pathname += '.svg'
             self.project.save(pathname)
+            self.working_file = pathname
 
     def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.Close()
