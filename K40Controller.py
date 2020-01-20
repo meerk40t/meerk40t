@@ -175,6 +175,17 @@ class K40Controller:
         kernel.add_control("K40-Wait Abort", abort_wait)
 
         self.thread = ControllerQueueThread(self)
+
+        def pause_k40():
+            self.pause()
+
+        kernel.add_control("K40-Pause", pause_k40)
+
+        def resume_k40():
+            self.resume()
+
+        kernel.add_control("K40-Resume", resume_k40)
+
         kernel.signal("control_thread", self.thread.state)
         kernel("buffer", 0)
         kernel.add_thread("ControllerQueueThread", self.thread)

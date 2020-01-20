@@ -509,6 +509,10 @@ class LhymicroWriter:
                     time.sleep(0.05)
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
+        elif command == COMMAND_FUNCTION:
+            t = values
+            if callable(t):
+                t()
 
     def move(self, x, y):
         if self.is_relative:

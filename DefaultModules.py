@@ -1,7 +1,105 @@
 import os
-from svgelements import *
+from io import BytesIO
+
+from base64 import b64encode
 from LaserNode import *
 from EgvParser import parse_egv
+from xml.etree.cElementTree import Element, ElementTree, SubElement
+
+
+class SVGWriter:
+    def __init__(self):
+        self.project = None
+
+    def initialize(self, project):
+        self.project = project
+        project.setting(int, "bed_width", 320)
+        project.setting(int, "bed_height", 220)
+        project.add_saver("SVGWriter", self)
+
+    def save_types(self):
+        yield "Scalable Vector Graphics", "svg", "image/svg+xml"
+
+    def versions(self):
+        yield 'default'
+
+    def create_svg_dom(self):
+        root = Element(SVG_NAME_TAG)
+        root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
+        root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
+        root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
+        root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
+        root.set("xmlns:meerK40t", "https://github.com/meerk40t/meerk40t/wiki/Namespace")
+        # Native unit is mils, these must convert to mm and to px
+        mils_per_mm = 39.3701
+        mils_per_px = 1000.0 / 96.0
+        px_per_mils = 96.0 / 1000.0
+        mm_width = self.project.bed_width
+        mm_height = self.project.bed_height
+        root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
+        root.set(SVG_ATTR_HEIGHT, '%fmm' % mm_height)
+        px_width = mm_width * mils_per_mm * px_per_mils
+        px_height = mm_height * mils_per_mm * px_per_mils
+
+        viewbox = '%d %d %d %d' % (0, 0, round(px_width), round(px_height))
+        scale = 'scale(%f)' % px_per_mils
+        root.set(SVG_ATTR_VIEWBOX, viewbox)
+        elements = self.project.elements
+        for node in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
+            element = node.element
+            if node.type == 'path':
+                subelement = SubElement(root, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d())
+                subelement.set(SVG_ATTR_TRANSFORM, scale)
+                for key, val in element.values.items():
+                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio'):
+                        subelement.set(key, str(val))
+            elif node.type == 'text':
+                subelement = SubElement(root, SVG_TAG_TEXT)
+                subelement.text = element.text
+                t = Matrix(element.transform)
+                t *= scale
+                subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
+                for key, val in element.values.items():
+                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio',
+                               'font-family', 'font-size', 'font-weight'):
+                        subelement.set(key, str(val))
+            else: # Image.
+                subelement = SubElement(root, SVG_TAG_IMAGE)
+                stream = BytesIO()
+                element.image.save(stream, format='PNG')
+                png = b64encode(stream.getvalue()).decode('utf8')
+                subelement.set('xlink:href', "data:image/png;base64,%s" % (png))
+                subelement.set(SVG_ATTR_X, '0')
+                subelement.set(SVG_ATTR_Y, '0')
+                subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
+                subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
+                subelement.set(SVG_ATTR_TRANSFORM, scale)
+                t = Matrix(element.transform)
+                t *= scale
+                subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
+                for key, val in element.values.items():
+                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio'):
+                        subelement.set(key, str(val))
+            stroke = str(element.stroke)
+            fill = str(element.fill)
+            if stroke == 'None':
+                stroke = SVG_VALUE_NONE
+            if fill == 'None':
+                fill = SVG_VALUE_NONE
+            subelement.set(SVG_ATTR_STROKE, stroke)
+            subelement.set(SVG_ATTR_FILL, fill)
+        return ElementTree(root)
+
+    def save(self, f, version='default'):
+        tree = self.create_svg_dom()
+        tree.write(f)
 
 
 class SVGLoader:

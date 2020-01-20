@@ -26,7 +26,18 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render(self, dc, draw_mode):
-        for element in self.project.elements.flat_elements(types=('image', 'path', 'text')):
+        if draw_mode & 0x1C00 == 0:
+            types = ('image', 'path', 'text')
+        else:
+            types = []
+            if draw_mode & 0x0400 == 0:
+                types.append('path')
+            if draw_mode & 0x0800 == 0:
+                types.append('image')
+            if draw_mode & 0x1000 == 0:
+                types.append('text')
+            types = tuple(types)
+        for element in self.project.elements.flat_elements(types=types, passes=False):
             try:
                 element.draw(element, dc, draw_mode)
             except AttributeError:
@@ -52,11 +63,13 @@ class LaserRender:
         return p
 
     def make_raster(self, group, width=None, height=None, bitmap=False, types=('path', 'text', 'image')):
-        flat_elements = list(group.flat_elements(types=types))
+        flat_elements = list(group.flat_elements(types=types, passes=False))
         bounds = group.scene_bounds
         if bounds is None:
             self.validate()
             bounds = group.scene_bounds
+        if bounds is None:
+            return None
         xmin, ymin, xmax, ymax = bounds
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -214,7 +227,7 @@ class LaserRender:
     def set_selected_by_position(self, position):
         self.project.set_selected(None)
         self.validate()
-        for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text')))):
+        for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text'), passes=False))):
             bounds = e.scene_bounds
             if bounds is None:
                 continue
@@ -255,7 +268,7 @@ class LaserRender:
 
     def bbox(self, elements):
         boundary_points = []
-        for e in elements.flat_elements(types=('image', 'path', 'text')):
+        for e in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
             box = e.scene_bounds
             if box is None:
                 continue

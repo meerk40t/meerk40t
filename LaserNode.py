@@ -33,6 +33,18 @@ class LaserNode(list):
 
     def __init__(self, element=None, parent=None):
         list.__init__(self)
+        if isinstance(element, LaserNode):
+            e = element.element
+            if isinstance(e, Path):
+                element = Path(e)
+            elif isinstance(e, SVGImage):
+                element = SVGImage(e)
+            elif isinstance(e, SVGText):
+                element = SVGText(e)
+            elif isinstance(e, SVGElement):
+                element = SVGElement(e)
+            else:
+                element = SVGElement()
         self.parent = parent
         self.cache = None
         self.scene_bounds = None
@@ -46,7 +58,7 @@ class LaserNode(list):
             self.speed = float(self.speed)
         else:
             if isinstance(element, SVGImage):
-                self.speed = 70.0
+                self.speed = 150.0
             else:
                 self.speed = 20.0
         if self.passes is not None:
@@ -73,9 +85,9 @@ class LaserNode(list):
                 self.stroke = Color('black')
             else:
                 self.stroke = Color('green')
-        if isinstance(element, SVGImage):
-            # Converting all images to RGBA.
-            element.image = element.image.convert("RGBA")
+        # if isinstance(element, SVGImage):
+        #     # Converting all images to RGBA.
+        #     element.image = element.image.convert("RGBA")
         elif isinstance(element, SVGText):
             # Converting x and y value into matrix values.
             self.transform.pre_translate(element.x, element.y)
@@ -393,6 +405,17 @@ class LaserNode(list):
         yield COMMAND_RASTER, raster
         yield COMMAND_MODE_DEFAULT, 0
 
+    def insert_all(self, position, obj_list):
+        """Group insert to trigger the notification only once."""
+        for obj in reversed(obj_list):
+            if obj.parent is not None:
+                raise ValueError("Still has a parent.")
+            if obj in self:
+                raise ValueError("Already part of list.")
+            list.insert(self, position, obj)
+            obj.parent = self
+        self.notify_change()
+
     def append_all(self, obj_list):
         """Group append to trigger the notification only once."""
         for obj in obj_list:
@@ -453,7 +476,7 @@ class LaserNode(list):
             if self.type in (types):
                 yield self
             for element in self:
-                for flat_element in element.flat_elements(types=types):
+                for flat_element in element.flat_elements(types=types, passes=passes):
                     yield flat_element
 
     def all_children_of_type(self, types):

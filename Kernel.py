@@ -55,7 +55,7 @@ class Scheduler(Thread):
     def run(self):
         self.state = THREAD_STATE_STARTED
         while self.state != THREAD_STATE_ABORT:
-            time.sleep(0.1)
+            time.sleep(0.005)  # 200 ticks a second.
             if self.state == THREAD_STATE_ABORT:
                 return
             while self.state == THREAD_STATE_PAUSED:
@@ -106,7 +106,7 @@ class Kernel:
 
     LaserNode data is primarily of three types: path, image, and text.
     Readers convert some file or streams being read into LaserNode data.
-    Writers convert LaserNode data into some types of files or streams.
+    Saver, convert LaserNode data into some types of files or streams.
     Effects convert LaserNode data into different LaserNode data.
     Operations are functions that can be arbitrarily added to spoolers.
     Controls are functions that can simply be called, typically for very light threads.
@@ -122,7 +122,7 @@ class Kernel:
     kernel.listen(signal, function): Registers function as a listener for the given signal.
     kernel.unlisten(signal, function): Unregister function as a listener for the signal.
     kernel.add_loader(loader): Registers a qualified loader function.
-    kernel.add_writer(file): Registers a qualified saver function.
+    kernel.add_saver(file): Registers a qualified saver function.
     kernel.add_effect(effect): registers a qualified effect.
     kernel.add_operation(op): registers a spooler operation
     kernel.add_thread(thread, object): Registers a thread.
@@ -144,12 +144,13 @@ class Kernel:
 
         self.modules = {}
         self.loaders = {}
+        self.savers = {}
         self.threads = {}
         self.controls = {}
         self.windows = {}
-        self.operations = []
+        self.open_windows = {}
 
-        self.writers = []
+        self.operations = []
         self.effects = []
 
         self.listeners = {}
@@ -160,7 +161,6 @@ class Kernel:
         self.run_later = lambda listener, message: listener(message)
 
         self.selected = None
-        self.open_windows = {}
         self.keymap = {}
 
         self.translation = lambda e: e  # Default for this code is do nothing.
@@ -185,17 +185,18 @@ class Kernel:
         self.run_later(self.process_queue, None)
 
     def process_queue(self, *args):
+        if len(self.message_queue) == 0:
+            return
         self.is_queue_processing = True
         self.queue_lock.acquire(True)
         queue = self.message_queue
         self.message_queue = {}
         self.queue_lock.release()
-
         for code, message in queue.items():
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
-                    self.run_later(listener, message)
+                    listener(message)
             self.last_message[code] = message
         self.is_queue_processing = False
 
@@ -235,6 +236,9 @@ class Kernel:
 
     def add_loader(self, loader_name, loader):
         self.loaders[loader_name] = loader
+
+    def add_saver(self, saver_name, saver):
+        self.savers[saver_name] = saver
 
     def read_config(self, t, key, default=None):
         if default is not None:
@@ -470,3 +474,37 @@ class Kernel:
                 if pathname.lower().endswith(extensions):
                     loader.load(pathname, group)
                     return True
+
+    def load_types(self, all=True):
+        filetypes = []
+        if all:
+            filetypes.append('All valid types')
+            exts = []
+            for loader_name, loader in self.loaders.items():
+                for description, extensions, mimetype in loader.load_types():
+                    for ext in extensions:
+                        exts.append('*.%s' % ext)
+            filetypes.append(';'.join(exts))
+        for loader_name, loader in self.loaders.items():
+            for description, extensions, mimetype in loader.load_types():
+                exts = []
+                for ext in extensions:
+                    exts.append('*.%s' % ext)
+                filetypes.append("%s (%s)" % (description, extensions[0]))
+                filetypes.append(';'.join(exts))
+        return "|".join(filetypes)
+
+    def save(self, pathname):
+        for save_name, saver in self.savers.items():
+            for description, extension, mimetype in saver.save_types():
+                if pathname.lower().endswith(extension):
+                    saver.save(pathname, 'default')
+                    return True
+
+    def save_types(self):
+        filetypes = []
+        for saver_name, saver in self.savers.items():
+            for description, extension, mimetype in saver.save_types():
+                filetypes.append("%s (%s)" % (description, extension))
+                filetypes.append("*.%s" % (extension))
+        return "|".join(filetypes)
