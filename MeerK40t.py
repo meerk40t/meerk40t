@@ -178,6 +178,7 @@ class MeerK40t(wx.Frame):
         project.setting(int, "units_marks", 10)
         project.setting(int, "units_index", 0)
         project.setting(bool, "mouse_zoom_invert", False)
+        project.setting(int, "_stepping_force", None)
         project.setting(int, 'fps', 40)
         if project.fps <= 0:
             project.fps = 60
@@ -190,6 +191,7 @@ class MeerK40t(wx.Frame):
 
         project.add_control("Path", self.open_path_dialog)
         project.add_control("FPS", self.open_fps_dialog)
+        project.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
 
         self.locale = None
         wx.Locale.AddCatalogLookupPathPrefix('locale')
@@ -1314,6 +1316,19 @@ class MeerK40t(wx.Frame):
             self.request_refresh()
 
         return toggle
+
+    def open_speedcode_gear_dialog(self):
+        dlg = wx.TextEntryDialog(self, _("Enter Forced Gear"), _("Gear Entry"), '')
+        dlg.SetValue('')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            value = dlg.GetValue()
+            if value in ('0','1','2','3','4'):
+                self.project._stepping_force = int(value)
+            else:
+                self.project._stepping_force = None
+        dlg.Destroy()
+
 
     def open_fps_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter FPS Limit"), _("FPS Limit Entry"), '')

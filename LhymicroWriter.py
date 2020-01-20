@@ -182,6 +182,7 @@ class LhymicroWriter:
         project.setting(bool, "rotary", False)
         project.setting(float, "scale_x", 1.0)
         project.setting(float, "scale_y", 1.0)
+        project.setting(int, "_stepping_force", None)
         project.autostart = True  # Setting still exists but false values do weird things.
 
         def spool(commands):
@@ -700,9 +701,10 @@ class LhymicroWriter:
         self.to_concat_mode()
         if self.d_ratio is not None:
             speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board,
-                                                        d_ratio=self.d_ratio)
+                                                        d_ratio=self.d_ratio, gear=self.project._stepping_force)
         else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board,
+                                                        gear=self.project._stepping_force)
         try:
             speed_code = bytes(speed_code)
         except TypeError:
