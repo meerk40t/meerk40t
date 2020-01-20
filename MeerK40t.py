@@ -9,25 +9,23 @@ import traceback
 import wx
 import wx.ribbon as RB
 
+from Alignment import Alignment
+from BufferView import BufferView
+from ColorDefine import ColorDefine
+from Controller import Controller
+from DefaultModules import *
+from ElementProperty import ElementProperty
+from JobInfo import JobInfo
+from JobSpooler import JobSpooler
 from K40Controller import K40Controller
 from Kernel import *
+from Keymap import Keymap
 from LaserRender import LaserRender, swizzlecolor
 from LhymicroWriter import LhymicroWriter
-
-from ElementProperty import ElementProperty
-from JobSpooler import JobSpooler
-from Controller import Controller
+from Navigation import Navigation
 from Preferences import Preferences
 from RotarySettings import RotarySettings
-from Alignment import Alignment
-from Keymap import Keymap
-from ColorDefine import ColorDefine
 from UsbConnect import UsbConnect
-from Navigation import Navigation
-from JobInfo import JobInfo
-from BufferView import BufferView
-
-from DefaultModules import *
 from ZMatrix import ZMatrix
 from icons import *
 from svgelements import *
@@ -106,6 +104,10 @@ ID_MENU_HIDE_LASERPATH = idinc.new()
 ID_MENU_HIDE_RETICLE = idinc.new()
 ID_MENU_HIDE_SELECTION = idinc.new()
 ID_MENU_SCREEN_REFRESH = idinc.new()
+ID_MENU_SCREEN_ANIMATE = idinc.new()
+ID_MENU_HIDE_IMAGE = idinc.new()
+ID_MENU_HIDE_PATH = idinc.new()
+ID_MENU_HIDE_TEXT = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
@@ -176,13 +178,18 @@ class MeerK40t(wx.Frame):
         project.setting(int, "units_marks", 10)
         project.setting(int, "units_index", 0)
         project.setting(bool, "mouse_zoom_invert", False)
+        project.setting(int, 'fps', 40)
+        if project.fps <= 0:
+            project.fps = 60
         project.setting(int, 'language', None)
+
         if project.window_width < 300:
             project.window_width = 300
         if project.window_height < 300:
             project.window_height = 300
 
         project.add_control("Path", self.open_path_dialog)
+        project.add_control("FPS", self.open_fps_dialog)
 
         self.locale = None
         wx.Locale.AddCatalogLookupPathPrefix('locale')
@@ -193,7 +200,7 @@ class MeerK40t(wx.Frame):
         self.SetSize((project.window_width, project.window_height))
         self.DragAcceptFiles(True)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style= wx.TR_MULTIPLE) # wx.FULL_REPAINT_ON_RESIZE |
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE)  # wx.FULL_REPAINT_ON_RESIZE |
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
         self.tree.SetImageList(self.tree_images)
@@ -244,12 +251,16 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
         self.main_menubar.Append(wxglade_tmp_menu, _("View"))
         wxglade_tmp_menu = wx.Menu()
 
@@ -296,15 +307,18 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
 
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(4), id=ID_MENU_HIDE_GRID)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(2), id=ID_MENU_HIDE_GUIDES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(1), id=ID_MENU_HIDE_FILLS)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(1), id=ID_MENU_HIDE_STROKES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(8), id=ID_MENU_HIDE_LASERPATH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(16), id=ID_MENU_HIDE_RETICLE)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(32), id=ID_MENU_HIDE_SELECTION)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(64), id=ID_MENU_HIDE_STROKES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(256), id=ID_MENU_SCREEN_REFRESH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0004), id=ID_MENU_HIDE_GRID)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0002), id=ID_MENU_HIDE_GUIDES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0400), id=ID_MENU_HIDE_PATH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0800), id=ID_MENU_HIDE_IMAGE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x1000), id=ID_MENU_HIDE_TEXT)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0001), id=ID_MENU_HIDE_FILLS)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0008), id=ID_MENU_HIDE_LASERPATH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0010), id=ID_MENU_HIDE_RETICLE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0020), id=ID_MENU_HIDE_SELECTION)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0040), id=ID_MENU_HIDE_STROKES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
@@ -338,22 +352,30 @@ class MeerK40t(wx.Frame):
         self.previous_position = None
         self.project.elements_change_listener = self.tree_update
 
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
-        m.Check(self.project.draw_mode & 4 != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
-        m.Check(self.project.draw_mode & 2 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
-        m.Check(self.project.draw_mode & 1 != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_STROKES)
-        m.Check(self.project.draw_mode & 64 != 0)
+        m.Check(self.project.draw_mode & 0x0001 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
+        m.Check(self.project.draw_mode & 0x0002 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
+        m.Check(self.project.draw_mode & 0x0004 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LASERPATH)
-        m.Check(self.project.draw_mode & 8 != 0)
+        m.Check(self.project.draw_mode & 0x0008 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_RETICLE)
-        m.Check(self.project.draw_mode & 16 != 0)
+        m.Check(self.project.draw_mode & 0x0010 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_SELECTION)
-        m.Check(self.project.draw_mode & 32 != 0)
+        m.Check(self.project.draw_mode & 0x0020 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_STROKES)
+        m.Check(self.project.draw_mode & 0x0040 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_REFRESH)
-        m.Check(self.project.draw_mode & 256 != 0)
+        m.Check(self.project.draw_mode & 0x0100 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_ANIMATE)
+        m.Check(self.project.draw_mode & 0x0200 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_PATH)
+        m.Check(self.project.draw_mode & 0x0400 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_IMAGE)
+        m.Check(self.project.draw_mode & 0x0800 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TEXT)
+        m.Check(self.project.draw_mode & 0x1000 != 0)
 
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.tree)
@@ -376,7 +398,17 @@ class MeerK40t(wx.Frame):
         self.popup_window_position = None
         self.popup_scene_position = None
         self._Buffer = None
-        self.dirty = False
+        self.screen_refresh_is_requested = True
+        self.screen_refresh_is_running = False
+        self.background_brush = wx.Brush("Grey")
+        self.project = project
+        self.renderer = LaserRender(project)
+        self.grid = None
+        self.guide_lines = None
+        self.laserpath = [(0, 0, 0, 0)] * 1000
+        self.laserpath_index = 0
+        self.move_function = self.move_pan
+        self.working_file = None
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -387,15 +419,6 @@ class MeerK40t(wx.Frame):
         self.selection_pen.SetColour(wx.BLUE)
         self.selection_pen.SetWidth(25)
         self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
-
-        self.grid = None
-        self.guide_lines = None
-
-        self.laserpath = [(0, 0, 0, 0)] * 1000
-        self.laserpath_index = 0
-
-        self.move_function = self.move_pan
-        self.working_file = None
 
         self.scene.Bind(wx.EVT_PAINT, self.on_paint)
         self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
@@ -418,9 +441,6 @@ class MeerK40t(wx.Frame):
         self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
         self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.background_brush = wx.Brush("Grey")
-        self.project = project
-        self.renderer = LaserRender(project)
         bedwidth = project.bed_width
         bedheight = project.bed_height
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
@@ -438,6 +458,14 @@ class MeerK40t(wx.Frame):
         self.project.listen("writer_mode", self.on_writer_mode)
         self.space_changed(0)
         self.default_keymap()
+        self.fps_job = self.project.cron.add_job(self.refresh_scene, interval=1.0 / float(project.fps))
+
+    def set_fps(self, fps):
+        if fps == 0:
+            fps = 1
+        self.fps_job.times = 0
+        self.project.fps = fps
+        self.fps_job = self.project.cron.add_job(self.refresh_scene, interval=1.0 / float(project.fps))
 
     def on_elements_update(self, *args):
         """
@@ -447,7 +475,6 @@ class MeerK40t(wx.Frame):
         :return:
         """
         self.refresh_tree_elements()
-        self.Update()
 
     def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
         """
@@ -617,7 +644,7 @@ class MeerK40t(wx.Frame):
             self.background_brush = wx.Brush("Grey")
         else:
             self.background_brush = wx.Brush("Red")
-        self.post_buffer_update()
+        self.request_refresh_for_animation()
 
     def on_close(self, event):
         if self.project.spooler.thread.state == THREAD_STATE_STARTED or \
@@ -705,21 +732,21 @@ class MeerK40t(wx.Frame):
         Load SVG File. Scalable Vector Graphics
         """
         self.project.load(pathname, group)
-        self.post_buffer_update()
+        self.request_refresh()
 
     def load_egv(self, pathname, group=None):
         """
         Load egv files. Engrave files.
         """
         self.project.load(pathname, group)
-        self.post_buffer_update()
+        self.request_refresh()
 
     def load_image(self, pathname, group=None):
         """
         Load image files.
         """
         self.project.load(pathname, group)
-        self.post_buffer_update()
+        self.request_refresh()
 
     def tree_update(self):
         self.refresh_tree_elements()
@@ -740,15 +767,14 @@ class MeerK40t(wx.Frame):
         self._Buffer = wx.Bitmap(width, height)
         self.project.window_width, self.project.window_height = self.Size
         self.guide_lines = None
-        self.post_buffer_update()
-        self.Update()
+        self.request_refresh()
 
     def update_position(self, pos):
         # x, y, old_x, old_y = pos
         self.laserpath[self.laserpath_index] = pos
         self.laserpath_index += 1
         self.laserpath_index %= len(self.laserpath)
-        self.post_buffer_update()
+        self.request_refresh_for_animation()
 
     def space_changed(self, units):
         self.grid = None
@@ -759,21 +785,39 @@ class MeerK40t(wx.Frame):
         self.on_size(None)
 
     def selection_changed(self, selection):
-        self.post_buffer_update()
+        self.request_refresh()
 
     def elements_changed(self, e):
-        self.post_buffer_update()
+        self.request_refresh()
 
     def on_erase(self, event):
         pass
 
-    def post_buffer_update(self):
-        if not self.dirty and self.project.draw_mode & 256 == 0:
-            self.dirty = True
-            wx.CallAfter(self.update_buffer_ui_thread)
+    def request_refresh_for_animation(self):
+        """Called on the various signals trying to animate the screen."""
+        if self.project.draw_mode & 0x0200 == 0:
+            self.request_refresh()
+
+    def request_refresh(self):
+        """Request an update to the scene."""
+        if self.project.draw_mode & 0x0100 == 0:
+            self.screen_refresh_is_requested = True
+
+    def refresh_scene(self):
+        """Called by the Scheduler at a given the specified framerate."""
+        if self.screen_refresh_is_requested and not self.screen_refresh_is_running:
+            self.screen_refresh_is_running = True
+            wx.CallAfter(self.refresh_in_ui)
+
+    def refresh_in_ui(self):
+        """Called by refresh_scene() in the UI thread."""
+        self.update_buffer_ui_thread()
+        self.Refresh()
+        self.screen_refresh_is_requested = False
+        self.screen_refresh_is_running = False
 
     def update_buffer_ui_thread(self):
-        self.dirty = False
+        """Performs the redraw of the data in the UI thread."""
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         self.on_draw_background(dc)
@@ -790,9 +834,7 @@ class MeerK40t(wx.Frame):
             dc.DrawText(_("Current OS cannot use transformation matrix. Skipping scene draw."), s[0] - 350, s[1])
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
-        del dc  # need to get rid of the MemoryDC before Update() is called.
-        self.Refresh()
-        # self.Update()
+        del dc
 
     def on_matrix_change(self):
         self.guide_lines = None
@@ -852,7 +894,7 @@ class MeerK40t(wx.Frame):
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
         elif rotation < -1:
             self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
-        self.post_buffer_update()
+        self.request_refresh()
 
     def on_mouse_middle_down(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
@@ -894,11 +936,11 @@ class MeerK40t(wx.Frame):
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
-        self.post_buffer_update()
+        self.request_refresh()
 
     def move_selected(self, wdx, wdy, sdx, sdy):
         self.project.move_selected(sdx, sdy)
-        self.post_buffer_update()
+        self.request_refresh()
 
     def on_mouse_move(self, event):
         if not event.Dragging():
@@ -1007,7 +1049,7 @@ class MeerK40t(wx.Frame):
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
-        self.post_buffer_update()
+        self.request_refresh()
 
     def focus_position_scene(self, scene_point):
         window_width, window_height = self.scene.ClientSize
@@ -1202,9 +1244,9 @@ class MeerK40t(wx.Frame):
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.project.elements = LaserNode(parent=self.project)
-        self.post_buffer_update()
+        self.request_refresh()
         self.tree_update()
-        self.Refresh()
+        # self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -1252,7 +1294,7 @@ class MeerK40t(wx.Frame):
         """
         m = self.scene.ClientSize / 2
         self.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
-        self.post_buffer_update()
+        self.request_refresh()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1260,7 +1302,7 @@ class MeerK40t(wx.Frame):
         """
         m = self.scene.ClientSize / 2
         self.scene_post_scale(1.5, 1.5, m[0], m[1])
-        self.post_buffer_update()
+        self.request_refresh()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1277,12 +1319,21 @@ class MeerK40t(wx.Frame):
 
         def toggle(event):
             self.project.draw_mode ^= bits
-            self.post_buffer_update()
+            self.request_refresh()
 
         return toggle
 
+    def open_fps_dialog(self):
+        dlg = wx.TextEntryDialog(self, _("Enter FPS Limit"), _("FPS Limit Entry"), '')
+        dlg.SetValue('')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            fps = dlg.GetValue()
+            self.set_fps(int(fps))
+        dlg.Destroy()
+
     def open_path_dialog(self):
-        dlg = wx.TextEntryDialog(self, 'Enter SVG Path Data', 'Path Entry', '')
+        dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
         dlg.SetValue('')
 
         if dlg.ShowModal() == wx.ID_OK:
@@ -1405,6 +1456,7 @@ class MeerK40t(wx.Frame):
             self.Close(True)
             window = MeerK40t(None, wx.ID_ANY, "")
             window.Show()
+
         return update
 
     def language_to(self, lang):

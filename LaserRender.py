@@ -26,7 +26,18 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render(self, dc, draw_mode):
-        for element in self.project.elements.flat_elements(types=('image', 'path', 'text')):
+        if draw_mode & 0x1C00 == 0:
+            types = ('image', 'path', 'text')
+        else:
+            types = []
+            if draw_mode & 0x0400 == 0:
+                types.append('path')
+            if draw_mode & 0x0800 == 0:
+                types.append('image')
+            if draw_mode & 0x1000 == 0:
+                types.append('text')
+            types = tuple(types)
+        for element in self.project.elements.flat_elements(types=types):
             try:
                 element.draw(element, dc, draw_mode)
             except AttributeError:

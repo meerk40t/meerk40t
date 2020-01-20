@@ -55,7 +55,7 @@ class Scheduler(Thread):
     def run(self):
         self.state = THREAD_STATE_STARTED
         while self.state != THREAD_STATE_ABORT:
-            time.sleep(0.1)
+            time.sleep(0.005)  # 200 ticks a second.
             if self.state == THREAD_STATE_ABORT:
                 return
             while self.state == THREAD_STATE_PAUSED:
@@ -192,12 +192,11 @@ class Kernel:
         queue = self.message_queue
         self.message_queue = {}
         self.queue_lock.release()
-
         for code, message in queue.items():
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
-                    self.run_later(listener, message)
+                    listener(message)
             self.last_message[code] = message
         self.is_queue_processing = False
 
