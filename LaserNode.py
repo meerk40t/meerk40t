@@ -33,6 +33,18 @@ class LaserNode(list):
 
     def __init__(self, element=None, parent=None):
         list.__init__(self)
+        if isinstance(element, LaserNode):
+            e = element.element
+            if isinstance(e, Path):
+                element = Path(e)
+            elif isinstance(e, SVGImage):
+                element = SVGImage(e)
+            elif isinstance(e, SVGText):
+                element = SVGText(e)
+            elif isinstance(e, SVGElement):
+                element = SVGElement(e)
+            else:
+                element = SVGElement()
         self.parent = parent
         self.cache = None
         self.scene_bounds = None
@@ -453,7 +465,7 @@ class LaserNode(list):
             if self.type in (types):
                 yield self
             for element in self:
-                for flat_element in element.flat_elements(types=types):
+                for flat_element in element.flat_elements(types=types, passes=passes):
                     yield flat_element
 
     def all_children_of_type(self, types):

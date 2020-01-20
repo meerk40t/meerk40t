@@ -37,7 +37,7 @@ class LaserRender:
             if draw_mode & 0x1000 == 0:
                 types.append('text')
             types = tuple(types)
-        for element in self.project.elements.flat_elements(types=types):
+        for element in self.project.elements.flat_elements(types=types, passes=False):
             try:
                 element.draw(element, dc, draw_mode)
             except AttributeError:
@@ -63,7 +63,7 @@ class LaserRender:
         return p
 
     def make_raster(self, group, width=None, height=None, bitmap=False, types=('path', 'text', 'image')):
-        flat_elements = list(group.flat_elements(types=types))
+        flat_elements = list(group.flat_elements(types=types, passes=False))
         bounds = group.scene_bounds
         if bounds is None:
             self.validate()
@@ -227,7 +227,7 @@ class LaserRender:
     def set_selected_by_position(self, position):
         self.project.set_selected(None)
         self.validate()
-        for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text')))):
+        for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text'), passes=False))):
             bounds = e.scene_bounds
             if bounds is None:
                 continue
@@ -268,7 +268,7 @@ class LaserRender:
 
     def bbox(self, elements):
         boundary_points = []
-        for e in elements.flat_elements(types=('image', 'path', 'text')):
+        for e in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
             box = e.scene_bounds
             if box is None:
                 continue

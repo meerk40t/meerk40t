@@ -150,7 +150,6 @@ project.add_window("Controller", Controller)
 project.add_window("JobSpooler", JobSpooler)
 project.add_window("JobInfo", JobInfo)
 project.add_window("BufferView", BufferView)
-project.boot()
 
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('fr', u'français', wx.LANGUAGE_FRENCH),
@@ -168,6 +167,7 @@ class MeerK40t(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.project = project
+        project.boot()
         project.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         project.setting(int, "window_width", 1200)
         project.setting(int, "window_height", 600)
@@ -1508,6 +1508,10 @@ def create_menu(element):
                 if len(element) > 1:
                     gui.Bind(wx.EVT_MENU, menu_reverse_order(element),
                              menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+        else:
+            if element.passes != 1:
+                gui.Bind(wx.EVT_MENU, menu_split_passes(element),
+                         menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_hull(element), menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_execute(element), menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, menu_reset(element),
@@ -1556,7 +1560,8 @@ def create_menu(element):
         text_menu = wx.Menu()
         gui.Bind(wx.EVT_MENU, menu_remove(element, types=(SVGText)),
                  text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
-        menu.Append(wx.ID_ANY, "Text", text_menu)
+        menu.AppendSubMenu(text_menu, _("Text"))
+
     if menu.MenuItemCount != 0:
         gui.PopupMenu(menu)
         menu.Destroy()
@@ -1574,7 +1579,7 @@ def menu_scale(element, value):
     def specific(event):
         center = element.center
         if center is not None:
-            for e in element.flat_elements(types=('image', 'path', 'text')):
+            for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
                 e.element.transform.post_scale(value, value, center[0], center[1])
             project("elements", 0)
 
@@ -1591,7 +1596,7 @@ def menu_step(element, step_value):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=('image')):
+        for e in element.flat_elements(types=('image'), passes=False):
             old_step = e.raster_step
             e.raster_step = step_value
             scale = float(step_value) / float(old_step)
@@ -1611,7 +1616,7 @@ def menu_raster_actualize(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=('image')):
+        for e in element.flat_elements(types=('image'), passes=False):
             e.make_actual()
         project(_("elements"), 0)
 
@@ -1627,7 +1632,7 @@ def menu_raster_native(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=('image')):
+        for e in element.flat_elements(types=('image'), passes=False):
             e.set_native()
         project("elements", 0)
 
@@ -1643,7 +1648,7 @@ def menu_dither(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=('image')):
+        for e in element.flat_elements(types=('image'), passes=False):
             e.element.image = e.element.image.convert("1")
             e.cache = None
         project("elements", 0)
@@ -1680,7 +1685,7 @@ def menu_reify(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=('path')):
+        for e in element.flat_elements(types=('path'), passes=False):
             e.reify_matrix()
             project("elements", 0)
 
@@ -1696,7 +1701,7 @@ def menu_reset(element):
     """
 
     def specific(event):
-        for e in element.flat_elements(types=('image', 'path', 'text')):
+        for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
             e.element.transform.reset()
             project("elements", 0)
 
@@ -1716,7 +1721,7 @@ def menu_rotate(element, value):
 
     def specific(event):
         center = element.center
-        for e in element.flat_elements(types=('image', 'path', 'text')):
+        for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
             e.transform.post_rotate(value, center[0], center[1])
         project("elements", 0)
 
@@ -1766,6 +1771,29 @@ def menu_remove(element, types=None):
 
     return delete_element
 
+def menu_split_passes(element):
+    """
+    Menu to break element into subpath.
+
+    :param element:
+    :return:
+    """
+    def specific(event):
+        context = element
+        for e in element.all_children_of_type(types=('path', 'image', 'text')):
+            if e.passes != 1:
+                parent = e.parent
+                e.detach()
+                passes = e.passes
+                e.passes = 1
+                all = []
+                for i in range(0, passes):
+                    all.append(LaserNode(e))
+                parent.append_all(all)
+        project("elements", 0)
+        project.set_selected(None)
+
+    return specific
 
 def menu_subpath(element):
     """
@@ -1815,7 +1843,7 @@ def get_convex_hull(element):
     :return:
     """
     pts = []
-    for e in element.flat_elements(types=('image', 'path')):
+    for e in element.flat_elements(types=('image', 'path'), passes=False):
         if isinstance(e.element, Path):
             epath = abs(e.element)
             pts += [q for q in epath.as_points()]

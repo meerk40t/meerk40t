@@ -6362,13 +6362,21 @@ class SVGImage(GraphicObject, Transformable):
         if len(args) == 1:
             if isinstance(args[0], dict):
                 values = args[0]
-            if isinstance(values, dict):
                 if XLINK_HREF in values:
                     self.url = values[XLINK_HREF]
                 elif SVG_HREF in values:
                     self.url = values[SVG_HREF]
                 else:
                     self.url = None
+            elif isinstance(args[0], SVGImage):
+                s = args[0]
+                self.url = s.url
+                self.data = s.data
+                self.viewbox = s.viewbox
+                self.image = s.image
+                self.image_width = s.image_width
+                self.image_height = s.image_height
+                return
             self.viewbox = Viewbox(values)
             self.data = None
         if self.url is not None:
