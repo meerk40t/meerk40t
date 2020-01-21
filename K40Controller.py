@@ -2,22 +2,22 @@ import threading
 
 import usb.core
 import usb.util
-import time
 
 from Kernel import *
 
-STATUS_BAD_STATE = 204          # 0xCC
-STATUS_OK = 206                 # 0xCE
-STATUS_PACKET_REJECTED = 207    # 0xCF
-STATUS_FINISH = 236             # 0xEC
-STATUS_BUSY = 238               # 0xEE
-STATUS_POWER = 239              # 0xEF
+STATUS_BAD_STATE = 204  # 0xCC
+STATUS_OK = 206  # 0xCE
+STATUS_PACKET_REJECTED = 207  # 0xCF
+STATUS_FINISH = 236  # 0xEC
+STATUS_BUSY = 238  # 0xEE
+STATUS_POWER = 239  # 0xEF
 
 STATUS_NO_DEVICE = -1
-USB_LOCK_VENDOR = 0x1a86                #Dev : (1a86) QinHeng Electronics
-USB_LOCK_PRODUCT = 0x5512               # (5512) CH341A
+USB_LOCK_VENDOR = 0x1a86  # Dev : (1a86) QinHeng Electronics
+USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
 BULK_WRITE_ENDPOINT = 0x02
 BULK_READ_ENDPOINT = 0x82
+mCH341_EPP_MODE = 258  # i << 8 | i < 0x100? 0x02 : 0x00 == 256 | 2 = 258, iMode-> 00/01 EPP
 mCH341_PARA_CMD_R0 = 0xAC
 mCH341_PARA_CMD_R1 = 0xAD
 mCH341_PARA_CMD_W0 = 0xA6
@@ -27,10 +27,10 @@ mCH341_PACKET_LENGTH = 32
 mCH341_PKT_LEN_SHORT = 8
 mCH341_PARA_INIT = 0xB1
 mCH341_VENDOR_READ = 0xC0
-mCH341_VENDOR_WRITE	= 0x40
+mCH341_VENDOR_WRITE = 0x40
 mCH341A_BUF_CLEAR = 0xB2
-mCH341A_DELAY_MS =0x5E
-mCH341A_GET_VER	= 0x5F
+mCH341A_DELAY_MS = 0x5E
+mCH341A_GET_VER = 0x5F
 
 
 def get_code_string_from_code(code):
@@ -395,7 +395,7 @@ class K40Controller:
         self.update_status()
         self.log(str(self.status))
         self.log("Sending control transfer.")
-        self.usb.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE, bRequest=mCH341_PARA_INIT, wValue=258,
+        self.usb.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE, bRequest=mCH341_PARA_INIT, wValue=mCH341_EPP_MODE,
                                wIndex=0, data_or_wLength=0, timeout=5000)
         self.log("Requesting Status.")
         self.update_status()
