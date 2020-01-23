@@ -184,6 +184,7 @@ class LhymicroWriter:
         project.setting(float, "scale_y", 1.0)
         project.setting(int, "_stepping_force", None)
         project.autostart = True  # Setting still exists but false values do weird things.
+        project.setting(float, "_acceleration_breaks", float("inf"))
 
         def spool(commands):
             self.send_job(commands)
@@ -194,6 +195,27 @@ class LhymicroWriter:
             self.project.add_module(self.project.controller)
 
         project.add_control("Emergency Stop", self.emergency_stop)
+
+        def break_acceleration10():
+            self.project._acceleration_breaks = 10.0
+
+        def break_acceleration20():
+            self.project._acceleration_breaks = 20.0
+
+        def break_acceleration30():
+            self.project._acceleration_breaks = 30.0
+
+        def break_acceleration40():
+            self.project._acceleration_breaks = 40.0
+
+        def break_acceleration_inf():
+            self.project._acceleration_breaks = float("inf")
+
+        project.add_control("acceleration Breaks 10mm/s", break_acceleration10)
+        project.add_control("acceleration Breaks 20mm/s", break_acceleration20)
+        project.add_control("acceleration Breaks 30mm/s", break_acceleration30)
+        project.add_control("acceleration Breaks 40mm/s", break_acceleration40)
+        project.add_control("acceleration Breaks off", break_acceleration_inf)
 
         self.thread = SpoolerThread(project, self, self.project.controller)
         project.add_thread("K40Spooler", self.thread)
@@ -408,12 +430,26 @@ class LhymicroWriter:
             sy = self.current_y
             self.pulse_modulation = True
             try:
+                x2 = y2 = x1 = y1 = None
                 for x, y, on in self.group_plots(sx, sy, path.plot()):
                     if on == 0:
                         self.up()
                     else:
                         self.down()
+                    try:
+                        change = abs(((x2 > x1) - (x2 < x1) + (y2 > y1) - (y2 < y1)) -
+                                     ((x1 > x) - (x1 < x) + (y1 > y) - (y1 < y)))
+                    except TypeError:
+                        change = 0
+                    if self.state == STATE_COMPACT and \
+                            change >= 2 and \
+                            self.speed >= self.project._acceleration_breaks:
+                        self.to_default_mode()
+                        self.to_compact_mode()
+                        x1 = y1 = None
                     self.move_absolute(x, y)
+                    x2, y2 = x1, y1
+                    x1, y1 = x, y
             except RuntimeError:
                 return
         elif command == COMMAND_RASTER:
@@ -535,6 +571,7 @@ class LhymicroWriter:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
+            # Todo, combine these calling 'NS2P\n'
             self.project.controller += b'S1P\n'
             if not self.project.autolock:
                 self.project.controller += b'IS2P\n'
