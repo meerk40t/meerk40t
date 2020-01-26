@@ -1,4 +1,4 @@
-from threading import Lock, Thread
+from threading import *
 from LaserNode import LaserNode
 import time
 
@@ -89,6 +89,193 @@ class Module:
         self.kernel = None
 
 
+class SpoolerThread(Thread):
+    """
+    SpoolerThread objects perform the spooler functions in an async manner.
+    """
+    def __init__(self, uid, kernel, spooler, interpreter):
+        Thread.__init__(self)
+        self.uid = uid
+        self.project = kernel
+        kernel.setting(int, "buffer_max", 900)
+        kernel.setting(bool, "buffer_limit", True)
+        self.spooler = spooler
+        self.interpreter = interpreter
+
+        self.buffer_size = -1
+        self.state = THREAD_STATE_UNSTARTED
+        self.project("writer", self.state)
+
+    def start_element_producer(self):
+        if self.state != THREAD_STATE_ABORT:
+            self.state = THREAD_STATE_STARTED
+            self.project("writer", self.state)
+            self.start()
+
+    def pause(self):
+        self.state = THREAD_STATE_PAUSED
+        self.project("writer", self.state)
+
+    def resume(self):
+        self.state = THREAD_STATE_STARTED
+        self.project("writer", self.state)
+
+    def abort(self, val):
+        if val != 0:
+            self.state = THREAD_STATE_ABORT
+            self.project("writer", self.state)
+
+    def stop(self):
+        self.abort(1)
+
+    def thread_pause_check(self, *args):
+        while (self.project.buffer_limit and len(self.interpreter) > self.project.buffer_max) or \
+                self.state == THREAD_STATE_PAUSED:
+            # Backend is full or we are paused. We're waiting.
+            time.sleep(0.1)
+            if self.state == THREAD_STATE_ABORT:
+                raise StopIteration  # abort called.
+        if self.state == THREAD_STATE_ABORT:
+            raise StopIteration  # abort called.
+
+    def run(self):
+        command_index = 0
+        self.project.listen("buffer", self.update_buffer_size)
+        self.project.listen("abort", self.abort)
+        self.spooler.on_plot = self.thread_pause_check
+        try:
+            while True:
+                element = self.spooler.peek()
+                if element is None:
+                    raise StopIteration
+                self.thread_pause_check()
+                try:
+                    gen = element.generate
+                except AttributeError:
+                    gen = element
+                for e in gen():
+                    try:
+                        command, values = e
+                    except TypeError:
+                        command = e
+                        values = 0
+                    command_index += 1
+                    self.thread_pause_check()
+                    self.project("command", command_index)
+                    self.project.spooler.command(command, values)
+                self.spooler.pop()
+                self.project("spooler", element)
+        except StopIteration:
+            pass  # We aborted the loop.
+        # Final listener calls.
+        self.spooler.on_plot = None
+        self.project.unlisten("abort", self.abort)
+        self.project.unlisten("buffer", self.update_buffer_size)
+        if self.state == THREAD_STATE_ABORT:
+            self.spooler.clear_queue()
+            self.project("writer_mode", self.spooler.state)
+            return  # Must not do anything else. Just die as fast as possible.
+        self.project.autostart_controller = True
+        self.state = THREAD_STATE_FINISHED
+        self.project("writer", self.state)
+
+    def update_buffer_size(self, size):
+        self.buffer_size = size
+
+
+class Spooler:
+    """
+    Given spoolable objects it uses an interpreter to convert these to code.
+    The code is then written to a pipe. These operations occur in an async manner, with a registered thread.
+    """
+    def __init__(self, uid="spooler", kernel=None):
+        self.uid = uid
+        self.kernel = kernel
+        self.interpreter = None
+        self.queue_lock = Lock()
+        self.queue = []
+        self.thread = None
+
+    def send_job(self, element):
+        self.queue_lock.acquire()
+        if isinstance(element, (list, tuple)):
+            self.queue += element
+        else:
+            self.queue.append(element)
+        self.queue_lock.release()
+        self.start_queue_consumer()
+        self.kernel("spooler", 0)
+
+    def clear_queue(self):
+        # self.spooler.state = STATE_DEFAULT
+        self.queue_lock.acquire()
+        self.queue = []
+        self.queue_lock.release()
+        self.kernel("spooler", 0)
+
+    def start_queue_consumer(self):
+        if self.thread.state == THREAD_STATE_ABORT:
+            # We cannot reset an aborted thread without specifically calling reset.
+            return
+        if self.thread.state == THREAD_STATE_FINISHED:
+            self.thread = SpoolerThread(self.uid, self.kernel, self, self.interpreter)
+            self.kernel.add_thread(self.uid, self.thread)
+        if self.thread.state == THREAD_STATE_UNSTARTED:
+            self.thread.state = THREAD_STATE_STARTED
+            self.thread.start()
+            self.kernel("writer", self.thread.state)
+
+
+class Interpreter:
+    """
+    An Interpreter takes spoolable commands and turns those commands into states and code in a language
+    agnostic fashion.
+    """
+    def __init__(self, kernel):
+        self.kernel = kernel
+        self.pipe = None
+
+    def __len__(self):
+        if self.pipe is None:
+            return 0
+        else:
+            return len(self.pipe)
+
+    def command(self, command, values):
+        """Commands are middle language LaserCommandConstants there values are given."""
+        pass
+
+
+class Pipe:
+    """
+    Write location in the kernel. Provides general information about buffer size but is
+    agnostic as to where the code ends up.
+
+    Example pipes are mock, file, print, libusb-driver, and ch341-win.
+    """
+    def __init__(self, kernel):
+        self.kernel = kernel
+        self.buffer = b''
+
+    def __len__(self):
+        return self.buffer
+
+    def __enter__(self):
+        self.open()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+    def write(self, bytes_to_write):
+        self.kernel += bytes_to_write
+
+
 class Kernel:
     """
     The kernel is the software framework that is tasked with the API implementation.
@@ -149,6 +336,11 @@ class Kernel:
         self.controls = {}
         self.windows = {}
         self.open_windows = {}
+
+        self.backend = None
+        self.spoolers = {}
+        self.interpreters = {}
+        self.pipes = {}
 
         self.operations = []
         self.effects = []
@@ -239,6 +431,16 @@ class Kernel:
 
     def add_saver(self, saver_name, saver):
         self.savers[saver_name] = saver
+
+    def add_backend(self, backend_name, spooler, interpreter, pipe):
+        if spooler is not None:
+            self.spooler[backend_name] = spooler
+            spooler.interpreter = interpreter
+        if interpreter is not None:
+            self.interpreters[backend_name] = interpreter
+            interpreter.pipe = pipe
+        if pipe is not None:
+            self.pipes[backend_name] = pipe
 
     def read_config(self, t, key, default=None):
         if default is not None:
