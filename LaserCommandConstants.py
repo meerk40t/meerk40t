@@ -41,3 +41,6 @@ COMMAND_LOCK = 301  # Locks the rail
 COMMAND_UNLOCK = 302  # Unlocks the rail.
 COMMAND_BEEP = 320  # Beep.
 COMMAND_FUNCTION = 350  # Execute the function given by this command.
+COMMAND_OPEN = 400  # Opens the channel, general hello.
+COMMAND_CLOSE = 500  # The channel will close. No valid commands will be parsed after this.
+COMMAND_EMERGENCY_STOP = 600 # Emergency Stop command is issued.

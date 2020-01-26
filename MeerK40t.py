@@ -21,7 +21,7 @@ from K40Controller import K40Controller
 from Kernel import *
 from Keymap import Keymap
 from LaserRender import LaserRender, swizzlecolor
-from LhymicroWriter import LhymicroWriter
+from LhymicroInterpreter import LhymicroInterpreter
 from Navigation import Navigation
 from Preferences import Preferences
 from RotarySettings import RotarySettings
@@ -131,7 +131,7 @@ project.run_later = wx.CallAfter
 project.translation = wx.GetTranslation
 project.set_config(wx.Config("MeerK40t"))
 project.add_module('K40Controller', K40Controller())
-project.add_module('K40Writer', LhymicroWriter())
+project.add_module('K40Writer', LhymicroInterpreter())
 project.add_module('SVGLoader', SVGLoader())
 project.add_module('ImageLoader', ImageLoader())
 project.add_module('EgvLoader', EgvLoader())

@@ -1,10 +1,7 @@
 import threading
-from ctypes import *
-
-import usb.core
-import usb.util
 
 from Kernel import *
+
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -22,29 +19,6 @@ STATUS_POWER = 239
 # 255, 206, 111, 148, 19, 255
 # 255, 206, 111, 12, 18, 0
 
-STATUS_NO_DEVICE = -1
-USB_LOCK_VENDOR = 0x1a86  # Dev : (1a86) QinHeng Electronics
-USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
-BULK_WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
-BULK_READ_ENDPOINT = 0x82  # usb.util.ENDPOINT_IN|usb.util.ENDPOINT_TYPE_BULK
-CH341_PARA_MODE_EPP19 = 0x01
-
-mCH341_PARA_CMD_R0 = 0xAC  # 10101100
-mCH341_PARA_CMD_R1 = 0xAD  # 10101101
-mCH341_PARA_CMD_W0 = 0xA6  # 10100110
-mCH341_PARA_CMD_W1 = 0xA7  # 10100111
-mCH341_PARA_CMD_STS = 0xA0  # 10100000
-
-mCH341_PACKET_LENGTH = 32
-mCH341_PKT_LEN_SHORT = 8
-mCH341_SET_PARA_MODE = 0x9A
-mCH341_PARA_INIT = 0xB1
-mCH341_VENDOR_READ = 0xC0
-mCH341_VENDOR_WRITE = 0x40
-mCH341A_BUF_CLEAR = 0xB2
-mCH341A_DELAY_MS = 0x5E
-mCH341A_GET_VER = 0x5F
-
 
 def get_code_string_from_code(code):
     if code == STATUS_OK:
@@ -61,19 +35,6 @@ def get_code_string_from_code(code):
         return "Bad State"
     else:
         return "Unknown: %d" % code
-
-
-def convert_to_list_bytes(data):
-    if isinstance(data, str):  # python 2
-        packet = [0] * 30
-        for i in range(0, 30):
-            packet[i] = ord(data[i])
-        return packet
-    else:
-        packet = [0] * 30
-        for i in range(0, 30):
-            packet[i] = data[i]
-        return packet
 
 
 crc_table = [
@@ -100,396 +61,68 @@ def onewire_crc_lookup(line):
 
 
 class ControllerQueueThread(threading.Thread):
+    """
+    The ControllerQueue thread matches the state of the controller to the state of the thread and processes the queue.
+    If you set the controller to THREAD_ABORTED it will abort, if THREAD_FINISHED it will finish. THREAD_PAUSE it will
+    pause.
+    """
     def __init__(self, controller):
         threading.Thread.__init__(self)
         self.controller = controller
+
         self.state = THREAD_STATE_UNSTARTED
         self.controller.kernel("control_thread", self.state)
 
     def run(self):
+        if self.controller.state == THREAD_STATE_UNSTARTED:
+            self.state = THREAD_STATE_UNSTARTED
+            return
         self.state = THREAD_STATE_STARTED
         self.controller.kernel("control_thread", self.state)
-        waited = 0
-        self.controller.kernel("status_bar", ("Laser On!", 1))
-        while self.state != THREAD_STATE_ABORT:
+
+        # waited = 0
+        while self.controller.state != THREAD_STATE_ABORT:
             if self.controller.process_queue():
                 time.sleep(0.1)
-                waited += 1
-                if waited >= 20:
-                    break
-            else:
-                waited = 0
-            while self.state == THREAD_STATE_PAUSED:
+            #     waited += 1
+            #     if waited >= 20:
+            #         break
+            # else:
+            #     waited = 0
+            while self.controller.state == THREAD_STATE_PAUSED:
+                self.state = THREAD_STATE_PAUSED
                 self.controller.kernel("control_thread", self.state)
                 time.sleep(1)
-        self.controller.kernel("status_bar", (None, 1))
-        if self.state == THREAD_STATE_ABORT:
+            if len(self.controller) == 0 and self.controller.state == THREAD_STATE_FINISHED:
+                break
+        if self.controller.state == THREAD_STATE_ABORT:
+            self.state = THREAD_STATE_ABORT
             self.controller.kernel("control_thread", self.state)
             return
-        self.state = THREAD_STATE_FINISHED
-        self.controller.kernel("control_thread", self.state)
+        else:
+            self.state = THREAD_STATE_FINISHED
+            self.controller.kernel("control_thread", self.state)
 
 
-STATE_UNINITIALIZED = -1
-STATE_CONNECTING = 0
-STATE_DRIVER_FINDING_DEVICES = 10
-STATE_DRIVER_NO_BACKEND = 20
-STATE_DEVICE_FOUND = 30
-STATE_DEVICE_NOT_FOUND = 50
-STATE_DEVICE_REJECTED = 60
-
-STATE_USB_SET_CONFIG = 100
-STATE_USB_DETACH_KERNEL = 200
-STATE_USB_DETACH_KERNEL_SUCCESS = 210
-STATE_USB_DETACH_KERNEL_FAIL = 220
-STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED = 230
-
-STATE_USB_CLAIM_INTERFACE = 300
-STATE_USB_CLAIM_INTERFACE_SUCCESS = 310
-STATE_USB_CLAIM_INTERFACE_FAIL = 320
-
-STATE_USB_CONNECTED = 400
-STATE_CH431_PARAMODE = 160
-
-STATE_CONNECTED = 600
-
-STATE_USB_SET_DISCONNECTING = 1000
-STATE_USB_ATTACH_KERNEL = 1100
-STATE_USB_ATTACH_KERNEL_SUCCESS = 1110
-STATE_USB_ATTACH_KERNEL_FAIL = 1120
-STATE_USB_RELEASE_INTERFACE = 1200
-STATE_USB_RELEASE_INTERFACE_SUCCESS = 1210
-STATE_USB_RELEASE_INTERFACE_FAIL = 1220
-
-STATE_USB_DISPOSING_RESOURCES = 1200
-STATE_USB_RESET = 1400
-STATE_USB_RESET_SUCCESS = 1410
-STATE_USB_RESET_FAIL = 1420
-STATE_USB_DISCONNECTED = 1500
-
-
-class CH341LibusbDriver:
-    """
-    Libusb driver for the CH341 chip. The CH341x is a USB interface chip that can emulate UART, parallel port,
-    and synchronous serial (EPP, I2C, SPI). The Lhystudios boards (M2Nano, et al) and Moshi boards and likely others
-    use this in EPP 1.9 mode. This class is not and not intended to be a full driver for that chip. Rather we are
-    duplicating the function calls and implementing compatible operations to permit a stand-in for the default CH341
-    driver. Using libusb to do the usb connection to the chip as well as permitting easy swapping that for the default
-    driver. This serves as the basis to permit multiple operative methods, permitting use of either the default driver
-    or Libusb driver interchangeably.
-
-    Since these functions will need swapping in MSW we should duplicate the function calls thereof. Also since a stated
-    goal is to support multiple devices implicitly, we should also properly support multiple device functionality.
-
-    To this end, this should duplicate the names of the function calls. And the use of index to reference which
-    connection to use for each command.
-    """
-
+class K40Controller(Pipe):
     def __init__(self, kernel):
-        self.devices = {}
-        self.interface = {}
-        self.kernel = kernel
-
-    def set_status(self, code, obj=None):
-        message = None
-        if code == STATE_CONNECTING:
-            message = "Attempting connection to USB."
-        elif code == STATE_DRIVER_NO_BACKEND:
-            message = "PyUsb detected no backend LibUSB driver."
-        elif code == STATE_DEVICE_FOUND:
-            message = "K40 device detected:\n%s\n" % str(obj)
-        elif code == STATE_DEVICE_NOT_FOUND:
-            message = "Not Found"
-        elif code == STATE_DEVICE_REJECTED:
-            message = "K40 devices were found but they were rejected."
-        elif code == STATE_USB_SET_CONFIG:
-            message = "Config Set"
-        elif code == STATE_USB_DETACH_KERNEL:
-            message = "Attempting to detach kernel."
-        elif code == STATE_USB_DETACH_KERNEL_SUCCESS:
-            message = "Kernel detach: Success."
-        elif code == STATE_USB_DETACH_KERNEL_FAIL:
-            message = "Kernel detach: Failed."
-        elif code == STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED:
-            message = "Kernel detach: Not Implemented."
-        elif code == STATE_USB_CLAIM_INTERFACE:
-            message = "Attempting to claim interface."
-        elif code == STATE_USB_CLAIM_INTERFACE_SUCCESS:
-            message = "Interface claim: Success"
-        elif code == STATE_USB_CLAIM_INTERFACE_FAIL:
-            message = "Interface claim: Fail"
-        elif code == STATE_USB_CONNECTED:
-            message = "USB Connected"
-        elif code == STATE_USB_SET_DISCONNECTING:
-            message = "Attempting disconnection from USB."
-        elif code == STATE_USB_ATTACH_KERNEL:
-            message = "Attempting kernel attach"
-        elif code == STATE_USB_ATTACH_KERNEL_SUCCESS:
-            message = "Kernel attach: Success."
-        elif code == STATE_USB_ATTACH_KERNEL_FAIL:
-            message = "Kernel attach: Fail."
-        elif code == STATE_USB_RELEASE_INTERFACE:
-            message = "Attempting to release interface."
-        elif code == STATE_USB_RELEASE_INTERFACE_SUCCESS:
-            message = "Interface released"
-        elif code == STATE_USB_RELEASE_INTERFACE_FAIL:
-            message = "Interface did not exist."
-        elif code == STATE_USB_DISPOSING_RESOURCES:
-            message = "Attempting to dispose resources."
-        elif code == STATE_USB_RESET:
-            message = "Attempting USB reset."
-        elif code == STATE_USB_RESET_FAIL:
-            message = "USB connection did not exist."
-        elif code == STATE_USB_RESET_SUCCESS:
-            message = "USB connection reset."
-        elif code == STATE_USB_DISCONNECTED:
-            message = "USB Disconnection Successful."
-        self.kernel.signal('usb_log', message)
-        self.kernel.signal('usb_state', code)
-
-    def choose_device(self, devices, index):
-        """
-        We have a choice of different devices and must choose which one to connect to.
-
-        :param devices: List of devices to choose from.
-        :param index: Index of the device we were asked to choose.
-        :return: Device chosen.
-        """
-
-        for i, dev in enumerate(devices):
-            self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
-        if devices is None or len(devices) == 0:
-            return None
-        else:
-            return devices[index]
-        # if self.kernel.usb_index == -1:
-        #     if self.kernel.usb_address == -1 and self.kernel.usb_bus == -1:
-        #         if len(d) > 0:
-        #             self.usb = d[0]
-        #     else:
-        #         for dev in d:
-        #             if (self.kernel.usb_address == -1 or self.kernel.usb_address == dev.address) and \
-        #                     (self.kernel.usb_bus == -1 or self.kernel.usb_bus == dev.bus):
-        #                 self.usb = dev
-        #                 break
-        # else:
-        #     if len(d) > self.kernel.usb_index:
-        #         self.usb = d[self.kernel.usb_index]
-
-    def connect_find(self, index=0):
-        try:
-            devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
-        except usb.core.NoBackendError:
-            self.set_status(STATE_DRIVER_NO_BACKEND)
-            raise ConnectionError
-        self.set_status(STATE_DRIVER_FINDING_DEVICES)
-        devices = [d for d in devices]
-        if len(devices) == 0:
-            self.set_status(STATE_DEVICE_NOT_FOUND)
-            raise ConnectionError
-        self.set_status(STATE_DEVICE_FOUND, devices)
-        device = self.choose_device(devices, index)
-        if device is None:
-            self.set_status(STATE_DEVICE_REJECTED)
-            raise ConnectionError
-        return device
-
-    def connect_interface(self, device):
-        self.set_status(STATE_USB_SET_CONFIG)
-        device.set_configuration()
-        self.set_status(STATE_USB_CLAIM_INTERFACE)
-        try:
-            interface = device.get_active_configuration()[(0, 0)]
-            self.set_status(STATE_USB_CLAIM_INTERFACE_SUCCESS)
-            return interface
-        except usb.core.USBError:
-            self.set_status(STATE_USB_CLAIM_INTERFACE_FAIL)
-            raise ConnectionError
-
-    def connect_detach(self, device, interface):
-        try:
-            if device.is_kernel_driver_active(interface.bInterfaceNumber):
-                try:
-                    self.set_status(STATE_USB_DETACH_KERNEL)
-                    device.detach_kernel_driver(interface.bInterfaceNumber)
-                    self.set_status(STATE_USB_DETACH_KERNEL_SUCCESS)
-                except usb.core.USBError:
-                    self.set_status(STATE_USB_DETACH_KERNEL_FAIL)
-                    raise ConnectionError
-        except NotImplementedError:
-            self.set_status(STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED)  # Driver does not permit kernel detaching.
-            # Non-fatal error.
-
-    def connect_claim(self, device, interface):
-        self.set_status(STATE_USB_CLAIM_INTERFACE)
-        usb.util.claim_interface(device, interface)
-        self.set_status(STATE_USB_CLAIM_INTERFACE_SUCCESS)
-
-    def disconnect_detach(self, device, interface):
-        try:
-            self.set_status(STATE_USB_ATTACH_KERNEL)
-            device.attach_kernel_driver(interface.bInterfaceNumber)
-            self.set_status(STATE_USB_ATTACH_KERNEL_SUCCESS)
-        except usb.core.USBError:
-            self.set_status(STATE_USB_ATTACH_KERNEL_FAIL)
-            # Continue and hope it is non-critical.
-        except NotImplementedError:
-            self.set_status(STATE_USB_ATTACH_KERNEL_FAIL)
-
-    def disconnect_interface(self, device, interface):
-        try:
-            self.set_status(STATE_USB_RELEASE_INTERFACE)
-            usb.util.release_interface(device, interface)
-            self.set_status(STATE_USB_RELEASE_INTERFACE_SUCCESS)
-        except usb.core.USBError:
-            self.set_status(STATE_USB_RELEASE_INTERFACE_FAIL)
-        self.interface = None
-
-    def disconnect_dispose(self, device):
-        self.set_status(STATE_USB_DISPOSING_RESOURCES)
-        usb.util.dispose_resources(device)
-
-    def disconnect_reset(self, device):
-        self.set_status(STATE_USB_RESET)
-        try:
-            device.reset()
-            self.set_status(STATE_USB_RESET_SUCCESS)
-        except usb.core.USBError:
-            self.set_status(STATE_USB_RESET_FAIL)
-
-    def CH341OpenDevice(self, index=0):
-        """Opens device, returns index."""
-        self.set_status(STATE_CONNECTING)
-        try:
-            device = self.connect_find(index)
-            self.devices[index] = device
-            interface = self.connect_interface(device)
-            self.interface[index] = interface
-
-            self.connect_detach(device, interface)
-            self.connect_claim(device, interface)
-
-            self.set_status(STATE_USB_CONNECTED)
-        except ConnectionError:
-            pass
-
-    def CH341CloseDevice(self, index=0):
-        """Closes device."""
-        device = self.devices[index]
-        interface = self.interface[index]
-        self.set_status(STATE_USB_SET_DISCONNECTING)
-        if device is not None:
-            try:
-                self.disconnect_detach(device, interface)
-                self.disconnect_interface(device, interface)
-                del self.interface[index]
-                self.disconnect_dispose(device)
-                self.disconnect_reset(device)
-                del self.devices[index]
-                self.set_status(STATE_USB_DISCONNECTED)
-            except ConnectionError:
-                pass
-
-    def CH341GetVersion(self, index=0):
-        device = self.devices[index]
-        buffer = device.ctrl_transfer(bmRequestType=mCH341_VENDOR_READ,
-                                      bRequest=mCH341A_GET_VER,
-                                      wValue=0,
-                                      wIndex=0,
-                                      data_or_wLength=2,
-                                      timeout=5000)
-        if len(buffer) < 0:
-            return 2
-        else:
-            return (buffer[1] << 8) | buffer[0]
-
-    def CH341InitParallel(self, index=0, mode=CH341_PARA_MODE_EPP19):  # Mode 1, we need EPP 1.9
-        """Permits setting a mode, but our mode is only 1 since the device is using
-        EPP 1.9. This is a control transfer event."""
-        device = self.devices[index]
-        value = mode << 8
-        if mode < 256:
-            value |= 2
-        device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
-                             bRequest=mCH341_PARA_INIT,
-                             wValue=value,
-                             wIndex=0,
-                             data_or_wLength=0,
-                             timeout=5000)
-
-    def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
-        device = self.devices[index]
-        value = 0x2525
-        device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
-                             bRequest=mCH341_SET_PARA_MODE,
-                             wValue=value,
-                             wIndex=index,
-                             data_or_wLength=mode << 8 | mode,
-                             timeout=5000)
-
-    def CH341EPPWrite(self, index=0, buffer=None, length=0, pipe=0):
-        if buffer is not None:
-            device = self.devices[index]
-            while len(buffer) > 31:
-                if pipe == 0:
-                    packet = [mCH341_PARA_CMD_W0] + buffer[:30]
-                else:
-                    packet = [mCH341_PARA_CMD_W1] + buffer[:30]
-                buffer = buffer[31:]
-                data = convert_to_list_bytes(packet)
-                device.write(BULK_WRITE_ENDPOINT, data, 10000)
-
-    def CH341EPPRead(self, index=0, buffer=None, length=0, pipe=0):
-        b = self.devices[index].read(BULK_READ_ENDPOINT, length, 10000)
-        return b
-
-    def CH341GetStatus(self, index=0, status=[0]):
-        """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: datats, 15: addrs"""
-        self.devices[index].write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
-        status[0] = self.devices[index].read(BULK_READ_ENDPOINT, 6, 10000)
-        return status
-
-    def CH341EppReadData(self, index=0, buffer=None, length=0):  # WR=1, DS=0, AS=1, D0-D7 in
-        self.CH341EPPRead(buffer, length, 0)
-
-    def CH341EppReadAddr(self, index=0, buffer=None, length=0):  # WR=1, DS=0, AS=1 D0-D7 in
-        self.CH341EPPRead(buffer, length, 1)
-
-    def CH341EppWriteData(self, index, buffer=None, length=0):  # WR=0, DS=0, AS=1, D0-D7 out
-        self.CH341EPPWrite(buffer, length, 0)
-
-    def CH341EppWriteAddr(self, index, buffer=None, length=0):  # WR=0, DS=1, AS=0, D0-D7 out
-        self.CH341EPPWrite(buffer, length, 1)
-
-
-class K40Controller:
-    def __init__(self, driver=0):
-        self.driver = driver
-        self.kernel = None
-
-        self.controller_state = STATE_UNINITIALIZED
-        self.desired_state = STATE_UNINITIALIZED
+        Pipe.__init__(self, kernel)
+        self.driver = None
+        self.state = THREAD_STATE_UNSTARTED
 
         self.process_queue_pause = False
         self.queue_lock = threading.Lock()
-        self.usb_lock = threading.Lock()
         self.thread = None
 
         self.abort_waiting = False
 
-        self.status = STATE_UNINITIALIZED
-
-    def initialize(self, kernel):
-        self.kernel = kernel
-        if self.driver == 0:
-            self.driver = CH341LibusbDriver(kernel)
-        else:
-            self.driver = windll.LoadLibrary("CH341DLL.dll")
-        self.kernel.controller = self
         kernel.setting(int, 'usb_index', -1)
         kernel.setting(int, 'usb_bus', -1)
         kernel.setting(int, 'usb_address', -1)
         kernel.setting(int, 'usb_serial', -1)
+        kernel.setting(int, 'usb_chip_version', -1)
+        kernel.setting(int, 'ch341_driver', -1)
+
         kernel.setting(bool, 'mock', False)
         kernel.setting(int, 'packet_count', 0)
         kernel.setting(int, 'rejected_count', 0)
@@ -498,16 +131,23 @@ class K40Controller:
         kernel.setting(str, "_controller_buffer", b'')
         kernel.setting(str, "_controller_queue", b'')
         kernel.setting(str, "_usb_state", None)
+        self.kernel = kernel
+        if kernel.ch341_driver != 1:
+            from CH341LibusbDriver import driver
+            self.driver = driver
+        elif kernel.ch341_driver == 1:
+            from CH341WindllDriver import driver
+            self.driver = driver
+        self.thread = ControllerQueueThread(self)
 
         def start_usb():
-            self.desired_state = STATE_CONNECTED
+            self.state = THREAD_STATE_STARTED
             self.start()
 
         kernel.add_control("K40Usb-Start", start_usb)
 
         def stop_usb():
-            self.set_usb_status("Disconnecting")
-            self.desired_state = STATE_USB_DISCONNECTED
+            self.state = THREAD_STATE_FINISHED
 
         kernel.add_control("K40Usb-Stop", stop_usb)
 
@@ -516,15 +156,15 @@ class K40Controller:
 
         kernel.add_control("K40-Wait Abort", abort_wait)
 
-        self.thread = ControllerQueueThread(self)
-
         def pause_k40():
-            self.pause()
+            self.state = THREAD_STATE_PAUSED
+            self.start()
 
         kernel.add_control("K40-Pause", pause_k40)
 
         def resume_k40():
-            self.resume()
+            self.state = THREAD_STATE_STARTED
+            self.start()
 
         kernel.add_control("K40-Resume", resume_k40)
 
@@ -540,11 +180,14 @@ class K40Controller:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def __len__(self):
+        return len(self.kernel._controller_buffer) + len(self.kernel._controller_queue)
+
     def __iadd__(self, other):
         self.queue_lock.acquire()
         self.kernel._controller_queue += other
         self.queue_lock.release()
-        buffer_size = len(self.kernel._controller_buffer) + len(self.kernel._controller_queue)
+        buffer_size = len(self)
         self.kernel("buffer", buffer_size)
         if self.kernel.autostart_controller:
             self.start()

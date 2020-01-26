@@ -195,6 +195,21 @@ class Spooler:
         self.queue_lock = Lock()
         self.queue = []
         self.thread = None
+        self.on_plot = None # Remove this, weird method.
+
+    def peek(self):
+        if len(self.queue) == 0:
+            return None
+        return self.queue[0]
+
+    def pop(self):
+        if len(self.queue) == 0:
+            return None
+        self.queue_lock.acquire()
+        queue_head = self.queue[0]
+        del self.queue[0]
+        self.queue_lock.release()
+        return queue_head
 
     def send_job(self, element):
         self.queue_lock.acquire()
@@ -212,6 +227,10 @@ class Spooler:
         self.queue = []
         self.queue_lock.release()
         self.kernel("spooler", 0)
+
+    def reset_thread(self):
+        self.thread = SpoolerThread(self.uid, self.kernel, self, self.interpreter)
+        self.kernel("writer", self.thread.state)
 
     def start_queue_consumer(self):
         if self.thread.state == THREAD_STATE_ABORT:
