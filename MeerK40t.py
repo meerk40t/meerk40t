@@ -130,8 +130,9 @@ project = Kernel()
 project.run_later = wx.CallAfter
 project.translation = wx.GetTranslation
 project.set_config(wx.Config("MeerK40t"))
-project.add_module('K40Controller', K40Controller())
-project.add_module('K40Writer', LhymicroInterpreter())
+
+pipe = K40Controller(project)
+project.add_backend("K40-Stock", pipe, LhymicroInterpreter(project, pipe))
 project.add_module('SVGLoader', SVGLoader())
 project.add_module('ImageLoader', ImageLoader())
 project.add_module('EgvLoader', EgvLoader())
@@ -150,6 +151,7 @@ project.add_window("Controller", Controller)
 project.add_window("JobSpooler", JobSpooler)
 project.add_window("JobInfo", JobInfo)
 project.add_window("BufferView", BufferView)
+
 
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('fr', u'français', wx.LANGUAGE_FRENCH),
@@ -180,6 +182,8 @@ class MeerK40t(wx.Frame):
         project.setting(bool, "mouse_zoom_invert", False)
         project.setting(int, "_stepping_force", None)
         project.setting(int, 'fps', 40)
+        project.setting(float, "current_x", 0.0)
+        project.setting(float, "current_y", 0.0)
         if project.fps <= 0:
             project.fps = 60
         project.setting(int, 'language', None)
@@ -286,7 +290,8 @@ class MeerK40t(wx.Frame):
 
         if os.path.exists('./locale'):
             wxglade_tmp_menu = wx.Menu()
-            for i, lang in enumerate(supported_languages):
+            i = 0
+            for lang in supported_languages:
                 language_code, language_name, language_index = lang
                 m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
                 if i == language:
@@ -294,6 +299,7 @@ class MeerK40t(wx.Frame):
                 self.Bind(wx.EVT_MENU, self.language_to(i), id=m.GetId())
                 if not os.path.exists('./locale/%s' % language_code) and i != 0:
                     m.Enable(False)
+                i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
@@ -1187,8 +1193,8 @@ class MeerK40t(wx.Frame):
         if self.project.draw_mode & 16 == 0:
             dc.SetPen(wx.RED_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x = self.project.spooler.current_x
-            y = self.project.spooler.current_y
+            x = self.project.current_x
+            y = self.project.current_y
             x, y = self.convert_scene_to_window([x, y])
             dc.DrawCircle(x, y, 10)
 

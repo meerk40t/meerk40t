@@ -43,8 +43,8 @@ def lhymicro_distance(v):
 
 
 class LhymicroInterpreter(Interpreter):
-    def __init__(self, kernel, current_x=0, current_y=0):
-        Interpreter.__init__(self, kernel)
+    def __init__(self, kernel, pipe, current_x=0, current_y=0):
+        Interpreter.__init__(self, kernel, pipe)
         self.state = STATE_DEFAULT
         self.is_on = False
         self.is_left = False
@@ -69,7 +69,6 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.pipe = None
         self.on_plot = None
 
         kernel.setting(str, "board", "M2")
@@ -390,14 +389,14 @@ class LhymicroInterpreter(Interpreter):
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == STATE_DEFAULT:
-            self.kernel.controller += b'I'
+            self.pipe += b'I'
             if dx != 0:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.kernel.controller += b'S1P\n'
+            self.pipe += b'S1P\n'
             if not self.kernel.autolock:
-                self.kernel.controller += b'IS2P\n'
+                self.pipe += b'IS2P\n'
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in self.group_plots(self.current_x, self.current_y,
@@ -416,7 +415,7 @@ class LhymicroInterpreter(Interpreter):
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.kernel.controller += b'N'
+            self.pipe += b'N'
         self.check_bounds()
         self.kernel("position", (self.current_x, self.current_y, self.current_x - dx, self.current_y - dy))
 
@@ -504,7 +503,7 @@ class LhymicroInterpreter(Interpreter):
     def down(self):
         if self.is_on:
             return False
-        controller = self.kernel.controller
+        controller = self.pipe
         if self.state == STATE_DEFAULT:
             controller += b'I'
             controller += COMMAND_ON
@@ -520,7 +519,7 @@ class LhymicroInterpreter(Interpreter):
         return True
 
     def up(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         if not self.is_on:
             return False
         if self.state == STATE_DEFAULT:
@@ -538,7 +537,7 @@ class LhymicroInterpreter(Interpreter):
         return True
 
     def to_default_mode(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         if self.state == STATE_CONCAT:
             controller += b'S1P\n'
             if not self.kernel.autolock:
@@ -550,14 +549,14 @@ class LhymicroInterpreter(Interpreter):
         self.kernel("writer_mode", self.state)
 
     def to_concat_mode(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.to_default_mode()
         controller += b'I'
         self.state = STATE_CONCAT
         self.kernel("writer_mode", self.state)
 
     def to_compact_mode(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.to_concat_mode()
         if self.d_ratio is not None:
             speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.kernel.board,
@@ -577,7 +576,7 @@ class LhymicroInterpreter(Interpreter):
         self.kernel("writer_mode", self.state)
 
     def h_switch(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         if self.is_left:
             controller += COMMAND_RIGHT
         else:
@@ -590,7 +589,7 @@ class LhymicroInterpreter(Interpreter):
         self.is_on = False
 
     def v_switch(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         if self.is_top:
             controller += COMMAND_BOTTOM
         else:
@@ -603,7 +602,7 @@ class LhymicroInterpreter(Interpreter):
         self.is_on = False
 
     def home(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.to_default_mode()
         controller += b'IPP\n'
         old_x = self.current_x
@@ -615,17 +614,17 @@ class LhymicroInterpreter(Interpreter):
         self.kernel("position", (self.current_x, self.current_y, old_x, old_y))
 
     def lock_rail(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.to_default_mode()
         controller += b'IS1P\n'
 
     def unlock_rail(self, abort=False):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.to_default_mode()
         controller += b'IS2P\n'
 
     def abort(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         controller += b'I\n'
 
     def check_bounds(self):
@@ -652,7 +651,7 @@ class LhymicroInterpreter(Interpreter):
             self.move_top(dy)
 
     def move_angle(self, dx, dy):
-        controller = self.kernel.controller
+        controller = self.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
         if dx > 0:  # Moving right
@@ -677,7 +676,7 @@ class LhymicroInterpreter(Interpreter):
         controller += COMMAND_ANGLE + lhymicro_distance(abs(dy))
 
     def declare_directions(self):
-        controller = self.kernel.controller
+        controller = self.pipe
         if self.is_top:
             controller += COMMAND_TOP
         else:
@@ -688,7 +687,7 @@ class LhymicroInterpreter(Interpreter):
             controller += COMMAND_RIGHT
 
     def move_right(self, dx=0):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.current_x += dx
         self.is_left = False
         controller += COMMAND_RIGHT
@@ -697,7 +696,7 @@ class LhymicroInterpreter(Interpreter):
             self.check_bounds()
 
     def move_left(self, dx=0):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.current_x -= abs(dx)
         self.is_left = True
         controller += COMMAND_LEFT
@@ -706,7 +705,7 @@ class LhymicroInterpreter(Interpreter):
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.current_y += dy
         self.is_top = False
         controller += COMMAND_BOTTOM
@@ -715,7 +714,7 @@ class LhymicroInterpreter(Interpreter):
             self.check_bounds()
 
     def move_top(self, dy=0):
-        controller = self.kernel.controller
+        controller = self.pipe
         self.current_y -= abs(dy)
         self.is_top = True
         controller += COMMAND_TOP

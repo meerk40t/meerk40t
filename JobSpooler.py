@@ -120,7 +120,8 @@ class JobSpooler(wx.Frame):
         if len(self.project.spooler.queue) > 0:
             pass
             # This should actually process and update the queue items.
-            for i, e in enumerate(self.project.spooler.queue):
+            i = 0
+            for e in self.project.spooler.queue:
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
                     try:
@@ -153,6 +154,7 @@ class JobSpooler(wx.Frame):
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, _("n/a"))
                     self.list_job_spool.SetItem(m, 8, _("unknown"))
+                i += 1
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         event.Skip()

@@ -97,13 +97,14 @@ class SpoolerThread(Thread):
         Thread.__init__(self)
         self.uid = uid
         self.project = kernel
+        self.state = THREAD_STATE_UNSTARTED
         kernel.setting(int, "buffer_max", 900)
         kernel.setting(bool, "buffer_limit", True)
         self.spooler = spooler
         self.interpreter = interpreter
 
         self.buffer_size = -1
-        self.state = THREAD_STATE_UNSTARTED
+
         self.project("writer", self.state)
 
     def start_element_producer(self):
@@ -162,7 +163,7 @@ class SpoolerThread(Thread):
                     command_index += 1
                     self.thread_pause_check()
                     self.project("command", command_index)
-                    self.project.spooler.command(command, values)
+                    self.interpreter.command(command, values)
                 self.spooler.pop()
                 self.project("spooler", element)
         except StopIteration:
@@ -188,13 +189,14 @@ class Spooler:
     Given spoolable objects it uses an interpreter to convert these to code.
     The code is then written to a pipe. These operations occur in an async manner, with a registered thread.
     """
-    def __init__(self, uid="spooler", kernel=None):
+    def __init__(self, uid="spooler", kernel=None, interpreter=None):
         self.uid = uid
         self.kernel = kernel
-        self.interpreter = None
+        self.interpreter = interpreter
+        self.thread = SpoolerThread(self.uid, self.kernel, self, self.interpreter)
         self.queue_lock = Lock()
         self.queue = []
-        self.thread = None
+
         self.on_plot = None # Remove this, weird method.
 
     def peek(self):
@@ -250,9 +252,9 @@ class Interpreter:
     An Interpreter takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion.
     """
-    def __init__(self, kernel):
+    def __init__(self, kernel=None, pipe=None):
         self.kernel = kernel
-        self.pipe = None
+        self.pipe = pipe
 
     def __len__(self):
         if self.pipe is None:
@@ -342,8 +344,8 @@ class Kernel:
     kernel(signal, value): Calls the signal with the given value.
     """
 
-    def __init__(self, spooler=None, config=None):
-        self.spooler = spooler  # Class responsible for spooling commands
+    def __init__(self, config=None):
+        self.spooler = None  # Class responsible for spooling commands
         self.elements = LaserNode(parent=self)
 
         self.config = None
@@ -356,7 +358,6 @@ class Kernel:
         self.windows = {}
         self.open_windows = {}
 
-        self.backend = None
         self.spoolers = {}
         self.interpreters = {}
         self.pipes = {}
@@ -451,15 +452,16 @@ class Kernel:
     def add_saver(self, saver_name, saver):
         self.savers[saver_name] = saver
 
-    def add_backend(self, backend_name, spooler, interpreter, pipe):
-        if spooler is not None:
-            self.spooler[backend_name] = spooler
-            spooler.interpreter = interpreter
+    def add_backend(self, backend_name, pipe, interpreter, spooler=None):
+        if spooler is None:
+            spooler = Spooler(backend_name, self, interpreter)
+        self.spoolers[backend_name] = spooler
         if interpreter is not None:
             self.interpreters[backend_name] = interpreter
             interpreter.pipe = pipe
         if pipe is not None:
             self.pipes[backend_name] = pipe
+        self.spooler = spooler
 
     def read_config(self, t, key, default=None):
         if default is not None:

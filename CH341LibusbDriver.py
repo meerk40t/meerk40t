@@ -94,10 +94,10 @@ class CH341LibusbDriver:
     connection to use for each command.
     """
 
-    def __init__(self, kernel):
+    def __init__(self):
         self.devices = {}
         self.interface = {}
-        self.kernel = kernel
+        self.signal = lambda e,f: e  #Nullop.
 
     def set_status(self, code, obj=None):
         message = None
@@ -153,8 +153,8 @@ class CH341LibusbDriver:
             message = "USB connection reset."
         elif code == STATE_USB_DISCONNECTED:
             message = "USB Disconnection Successful."
-        self.kernel.signal('usb_log', message)
-        self.kernel.signal('usb_state', code)
+        self.signal('usb_log', message)
+        self.signal('usb_state', code)
 
     def choose_device(self, devices, index):
         """
@@ -166,7 +166,8 @@ class CH341LibusbDriver:
         """
 
         for i, dev in enumerate(devices):
-            self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
+            # self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
+            pass
         if devices is None or len(devices) == 0:
             return None
         else:

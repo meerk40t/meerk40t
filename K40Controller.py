@@ -202,13 +202,13 @@ class K40Controller(Pipe):
         return self.thread.state
 
     def start(self):
-        if self.thread.state == THREAD_STATE_ABORT:
+        if self.state == THREAD_STATE_ABORT:
             # We cannot reset an aborted thread without specifically calling reset.
             return
-        if self.thread.state == THREAD_STATE_FINISHED:
+        if self.state == THREAD_STATE_FINISHED:
             self.thread = ControllerQueueThread(self)
-        if self.thread.state == THREAD_STATE_UNSTARTED:
-            self.thread.state = THREAD_STATE_STARTED
+        if self.state == THREAD_STATE_UNSTARTED:
+            self.state = THREAD_STATE_STARTED
             self.thread.start()
             self.kernel("control_thread", self.thread.state)
 

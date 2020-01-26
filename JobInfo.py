@@ -232,7 +232,7 @@ class JobInfo(wx.Frame):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.operations) == 0:
-            self.project.spooler.add_queue(self.elements)
+            self.project.spooler.send_job(self.elements)
             self.on_button_job_spooler()
             self.project.close_old_window("JobInfo")
         else:
