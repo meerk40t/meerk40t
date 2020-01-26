@@ -337,7 +337,7 @@ class CH341LibusbDriver:
                              data_or_wLength=mode << 8 | mode,
                              timeout=5000)
 
-    def CH341EPPWrite(self, index=0, buffer=None, length=0, pipe=0):
+    def CH341EppWrite(self, index=0, buffer=None, length=0, pipe=0):
         if buffer is not None:
             device = self.devices[index]
             while len(buffer) > 31:
@@ -349,7 +349,7 @@ class CH341LibusbDriver:
                 data = convert_to_list_bytes(packet)
                 device.write(BULK_WRITE_ENDPOINT, data, 10000)
 
-    def CH341EPPRead(self, index=0, buffer=None, length=0, pipe=0):
+    def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
         b = self.devices[index].read(BULK_READ_ENDPOINT, length, 10000)
         return b
 
@@ -360,16 +360,16 @@ class CH341LibusbDriver:
         return status
 
     def CH341EppReadData(self, index=0, buffer=None, length=0):  # WR=1, DS=0, AS=1, D0-D7 in
-        self.CH341EPPRead(buffer, length, 0)
+        self.CH341EppRead(index, buffer, length, 0)
 
     def CH341EppReadAddr(self, index=0, buffer=None, length=0):  # WR=1, DS=0, AS=1 D0-D7 in
-        self.CH341EPPRead(buffer, length, 1)
+        self.CH341EppRead(index, buffer, length, 1)
 
     def CH341EppWriteData(self, index, buffer=None, length=0):  # WR=0, DS=0, AS=1, D0-D7 out
-        self.CH341EPPWrite(buffer, length, 0)
+        self.CH341EppWrite(index, buffer, length, 0)
 
     def CH341EppWriteAddr(self, index, buffer=None, length=0):  # WR=0, DS=1, AS=0, D0-D7 out
-        self.CH341EPPWrite(buffer, length, 1)
+        self.CH341EppWrite(index, buffer, length, 1)
 
 
 driver = CH341LibusbDriver()

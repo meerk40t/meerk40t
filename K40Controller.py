@@ -108,6 +108,8 @@ class K40Controller(Pipe):
     def __init__(self, kernel):
         Pipe.__init__(self, kernel)
         self.driver = None
+        self.driver_index = 0
+        self.driver_connected = False
         self.state = THREAD_STATE_UNSTARTED
 
         self.process_queue_pause = False
@@ -115,6 +117,7 @@ class K40Controller(Pipe):
         self.thread = None
 
         self.abort_waiting = False
+        self.status = [0] * 6
 
         kernel.setting(int, 'usb_index', -1)
         kernel.setting(int, 'usb_bus', -1)
@@ -173,13 +176,6 @@ class K40Controller(Pipe):
         kernel.add_thread("ControllerQueueThread", self.thread)
         self.set_usb_status("Uninitialized")
 
-    def __enter__(self):
-        self.open()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
     def __len__(self):
         return len(self.kernel._controller_buffer) + len(self.kernel._controller_queue)
 
@@ -192,6 +188,12 @@ class K40Controller(Pipe):
         if self.kernel.autostart_controller:
             self.start()
         return self
+
+    def open(self):
+        self.driver.CH341OpenDevice(self.driver_index)
+
+    def close(self):
+        self.driver.CH341CloseDevice(self.driver_index)
 
     def log(self, info):
         update = str(info) + '\n'
@@ -224,12 +226,12 @@ class K40Controller(Pipe):
 
     def abort(self):
         self.thread.state = THREAD_STATE_ABORT
-        packet = b'I' + b'F' * 29
-        if self.usb is not None:
-            try:
-                self.send_packet(packet)
-            except usb.core.USBError:
-                pass  # Emergency stop was a failure.
+        # packet = b'I' + b'F' * 29
+        # if self.usb is not None:
+        #     try:
+        #         self.send_packet(packet)
+        #     except usb.core.USBError:
+        #         pass  # Emergency stop was a failure.
         self.kernel._controller_buffer = b''
         self.kernel._controller_queue = b''
         self.kernel("buffer", len(self.kernel._controller_buffer))
@@ -244,11 +246,9 @@ class K40Controller(Pipe):
     def process_queue(self):
         if self.process_queue_pause:
             return False
-        if self.usb is None and not self.kernel.mock:
-            try:
-                self.open()
-            except usb.core.USBError:
-                return False
+
+        if not self.driver_connected and not self.kernel.mock:
+            self.open()
         wait_finish = False
         if len(self.kernel._controller_queue):
             self.queue_lock.acquire()
@@ -274,25 +274,25 @@ class K40Controller(Pipe):
                 wait_finish = True
             packet += b'F' * (30 - len(packet))
         # try to send packet
-        try:
-            self.wait(STATUS_OK)
-            if self.process_queue_pause:
-                return False  # Paused during wait.
-            if len(packet) == 30:
-                self.kernel._controller_buffer = self.kernel._controller_buffer[length:]
-                self.kernel("buffer", len(self.kernel._controller_buffer))
-            else:
-                return True  # No valid packet was able to be produced.
-            self.send_packet(packet)
-        except usb.core.USBError:
-            # Execution should have broken at wait. Therefore not corrupting packet. Failed a reconnect demand.
-            return False
+        self.wait(STATUS_OK)
+        if self.process_queue_pause:
+            return False  # Paused during wait.
+        if len(packet) == 30:
+            self.kernel._controller_buffer = self.kernel._controller_buffer[length:]
+            self.kernel("buffer", len(self.kernel._controller_buffer))
+        else:
+            return True  # No valid packet was able to be produced.
+        self.send_packet(packet)
+
         if wait_finish:
             self.wait(STATUS_FINISH)
         return False
 
     def send_packet(self, packet):
-        self.driver.CH341EPPWrite(0, packet, len(packet), 0)
+        if self.kernel.mock:
+            time.sleep(0.1)
+        else:
+            self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))
         self.kernel.packet_count += 1
         self.kernel("packet", packet)
         self.kernel("packet_text", packet)
@@ -308,22 +308,8 @@ class K40Controller(Pipe):
             self.status = [STATUS_OK] * 6
             time.sleep(0.01)
         else:
-            try:
-                self.usb.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
-            except usb.core.USBError as e:
-                self.log("Usb refused status check.")
-                while True:
-                    try:
-                        self.close()
-                        self.open()
-                    except usb.core.USBError:
-                        pass
-                    if self.usb is not None:
-                        break
-                # TODO: will sometimes crash here after failing to actually reclaim USB connection.
-                self.usb.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
-                self.log("Sending original status check.")
-            self.status = self.usb.read(BULK_READ_ENDPOINT, 6, 10000)
+            self.driver.CH341EppWriteData(self.driver_index, [160], 1)
+            self.driver.CH341EppReadData(self.driver_index, self.status, 6)
         self.kernel("status", self.status)
 
     def wait(self, value):
