@@ -1,7 +1,9 @@
+import ctypes
 import threading
 
+from CH341LibusbDriver import STATE_USB_CONNECTED
 from Kernel import *
-
+from ctypes import c_byte, c_int, c_void_p, byref
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -19,6 +21,19 @@ STATUS_POWER = 239
 # 255, 206, 111, 148, 19, 255
 # 255, 206, 111, 12, 18, 0
 
+
+
+def convert_to_list_bytes(data):
+    if isinstance(data, str):  # python 2
+        packet = [0] * 30
+        for i in range(0, 30):
+            packet[i] = ord(data[i])
+        return packet
+    else:
+        packet = [0] * 30
+        for i in range(0, 30):
+            packet[i] = data[i]
+        return packet
 
 def get_code_string_from_code(code):
     if code == STATUS_OK:
@@ -109,7 +124,6 @@ class K40Controller(Pipe):
         Pipe.__init__(self, kernel)
         self.driver = None
         self.driver_index = 0
-        self.driver_connected = False
         self.state = THREAD_STATE_UNSTARTED
 
         self.process_queue_pause = False
@@ -124,7 +138,6 @@ class K40Controller(Pipe):
         kernel.setting(int, 'usb_address', -1)
         kernel.setting(int, 'usb_serial', -1)
         kernel.setting(int, 'usb_chip_version', -1)
-        kernel.setting(int, 'ch341_driver', -1)
 
         kernel.setting(bool, 'mock', False)
         kernel.setting(int, 'packet_count', 0)
@@ -135,12 +148,19 @@ class K40Controller(Pipe):
         kernel.setting(str, "_controller_queue", b'')
         kernel.setting(str, "_usb_state", None)
         self.kernel = kernel
-        if kernel.ch341_driver != 1:
-            from CH341LibusbDriver import driver
-            self.driver = driver
-        elif kernel.ch341_driver == 1:
-            from CH341WindllDriver import driver
-            self.driver = driver
+        try:
+            from CH341LibusbDriver import CH341Driver
+            driver = CH341Driver(self.driver_index)
+            driver.open()
+            chip_version = driver.get_chip_version()
+            driver.close()
+        except: # Import Error (libusb isn't installed), ConnectionRefusedError (wrong driver)
+            from CH341WindllDriver import CH341Driver
+            driver = CH341Driver(self.driver_index)
+            driver.open()
+            chip_version = driver.get_chip_version()
+            driver.close()
+        self.driver = driver
         self.thread = ControllerQueueThread(self)
 
         def start_usb():
@@ -190,10 +210,10 @@ class K40Controller(Pipe):
         return self
 
     def open(self):
-        self.driver.CH341OpenDevice(self.driver_index)
+        self.driver.open()
 
     def close(self):
-        self.driver.CH341CloseDevice(self.driver_index)
+        self.driver.close()
 
     def log(self, info):
         update = str(info) + '\n'
@@ -246,9 +266,11 @@ class K40Controller(Pipe):
     def process_queue(self):
         if self.process_queue_pause:
             return False
-
-        if not self.driver_connected and not self.kernel.mock:
+        # if self.driver_index in  == STATE_USB_CONNECTED and not self.kernel.mock:
+        try:
             self.open()
+        except ConnectionRefusedError:
+            return True
         wait_finish = False
         if len(self.kernel._controller_queue):
             self.queue_lock.acquire()
@@ -292,7 +314,9 @@ class K40Controller(Pipe):
         if self.kernel.mock:
             time.sleep(0.1)
         else:
-            self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))
+            packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
+            self.driver.write(packet)
+
         self.kernel.packet_count += 1
         self.kernel("packet", packet)
         self.kernel("packet_text", packet)
@@ -308,8 +332,7 @@ class K40Controller(Pipe):
             self.status = [STATUS_OK] * 6
             time.sleep(0.01)
         else:
-            self.driver.CH341EppWriteData(self.driver_index, [160], 1)
-            self.driver.CH341EppReadData(self.driver_index, self.status, 6)
+            self.status = self.driver.get_status()
         self.kernel("status", self.status)
 
     def wait(self, value):

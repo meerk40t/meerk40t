@@ -124,13 +124,13 @@ class Navigation(wx.Frame):
         self.spin_pulse_time.SetValue(project.navigation_pulse)
 
     def home(self, evt):
-        self.project.spooler.home()
+        self.project.spooler.interpreter.home()
 
     def lock_rail(self, evt):
-        self.project.spooler.lock_rail()
+        self.project.spooler.interpreter.lock_rail()
 
     def unlock_rail(self, evt):
-        self.project.spooler.unlock_rail()
+        self.project.spooler.interpreter.unlock_rail()
 
     def fire_time(self, evt):
         value = self.spin_pulse_time.GetValue()
@@ -141,28 +141,27 @@ class Navigation(wx.Frame):
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, value
             yield COMMAND_LASER_OFF
-
-        self.project.execute("Spool", timed_fire)
+        self.project.spooler.send_job(timed_fire)
 
     def move_top(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.move_relative(0, -value)
+        self.project.spooler.interpreter.move_relative(0, -value)
 
     def move_left(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.move_relative(-value, 0)
+        self.project.spooler.interpreter.move_relative(-value, 0)
 
     def move_right(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.move_relative(value, 0)
+        self.project.spooler.interpreter.move_relative(value, 0)
 
     def move_bottom(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.move_relative(0, value)
+        self.project.spooler.interpreter.move_relative(0, value)
 
     def on_spin_step_size(self, event):  # wxGlade: Navigate.<event_handler>
         self.project.navigation_step = self.spin_step_size.GetValue()

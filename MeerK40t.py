@@ -655,8 +655,9 @@ class MeerK40t(wx.Frame):
         self.request_refresh_for_animation()
 
     def on_close(self, event):
-        if self.project.spooler.thread.state == THREAD_STATE_STARTED or \
-                self.project.controller.thread.state == THREAD_STATE_STARTED:
+        #TODO: This model is outdated for version 4.
+        if self.project.spooler.thread.state == THREAD_STATE_STARTED:
+                # self.project.controller.thread.state == THREAD_STATE_STARTED:
             dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
                                    _('Processes are still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
             result = dlg.ShowModal()
