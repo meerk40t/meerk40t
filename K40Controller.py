@@ -148,19 +148,7 @@ class K40Controller(Pipe):
         kernel.setting(str, "_controller_queue", b'')
         kernel.setting(str, "_usb_state", None)
         self.kernel = kernel
-        try:
-            from CH341LibusbDriver import CH341Driver
-            driver = CH341Driver(self.driver_index)
-            driver.open()
-            chip_version = driver.get_chip_version()
-            driver.close()
-        except: # Import Error (libusb isn't installed), ConnectionRefusedError (wrong driver)
-            from CH341WindllDriver import CH341Driver
-            driver = CH341Driver(self.driver_index)
-            driver.open()
-            chip_version = driver.get_chip_version()
-            driver.close()
-        self.driver = driver
+        self.driver = None
         self.thread = ControllerQueueThread(self)
 
         def start_usb():
@@ -209,7 +197,26 @@ class K40Controller(Pipe):
             self.start()
         return self
 
+    def detect_driver(self):
+        try:
+            from CH341LibusbDriver import CH341Driver
+            self.driver = driver = CH341Driver(self.driver_index)
+            driver.open()
+            chip_version = driver.get_chip_version()
+            driver.close()
+        except: # Import Error (libusb isn't installed), ConnectionRefusedError (wrong driver)
+            try:
+                from CH341WindllDriver import CH341Driver
+                self.driver = driver = CH341Driver(self.driver_index)
+                driver.open()
+                chip_version = driver.get_chip_version()
+                driver.close()
+            except:
+                self.driver = None
+
     def open(self):
+        if self.driver is None:
+            self.detect_driver()
         self.driver.open()
 
     def close(self):
