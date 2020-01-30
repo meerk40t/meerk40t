@@ -1,6 +1,8 @@
-from threading import *
-from LaserNode import LaserNode
 import time
+from threading import *
+
+from LaserNode import LaserNode
+from LaserOperation import *
 
 THREAD_STATE_UNKNOWN = -1
 THREAD_STATE_UNSTARTED = 0
@@ -93,6 +95,7 @@ class SpoolerThread(Thread):
     """
     SpoolerThread objects perform the spooler functions in an async manner.
     """
+
     def __init__(self, uid, kernel, spooler, interpreter):
         Thread.__init__(self)
         self.uid = uid
@@ -189,6 +192,7 @@ class Spooler:
     Given spoolable objects it uses an interpreter to convert these to code.
     The code is then written to a pipe. These operations occur in an async manner, with a registered thread.
     """
+
     def __init__(self, uid="spooler", kernel=None, interpreter=None):
         self.uid = uid
         self.kernel = kernel
@@ -197,7 +201,7 @@ class Spooler:
         self.queue_lock = Lock()
         self.queue = []
 
-        self.on_plot = None # Remove this, weird method.
+        self.on_plot = None  # Remove this, weird method.
 
     def peek(self):
         if len(self.queue) == 0:
@@ -252,6 +256,7 @@ class Interpreter:
     An Interpreter takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion.
     """
+
     def __init__(self, kernel=None, pipe=None):
         self.kernel = kernel
         self.pipe = pipe
@@ -274,6 +279,7 @@ class Pipe:
 
     Example pipes are mock, file, print, libusb-driver, and ch341-win.
     """
+
     def __init__(self, kernel):
         self.kernel = kernel
         self.buffer = b''
@@ -348,6 +354,7 @@ class Kernel:
     def __init__(self, config=None):
         self.spooler = None  # Class responsible for spooling commands
         self.elements = LaserNode(parent=self)
+        self.operations = []
 
         self.config = None
 
@@ -363,7 +370,6 @@ class Kernel:
         self.interpreters = {}
         self.pipes = {}
 
-        self.operations = []
         self.effects = []
 
         self.listeners = {}
@@ -374,6 +380,7 @@ class Kernel:
         self.run_later = lambda listener, message: listener(message)
 
         self.selected = None
+        self.selected_operation = None
         self.keymap = {}
 
         self.translation = lambda e: e  # Default for this code is do nothing.
@@ -679,7 +686,15 @@ class Kernel:
             pass
 
     def set_selected(self, selected):
-        self.selected = selected
+        """Sets the selected element. This could be a LaserOperation or a LaserNode."""
+        if selected is None:
+            self.selected = None
+            self.selected_operation = None
+        else:
+            if isinstance(selected, LaserNode):
+                self.selected = selected
+            else:
+                self.selected_operation = selected
         self("selection", self.selected)
 
     def notify_change(self):
@@ -692,12 +707,24 @@ class Kernel:
         for e in self.selected:
             e.move(dx, dy)
 
+    def classify(self, lasernode):
+        if lasernode is None:
+            return
+        for element in lasernode.flat_elements(types=('image', 'text', 'path')):
+            if element.type == 'image':
+                self.operations.append(RasterOperation(element.element))
+            elif element.type == 'path':
+                if element.stroke == "red":
+                    self.operations.append(CutOperation(element.element))
+                else:
+                    self.operations.append(EngraveOperation(element.element))
+
     def load(self, pathname, group=None):
         for loader_name, loader in self.loaders.items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    loader.load(pathname, group)
-                    return True
+                    return loader.load(pathname, group)
+        return None
 
     def load_types(self, all=True):
         filetypes = []
@@ -724,6 +751,7 @@ class Kernel:
                 if pathname.lower().endswith(extension):
                     saver.save(pathname, 'default')
                     return True
+        return False
 
     def save_types(self):
         filetypes = []

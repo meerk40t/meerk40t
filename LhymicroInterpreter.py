@@ -103,7 +103,7 @@ class LhymicroInterpreter(Interpreter):
         kernel.add_control("acceleration Breaks off", break_acceleration_inf)
 
     def emergency_stop(self):
-        self.command(COMMAND_EMERGENCY_STOP)
+        self.command(COMMAND_EMERGENCY_STOP, 0)
 
     def ungroup_plots(self, generate):
         current_x = None

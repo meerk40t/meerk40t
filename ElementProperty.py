@@ -1,5 +1,6 @@
 import wx
 
+from LaserNode import LaserNode
 from LaserRender import swizzlecolor
 from svgelements import *
 
@@ -60,24 +61,39 @@ class ElementProperty(wx.Frame):
         self.project.mark_window_closed("ElementProperty")
         event.Skip()  # Call destroy.
 
-    def set_elements(self, element):
-        self.element = element
-        self.text_name.SetValue(str(element))
-        if element.speed is not None:
-            self.spin_speed_set.SetValue(element.speed)
-        if element.power is not None:
-            self.spin_power_set.SetValue(element.power)
-        if element.dratio is not None:
-            self.spin_speed_dratio.SetValue(element.dratio)
-        if element.passes is not None:
-            self.spin_passes.SetValue(element.passes)
-        if element.raster_step is not None:
-            self.spin_step_size.SetValue(element.raster_step)
-        if element.raster_direction is not None:
-            self.combo_raster_direction.SetSelection(element.raster_direction)
-        if element.stroke is not None and element.stroke != "none":
-            color = wx.Colour(swizzlecolor(element.stroke))
-            self.text_name.SetBackgroundColour(color)
+    def set_elements(self, operation):
+        self.element = operation
+        self.text_name.SetValue(str(operation))
+        if operation.speed is not None:
+            self.spin_speed_set.SetValue(operation.speed)
+        if operation.power is not None:
+            self.spin_power_set.SetValue(operation.power)
+        try:
+            if operation.dratio is not None:
+                self.spin_speed_dratio.SetValue(operation.dratio)
+        except AttributeError:
+            self.spin_speed_set.Enable(False)
+        try:
+            if operation.passes is not None:
+                self.spin_passes.SetValue(operation.passes)
+        except AttributeError:
+            self.spin_passes.Enable(False)
+        try:
+            if operation.raster_step is not None:
+                self.spin_step_size.SetValue(operation.raster_step)
+        except AttributeError:
+            self.spin_step_size.Enable(False)
+        try:
+            if operation.raster_direction is not None:
+                self.combo_raster_direction.SetSelection(operation.raster_direction)
+        except AttributeError:
+            self.combo_raster_direction.Enable(False)
+        try:
+            if operation.stroke is not None and operation.stroke != "none":
+                color = wx.Colour(swizzlecolor(operation.stroke))
+                self.text_name.SetBackgroundColour(color)
+        except AttributeError:
+            pass
 
     def set_project(self, project):
         self.project = project
@@ -165,50 +181,91 @@ class ElementProperty(wx.Frame):
         # end wxGlade
 
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
-        self.element.name = self.text_name.GetValue()
-        if self.project is not None:
-            self.project("elements", 0)
+        try:
+            self.element.name = self.text_name.GetValue()
+            if self.project is not None:
+                self.project("elements", 0)
+        except AttributeError:
+            pass
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.element.flat_elements(passes=False):
-            e.speed = self.spin_speed_set.GetValue()
+        if isinstance(self.element, LaserNode):
+            for e in self.element.flat_elements(passes=False):
+                e.speed = self.spin_speed_set.GetValue()
+        else:
+            try:
+                self.element.speed = self.spin_speed_set.GetValue()
+            except AttributeError:
+                return
         if self.project is not None:
             self.project("elements", 0)
 
     def on_spin_power(self, event):
-        for e in self.element.flat_elements(passes=False):
-            e.power = self.spin_power_set.GetValue()
+        if isinstance(self.element, LaserNode):
+            for e in self.element.flat_elements(passes=False):
+                e.power = self.spin_power_set.GetValue()
+        else:
+            try:
+                self.element.power = self.spin_power_set.GetValue()
+            except AttributeError:
+                return
 
     def on_check_speed_dratio(self, event):
         self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue())
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.element.flat_elements(passes=False):
-            e.dratio = self.spin_speed_dratio.GetValue()
+        if isinstance(self.element, LaserNode):
+            for e in self.element.flat_elements(passes=False):
+                e.dratio = self.spin_speed_dratio.GetValue()
+        else:
+            try:
+                self.element.dratio = self.spin_speed_dratio.GetValue()
+            except AttributeError:
+                return
 
     def on_spin_passes(self, event):  # wxGlade: ElementProperty.<event_handler>
-        self.element.passes = self.spin_passes.GetValue()
-        if self.project is not None:
-            self.project("elements", 0)
+        try:
+            self.element.passes = self.spin_passes.GetValue()
+            if self.project is not None:
+                self.project("elements", 0)
+        except AttributeError:
+            return
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
-        for e in self.element.flat_elements(passes=False):
-            e.raster_step = self.spin_step_size.GetValue()
+        if isinstance(self.element, LaserNode):
+            for e in self.element.flat_elements(passes=False):
+                e.raster_step = self.spin_step_size.GetValue()
+        else:
+            try:
+                self.element.raster_step = self.spin_step_size.GetValue()
+            except AttributeError:
+                return
         if self.project is not None:
             self.project("elements", 0)
 
     def on_combobox_rasterdirection(self, event):  # wxGlade: Preferences.<event_handler>
-        for e in self.element.flat_elements(passes=False):
-            e.raster_direction = self.combo_raster_direction.GetSelection()
+        if isinstance(self.element, LaserNode):
+            for e in self.element.flat_elements(passes=False):
+                e.raster_direction = self.combo_raster_direction.GetSelection()
+        else:
+            try:
+                self.element.raster_direction = self.combo_raster_direction.GetSelection()
+            except AttributeError:
+                pass
 
     def on_button_color(self, event):  # wxGlade: ElementProperty.<event_handler>
         button = event.EventObject
         self.text_name.SetBackgroundColour(button.GetBackgroundColour())
         self.text_name.Refresh()
         color = swizzlecolor(button.GetBackgroundColour().GetRGB())
-
-        for e in self.element.flat_elements(passes=False):
-            e.stroke = Color(color)
+        if isinstance(self.element, LaserNode):
+            for e in self.element.flat_elements(passes=False):
+                e.stroke = Color(color)
+        else:
+            try:
+                self.element.stroke = Color(color)
+            except AttributeError:
+                return
         if self.project is not None:
             self.project("elements", 0)
 

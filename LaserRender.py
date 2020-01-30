@@ -3,6 +3,7 @@ from PIL import Image
 
 from LaserNode import *
 from ZMatrix import ZMatrix
+from LaserCommandConstants import *
 
 """
 Laser Render provides GUI relevant methods of displaying the given project nodes.
@@ -54,11 +55,21 @@ class LaserRender:
             except AttributeError:
                 pass  # This should not have happened.
 
+    def generate_path(self, path):
+        object_path = abs(path)
+        plot = object_path
+        first_point = plot.first_point
+        if first_point is None:
+            return
+        yield COMMAND_RAPID_MOVE, first_point
+        yield COMMAND_PLOT, plot
+
     def make_path(self, gc, element):
         p = gc.CreatePath()
         parse = LaserCommandPathParser(p)
+        path = element.element
 
-        for event in element.generate():
+        for event in self.generate_path(path):
             parse.command(event)
         return p
 

@@ -1,5 +1,4 @@
-from LaserCommandConstants import *
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
+
 from svgelements import *
 
 """
@@ -309,101 +308,6 @@ class LaserNode(list):
                 if self.scene_bounds is None:
                     return None
         return (self.scene_bounds[2] - self.scene_bounds[0]) / 2.0, (self.scene_bounds[3] - self.scene_bounds[1]) / 2.0
-
-    def generate(self):
-        if isinstance(self.element, SVGImage):
-            for g in self.generate_image():
-                yield g
-        elif isinstance(self.element, Path):
-            for g in self.generate_path():
-                yield g
-        elif isinstance(self.element, SVGText):
-            for g in self.generate_text():
-                yield g
-
-    def generate_text(self):
-        yield COMMAND_MODE_DEFAULT, 0
-
-    def generate_path(self):
-        object_path = abs(self.element)
-        yield COMMAND_SET_SPEED, self.speed
-        yield COMMAND_SET_POWER, self.power
-        yield COMMAND_SET_D_RATIO, self.dratio
-        plot = object_path
-        first_point = plot.first_point
-        if first_point is None:
-            return
-        yield COMMAND_RAPID_MOVE, first_point
-        yield COMMAND_SET_STEP, 0
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_PLOT, plot
-        yield COMMAND_MODE_DEFAULT, 0
-        yield COMMAND_SET_SPEED, None
-        yield COMMAND_SET_D_RATIO, None
-
-    def generate_image(self):
-        image = self.element.image
-        yield COMMAND_SET_SPEED, self.speed
-
-        direction = self.raster_direction
-        step = self.raster_step
-        yield COMMAND_SET_POWER, self.power
-
-        traverse = 0
-        if direction == 0:
-            yield COMMAND_SET_STEP, step
-            traverse |= X_AXIS
-            traverse |= TOP
-        elif direction == 1:
-            yield COMMAND_SET_STEP, step
-            traverse |= X_AXIS
-            traverse |= BOTTOM
-        width, height = image.size
-        mode = image.mode
-
-        if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
-            # Any mode without a filter should get converted.
-            image = self.element.image = image.convert("RGBA")
-            mode = image.mode
-        if mode == "1":
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-        elif mode == "P":
-            p = image.getpalette()
-
-            def image_filter(pixel):
-                v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-                return 1.0 - v / 765.0
-        elif mode == "L":
-            def image_filter(pixel):
-                return (255 - pixel) / 255.0
-        elif mode == "RGB":
-            def image_filter(pixel):
-                return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
-        elif mode == "RGBA":
-            def image_filter(pixel):
-                return (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
-        else:
-            raise ValueError  # this shouldn't happen.
-        m = self.transform
-        data = image.load()
-        overscan = self['overscan']
-        if overscan is None:
-            overscan = 20
-        else:
-            try:
-                overscan = int(overscan)
-            except ValueError:
-                overscan = 20
-        raster = RasterPlotter(data, width, height, traverse, 0, overscan,
-                               m.value_trans_x(),
-                               m.value_trans_y(),
-                               step, image_filter)
-        yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
-        yield COMMAND_SET_DIRECTION, raster.initial_direction()
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_RASTER, raster
-        yield COMMAND_MODE_DEFAULT, 0
 
     def insert_all(self, position, obj_list):
         """Group insert to trigger the notification only once."""

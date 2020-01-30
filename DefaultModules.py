@@ -152,6 +152,7 @@ class SVGLoader:
                 except OSError:
                     pass
         context.append_all(append_list)
+        return context
 
 
 class EgvLoader:
@@ -188,6 +189,7 @@ class EgvLoader:
                     context.append(element)
                     if 'speed' in event:
                         element['speed'] = event['speed']
+        return context
 
 
 class ImageLoader:
@@ -220,3 +222,4 @@ class ImageLoader:
             context.append(group)
         context = group
         context.append(element)
+        return context
