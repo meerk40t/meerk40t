@@ -1300,7 +1300,7 @@ class MeerK40t(wx.Frame):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
-            result = self.load_file(pathname)
+            result = project.load(pathname)
             self.project.classify(result)
 
     def on_click_save(self, event):
