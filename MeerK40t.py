@@ -1490,7 +1490,7 @@ class MeerK40t(wx.Frame):
         """
         window = self.project.open_window("JobInfo")
 
-        window.set_elements(project.operations)
+        window.set_elements(project.operations[:])
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
