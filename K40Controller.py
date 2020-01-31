@@ -1,9 +1,6 @@
-import ctypes
 import threading
 
-from CH341LibusbDriver import STATE_USB_CONNECTED
 from Kernel import *
-from ctypes import c_byte, c_int, c_void_p, byref
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -303,7 +300,7 @@ class K40Controller(Pipe):
                 wait_finish = True
             packet += b'F' * (30 - len(packet))
         # try to send packet
-        self.wait(STATUS_OK)
+        self.wait_ok()
         if self.process_queue_pause:
             return False  # Paused during wait.
         if len(packet) == 30:
@@ -314,7 +311,7 @@ class K40Controller(Pipe):
         self.send_packet(packet)
 
         if wait_finish:
-            self.wait(STATUS_FINISH)
+            self.wait_finished()
         return False
 
     def send_packet(self, packet):
@@ -342,20 +339,41 @@ class K40Controller(Pipe):
             self.status = self.driver.get_status()
         self.kernel("status", self.status)
 
-    def wait(self, value):
+    def wait_ok(self):
         i = 0
         while True:
             self.update_status()
             if self.kernel.mock:  # Mock controller
-                self.status = [value] * 6
+                self.status = [STATUS_OK] * 6
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
                 self.kernel.rejected_count += 1
-            if status == value:
+            if status == STATUS_OK:
                 break
             time.sleep(0.1)
-            self.kernel("wait", (value, i))
+            self.kernel("wait", (STATUS_OK, i))
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
                 return  # Wait abort was requested.
+
+    def wait_finished(self):
+        i = 0
+        while True:
+            self.update_status()
+            if self.kernel.mock:  # Mock controller
+                self.status = [STATUS_FINISH] * 6
+            status = self.status[1]
+            if status == STATUS_PACKET_REJECTED:
+                self.kernel.rejected_count += 1
+            if status & 0x02 == 0:
+                # StateBitPEMP = 0x00000200
+                # 0xEC, 11101100
+                break
+            time.sleep(0.1)
+            self.kernel("wait", (status, i))
+            i += 1
+            if self.abort_waiting:
+                self.abort_waiting = False
+                return  # Wait abort was requested.
+

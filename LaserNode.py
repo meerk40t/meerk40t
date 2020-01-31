@@ -53,29 +53,29 @@ class LaserNode(list):
             self.element = element
         else:
             self.element = SVGElement()
-        if self.speed is not None:
-            self.speed = float(self.speed)
-        else:
-            if isinstance(element, SVGImage):
-                self.speed = 150.0
-            else:
-                self.speed = 20.0
-        if self.passes is not None:
-            self.passes = int(self.passes)
-        else:
-            self.passes = 1
-        if self.power is not None:
-            self.power = float(self.power)
-        else:
-            self.power = 1000.0
-        if self.raster_step is not None:
-            self.raster_step = int(self.raster_step)
-        else:
-            self.raster_step = 1
-        if self.raster_direction is not None:
-            self.raster_direction = int(self.raster_direction)
-        else:
-            self.raster_direction = 0
+        # if self.speed is not None:
+        #     self.speed = float(self.speed)
+        # else:
+        #     if isinstance(element, SVGImage):
+        #         self.speed = 150.0
+        #     else:
+        #         self.speed = 20.0
+        # if self.passes is not None:
+        #     self.passes = int(self.passes)
+        # else:
+        #     self.passes = 1
+        # if self.power is not None:
+        #     self.power = float(self.power)
+        # else:
+        #     self.power = 1000.0
+        # if self.raster_step is not None:
+        #     self.raster_step = int(self.raster_step)
+        # else:
+        #     self.raster_step = 1
+        # if self.raster_direction is not None:
+        #     self.raster_direction = int(self.raster_direction)
+        # else:
+        #     self.raster_direction = 0
 
         if self.stroke is None or self.stroke == 'none':
             if isinstance(element, SVGElement):

@@ -16,11 +16,22 @@ class LaserOperation(list):
     Laser operations are a type of list and should contain SVGElement based objects
     """
 
-    def __init__(self):
+    def __init__(self, obj):
         list.__init__(self)
-        self.speed = 20.0
-        self.power = 1000.0
-        self.dratio = None
+        speed = 20
+        if 'speed' in obj.values and obj.values['speed'] is not None:
+            speed = float(obj.values['speed'])
+        self.speed = speed
+
+        power = 1000
+        if 'power' in obj.values and obj.values['power'] is not None:
+            power = int(obj.values['power'])
+        self.power = power
+
+        dratio = None
+        if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
+            dratio = float(obj.values['d_ratio'])
+        self.dratio = dratio
 
     def __str__(self):
         parts = []
@@ -37,12 +48,27 @@ class RasterOperation(LaserOperation):
     """
 
     def __init__(self, image=None):
-        LaserOperation.__init__(self)
-        self.speed = 150.0
-        self.raster_step = 1
-        self.raster_direction = 0
-        self.unidirectional = False
-        self.overscan = 20
+        LaserOperation.__init__(self, image)
+        speed = 150.0
+        if 'speed' in image.values and image.values['speed'] is not None:
+            speed = float(image.values['speed'])
+        self.speed = speed
+        raster_step = 1
+        if 'raster_step' in image.values and image.values['raster_step'] is not None:
+            raster_step = int(image.values['raster_step'])
+        self.raster_step = raster_step
+        raster_direction = 0
+        if 'raster_direction' in image.values and image.values['raster_direction'] is not None:
+            raster_direction = int(image.values['raster_direction'])
+        self.raster_direction = raster_direction
+        unidirectional = False
+        if 'unidirectional' in image.values and image.values['unidirectional'] is not None:
+            unidirectional = bool(image.values['unidirectional'])
+        self.unidirectional = unidirectional
+        overscan = 20
+        if 'overscan' in image.values and image.values['overscan'] is not None:
+            overscan = int(image.values['overscan'])
+        self.overscan = overscan
         if image is not None:
             self.append(image)
 
@@ -128,10 +154,14 @@ class EngraveOperation(LaserOperation):
     """
 
     def __init__(self, path=None):
-        LaserOperation.__init__(self)
-        self.speed = 35.0
+        LaserOperation.__init__(self, path)
+
+        speed = 35.0
         if path is not None:
+            if path.values['speed'] is not None:
+                speed = float(path.values['speed'])
             self.append(path)
+        self.speed = speed
 
     def __str__(self):
         parts = []
@@ -161,7 +191,11 @@ class EngraveOperation(LaserOperation):
 class CutOperation(EngraveOperation):
     def __init__(self, path=None):
         EngraveOperation.__init__(self, path=path)
-        self.speed = 10.0
+        speed = 10.0
+        if path is not None:
+            if path.values['speed'] is not None:
+                speed = float(path.values['speed'])
+        self.speed = speed
 
     def __str__(self):
         parts = []
