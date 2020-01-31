@@ -158,7 +158,7 @@ class EngraveOperation(LaserOperation):
 
         speed = 35.0
         if path is not None:
-            if path.values['speed'] is not None:
+            if 'speed' in path.values and path.values['speed'] is not None:
                 speed = float(path.values['speed'])
             self.append(path)
         self.speed = speed
@@ -193,7 +193,7 @@ class CutOperation(EngraveOperation):
         EngraveOperation.__init__(self, path=path)
         speed = 10.0
         if path is not None:
-            if path.values['speed'] is not None:
+            if 'speed' in path.values and path.values['speed'] is not None:
                 speed = float(path.values['speed'])
         self.speed = speed
 

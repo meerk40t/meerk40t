@@ -53,27 +53,27 @@ class LaserNode(list):
             self.element = element
         else:
             self.element = SVGElement()
-        # if self.speed is not None:
-        #     self.speed = float(self.speed)
+        if self.speed is not None:
+            self.speed = float(self.speed)
         # else:
         #     if isinstance(element, SVGImage):
         #         self.speed = 150.0
         #     else:
         #         self.speed = 20.0
-        # if self.passes is not None:
-        #     self.passes = int(self.passes)
+        if self.passes is not None:
+            self.passes = int(self.passes)
         # else:
         #     self.passes = 1
-        # if self.power is not None:
-        #     self.power = float(self.power)
+        if self.power is not None:
+            self.power = float(self.power)
         # else:
         #     self.power = 1000.0
-        # if self.raster_step is not None:
-        #     self.raster_step = int(self.raster_step)
+        if self.raster_step is not None:
+            self.raster_step = int(self.raster_step)
         # else:
         #     self.raster_step = 1
-        # if self.raster_direction is not None:
-        #     self.raster_direction = int(self.raster_direction)
+        if self.raster_direction is not None:
+            self.raster_direction = int(self.raster_direction)
         # else:
         #     self.raster_direction = 0
 
@@ -121,46 +121,45 @@ class LaserNode(list):
             return name
         if self.parent is None or not isinstance(self.parent, LaserNode):
             return "Project"
+        type_name = "Unknown"
+        parts = []
+        if self.passes is not None and self.passes != 1:
+            parts.append("pass: %d" % int(self.passes))
+        if self.speed is not None:
+            parts.append("@%.1fmm/s" % float(self.speed))
+        if self.power is not None:
+            parts.append("%d ppi" % int(self.power))
         if len(self) != 0:
-            name = "Group"
-            if self.element is not None:
-                return "%d pass, %s" % (self.passes, name)
-            return name
+            type_name = "Group"
         if isinstance(self.element, SVGImage):
-            id = self.id
-            if id is None:
-                id = "Image"
-            else:
-                id = str(id)
+            type_name = "Image"
             wi = self.element.image_width
             hi = self.element.image_height
             bbox = self.element.bbox()
             wr = bbox[2] - bbox[1]
             hr = bbox[3] - bbox[0]
             m = self.transform
-            s = self.raster_step
-            if m.a == s and m.b == 0.0 and m.c == 0.0 and m.d == s:
-                return "%s %dx%d %d@%3f" % (id, wi, hi, self.raster_step, self.speed)
+            parts.append("(%d x %d)" % (wi, hi))
+
+            if self.raster_step is not None:
+                parts.append("step: %d" % self.raster_step)
+                s = self.raster_step
             else:
-                return "*** %s (%dx%d) -> (%dx%d) %d@%3f" % (id, wi, hi, wr, hr, self.raster_step, self.speed)
-        if isinstance(self.element, SVGText):
-            string = "NOT IMPLEMENTED: \"%s\"" % (self.element.text)
-            if len(string) < 100:
-                return string
-            return string[:97] + '...'
-        if isinstance(self.element, Path):
-            try:
-                h = str(hash(self.element.d()))
-            except TypeError:
-                h = "None"
-            name = "Path @%.1f mm/s %.1fx path=%s" % \
-                   (self.speed,
-                    self.element.transform.value_scale_x(),
-                    h)
-            if len(name) >= 100:
-                name = name[:97] + '...'
-            return name
-        return 'unknown'
+                s = 1.0
+            if m.a == s and m.b == 0.0 and m.c == 0.0 and m.d == s:
+                pass
+            else:
+                parts.append("(%d x %d)" % (wr, hr))
+        elif isinstance(self.element, SVGText):
+            type_name = "Text"
+            parts.append("(Not Implemented)")
+            parts.append("\"%s\"" % self.element.text)
+        elif isinstance(self.element, Path):
+            type_name = "Path"
+            parts.append(str(self.element.first_point))
+            if self.element.transform.value_scale_x() != 1.0:
+                parts.append("1:%.1f" % self.element.transform.value_scale_x())
+        return "%s (%s)" % (type_name, " ".join(parts))
 
     @property
     def type(self):
@@ -374,7 +373,7 @@ class LaserNode(list):
         if types is None:
             types = ('image', 'path', 'text')
         pass_count = self.passes
-        if not passes:
+        if not passes or pass_count is None:
             pass_count = 1
         for i in range(0, pass_count):
             if self.type in (types):

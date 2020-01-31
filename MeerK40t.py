@@ -643,10 +643,11 @@ class MeerK40t(wx.Frame):
             item = tree.AppendItem(node, str(element))
             tree.SetItemData(item, element)
         elif isinstance(element, LaserNode):
-            if element.passes == 1:
+            if element.passes == 1 or element.passes is None:
                 item = tree.AppendItem(node, str(element))
             else:
-                item = tree.AppendItem(node, "%d pass, %s" % (element.passes, str(element)))
+                print(element.passes)
+                item = tree.AppendItem(node, "%s pass, %s" % (str(element.passes), str(element)))
             tree.SetItemData(item, element)
             try:
                 tree.SetItemBackgroundColour(item, wx.Colour(swizzlecolor(element.fill)))
