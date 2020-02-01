@@ -697,19 +697,25 @@ class Kernel:
     def remove_thread(self, thread_name):
         del self.threads[thread_name]
 
-    def get_state_string_from_state(self, state):
+    def get_text_thread_state(self, state):
+        _ = self.translation
         if state == THREAD_STATE_UNSTARTED:
-            return "Unstarted"
+            return _("Unstarted")
         elif state == THREAD_STATE_ABORT:
-            return "Aborted"
+            return _("Aborted")
         elif state == THREAD_STATE_FINISHED:
-            return "Finished"
+            return _("Finished")
         elif state == THREAD_STATE_PAUSED:
-            return "Paused"
+            return _("Paused")
         elif state == THREAD_STATE_STARTED:
-            return "Started"
+            return _("Started")
         elif state == THREAD_STATE_UNKNOWN:
-            return "Unknown"
+            return _("Unknown")
+
+    def get_text_usb_state(self, state):
+        _ = self.translation
+        return ''
+        # TODO: process states here.
 
     def get_state(self, thread_name):
         try:

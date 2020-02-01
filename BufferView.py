@@ -6,7 +6,7 @@ _ = wx.GetTranslation
 class BufferView(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: BufferView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((697, 584))
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")

@@ -1,4 +1,5 @@
 from ctypes import *
+from CH341DriverBase import *
 
 # MIT License.
 
@@ -7,29 +8,47 @@ class CH341Driver:
     """
     This is basic interface code for a CH341 to be run in EPP 1.9 mode.
     """
-    def __init__(self, driver_index):
+    def __init__(self, driver_index, state_listener=None):
+        if state_listener is None:
+            self.state_listener = lambda code: None  # Code, Name, Message
+        else:
+            self.state_listener = state_listener
         self.driver = windll.LoadLibrary("CH341DLL.dll")
         self.driver_index = driver_index
         self.driver_value = None
+        self.state = None
+
+    def set_status(self, code):
+        self.state_listener(code)
+        self.state = code
 
     def open(self):
         """
         Opens the driver for the stated device number.
         """
         if self.driver_value is None:
+            self.set_status(STATE_DRIVER_CH341)
+            self.set_status(STATE_CONNECTING)
             val = self.driver.CH341OpenDevice(self.driver_index)
             self.driver_value = val
             if val == -1:
+                self.set_status(STATE_CONNECTION_FAILED)
                 return -1
+            self.set_status(STATE_USB_CONNECTED)
+            self.set_status(STATE_CH341_PARAMODE)
             self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
+            self.set_status(STATE_CONNECTED)
 
     def close(self):
         """
         Closes the driver for the stated device index.
         """
+        self.set_status(STATE_USB_SET_DISCONNECTING)
         if self.driver_value == -1:
+            self.set_status(STATE_USB_RESET_FAIL)
             raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
+        self.set_status(STATE_USB_DISCONNECTED)
         self.driver_value = None
 
     def write(self, packet):

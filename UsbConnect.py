@@ -15,50 +15,41 @@ class UsbConnect(wx.Frame):
         self.__do_layout()
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.project = None
-        self.dirty = False
-        self.append_text = ""
+        self.kernel = None
+        self.uid = None
 
-    def set_kernel(self, project):
-        self.project = project
-        self.project.setting(str, "_device_log", '')
-        self.usblog_text.SetValue(self.project._device_log)
-
-        self.project.listen("usb_log", self.update_log)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        try:
+            backend = self.kernel.backend
+            self.uid = backend.uid
+            self.kernel.listen("%s;pipe;device_log" % self.uid, self.update_log)
+        except AttributeError:
+            pass
 
     def on_close(self, event):
-        self.project.unlisten("usb_log", self.update_log)
-        self.project.mark_window_closed("UsbConnect")
+        self.kernel.unlisten("%s;pipe;device_log" % self.uid, self.update_log)
+        self.kernel.mark_window_closed("UsbConnect")
         event.Skip()  # Call destroy as regular.
 
     def update_log(self, text):
-        self.append_text += text
         self.post_update()
 
-    def post_update_on_gui_thread(self):
-        if self.project is None:
+    def post_update(self):
+        if self.kernel is None:
             return
         try:
-            self.usblog_text.AppendText(self.append_text)
-            self.append_text = ""
-        except RuntimeError:
-            self.project.unlisten("usb_log", self.update_log)
-        self.dirty = False
-
-    def post_update(self):
-        if not self.dirty:
-            self.dirty = True
-            wx.CallAfter(self.post_update_on_gui_thread)
+            backend = self.kernel.backend
+            self.usblog_text.SetValue(backend.device_log)
+            self.usblog_text.AppendText("\n")
+        except AttributeError:
+            return
 
     def __set_properties(self):
-        # begin wxGlade: UsbConnect.__set_properties
         self.SetTitle(_("UsbConnect"))
-        # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: UsbConnect.__do_layout
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
         sizer_2.Add(self.usblog_text, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_2)
         self.Layout()
-        # end wxGlade

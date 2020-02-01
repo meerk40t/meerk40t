@@ -1,6 +1,7 @@
 import threading
 
 from Kernel import *
+from CH341DriverBase import *
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -205,21 +206,31 @@ class K40Controller(Pipe):
         """Must write directly to the controller without delay."""
         pass
 
+    def state_listener(self, code):
+        if isinstance(code, int):
+            self.log(get_name_for_status(code))
+            self.backend.signal("pipe;usb_state", code)
+        else:
+            self.log(str(code))
+
+
     def detect_driver(self):
         # TODO: Match the specific requirements of the backend driver protocol.
         # If you match more than one device. You should connect to the one that lets you connect.
         try:
             from CH341LibusbDriver import CH341Driver
-            self.driver = driver = CH341Driver(self.driver_index)
+            self.driver = driver = CH341Driver(self.driver_index, state_listener=self.state_listener)
             driver.open()
             chip_version = driver.get_chip_version()
+            self.backend.signal("pipe;chipv", chip_version)
             driver.close()
         except: # Import Error (libusb isn't installed), ConnectionRefusedError (wrong driver)
             try:
                 from CH341WindllDriver import CH341Driver
-                self.driver = driver = CH341Driver(self.driver_index)
+                self.driver = driver = CH341Driver(self.driver_index, state_listener=self.state_listener)
                 driver.open()
                 chip_version = driver.get_chip_version()
+                self.backend.signal("pipe;chipv", chip_version)
                 driver.close()
             except:
                 self.driver = None
@@ -227,6 +238,7 @@ class K40Controller(Pipe):
     def log(self, info):
         update = str(info) + '\n'
         self.backend.log(update)
+        self.backend.signal("pipe;device_log", update)
 
     def state(self):
         return self.thread.state

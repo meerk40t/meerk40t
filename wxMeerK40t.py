@@ -11,7 +11,6 @@ import wx.ribbon as RB
 
 from Alignment import Alignment
 from BufferView import BufferView
-from ColorDefine import ColorDefine
 from Controller import Controller
 from DefaultModules import *
 from ElementProperty import ElementProperty
@@ -254,7 +253,6 @@ class MeerK40t(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
-        # self.Bind(wx.EVT_MENU, self.open_colordefine, id=ID_MENU_COLORDEFINE)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_rotary, id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
@@ -614,11 +612,7 @@ class MeerK40t(wx.Frame):
             item = tree.AppendItem(node, str(element))
             tree.SetItemData(item, element)
         elif isinstance(element, LaserNode):
-            if element.passes == 1 or element.passes is None:
-                item = tree.AppendItem(node, str(element))
-            else:
-                print(element.passes)
-                item = tree.AppendItem(node, "%s pass, %s" % (str(element.passes), str(element)))
+            item = tree.AppendItem(node, str(element))
             tree.SetItemData(item, element)
             try:
                 tree.SetItemBackgroundColour(item, wx.Colour(swizzlecolor(element.fill)))
@@ -669,10 +663,10 @@ class MeerK40t(wx.Frame):
         self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
 
     def on_control_state(self, value):
-        self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_state_string_from_state(value)), 1)
+        self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_text_thread_state(value)), 1)
 
     def on_writer_state(self, value):
-        self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_state_string_from_state(value)), 2)
+        self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_text_thread_state(value)), 2)
 
     def on_writer_mode(self, state):
         if state == 0:
@@ -694,7 +688,7 @@ class MeerK40t(wx.Frame):
 
     def unlisten_backend(self):
         if self.backend_listening is None:
-            return # Can't unlisten to nothing, ---
+            return  # Can't unlisten to nothing, ---
         backend = self.backend_listening
         uid = backend.uid
         self.kernel.unlisten("%s;pipe;usb" % uid, self.on_usb_status)
@@ -718,8 +712,6 @@ class MeerK40t(wx.Frame):
         self.kernel.unlisten("bed_size", self.bed_changed)
 
     def on_close(self, event):
-        # TODO: This model is outdated for version 4.
-        # There could be several backends that are equally running.
         for name, backend in self.kernel.backends.items():
             if backend.spooler.thread.state == THREAD_STATE_STARTED or backend.pipe.thread.state == THREAD_STATE_STARTED:
                 uid = backend.uid
@@ -1549,7 +1541,6 @@ class MeerK40t(wx.Frame):
 
         return update_language
 
-
     def create_menu(self, element):
         """Create menu items. This is used for both the scene and the tree to create menu items."""
         if element is None:
@@ -1574,25 +1565,30 @@ class MeerK40t(wx.Frame):
                     if element.passes != 1:
                         gui.Bind(wx.EVT_MENU, self.menu_split_passes(element),
                                  menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_hull(element), menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_execute(element), menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_hull(element),
+                         menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_execute(element),
+                         menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_reset(element),
                          menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
                 path_scale_sub_menu = wx.Menu()
                 for i in range(1, 25):
                     gui.Bind(wx.EVT_MENU, self.menu_scale(element, 6.0 / float(i)),
-                             path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "", wx.ITEM_NORMAL))
+                             path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                                                        wx.ITEM_NORMAL))
                 menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
                 path_rotate_sub_menu = wx.Menu()
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(element, 1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)), "",
+                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                                                         "",
                                                          wx.ITEM_NORMAL))
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(element, -1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                             path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                         _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
                                                          wx.ITEM_NORMAL))
                 menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
             if element.contains_type('path'):
@@ -1648,7 +1644,6 @@ class MeerK40t(wx.Frame):
 
         return specific
 
-
     def menu_step(self, element, step_value):
         """
         Change raster step values of subelements.
@@ -1669,7 +1664,6 @@ class MeerK40t(wx.Frame):
 
         return specific
 
-
     def menu_raster_actualize(self, element):
         """
         Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
@@ -1684,7 +1678,6 @@ class MeerK40t(wx.Frame):
             self.kernel(_("elements"), 0)
 
         return specific
-
 
     def menu_raster_native(self, element):
         """
@@ -1701,7 +1694,6 @@ class MeerK40t(wx.Frame):
 
         return specific
 
-
     def menu_dither(self, element):
         """
         Change raster dither forcing raster elements to 1 bit.
@@ -1717,7 +1709,6 @@ class MeerK40t(wx.Frame):
             self.kernel("elements", 0)
 
         return specific
-
 
     def menu_raster(self, element):
         """
@@ -1829,7 +1820,7 @@ class MeerK40t(wx.Frame):
         else:
             def delete_element(event):
                 self.kernel.operations.remove(element)
-                self.kernel("elements",0)
+                self.kernel("elements", 0)
 
         return delete_element
 
@@ -1896,7 +1887,6 @@ class MeerK40t(wx.Frame):
 
         return open_jobinfo_window
 
-
     def get_convex_hull(self, element):
         """
         Processing function for menu_hull(element) to return the hull points.
@@ -1916,7 +1906,6 @@ class MeerK40t(wx.Frame):
         if len(hull) == 0:
             return None
         return hull
-
 
     def menu_hull(self, element):
         """
@@ -1939,7 +1928,6 @@ class MeerK40t(wx.Frame):
             self.kernel.set_selected(None)
 
         return convex_hull
-
 
     def menu_reverse_order(self, element):
         """
@@ -1977,7 +1965,7 @@ class wxMeerK40t(Module, wx.App):
     """
 
     def __init__(self):
-        wx.App.__init__(self,0)
+        wx.App.__init__(self, 0)
         Module.__init__(self)
         self.locale = None
         self.kernel = None
@@ -1986,7 +1974,7 @@ class wxMeerK40t(Module, wx.App):
         return True
 
     def initialize(self, kernel, name=None):
-        kernel.setting(wx.App, 'gui', self) # Registers self as kernel.gui
+        kernel.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
         kernel.add_window("MeerK40t", MeerK40t)
         self.kernel = kernel
         _ = wx.GetTranslation
@@ -2004,7 +1992,6 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)
         kernel.add_window("Keymap", Keymap)
-        kernel.add_window("ColorDefine", ColorDefine)
         kernel.add_window("UsbConnect", UsbConnect)
         kernel.add_window("Navigation", Navigation)
         kernel.add_window("Controller", Controller)
@@ -2043,5 +2030,6 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
     dlg.ShowModal()
     dlg.Destroy()
+
 
 sys.excepthook = handleGUIException

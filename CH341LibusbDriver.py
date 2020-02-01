@@ -1,5 +1,6 @@
 import usb.core
 import usb.util
+from CH341DriverBase import *
 
 STATUS_NO_DEVICE = -1
 USB_LOCK_VENDOR = 0x1a86  # Dev : (1a86) QinHeng Electronics
@@ -24,50 +25,6 @@ mCH341A_BUF_CLEAR = 0xB2
 mCH341A_DELAY_MS = 0x5E
 mCH341A_GET_VER = 0x5F
 
-STATE_UNINITIALIZED = -1
-STATE_CONNECTING = 0
-STATE_DRIVER_FINDING_DEVICES = 10
-STATE_DRIVER_NO_BACKEND = 20
-STATE_DEVICE_FOUND = 30
-STATE_DEVICE_NOT_FOUND = 50
-STATE_DEVICE_REJECTED = 60
-
-STATE_USB_SET_CONFIG = 100
-STATE_USB_DETACH_KERNEL = 200
-STATE_USB_DETACH_KERNEL_SUCCESS = 210
-STATE_USB_DETACH_KERNEL_FAIL = 220
-STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED = 230
-
-STATE_USB_CLAIM_INTERFACE = 300
-STATE_USB_CLAIM_INTERFACE_SUCCESS = 310
-STATE_USB_CLAIM_INTERFACE_FAIL = 320
-
-STATE_USB_CONNECTED = 400
-STATE_CH431_PARAMODE = 160
-
-STATE_CONNECTED = 600
-
-STATE_USB_SET_DISCONNECTING = 1000
-STATE_USB_ATTACH_KERNEL = 1100
-STATE_USB_ATTACH_KERNEL_SUCCESS = 1110
-STATE_USB_ATTACH_KERNEL_FAIL = 1120
-STATE_USB_RELEASE_INTERFACE = 1200
-STATE_USB_RELEASE_INTERFACE_SUCCESS = 1210
-STATE_USB_RELEASE_INTERFACE_FAIL = 1220
-
-STATE_USB_DISPOSING_RESOURCES = 1200
-STATE_USB_RESET = 1400
-STATE_USB_RESET_SUCCESS = 1410
-STATE_USB_RESET_FAIL = 1420
-STATE_USB_DISCONNECTED = 1500
-
-
-def convert_to_list_bytes(data):
-    if isinstance(data, str):  # python 2
-        return [ord(e) for e in data]
-    else:
-        return [e for e in data]
-
 
 class CH341LibusbDriver:
     """
@@ -86,69 +43,19 @@ class CH341LibusbDriver:
     connection to use for each command.
     """
 
-    def __init__(self):
+    def __init__(self, state_listener=None):
         self.devices = {}
         self.interface = {}
-        self.signal = lambda e, f: e  # Nullop.
+        if state_listener is None:
+            self.state_listener = lambda code: None  # Code, Name, Message
+        else:
+            self.state_listener = state_listener
         self.state = None
 
-    def set_status(self, code, obj=None):
-        message = None
-        if code == STATE_CONNECTING:
-            message = "Attempting connection to USB."
-        elif code == STATE_DRIVER_NO_BACKEND:
-            message = "PyUsb detected no backend LibUSB driver."
-        elif code == STATE_DEVICE_FOUND:
-            message = "K40 device detected:\n%s\n" % str(obj)
-        elif code == STATE_DEVICE_NOT_FOUND:
-            message = "Not Found"
-        elif code == STATE_DEVICE_REJECTED:
-            message = "K40 devices were found but they were rejected."
-        elif code == STATE_USB_SET_CONFIG:
-            message = "Config Set"
-        elif code == STATE_USB_DETACH_KERNEL:
-            message = "Attempting to detach kernel."
-        elif code == STATE_USB_DETACH_KERNEL_SUCCESS:
-            message = "Kernel detach: Success."
-        elif code == STATE_USB_DETACH_KERNEL_FAIL:
-            message = "Kernel detach: Failed."
-        elif code == STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED:
-            message = "Kernel detach: Not Implemented."
-        elif code == STATE_USB_CLAIM_INTERFACE:
-            message = "Attempting to claim interface."
-        elif code == STATE_USB_CLAIM_INTERFACE_SUCCESS:
-            message = "Interface claim: Success"
-        elif code == STATE_USB_CLAIM_INTERFACE_FAIL:
-            message = "Interface claim: Fail"
-        elif code == STATE_USB_CONNECTED:
-            message = "USB Connected"
-        elif code == STATE_USB_SET_DISCONNECTING:
-            message = "Attempting disconnection from USB."
-        elif code == STATE_USB_ATTACH_KERNEL:
-            message = "Attempting kernel attach"
-        elif code == STATE_USB_ATTACH_KERNEL_SUCCESS:
-            message = "Kernel attach: Success."
-        elif code == STATE_USB_ATTACH_KERNEL_FAIL:
-            message = "Kernel attach: Fail."
-        elif code == STATE_USB_RELEASE_INTERFACE:
-            message = "Attempting to release interface."
-        elif code == STATE_USB_RELEASE_INTERFACE_SUCCESS:
-            message = "Interface released"
-        elif code == STATE_USB_RELEASE_INTERFACE_FAIL:
-            message = "Interface did not exist."
-        elif code == STATE_USB_DISPOSING_RESOURCES:
-            message = "Attempting to dispose resources."
-        elif code == STATE_USB_RESET:
-            message = "Attempting USB reset."
-        elif code == STATE_USB_RESET_FAIL:
-            message = "USB connection did not exist."
-        elif code == STATE_USB_RESET_SUCCESS:
-            message = "USB connection reset."
-        elif code == STATE_USB_DISCONNECTED:
-            message = "USB Disconnection Successful."
-        self.signal('usb_log', message)
-        self.signal('usb_state', code)
-        self.state = code
+    def set_status(self, code):
+        self.state_listener(code)
+        if isinstance(code, int):
+            self.state = code
 
     def choose_device(self, devices, index):
         """
@@ -181,17 +88,19 @@ class CH341LibusbDriver:
         #         self.usb = d[self.kernel.usb_index]
 
     def connect_find(self, index=0):
+        self.set_status(STATE_DRIVER_LIBUSB)
         try:
+            self.set_status(STATE_DRIVER_FINDING_DEVICES)
             devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
         except usb.core.NoBackendError:
             self.set_status(STATE_DRIVER_NO_BACKEND)
             raise ConnectionError
-        self.set_status(STATE_DRIVER_FINDING_DEVICES)
         devices = [d for d in devices]
         if len(devices) == 0:
             self.set_status(STATE_DEVICE_NOT_FOUND)
             raise ConnectionError
-        self.set_status(STATE_DEVICE_FOUND, devices)
+        self.set_status(STATE_DEVICE_FOUND)
+        self.set_status(devices)
         device = self.choose_device(devices, index)
         if device is None:
             self.set_status(STATE_DEVICE_REJECTED)
@@ -278,6 +187,7 @@ class CH341LibusbDriver:
             self.set_status(STATE_USB_CONNECTED)
             return index
         except ConnectionError:
+            self.set_status(STATE_CONNECTION_FAILED)
             return -1
 
     def CH341CloseDevice(self, index=0):
@@ -376,8 +286,8 @@ class CH341LibusbDriver:
 
 
 class CH341Driver:
-    def __init__(self, driver_index):
-        self.driver = CH341LibusbDriver()
+    def __init__(self, driver_index, state_listener=None):
+        self.driver = CH341LibusbDriver(state_listener=state_listener)
         self.driver_index = driver_index
         self.driver_value = None
 

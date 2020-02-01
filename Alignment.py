@@ -198,7 +198,6 @@ class Alignment(wx.Frame):
         self.button_square_align_4_corner.Enable(self.check_horizontal_done.GetValue())
 
     def on_slider_square_power_change(self, event):  # wxGlade: Alignment.<event_handler>
-        #TODO: This directly references the current spooler.
         spooler = self.project.backend.spooler
         spooler.set_power(self.slider_square_power.GetValue())
 
