@@ -123,7 +123,6 @@ class JobSpooler(wx.Frame):
     def refresh_spooler_list(self):
         self.list_job_spool.DeleteAllItems()
         if len(self.project.backend.spooler.queue) > 0:
-            pass
             # This should actually process and update the queue items.
             i = 0
             for e in self.project.backend.spooler.queue:

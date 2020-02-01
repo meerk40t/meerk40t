@@ -24,6 +24,7 @@ from Navigation import Navigation
 from Preferences import Preferences
 from RotarySettings import RotarySettings
 from UsbConnect import UsbConnect
+from DeviceManager import DeviceManager
 from ZMatrix import ZMatrix
 from icons import *
 from svgelements import *
@@ -109,7 +110,7 @@ ID_MENU_HIDE_TEXT = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
-ID_MENU_COLORDEFINE = idinc.new()
+ID_MENU_DEVICE_MANAGER = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
@@ -209,7 +210,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, _("Preferences"), "")
         wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
-        # wxglade_tmp_menu.Append(ID_MENU_COLORDEFINE, "Color Define", "")
+        wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
 
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
@@ -252,6 +253,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, self.open_devicemanager, id=ID_MENU_DEVICE_MANAGER)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.open_rotary, id=ID_MENU_ROTARY)
@@ -1438,14 +1440,14 @@ class MeerK40t(wx.Frame):
         """
         self.kernel.open_window("Keymap")
 
-    def open_colordefine(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def open_devicemanager(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
-        Open ColorDefine dialog
+        Open DeviceManager dialog
 
         :param event:
         :return:
         """
-        self.kernel.open_window("ColorDefine")
+        self.kernel.open_window("DeviceManager")
 
     def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1991,6 +1993,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window("Preferences", Preferences)
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)
+        kernel.add_window("DeviceManager", DeviceManager)
         kernel.add_window("Keymap", Keymap)
         kernel.add_window("UsbConnect", UsbConnect)
         kernel.add_window("Navigation", Navigation)

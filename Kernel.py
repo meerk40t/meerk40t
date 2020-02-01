@@ -101,6 +101,8 @@ class Backend:
         self.device_log = ''
         self.current_x = 0
         self.current_y = 0
+        self.state = -1
+        self.location = ''
 
         def hold():
             if self.hold_condition(0):
@@ -538,6 +540,7 @@ class Kernel:
 
     def activate_backend(self, backend_name):
         self.backend = self.backends[backend_name]
+        self.signal("device", self.backend)
 
     def read_config(self, t, key, default=None):
         if default is not None:

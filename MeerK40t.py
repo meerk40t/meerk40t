@@ -3,7 +3,8 @@ from Kernel import *
 
 kernel = Kernel()
 
-kernel.add_module('K40Stock', K40Stock())
+kernel.add_module('Lhystudio-a', K40Stock())
+kernel.add_module('Lhystudio-b', K40Stock())
 kernel.add_module('SVGLoader', SVGLoader())
 kernel.add_module('ImageLoader', ImageLoader())
 kernel.add_module('EgvLoader', EgvLoader())
