@@ -574,7 +574,7 @@ class MeerK40t(wx.Frame):
         element = self.tree.GetItemData(item)
         if element is not None:
             self.kernel.set_selected(element)
-            create_menu(element)
+            self.create_menu(element)
         event.Skip()
 
     def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
@@ -707,12 +707,12 @@ class MeerK40t(wx.Frame):
         self.kernel.unlisten("control_thread", self.on_control_state)
         self.kernel.unlisten("writer", self.on_writer_state)
         self.kernel.flush()
-        self.kernel.shutdown()
         self.kernel.unlisten("position", self.update_position)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
         self.kernel.unlisten("bed_size", self.bed_changed)
         self.kernel.unlisten("elements", self.elements_changed)
+        self.kernel.shutdown()
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -988,7 +988,7 @@ class MeerK40t(wx.Frame):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
         self.renderer.set_selected_by_position(self.popup_scene_position)
-        create_menu(self.kernel.selected)
+        self.create_menu(self.kernel.selected)
 
     def on_right_mouse_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
@@ -1948,14 +1948,22 @@ class MappedKey:
         return self.key
 
 
-class wxMeerK40t(Module):
+class wxMeerK40t(Module, wx.App):
     def __init__(self):
+        wx.App.__init__(self,0)
         Module.__init__(self)
         self.locale = None
-        self.gui = None
+        self.kernel = None
+
+    def OnInit(self):
+        # self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
+        # self.SetTopWindow(self.MeerK40t)
+        # self.MeerK40t.Show()
+        return True
 
     def initialize(self, kernel, name=None):
         kernel.add_window("MeerK40t", MeerK40t)
+        self.kernel = kernel
         _ = wx.GetTranslation
 
         wx.Locale.AddCatalogLookupPathPrefix('locale')
@@ -1981,23 +1989,7 @@ class wxMeerK40t(Module):
         language = kernel.language
         if language is not None and language != 0:
             self.language_to(language)(None)
-
-        class MeerK40tGui(wx.App):
-            """
-            MeerK40t Gui Launch.
-            """
-
-            def OnInit(self):
-                # self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
-                # self.SetTopWindow(self.MeerK40t)
-                # self.MeerK40t.Show()
-                return True
-
-        self.gui = MeerK40tGui(0)
-        kernel.open_window("MeerK40t")
-
-    def MainLoop(self):
-        self.gui.MainLoop()
+        self.kernel.open_window("MeerK40t")
 
 
 # end of class MeerK40tGui
