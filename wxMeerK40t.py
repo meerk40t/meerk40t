@@ -352,6 +352,7 @@ class MeerK40t(wx.Frame):
 
         self.fps_job = None
         self.kernel = None
+        self.backend_listening = None
 
     def add_language_menu(self):
         if os.path.exists('./locale'):
@@ -384,16 +385,13 @@ class MeerK40t(wx.Frame):
         kernel.setting(int, 'fps', 40)
         kernel.setting(float, "current_x", 0.0)
         kernel.setting(float, "current_y", 0.0)
-        self.kernel.listen("usb_state", self.on_usb_status)
-        self.kernel.listen("control_thread", self.on_control_state)
-        self.kernel.listen("writer", self.on_writer_state)
+
         self.kernel.listen("elements", self.on_elements_update)
-        self.kernel.listen("position", self.update_position)
+        self.kernel.listen("elements", self.elements_changed)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
         self.kernel.listen("bed_size", self.bed_changed)
-        self.kernel.listen("elements", self.elements_changed)
-        self.kernel.listen("writer_mode", self.on_writer_mode)
+        self.listen_backend(self.kernel.backend)
         if kernel.fps <= 0:
             kernel.fps = 60
         self.renderer = LaserRender(kernel)
@@ -406,11 +404,12 @@ class MeerK40t(wx.Frame):
         kernel.add_control("Path", self.open_path_dialog)
         kernel.add_control("FPS", self.open_fps_dialog)
         kernel.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
-        kernel.boot()
 
         self.SetSize((kernel.window_width, kernel.window_height))
         bedwidth = kernel.bed_width
         bedheight = kernel.bed_height
+
+        self.kernel.boot()
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
         self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
         self.add_language_menu()
@@ -687,6 +686,29 @@ class MeerK40t(wx.Frame):
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
 
+    def listen_backend(self, backend):
+        if self.backend_listening is not None:
+            self.unlisten_backend()
+        self.backend_listening = backend
+        uid = backend.uid
+        self.kernel.listen("%s;pipe;usb" % uid, self.on_usb_status)
+        self.kernel.listen("%s;pipe;thread" % uid, self.on_control_state)
+        self.kernel.listen("%s;interpreter;state" % uid, self.on_writer_state)
+        self.kernel.listen("%s;interpreter;position" % uid, self.update_position)
+        self.kernel.listen("%s;interpreter;mode" % uid, self.on_writer_mode)
+
+    def unlisten_backend(self):
+        if self.backend_listening is None:
+            return # Can't unlisten to nothing, ---
+        backend = self.backend_listening
+        uid = backend.uid
+        self.kernel.unlisten("%s;pipe;usb" % uid, self.on_usb_status)
+        self.kernel.unlisten("%s;pipe;thread" % uid, self.on_control_state)
+        self.kernel.unlisten("%s;interpreter;state" % uid, self.on_writer_state)
+        self.kernel.unlisten("%s;interpreter;position" % uid, self.update_position)
+        self.kernel.unlisten("%s;interpreter;mode" % uid, self.on_writer_mode)
+
+
     def on_close(self, event):
         # TODO: This model is outdated for version 4.
         # There could be several backends that are equally running.
@@ -793,10 +815,9 @@ class MeerK40t(wx.Frame):
         self.request_refresh()
 
     def update_position(self, pos):
-        for p in pos:
-            self.laserpath[self.laserpath_index] = p
-            self.laserpath_index += 1
-            self.laserpath_index %= len(self.laserpath)
+        self.laserpath[self.laserpath_index] = pos
+        self.laserpath_index += 1
+        self.laserpath_index %= len(self.laserpath)
         self.request_refresh_for_animation()
 
     def space_changed(self, units):
@@ -1206,12 +1227,16 @@ class MeerK40t(wx.Frame):
         if self.kernel.draw_mode & 2 == 0:
             self.on_draw_guides(dc)
         if self.kernel.draw_mode & 16 == 0:
+            # Draw Reticle
             dc.SetPen(wx.RED_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            x = self.kernel.current_x
-            y = self.kernel.current_y
-            x, y = self.convert_scene_to_window([x, y])
-            dc.DrawCircle(x, y, 10)
+            try:
+                x = self.kernel.backend.current_x
+                y = self.kernel.backend.current_y
+                x, y = self.convert_scene_to_window([x, y])
+                dc.DrawCircle(x, y, 10)
+            except AttributeError:
+                pass
 
     def on_draw_bed(self, dc):
         wmils = self.kernel.bed_width * 39.37
@@ -1699,7 +1724,7 @@ class MeerK40t(wx.Frame):
         """
 
         def specific(event):
-            renderer = LaserRender(project)
+            renderer = LaserRender(self.kernel)
             image = renderer.make_raster(element, types='path')
             xmin, ymin, xmax, ymax = self.kernel.selected.scene_bounds
             image_element = LaserNode(SVGImage(image=image))
@@ -1708,7 +1733,6 @@ class MeerK40t(wx.Frame):
             self.kernel("elements", 0)
 
         return specific
-
 
     def menu_reify(self, element):
         """
@@ -1725,7 +1749,6 @@ class MeerK40t(wx.Frame):
 
         return specific
 
-
     def menu_reset(self, element):
         """
         Menu to reset transformations applied to elements.
@@ -1740,7 +1763,6 @@ class MeerK40t(wx.Frame):
                 self.kernel("elements", 0)
 
         return specific
-
 
     def menu_rotate(self, element, value):
         """
@@ -1761,7 +1783,6 @@ class MeerK40t(wx.Frame):
 
         return specific
 
-
     def menu_reload(self, element):
         """
         Menu to reload the element from the file on disk.
@@ -1778,7 +1799,6 @@ class MeerK40t(wx.Frame):
             self.kernel.load(filepath, group=element)
 
         return specific
-
 
     def menu_remove(self, element, types=None):
         """
@@ -1809,7 +1829,6 @@ class MeerK40t(wx.Frame):
 
         return delete_element
 
-
     def menu_split_passes(self, element):
         """
         Menu to break element into subpath.
@@ -1835,7 +1854,6 @@ class MeerK40t(wx.Frame):
 
         return specific
 
-
     def menu_subpath(self, element):
         """
         Menu to break element into subpath.
@@ -1859,7 +1877,6 @@ class MeerK40t(wx.Frame):
             self.kernel.set_selected(None)
 
         return specific
-
 
     def menu_execute(self, element):
         """
@@ -1949,6 +1966,12 @@ class MappedKey:
 
 
 class wxMeerK40t(Module, wx.App):
+    """
+    wxMeerK40t is the wx.App main class and a qualified Module for the MeerK40t kernel.
+    Running MeerK40t without the wxMeerK40t gui is both possible and reasonable. This should not change the way the
+    underlying code runs. It should just be a series of frames held together with the kernel.
+    """
+
     def __init__(self):
         wx.App.__init__(self,0)
         Module.__init__(self)
@@ -1956,12 +1979,10 @@ class wxMeerK40t(Module, wx.App):
         self.kernel = None
 
     def OnInit(self):
-        # self.MeerK40t = MeerK40t(None, wx.ID_ANY, "")
-        # self.SetTopWindow(self.MeerK40t)
-        # self.MeerK40t.Show()
         return True
 
     def initialize(self, kernel, name=None):
+        kernel.setting(wx.App, 'gui', self) # Registers self as kernel.gui
         kernel.add_window("MeerK40t", MeerK40t)
         self.kernel = kernel
         _ = wx.GetTranslation

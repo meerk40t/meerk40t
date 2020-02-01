@@ -259,7 +259,7 @@ class K40Controller(Pipe):
 
     def reset(self):
         self.thread = ControllerQueueThread(self)
-        self.backend.add_thread("controller-thread", self.thread)
+        self.backend.add_thread("controller;thread", self.thread)
 
     def stop(self):
         self.abort()

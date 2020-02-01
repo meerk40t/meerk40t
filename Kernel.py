@@ -513,10 +513,11 @@ class Kernel:
         return self.config.Read(item)
 
     def boot(self):
-        self.cron = Scheduler(self)
-        self.cron.add_job(self.delegate_messages, args=(), interval=0.05)
-        self.add_thread('Scheduler', self.cron)
-        self.cron.start()
+        if self.cron is None:
+            self.cron = Scheduler(self)
+            self.cron.add_job(self.delegate_messages, args=(), interval=0.05)
+            self.add_thread('Scheduler', self.cron)
+            self.cron.start()
 
     def add_module(self, module_name, module):
         self.modules[module_name] = module

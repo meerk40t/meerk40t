@@ -1,18 +1,12 @@
 import wx
 
-# begin wxGlade: dependencies
-# end wxGlade
-
-# begin wxGlade: extracode
-# end wxGlade
-
 _ = wx.GetTranslation
 
 
 class BufferView(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: BufferView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((697, 584))
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -31,13 +25,21 @@ class BufferView(wx.Frame):
 
     def set_kernel(self, project):
         self.project = project
-        project.setting(str, '_controller_queue', b'')
-        project.setting(str, '_controller_buffer', b'')
-        buffer = self.project._controller_buffer + self.project._controller_queue
+        pipe = project.backend.pipe
+        buffer = None
+        if pipe is not None:
+            try:
+                buffer = pipe.buffer + pipe.queue
+            except AttributeError:
+                buffer = None
+        if buffer is None:
+            buffer = _("Could not find buffer.\n")
+
         try:
             bufferstr = buffer.decode()
         except ValueError:
             bufferstr = buffer.decode("ascii")
+
         self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
         self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
 
