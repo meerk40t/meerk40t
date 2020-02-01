@@ -27,7 +27,7 @@ class Keymap(wx.Frame):
         self.project.mark_window_closed("Keymap")
         event.Skip()  # Call destroy.
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
         project.setting(bool, "mouse_zoom_invert", False)
         self.check_invert_mouse_zoom.SetValue(self.project.mouse_zoom_invert)

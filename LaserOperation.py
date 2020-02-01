@@ -1,6 +1,6 @@
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
-from svgelements import Length
+from svgelements import Length, SVGImage
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_SPEED = 'speed'
@@ -97,7 +97,10 @@ class RasterOperation(LaserOperation):
             traverse |= X_AXIS
             traverse |= BOTTOM
 
-        for image in self:
+        for svgimage in self:
+            if not isinstance(svgimage, SVGImage):
+                continue  # We do not raster anything that is not classed properly.
+            image = svgimage.image
             width, height = image.size
             mode = image.mode
 
@@ -125,7 +128,7 @@ class RasterOperation(LaserOperation):
                     return (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
             else:
                 raise ValueError  # this shouldn't happen.
-            m = image.transform
+            m = svgimage.transform
             data = image.load()
 
             overscan = self.overscan
@@ -184,8 +187,6 @@ class EngraveOperation(LaserOperation):
             yield COMMAND_MODE_COMPACT, 0
             yield COMMAND_PLOT, plot
             yield COMMAND_MODE_DEFAULT, 0
-        yield COMMAND_SET_SPEED, None
-        yield COMMAND_SET_D_RATIO, None
 
 
 class CutOperation(EngraveOperation):

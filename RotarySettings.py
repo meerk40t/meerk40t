@@ -57,7 +57,7 @@ class RotarySettings(wx.Frame):
         self.project.mark_window_closed("Rotary")
         event.Skip()  # Call destroy.
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
         self.project.setting(bool, 'rotary', False)
         self.project.setting(float, 'scale_x', 1.0)

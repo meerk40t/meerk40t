@@ -95,7 +95,7 @@ class ElementProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
 
     def __set_properties(self):

@@ -48,6 +48,7 @@ class Controller(wx.Frame):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.project = None
+        self.uid = None
         self.dirty = False
         self.status_data = None
         self.packet_data = None
@@ -65,25 +66,30 @@ class Controller(wx.Frame):
         self.update_usb_status = False
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
-        self.project.setting(int, "packet_count", 0)
-        self.project.setting(str, "_usb_state", None)
-        self.project.listen("status", self.update_status)
-        self.project.listen("packet", self.update_packet)
-        self.project.listen("packet_text", self.update_packet_text)
-        self.project.listen("buffer", self.on_buffer_update)
-        self.project.listen("usb_state", self.on_usb_state)
-        self.project.listen("control_thread", self.on_control_state)
+        if project.backend is not None:
+            uid = project.backend.uid
+            self.uid = uid
+            self.project.listen("%s;pipe;status" % uid, self.update_status)
+            self.project.listen("%s;pipe;packet" % uid, self.update_packet)
+            self.project.listen("%s;pipe;packet_text" % uid, self.update_packet_text)
+            self.project.listen("%s;pipe;buffer" % uid, self.on_buffer_update)
+            self.project.listen("%s;pipe;usb_state" % uid, self.on_usb_state)
+            self.project.listen("%s;pipe;thread" % uid, self.on_control_state)
+        else:
+            self.uid = None
         self.set_controller_button_by_state()
 
     def on_close(self, event):
-        self.project.unlisten("status", self.update_status)
-        self.project.unlisten("packet", self.update_packet)
-        self.project.unlisten("packet_text", self.update_packet_text)
-        self.project.unlisten("buffer", self.on_buffer_update)
-        self.project.unlisten("usb_state", self.on_usb_state)
-        self.project.unlisten("control_thread", self.on_control_state)
+        uid = self.uid
+        if uid is not None:
+            self.project.listen("%s;pipe;status" % uid, self.update_status)
+            self.project.listen("%s;pipe;packet" % uid, self.update_packet)
+            self.project.listen("%s;pipe;packet_text" % uid, self.update_packet_text)
+            self.project.listen("%s;pipe;buffer" % uid, self.on_buffer_update)
+            self.project.listen("%s;pipe;usb_state" % uid, self.on_usb_state)
+            self.project.listen("%s;pipe;thread" % uid, self.on_control_state)
 
         self.project.mark_window_closed("Controller")
         self.project = None
@@ -293,16 +299,17 @@ class Controller(wx.Frame):
         self.dirty = False
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.project.get_state("K40Controller")
-        if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.project.start("K40Controller")
-        elif state == THREAD_STATE_PAUSED:
-            self.project.resume("K40Controller")
-        elif state == THREAD_STATE_STARTED:
-            self.project.pause("K40Controller")
-        elif state == THREAD_STATE_ABORT:
-            self.project("abort", 0)
-            self.project.reset("K40Controller")
+        if self.project.backend != None:
+            uid = self.project.backend.uid
+            state = self.project.get_state(uid)
+            if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
+                self.project.start(uid)
+            elif state == THREAD_STATE_PAUSED:
+                self.project.resume(uid)
+            elif state == THREAD_STATE_STARTED:
+                self.project.pause(uid)
+            elif state == THREAD_STATE_ABORT:
+                self.project.reset(uid)
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
         state = self.project._usb_state
@@ -337,7 +344,7 @@ class Controller(wx.Frame):
         self.usb_status = status
         self.post_update()
 
-    def on_buffer_update(self, value):
+    def on_buffer_update(self, value, *args):
         self.update_buffer_size = True
         self.buffer_size = value
         if self.buffer_size > self.buffer_max:

@@ -39,6 +39,7 @@ class JobSpooler(wx.Frame):
         self.update_spooler_state = False
         self.update_spooler = False
 
+        self.uid = None
         self.elements_progress = 0
         self.elements_progress_total = 0
         self.command_index = 0
@@ -46,15 +47,17 @@ class JobSpooler(wx.Frame):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
-        project.setting(str, "_controller_buffer", b'')
-        project.setting(str, "_controller_queue", b'')
+        if self.project.backend is None:
+            return
+        uid = self.project.backend.uid
+        self.uid = uid
         project.setting(int, "buffer_max", 600)
         project.setting(bool, "buffer_limit", True)
-        project.listen("spooler", self.on_spooler_update)
-        project.listen("buffer", self.on_buffer_update)
-        project.listen("writer", self.on_spooler_state)
+        project.listen("%s;spooler;queue" % uid, self.on_spooler_update)
+        project.listen("%s;pipe;buffer" % uid, self.on_buffer_update)
+        project.listen("%s;interpreter;state" % uid, self.on_spooler_state)
 
         self.set_spooler_button_by_state()
         self.checkbox_limit_buffer.SetValue(self.project.buffer_limit)
@@ -62,9 +65,11 @@ class JobSpooler(wx.Frame):
         self.refresh_spooler_list()
 
     def on_close(self, event):
-        self.project.unlisten("spooler", self.on_spooler_update)
-        self.project.unlisten("buffer", self.on_buffer_update)
-        self.project.unlisten("writer", self.on_spooler_state)
+        project = self.project
+        uid = self.uid
+        project.unlisten("%s;spooler;queue" % uid, self.on_spooler_update)
+        project.unlisten("%s;pipe;buffer" % uid, self.on_buffer_update)
+        project.unlisten("%s;interpreter;state" % uid, self.on_spooler_state)
         self.project.mark_window_closed("JobSpooler")
         self.project = None
         event.Skip()  # Call destroy as regular.
@@ -117,11 +122,11 @@ class JobSpooler(wx.Frame):
 
     def refresh_spooler_list(self):
         self.list_job_spool.DeleteAllItems()
-        if len(self.project.spooler.queue) > 0:
+        if len(self.project.backend.spooler.queue) > 0:
             pass
             # This should actually process and update the queue items.
             i = 0
-            for e in self.project.spooler.queue:
+            for e in self.project.backend.spooler.queue:
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
                     try:
@@ -213,22 +218,22 @@ class JobSpooler(wx.Frame):
         self.project.open_window("Controller")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        state = self.project.spooler.thread.state
+        spooler = self.project.backend.spooler
+        state = spooler.thread.state
         if state == THREAD_STATE_STARTED:
-            self.project.spooler.thread.pause()
+            spooler.thread.pause()
             self.set_spooler_button_by_state()
         elif state == THREAD_STATE_PAUSED:
-            self.project.spooler.thread.resume()
+            spooler.thread.resume()
             self.set_spooler_button_by_state()
         elif state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.project.spooler.start_queue_consumer()
+            spooler.start_queue_consumer()
             self.set_spooler_button_by_state()
         elif state == THREAD_STATE_ABORT:
-            self.project("abort", 0)
-            self.project.spooler.reset_thread()
+            spooler.reset_thread()
 
     def set_spooler_button_by_state(self):
-        state = self.project.spooler.thread.state
+        state = self.project.backend.spooler.thread.state
         if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
             self.button_spooler_control.SetBackgroundColour("#009900")
             self.button_spooler_control.SetLabel(_("Start Job"))
@@ -253,7 +258,7 @@ class JobSpooler(wx.Frame):
 
         if self.update_buffer_size:
             self.update_buffer_size = False
-            buffer_size = len(self.project._controller_buffer) + len(self.project._controller_queue)
+            buffer_size = len(self.project.backend.pipe)
             self.text_packet_buffer.SetValue(str(buffer_size))
             self.gauge_controller.SetRange(self.spin_packet_buffer_max.GetValue())
             max = self.gauge_controller.GetRange()

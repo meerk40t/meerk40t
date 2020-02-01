@@ -116,7 +116,7 @@ class Navigation(wx.Frame):
         self.Layout()
         # end wxGlade
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
         self.project.setting(float, "navigation_step", self.spin_step_size.GetValue())
         self.project.setting(float, "navigation_pulse", self.spin_pulse_time.GetValue())
@@ -141,27 +141,27 @@ class Navigation(wx.Frame):
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, value
             yield COMMAND_LASER_OFF
-        self.project.spooler.send_job(timed_fire)
+        self.project.backend.send_job(timed_fire)
 
     def move_top(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.interpreter.move_relative(0, -value)
+        self.project.backend.interpreter.move_relative(0, -value)
 
     def move_left(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.interpreter.move_relative(-value, 0)
+        self.project.backend.interpreter.move_relative(-value, 0)
 
     def move_right(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.interpreter.move_relative(value, 0)
+        self.project.backend.interpreter.move_relative(value, 0)
 
     def move_bottom(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.spooler.interpreter.move_relative(0, value)
+        self.project.backend.interpreter.move_relative(0, value)
 
     def on_spin_step_size(self, event):  # wxGlade: Navigate.<event_handler>
         self.project.navigation_step = self.spin_step_size.GetValue()

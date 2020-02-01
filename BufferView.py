@@ -29,7 +29,7 @@ class BufferView(wx.Frame):
         self.project = None
         event.Skip()  # Call destroy as regular.
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
         project.setting(str, '_controller_queue', b'')
         project.setting(str, '_controller_buffer', b'')

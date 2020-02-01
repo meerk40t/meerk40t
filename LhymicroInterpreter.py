@@ -43,8 +43,8 @@ def lhymicro_distance(v):
 
 
 class LhymicroInterpreter(Interpreter):
-    def __init__(self, kernel, pipe, current_x=0, current_y=0):
-        Interpreter.__init__(self, kernel, pipe)
+    def __init__(self, backend):
+        Interpreter.__init__(self, backend)
         self.state = STATE_DEFAULT
         self.is_on = False
         self.is_left = False
@@ -58,8 +58,8 @@ class LhymicroInterpreter(Interpreter):
         self.pulse_total = 0.0
         self.pulse_modulation = True
 
-        self.current_x = current_x
-        self.current_y = current_y
+        current_x = backend.current_x
+        current_y = backend.current_y
         self.next_x = current_x
         self.next_y = current_y
         self.max_x = current_x
@@ -69,41 +69,31 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.on_plot = None
+        self.on_plot = lambda x, y, on: backend.signal('interpreter;plot', (x, y, on))
 
-        kernel.setting(str, "board", "M2")
-        kernel.setting(bool, "autolock", True)
-        kernel.setting(bool, "autostart", True)
-        kernel.setting(bool, "rotary", False)
-        kernel.setting(float, "scale_x", 1.0)
-        kernel.setting(float, "scale_y", 1.0)
-        kernel.setting(int, "_stepping_force", None)
-        kernel.setting(float, "_acceleration_breaks", float("inf"))
-        kernel.add_control("Emergency Stop", self.emergency_stop)
+        backend.add_control("Emergency Stop", self.emergency_stop)
+        # TODO: Consider Restoring this code.
 
-        def break_acceleration10():
-            self.kernel._acceleration_breaks = 10.0
-
-        def break_acceleration20():
-            self.kernel._acceleration_breaks = 20.0
-
-        def break_acceleration30():
-            self.kernel._acceleration_breaks = 30.0
-
-        def break_acceleration40():
-            self.kernel._acceleration_breaks = 40.0
-
-        def break_acceleration_inf():
-            self.kernel._acceleration_breaks = float("inf")
-
-        kernel.add_control("acceleration Breaks 10mm/s", break_acceleration10)
-        kernel.add_control("acceleration Breaks 20mm/s", break_acceleration20)
-        kernel.add_control("acceleration Breaks 30mm/s", break_acceleration30)
-        kernel.add_control("acceleration Breaks 40mm/s", break_acceleration40)
-        kernel.add_control("acceleration Breaks off", break_acceleration_inf)
-
-    def emergency_stop(self):
-        self.command(COMMAND_EMERGENCY_STOP, 0)
+        # def break_acceleration10():
+        #     self.kernel._acceleration_breaks = 10.0
+        #
+        # def break_acceleration20():
+        #     self.kernel._acceleration_breaks = 20.0
+        #
+        # def break_acceleration30():
+        #     self.kernel._acceleration_breaks = 30.0
+        #
+        # def break_acceleration40():
+        #     self.kernel._acceleration_breaks = 40.0
+        #
+        # def break_acceleration_inf():
+        #     self.kernel._acceleration_breaks = float("inf")
+        #
+        # backend.add_control("acceleration Breaks 10mm/s", break_acceleration10)
+        # backend.add_control("acceleration Breaks 20mm/s", break_acceleration20)
+        # backend.add_control("acceleration Breaks 30mm/s", break_acceleration30)
+        # backend.add_control("acceleration Breaks 40mm/s", break_acceleration40)
+        # backend.add_control("acceleration Breaks off", break_acceleration_inf)
 
     def ungroup_plots(self, generate):
         current_x = None
@@ -136,7 +126,6 @@ class LhymicroInterpreter(Interpreter):
                 yield current_x, current_y, on
 
     def group_plots(self, start_x, start_y, generate):
-        """PPI is Pulses per inch."""
         last_x = start_x
         last_y = start_y
         last_on = 0
@@ -191,8 +180,8 @@ class LhymicroInterpreter(Interpreter):
             self.move(x, y)
         elif command == COMMAND_SHIFT:
             x, y = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.up()
             self.pulse_modulation = False
             if self.state == STATE_COMPACT:
@@ -202,8 +191,8 @@ class LhymicroInterpreter(Interpreter):
                 self.move(x, y)
         elif command == COMMAND_MOVE:
             x, y = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.pulse_modulation = self.is_on
 
             if self.state == STATE_COMPACT:
@@ -213,8 +202,8 @@ class LhymicroInterpreter(Interpreter):
                 self.move(x, y)
         elif command == COMMAND_CUT:
             x, y = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                 if on == 0:
@@ -238,8 +227,8 @@ class LhymicroInterpreter(Interpreter):
                 return
             first_point = path.first_point
             self.move_absolute(first_point[0], first_point[1])
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.pulse_modulation = True
             try:
                 x2 = y2 = x1 = y1 = None
@@ -255,7 +244,7 @@ class LhymicroInterpreter(Interpreter):
                         change = 0
                     if self.state == STATE_COMPACT and \
                             change >= 2 and \
-                            self.speed >= self.kernel._acceleration_breaks:
+                            self.speed >= self.backend.kernel._acceleration_breaks:
                         self.to_default_mode()
                         self.to_compact_mode()
                         x1 = y1 = None
@@ -266,8 +255,8 @@ class LhymicroInterpreter(Interpreter):
                 return
         elif command == COMMAND_RASTER:
             raster = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.pulse_modulation = True
             try:
                 for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
@@ -299,8 +288,8 @@ class LhymicroInterpreter(Interpreter):
                 return
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
                 if on == 0:
@@ -310,8 +299,8 @@ class LhymicroInterpreter(Interpreter):
                 self.move_absolute(x, y)
         elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, ex, ey = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.backend.current_x
+            sy = self.backend.current_y
             self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
                 if on == 0:
@@ -341,8 +330,8 @@ class LhymicroInterpreter(Interpreter):
             self.is_relative = False
         elif command == COMMAND_SET_POSITION:
             x, y = values
-            self.current_x = x
-            self.current_y = y
+            self.backend.current_x = x
+            self.backend.current_y = y
         elif command == COMMAND_MODE_COMPACT:
             self.to_compact_mode()
         elif command == COMMAND_MODE_DEFAULT:
@@ -353,7 +342,7 @@ class LhymicroInterpreter(Interpreter):
             t = values
             time.sleep(t)
         elif command == COMMAND_WAIT_BUFFER_EMPTY:
-            while len(self.pipe) > 0:
+            while len(self.backend.pipe) > 0:
                 time.sleep(0.05)
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
@@ -366,13 +355,35 @@ class LhymicroInterpreter(Interpreter):
         elif command == COMMAND_OPEN:
             self.reset_modes()
             self.state = STATE_DEFAULT
-        elif command == COMMAND_EMERGENCY_STOP:
-            pass
-            # self.clear_queue()
-            # self.thread.state = THREAD_STATE_ABORT
-            # self.kernel._controller_buffer = b''
-            # self.kernel._controller_queue = b''
-            # self.abort()
+        elif command == COMMAND_RESET:
+            self.emergency_stop()
+        elif command == COMMAND_PAUSE:
+            self.pause()
+        elif command == COMMAND_STATUS:
+            self.backend.signal("interpreter;status", self.get_status())
+        elif command == COMMAND_RESUME:
+            pass  # This command can't be processed since we should be paused.
+
+    def realtime_command(self, command, values):
+        # TODO: Must call the pipe's realtime_write command or adjust states.
+        pass
+
+    def emergency_stop(self):
+        pass
+
+    def get_status(self):
+        parts = []
+        parts.append("x=%f" % self.backend.current_x)
+        parts.append("y=%f" % self.backend.current_y)
+        parts.append("speed=%f" % self.speed)
+        parts.append("power=%d" % self.power)
+        return ";".join(parts)
+
+    def resume(self):
+        self.pause()
+
+    def pause(self):
+        self.backend.pipe.realtime_write(b'PN\n')
 
     def move(self, x, y):
         if self.is_relative:
@@ -381,7 +392,7 @@ class LhymicroInterpreter(Interpreter):
             self.move_absolute(x, y)
 
     def move_absolute(self, x, y):
-        self.move_relative(x - self.current_x, y - self.current_y)
+        self.move_relative(x - self.backend.current_x, y - self.backend.current_y)
 
     def move_relative(self, dx, dy):
         if abs(dx) == 0 and abs(dy) == 0:
@@ -389,19 +400,19 @@ class LhymicroInterpreter(Interpreter):
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == STATE_DEFAULT:
-            self.pipe += b'I'
+            self.backend.pipe.write(b'I')
             if dx != 0:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.pipe += b'S1P\n'
-            if not self.kernel.autolock:
-                self.pipe += b'IS2P\n'
+            self.backend.pipe.write(b'S1P\n')
+            if not self.backend.autolock:
+                self.backend.pipe.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                for x, y, on in self.group_plots(self.current_x, self.current_y,
-                                                 Line.plot_line(self.current_x, self.current_y,
-                                                                self.current_x + dx, self.current_y + dy)
+                for x, y, on in self.group_plots(self.backend.current_x, self.backend.current_y,
+                                                 Line.plot_line(self.backend.current_x, self.backend.current_y,
+                                                                self.backend.current_x + dx, self.backend.current_y + dy)
                                                  ):
                     self.move_absolute(x, y)
             elif abs(dx) == abs(dy):
@@ -415,9 +426,10 @@ class LhymicroInterpreter(Interpreter):
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.pipe += b'N'
+            self.backend.pipe.write(b'N')
         self.check_bounds()
-        self.kernel("position", (self.current_x, self.current_y, self.current_x - dx, self.current_y - dy))
+        self.backend.signal('interpreter;position', (self.backend.current_x, self.backend.current_y,
+                                         self.backend.current_x - dx, self.backend.current_y - dy))
 
     def move_xy_line(self, delta_x, delta_y):
         """Strictly speaking if this happens it is because of a bug.
@@ -503,135 +515,135 @@ class LhymicroInterpreter(Interpreter):
     def down(self):
         if self.is_on:
             return False
-        controller = self.pipe
+        controller = self.backend.pipe
         if self.state == STATE_DEFAULT:
-            controller += b'I'
-            controller += COMMAND_ON
-            controller += b'S1P\n'
+            controller.write(b'I')
+            controller.write(COMMAND_ON)
+            controller.write(b'S1P\n')
             if not self.kernel.autolock:
-                controller += b'IS2P\n'
+                controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller += COMMAND_ON
+            controller.write(COMMAND_ON)
         elif self.state == STATE_CONCAT:
-            controller += COMMAND_ON
-            controller += b'N'
+            controller.write(COMMAND_ON)
+            controller.write(b'N')
         self.is_on = True
         return True
 
     def up(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         if not self.is_on:
             return False
         if self.state == STATE_DEFAULT:
-            controller += b'I'
-            controller += COMMAND_OFF
-            controller += b'S1P\n'
+            controller.write(b'I')
+            controller.write(COMMAND_OFF)
+            controller.write(b'S1P\n')
             if not self.kernel.autolock:
-                controller += b'IS2P\n'
+                controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller += COMMAND_OFF
+            controller.write(COMMAND_OFF)
         elif self.state == STATE_CONCAT:
-            controller += COMMAND_OFF
-            controller += b'N'
+            controller.write(COMMAND_OFF)
+            controller.write(b'N')
         self.is_on = False
         return True
 
     def to_default_mode(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         if self.state == STATE_CONCAT:
-            controller += b'S1P\n'
-            if not self.kernel.autolock:
-                controller += b'IS2P\n'
+            controller.write(b'S1P\n')
+            if not self.backend.autolock:
+                controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller += b'FNSE-\n'
+            controller.write(b'FNSE-\n')
             self.reset_modes()
         self.state = STATE_DEFAULT
-        self.kernel("writer_mode", self.state)
+        self.backend.signal('interpreter;mode', self.state)
 
     def to_concat_mode(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         self.to_default_mode()
-        controller += b'I'
+        controller.write(b'I')
         self.state = STATE_CONCAT
-        self.kernel("writer_mode", self.state)
+        self.backend.signal('interpreter;mode', self.state)
 
     def to_compact_mode(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         self.to_concat_mode()
         if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.kernel.board,
-                                                        d_ratio=self.d_ratio, gear=self.kernel._stepping_force)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.backend.kernel.board,
+                                                        d_ratio=self.d_ratio, gear=self.backend.kernel._stepping_force)
         else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.kernel.board,
-                                                        gear=self.kernel._stepping_force)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.backend.kernel.board,
+                                                        gear=self.backend.kernel._stepping_force)
         try:
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        controller += speed_code
-        controller += b'N'
+        controller.write(speed_code)
+        controller.write(b'N')
         self.declare_directions()
-        controller += b'S1E'
+        controller.write(b'S1E')
         self.state = STATE_COMPACT
-        self.kernel("writer_mode", self.state)
+        self.backend.signal('interpreter;mode', self.state)
 
     def h_switch(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         if self.is_left:
-            controller += COMMAND_RIGHT
+            controller.write(COMMAND_RIGHT)
         else:
-            controller += COMMAND_LEFT
+            controller.write(COMMAND_LEFT)
         self.is_left = not self.is_left
         if self.is_top:
-            self.current_y -= self.raster_step
+            self.backend.current_y -= self.raster_step
         else:
-            self.current_y += self.raster_step
+            self.backend.current_y += self.raster_step
         self.is_on = False
 
     def v_switch(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         if self.is_top:
-            controller += COMMAND_BOTTOM
+            controller.write(COMMAND_BOTTOM)
         else:
-            controller += COMMAND_TOP
+            controller.write(COMMAND_TOP)
         self.is_top = not self.is_top
         if self.is_left:
-            self.current_x -= self.raster_step
+            self.backend.current_x -= self.raster_step
         else:
-            self.current_x += self.raster_step
+            self.backend.current_x += self.raster_step
         self.is_on = False
 
     def home(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         self.to_default_mode()
-        controller += b'IPP\n'
-        old_x = self.current_x
-        old_y = self.current_y
-        self.current_x = 0
-        self.current_y = 0
+        controller.write(b'IPP\n')
+        old_x = self.backend.current_x
+        old_y = self.backend.current_y
+        self.backend.current_x = 0
+        self.backend.current_y = 0
         self.reset_modes()
         self.state = STATE_DEFAULT
-        self.kernel("position", (self.current_x, self.current_y, old_x, old_y))
+        self.backend.signal('interpreter;position', (self.backend.current_x, self.backend.current_y, old_x, old_y))
 
     def lock_rail(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         self.to_default_mode()
-        controller += b'IS1P\n'
+        controller.write(b'IS1P\n')
 
     def unlock_rail(self, abort=False):
-        controller = self.pipe
+        controller = self.backend.pipe
         self.to_default_mode()
-        controller += b'IS2P\n'
+        controller.write(b'IS2P\n')
 
     def abort(self):
-        controller = self.pipe
-        controller += b'I\n'
+        controller = self.backend.pipe
+        controller.write(b'I\n')
 
     def check_bounds(self):
-        self.min_x = min(self.min_x, self.current_x)
-        self.min_y = min(self.min_y, self.current_y)
-        self.max_x = max(self.max_x, self.current_x)
-        self.max_y = max(self.max_y, self.current_y)
+        self.min_x = min(self.min_x, self.backend.current_x)
+        self.min_y = min(self.min_y, self.backend.current_y)
+        self.max_x = max(self.max_x, self.backend.current_x)
+        self.max_y = max(self.max_y, self.backend.current_y)
 
     def reset_modes(self):
         self.is_on = False
@@ -651,73 +663,73 @@ class LhymicroInterpreter(Interpreter):
             self.move_top(dy)
 
     def move_angle(self, dx, dy):
-        controller = self.pipe
+        controller = self.backend.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
         if dx > 0:  # Moving right
             if self.is_left:
-                controller += COMMAND_RIGHT
+                controller.write(COMMAND_RIGHT)
                 self.is_left = False
         else:  # Moving left
             if not self.is_left:
-                controller += COMMAND_LEFT
+                controller.write(COMMAND_LEFT)
                 self.is_left = True
         if dy > 0:  # Moving bottom
             if self.is_top:
-                controller += COMMAND_BOTTOM
+                controller.write(COMMAND_BOTTOM)
                 self.is_top = False
         else:  # Moving top
             if not self.is_top:
-                controller += COMMAND_TOP
+                controller.write(COMMAND_TOP)
                 self.is_top = True
-        self.current_x += dx
-        self.current_y += dy
+        self.backend.current_x += dx
+        self.backend.current_y += dy
         self.check_bounds()
-        controller += COMMAND_ANGLE + lhymicro_distance(abs(dy))
+        controller.write(COMMAND_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
-        controller = self.pipe
+        controller = self.backend.pipe
         if self.is_top:
-            controller += COMMAND_TOP
+            controller.write(COMMAND_TOP)
         else:
-            controller += COMMAND_BOTTOM
+            controller.write(COMMAND_BOTTOM)
         if self.is_left:
-            controller += COMMAND_LEFT
+            controller.write(COMMAND_LEFT)
         else:
-            controller += COMMAND_RIGHT
+            controller.write(COMMAND_RIGHT)
 
     def move_right(self, dx=0):
-        controller = self.pipe
-        self.current_x += dx
+        controller = self.backend.pipe
+        self.backend.current_x += dx
         self.is_left = False
-        controller += COMMAND_RIGHT
+        controller.write(COMMAND_RIGHT)
         if dx != 0:
-            controller += lhymicro_distance(abs(dx))
+            controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_left(self, dx=0):
-        controller = self.pipe
-        self.current_x -= abs(dx)
+        controller = self.backend.pipe
+        self.backend.current_x -= abs(dx)
         self.is_left = True
-        controller += COMMAND_LEFT
+        controller.write(COMMAND_LEFT)
         if dx != 0:
-            controller += lhymicro_distance(abs(dx))
+            controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        controller = self.pipe
-        self.current_y += dy
+        controller = self.backend.pipe
+        self.backend.current_y += dy
         self.is_top = False
-        controller += COMMAND_BOTTOM
+        controller.write(COMMAND_BOTTOM)
         if dy != 0:
-            controller += lhymicro_distance(abs(dy))
+            controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
     def move_top(self, dy=0):
-        controller = self.pipe
-        self.current_y -= abs(dy)
+        controller = self.backend.pipe
+        self.backend.current_y -= abs(dy)
         self.is_top = True
-        controller += COMMAND_TOP
+        controller.write(COMMAND_TOP)
         if dy != 0:
-            controller += lhymicro_distance(abs(dy))
+            controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()

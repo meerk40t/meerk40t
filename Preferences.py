@@ -84,7 +84,7 @@ class Preferences(wx.Frame):
         self.project.mark_window_closed("Preferences")
         event.Skip()  # Call destroy.
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         project.setting(bool, "mock", False)
         project.setting(bool, "autobeep", False)
         project.setting(bool, "autohome", False)

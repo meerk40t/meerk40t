@@ -84,124 +84,168 @@ class Module:
     def __init__(self):
         self.kernel = None
 
-    def initialize(self, kernel):
+    def initialize(self, kernel, name=None):
         self.kernel = kernel
 
     def shutdown(self, kernel):
         self.kernel = None
 
 
-class SpoolerThread(Thread):
-    """
-    SpoolerThread objects perform the spooler functions in an async manner.
-    """
-
-    def __init__(self, uid, kernel, spooler, interpreter):
-        Thread.__init__(self)
+class Backend:
+    def __init__(self, kernel=None, uid=None, spooler=None, interpreter=None, pipe=None):
+        self.kernel = kernel
         self.uid = uid
-        self.project = kernel
-        self.state = THREAD_STATE_UNSTARTED
-        kernel.setting(int, "buffer_max", 900)
-        kernel.setting(bool, "buffer_limit", True)
         self.spooler = spooler
         self.interpreter = interpreter
+        self.pipe = pipe
+        self.device_log = ''
+        self.current_x = 0
+        self.current_y = 0
 
-        self.buffer_size = -1
+        def hold():
+            if self.hold_condition(0):
+                time.sleep(0.1)
 
-        self.project("writer", self.state)
+        self.hold = hold
+        self.hold_condition = lambda e: False
+
+    def send_job(self, job):
+        self.spooler.send_job(job)
+
+    def signal(self, code, *message):
+        self.kernel.signal(self.uid + ';' + code, *message)
+
+    def log(self, message):
+        self.device_log += message
+
+    def setting(self, v_type, key, value):
+        self.kernel.setting(v_type, key, value)
+
+    def add_thread(self, name, thread):
+        self.kernel.add_thread(self.uid + name, thread)
+
+    def add_control(self, name, control):
+        self.kernel.add_control(self.uid + name, control)
+
+
+class SpoolerThread(Thread):
+    """
+    SpoolerThreads perform the spooler functions in an async manner.
+    When the spooler is empty the thread ends.
+
+    Expects spooler has commands:
+    peek(), pop(), hold(), execute(), thread_state_update(int),
+
+    """
+
+    def __init__(self, spooler):
+        Thread.__init__(self)
+        self.spooler = spooler
+        self.state = None
+        self.set_state(THREAD_STATE_UNSTARTED)
+
+    def set_state(self, state):
+        if self.state != state:
+            self.state = state
+            self.spooler.thread_state_update(self.state)
 
     def start_element_producer(self):
         if self.state != THREAD_STATE_ABORT:
-            self.state = THREAD_STATE_STARTED
-            self.project("writer", self.state)
+            self.set_state(THREAD_STATE_STARTED)
             self.start()
 
     def pause(self):
-        self.state = THREAD_STATE_PAUSED
-        self.project("writer", self.state)
+        self.set_state(THREAD_STATE_PAUSED)
 
     def resume(self):
-        self.state = THREAD_STATE_STARTED
-        self.project("writer", self.state)
+        self.set_state(THREAD_STATE_STARTED)
 
     def abort(self, val):
         if val != 0:
-            self.state = THREAD_STATE_ABORT
-            self.project("writer", self.state)
+            self.set_state(THREAD_STATE_ABORT)
 
     def stop(self):
         self.abort(1)
 
-    def thread_pause_check(self, *args):
-        while (self.project.buffer_limit and len(self.interpreter) > self.project.buffer_max) or \
-                self.state == THREAD_STATE_PAUSED:
-            # Backend is full or we are paused. We're waiting.
-            time.sleep(0.1)
-            if self.state == THREAD_STATE_ABORT:
-                raise StopIteration  # abort called.
-        if self.state == THREAD_STATE_ABORT:
-            raise StopIteration  # abort called.
-
     def run(self):
         command_index = 0
-        self.project.listen("buffer", self.update_buffer_size)
-        self.project.listen("abort", self.abort)
-        self.spooler.on_plot = self.thread_pause_check
-        try:
-            while True:
-                element = self.spooler.peek()
-                if element is None:
-                    raise StopIteration
-                self.thread_pause_check()
-                try:
-                    gen = element.generate
-                except AttributeError:
-                    gen = element
-                for e in gen():
-                    try:
-                        command, values = e
-                    except TypeError:
-                        command = e
-                        values = 0
-                    command_index += 1
-                    self.thread_pause_check()
-                    self.project("command", command_index)
-                    self.interpreter.command(command, values)
-                self.spooler.pop()
-                self.project("spooler", element)
-        except StopIteration:
-            pass  # We aborted the loop.
-        # Final listener calls.
-        self.spooler.on_plot = None
-        self.project.unlisten("abort", self.abort)
-        self.project.unlisten("buffer", self.update_buffer_size)
+        self.spooler.hold()
+        while True:
+            element = self.spooler.peek()
+            if element is None:
+                break  # Nothing left in spooler.
+            if self.state == THREAD_STATE_ABORT:
+                break
+            self.spooler.hold()
+            try:
+                gen = element.generate
+            except AttributeError:
+                gen = element
+            for e in gen():
+                if isinstance(e, (tuple,list)):
+                    command = e[0]
+                    if len(e) >= 2:
+                        values = e[1:]
+                    else:
+                        values = [None]
+                else:
+                    command = e
+                    values = [None]
+                command_index += 1
+                if self.state == THREAD_STATE_ABORT:
+                    break
+                self.spooler.hold()
+                self.spooler.execute(command, *values)
+            self.spooler.pop()
         if self.state == THREAD_STATE_ABORT:
-            self.spooler.clear_queue()
-            self.project("writer_mode", self.spooler.state)
-            return  # Must not do anything else. Just die as fast as possible.
-        self.project.autostart_controller = True
-        self.state = THREAD_STATE_FINISHED
-        self.project("writer", self.state)
-
-    def update_buffer_size(self, size):
-        self.buffer_size = size
+            return
+        self.set_state(THREAD_STATE_FINISHED)
 
 
 class Spooler:
     """
     Given spoolable objects it uses an interpreter to convert these to code.
-    The code is then written to a pipe. These operations occur in an async manner, with a registered thread.
+    The code is then written to a pipe.
+    These operations occur in an async manner with a registered SpoolerThread.
     """
 
-    def __init__(self, uid="spooler", kernel=None, interpreter=None):
-        self.uid = uid
-        self.kernel = kernel
-        self.interpreter = interpreter
-        self.thread = SpoolerThread(self.uid, self.kernel, self, self.interpreter)
+    def __init__(self, backend):
+        self.backend = backend
+
+        def hold():
+            if self.hold_condition(0):
+                time.sleep(0.1)
+
+        self.hold = hold
+        self.hold_condition = lambda e: False
+
         self.queue_lock = Lock()
         self.queue = []
+        self.thread = None
+        self.reset_thread()
 
-        self.on_plot = None  # Remove this, weird method.
+    def thread_state_update(self, state):
+        self.backend.signal('spooler;thread', state)
+
+    def execute(self, command, *values):
+        self.backend.interpreter.command(command, *values)
+
+    def realtime(self, command, *values):
+        """Realtimes are sent directly to the interpreter without spooling."""
+
+        # TODO: REALTIME must be called from the -spooler-thread to avoid concurrency problems.
+        if command == COMMAND_PAUSE:
+            self.thread.pause()
+        elif command == COMMAND_RESUME:
+            self.thread.resume()
+        elif command == COMMAND_RESET:
+            self.clear_queue()
+        elif command == COMMAND_CLOSE:
+            self.thread.stop()
+        try:
+            return self.backend.interpreter.realtime_command(command, values)
+        except NotImplementedError:
+            pass
 
     def peek(self):
         if len(self.queue) == 0:
@@ -215,6 +259,7 @@ class Spooler:
         queue_head = self.queue[0]
         del self.queue[0]
         self.queue_lock.release()
+        self.backend.signal("spooler;queue", len(self.queue))
         return queue_head
 
     def send_job(self, element):
@@ -225,51 +270,61 @@ class Spooler:
             self.queue.append(element)
         self.queue_lock.release()
         self.start_queue_consumer()
-        self.kernel("spooler", 0)
+        self.backend.signal("spooler;queue", len(self.queue))
 
     def clear_queue(self):
-        # self.spooler.state = STATE_DEFAULT
         self.queue_lock.acquire()
         self.queue = []
         self.queue_lock.release()
-        self.kernel("spooler", 0)
+        self.backend.signal("spooler;queue", len(self.queue))
 
     def reset_thread(self):
-        self.thread = SpoolerThread(self.uid, self.kernel, self, self.interpreter)
-        self.kernel("writer", self.thread.state)
+        self.thread = SpoolerThread(self)
+        self.backend.add_thread('spooler;thread', self.thread)
 
     def start_queue_consumer(self):
         if self.thread.state == THREAD_STATE_ABORT:
             # We cannot reset an aborted thread without specifically calling reset.
             return
         if self.thread.state == THREAD_STATE_FINISHED:
-            self.thread = SpoolerThread(self.uid, self.kernel, self, self.interpreter)
-            self.kernel.add_thread(self.uid, self.thread)
+            self.reset_thread()
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.state = THREAD_STATE_STARTED
             self.thread.start()
-            self.kernel("writer", self.thread.state)
 
 
 class Interpreter:
     """
     An Interpreter takes spoolable commands and turns those commands into states and code in a language
-    agnostic fashion.
+    agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
     """
 
-    def __init__(self, kernel=None, pipe=None):
-        self.kernel = kernel
-        self.pipe = pipe
+    def __init__(self, backend=None):
+        self.backend = backend
+
+        def hold():
+            if self.hold_condition(0):
+                time.sleep(0.1)
+
+        self.hold = hold
+        self.hold_condition = lambda e: False
 
     def __len__(self):
-        if self.pipe is None:
+        if self.backend.pipe is None:
             return 0
         else:
-            return len(self.pipe)
+            return len(self.backend.pipe)
 
-    def command(self, command, values):
+    def command(self, command, values=None):
         """Commands are middle language LaserCommandConstants there values are given."""
-        pass
+        return NotImplementedError
+
+    def realtime_command(self, command, values=None):
+        """Asks for the execution of a realtime command. Unlike the spooled commands these
+        return False if rejected and something else if able to be performed. These will not
+        be queued. If rejected. They must be performed in realtime or cancelled.
+        """
+        return self.command(command, values)
 
 
 class Pipe:
@@ -277,15 +332,14 @@ class Pipe:
     Write location in the kernel. Provides general information about buffer size but is
     agnostic as to where the code ends up.
 
-    Example pipes are mock, file, print, libusb-driver, and ch341-win.
+    Example pipes are mock, file, print, libusb-driver, and ch341-win. (these may or maynot exist).
     """
 
-    def __init__(self, kernel):
-        self.kernel = kernel
-        self.buffer = b''
+    def __init__(self, backend=None):
+        self.backend = backend
 
     def __len__(self):
-        return self.buffer
+        return 0
 
     def __enter__(self):
         self.open()
@@ -294,14 +348,30 @@ class Pipe:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    @property
+    def name(self):
+        return NotImplementedError
+
     def open(self):
-        pass
+        raise NotImplementedError
 
     def close(self):
-        pass
+        raise NotImplementedError
 
     def write(self, bytes_to_write):
-        self.kernel += bytes_to_write
+        raise NotImplementedError
+
+    def read(self, size=-1):
+        """Most pipes will be outstreams but some could provide data through this method."""
+        raise NotImplementedError
+
+    def realtime_write(self, bytes_to_write):
+        """
+        This method shall be permitted to not exist.
+        To facilitate pipes being easily replaced with filelike objects, any calls
+        to this method should assume pipe may not have this command.
+        """
+        self.write(bytes_to_write)
 
 
 class Kernel:
@@ -366,9 +436,8 @@ class Kernel:
         self.windows = {}
         self.open_windows = {}
 
-        self.spoolers = {}
-        self.interpreters = {}
-        self.pipes = {}
+        self.backends = {}
+        self.backend = None
 
         self.effects = []
 
@@ -391,10 +460,10 @@ class Kernel:
     def __str__(self):
         return "Project"
 
-    def __call__(self, code, message):
+    def __call__(self, code, *message):
         self.signal(code, message)
 
-    def signal(self, code, message):
+    def signal(self, code, *message):
         self.queue_lock.acquire(True)
         self.message_queue[code] = message
         self.queue_lock.release()
@@ -413,10 +482,12 @@ class Kernel:
         self.message_queue = {}
         self.queue_lock.release()
         for code, message in queue.items():
+            if 'spooler' in code:
+                print("%s : %s" % (code,message))
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
-                    listener(message)
+                    listener(*message)
             self.last_message[code] = message
         self.is_queue_processing = False
 
@@ -449,10 +520,7 @@ class Kernel:
 
     def add_module(self, module_name, module):
         self.modules[module_name] = module
-        try:
-            module.initialize(self)
-        except AttributeError:
-            pass
+        module.initialize(self, name=module_name)
 
     def add_loader(self, loader_name, loader):
         self.loaders[loader_name] = loader
@@ -460,16 +528,12 @@ class Kernel:
     def add_saver(self, saver_name, saver):
         self.savers[saver_name] = saver
 
-    def add_backend(self, backend_name, pipe, interpreter, spooler=None):
-        if spooler is None:
-            spooler = Spooler(backend_name, self, interpreter)
-        self.spoolers[backend_name] = spooler
-        if interpreter is not None:
-            self.interpreters[backend_name] = interpreter
-            interpreter.pipe = pipe
-        if pipe is not None:
-            self.pipes[backend_name] = pipe
-        self.spooler = spooler
+    def add_backend(self, backend_name, backend):
+        self.backends[backend_name] = backend
+        self.backend = backend
+
+    def activate_backend(self, backend_name):
+        self.backend = self.backends[backend_name]
 
     def read_config(self, t, key, default=None):
         if default is not None:
@@ -575,7 +639,7 @@ class Kernel:
         self.close_old_window(window_name)
         w = self.windows[window_name]
         window = w(None, -1, "")
-        window.set_project(self)
+        window.set_kernel(self)
         window.Show()
         self.open_windows[window_name] = window
         return window
@@ -607,12 +671,12 @@ class Kernel:
             self.listeners[signal] = [function]
         if signal in self.last_message:
             last_message = self.last_message[signal]
-            function(last_message)
+            function(*last_message)
 
-    def unlisten(self, listener, code):
-        if code in self.listeners:
-            listeners = self.listeners[code]
-            listeners.remove(listener)
+    def unlisten(self, signal, function):
+        if signal in self.listeners:
+            listeners = self.listeners[signal]
+            listeners.remove(function)
 
     def add_control(self, control_name, function):
         self.controls[control_name] = function
@@ -645,7 +709,7 @@ class Kernel:
 
     def get_state(self, thread_name):
         try:
-            return self.modules[thread_name].state()
+            return self.backends[thread_name].state()
         except AttributeError:
             return THREAD_STATE_UNKNOWN
 

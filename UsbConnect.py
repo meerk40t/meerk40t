@@ -19,7 +19,7 @@ class UsbConnect(wx.Frame):
         self.dirty = False
         self.append_text = ""
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
         self.project.setting(str, "_device_log", '')
         self.usblog_text.SetValue(self.project._device_log)

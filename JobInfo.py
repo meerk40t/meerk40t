@@ -164,7 +164,7 @@ class JobInfo(wx.Frame):
             self.jobadd_home(None)
         self.update_gui()
 
-    def set_project(self, project, operations=None):
+    def set_kernel(self, project, operations=None):
         self.project = project
         self.operations = operations
         project.setting(bool, 'rotary', False)
@@ -215,9 +215,6 @@ class JobInfo(wx.Frame):
         self.Centre()
         # end wxGlade
 
-    def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.spooler.thread.limit_buffer = not self.project.spooler.thread.limit_buffer
-
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
         self.project.autostart = self.menu_autostart.IsChecked()
 
@@ -232,7 +229,7 @@ class JobInfo(wx.Frame):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.operations) == 0:
-            self.project.spooler.send_job(self.elements)
+            self.project.backend.send_job(self.elements)
             self.on_button_job_spooler()
             self.project.close_old_window("JobInfo")
         else:

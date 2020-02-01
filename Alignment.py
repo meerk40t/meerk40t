@@ -62,7 +62,7 @@ class Alignment(wx.Frame):
         self.project = None
         event.Skip()  # Call destroy as regular.
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
 
     def __set_properties(self):
@@ -198,7 +198,8 @@ class Alignment(wx.Frame):
         self.button_square_align_4_corner.Enable(self.check_horizontal_done.GetValue())
 
     def on_slider_square_power_change(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.project.spooler
+        #TODO: This directly references the current spooler.
+        spooler = self.project.backend.spooler
         spooler.set_power(self.slider_square_power.GetValue())
 
     def on_button_square_align_4_corners(self, event):  # wxGlade: Alignment.<event_handler>
@@ -228,8 +229,8 @@ class Alignment(wx.Frame):
         yield COMMAND_MODE_DEFAULT
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        y_val = self.project.spooler.current_y
-        x_val = self.project.spooler.current_x
+        y_val = self.project.backend.current_y
+        x_val = self.project.backend.current_x
         y_step = round(5 * 39.3701)
 
         while y_val < y_max:

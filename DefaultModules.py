@@ -2,16 +2,61 @@ import os
 from io import BytesIO
 
 from base64 import b64encode
+
+from K40Controller import K40Controller
+from Kernel import Spooler, Module, Backend
+from LhymicroInterpreter import LhymicroInterpreter
 from LaserNode import *
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
+
+
+class K40Stock(Module, Backend):
+    def __init__(self):
+        Module.__init__(self)
+        Backend.__init__(self)
+        self.autolock = True
+
+    def initialize(self, kernel, name='Lhy-K40'):
+        kernel.setting(int, 'usb_index', -1)
+        kernel.setting(int, 'usb_bus', -1)
+        kernel.setting(int, 'usb_address', -1)
+        kernel.setting(int, 'usb_serial', -1)
+        kernel.setting(int, 'usb_chip_version', -1)
+
+        kernel.setting(bool, 'mock', False)
+        kernel.setting(int, 'packet_count', 0)
+        kernel.setting(int, 'rejected_count', 0)
+        kernel.setting(int, "buffer_max", 900)
+        kernel.setting(bool, "buffer_limit", True)
+        kernel.setting(bool, "autolock", True)
+
+        kernel.setting(str, "board", "M2")
+        kernel.setting(bool, "autostart", True)
+        kernel.setting(bool, "rotary", False)
+        kernel.setting(float, "scale_x", 1.0)
+        kernel.setting(float, "scale_y", 1.0)
+        kernel.setting(int, "_stepping_force", None)
+        kernel.setting(float, "_acceleration_breaks", float("inf"))
+
+        self.uid = name
+        self.kernel = kernel
+        self.pipe = K40Controller(self)
+        self.interpreter = LhymicroInterpreter(self)
+        self.spooler = Spooler(self)
+        kernel.add_backend(name, self)
+
+        self.hold_condition = lambda e: kernel.buffer_limit and len(self.pipe) > self.kernel.buffer_max
+
+    def shutdown(self, kernel):
+        pass
 
 
 class SVGWriter:
     def __init__(self):
         self.project = None
 
-    def initialize(self, project):
+    def initialize(self, project, name=None):
         self.project = project
         project.setting(int, "bed_width", 320)
         project.setting(int, "bed_height", 220)
@@ -106,7 +151,7 @@ class SVGLoader:
     def __init__(self):
         self.project = None
 
-    def initialize(self, project):
+    def initialize(self, project, name=None):
         self.project = project
         project.setting(int, "bed_width", 320)
         project.setting(int, "bed_height", 220)
@@ -159,7 +204,7 @@ class EgvLoader:
     def __init__(self):
         self.project = None
 
-    def initialize(self, project):
+    def initialize(self, project, name=None):
         self.project = project
         project.add_loader("EGVLoader", self)
 
@@ -196,7 +241,7 @@ class ImageLoader:
     def __init__(self):
         self.project = None
 
-    def initialize(self, project):
+    def initialize(self, project, name=None):
         self.project = project
         project.add_loader("ImageLoader", self)
 

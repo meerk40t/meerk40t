@@ -19,7 +19,6 @@ STATUS_POWER = 239
 # 255, 206, 111, 12, 18, 0
 
 
-
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2
         packet = [0] * 30
@@ -31,6 +30,7 @@ def convert_to_list_bytes(data):
         for i in range(0, 30):
             packet[i] = data[i]
         return packet
+
 
 def get_code_string_from_code(code):
     if code == STATUS_OK:
@@ -46,7 +46,7 @@ def get_code_string_from_code(code):
     elif code == STATUS_BAD_STATE:
         return "Bad State"
     else:
-        return "Unknown: %d" % code
+        return "UNK %02x" % code
 
 
 crc_table = [
@@ -74,127 +74,138 @@ def onewire_crc_lookup(line):
 
 class ControllerQueueThread(threading.Thread):
     """
-    The ControllerQueue thread matches the state of the controller to the state of the thread and processes the queue.
-    If you set the controller to THREAD_ABORTED it will abort, if THREAD_FINISHED it will finish. THREAD_PAUSE it will
-    pause.
+    The ControllerQueue thread matches the state of the controller to the state
+    of the thread and processes the queue. If you set the controller to
+    THREAD_ABORTED it will abort, if THREAD_FINISHED it will finish. THREAD_PAUSE
+    it will pause.
     """
     def __init__(self, controller):
         threading.Thread.__init__(self)
         self.controller = controller
+        self.state = None
+        self.set_state(THREAD_STATE_UNSTARTED)
 
-        self.state = THREAD_STATE_UNSTARTED
-        self.controller.kernel("control_thread", self.state)
+    def set_state(self, state):
+        if self.state != state:
+            self.state = state
+            self.controller.thread_state_update(self.state)
 
     def run(self):
-        if self.controller.state == THREAD_STATE_UNSTARTED:
-            self.state = THREAD_STATE_UNSTARTED
-            return
-        self.state = THREAD_STATE_STARTED
-        self.controller.kernel("control_thread", self.state)
+        self.set_state(THREAD_STATE_STARTED)
+        while self.controller.state == THREAD_STATE_UNSTARTED:
+            time.sleep(0.1)  # Already started. Unstarted is the desired state. Wait.
 
-        # waited = 0
+        count = 0
         while self.controller.state != THREAD_STATE_ABORT:
+
             if self.controller.process_queue():
-                time.sleep(0.1)
-            #     waited += 1
-            #     if waited >= 20:
-            #         break
-            # else:
-            #     waited = 0
+                # TODO: make sure this is the correct direction.
+                if count > 100:
+                    count = 100
+                time.sleep(0.01 * count)
+                count += 1
+            else:
+                count = 0
             while self.controller.state == THREAD_STATE_PAUSED:
-                self.state = THREAD_STATE_PAUSED
-                self.controller.kernel("control_thread", self.state)
+                self.set_state(THREAD_STATE_PAUSED)
                 time.sleep(1)
             if len(self.controller) == 0 and self.controller.state == THREAD_STATE_FINISHED:
+                # If finished is the desired state we need to actually be finished.
                 break
         if self.controller.state == THREAD_STATE_ABORT:
-            self.state = THREAD_STATE_ABORT
-            self.controller.kernel("control_thread", self.state)
+            self.set_state(THREAD_STATE_ABORT)
             return
         else:
-            self.state = THREAD_STATE_FINISHED
-            self.controller.kernel("control_thread", self.state)
+            self.set_state(THREAD_STATE_FINISHED)
 
 
 class K40Controller(Pipe):
-    def __init__(self, kernel):
-        Pipe.__init__(self, kernel)
+    def __init__(self, backend=None):
+        Pipe.__init__(self, backend)
         self.driver = None
         self.driver_index = 0
         self.state = THREAD_STATE_UNSTARTED
 
         self.process_queue_pause = False
+
+        self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
+        self.queue = b''  # Thread-unsafe additional commands to append.
         self.queue_lock = threading.Lock()
         self.thread = None
+        self.mock = backend.kernel.mock
+        self.packet_count = 0
+        self.rejected_count = 0
 
         self.abort_waiting = False
         self.status = [0] * 6
 
-        kernel.setting(int, 'usb_index', -1)
-        kernel.setting(int, 'usb_bus', -1)
-        kernel.setting(int, 'usb_address', -1)
-        kernel.setting(int, 'usb_serial', -1)
-        kernel.setting(int, 'usb_chip_version', -1)
-
-        kernel.setting(bool, 'mock', False)
-        kernel.setting(int, 'packet_count', 0)
-        kernel.setting(int, 'rejected_count', 0)
-        kernel.setting(bool, 'autostart_controller', True)
-        kernel.setting(str, "_device_log", '')
-        kernel.setting(str, "_controller_buffer", b'')
-        kernel.setting(str, "_controller_queue", b'')
-        kernel.setting(str, "_usb_state", None)
-        self.kernel = kernel
         self.driver = None
-        self.thread = ControllerQueueThread(self)
+        self.thread = None
+        self.reset()
 
         def start_usb():
             self.state = THREAD_STATE_STARTED
             self.start()
 
-        kernel.add_control("K40Usb-Start", start_usb)
+        self.backend.add_control("Start", start_usb)
 
         def stop_usb():
             self.state = THREAD_STATE_FINISHED
 
-        kernel.add_control("K40Usb-Stop", stop_usb)
+        self.backend.add_control("Stop", stop_usb)
 
         def abort_wait():
             self.abort_waiting = True
 
-        kernel.add_control("K40-Wait Abort", abort_wait)
+        self.backend.add_control("Wait Abort", abort_wait)
 
         def pause_k40():
             self.state = THREAD_STATE_PAUSED
             self.start()
 
-        kernel.add_control("K40-Pause", pause_k40)
+        self.backend.add_control("Pause", pause_k40)
 
         def resume_k40():
             self.state = THREAD_STATE_STARTED
             self.start()
 
-        kernel.add_control("K40-Resume", resume_k40)
-
-        kernel.signal("control_thread", self.thread.state)
-        kernel("buffer", 0)
-        kernel.add_thread("ControllerQueueThread", self.thread)
-        self.set_usb_status("Uninitialized")
+        self.backend.add_control("Resume", resume_k40)
 
     def __len__(self):
-        return len(self.kernel._controller_buffer) + len(self.kernel._controller_queue)
+        return len(self.buffer) + len(self.queue)
 
-    def __iadd__(self, other):
+    def thread_state_update(self, state):
+        self.backend.signal('pipe;thread', state)
+
+    @property
+    def name(self):
+        return self.backend.uid
+
+    def open(self):
+        if self.driver is None:
+            self.detect_driver()
+        self.driver.open()
+
+    def close(self):
+        self.driver.close()
+
+    def write(self, bytes_to_write):
         self.queue_lock.acquire()
-        self.kernel._controller_queue += other
+        self.queue += bytes_to_write
         self.queue_lock.release()
-        buffer_size = len(self)
-        self.kernel("buffer", buffer_size)
-        if self.kernel.autostart_controller:
-            self.start()
+        self.start()
         return self
 
+    def read(self, size=-1):
+        return self.status
+
+    def realtime_write(self, bytes_to_write):
+        """Must write directly to the controller without delay."""
+        pass
+
     def detect_driver(self):
+        # TODO: Match the specific requirements of the backend driver protocol.
+        # If you match more than one device. You should connect to the one that lets you connect.
         try:
             from CH341LibusbDriver import CH341Driver
             self.driver = driver = CH341Driver(self.driver_index)
@@ -211,18 +222,9 @@ class K40Controller(Pipe):
             except:
                 self.driver = None
 
-    def open(self):
-        if self.driver is None:
-            self.detect_driver()
-        self.driver.open()
-
-    def close(self):
-        self.driver.close()
-
     def log(self, info):
         update = str(info) + '\n'
-        self.kernel("usb_log", update)
-        self.kernel._device_log += update
+        self.backend.log(update)
 
     def state(self):
         return self.thread.state
@@ -232,66 +234,67 @@ class K40Controller(Pipe):
             # We cannot reset an aborted thread without specifically calling reset.
             return
         if self.state == THREAD_STATE_FINISHED:
-            self.thread = ControllerQueueThread(self)
+            self.reset()
         if self.state == THREAD_STATE_UNSTARTED:
             self.state = THREAD_STATE_STARTED
             self.thread.start()
-            self.kernel("control_thread", self.thread.state)
 
     def resume(self):
         self.process_queue_pause = False
-        self.thread.state = THREAD_STATE_STARTED
-        self.kernel("control_thread", self.thread.state)
+        self.state = THREAD_STATE_STARTED
+        if self.thread.state == THREAD_STATE_UNSTARTED:
+            self.thread.start()
 
     def pause(self):
         self.process_queue_pause = True
-        self.thread.state = THREAD_STATE_PAUSED
-        self.kernel("control_thread", self.thread.state)
+        self.state = THREAD_STATE_PAUSED
+        if self.thread.state == THREAD_STATE_UNSTARTED:
+            self.thread.start()
 
     def abort(self):
-        self.thread.state = THREAD_STATE_ABORT
-        # packet = b'I' + b'F' * 29
-        # if self.usb is not None:
-        #     try:
-        #         self.send_packet(packet)
-        #     except usb.core.USBError:
-        #         pass  # Emergency stop was a failure.
-        self.kernel._controller_buffer = b''
-        self.kernel._controller_queue = b''
-        self.kernel("buffer", len(self.kernel._controller_buffer))
-        self.kernel("control_thread", self.thread.state)
+        self.state = THREAD_STATE_ABORT
+        self.buffer = b''
+        self.queue = b''
+        self.backend.signal('pipe;buffer', 0)
 
     def reset(self):
         self.thread = ControllerQueueThread(self)
+        self.backend.add_thread("controller-thread", self.thread)
 
     def stop(self):
         self.abort()
 
     def process_queue(self):
+        """
+        Attempts to process the queue
+
+        :return: some queue was processed.
+        """
         if self.process_queue_pause:
             return False
         # if self.driver_index in  == STATE_USB_CONNECTED and not self.kernel.mock:
         try:
             self.open()
         except ConnectionRefusedError:
-            return True
+            return False
+
         wait_finish = False
-        if len(self.kernel._controller_queue):
+        if len(self.queue):
             self.queue_lock.acquire()
-            self.kernel._controller_buffer += self.kernel._controller_queue
-            self.kernel._controller_queue = b''
+            self.buffer += self.queue
+            self.queue = b''
             self.queue_lock.release()
-            self.kernel("buffer", len(self.kernel._controller_buffer))
-        if len(self.kernel._controller_buffer) == 0:
+            self.backend.signal('pipe;buffer', len(self.buffer))
+        if len(self.buffer) == 0:
             return True
-        find = self.kernel._controller_buffer.find(b'\n', 0, 30)
+        find = self.buffer.find(b'\n', 0, 30)
         if find != -1:
-            length = min(30, len(self.kernel._controller_buffer), find + 1)
+            length = min(30, len(self.buffer), find + 1)
         else:
-            length = min(30, len(self.kernel._controller_buffer))
-        packet = self.kernel._controller_buffer[:length]
+            length = min(30, len(self.buffer))
+        packet = self.buffer[:length]
         if packet.endswith(b'-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
-            packet += self.kernel._controller_buffer[length:length + 1]
+            packet += self.buffer[length:length + 1]
             length += 1
         if packet.endswith(b'\n'):
             packet = packet[:-1]
@@ -299,13 +302,14 @@ class K40Controller(Pipe):
                 packet = packet[:-1]
                 wait_finish = True
             packet += b'F' * (30 - len(packet))
+
         # try to send packet
         self.wait_ok()
         if self.process_queue_pause:
             return False  # Paused during wait.
         if len(packet) == 30:
-            self.kernel._controller_buffer = self.kernel._controller_buffer[length:]
-            self.kernel("buffer", len(self.kernel._controller_buffer))
+            self.buffer = self.buffer[length:]
+            self.backend.signal('pipe;buffer', len(self.buffer))
         else:
             return True  # No valid packet was able to be produced.
         self.send_packet(packet)
@@ -315,43 +319,35 @@ class K40Controller(Pipe):
         return False
 
     def send_packet(self, packet):
-        if self.kernel.mock:
+        if self.mock:
             time.sleep(0.1)
         else:
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
 
-        self.kernel.packet_count += 1
-        self.kernel("packet", packet)
-        self.kernel("packet_text", packet)
-
-    def set_usb_status(self, state):
-        if state == self.kernel._usb_state:
-            return
-        self.kernel._usb_state = state
-        self.kernel("usb_state", state)
+        self.packet_count += 1
+        self.backend.signal("pipe;packet", convert_to_list_bytes(packet))
+        self.backend.signal("pipe;packet_text", packet)
 
     def update_status(self):
-        if self.kernel.mock:
-            self.status = [STATUS_OK] * 6
+        if self.mock:
+            self.status = [255, 206, 0, 0, 0, 0]
             time.sleep(0.01)
         else:
             self.status = self.driver.get_status()
-        self.kernel("status", self.status)
+        self.backend.signal("pipe;status", self.status)
 
     def wait_ok(self):
         i = 0
         while True:
             self.update_status()
-            if self.kernel.mock:  # Mock controller
-                self.status = [STATUS_OK] * 6
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
-                self.kernel.rejected_count += 1
+                self.rejected_count += 1
             if status == STATUS_OK:
                 break
             time.sleep(0.1)
-            self.kernel("wait", (STATUS_OK, i))
+            self.backend.signal("pipe;wait", STATUS_OK, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
@@ -361,17 +357,16 @@ class K40Controller(Pipe):
         i = 0
         while True:
             self.update_status()
-            if self.kernel.mock:  # Mock controller
-                self.status = [STATUS_FINISH] * 6
+            if self.mock:  # Mock controller
+                self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
-                self.kernel.rejected_count += 1
+                self.rejected_count += 1
             if status & 0x02 == 0:
-                # StateBitPEMP = 0x00000200
-                # 0xEC, 11101100
+                # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
                 break
-            time.sleep(0.1)
-            self.kernel("wait", (status, i))
+            time.sleep(0.05)
+            self.backend.signal("pipe;wait", (status, i))
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
