@@ -18,15 +18,17 @@ class CH341Driver:
         """
         if self.driver_value is None:
             val = self.driver.CH341OpenDevice(self.driver_index)
+            self.driver_value = val
             if val == -1:
                 return -1
-            self.driver_value = val
             self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
 
     def close(self):
         """
         Closes the driver for the stated device index.
         """
+        if self.driver_value == -1:
+            raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
         self.driver_value = None
 
@@ -38,6 +40,8 @@ class CH341Driver:
         :param packet: 32 bytes of data to be written to the CH341.
         :return:
         """
+        if self.driver_value == -1:
+            raise ConnectionError
         length = len(packet)
         obuf = (c_byte * length)()
         for i in range(length):
@@ -66,6 +70,8 @@ class CH341Driver:
         StateBitSDA		0x00800000
         :return:
         """
+        if self.driver_value == -1:
+            raise ConnectionError
         obuf = (c_byte * 6)()
         self.driver.CH341GetStatus(self.driver_index, obuf)
         return [int(q & 0xff) for q in obuf]
@@ -75,4 +81,6 @@ class CH341Driver:
         Gets the version of the CH341 chip being used.
         :return: version. Eg. 48.
         """
+        if self.driver_value == -1:
+            raise ConnectionError
         return self.driver.CH341GetVerIC(self.driver_index)

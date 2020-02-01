@@ -385,12 +385,7 @@ class MeerK40t(wx.Frame):
         kernel.setting(int, 'fps', 40)
         kernel.setting(float, "current_x", 0.0)
         kernel.setting(float, "current_y", 0.0)
-
-        self.kernel.listen("elements", self.on_elements_update)
-        self.kernel.listen("elements", self.elements_changed)
-        self.kernel.listen("units", self.space_changed)
-        self.kernel.listen("selection", self.selection_changed)
-        self.kernel.listen("bed_size", self.bed_changed)
+        self.listen_scene()
         self.listen_backend(self.kernel.backend)
         if kernel.fps <= 0:
             kernel.fps = 60
@@ -708,32 +703,41 @@ class MeerK40t(wx.Frame):
         self.kernel.unlisten("%s;interpreter;position" % uid, self.update_position)
         self.kernel.unlisten("%s;interpreter;mode" % uid, self.on_writer_mode)
 
+    def listen_scene(self):
+        self.kernel.listen("elements", self.on_elements_update)
+        self.kernel.listen("elements", self.elements_changed)
+        self.kernel.listen("units", self.space_changed)
+        self.kernel.listen("selection", self.selection_changed)
+        self.kernel.listen("bed_size", self.bed_changed)
+
+    def unlisten_scene(self):
+        self.kernel.unlisten("elements", self.on_elements_update)
+        self.kernel.unlisten("elements", self.elements_changed)
+        self.kernel.unlisten("units", self.space_changed)
+        self.kernel.unlisten("selection", self.selection_changed)
+        self.kernel.unlisten("bed_size", self.bed_changed)
 
     def on_close(self, event):
         # TODO: This model is outdated for version 4.
         # There could be several backends that are equally running.
-        if self.kernel.backend.spooler.thread.state == THREAD_STATE_STARTED or \
-                self.kernel.backend.pipe.thread.state == THREAD_STATE_STARTED:
-            dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
-                                   _('Processes are still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
+        for name, backend in self.kernel.backends.items():
+            if backend.spooler.thread.state == THREAD_STATE_STARTED or backend.pipe.thread.state == THREAD_STATE_STARTED:
+                uid = backend.uid
+                dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
+                                       uid + _(' processes is still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
+                result = dlg.ShowModal()
+                dlg.Destroy()
 
-            if result == wx.ID_OK:
-                pass
-            else:
-                return
+                if result == wx.ID_OK:
+                    backend.close()
+                else:
+                    return
         for window in [value for key, value in self.kernel.open_windows.items()]:
-            window.Close()
-        self.kernel.unlisten("usb_state", self.on_usb_status)
-        self.kernel.unlisten("control_thread", self.on_control_state)
-        self.kernel.unlisten("writer", self.on_writer_state)
+            if window != self:  # Self is currently being closed.
+                window.Close()
+        self.unlisten_backend()
+        self.unlisten_scene()
         self.kernel.flush()
-        self.kernel.unlisten("position", self.update_position)
-        self.kernel.unlisten("units", self.space_changed)
-        self.kernel.unlisten("selection", self.selection_changed)
-        self.kernel.unlisten("bed_size", self.bed_changed)
-        self.kernel.unlisten("elements", self.elements_changed)
         self.kernel.shutdown()
         event.Skip()  # Call destroy as regular.
 

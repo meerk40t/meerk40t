@@ -48,8 +48,10 @@ class K40Stock(Module, Backend):
 
         self.hold_condition = lambda e: kernel.buffer_limit and len(self.pipe) > self.kernel.buffer_max
 
-    def shutdown(self, kernel):
-        pass
+    def close(self):
+        self.spooler.clear_queue()
+        self.interpreter.emergency_stop()
+        self.pipe.close()
 
 
 class SVGWriter:

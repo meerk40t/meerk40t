@@ -99,13 +99,14 @@ class ControllerQueueThread(threading.Thread):
         while self.controller.state != THREAD_STATE_ABORT:
 
             if self.controller.process_queue():
-                # TODO: make sure this is the correct direction.
+                # Some queue was processed.
+                count = 0
+            else:
+                # No packet could be sent.
                 if count > 100:
                     count = 100
-                time.sleep(0.01 * count)
+                time.sleep(0.01 * count)  # will tick up to 1 second waits if process queue never works.
                 count += 1
-            else:
-                count = 0
             while self.controller.state == THREAD_STATE_PAUSED:
                 self.set_state(THREAD_STATE_PAUSED)
                 time.sleep(1)
@@ -125,8 +126,6 @@ class K40Controller(Pipe):
         self.driver = None
         self.driver_index = 0
         self.state = THREAD_STATE_UNSTARTED
-
-        self.process_queue_pause = False
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
         self.queue = b''  # Thread-unsafe additional commands to append.
@@ -184,10 +183,13 @@ class K40Controller(Pipe):
     def open(self):
         if self.driver is None:
             self.detect_driver()
+        if self.driver is None:
+            raise ConnectionRefusedError
         self.driver.open()
 
     def close(self):
-        self.driver.close()
+        if self.driver is not None:
+            self.driver.close()
 
     def write(self, bytes_to_write):
         self.queue_lock.acquire()
@@ -240,13 +242,11 @@ class K40Controller(Pipe):
             self.thread.start()
 
     def resume(self):
-        self.process_queue_pause = False
         self.state = THREAD_STATE_STARTED
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.start()
 
     def pause(self):
-        self.process_queue_pause = True
         self.state = THREAD_STATE_PAUSED
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.start()
@@ -266,11 +266,15 @@ class K40Controller(Pipe):
 
     def process_queue(self):
         """
-        Attempts to process the queue
+        Attempts to process the buffer/queue
+        Will fail on ConnectionRefusedError at open.
+        process_queue_pause = True anytime before packet send.
+        self.buffer is empty.
+        Failure to produce packet.
 
         :return: some queue was processed.
         """
-        if self.process_queue_pause:
+        if self.state == THREAD_STATE_PAUSED:
             return False
         # if self.driver_index in  == STATE_USB_CONNECTED and not self.kernel.mock:
         try:
@@ -286,7 +290,7 @@ class K40Controller(Pipe):
             self.queue_lock.release()
             self.backend.signal('pipe;buffer', len(self.buffer))
         if len(self.buffer) == 0:
-            return True
+            return False
         find = self.buffer.find(b'\n', 0, 30)
         if find != -1:
             length = min(30, len(self.buffer), find + 1)
@@ -304,19 +308,24 @@ class K40Controller(Pipe):
             packet += b'F' * (30 - len(packet))
 
         # try to send packet
-        self.wait_ok()
-        if self.process_queue_pause:
-            return False  # Paused during wait.
+        try:
+            self.wait_ok()
+        except ConnectionError:
+            return False
+        if self.state == THREAD_STATE_PAUSED:
+            return False  # Paused during packet fetch.
+
+        # TODO: Remove packet from queue only once sent. If send_packet errors, queue is still correct.
         if len(packet) == 30:
             self.buffer = self.buffer[length:]
             self.backend.signal('pipe;buffer', len(self.buffer))
         else:
-            return True  # No valid packet was able to be produced.
+            return False  # No valid packet was able to be produced.
         self.send_packet(packet)
 
         if wait_finish:
             self.wait_finished()
-        return False
+        return True  # A packet was prepped and sent correctly.
 
     def send_packet(self, packet):
         if self.mock:
@@ -342,6 +351,8 @@ class K40Controller(Pipe):
         while True:
             self.update_status()
             status = self.status[1]
+            if status == 0:
+                raise ConnectionError
             if status == STATUS_PACKET_REJECTED:
                 self.rejected_count += 1
             if status == STATUS_OK:

@@ -109,6 +109,9 @@ class Backend:
         self.hold = hold
         self.hold_condition = lambda e: False
 
+    def close(self):
+        pass
+
     def send_job(self, job):
         self.spooler.send_job(job)
 
