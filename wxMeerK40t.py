@@ -1054,8 +1054,8 @@ class MeerK40t(wx.Frame):
             self.kernel.open_window(window_name)
 
     def execute_set_position_action(self, index):
-        x = self.kernel.backend.current_x
-        y = self.kernel.backend.current_y
+        x = self.kernel.device.current_x
+        y = self.kernel.device.current_y
         self.kernel.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
 
     def execute_move_action(self, direction, amount):
@@ -1239,8 +1239,8 @@ class MeerK40t(wx.Frame):
             dc.SetPen(wx.RED_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             try:
-                x = self.kernel.backend.current_x
-                y = self.kernel.backend.current_y
+                x = self.kernel.device.current_x
+                y = self.kernel.device.current_y
                 x, y = self.convert_scene_to_window([x, y])
                 dc.DrawCircle(x, y, 10)
             except AttributeError:
