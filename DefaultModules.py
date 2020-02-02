@@ -52,7 +52,7 @@ class K40StockDevice(Device):
         self.pipe = K40Controller(self)
         self.interpreter = LhymicroInterpreter(self)
         self.spooler = Spooler(self)
-        self.spooler.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
+        self.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
 
     def close(self):
         self.spooler.clear_queue()

@@ -15,17 +15,17 @@ class BufferView(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
-        self.project = None
+        self.kernel = None
         self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.project.mark_window_closed("BufferView")
-        self.project = None
+        self.kernel.mark_window_closed("BufferView")
+        self.kernel = None
         event.Skip()  # Call destroy as regular.
 
     def set_kernel(self, project):
-        self.project = project
+        self.kernel = project
         self.device = project.device
         if self.device is None:
             for attr in dir(self):

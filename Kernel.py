@@ -112,19 +112,20 @@ class Device:
         self.current_y = 0
         self.state = -1
         self.location = ''
-
-        def hold():
-            if self.hold_condition(0):
-                time.sleep(0.1)
-
-        self.hold = hold
         self.hold_condition = lambda e: False
+
+    def hold(self):
+        while self.hold_condition(0):
+            time.sleep(0.1)
 
     def close(self):
         self.flush()
 
     def send_job(self, job):
         self.spooler.send_job(job)
+
+    def execute(self, control_name, *args):
+        self.kernel.controls[self.uid + control_name](*args)
 
     def signal(self, code, *message):
         self.kernel.signal(self.uid + ';' + code, *message)
@@ -220,14 +221,14 @@ class SpoolerThread(Thread):
 
     def run(self):
         command_index = 0
-        self.spooler.hold()
+        self.spooler.device.hold()
         while True:
             element = self.spooler.peek()
             if element is None:
                 break  # Nothing left in spooler.
             if self.state == THREAD_STATE_ABORT:
                 break
-            self.spooler.hold()
+            self.spooler.device.hold()
             try:
                 gen = element.generate
             except AttributeError:
@@ -245,7 +246,7 @@ class SpoolerThread(Thread):
                 command_index += 1
                 if self.state == THREAD_STATE_ABORT:
                     break
-                self.spooler.hold()
+                self.spooler.device.hold()
                 self.spooler.execute(command, *values)
             self.spooler.pop()
         if self.state == THREAD_STATE_ABORT:
@@ -263,22 +264,16 @@ class Spooler:
     def __init__(self, device):
         self.device = device
 
-        self.hold_condition = lambda e: False
-
         self.queue_lock = Lock()
         self.queue = []
         self.thread = None
         self.reset_thread()
 
-    def hold(self):
-        while self.hold_condition(0):
-            time.sleep(0.1)
-
     def thread_state_update(self, state):
         self.device.signal('spooler;thread', state)
 
     def execute(self, command, *values):
-        self.hold()
+        self.device.hold()
         self.device.interpreter.command(command, *values)
 
     def realtime(self, command, *values):

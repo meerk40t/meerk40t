@@ -140,9 +140,9 @@ class JobInfo(wx.Frame):
                 pass
 
     def jobadd_scale_rotary(self):
-        if self.kernel.scale_x != 1.0 or self.kernel.scale_y != 1.0:
+        if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
             def scale_project():
-                p = self.kernel
+                p = self.device
                 scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.spooler.current_x, p.spooler.current_y)
                 for e in self.job_items:
                     try:
@@ -156,13 +156,13 @@ class JobInfo(wx.Frame):
         self.job_items = elements
         self.jobadd_remove_text()
         self.jobadd_actualize_image()
-        if self.kernel.rotary:
+        if self.device.rotary:
             self.jobadd_scale_rotary()
 
-        if self.kernel.autobeep:
+        if self.device.autobeep:
             self.jobadd_beep(None)
 
-        if self.kernel.autohome:
+        if self.device.autohome:
             self.jobadd_home(None)
 
         self.update_gui()
@@ -224,20 +224,20 @@ class JobInfo(wx.Frame):
         # end wxGlade
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.kernel.autostart = self.menu_autostart.IsChecked()
+        self.device.autostart = self.menu_autostart.IsChecked()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.kernel.autohome = self.menu_autohome.IsChecked()
+        self.device.autohome = self.menu_autohome.IsChecked()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.kernel.autobeep = self.menu_autobeep.IsChecked()
+        self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         self.kernel.open_window("JobSpooler")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.required_preprocessing_operations) == 0:
-            self.kernel.device.send_job(self.job_items)
+            self.device.send_job(self.job_items)
             self.on_button_job_spooler()
             self.kernel.close_old_window("JobInfo")
         else:
@@ -246,7 +246,7 @@ class JobInfo(wx.Frame):
             self.required_preprocessing_operations = []
             for op in ops:
                 op()
-
+            # TODO: break the connection between elements in kernel and the elements here.
             self.kernel('elements', 0)
             self.update_gui()
 

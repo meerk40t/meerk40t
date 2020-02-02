@@ -69,8 +69,6 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.on_plot = lambda x, y, on: device.signal('interpreter;plot', (x, y, on))
-
         device.add_control("Emergency Stop", self.emergency_stop)
         # TODO: Consider Restoring this code.
 
@@ -94,6 +92,10 @@ class LhymicroInterpreter(Interpreter):
         # backend.add_control("acceleration Breaks 30mm/s", break_acceleration30)
         # backend.add_control("acceleration Breaks 40mm/s", break_acceleration40)
         # backend.add_control("acceleration Breaks off", break_acceleration_inf)
+
+    def on_plot(self, x, y, on):
+        self.device.signal('interpreter;plot', (x, y, on))
+        self.device.hold()
 
     def ungroup_plots(self, generate):
         current_x = None
@@ -154,8 +156,7 @@ class LhymicroInterpreter(Interpreter):
                 last_y = y
                 continue
             yield last_x, last_y, last_on
-            if self.on_plot is not None:
-                self.on_plot(last_x, last_y, last_on)
+            self.on_plot(last_x, last_y, last_on)
             dx = x - last_x
             dy = y - last_y
             if abs(dx) > 1 or abs(dy) > 1:
@@ -166,8 +167,7 @@ class LhymicroInterpreter(Interpreter):
             last_y = y
             last_on = on
         yield last_x, last_y, last_on
-        if self.on_plot is not None:
-            self.on_plot(last_x, last_y, last_on)
+        self.on_plot(last_x, last_y, last_on)
 
     def command(self, command, values):
         if command == COMMAND_LASER_OFF:

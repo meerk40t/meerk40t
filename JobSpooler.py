@@ -175,7 +175,7 @@ class JobSpooler(wx.Frame):
             event.Skip()
             return  # We can't delete the running element.
         try:
-            element = self.kernel.spooler.queue[index]
+            element = self.device.spooler.queue[index]
         except IndexError:
             return
         menu = wx.Menu()
@@ -188,36 +188,36 @@ class JobSpooler(wx.Frame):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            self.kernel.spooler.queue = []
+            self.device.spooler.queue = []
             self.refresh_spooler_list()
 
         return delete
 
     def on_tree_popup_delete(self, element):
         def delete(event):
-            self.kernel.spooler.queue.remove(element)
+            self.device.spooler.queue.remove(element)
             self.refresh_spooler_list()
 
         return delete
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.kernel.buffer_limit = not self.kernel.buffer_limit
+        self.device.buffer_limit = not self.device.buffer_limit
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.kernel is not None:
-            self.kernel.buffer_max = self.spin_packet_buffer_max.GetValue()
+        if self.device is not None:
+            self.device.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.kernel is not None:
-            self.kernel.autostart = not self.kernel.autostart
+        if self.device is not None:
+            self.device.autostart = not self.device.autostart
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.kernel is not None:
-            self.kernel.autohome = not self.kernel.autohome
+        if self.device is not None:
+            self.device.autohome = not self.device.autohome
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.kernel is not None:
-            self.kernel.autobeep = not self.kernel.autobeep
+        if self.device is not None:
+            self.device.autobeep = not self.device.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
         self.kernel.open_window("Controller")

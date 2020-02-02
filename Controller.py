@@ -283,8 +283,8 @@ class Controller(wx.Frame):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
-            self.packet_count_text.SetValue(str(self.kernel.packet_count))
-            self.rejected_packet_count_text.SetValue(str(self.kernel.rejected_count))
+            self.packet_count_text.SetValue(str(self.device.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.device.rejected_count))
             update = True
         if self.update_buffer_size:
             self.update_buffer_size = False
@@ -326,12 +326,12 @@ class Controller(wx.Frame):
         uid = self.device.uid
         state = self.usb_state
         if state == STATE_USB_DISCONNECTED or state == STATE_UNINITIALIZED:
-            self.kernel.execute("%sStart" % uid)
+            self.device.execute("Start")
         else:
-            self.kernel.execute("%sStop" % uid)
+            self.device.execute("Stop")
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.kernel.execute("Emergency Stop")
+        self.device.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
         self.kernel.open_window("BufferView")
