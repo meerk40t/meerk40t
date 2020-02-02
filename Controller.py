@@ -49,6 +49,7 @@ class Controller(wx.Frame):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.kernel = None
+        self.device = None
         self.uid = None
         self.dirty = False
         self.status_data = None
@@ -67,10 +68,20 @@ class Controller(wx.Frame):
         self.update_usb_status = False
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
-    def set_kernel(self, project):
-        self.kernel = project
-        if project.backend is not None:
-            uid = project.backend.uid
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            uid = kernel.device.uid
             self.uid = uid
             self.kernel.listen("%s;pipe;status" % uid, self.update_status)
             self.kernel.listen("%s;pipe;packet" % uid, self.update_packet)
@@ -78,8 +89,7 @@ class Controller(wx.Frame):
             self.kernel.listen("%s;pipe;buffer" % uid, self.on_buffer_update)
             self.kernel.listen("%s;pipe;usb_state" % uid, self.on_usb_state)
             self.kernel.listen("%s;pipe;thread" % uid, self.on_control_state)
-        else:
-            self.uid = None
+
         self.set_controller_button_by_state()
 
     def on_close(self, event):
@@ -300,9 +310,10 @@ class Controller(wx.Frame):
         self.dirty = False
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        if self.kernel.backend is not None:
-            uid = self.kernel.backend.uid
+        if self.device is not None:
+            uid = self.device.uid
             state = self.kernel.get_state(uid)
+            # TODO: This is questionable. getstate is for modules.
             if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
                 self.kernel.start(uid)
             elif state == THREAD_STATE_PAUSED:
@@ -313,7 +324,7 @@ class Controller(wx.Frame):
                 self.kernel.reset(uid)
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        uid = self.kernel.backend.uid
+        uid = self.device.uid
         state = self.usb_state
         if state == STATE_USB_DISCONNECTED or state == STATE_UNINITIALIZED:
             self.kernel.execute("%sStart" % uid)

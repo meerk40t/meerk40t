@@ -16,6 +16,7 @@ class BufferView(wx.Frame):
         self.__do_layout()
         # end wxGlade
         self.project = None
+        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
@@ -25,23 +26,34 @@ class BufferView(wx.Frame):
 
     def set_kernel(self, project):
         self.project = project
-        pipe = project.backend.pipe
-        buffer = None
-        if pipe is not None:
+        self.device = project.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            pipe = self.device.pipe
+            buffer = None
+            if pipe is not None:
+                try:
+                    buffer = pipe.buffer + pipe.queue
+                except AttributeError:
+                    buffer = None
+            if buffer is None:
+                buffer = _("Could not find buffer.\n")
+
             try:
-                buffer = pipe.buffer + pipe.queue
-            except AttributeError:
-                buffer = None
-        if buffer is None:
-            buffer = _("Could not find buffer.\n")
+                bufferstr = buffer.decode()
+            except ValueError:
+                bufferstr = buffer.decode("ascii")
 
-        try:
-            bufferstr = buffer.decode()
-        except ValueError:
-            bufferstr = buffer.decode("ascii")
-
-        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
-        self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
+            self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
+            self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
 
     def __set_properties(self):
         # begin wxGlade: BufferView.__set_properties

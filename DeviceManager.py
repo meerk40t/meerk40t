@@ -6,13 +6,8 @@
 
 import wx
 from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50
-# icons8_comments_50.GetBitmap()
 
-# begin wxGlade: dependencies
-# end wxGlade
-
-# begin wxGlade: extracode
-# end wxGlade
+_ = wx.GetTranslation
 
 
 class DeviceManager(wx.Frame):
@@ -54,12 +49,12 @@ class DeviceManager(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: DeviceManager.__set_properties
-        self.SetTitle("Device Manager")
+        self.SetTitle(-("Device Manager"))
         self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.devices_list.AppendColumn("Name", format=wx.LIST_FORMAT_LEFT, width=117)
-        self.devices_list.AppendColumn("Driver", format=wx.LIST_FORMAT_LEFT, width=146)
-        self.devices_list.AppendColumn("State", format=wx.LIST_FORMAT_LEFT, width=105)
-        self.devices_list.AppendColumn("Location", format=wx.LIST_FORMAT_LEFT, width=254)
+        self.devices_list.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=117)
+        self.devices_list.AppendColumn(_("Driver"), format=wx.LIST_FORMAT_LEFT, width=146)
+        self.devices_list.AppendColumn(_("State"), format=wx.LIST_FORMAT_LEFT, width=105)
+        self.devices_list.AppendColumn(_("Location"), format=wx.LIST_FORMAT_LEFT, width=254)
         self.new_device_button.SetSize(self.new_device_button.GetBestSize())
         self.remove_device_button.SetSize(self.remove_device_button.GetBestSize())
         self.device_properties_button.SetSize(self.device_properties_button.GetBestSize())
@@ -84,10 +79,13 @@ class DeviceManager(wx.Frame):
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
-        if len(self.kernel.backends) <= 0:
+        if len(self.kernel.devices) <= 0:
             return
         i = 0
-        for key, value in self.kernel.backends.items():
+        for key, value in self.kernel.devices.items():
+            if len(key) == 0:
+
+                key = _("<Default>")
             m = self.devices_list.InsertItem(i, "%s" % str(key))
             if m != -1:
                 self.devices_list.SetItem(m, 1, "Lhystudio")
@@ -101,7 +99,7 @@ class DeviceManager(wx.Frame):
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
         # new_backend = self.kernel.backends[event.GetLabel()]
-        self.kernel.activate_backend(uid)
+        self.kernel.activate_device(uid)
         self.Close()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>

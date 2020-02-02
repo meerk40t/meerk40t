@@ -4,54 +4,94 @@ from io import BytesIO
 from base64 import b64encode
 
 from K40Controller import K40Controller
-from Kernel import Spooler, Module, Backend
+from Kernel import Spooler, Module, Backend, Device
 from LhymicroInterpreter import LhymicroInterpreter
 from LaserNode import *
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 
-class K40Stock(Module, Backend):
+class K40StockDevice(Device):
     def __init__(self):
-        Module.__init__(self)
-        Backend.__init__(self)
+        Device.__init__(self)
+        self.usb_index = -1
+        self.usb_bus = -1
+        self.usb_address = -1
+        self.usb_serial = -1
+        self.usb_chip_version = -1
+        self.mock = True
+        self.packet_count = 0
+        self.rejected_count = 0
+        self.buffer_max = 900
+        self.buffer_limit = True
         self.autolock = True
+        self.autohome = False
+        self.autobeep = True
+        self.autostart = True
+        self.board = 'M2'
+        self.rotary = False
+        self.scale_x = 1.0
+        self.scale_y = 1.0
+        self._stepping_force = None
+        self._acceleration_breaks = float("inf")
 
-    def initialize(self, kernel, name='Lhy-K40'):
-        kernel.setting(int, 'usb_index', -1)
-        kernel.setting(int, 'usb_bus', -1)
-        kernel.setting(int, 'usb_address', -1)
-        kernel.setting(int, 'usb_serial', -1)
-        kernel.setting(int, 'usb_chip_version', -1)
-
-        kernel.setting(bool, 'mock', False)
-        kernel.setting(int, 'packet_count', 0)
-        kernel.setting(int, 'rejected_count', 0)
-        kernel.setting(int, "buffer_max", 900)
-        kernel.setting(bool, "buffer_limit", True)
-        kernel.setting(bool, "autolock", True)
-
-        kernel.setting(str, "board", "M2")
-        kernel.setting(bool, "autostart", True)
-        kernel.setting(bool, "rotary", False)
-        kernel.setting(float, "scale_x", 1.0)
-        kernel.setting(float, "scale_y", 1.0)
-        kernel.setting(int, "_stepping_force", None)
-        kernel.setting(float, "_acceleration_breaks", float("inf"))
-
-        self.uid = name
+    def initialize(self, kernel, name=''):
         self.kernel = kernel
+        self.uid = name
+        kernel.setting(int, '%susb_index' % name, self.usb_index)
+        kernel.setting(int, '%susb_bus' % name, self.usb_bus)
+        kernel.setting(int, '%susb_address' % name, self.usb_address)
+        kernel.setting(int, '%susb_serial' % name, self.usb_serial)
+        kernel.setting(int, '%susb_chip_version' % name, self.usb_chip_version)
+
+        kernel.setting(bool, '%smock' % name, self.mock)
+        kernel.setting(int, '%spacket_count' % name, self.packet_count)
+        kernel.setting(int, '%srejected_count' % name, self.rejected_count)
+        kernel.setting(int, "%sbuffer_max" % name, self.buffer_max)
+        kernel.setting(bool, "%sbuffer_limit" % name, self.buffer_limit)
+        kernel.setting(bool, "%sautolock" % name, self.autolock)
+        kernel.setting(bool, "%sautohome" % name, self.autohome)
+        kernel.setting(bool, "%sautobeep" % name, self.autobeep)
+        kernel.setting(bool, "%sautostart" % name, self.autostart)
+
+        kernel.setting(str, "%sboard" % name, self.board)
+        kernel.setting(bool, "%srotary" % name, self.rotary)
+        kernel.setting(float, "%sscale_x" % name, self.scale_x)
+        kernel.setting(float, "%sscale_y" % name, self.scale_y)
+        kernel.setting(int, "_%sstepping_force" % name, self._stepping_force)
+        kernel.setting(float, "_%sacceleration_breaks" % name, self._acceleration_breaks)
+
+        self.hold_condition = lambda v: kernel.buffer_limit and len(self.pipe) > self.kernel.buffer_max
+        kernel.add_device(name, self)
+        self.open()
+
+    def open(self):
         self.pipe = K40Controller(self)
         self.interpreter = LhymicroInterpreter(self)
         self.spooler = Spooler(self)
-        kernel.add_backend(name, self)
-
-        self.hold_condition = lambda e: kernel.buffer_limit and len(self.pipe) > self.kernel.buffer_max
 
     def close(self):
         self.spooler.clear_queue()
         self.interpreter.emergency_stop()
         self.pipe.close()
+
+
+class K40StockBackend(Module, Backend):
+    def __init__(self):
+        Module.__init__(self)
+        Backend.__init__(self, uid='K40Stock')
+        self.autolock = True
+        self.mock = True
+
+    def initialize(self, kernel, name='K40Stock'):
+        self.kernel = kernel
+        self.kernel.add_backend(name, self)
+        self.create_device('')
+        self.create_device('k')
+
+    def create_device(self, uid):
+        device = K40StockDevice()
+        device.initialize(self.kernel, uid)
 
 
 class SVGWriter:

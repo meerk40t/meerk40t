@@ -48,11 +48,12 @@ class Navigation(wx.Frame):
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_pulse_time, self.spin_pulse_time)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_pulse_time, self.spin_pulse_time)
         # end wxGlade
-        self.project = None
+        self.kernel = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.device = None
 
     def on_close(self, event):
-        self.project.mark_window_closed("Navigation")
+        self.kernel.mark_window_closed("Navigation")
         event.Skip()  # Call destroy.
 
     def __set_properties(self):
@@ -116,21 +117,32 @@ class Navigation(wx.Frame):
         self.Layout()
         # end wxGlade
 
-    def set_kernel(self, project):
-        self.project = project
-        self.project.setting(float, "navigation_step", self.spin_step_size.GetValue())
-        self.project.setting(float, "navigation_pulse", self.spin_pulse_time.GetValue())
-        self.spin_step_size.SetValue(project.navigation_step)
-        self.spin_pulse_time.SetValue(project.navigation_pulse)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.kernel.setting(float, "navigation_step", self.spin_step_size.GetValue())
+            self.kernel.setting(float, "navigation_pulse", self.spin_pulse_time.GetValue())
+            self.spin_step_size.SetValue(kernel.navigation_step)
+            self.spin_pulse_time.SetValue(kernel.navigation_pulse)
 
     def home(self, evt):
-        self.project.spooler.interpreter.home()
+        self.device.interpreter.home()
 
     def lock_rail(self, evt):
-        self.project.spooler.interpreter.lock_rail()
+        self.device.interpreter.lock_rail()
 
     def unlock_rail(self, evt):
-        self.project.spooler.interpreter.unlock_rail()
+        self.device.interpreter.unlock_rail()
 
     def fire_time(self, evt):
         value = self.spin_pulse_time.GetValue()
@@ -141,30 +153,30 @@ class Navigation(wx.Frame):
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, value
             yield COMMAND_LASER_OFF
-        self.project.backend.send_job(timed_fire)
+        self.device.send_job(timed_fire)
 
     def move_top(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.backend.interpreter.move_relative(0, -value)
+        self.device.interpreter.move_relative(0, -value)
 
     def move_left(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.backend.interpreter.move_relative(-value, 0)
+        self.device.interpreter.move_relative(-value, 0)
 
     def move_right(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.backend.interpreter.move_relative(value, 0)
+        self.device.interpreter.move_relative(value, 0)
 
     def move_bottom(self, evt):
         value = self.spin_step_size.GetValue()
         value = int(value * 39.37)
-        self.project.backend.interpreter.move_relative(0, value)
+        self.device.interpreter.move_relative(0, value)
 
     def on_spin_step_size(self, event):  # wxGlade: Navigate.<event_handler>
-        self.project.navigation_step = self.spin_step_size.GetValue()
+        self.kernel.navigation_step = self.spin_step_size.GetValue()
 
     def on_spin_pulse_time(self, event):  # wxGlade: Navigate.<event_handler>
-        self.project.navigation_pulse = self.spin_pulse_time.GetValue()
+        self.kernel.navigation_pulse = self.spin_pulse_time.GetValue()

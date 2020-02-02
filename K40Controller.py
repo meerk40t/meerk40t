@@ -122,17 +122,18 @@ class ControllerQueueThread(threading.Thread):
 
 
 class K40Controller(Pipe):
-    def __init__(self, backend=None):
-        Pipe.__init__(self, backend)
+    def __init__(self, device=None):
+        Pipe.__init__(self, device)
         self.driver = None
         self.driver_index = 0
         self.state = THREAD_STATE_UNSTARTED
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
         self.queue = b''  # Thread-unsafe additional commands to append.
+        self.preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
         self.queue_lock = threading.Lock()
+        self.preempt_lock = threading.Lock()
         self.thread = None
-        self.mock = backend.kernel.mock
         self.packet_count = 0
         self.rejected_count = 0
 
@@ -147,39 +148,39 @@ class K40Controller(Pipe):
             self.state = THREAD_STATE_STARTED
             self.start()
 
-        self.backend.add_control("Start", start_usb)
+        self.device.add_control("Start", start_usb)
 
         def stop_usb():
             self.state = THREAD_STATE_FINISHED
 
-        self.backend.add_control("Stop", stop_usb)
+        self.device.add_control("Stop", stop_usb)
 
         def abort_wait():
             self.abort_waiting = True
 
-        self.backend.add_control("Wait Abort", abort_wait)
+        self.device.add_control("Wait Abort", abort_wait)
 
         def pause_k40():
             self.state = THREAD_STATE_PAUSED
             self.start()
 
-        self.backend.add_control("Pause", pause_k40)
+        self.device.add_control("Pause", pause_k40)
 
         def resume_k40():
             self.state = THREAD_STATE_STARTED
             self.start()
 
-        self.backend.add_control("Resume", resume_k40)
+        self.device.add_control("Resume", resume_k40)
 
     def __len__(self):
         return len(self.buffer) + len(self.queue)
 
     def thread_state_update(self, state):
-        self.backend.signal('pipe;thread', state)
+        self.device.signal('pipe;thread', state)
 
     @property
     def name(self):
-        return self.backend.uid
+        return self.device.uid
 
     def open(self):
         if self.driver is None:
@@ -189,8 +190,9 @@ class K40Controller(Pipe):
         self.driver.open()
 
     def close(self):
-        if self.driver is not None:
-            self.driver.close()
+        if not self.device.mock:
+            if self.driver is not None:
+                self.driver.close()
 
     def write(self, bytes_to_write):
         self.queue_lock.acquire()
@@ -203,26 +205,31 @@ class K40Controller(Pipe):
         return self.status
 
     def realtime_write(self, bytes_to_write):
-        """Must write directly to the controller without delay."""
-        pass
+        """
+        Preempting commands.
+        Commands to be sent to the front of the buffer."""
+        self.preempt_lock.acquire()
+        self.preempt = bytes_to_write + self.preempt
+        self.preempt_lock.release()
+        self.start()
+        return self
 
     def state_listener(self, code):
         if isinstance(code, int):
             self.log(get_name_for_status(code))
-            self.backend.signal("pipe;usb_state", code)
+            self.device.signal("pipe;usb_state", code)
         else:
             self.log(str(code))
 
-
     def detect_driver(self):
-        # TODO: Match the specific requirements of the backend driver protocol.
-        # If you match more than one device. You should connect to the one that lets you connect.
+        # TODO: Multi-Match the specific requirements of the backend driver protocol.
+        # Connection-Permitted- If you match more than one device. You should connect to the one that lets you connect.
         try:
             from CH341LibusbDriver import CH341Driver
             self.driver = driver = CH341Driver(self.driver_index, state_listener=self.state_listener)
             driver.open()
             chip_version = driver.get_chip_version()
-            self.backend.signal("pipe;chipv", chip_version)
+            self.device.signal("pipe;chipv", chip_version)
             driver.close()
         except: # Import Error (libusb isn't installed), ConnectionRefusedError (wrong driver)
             try:
@@ -230,15 +237,15 @@ class K40Controller(Pipe):
                 self.driver = driver = CH341Driver(self.driver_index, state_listener=self.state_listener)
                 driver.open()
                 chip_version = driver.get_chip_version()
-                self.backend.signal("pipe;chipv", chip_version)
+                self.device.signal("pipe;chipv", chip_version)
                 driver.close()
             except:
                 self.driver = None
 
     def log(self, info):
         update = str(info) + '\n'
-        self.backend.log(update)
-        self.backend.signal("pipe;device_log", update)
+        self.device.log(update)
+        self.device.signal("pipe;device_log", update)
 
     def state(self):
         return self.thread.state
@@ -267,11 +274,11 @@ class K40Controller(Pipe):
         self.state = THREAD_STATE_ABORT
         self.buffer = b''
         self.queue = b''
-        self.backend.signal('pipe;buffer', 0)
+        self.device.signal('pipe;buffer', 0)
 
     def reset(self):
         self.thread = ControllerQueueThread(self)
-        self.backend.add_thread("controller;thread", self.thread)
+        self.device.add_thread("controller;thread", self.thread)
 
     def stop(self):
         self.abort()
@@ -279,84 +286,118 @@ class K40Controller(Pipe):
     def process_queue(self):
         """
         Attempts to process the buffer/queue
-        Will fail on ConnectionRefusedError at open.
-        process_queue_pause = True anytime before packet send.
-        self.buffer is empty.
-        Failure to produce packet.
+        Will fail on ConnectionRefusedError at open, 'process_queue_pause = True' (anytime before packet sent),
+        self.buffer is empty, or a failure to produce packet.
 
-        :return: some queue was processed.
+        Buffer will not be changed unless packet is successfully sent, or pipe commands are processed.
+
+        - : tells the system to require wait finish at the end of the queue processing.
+        * : tells the system to clear the buffers, and abort the thread.
+        ! : tells the system to pause.
+        & : tells the system to resume.
+
+        :return: queue process success.
         """
-        if self.state == THREAD_STATE_PAUSED:
-            return False
-        # if self.driver_index in  == STATE_USB_CONNECTED and not self.kernel.mock:
-        try:
-            self.open()
-        except ConnectionRefusedError:
-            return False
 
-        wait_finish = False
-        if len(self.queue):
+        if len(self.queue):  # check for and append queue
             self.queue_lock.acquire()
             self.buffer += self.queue
             self.queue = b''
             self.queue_lock.release()
-            self.backend.signal('pipe;buffer', len(self.buffer))
+            self.device.signal('pipe;buffer', len(self.buffer))
+        if len(self.preempt):  # check for and prepend preempt
+            self.preempt_lock.acquire()
+            self.buffer = self.preempt + self.buffer
+            self.preempt = b''
+            self.preempt_lock.release()
         if len(self.buffer) == 0:
             return False
+
+        # Find buffer of 30 or containing '\n'.
         find = self.buffer.find(b'\n', 0, 30)
-        if find != -1:
-            length = min(30, len(self.buffer), find + 1)
-        else:
+        if find == -1:  # No end found.
             length = min(30, len(self.buffer))
+        else:  # Line end found.
+            length = min(30, len(self.buffer), find + 1)
         packet = self.buffer[:length]
-        if packet.endswith(b'-'):  # edge condition of "-\n" catching only the '-' exactly at 30.
+
+        # edge condition of catching only pipe command without '\n'
+        if packet.endswith((b'-', b'*', b'&', b'!')):
             packet += self.buffer[length:length + 1]
             length += 1
+
+        post_send_command = None
+        # find pipe commands.
         if packet.endswith(b'\n'):
             packet = packet[:-1]
-            if packet.endswith(b'-'):
+            if packet.endswith(b'-'):  # wait finish
                 packet = packet[:-1]
-                wait_finish = True
-            packet += b'F' * (30 - len(packet))
+                post_send_command = self.wait_finished
+            elif packet.endswith(b'*'):  # abort
+                post_send_command = self.abort
+                packet = packet[:-1]
+            elif packet.endswith(b'&'):  # resume
+                self.resume()  # resume must be done before checking pause state.
+                packet = packet[:-1]
+            elif packet.endswith(b'!'):  # pause
+                post_send_command = self.pause
+                packet = packet[:-1]
+            if len(packet) != 0:
+                packet += b'F' * (30 - len(packet))  # Padding. '\n'
 
-        # try to send packet
-        try:
-            self.wait_ok()
-        except ConnectionError:
-            return False
         if self.state == THREAD_STATE_PAUSED:
-            return False  # Paused during packet fetch.
+            return False  # Abort due to pause.
 
-        # TODO: Remove packet from queue only once sent. If send_packet errors, queue is still correct.
-        if len(packet) == 30:
-            self.buffer = self.buffer[length:]
-            self.backend.signal('pipe;buffer', len(self.buffer))
+        # Packet is prepared and ready to send.
+        if self.device.mock:
+            self.state_listener(STATE_DRIVER_MOCK)
         else:
-            return False  # No valid packet was able to be produced.
-        self.send_packet(packet)
+            try:
+                self.open()
+            except ConnectionRefusedError:
+                return False
 
-        if wait_finish:
-            self.wait_finished()
+        if len(packet) == 30:
+            # check that latest state is okay.
+            try:
+                self.wait_ok()
+            except ConnectionError:
+                return False  # Error.
+
+            if self.state == THREAD_STATE_PAUSED:
+                return False  # Paused during packet fetch.
+            try:
+                self.send_packet(packet)
+            except ConnectionError:
+                return False
+        self.buffer = self.buffer[length:]
+        self.device.signal('pipe;buffer', len(self.buffer))
+        if post_send_command is not None:
+            # Post send command could be wait_finished, and might have a broken pipe.
+            try:
+                post_send_command()
+            except ConnectionError:
+                pass
         return True  # A packet was prepped and sent correctly.
 
     def send_packet(self, packet):
-        if self.mock:
+        if self.device.mock:
             time.sleep(0.1)
         else:
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
 
         self.packet_count += 1
-        self.backend.signal("pipe;packet", convert_to_list_bytes(packet))
-        self.backend.signal("pipe;packet_text", packet)
+        self.device.signal("pipe;packet", convert_to_list_bytes(packet))
+        self.device.signal("pipe;packet_text", packet)
 
     def update_status(self):
-        if self.mock:
+        if self.device.mock:
             self.status = [255, 206, 0, 0, 0, 0]
             time.sleep(0.01)
         else:
             self.status = self.driver.get_status()
-        self.backend.signal("pipe;status", self.status)
+        self.device.signal("pipe;status", self.status)
 
     def wait_ok(self):
         i = 0
@@ -369,8 +410,8 @@ class K40Controller(Pipe):
                 self.rejected_count += 1
             if status == STATUS_OK:
                 break
-            time.sleep(0.1)
-            self.backend.signal("pipe;wait", STATUS_OK, i)
+            time.sleep(0.05)
+            self.device.signal("pipe;wait", STATUS_OK, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
@@ -380,7 +421,7 @@ class K40Controller(Pipe):
         i = 0
         while True:
             self.update_status()
-            if self.mock:  # Mock controller
+            if self.device.mock:  # Mock controller
                 self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
@@ -389,7 +430,7 @@ class K40Controller(Pipe):
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
                 break
             time.sleep(0.05)
-            self.backend.signal("pipe;wait", (status, i))
+            self.device.signal("pipe;wait", status, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False

@@ -50,22 +50,34 @@ class RotarySettings(wx.Frame):
                   self.spin_rotary_object_circumference)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotary_object_circumference, self.spin_rotary_object_circumference)
         # end wxGlade
-        self.project = None
+        self.kernel = None
+        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.project.mark_window_closed("Rotary")
+        self.kernel.mark_window_closed("Rotary")
         event.Skip()  # Call destroy.
 
-    def set_kernel(self, project):
-        self.project = project
-        self.project.setting(bool, 'rotary', False)
-        self.project.setting(float, 'scale_x', 1.0)
-        self.project.setting(float, 'scale_y', 1.0)
-        self.spin_rotary_scalex.SetValue(self.project.scale_x)
-        self.spin_rotary_scaley.SetValue(self.project.scale_y)
-        self.checkbox_rotary.SetValue(self.project.rotary)
-        self.on_check_rotary(None)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.device.setting(bool, 'rotary', False)
+            self.device.setting(float, 'scale_x', 1.0)
+            self.device.setting(float, 'scale_y', 1.0)
+            self.spin_rotary_scalex.SetValue(self.device.scale_x)
+            self.spin_rotary_scaley.SetValue(self.device.scale_y)
+            self.checkbox_rotary.SetValue(self.device.rotary)
+            self.on_check_rotary(None)
 
     def __set_properties(self):
         # begin wxGlade: RotarySettings.__set_properties
@@ -130,15 +142,15 @@ class RotarySettings(wx.Frame):
         # end wxGlade
 
     def on_check_rotary(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.project.rotary = self.checkbox_rotary.GetValue()
+        self.device.rotary = self.checkbox_rotary.GetValue()
         self.spin_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.spin_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_spin_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.project.scale_y = self.spin_rotary_scaley.GetValue()
+        self.device.scale_y = self.spin_rotary_scaley.GetValue()
 
     def on_spin_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.project.scale_x = self.spin_rotary_scalex.GetValue()
+        self.device.scale_x = self.spin_rotary_scalex.GetValue()
 
     def on_check_rotary_loop(self, event):  # wxGlade: RotarySettings.<event_handler>
         print("Event handler 'on_check_rotary_loop' not implemented!")

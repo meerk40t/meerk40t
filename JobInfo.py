@@ -64,11 +64,13 @@ class JobInfo(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_start_job, self.button_writer_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_job_spooler, self.button_job_spooler)
         # end wxGlade
-        self.project = None
+        self.kernel = None
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.elements = None
-        self.operations = None
+
+        self.device = None
+        self.job_items = None
+        self.required_preprocessing_operations = None
 
     def spool_trace_simple(self, event):
         print("Spool Simple.")
@@ -81,7 +83,7 @@ class JobInfo(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_HOME
 
-        self.elements.append(home)
+        self.job_items.append(home)
         self.update_gui()
 
     def jobadd_wait(self, event):
@@ -91,7 +93,7 @@ class JobInfo(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_WAIT, wait_amount
 
-        self.elements.append(wait)
+        self.job_items.append(wait)
         self.update_gui()
 
     def jobadd_beep(self, event):
@@ -99,25 +101,25 @@ class JobInfo(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_BEEP
 
-        self.elements.append(beep)
+        self.job_items.append(beep)
         self.update_gui()
 
     def jobadd_remove_text(self):
-        for e in self.elements:
+        for e in self.job_items:
             try:
                 t = e.type
             except AttributeError:
                 t = 'function'
             if t == 'text':
                 def remove_text():
-                    self.elements = [e for e in self.elements if not hasattr(e, 'type') or e.type != 'text']
+                    self.job_items = [e for e in self.job_items if not hasattr(e, 'type') or e.type != 'text']
                     self.update_gui()
 
-                self.operations.append(remove_text)
+                self.required_preprocessing_operations.append(remove_text)
                 break
 
     def jobadd_actualize_image(self):
-        for e in self.elements:
+        for e in self.job_items:
             try:
                 t = e.type
             except AttributeError:
@@ -125,67 +127,73 @@ class JobInfo(wx.Frame):
             try:
                 if e.needs_actualization():
                     def actualize():
-                        for e in self.elements:
+                        for e in self.job_items:
                             try:
                                 if e.needs_actualization():
                                     e.make_actual()
                             except AttributeError:
                                 pass
 
-                    self.operations.append(actualize)
+                    self.required_preprocessing_operations.append(actualize)
                     break
             except AttributeError:
                 pass
 
     def jobadd_scale_rotary(self):
-        if self.project.scale_x != 1.0 or self.project.scale_y != 1.0:
+        if self.kernel.scale_x != 1.0 or self.kernel.scale_y != 1.0:
             def scale_project():
-                p = self.project
+                p = self.kernel
                 scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.spooler.current_x, p.spooler.current_y)
-                for e in self.elements:
+                for e in self.job_items:
                     try:
                         e.element *= scale_str
                     except AttributeError:
                         pass
                 self.jobadd_actualize_image()
-            self.operations.append(scale_project)
+            self.required_preprocessing_operations.append(scale_project)
 
-    def set_elements(self, elements):
-        self.elements = elements
+    def set_job_items(self, elements):
+        self.job_items = elements
         self.jobadd_remove_text()
         self.jobadd_actualize_image()
-        if self.project.rotary:
+        if self.kernel.rotary:
             self.jobadd_scale_rotary()
 
-        if self.project.autobeep:
+        if self.kernel.autobeep:
             self.jobadd_beep(None)
 
-        if self.project.autohome:
+        if self.kernel.autohome:
             self.jobadd_home(None)
+
         self.update_gui()
 
-    def set_kernel(self, project, operations=None):
-        self.project = project
-        self.operations = operations
-        project.setting(bool, 'rotary', False)
-        project.setting(float, 'scale_x', 1.0)
-        project.setting(float, 'scale_y', 1.0)
-        project.setting(bool, "autohome", False)
-        project.setting(bool, "autobeep", True)
-        project.setting(bool, "autostart", True)
-        self.menu_autohome.Check(project.autohome)
-        self.menu_autobeep.Check(project.autobeep)
-        self.menu_autostart.Check(project.autostart)
-        if self.elements is None:
-            self.elements = []
-        if self.operations is None:
-            self.operations = []
+    def set_device(self, device):
+        self.device = device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.menu_autohome.Check(device.autohome)
+            self.menu_autobeep.Check(device.autobeep)
+            self.menu_autostart.Check(device.autostart)
 
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.set_device(kernel.device)
+        self.required_preprocessing_operations = []
+        self.job_items = []
+        self.set_job_items(kernel.operations[:])
         self.update_gui()
 
     def on_close(self, event):
-        self.project.mark_window_closed("JobInfo")
-        self.project = None
+        self.kernel.mark_window_closed("JobInfo")
+        self.kernel = None
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -216,30 +224,30 @@ class JobInfo(wx.Frame):
         # end wxGlade
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.autostart = self.menu_autostart.IsChecked()
+        self.kernel.autostart = self.menu_autostart.IsChecked()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.autohome = self.menu_autohome.IsChecked()
+        self.kernel.autohome = self.menu_autohome.IsChecked()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.autobeep = self.menu_autobeep.IsChecked()
+        self.kernel.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.project.open_window("JobSpooler")
+        self.kernel.open_window("JobSpooler")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        if len(self.operations) == 0:
-            self.project.backend.send_job(self.elements)
+        if len(self.required_preprocessing_operations) == 0:
+            self.kernel.device.send_job(self.job_items)
             self.on_button_job_spooler()
-            self.project.close_old_window("JobInfo")
+            self.kernel.close_old_window("JobInfo")
         else:
             # copy of operations, so operations can add ops.
-            ops = self.operations[:]
-            self.operations = []
+            ops = self.required_preprocessing_operations[:]
+            self.required_preprocessing_operations = []
             for op in ops:
                 op()
 
-            self.project('elements', 0)
+            self.kernel('elements', 0)
             self.update_gui()
 
     def on_listbox_element_click(self, event):  # wxGlade: JobInfo.<event_handler>
@@ -268,12 +276,12 @@ class JobInfo(wx.Frame):
 
         self.operations_listbox.Clear()
         self.elements_listbox.Clear()
-        elements = self.elements
-        operations = self.operations
+        elements = self.job_items
+        operations = self.required_preprocessing_operations
         if elements is not None and len(elements) != 0:
-            self.elements_listbox.InsertItems([name_str(e) for e in self.elements], 0)
+            self.elements_listbox.InsertItems([name_str(e) for e in self.job_items], 0)
         if operations is not None and len(operations) != 0:
-            self.operations_listbox.InsertItems([name_str(e) for e in self.operations], 0)
+            self.operations_listbox.InsertItems([name_str(e) for e in self.required_preprocessing_operations], 0)
 
             self.button_writer_control.SetLabelText(_("Execute Operations"))
             self.button_writer_control.SetBackgroundColour(wx.Colour(255, 255, 102))

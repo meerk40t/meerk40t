@@ -92,6 +92,15 @@ class Module:
 
 
 class Backend:
+    def __init__(self, kernel=None, uid=None):
+        self.kernel = kernel
+        self.uid = uid
+
+    def create_device(self, uid):
+        pass
+
+
+class Device:
     def __init__(self, kernel=None, uid=None, spooler=None, interpreter=None, pipe=None):
         self.kernel = kernel
         self.uid = uid
@@ -124,7 +133,18 @@ class Backend:
         self.device_log += message
 
     def setting(self, v_type, key, value):
-        self.kernel.setting(v_type, key, value)
+        return self.kernel.setting(v_type, self.uid + key, value)
+
+    def get(self, key):
+        key = self.uid + key
+        if hasattr(self.kernel, key):
+            return getattr(self.kernel, key)
+
+    def listen(self, signal, function):
+        self.kernel.listen(self.uid + signal, function)
+
+    def unlisten(self, signal, function):
+        self.kernel.unlisten(self.uid + signal, function)
 
     def add_thread(self, name, thread):
         self.kernel.add_thread(self.uid + name, thread)
@@ -214,8 +234,8 @@ class Spooler:
     These operations occur in an async manner with a registered SpoolerThread.
     """
 
-    def __init__(self, backend):
-        self.backend = backend
+    def __init__(self, device):
+        self.device = device
 
         def hold():
             if self.hold_condition(0):
@@ -230,10 +250,10 @@ class Spooler:
         self.reset_thread()
 
     def thread_state_update(self, state):
-        self.backend.signal('spooler;thread', state)
+        self.device.signal('spooler;thread', state)
 
     def execute(self, command, *values):
-        self.backend.interpreter.command(command, *values)
+        self.device.interpreter.command(command, *values)
 
     def realtime(self, command, *values):
         """Realtimes are sent directly to the interpreter without spooling."""
@@ -248,7 +268,7 @@ class Spooler:
         elif command == COMMAND_CLOSE:
             self.thread.stop()
         try:
-            return self.backend.interpreter.realtime_command(command, values)
+            return self.device.interpreter.realtime_command(command, values)
         except NotImplementedError:
             pass
 
@@ -264,7 +284,7 @@ class Spooler:
         queue_head = self.queue[0]
         del self.queue[0]
         self.queue_lock.release()
-        self.backend.signal("spooler;queue", len(self.queue))
+        self.device.signal("spooler;queue", len(self.queue))
         return queue_head
 
     def send_job(self, element):
@@ -275,17 +295,17 @@ class Spooler:
             self.queue.append(element)
         self.queue_lock.release()
         self.start_queue_consumer()
-        self.backend.signal("spooler;queue", len(self.queue))
+        self.device.signal("spooler;queue", len(self.queue))
 
     def clear_queue(self):
         self.queue_lock.acquire()
         self.queue = []
         self.queue_lock.release()
-        self.backend.signal("spooler;queue", len(self.queue))
+        self.device.signal("spooler;queue", len(self.queue))
 
     def reset_thread(self):
         self.thread = SpoolerThread(self)
-        self.backend.add_thread('spooler;thread', self.thread)
+        self.device.add_thread('spooler;thread', self.thread)
 
     def start_queue_consumer(self):
         if self.thread.state == THREAD_STATE_ABORT:
@@ -304,8 +324,8 @@ class Interpreter:
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
     """
 
-    def __init__(self, backend=None):
-        self.backend = backend
+    def __init__(self, device=None):
+        self.device = device
 
         def hold():
             if self.hold_condition(0):
@@ -315,10 +335,10 @@ class Interpreter:
         self.hold_condition = lambda e: False
 
     def __len__(self):
-        if self.backend.pipe is None:
+        if self.device.pipe is None:
             return 0
         else:
-            return len(self.backend.pipe)
+            return len(self.device.pipe)
 
     def command(self, command, values=None):
         """Commands are middle language LaserCommandConstants there values are given."""
@@ -340,8 +360,8 @@ class Pipe:
     Example pipes are mock, file, print, libusb-driver, and ch341-win. (these may or maynot exist).
     """
 
-    def __init__(self, backend=None):
-        self.backend = backend
+    def __init__(self, device=None):
+        self.device = device
 
     def __len__(self):
         return 0
@@ -442,7 +462,9 @@ class Kernel:
         self.open_windows = {}
 
         self.backends = {}
-        self.backend = None
+        self.devices = {}
+
+        self.device = None
 
         self.effects = []
 
@@ -536,11 +558,14 @@ class Kernel:
 
     def add_backend(self, backend_name, backend):
         self.backends[backend_name] = backend
-        self.backend = backend
 
-    def activate_backend(self, backend_name):
-        self.backend = self.backends[backend_name]
-        self.signal("device", self.backend)
+    def add_device(self, device_name, device):
+        self.devices[device_name] = device
+        self.activate_device(device_name)
+
+    def activate_device(self, device_name):
+        self.device = self.devices[device_name]
+        self.signal("device", self.device)
 
     def read_config(self, t, key, default=None):
         if default is not None:
@@ -599,7 +624,7 @@ class Kernel:
         :param setting_type: int, float, str, or bool value
         :param setting_name: name of the setting
         :param default: default value for the setting to have.
-        :return:
+        :return: load_value
         """
         if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
             return
@@ -608,6 +633,7 @@ class Kernel:
         else:
             load_value = default
         setattr(self, setting_name, load_value)
+        return load_value
 
     def flush(self):
         for attr in dir(self):
@@ -683,7 +709,10 @@ class Kernel:
     def unlisten(self, signal, function):
         if signal in self.listeners:
             listeners = self.listeners[signal]
-            listeners.remove(function)
+            try:
+                listeners.remove(function)
+            except ValueError:
+                print(listeners)
 
     def add_control(self, control_name, function):
         self.controls[control_name] = function
@@ -722,7 +751,7 @@ class Kernel:
 
     def get_state(self, thread_name):
         try:
-            return self.backends[thread_name].state()
+            return self.modules[thread_name].state()
         except AttributeError:
             return THREAD_STATE_UNKNOWN
 

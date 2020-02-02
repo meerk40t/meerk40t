@@ -352,7 +352,7 @@ class MeerK40t(wx.Frame):
 
         self.fps_job = None
         self.kernel = None
-        self.backend_listening = None
+        self.device_listening = None
 
     def add_language_menu(self):
         if os.path.exists('./locale'):
@@ -386,7 +386,6 @@ class MeerK40t(wx.Frame):
         kernel.setting(float, "current_x", 0.0)
         kernel.setting(float, "current_y", 0.0)
         self.listen_scene()
-        self.listen_backend(self.kernel.backend)
         if kernel.fps <= 0:
             kernel.fps = 60
         self.renderer = LaserRender(kernel)
@@ -454,6 +453,7 @@ class MeerK40t(wx.Frame):
         :param args:
         :return:
         """
+        self.request_refresh()
         self.refresh_tree_elements()
 
     def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
@@ -677,59 +677,60 @@ class MeerK40t(wx.Frame):
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
 
-    def listen_backend(self, backend):
-        if self.backend_listening is not None:
-            self.unlisten_backend()
-        self.backend_listening = backend
-        uid = backend.uid
-        self.kernel.listen("%s;pipe;usb" % uid, self.on_usb_status)
-        self.kernel.listen("%s;pipe;thread" % uid, self.on_control_state)
-        self.kernel.listen("%s;interpreter;state" % uid, self.on_writer_state)
-        self.kernel.listen("%s;interpreter;position" % uid, self.update_position)
-        self.kernel.listen("%s;interpreter;mode" % uid, self.on_writer_mode)
+    def on_device_switch(self, device):
+        self.unlisten_device()
+        self.listen_device(device)
 
-    def unlisten_backend(self):
-        if self.backend_listening is None:
+    def listen_device(self, device):
+        if self.device_listening is not None:
+            self.unlisten_device()
+        self.device_listening = device
+        device.listen(";pipe;usb", self.on_usb_status)
+        device.listen(";pipe;thread", self.on_control_state)
+        device.listen(";interpreter;state", self.on_writer_state)
+        device.listen(";interpreter;position", self.update_position)
+        device.listen(";interpreter;mode", self.on_writer_mode)
+
+    def unlisten_device(self):
+        if self.device_listening is None:
             return  # Can't unlisten to nothing, ---
-        backend = self.backend_listening
-        uid = backend.uid
-        self.kernel.unlisten("%s;pipe;usb" % uid, self.on_usb_status)
-        self.kernel.unlisten("%s;pipe;thread" % uid, self.on_control_state)
-        self.kernel.unlisten("%s;interpreter;state" % uid, self.on_writer_state)
-        self.kernel.unlisten("%s;interpreter;position" % uid, self.update_position)
-        self.kernel.unlisten("%s;interpreter;mode" % uid, self.on_writer_mode)
+        device = self.device_listening
+        device.unlisten(";pipe;usb", self.on_usb_status)
+        device.unlisten(";pipe;thread", self.on_control_state)
+        device.unlisten(";interpreter;state", self.on_writer_state)
+        device.unlisten(";interpreter;position", self.update_position)
+        device.unlisten(";interpreter;mode", self.on_writer_mode)
 
     def listen_scene(self):
+        self.kernel.listen("device", self.on_device_switch)
         self.kernel.listen("elements", self.on_elements_update)
-        self.kernel.listen("elements", self.elements_changed)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
         self.kernel.listen("bed_size", self.bed_changed)
 
     def unlisten_scene(self):
         self.kernel.unlisten("elements", self.on_elements_update)
-        self.kernel.unlisten("elements", self.elements_changed)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
         self.kernel.unlisten("bed_size", self.bed_changed)
 
     def on_close(self, event):
-        for name, backend in self.kernel.backends.items():
-            if backend.spooler.thread.state == THREAD_STATE_STARTED or backend.pipe.thread.state == THREAD_STATE_STARTED:
-                uid = backend.uid
+        for name, device in self.kernel.devices.items():
+            if device.spooler.thread.state == THREAD_STATE_STARTED or device.pipe.thread.state == THREAD_STATE_STARTED:
+                uid = device.uid
                 dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
                                        uid + _(' processes is still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
                 result = dlg.ShowModal()
                 dlg.Destroy()
 
                 if result == wx.ID_OK:
-                    backend.close()
+                    device.close()
                 else:
                     return
         for window in [value for key, value in self.kernel.open_windows.items()]:
             if window != self:  # Self is currently being closed.
                 window.Close()
-        self.unlisten_backend()
+        self.unlisten_device()
         self.unlisten_scene()
         self.kernel.flush()
         self.kernel.shutdown()
@@ -827,9 +828,6 @@ class MeerK40t(wx.Frame):
         self.on_size(None)
 
     def selection_changed(self, selection):
-        self.request_refresh()
-
-    def elements_changed(self, e):
         self.request_refresh()
 
     def on_erase(self, event):
@@ -973,8 +971,7 @@ class MeerK40t(wx.Frame):
         position = self.convert_window_to_scene(position)
         self.renderer.set_selected_by_position(position)
         if self.kernel.selected is not None:
-            window = self.kernel.open_window("ElementProperty")
-            window.set_elements(self.kernel.selected)
+            self.kernel.open_window("ElementProperty").set_elements(self.kernel.selected)
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
@@ -1027,11 +1024,14 @@ class MeerK40t(wx.Frame):
         self.kernel.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
 
     def execute_string_action(self, action, *args):
-        writer = self.kernel.spooler
+        device = self.kernel.device
+        if device is None:
+            return
+        spooler = device.spooler
         if action == 'move':
-            writer.send_job(self.execute_move_action(*args))
+            spooler.send_job(self.execute_move_action(*args))
         elif action == 'move_to':
-            writer.send_job(self.execute_move_to_action(*args))
+            spooler.send_job(self.execute_move_to_action(*args))
         elif action == 'set_position':
             self.execute_set_position_action(*args)
         elif action == 'window':
@@ -1494,8 +1494,6 @@ class MeerK40t(wx.Frame):
         """
         window = self.kernel.open_window("JobInfo")
 
-        window.set_elements(self.kernel.operations[:])
-
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Launch webpage
@@ -1885,7 +1883,6 @@ class MeerK40t(wx.Frame):
 
         def open_jobinfo_window(event):
             window = self.kernel.open_window("JobInfo")
-            window.set_elements([e for e in element.flat_elements(types=('image', 'path', 'text'), passes=True)])
 
         return open_jobinfo_window
 

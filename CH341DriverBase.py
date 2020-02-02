@@ -4,6 +4,7 @@ STATE_CONNECTING = 0
 STATE_CONNECTION_FAILED = 2
 STATE_DRIVER_LIBUSB = 3
 STATE_DRIVER_CH341 = 4
+STATE_DRIVER_MOCK = 5
 STATE_DRIVER_FINDING_DEVICES = 10
 STATE_DRIVER_NO_BACKEND = 20
 STATE_DEVICE_FOUND = 30
@@ -50,6 +51,8 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("Using LibUSB to connect.")
     elif code == STATE_DRIVER_CH341:
         return _("Using CH341 Driver to connect.")
+    elif code == STATE_DRIVER_MOCK:
+        return _("Using Mock Driver.")
     elif code == STATE_DRIVER_FINDING_DEVICES:
         return _("Finding devices.")
     elif code == STATE_DRIVER_NO_BACKEND:

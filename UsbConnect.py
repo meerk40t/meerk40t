@@ -16,19 +16,26 @@ class UsbConnect(wx.Frame):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.kernel = None
+        self.device = None
         self.uid = None
 
     def set_kernel(self, kernel):
         self.kernel = kernel
-        try:
-            backend = self.kernel.backend
-            self.uid = backend.uid
-            self.kernel.listen("%s;pipe;device_log" % self.uid, self.update_log)
-        except AttributeError:
-            pass
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+            return
+        self.device.listen('pipe;device_log', self.update_log)
 
     def on_close(self, event):
-        self.kernel.unlisten("%s;pipe;device_log" % self.uid, self.update_log)
+        self.device.unlisten("%s;pipe;device_log" % self.uid, self.update_log)
         self.kernel.mark_window_closed("UsbConnect")
         event.Skip()  # Call destroy as regular.
 
