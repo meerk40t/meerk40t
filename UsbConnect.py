@@ -32,10 +32,10 @@ class UsbConnect(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        self.device.listen('pipe;device_log', self.update_log)
+        self.device.listen(';pipe;device_log', self.update_log)
 
     def on_close(self, event):
-        self.device.unlisten("%s;pipe;device_log" % self.uid, self.update_log)
+        self.device.unlisten(';pipe;device_log', self.update_log)
         self.kernel.mark_window_closed("UsbConnect")
         event.Skip()  # Call destroy as regular.
 
@@ -46,8 +46,8 @@ class UsbConnect(wx.Frame):
         if self.kernel is None:
             return
         try:
-            backend = self.kernel.backend
-            self.usblog_text.SetValue(backend.device_log)
+            device = self.kernel.device
+            self.usblog_text.SetValue(device.device_log)
             self.usblog_text.AppendText("\n")
         except AttributeError:
             return

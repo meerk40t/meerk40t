@@ -131,6 +131,7 @@ class Device:
 
     def log(self, message):
         self.device_log += message
+        self.signal(';pipe;device_log')
 
     def setting(self, v_type, key, value):
         return self.kernel.setting(v_type, self.uid + key, value)

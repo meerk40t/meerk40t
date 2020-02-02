@@ -49,7 +49,7 @@ class DeviceManager(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: DeviceManager.__set_properties
-        self.SetTitle(-("Device Manager"))
+        self.SetTitle(_("Device Manager"))
         self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         self.devices_list.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=117)
         self.devices_list.AppendColumn(_("Driver"), format=wx.LIST_FORMAT_LEFT, width=146)
@@ -98,17 +98,22 @@ class DeviceManager(wx.Frame):
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        # new_backend = self.kernel.backends[event.GetLabel()]
         self.kernel.activate_device(uid)
         self.Close()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        print("Event handler 'on_button_new' not implemented!")
-        event.Skip()
+        for name, backend in self.kernel.backends.items():
+            dlg = wx.TextEntryDialog(None, _('Enter name of the %s device') % name, _('Device Name'))
+            dlg.SetValue("")
+            if dlg.ShowModal() == wx.ID_OK:
+                name = dlg.GetValue()
+                if name not in self.kernel.devices:
+                    backend.create_device(dlg.GetValue())
+            dlg.Destroy()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
-        print("Event handler 'on_button_remove' not implemented!")
-        event.Skip()
+        item = self.devices_list.GetFirstSelected()
+        pass # TODO: remove device.
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_properties' not implemented!")

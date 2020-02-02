@@ -19,7 +19,7 @@ class K40StockDevice(Device):
         self.usb_address = -1
         self.usb_serial = -1
         self.usb_chip_version = -1
-        self.mock = True
+        self.mock = False
         self.packet_count = 0
         self.rejected_count = 0
         self.buffer_max = 900
