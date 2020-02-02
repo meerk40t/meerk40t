@@ -263,11 +263,6 @@ class Spooler:
     def __init__(self, device):
         self.device = device
 
-        def hold():
-            if self.hold_condition(0):
-                time.sleep(0.1)
-
-        self.hold = hold
         self.hold_condition = lambda e: False
 
         self.queue_lock = Lock()
@@ -275,10 +270,15 @@ class Spooler:
         self.thread = None
         self.reset_thread()
 
+    def hold(self):
+        while self.hold_condition(0):
+            time.sleep(0.1)
+
     def thread_state_update(self, state):
         self.device.signal('spooler;thread', state)
 
     def execute(self, command, *values):
+        self.hold()
         self.device.interpreter.command(command, *values)
 
     def realtime(self, command, *values):
@@ -352,13 +352,6 @@ class Interpreter:
 
     def __init__(self, device=None):
         self.device = device
-
-        def hold():
-            if self.hold_condition(0):
-                time.sleep(0.1)
-
-        self.hold = hold
-        self.hold_condition = lambda e: False
 
     def __len__(self):
         if self.device.pipe is None:

@@ -42,9 +42,9 @@ class K40StockDevice(Device):
         self.setting(float, "_acceleration_breaks", float("inf"))
         self.setting(int, "bed_width", 320)
         self.setting(int, "bed_height", 220)
+
         self.signal("bed_size", (self.bed_width, self.bed_height))
 
-        self.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
         kernel.add_device(name, self)
         self.open()
 
@@ -52,6 +52,7 @@ class K40StockDevice(Device):
         self.pipe = K40Controller(self)
         self.interpreter = LhymicroInterpreter(self)
         self.spooler = Spooler(self)
+        self.spooler.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
 
     def close(self):
         self.spooler.clear_queue()
