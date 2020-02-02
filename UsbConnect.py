@@ -32,10 +32,11 @@ class UsbConnect(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        self.device.listen(';pipe;device_log', self.update_log)
+        self.device.listen('pipe;device_log', self.update_log)
 
     def on_close(self, event):
-        self.device.unlisten(';pipe;device_log', self.update_log)
+        if self.device is not None:
+            self.device.unlisten('pipe;device_log', self.update_log)
         self.kernel.mark_window_closed("UsbConnect")
         event.Skip()  # Call destroy as regular.
 

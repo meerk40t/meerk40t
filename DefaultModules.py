@@ -14,54 +14,37 @@ from xml.etree.cElementTree import Element, ElementTree, SubElement
 class K40StockDevice(Device):
     def __init__(self):
         Device.__init__(self)
-        self.usb_index = -1
-        self.usb_bus = -1
-        self.usb_address = -1
-        self.usb_serial = -1
-        self.usb_chip_version = -1
-        self.mock = False
-        self.packet_count = 0
-        self.rejected_count = 0
-        self.buffer_max = 900
-        self.buffer_limit = True
-        self.autolock = True
-        self.autohome = False
-        self.autobeep = True
-        self.autostart = True
-        self.board = 'M2'
-        self.rotary = False
-        self.scale_x = 1.0
-        self.scale_y = 1.0
-        self._stepping_force = None
-        self._acceleration_breaks = float("inf")
 
     def initialize(self, kernel, name=''):
         self.kernel = kernel
         self.uid = name
-        kernel.setting(int, '%susb_index' % name, self.usb_index)
-        kernel.setting(int, '%susb_bus' % name, self.usb_bus)
-        kernel.setting(int, '%susb_address' % name, self.usb_address)
-        kernel.setting(int, '%susb_serial' % name, self.usb_serial)
-        kernel.setting(int, '%susb_chip_version' % name, self.usb_chip_version)
+        self.setting(int, 'usb_index', -1)
+        self.setting(int, 'usb_bus', -1)
+        self.setting(int, 'usb_address', -1)
+        self.setting(int, 'usb_serial', -1)
+        self.setting(int, 'usb_chip_version', -1)
 
-        kernel.setting(bool, '%smock' % name, self.mock)
-        kernel.setting(int, '%spacket_count' % name, self.packet_count)
-        kernel.setting(int, '%srejected_count' % name, self.rejected_count)
-        kernel.setting(int, "%sbuffer_max" % name, self.buffer_max)
-        kernel.setting(bool, "%sbuffer_limit" % name, self.buffer_limit)
-        kernel.setting(bool, "%sautolock" % name, self.autolock)
-        kernel.setting(bool, "%sautohome" % name, self.autohome)
-        kernel.setting(bool, "%sautobeep" % name, self.autobeep)
-        kernel.setting(bool, "%sautostart" % name, self.autostart)
+        self.setting(bool, 'mock', False)
+        self.setting(int, 'packet_count', 0)
+        self.setting(int, 'rejected_count', 0)
+        self.setting(int, "buffer_max", 900)
+        self.setting(bool, "buffer_limit", True)
+        self.setting(bool, "autolock", True)
+        self.setting(bool, "autohome", False)
+        self.setting(bool, "autobeep", True)
+        self.setting(bool, "autostart", True)
 
-        kernel.setting(str, "%sboard" % name, self.board)
-        kernel.setting(bool, "%srotary" % name, self.rotary)
-        kernel.setting(float, "%sscale_x" % name, self.scale_x)
-        kernel.setting(float, "%sscale_y" % name, self.scale_y)
-        kernel.setting(int, "_%sstepping_force" % name, self._stepping_force)
-        kernel.setting(float, "_%sacceleration_breaks" % name, self._acceleration_breaks)
+        self.setting(str, "board", 'M2')
+        self.setting(bool, "rotary", False)
+        self.setting(float, "scale_x", 1.0)
+        self.setting(float, "scale_y", 1.0)
+        self.setting(int, "_stepping_force", None)
+        self.setting(float, "_acceleration_breaks", float("inf"))
+        self.setting(int, "bed_width", 320)
+        self.setting(int, "bed_height", 220)
+        self.signal("bed_size", (self.bed_width, self.bed_height))
 
-        self.hold_condition = lambda v: kernel.buffer_limit and len(self.pipe) > self.kernel.buffer_max
+        self.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
         kernel.add_device(name, self)
         self.open()
 
@@ -86,8 +69,12 @@ class K40StockBackend(Module, Backend):
     def initialize(self, kernel, name='K40Stock'):
         self.kernel = kernel
         self.kernel.add_backend(name, self)
-        self.create_device('')
-        self.create_device('k')
+        self.kernel.setting(str, 'device_list', '')
+        self.kernel.setting(str, 'device_primary', '')
+        for device in kernel.device_list.split(';'):
+            self.create_device(device)
+            if device == kernel.device_primary:
+                self.kernel.activate_device(device)
 
     def create_device(self, uid):
         device = K40StockDevice()
@@ -96,13 +83,11 @@ class K40StockBackend(Module, Backend):
 
 class SVGWriter:
     def __init__(self):
-        self.project = None
+        self.kernel = None
 
-    def initialize(self, project, name=None):
-        self.project = project
-        project.setting(int, "bed_width", 320)
-        project.setting(int, "bed_height", 220)
-        project.add_saver("SVGWriter", self)
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        kernel.add_saver("SVGWriter", self)
 
     def save_types(self):
         yield "Scalable Vector Graphics", "svg", "image/svg+xml"
@@ -121,8 +106,16 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        mm_width = self.project.bed_width
-        mm_height = self.project.bed_height
+        if self.kernel.device is None:
+            self.kernel.setting(int, "bed_width", 320)
+            self.kernel.setting(int, "bed_height", 220)
+            mm_width = self.kernel.bed_width
+            mm_height = self.kernel.bed_height
+        else:
+            self.kernel.device.setting(int, "bed_width", 320)
+            self.kernel.device.setting(int, "bed_height", 220)
+            mm_width = self.kernel.device.bed_width
+            mm_height = self.kernel.device.bed_height
         root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
         root.set(SVG_ATTR_HEIGHT, '%fmm' % mm_height)
         px_width = mm_width * mils_per_mm * px_per_mils
@@ -131,7 +124,7 @@ class SVGWriter:
         viewbox = '%d %d %d %d' % (0, 0, round(px_width), round(px_height))
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
-        elements = self.project.elements
+        elements = self.kernel.elements
         for node in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
             element = node.element
             if node.type == 'path':

@@ -81,27 +81,26 @@ class Controller(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
         else:
-            uid = kernel.device.uid
-            self.uid = uid
-            self.kernel.listen("%s;pipe;status" % uid, self.update_status)
-            self.kernel.listen("%s;pipe;packet" % uid, self.update_packet)
-            self.kernel.listen("%s;pipe;packet_text" % uid, self.update_packet_text)
-            self.kernel.listen("%s;pipe;buffer" % uid, self.on_buffer_update)
-            self.kernel.listen("%s;pipe;usb_state" % uid, self.on_usb_state)
-            self.kernel.listen("%s;pipe;thread" % uid, self.on_control_state)
+            self.device.unlisten("pipe;status", self.update_status)
+            self.device.unlisten("pipe;packet", self.update_packet)
+            self.device.unlisten("pipe;packet_text", self.update_packet_text)
+            self.device.unlisten("pipe;buffer", self.on_buffer_update)
+            self.device.unlisten("pipe;usb_state", self.on_usb_state)
+            self.device.unlisten("pipe;thread", self.on_control_state)
 
         self.set_controller_button_by_state()
 
     def on_close(self, event):
-        uid = self.uid
-        if uid is not None:
-            self.kernel.listen("%s;pipe;status" % uid, self.update_status)
-            self.kernel.listen("%s;pipe;packet" % uid, self.update_packet)
-            self.kernel.listen("%s;pipe;packet_text" % uid, self.update_packet_text)
-            self.kernel.listen("%s;pipe;buffer" % uid, self.on_buffer_update)
-            self.kernel.listen("%s;pipe;usb_state" % uid, self.on_usb_state)
-            self.kernel.listen("%s;pipe;thread" % uid, self.on_control_state)
-
+        try:
+            if self.device is not None:
+                self.device.unlisten("pipe;status", self.update_status)
+                self.device.unlisten("pipe;packet", self.update_packet)
+                self.device.unlisten("pipe;packet_text", self.update_packet_text)
+                self.device.unlisten("pipe;buffer", self.on_buffer_update)
+                self.device.unlisten("pipe;usb_state", self.on_usb_state)
+                self.device.unlisten("pipe;thread", self.on_control_state)
+        except KeyError:
+            pass # Must have not registered at start because of no device.
         self.kernel.mark_window_closed("Controller")
         self.kernel = None
         event.Skip()  # delegate destroy to super

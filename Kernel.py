@@ -121,7 +121,7 @@ class Device:
         self.hold_condition = lambda e: False
 
     def close(self):
-        pass
+        self.flush()
 
     def send_job(self, job):
         self.spooler.send_job(job)
@@ -133,8 +133,33 @@ class Device:
         self.device_log += message
         self.signal(';pipe;device_log')
 
-    def setting(self, v_type, key, value):
-        return self.kernel.setting(v_type, self.uid + key, value)
+    def setting(self, setting_type, setting_name, default=None):
+        """
+        Registers a setting to be used on this device. The functionality is
+        similar to that of Kernel.setting except that it registers at the device level.
+        """
+        setting_uid_name = self.uid + setting_name
+        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
+            return
+        if not setting_name.startswith('_') and self.kernel.config is not None:
+            load_value = self.kernel[setting_type, setting_uid_name, default]
+        else:
+            load_value = default
+        setattr(self, setting_name, load_value)
+        return load_value
+
+    def flush(self):
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            if attr == 'uid':
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            uid_attr = self.uid + attr
+            if isinstance(value, (int, bool, str, float)):
+                self.kernel[uid_attr] = value
 
     def get(self, key):
         key = self.uid + key
@@ -142,10 +167,10 @@ class Device:
             return getattr(self.kernel, key)
 
     def listen(self, signal, function):
-        self.kernel.listen(self.uid + signal, function)
+        self.kernel.listen(self.uid + ';' + signal, function)
 
     def unlisten(self, signal, function):
-        self.kernel.unlisten(self.uid + signal, function)
+        self.kernel.unlisten(self.uid + ';' + signal, function)
 
     def add_thread(self, name, thread):
         self.kernel.add_thread(self.uid + name, thread)
@@ -562,10 +587,12 @@ class Kernel:
 
     def add_device(self, device_name, device):
         self.devices[device_name] = device
-        self.activate_device(device_name)
 
     def activate_device(self, device_name):
-        self.device = self.devices[device_name]
+        if device_name is None:
+            self.device = None
+        else:
+            self.device = self.devices[device_name]
         self.signal("device", self.device)
 
     def read_config(self, t, key, default=None):
@@ -684,6 +711,10 @@ class Kernel:
         All threads are stopped.
         """
         self.cron.stop()
+        self.flush()
+        for device_name in self.devices:
+            device = self.devices[device_name]
+            device.flush()
         for module_name in self.modules:
             module = self.modules[module_name]
             try:

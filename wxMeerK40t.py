@@ -22,6 +22,7 @@ from LaserOperation import *
 from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
 from Preferences import Preferences
+from Settings import Settings
 from RotarySettings import RotarySettings
 from UsbConnect import UsbConnect
 from DeviceManager import DeviceManager
@@ -76,6 +77,7 @@ ID_NAV = idinc.new()
 ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
 ID_PREFERENCES = idinc.new()
+ID_DEVICES = idinc.new()
 ID_JOB = idinc.new()
 ID_SPOOLER = idinc.new()
 
@@ -112,6 +114,7 @@ ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_DEVICE_MANAGER = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
+ID_MENU_SETTINGS = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
@@ -171,6 +174,7 @@ class MeerK40t(wx.Frame):
         windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
+        windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
         self._ribbon.Realize()
 
         self.CenterOnScreen()
@@ -208,6 +212,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
 
         wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, _("Preferences"), "")
+        wxglade_tmp_menu.Append(ID_MENU_SETTINGS, _("Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
@@ -253,9 +258,10 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, self.open_devicemanager, id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, self.open_devices, id=ID_MENU_DEVICE_MANAGER)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
+        self.Bind(wx.EVT_MENU, self.open_settings, id=ID_MENU_SETTINGS)
         self.Bind(wx.EVT_MENU, self.open_rotary, id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
@@ -273,6 +279,7 @@ class MeerK40t(wx.Frame):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_navigation, id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_controller, id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_preferences, id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_devices, id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_spooler, id=ID_SPOOLER)
 
         self.main_statusbar = self.CreateStatusBar(3)
@@ -374,17 +381,14 @@ class MeerK40t(wx.Frame):
         kernel.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         kernel.setting(int, "window_width", 1200)
         kernel.setting(int, "window_height", 600)
-        kernel.setting(int, "bed_width", 320)
-        kernel.setting(int, "bed_height", 220)
         kernel.setting(float, "units_convert", 39.37)
         kernel.setting(str, "units_name", 'mm')
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
         kernel.setting(bool, "mouse_zoom_invert", False)
-        kernel.setting(int, "_stepping_force", None)
         kernel.setting(int, 'fps', 40)
-        kernel.setting(float, "current_x", 0.0)
-        kernel.setting(float, "current_y", 0.0)
+        kernel.setting(int, "bed_width", 320)  # Default Value
+        kernel.setting(int, "bed_height", 220)  # Default Value
         self.listen_scene()
         if kernel.fps <= 0:
             kernel.fps = 60
@@ -685,28 +689,31 @@ class MeerK40t(wx.Frame):
         if self.device_listening is not None:
             self.unlisten_device()
         self.device_listening = device
-        device.listen(";pipe;usb", self.on_usb_status)
-        device.listen(";pipe;thread", self.on_control_state)
-        device.listen(";interpreter;state", self.on_writer_state)
-        device.listen(";interpreter;position", self.update_position)
-        device.listen(";interpreter;mode", self.on_writer_mode)
+        if device is not None:
+            device.listen("pipe;usb", self.on_usb_status)
+            device.listen("pipe;thread", self.on_control_state)
+            device.listen("interpreter;state", self.on_writer_state)
+            device.listen("interpreter;position", self.update_position)
+            device.listen("interpreter;mode", self.on_writer_mode)
+            device.listen("bed_size", self.bed_changed)
 
     def unlisten_device(self):
         if self.device_listening is None:
             return  # Can't unlisten to nothing, ---
         device = self.device_listening
-        device.unlisten(";pipe;usb", self.on_usb_status)
-        device.unlisten(";pipe;thread", self.on_control_state)
-        device.unlisten(";interpreter;state", self.on_writer_state)
-        device.unlisten(";interpreter;position", self.update_position)
-        device.unlisten(";interpreter;mode", self.on_writer_mode)
+        if device is not None:
+            device.unlisten("pipe;usb", self.on_usb_status)
+            device.unlisten("pipe;thread", self.on_control_state)
+            device.unlisten("interpreter;state", self.on_writer_state)
+            device.unlisten("interpreter;position", self.update_position)
+            device.unlisten("interpreter;mode", self.on_writer_mode)
+            device.unlisten("bed_size", self.bed_changed)
 
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
         self.kernel.listen("elements", self.on_elements_update)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
-        self.kernel.listen("bed_size", self.bed_changed)
 
     def unlisten_scene(self):
         self.kernel.unlisten("elements", self.on_elements_update)
@@ -732,7 +739,6 @@ class MeerK40t(wx.Frame):
                 window.Close()
         self.unlisten_device()
         self.unlisten_scene()
-        self.kernel.flush()
         self.kernel.shutdown()
         event.Skip()  # Call destroy as regular.
 
@@ -1146,9 +1152,13 @@ class MeerK40t(wx.Frame):
 
     def calculate_grid(self):
         lines = []
+        if self.kernel.device is not None:
+            v = self.kernel.device
+        else:
+            v = self.kernel
         p = self.kernel
-        wmils = p.bed_width * 39.37
-        hmils = p.bed_height * 39.37
+        wmils = v.bed_width * 39.37
+        hmils = v.bed_height * 39.37
         convert = p.units_convert
         marks = p.units_marks
         step = convert * marks
@@ -1237,8 +1247,12 @@ class MeerK40t(wx.Frame):
                 pass
 
     def on_draw_bed(self, dc):
-        wmils = self.kernel.bed_width * 39.37
-        hmils = self.kernel.bed_height * 39.37
+        if self.kernel.device is not None:
+            v = self.kernel.device
+        else:
+            v = self.kernel
+        wmils = v.bed_width * 39.37
+        hmils = v.bed_height * 39.37
         dc.SetBrush(wx.WHITE_BRUSH)
         dc.DrawRectangle(0, 0, wmils, hmils)
 
@@ -1404,6 +1418,17 @@ class MeerK40t(wx.Frame):
             group.append(LaserNode(p))
         dlg.Destroy()
 
+
+    def open_settings(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open preference dialog.
+
+        :param event:
+        :return:
+        """
+        self.kernel.open_window("Settings")
+
+
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Open preference dialog.
@@ -1440,7 +1465,7 @@ class MeerK40t(wx.Frame):
         """
         self.kernel.open_window("Keymap")
 
-    def open_devicemanager(self, event):  # wxGlade: MeerK40t.<event_handler>
+    def open_devices(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Open DeviceManager dialog
 
@@ -1506,6 +1531,7 @@ class MeerK40t(wx.Frame):
 
     def language_swap(self, lang):
         def update(event):
+            # TODO: Code for swapping current window for MeerK40t, with 0.4.0 this is possible.
             self.Unbind(wx.EVT_CLOSE, self)
             self.language_to(lang)
             self.kernel.flush()
@@ -1988,6 +2014,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
+        kernel.add_window("Settings", Settings)
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)
         kernel.add_window("DeviceManager", DeviceManager)

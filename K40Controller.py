@@ -158,7 +158,7 @@ class K40Controller(Pipe):
         def abort_wait():
             self.abort_waiting = True
 
-        self.device.add_control("Wait Abort", abort_wait)
+        self.device.add_control("Wait Abort %s" % self.device.uid, abort_wait)
 
         def pause_k40():
             self.state = THREAD_STATE_PAUSED
@@ -421,8 +421,8 @@ class K40Controller(Pipe):
         i = 0
         while True:
             self.update_status()
-            if self.device.mock:  # Mock controller
-                self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
+            # if self.device.mock:  # Mock controller
+            #     self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
                 self.rejected_count += 1

@@ -62,9 +62,9 @@ class JobSpooler(wx.Frame):
             return
         self.device.setting(int, "buffer_max", 600)
         self.device.setting(bool, "buffer_limit", True)
-        self.device.listen(";spooler;queue", self.on_spooler_update)
-        self.device.listen(";pipe;buffer", self.on_buffer_update)
-        self.device.listen(";interpreter;state", self.on_spooler_state)
+        self.device.listen("spooler;queue", self.on_spooler_update)
+        self.device.listen("pipe;buffer", self.on_buffer_update)
+        self.device.listen("interpreter;state", self.on_spooler_state)
 
         self.set_spooler_button_by_state()
         self.checkbox_limit_buffer.SetValue(self.kernel.buffer_limit)
@@ -72,9 +72,10 @@ class JobSpooler(wx.Frame):
         self.refresh_spooler_list()
 
     def on_close(self, event):
-        self.device.unlisten(";spooler;queue", self.on_spooler_update)
-        self.device.unlisten(";pipe;buffer", self.on_buffer_update)
-        self.device.unlisten(";interpreter;state", self.on_spooler_state)
+        if self.device is not None:
+            self.device.unlisten("spooler;queue", self.on_spooler_update)
+            self.device.unlisten("pipe;buffer", self.on_buffer_update)
+            self.device.unlisten("interpreter;state", self.on_spooler_state)
         self.kernel.mark_window_closed("JobSpooler")
         self.kernel = None
         self.device = None

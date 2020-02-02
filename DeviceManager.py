@@ -39,12 +39,20 @@ class DeviceManager(wx.Frame):
         self.kernel = None
 
     def on_close(self, event):
+        item = self.devices_list.GetFirstSelected()
+        if item != -1:
+            uid = self.devices_list.GetItem(item).Text
+            self.kernel.device_primary = uid
+        self.kernel.device_list = ";".join([d for d in self.kernel.devices])
+
         self.kernel.mark_window_closed("DeviceManager")
         self.kernel = None
         event.Skip()  # Call destroy as regular.
 
     def set_kernel(self, kernel):
         self.kernel = kernel
+        self.kernel.setting(str, 'device_list', '')
+        self.kernel.setting(str, 'device_primary', '')
         self.refresh_device_list()
 
     def __set_properties(self):
@@ -83,14 +91,13 @@ class DeviceManager(wx.Frame):
             return
         i = 0
         for key, value in self.kernel.devices.items():
-            if len(key) == 0:
-
-                key = _("<Default>")
-            m = self.devices_list.InsertItem(i, "%s" % str(key))
+            m = self.devices_list.InsertItem(i, str(key))
             if m != -1:
                 self.devices_list.SetItem(m, 1, "Lhystudio")
                 self.devices_list.SetItem(m, 2, str(value.state))
                 self.devices_list.SetItem(m, 3, str(value.location))
+            if value is self.kernel.device:
+                self.devices_list.Select(m)
             i += 1
 
     def on_list_drag(self, event):  # wxGlade: DeviceManager.<event_handler>
@@ -110,14 +117,25 @@ class DeviceManager(wx.Frame):
                 if name not in self.kernel.devices:
                     backend.create_device(dlg.GetValue())
             dlg.Destroy()
+        self.refresh_device_list()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
-        pass # TODO: remove device.
+        uid = self.devices_list.GetItem(item).Text
+        device = self.kernel.devices[uid]
+        del self.kernel.devices[uid]
+        if device is self.kernel.device:
+            self.kernel.activate_device(None)
+        self.refresh_device_list()
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
-        print("Event handler 'on_button_properties' not implemented!")
-        event.Skip()
+        old = self.kernel.device
+        item = self.devices_list.GetFirstSelected()
+        uid = self.devices_list.GetItem(item).Text
+        data = self.kernel.devices[uid]
+        self.kernel.device = data
+        self.kernel.open_window("Preferences")
+        self.kernel.device = old
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")
