@@ -81,12 +81,12 @@ class Controller(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
         else:
-            self.device.unlisten("pipe;status", self.update_status)
-            self.device.unlisten("pipe;packet", self.update_packet)
-            self.device.unlisten("pipe;packet_text", self.update_packet_text)
-            self.device.unlisten("pipe;buffer", self.on_buffer_update)
-            self.device.unlisten("pipe;usb_state", self.on_usb_state)
-            self.device.unlisten("pipe;thread", self.on_control_state)
+            self.device.listen("pipe;status", self.update_status)
+            self.device.listen("pipe;packet", self.update_packet)
+            self.device.listen("pipe;packet_text", self.update_packet_text)
+            self.device.listen("pipe;buffer", self.on_buffer_update)
+            self.device.listen("pipe;usb_state", self.on_usb_state)
+            self.device.listen("pipe;thread", self.on_control_state)
 
         self.set_controller_button_by_state()
 

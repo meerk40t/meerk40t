@@ -117,6 +117,7 @@ class Preferences(wx.Frame):
         self.spin_device_index.SetValue(self.device.usb_index)
         self.spin_device_bus.SetValue(self.device.usb_bus)
         self.spin_device_address.SetValue(self.device.usb_address)
+        self.spin_device_version.SetValue(self.device.usb_version)
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
@@ -134,13 +135,9 @@ class Preferences(wx.Frame):
         self.checkbox_mock_usb.SetToolTip(
             _("DEBUG. Without a K40 connected continue to process things as if there was one."))
         self.spin_device_index.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
-        self.spin_device_index.Enable(False)
         self.spin_device_address.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
-        self.spin_device_address.Enable(False)
         self.spin_device_bus.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
-        self.spin_device_bus.Enable(False)
         self.spin_device_version.SetToolTip(_("-1 match anything. 0-255 match exactly that value."))
-        self.spin_device_version.Enable(False)
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
         self.spin_home_x.Enable(False)

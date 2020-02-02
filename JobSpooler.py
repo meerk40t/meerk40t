@@ -60,15 +60,16 @@ class JobSpooler(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        self.device.setting(int, "buffer_max", 600)
+        self.device.setting(str, "board", "M2")
+        self.device.setting(int, "buffer_max", 900)
         self.device.setting(bool, "buffer_limit", True)
         self.device.listen("spooler;queue", self.on_spooler_update)
         self.device.listen("pipe;buffer", self.on_buffer_update)
         self.device.listen("interpreter;state", self.on_spooler_state)
 
         self.set_spooler_button_by_state()
-        self.checkbox_limit_buffer.SetValue(self.kernel.buffer_limit)
-        self.spin_packet_buffer_max.SetValue(self.kernel.buffer_max)
+        self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
+        self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
         self.refresh_spooler_list()
 
     def on_close(self, event):
@@ -144,7 +145,7 @@ class JobSpooler(wx.Frame):
                         self.list_job_spool.SetItem(m, 2, _("Executing"))
                     else:
                         self.list_job_spool.SetItem(m, 2, _("Queued"))
-                    self.list_job_spool.SetItem(m, 3, self.kernel.board)
+                    self.list_job_spool.SetItem(m, 3, self.device.board)
                     settings = []
                     if t == 'path':
                         self.list_job_spool.SetItem(m, 4, _("Path"))

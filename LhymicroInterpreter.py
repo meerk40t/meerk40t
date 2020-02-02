@@ -244,7 +244,7 @@ class LhymicroInterpreter(Interpreter):
                         change = 0
                     if self.state == STATE_COMPACT and \
                             change >= 2 and \
-                            self.speed >= self.device.kernel._acceleration_breaks:
+                            self.speed >= self.device._acceleration_breaks:
                         self.to_default_mode()
                         self.to_compact_mode()
                         x1 = y1 = None
@@ -595,11 +595,11 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         self.to_concat_mode()
         if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.device.kernel.board,
-                                                        d_ratio=self.d_ratio, gear=self.device.kernel._stepping_force)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.device.board,
+                                                        d_ratio=self.d_ratio, gear=self.device._stepping_force)
         else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.device.kernel.board,
-                                                        gear=self.device.kernel._stepping_force)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.device.board,
+                                                        gear=self.device._stepping_force)
         try:
             speed_code = bytes(speed_code)
         except TypeError:

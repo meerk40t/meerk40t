@@ -421,8 +421,8 @@ class K40Controller(Pipe):
         i = 0
         while True:
             self.update_status()
-            # if self.device.mock:  # Mock controller
-            #     self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
+            if self.device.mock:  # Mock controller
+                self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
                 self.rejected_count += 1
