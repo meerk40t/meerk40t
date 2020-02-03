@@ -20,8 +20,6 @@ class Settings(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((412, 183))
 
-        self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
-
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
                                                  choices=["Invert Mouse Wheel Zoom", "Autoclose Shutdown"])
 
