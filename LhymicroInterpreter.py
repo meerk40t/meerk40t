@@ -73,19 +73,19 @@ class LhymicroInterpreter(Interpreter):
         # TODO: Consider Restoring this code.
 
         # def break_acceleration10():
-        #     self.kernel._acceleration_breaks = 10.0
+        #     self.device._acceleration_breaks = 10.0
         #
         # def break_acceleration20():
-        #     self.kernel._acceleration_breaks = 20.0
+        #     self.device._acceleration_breaks = 20.0
         #
         # def break_acceleration30():
-        #     self.kernel._acceleration_breaks = 30.0
+        #     self.device._acceleration_breaks = 30.0
         #
         # def break_acceleration40():
-        #     self.kernel._acceleration_breaks = 40.0
+        #     self.device._acceleration_breaks = 40.0
         #
         # def break_acceleration_inf():
-        #     self.kernel._acceleration_breaks = float("inf")
+        #     self.device._acceleration_breaks = float("inf")
         #
         # backend.add_control("acceleration Breaks 10mm/s", break_acceleration10)
         # backend.add_control("acceleration Breaks 20mm/s", break_acceleration20)

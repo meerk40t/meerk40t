@@ -4,6 +4,8 @@
 #
 
 import wx
+import sys
+
 
 _ = wx.GetTranslation
 
@@ -22,7 +24,10 @@ class Settings(wx.Frame):
                                        majorDimension=1,
                                        style=wx.RA_SPECIFY_ROWS)
         self.check_invert_mouse_zoom = wx.CheckBox(self, wx.ID_ANY, _("Invert Mouse Wheel Zoom"))
-        self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+
+        from wxMeerK40t import supported_languages
+        choices = [language_name for language_code, language_name, language_index in supported_languages]
+        self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN)
 
         self.__set_properties()
         self.__do_layout()
@@ -76,8 +81,9 @@ class Settings(wx.Frame):
         self.kernel.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_combo_language' not implemented!")
-        event.Skip()
+        lang = self.combo_language.GetSelection()
+        if lang != -1 and self.kernel.gui is not None:
+            self.kernel.gui.language_swap(lang)
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
         if event.Int == 0:

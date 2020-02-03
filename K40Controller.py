@@ -195,7 +195,7 @@ class K40Controller(Pipe):
                 self.driver.close()
 
     def write(self, bytes_to_write):
-        self.queue_lock.acquire()
+        self.queue_lock.acquire(True)
         self.queue += bytes_to_write
         self.queue_lock.release()
         self.start()
@@ -208,7 +208,7 @@ class K40Controller(Pipe):
         """
         Preempting commands.
         Commands to be sent to the front of the buffer."""
-        self.preempt_lock.acquire()
+        self.preempt_lock.acquire(True)
         self.preempt = bytes_to_write + self.preempt
         self.preempt_lock.release()
         self.start()
@@ -300,13 +300,13 @@ class K40Controller(Pipe):
         """
 
         if len(self.queue):  # check for and append queue
-            self.queue_lock.acquire()
+            self.queue_lock.acquire(True)
             self.buffer += self.queue
             self.queue = b''
             self.queue_lock.release()
             self.device.signal('pipe;buffer', len(self.buffer))
         if len(self.preempt):  # check for and prepend preempt
-            self.preempt_lock.acquire()
+            self.preempt_lock.acquire(True)
             self.buffer = self.preempt + self.buffer
             self.preempt = b''
             self.preempt_lock.release()

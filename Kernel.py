@@ -301,7 +301,7 @@ class Spooler:
     def pop(self):
         if len(self.queue) == 0:
             return None
-        self.queue_lock.acquire()
+        self.queue_lock.acquire(True)
         queue_head = self.queue[0]
         del self.queue[0]
         self.queue_lock.release()
@@ -309,7 +309,7 @@ class Spooler:
         return queue_head
 
     def send_job(self, element):
-        self.queue_lock.acquire()
+        self.queue_lock.acquire(True)
         if isinstance(element, (list, tuple)):
             self.queue += element
         else:
@@ -319,7 +319,7 @@ class Spooler:
         self.device.signal("spooler;queue", len(self.queue))
 
     def clear_queue(self):
-        self.queue_lock.acquire()
+        self.queue_lock.acquire(True)
         self.queue = []
         self.queue_lock.release()
         self.device.signal("spooler;queue", len(self.queue))
@@ -483,6 +483,8 @@ class Kernel:
         self.effects = []
 
         self.listeners = {}
+        self.adding_listeners = []
+        self.removing_listeners = []
         self.last_message = {}
         self.queue_lock = Lock()
         self.message_queue = {}
@@ -518,13 +520,40 @@ class Kernel:
         if len(self.message_queue) == 0:
             return
         self.is_queue_processing = True
+        add = None
+        remove = None
         self.queue_lock.acquire(True)
         queue = self.message_queue
+        if len(self.adding_listeners) != 0:
+            add = self.adding_listeners
+            self.adding_listeners = []
+        if len(self.removing_listeners):
+            remove = self.removing_listeners
+            self.removing_listeners = []
         self.message_queue = {}
         self.queue_lock.release()
+        if add is not None:
+            for signal, funct in add:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    listeners.append(funct)
+                else:
+                    self.listeners[signal] = [funct]
+                if signal in self.last_message:
+                    last_message = self.last_message[signal]
+                    funct(*last_message)
+        if remove is not None:
+            for signal, funct in remove:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    try:
+                        listeners.remove(funct)
+                    except ValueError:
+                        print("Value error removing: %s  %s" % (str(listeners), signal))
+
         for code, message in queue.items():
-            if 'spooler' in code:
-                print("%s : %s" % (code,message))
+            # if 'spooler' in code:
+            #     print("%s : %s" % (code,message))
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
@@ -716,23 +745,15 @@ class Kernel:
                 # print("Waiting for processes to stop. %s" % (str(thread)))
             # print("Thread has Finished: %s" % (str(thread)))
 
-    def listen(self, signal, function):
-        if signal in self.listeners:
-            listeners = self.listeners[signal]
-            listeners.append(function)
-        else:
-            self.listeners[signal] = [function]
-        if signal in self.last_message:
-            last_message = self.last_message[signal]
-            function(*last_message)
+    def listen(self, signal, funct):
+        self.queue_lock.acquire(True)
+        self.adding_listeners.append((signal, funct))
+        self.queue_lock.release()
 
-    def unlisten(self, signal, function):
-        if signal in self.listeners:
-            listeners = self.listeners[signal]
-            try:
-                listeners.remove(function)
-            except ValueError:
-                print(listeners)
+    def unlisten(self, signal, funct):
+        self.queue_lock.acquire(True)
+        self.removing_listeners.append((signal, funct))
+        self.queue_lock.release()
 
     def add_control(self, control_name, function):
         self.controls[control_name] = function

@@ -370,7 +370,7 @@ class MeerK40t(wx.Frame):
                 m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
                 if i == self.kernel.language:
                     m.Check(True)
-                self.Bind(wx.EVT_MENU, self.language_to(i), id=m.GetId())
+                self.Bind(wx.EVT_MENU, self.kernel.gui.language_to(i), id=m.GetId())
                 if not os.path.exists('./locale/%s' % language_code) and i != 0:
                     m.Enable(False)
                 i += 1
@@ -666,13 +666,16 @@ class MeerK40t(wx.Frame):
         tree.ExpandAll()
 
     def on_usb_status(self, value):
-        self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
+        if self.kernel is not None:
+            self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
 
     def on_control_state(self, value):
-        self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_text_thread_state(value)), 1)
+        if self.kernel is not None:
+            self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_text_thread_state(value)), 1)
 
     def on_writer_state(self, value):
-        self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_text_thread_state(value)), 2)
+        if self.kernel is not None:
+            self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_text_thread_state(value)), 2)
 
     def on_writer_mode(self, state):
         if state == 0:
@@ -739,7 +742,8 @@ class MeerK40t(wx.Frame):
                 window.Close()
         self.unlisten_device()
         self.unlisten_scene()
-        self.kernel.shutdown()
+        #self.kernel.shutdown()
+        self.kernel = None
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -857,6 +861,8 @@ class MeerK40t(wx.Frame):
 
     def refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
+        if self.kernel is None:
+            return
         self.update_buffer_ui_thread()
         self.Refresh()
         self.screen_refresh_is_requested = False
@@ -1418,7 +1424,6 @@ class MeerK40t(wx.Frame):
             group.append(LaserNode(p))
         dlg.Destroy()
 
-
     def open_settings(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Open preference dialog.
@@ -1427,7 +1432,6 @@ class MeerK40t(wx.Frame):
         :return:
         """
         self.kernel.open_window("Settings")
-
 
     def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1528,44 +1532,6 @@ class MeerK40t(wx.Frame):
         """
         import webbrowser
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
-
-    def language_swap(self, lang):
-        def update(event):
-            # TODO: Code for swapping current window for MeerK40t, with 0.4.0 this is possible.
-            self.Unbind(wx.EVT_CLOSE, self)
-            self.language_to(lang)
-            self.kernel.flush()
-            self.Close(True)
-            window = MeerK40t(None, wx.ID_ANY, "")
-            window.Show()
-
-        return update
-
-    def language_to(self, lang):
-        """
-        Returns a function to change the language to the language specified.
-        :param lang: language to switch to
-        :return:
-        """
-
-        def update_language(event):
-            """
-            Update language to the requested language.
-            """
-            language_code, language_name, language_index = supported_languages[lang]
-            self.kernel.language = lang
-
-            if self.locale:
-                assert sys.getrefcount(self.locale) <= 2
-                del self.locale
-            self.locale = wx.Locale(language_index)
-            if self.locale.IsOk():
-                self.locale.AddCatalog('meerk40t')
-            else:
-                self.locale = None
-            self.kernel('language', (lang, language_code, language_name, language_index))
-
-        return update_language
 
     def create_menu(self, element):
         """Create menu items. This is used for both the scene and the tree to create menu items."""
@@ -2001,6 +1967,7 @@ class wxMeerK40t(Module, wx.App):
     def initialize(self, kernel, name=None):
         kernel.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
         kernel.add_window("MeerK40t", MeerK40t)
+
         self.kernel = kernel
         _ = wx.GetTranslation
 
@@ -2030,6 +1997,35 @@ class wxMeerK40t(Module, wx.App):
             self.language_to(language)(None)
         self.kernel.open_window("MeerK40t")
 
+    def language_swap(self, lang):
+        self.language_to(lang)(None)
+        self.kernel.open_window("MeerK40t")
+
+    def language_to(self, lang):
+        """
+        Returns a function to change the language to the language specified.
+        :param lang: language to switch to
+        :return:
+        """
+
+        def update_language(event):
+            """
+            Update language to the requested language.
+            """
+            language_code, language_name, language_index = supported_languages[lang]
+            self.kernel.language = lang
+
+            if self.locale:
+                assert sys.getrefcount(self.locale) <= 2
+                del self.locale
+            self.locale = wx.Locale(language_index)
+            if self.locale.IsOk():
+                self.locale.AddCatalog('meerk40t')
+            else:
+                self.locale = None
+            self.kernel('language', (lang, language_code, language_name, language_index))
+
+        return update_language
 
 # end of class MeerK40tGui
 def handleGUIException(exc_type, exc_value, exc_traceback):

@@ -130,10 +130,10 @@ class Navigation(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
         else:
-            self.kernel.setting(float, "navigation_step", self.spin_step_size.GetValue())
-            self.kernel.setting(float, "navigation_pulse", self.spin_pulse_time.GetValue())
-            self.spin_step_size.SetValue(kernel.navigation_step)
-            self.spin_pulse_time.SetValue(kernel.navigation_pulse)
+            self.device.setting(float, "navigation_step", self.spin_step_size.GetValue())
+            self.device.setting(float, "navigation_pulse", self.spin_pulse_time.GetValue())
+            self.spin_step_size.SetValue(self.device.navigation_step)
+            self.spin_pulse_time.SetValue(self.device.navigation_pulse)
 
     def home(self, evt):
         self.device.interpreter.home()
@@ -176,7 +176,7 @@ class Navigation(wx.Frame):
         self.device.interpreter.move_relative(0, value)
 
     def on_spin_step_size(self, event):  # wxGlade: Navigate.<event_handler>
-        self.kernel.navigation_step = self.spin_step_size.GetValue()
+        self.device.navigation_step = self.spin_step_size.GetValue()
 
     def on_spin_pulse_time(self, event):  # wxGlade: Navigate.<event_handler>
-        self.kernel.navigation_pulse = self.spin_pulse_time.GetValue()
+        self.device.navigation_pulse = self.spin_pulse_time.GetValue()
