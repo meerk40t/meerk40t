@@ -11,6 +11,19 @@ THREAD_STATE_PAUSED = 2
 THREAD_STATE_FINISHED = 3
 THREAD_STATE_ABORT = 10
 
+SHUTDOWN_BEGIN = 0
+SHUTDOWN_FLUSH = 1
+SHUTDOWN_WINDOW = 2
+SHUTDOWN_WINDOW_ERROR = -1
+SHUTDOWN_MODULE = 3
+SHUTDOWN_MODULE_ERROR = -2
+SHUTDOWN_THREAD = 4
+SHUTDOWN_THREAD_ERROR = -4
+SHUTDOWN_THREAD_ALIVE = 5
+SHUTDOWN_THREAD_FINISHED = 6
+SHUTDOWN_LISTENER_ERROR = -10
+SHUTDOWN_FINISH = 100
+
 
 class KernelJob:
     def __init__(self, scheduler, process, args, interval=1.0, times=None):
@@ -37,7 +50,10 @@ class KernelJob:
             self.times = self.times - 1
             if self.times <= 0:
                 self.scheduler.jobs.remove(self)
-        self.process(*self.args)
+        if isinstance(self.args, tuple):
+            self.process(*self.args)
+        else:
+            self.process(self.args)
         self.last_run = time.time()
         self.next_run = self.last_run + self.interval
 
@@ -45,6 +61,7 @@ class KernelJob:
 class Scheduler(Thread):
     def __init__(self, kernel):
         Thread.__init__(self)
+        self.daemon = True
         self.kernel = kernel
         self.state = THREAD_STATE_UNSTARTED
         self.jobs = []
@@ -56,16 +73,17 @@ class Scheduler(Thread):
 
     def run(self):
         self.state = THREAD_STATE_STARTED
-        while self.state != THREAD_STATE_ABORT:
+        while self.state != THREAD_STATE_FINISHED:
             time.sleep(0.005)  # 200 ticks a second.
             if self.state == THREAD_STATE_ABORT:
-                return
+                break
             while self.state == THREAD_STATE_PAUSED:
                 time.sleep(1.0)
             for job in self.jobs:
                 if job.scheduled:
                     job.run()
         self.state = THREAD_STATE_FINISHED
+        self.kernel.shutdown()
 
     def state(self):
         return self.state
@@ -83,9 +101,11 @@ class Scheduler(Thread):
 class Module:
     def __init__(self):
         self.kernel = None
+        self.name = None
 
     def initialize(self, kernel, name=None):
         self.kernel = kernel
+        self.name = name
 
     def shutdown(self, kernel):
         self.kernel = None
@@ -115,7 +135,7 @@ class Device:
         self.hold_condition = lambda e: False
 
     def hold(self):
-        while self.hold_condition(0):
+        while self.hold_condition(0) and self.spooler.thread.state != THREAD_STATE_ABORT:
             time.sleep(0.1)
 
     def close(self):
@@ -461,7 +481,6 @@ class Kernel:
     """
 
     def __init__(self, config=None):
-        self.spooler = None  # Class responsible for spooling commands
         self.elements = LaserNode(parent=self)
         self.operations = []
 
@@ -499,6 +518,7 @@ class Kernel:
         if config is not None:
             self.set_config(config)
         self.cron = None
+        self.shutdown_watcher = lambda i, e, o: True
 
     def __str__(self):
         return "Project"
@@ -583,34 +603,85 @@ class Kernel:
         return self.config.Read(item)
 
     def boot(self):
-        if self.cron is None:
+        if self.cron is None or not self.cron.is_alive():
             self.cron = Scheduler(self)
             self.cron.add_job(self.delegate_messages, args=(), interval=0.05)
             self.add_thread('Scheduler', self.cron)
             self.cron.start()
 
-    def add_module(self, module_name, module):
-        self.modules[module_name] = module
-        module.initialize(self, name=module_name)
+    def shutdown(self):
+        """
+        Begins kernel shutdown procedure.
 
-    def add_loader(self, loader_name, loader):
-        self.loaders[loader_name] = loader
+        Checks if shutdown should be done.
+        Save Kernel Persistent settings.
+        Save Device Persistent settings.
+        Closes all windows.
+        Ask all modules to shutdown.
+        Wait for threads to end.
+        -- If threads do not end, threads must be aborted.
+        Notifies of listener errors.
+        """
 
-    def add_saver(self, saver_name, saver):
-        self.savers[saver_name] = saver
+        kill = self.shutdown_watcher
 
-    def add_backend(self, backend_name, backend):
-        self.backends[backend_name] = backend
+        if not kill(SHUTDOWN_BEGIN, 'shutdown', self):
+            return
+        self.flush()
+        for device_name in self.devices:
+            device = self.devices[device_name]
+            if kill(SHUTDOWN_FLUSH, device_name, device):
+                device.flush()
+        windows = list(self.open_windows)
+        for i in range(0, len(windows)):
+            window_name = windows[i]
+            window = self.open_windows[window_name]
+            if kill(SHUTDOWN_WINDOW, window_name, window):
+                try:
+                    window.Close()
+                except AttributeError:
+                    pass
 
-    def add_device(self, device_name, device):
-        self.devices[device_name] = device
+        for window_name in list(self.open_windows):
+            window = self.open_windows[window_name]
+            kill(SHUTDOWN_WINDOW_ERROR, window_name, window)
 
-    def activate_device(self, device_name):
-        if device_name is None:
-            self.device = None
-        else:
-            self.device = self.devices[device_name]
-        self.signal("device", self.device)
+        for module_name in list(self.modules):
+            module = self.modules[module_name]
+            if kill(SHUTDOWN_MODULE, module_name, module):
+                try:
+                    module.shutdown(self)
+                except AttributeError:
+                    pass
+        for module_name in self.modules:
+            module = self.modules[module_name]
+            kill(SHUTDOWN_MODULE_ERROR, module_name, module)
+
+        for thread_name in self.threads:
+            thread = self.threads[thread_name]
+            if not thread.is_alive:
+                kill(SHUTDOWN_THREAD_ERROR, thread_name, thread)
+                continue
+            if kill(SHUTDOWN_THREAD, thread_name, thread):
+                if thread is self.cron:
+                    continue
+                    # Do not sleep thread waiting for cron thread to die. This is the cron thread.
+                try:
+                    thread.stop()
+                except AttributeError:
+                    pass
+                if thread.is_alive:
+                    kill(SHUTDOWN_THREAD_ALIVE, thread_name, thread)
+                while thread.is_alive():
+                    time.sleep(0.1)
+                kill(SHUTDOWN_THREAD_FINISHED, thread_name, thread)
+        for key, listener in self.listeners.items():
+            if len(listener):
+                kill(SHUTDOWN_LISTENER_ERROR, key, listener)
+        kill(SHUTDOWN_FINISH, 'shutdown', self)
+        self.last_message = {}
+        self.listeners = {}
+        self.device = None
 
     def read_config(self, t, key, default=None):
         if default is not None:
@@ -722,29 +793,6 @@ class Kernel:
         self.open_windows[window_name] = window
         return window
 
-    def shutdown(self):
-        """
-        Invokes Kernel Shutdown.
-        All threads are stopped.
-        """
-        self.cron.stop()
-        self.flush()
-        for device_name in self.devices:
-            device = self.devices[device_name]
-            device.flush()
-        for module_name in self.modules:
-            module = self.modules[module_name]
-            try:
-                module.stop()
-            except AttributeError:
-                pass
-        for thread_name in self.threads:
-            thread = self.threads[thread_name]
-            while thread.is_alive():
-                time.sleep(0.1)
-                # print("Waiting for processes to stop. %s" % (str(thread)))
-            # print("Thread has Finished: %s" % (str(thread)))
-
     def listen(self, signal, funct):
         self.queue_lock.acquire(True)
         self.adding_listeners.append((signal, funct))
@@ -754,6 +802,32 @@ class Kernel:
         self.queue_lock.acquire(True)
         self.removing_listeners.append((signal, funct))
         self.queue_lock.release()
+
+    def add_module(self, module_name, module):
+        self.modules[module_name] = module
+        module.initialize(self, name=module_name)
+
+    def remove_module(self, module_name):
+        del self.modules[module_name]
+
+    def add_loader(self, loader_name, loader):
+        self.loaders[loader_name] = loader
+
+    def add_saver(self, saver_name, saver):
+        self.savers[saver_name] = saver
+
+    def add_backend(self, backend_name, backend):
+        self.backends[backend_name] = backend
+
+    def add_device(self, device_name, device):
+        self.devices[device_name] = device
+
+    def activate_device(self, device_name):
+        if device_name is None:
+            self.device = None
+        else:
+            self.device = self.devices[device_name]
+        self.signal("device", self.device)
 
     def add_control(self, control_name, function):
         self.controls[control_name] = function

@@ -9,6 +9,7 @@ import traceback
 import wx
 import wx.ribbon as RB
 
+from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
 from Controller import Controller
@@ -24,6 +25,7 @@ from Navigation import Navigation
 from Preferences import Preferences
 from Settings import Settings
 from RotarySettings import RotarySettings
+from Shutdown import Shutdown
 from UsbConnect import UsbConnect
 from DeviceManager import DeviceManager
 from ZMatrix import ZMatrix
@@ -719,31 +721,17 @@ class MeerK40t(wx.Frame):
         self.kernel.listen("selection", self.selection_changed)
 
     def unlisten_scene(self):
+        self.kernel.unlisten("device", self.on_device_switch)
         self.kernel.unlisten("elements", self.on_elements_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
-        self.kernel.unlisten("bed_size", self.bed_changed)
 
     def on_close(self, event):
-        for name, device in self.kernel.devices.items():
-            if device.spooler.thread.state == THREAD_STATE_STARTED or device.pipe.thread.state == THREAD_STATE_STARTED:
-                uid = device.uid
-                dlg = wx.MessageDialog(None, _("Issue emergency stop and close?"),
-                                       uid + _(' processes is still running.'), wx.OK | wx.CANCEL | wx.ICON_WARNING)
-                result = dlg.ShowModal()
-                dlg.Destroy()
-
-                if result == wx.ID_OK:
-                    device.close()
-                else:
-                    return
-        for window in [value for key, value in self.kernel.open_windows.items()]:
-            if window != self:  # Self is currently being closed.
-                window.Close()
         self.unlisten_device()
         self.unlisten_scene()
-        #self.kernel.shutdown()
-        self.kernel = None
+        self.kernel.open_window('Shutdown')
+        self.kernel.mark_window_closed('MeerK40t')
+        self.kernel.cron.stop()
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -817,6 +805,8 @@ class MeerK40t(wx.Frame):
         self._Buffer = wx.Bitmap(width, height)
 
     def on_size(self, event):
+        if self.kernel is None:
+            return
         self.Layout()
         self.set_buffer()
         self.kernel.window_width, self.kernel.window_height = self.Size
@@ -1022,6 +1012,7 @@ class MeerK40t(wx.Frame):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def default_keymap(self):
+        self.kernel.keymap[wx.WXK_ESCAPE] = MappedKey("escape", "window Adjustments")
         self.kernel.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
         self.kernel.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
         self.kernel.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
@@ -1978,6 +1969,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.set_config(wx.Config("MeerK40t"))
         kernel.setting(int, 'language', None)
 
+        kernel.add_window('Shutdown', Shutdown)
         kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
@@ -1992,6 +1984,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window("JobSpooler", JobSpooler)
         kernel.add_window("JobInfo", JobInfo)
         kernel.add_window("BufferView", BufferView)
+        kernel.add_window("Adjustments", Adjustments)
         language = kernel.language
         if language is not None and language != 0:
             self.language_to(language)(None)

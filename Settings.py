@@ -18,12 +18,17 @@ class Settings(wx.Frame):
         # begin wxGlade: Preferences.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((491, 223))
+        self.SetSize((412, 183))
+
+        self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+
+        self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
+                                                 choices=["Invert Mouse Wheel Zoom", "Autoclose Shutdown"])
+
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),
                                        choices=[_("mm"), _("cm"), _("inch"), _("mils")],
                                        majorDimension=1,
                                        style=wx.RA_SPECIFY_ROWS)
-        self.check_invert_mouse_zoom = wx.CheckBox(self, wx.ID_ANY, _("Invert Mouse Wheel Zoom"))
 
         from wxMeerK40t import supported_languages
         choices = [language_name for language_code, language_name, language_index in supported_languages]
@@ -33,8 +38,8 @@ class Settings(wx.Frame):
         self.__do_layout()
 
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
-        self.Bind(wx.EVT_CHECKBOX, self.on_invert_mouse_wheel, self.check_invert_mouse_zoom)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_language, self.combo_language)
+        self.Bind(wx.EVT_CHECKLISTBOX, self.on_checklist_settings, self.checklist_options)
         # end wxGlade
         self.kernel = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -46,39 +51,47 @@ class Settings(wx.Frame):
     def set_kernel(self, kernel):
         self.kernel = kernel
         kernel.setting(bool, "mouse_zoom_invert", False)
-        kernel.setting(bool, "language", 0)
+        kernel.setting(bool, "autoclose_shutdown", True)
+        kernel.setting(int, "language", 0)
         kernel.setting(str, "units_name", 'mm')
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
-        self.check_invert_mouse_zoom.SetValue(self.kernel.mouse_zoom_invert)
+
+        if self.kernel.mouse_zoom_invert:
+            self.checklist_options.Check(0, True)
+        if self.kernel.autoclose_shutdown:
+            self.checklist_options.Check(1, True)
         self.radio_units.SetSelection(self.kernel.units_index)
         self.combo_language.SetSelection(self.kernel.language)
 
     def __set_properties(self):
-        # begin wxGlade: Preferences.__set_properties
-        self.SetTitle(_("Preferences"))
+        # begin wxGlade: Settings.__set_properties
+        self.SetTitle(_("Settings"))
         self.radio_units.SetBackgroundColour(wx.Colour(192, 192, 192))
         self.radio_units.SetToolTip(_("Set default units for guides"))
-        self.check_invert_mouse_zoom.SetToolTip(_("Invert the mouse wheel zoom direction"))
+        self.radio_units.SetSelection(0)
         self.combo_language.SetToolTip(_("Select the desired language to use."))
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: Preferences.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        # begin wxGlade: Settings.__do_layout
+        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_6 = wx.BoxSizer(wx.VERTICAL)
+        sizer_5 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL)
-        sizer_3 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Mouse Settings")), wx.HORIZONTAL)
-        sizer_1.Add(self.radio_units, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.check_invert_mouse_zoom, 0, 0, 0)
-        sizer_1.Add(sizer_3, 1, wx.EXPAND, 0)
+        sizer_5.Add(self.radio_units, 0, wx.EXPAND, 0)
         sizer_2.Add(self.combo_language, 0, 0, 0)
-        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
+        sizer_5.Add(sizer_2, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_6.Add(self.checklist_options, 1, wx.EXPAND, 0)
+        sizer_1.Add(sizer_6, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
 
-    def on_invert_mouse_wheel(self, event):  # wxGlade: Preferences.<event_handler>
-        self.kernel.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
+    def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
+        self.kernel.mouse_zoom_invert = self.checklist_options.IsChecked(0)
+        self.kernel.autoclose_shutdown = self.checklist_options.IsChecked(1)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
