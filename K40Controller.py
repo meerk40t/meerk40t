@@ -415,8 +415,8 @@ class K40Controller(Pipe):
                 return False  # Paused during packet fetch.
             self.send_packet(packet)
         else:
-            # This packet cannot be sent. Toss it back.
-            return False
+            if len(packet) != 0:  # packet isn't just commands.
+                return False  # This packet cannot be sent. Toss it back.
         self.buffer = self.buffer[length:]
         self.device.signal('pipe;buffer', len(self.buffer))
         # Bug skips send packet and as such the post send errors?
