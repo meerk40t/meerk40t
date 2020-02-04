@@ -46,6 +46,8 @@ def get_code_string_from_code(code):
         return "Low Power"
     elif code == STATUS_BAD_STATE:
         return "Bad State"
+    elif code == 0:
+        return "USB Failed"
     else:
         return "UNK %02x" % code
 
@@ -85,6 +87,7 @@ class ControllerQueueThread(threading.Thread):
         self.controller = controller
         self.state = None
         self.set_state(THREAD_STATE_UNSTARTED)
+        self.max_attempts = 5
 
     def set_state(self, state):
         if self.state != state:
@@ -92,15 +95,31 @@ class ControllerQueueThread(threading.Thread):
             self.controller.thread_state_update(self.state)
 
     def run(self):
+
         self.set_state(THREAD_STATE_STARTED)
         while self.controller.state == THREAD_STATE_UNSTARTED:
             time.sleep(0.1)  # Already started. Unstarted is the desired state. Wait.
 
+        refuse_counts = 0
+        connection_errors = 0
         count = 0
         while self.controller.state != THREAD_STATE_ABORT:
-
-            if self.controller.process_queue():
-                # Some queue was processed.
+            try:
+                queue_processed = self.controller.process_queue()
+                refuse_counts = 0
+            except ConnectionRefusedError:
+                refuse_counts += 1
+                time.sleep(3)  # 3 second sleep on failed connection attempt.
+                if refuse_counts >= self.max_attempts:
+                    self.controller.state = THREAD_STATE_ABORT
+                    self.controller.device.signal('pipe;error', refuse_counts)
+                continue
+            except ConnectionError:
+                connection_errors += 1
+                time.sleep(0.5)
+                self.controller.close()
+                continue
+            if queue_processed:
                 count = 0
             else:
                 # No packet could be sent.
@@ -108,9 +127,14 @@ class ControllerQueueThread(threading.Thread):
                     count = 100
                 time.sleep(0.01 * count)  # will tick up to 1 second waits if process queue never works.
                 count += 1
-            while self.controller.state == THREAD_STATE_PAUSED:
-                self.set_state(THREAD_STATE_PAUSED)
-                time.sleep(1)
+                if self.controller.state == THREAD_STATE_PAUSED:
+                    self.set_state(THREAD_STATE_PAUSED)
+                    while self.controller.state == THREAD_STATE_PAUSED:
+                        time.sleep(1)
+                        if self.controller.state == THREAD_STATE_ABORT:
+                            self.set_state(THREAD_STATE_ABORT)
+                            return
+                    self.set_state(THREAD_STATE_STARTED)
             if len(self.controller) == 0 and self.controller.state == THREAD_STATE_FINISHED:
                 # If finished is the desired state we need to actually be finished.
                 break
@@ -125,7 +149,6 @@ class K40Controller(Pipe):
     def __init__(self, device=None):
         Pipe.__init__(self, device)
         self.driver = None
-        self.driver_index = 0
         self.state = THREAD_STATE_UNSTARTED
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -133,32 +156,28 @@ class K40Controller(Pipe):
         self.preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
         self.queue_lock = threading.Lock()
         self.preempt_lock = threading.Lock()
-        self.thread = None
         self.packet_count = 0
         self.rejected_count = 0
 
-        self.abort_waiting = False
         self.status = [0] * 6
+        self.usb_state = -1
 
         self.driver = None
         self.thread = None
         self.reset()
 
-        def start_usb():
-            self.state = THREAD_STATE_STARTED
-            self.start()
+        self.abort_waiting = False
 
-        self.device.add_control("Start", start_usb)
-
-        def stop_usb():
-            self.state = THREAD_STATE_FINISHED
-
-        self.device.add_control("Stop", stop_usb)
+        self.device.add_control("Connect_USB", self.open)
+        self.device.add_control("Disconnect_USB", self.close)
+        self.device.add_control("Start", self.start)
+        self.device.add_control("Stop", self.stop)
+        self.device.add_control("Status Update", self.update_status)
 
         def abort_wait():
             self.abort_waiting = True
 
-        self.device.add_control("Wait Abort %s" % self.device.uid, abort_wait)
+        self.device.add_control("Wait Abort", abort_wait)
 
         def pause_k40():
             self.state = THREAD_STATE_PAUSED
@@ -184,15 +203,21 @@ class K40Controller(Pipe):
 
     def open(self):
         if self.driver is None:
-            self.detect_driver()
+            self.detect_driver_and_open()
+        else:
+            # Update criteria
+            self.driver.index = self.device.usb_index
+            self.driver.bus = self.device.usb_bus
+            self.driver.address = self.device.usb_address
+            self.driver.serial = self.device.usb_serial
+            self.driver.chipv = self.device.usb_version
+            self.driver.open()
         if self.driver is None:
             raise ConnectionRefusedError
-        self.driver.open()
 
     def close(self):
-        if not self.device.mock:
-            if self.driver is not None:
-                self.driver.close()
+        if self.driver is not None:
+            self.driver.close()
 
     def write(self, bytes_to_write):
         self.queue_lock.acquire(True)
@@ -212,35 +237,60 @@ class K40Controller(Pipe):
         self.preempt = bytes_to_write + self.preempt
         self.preempt_lock.release()
         self.start()
+        if self.state == THREAD_STATE_PAUSED:
+            self.state = THREAD_STATE_STARTED
         return self
 
     def state_listener(self, code):
         if isinstance(code, int):
-            self.log(get_name_for_status(code))
+            self.usb_state = code
+            name = get_name_for_status(code, translation=self.device.kernel.translation)
+            self.log(name)
             self.device.signal("pipe;usb_state", code)
+            self.device.signal("pipe;usb_status", name)
         else:
             self.log(str(code))
 
-    def detect_driver(self):
+    def detect_driver_and_open(self):
         # TODO: Multi-Match the specific requirements of the backend driver protocol.
         # Connection-Permitted- If you match more than one device. You should connect to the one that lets you connect.
+        index = self.device.usb_index
+        bus = self.device.usb_bus
+        address = self.device.usb_address
+        serial = self.device.usb_serial
+        chipv = self.device.usb_version
+
         try:
             from CH341LibusbDriver import CH341Driver
-            self.driver = driver = CH341Driver(self.driver_index, state_listener=self.state_listener)
+            self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
+                                               state_listener=self.state_listener)
             driver.open()
             chip_version = driver.get_chip_version()
+            self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
             self.device.signal("pipe;chipv", chip_version)
-            driver.close()
-        except: # Import Error (libusb isn't installed), ConnectionRefusedError (wrong driver)
-            try:
-                from CH341WindllDriver import CH341Driver
-                self.driver = driver = CH341Driver(self.driver_index, state_listener=self.state_listener)
-                driver.open()
-                chip_version = driver.get_chip_version()
-                self.device.signal("pipe;chipv", chip_version)
-                driver.close()
-            except:
-                self.driver = None
+            self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_LIBUSB)
+            self.state_listener(STATE_CONNECTED)
+            return
+        except ConnectionRefusedError:
+            self.driver = None
+        # TODO: Implement Import Errors
+        # except ImportError:
+        #     pass
+        try:
+            from CH341WindllDriver import CH341Driver
+            self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
+                                               state_listener=self.state_listener)
+            driver.open()
+            chip_version = driver.get_chip_version()
+            self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
+            self.device.signal("pipe;chipv", chip_version)
+            self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_CH341)
+            self.state_listener(STATE_CONNECTED)
+        except ConnectionRefusedError:
+            self.driver = None
+        # TODO: Implement Import Errors.
+        # except ImportError:
+        #     pass
 
     def log(self, info):
         update = str(info) + '\n'
@@ -277,8 +327,11 @@ class K40Controller(Pipe):
         self.device.signal('pipe;buffer', 0)
 
     def reset(self):
+        self.buffer = b''
+        self.queue = b''
         self.thread = ControllerQueueThread(self)
         self.device.add_thread("controller;thread", self.thread)
+        self.state = THREAD_STATE_UNSTARTED
 
     def stop(self):
         self.abort()
@@ -352,28 +405,24 @@ class K40Controller(Pipe):
         if self.device.mock:
             self.state_listener(STATE_DRIVER_MOCK)
         else:
-            try:
-                self.open()
-            except ConnectionRefusedError:
-                return False
+            self.open()
 
         if len(packet) == 30:
             # check that latest state is okay.
-            try:
-                self.wait_ok()
-            except ConnectionError:
-                return False  # Error.
+            self.wait_ok()
 
             if self.state == THREAD_STATE_PAUSED:
                 return False  # Paused during packet fetch.
-            try:
-                self.send_packet(packet)
-            except ConnectionError:
-                return False
+            self.send_packet(packet)
+        else:
+            # This packet cannot be sent. Toss it back.
+            return False
         self.buffer = self.buffer[length:]
         self.device.signal('pipe;buffer', len(self.buffer))
+        # Bug skips send packet and as such the post send errors?
         if post_send_command is not None:
             # Post send command could be wait_finished, and might have a broken pipe.
+            # But should report that packet was sent.
             try:
                 post_send_command()
             except ConnectionError:
@@ -393,7 +442,7 @@ class K40Controller(Pipe):
 
     def update_status(self):
         if self.device.mock:
-            self.status = [255, 206, 0, 0, 0, 0]
+            self.status = [255, 206, 0, 0, 0, 1]
             time.sleep(0.01)
         else:
             self.status = self.driver.get_status()
@@ -401,7 +450,7 @@ class K40Controller(Pipe):
 
     def wait_ok(self):
         i = 0
-        while True:
+        while self.state != THREAD_STATE_ABORT:
             self.update_status()
             status = self.status[1]
             if status == 0:
@@ -422,7 +471,7 @@ class K40Controller(Pipe):
         while True:
             self.update_status()
             if self.device.mock:  # Mock controller
-                self.status = [255, STATUS_FINISH, 0, 0, 0, 0]
+                self.status = [255, STATUS_FINISH, 0, 0, 0, 1]
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
                 self.rejected_count += 1

@@ -17,6 +17,10 @@ STATE_USB_DETACH_KERNEL_SUCCESS = 210
 STATE_USB_DETACH_KERNEL_FAIL = 220
 STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED = 230
 
+STATE_USB_SET_ACTIVE_CONFIG = 250
+STATE_USB_SET_ACTIVE_CONFIG_SUCCESS = 260
+STATE_USB_SET_ACTIVE_CONFIG_FAIL = 270
+
 STATE_USB_CLAIM_INTERFACE = 300
 STATE_USB_CLAIM_INTERFACE_SUCCESS = 310
 STATE_USB_CLAIM_INTERFACE_FAIL = 320
@@ -26,6 +30,9 @@ STATE_CH341_PARAMODE = 160
 
 STATE_CONNECTED = 600
 
+INFO_USB_CHIP_VERSION = 0x100000
+INFO_USB_DRIVER = 0x200000
+
 STATE_USB_SET_DISCONNECTING = 1000
 STATE_USB_ATTACH_KERNEL = 1100
 STATE_USB_ATTACH_KERNEL_SUCCESS = 1110
@@ -34,7 +41,7 @@ STATE_USB_RELEASE_INTERFACE = 1200
 STATE_USB_RELEASE_INTERFACE_SUCCESS = 1210
 STATE_USB_RELEASE_INTERFACE_FAIL = 1220
 
-STATE_USB_DISPOSING_RESOURCES = 1200
+STATE_USB_DISPOSING_RESOURCES = 1300
 STATE_USB_RESET = 1400
 STATE_USB_RESET_SUCCESS = 1410
 STATE_USB_RESET_FAIL = 1420
@@ -58,7 +65,7 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
     elif code == STATE_DRIVER_NO_BACKEND:
         return _("PyUsb detected no backend LibUSB driver.")
     elif code == STATE_DEVICE_FOUND:
-        return _("K40 device detected:\n%s\n") % str(obj)
+        return _("K40 device detected:")
     elif code == STATE_DEVICE_NOT_FOUND:
         return _("Devices Not Found.")
     elif code == STATE_DEVICE_REJECTED:
@@ -73,12 +80,19 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("Kernel detach: Failed.")
     elif code == STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED:
         return _("Kernel detach: Not Implemented.")
+
+    elif code == STATE_USB_SET_ACTIVE_CONFIG:
+        return _("Setting Active Config")
+    elif code == STATE_USB_SET_ACTIVE_CONFIG_SUCCESS:
+        return _("Active Config: Success.")
+    elif code == STATE_USB_SET_ACTIVE_CONFIG_FAIL:
+        return _("Active Config: Failed.")
     elif code == STATE_USB_CLAIM_INTERFACE:
         return _("Attempting to claim interface.")
     elif code == STATE_USB_CLAIM_INTERFACE_SUCCESS:
         return _("Interface claim: Success")
     elif code == STATE_USB_CLAIM_INTERFACE_FAIL:
-        return _("Interface claim: Fail")
+        return _("Interface claim: Failed. (Interface is in use.)")
     elif code == STATE_USB_CONNECTED:
         return _("USB Connected.")
     elif code == STATE_CH341_PARAMODE:
@@ -109,6 +123,12 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("USB connection reset.")
     elif code == STATE_USB_DISCONNECTED:
         return _("USB Disconnection Successful.\n")
+    elif code & INFO_USB_CHIP_VERSION != 0:
+        return _("CH341 Chip Version: %d") % (code & 0xFFFF)
+    elif code == (INFO_USB_DRIVER | STATE_DRIVER_LIBUSB):
+        return _("Driver Detected: LibUsb")
+    elif code == (INFO_USB_DRIVER | STATE_DRIVER_CH341):
+        return _("Driver Detected: CH341")
     return _("Unknown")
 
 

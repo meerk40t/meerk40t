@@ -18,6 +18,7 @@ COMMAND_ANGLE = b'M'
 COMMAND_ON = b'D'
 COMMAND_OFF = b'U'
 
+STATE_ABORT = -1
 STATE_DEFAULT = 0
 STATE_CONCAT = 1
 STATE_COMPACT = 2
@@ -69,7 +70,8 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        device.add_control("Emergency Stop", self.emergency_stop)
+        device.add_control("Realtime Pause", self.pause)
+        device.add_control("Realtime Resume", self.resume)
         # TODO: Consider Restoring this code.
 
         # def break_acceleration10():
@@ -355,8 +357,11 @@ class LhymicroInterpreter(Interpreter):
         elif command == COMMAND_OPEN:
             self.reset_modes()
             self.state = STATE_DEFAULT
+            self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_RESET:
-            self.emergency_stop()
+            self.device.pipe.realtime_write(b'I*\n')
+            self.state = STATE_DEFAULT
+            self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_PAUSE:
             self.pause()
         elif command == COMMAND_STATUS:
@@ -382,7 +387,9 @@ class LhymicroInterpreter(Interpreter):
             self.device.current_x = x
             self.device.current_y = y
         elif command == COMMAND_RESET:
-            self.emergency_stop()
+            self.device.pipe.realtime_write(b'I*\n')
+            self.state = STATE_DEFAULT
+            self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_PAUSE:
             self.pause()
         elif command == COMMAND_STATUS:
@@ -391,9 +398,6 @@ class LhymicroInterpreter(Interpreter):
             return status
         elif command == COMMAND_RESUME:
             self.resume()
-
-    def emergency_stop(self):
-        self.device.pipe.realtime_write(b'I*\n')
 
     def get_status(self):
         parts = []
@@ -647,6 +651,7 @@ class LhymicroInterpreter(Interpreter):
         self.device.current_y = 0
         self.reset_modes()
         self.state = STATE_DEFAULT
+        self.device.signal('interpreter;mode', self.state)
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y, old_x, old_y))
 
     def lock_rail(self):

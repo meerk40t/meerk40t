@@ -5,6 +5,7 @@ from base64 import b64encode
 
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
+from LaserCommandConstants import COMMAND_RESET
 from LhymicroInterpreter import LhymicroInterpreter
 from LaserNode import *
 from EgvParser import parse_egv
@@ -22,7 +23,7 @@ class K40StockDevice(Device):
         self.setting(int, 'usb_bus', -1)
         self.setting(int, 'usb_address', -1)
         self.setting(int, 'usb_serial', -1)
-        self.setting(int, 'usb_chip_version', -1)
+        self.setting(int, 'usb_version', -1)
 
         self.setting(bool, 'mock', False)
         self.setting(int, 'packet_count', 0)
@@ -45,8 +46,13 @@ class K40StockDevice(Device):
 
         self.signal("bed_size", (self.bed_width, self.bed_height))
 
+        self.add_control("Emergency Stop", self.emergency_stop)
+
         kernel.add_device(name, self)
         self.open()
+
+    def emergency_stop(self):
+        self.spooler.realtime(COMMAND_RESET, 1)
 
     def open(self):
         self.pipe = K40Controller(self)

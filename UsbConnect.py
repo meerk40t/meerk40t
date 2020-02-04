@@ -33,6 +33,8 @@ class UsbConnect(wx.Frame):
             dlg.Destroy()
             return
         self.device.listen('pipe;device_log', self.update_log)
+        self.usblog_text.SetValue(self.device.device_log)
+        self.usblog_text.AppendText("\n")
 
     def on_close(self, event):
         if self.device is not None:
@@ -41,15 +43,15 @@ class UsbConnect(wx.Frame):
         event.Skip()  # Call destroy as regular.
 
     def update_log(self, text):
-        self.post_update()
-
-    def post_update(self):
         if self.kernel is None:
             return
         try:
             device = self.kernel.device
-            self.usblog_text.SetValue(device.device_log)
-            self.usblog_text.AppendText("\n")
+            try:
+                self.usblog_text.SetValue(device.device_log)
+                self.usblog_text.AppendText("\n")
+            except RuntimeError:
+                pass # must have closed before signal hit.
         except AttributeError:
             return
 

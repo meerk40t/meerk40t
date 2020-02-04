@@ -63,9 +63,9 @@ class JobSpooler(wx.Frame):
         self.device.setting(str, "board", "M2")
         self.device.setting(int, "buffer_max", 900)
         self.device.setting(bool, "buffer_limit", True)
+        self.device.listen('spooler;thread', self.on_spooler_state)
         self.device.listen("spooler;queue", self.on_spooler_update)
         self.device.listen("pipe;buffer", self.on_buffer_update)
-        self.device.listen("interpreter;state", self.on_spooler_state)
 
         self.set_spooler_button_by_state()
         self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
@@ -74,9 +74,9 @@ class JobSpooler(wx.Frame):
 
     def on_close(self, event):
         if self.device is not None:
+            self.device.unlisten('spooler;thread', self.on_spooler_state)
             self.device.unlisten("spooler;queue", self.on_spooler_update)
             self.device.unlisten("pipe;buffer", self.on_buffer_update)
-            self.device.unlisten("interpreter;state", self.on_spooler_state)
         self.kernel.mark_window_closed("JobSpooler")
         self.kernel = None
         self.device = None
@@ -227,13 +227,10 @@ class JobSpooler(wx.Frame):
         state = spooler.thread.state
         if state == THREAD_STATE_STARTED:
             spooler.thread.pause()
-            self.set_spooler_button_by_state()
         elif state == THREAD_STATE_PAUSED:
             spooler.thread.resume()
-            self.set_spooler_button_by_state()
         elif state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
             spooler.start_queue_consumer()
-            self.set_spooler_button_by_state()
         elif state == THREAD_STATE_ABORT:
             spooler.reset_thread()
 

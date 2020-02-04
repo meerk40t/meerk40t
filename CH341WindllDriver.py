@@ -1,5 +1,7 @@
 from ctypes import *
+
 from CH341DriverBase import *
+
 
 # MIT License.
 
@@ -8,13 +10,19 @@ class CH341Driver:
     """
     This is basic interface code for a CH341 to be run in EPP 1.9 mode.
     """
-    def __init__(self, driver_index, state_listener=None):
+
+    def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, state_listener=None):
         if state_listener is None:
             self.state_listener = lambda code: None  # Code, Name, Message
         else:
             self.state_listener = state_listener
         self.driver = windll.LoadLibrary("CH341DLL.dll")
-        self.driver_index = driver_index
+        self.driver_index = 0
+        self.index = index
+        self.bus = bus
+        self.address = address
+        self.serial = serial
+        self.chipv = chipv
         self.driver_value = None
         self.state = None
 
@@ -22,34 +30,61 @@ class CH341Driver:
         self.state_listener(code)
         self.state = code
 
+    def try_open(self, i):
+        """Tries to open device at index, with given criteria"""
+        self.driver_index = i
+        val = self.driver.CH341OpenDevice(self.driver_index)
+        self.driver_value = val
+        if val == -1:
+            self.set_status(STATE_CONNECTION_FAILED)
+            raise ConnectionRefusedError  # No more devices.
+        # There is a device.
+        if self.chipv != -1:
+            chipv = self.get_chip_version()
+            if self.chipv != chipv:
+                # Rejected.
+                self.set_status(STATE_DEVICE_REJECTED)
+                self.driver.CH341CloseDevice(self.driver_index)
+                return -1
+        if self.bus != -1:
+            pass  # Windows driver no bus check.
+        if self.address != -1:
+            pass  # Windows driver no address check.
+        if self.serial != -1:
+            pass  # No driver has a serial number.
+        # The device passes our tests.
+        return 0
+
     def open(self):
         """
-        Opens the driver for the stated device number.
+        Opens the driver for unknown criteria.
         """
         if self.driver_value is None:
             self.set_status(STATE_DRIVER_CH341)
             self.set_status(STATE_CONNECTING)
-            val = self.driver.CH341OpenDevice(self.driver_index)
-            self.driver_value = val
-            if val == -1:
-                self.set_status(STATE_CONNECTION_FAILED)
-                return -1
+            if self.index == -1:
+                for i in range(0, 16):
+                    if self.try_open(i) == 0:
+                        break  # We have our driver.
+            else:
+                self.try_open(self.index)
             self.set_status(STATE_USB_CONNECTED)
             self.set_status(STATE_CH341_PARAMODE)
             self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
+            # self.driver.CH341SetExclusive(self.driver_index, 1)
             self.set_status(STATE_CONNECTED)
 
     def close(self):
         """
         Closes the driver for the stated device index.
         """
+        self.driver_value = None
         self.set_status(STATE_USB_SET_DISCONNECTING)
         if self.driver_value == -1:
             self.set_status(STATE_USB_RESET_FAIL)
             raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
         self.set_status(STATE_USB_DISCONNECTED)
-        self.driver_value = None
 
     def write(self, packet):
         """
@@ -90,7 +125,7 @@ class CH341Driver:
         :return:
         """
         if self.driver_value == -1:
-            raise ConnectionError
+            raise ConnectionRefusedError
         obuf = (c_byte * 6)()
         self.driver.CH341GetStatus(self.driver_index, obuf)
         return [int(q & 0xff) for q in obuf]
@@ -101,5 +136,5 @@ class CH341Driver:
         :return: version. Eg. 48.
         """
         if self.driver_value == -1:
-            raise ConnectionError
+            raise ConnectionRefusedError
         return self.driver.CH341GetVerIC(self.driver_index)

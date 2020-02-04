@@ -65,7 +65,7 @@ class Shutdown(wx.Frame):
         elif flag == SHUTDOWN_FINISH:
             self.text_shutdown.AppendText(_("Shutdown.\n"))
             if self.autoclose:
-                wx.Shutdown()
+                self.Close()
         return True
 
     def __set_properties(self):

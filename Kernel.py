@@ -135,7 +135,11 @@ class Device:
         self.hold_condition = lambda e: False
 
     def hold(self):
-        while self.hold_condition(0) and self.spooler.thread.state != THREAD_STATE_ABORT:
+        if self.spooler.thread.state == THREAD_STATE_ABORT:
+            raise InterruptedError
+        while self.hold_condition(0):
+            if self.spooler.thread.state == THREAD_STATE_ABORT:
+                raise InterruptedError
             time.sleep(0.1)
 
     def close(self):
@@ -152,7 +156,7 @@ class Device:
 
     def log(self, message):
         self.device_log += message
-        self.signal(';pipe;device_log')
+        self.signal('pipe;device_log', message)
 
     def setting(self, setting_type, setting_name, default=None):
         """
@@ -219,7 +223,7 @@ class SpoolerThread(Thread):
     def set_state(self, state):
         if self.state != state:
             self.state = state
-            self.spooler.thread_state_update(self.state)
+            self.spooler.thread_state_update()
 
     def start_element_producer(self):
         if self.state != THREAD_STATE_ABORT:
@@ -241,34 +245,36 @@ class SpoolerThread(Thread):
 
     def run(self):
         command_index = 0
-        self.spooler.device.hold()
-        while True:
-            element = self.spooler.peek()
-            if element is None:
-                break  # Nothing left in spooler.
-            if self.state == THREAD_STATE_ABORT:
-                break
+        self.set_state(THREAD_STATE_STARTED)
+        try:
             self.spooler.device.hold()
-            try:
-                gen = element.generate
-            except AttributeError:
-                gen = element
-            for e in gen():
-                if isinstance(e, (tuple,list)):
-                    command = e[0]
-                    if len(e) >= 2:
-                        values = e[1:]
-                    else:
-                        values = [None]
-                else:
-                    command = e
-                    values = [None]
-                command_index += 1
-                if self.state == THREAD_STATE_ABORT:
-                    break
+            while True:
+                element = self.spooler.peek()
+                if element is None:
+                    break  # Nothing left in spooler.
                 self.spooler.device.hold()
-                self.spooler.execute(command, *values)
-            self.spooler.pop()
+                try:
+                    gen = element.generate
+                except AttributeError:
+                    gen = element
+                for e in gen():
+                    if isinstance(e, (tuple,list)):
+                        command = e[0]
+                        if len(e) >= 2:
+                            values = e[1:]
+                        else:
+                            values = [None]
+                    else:
+                        command = e
+                        values = [None]
+                    command_index += 1
+                    if self.state == THREAD_STATE_ABORT:
+                        break
+                    self.spooler.device.hold()
+                    self.spooler.execute(command, *values)
+                self.spooler.pop()
+        except InterruptedError:
+            pass
         if self.state == THREAD_STATE_ABORT:
             return
         self.set_state(THREAD_STATE_FINISHED)
@@ -289,8 +295,11 @@ class Spooler:
         self.thread = None
         self.reset_thread()
 
-    def thread_state_update(self, state):
-        self.device.signal('spooler;thread', state)
+    def thread_state_update(self):
+        if self.thread is None:
+            self.device.signal('spooler;thread', THREAD_STATE_UNSTARTED)
+        else:
+            self.device.signal('spooler;thread', self.thread.state)
 
     def execute(self, command, *values):
         self.device.hold()
@@ -298,13 +307,12 @@ class Spooler:
 
     def realtime(self, command, *values):
         """Realtimes are sent directly to the interpreter without spooling."""
-
-        # TODO: REALTIME must be called from the -spooler-thread to avoid concurrency problems.
         if command == COMMAND_PAUSE:
             self.thread.pause()
         elif command == COMMAND_RESUME:
             self.thread.resume()
         elif command == COMMAND_RESET:
+            self.thread.stop()
             self.clear_queue()
         elif command == COMMAND_CLOSE:
             self.thread.stop()
@@ -346,7 +354,7 @@ class Spooler:
 
     def reset_thread(self):
         self.thread = SpoolerThread(self)
-        self.device.add_thread('spooler;thread', self.thread)
+        self.thread_state_update()
 
     def start_queue_consumer(self):
         if self.thread.state == THREAD_STATE_ABORT:
@@ -537,7 +545,7 @@ class Kernel:
         self.run_later(self.process_queue, None)
 
     def process_queue(self, *args):
-        if len(self.message_queue) == 0:
+        if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
             return
         self.is_queue_processing = True
         add = None
@@ -788,8 +796,8 @@ class Kernel:
         self.close_old_window(window_name)
         w = self.windows[window_name]
         window = w(None, -1, "")
-        window.set_kernel(self)
         window.Show()
+        window.set_kernel(self)
         self.open_windows[window_name] = window
         return window
 
@@ -866,7 +874,7 @@ class Kernel:
 
     def get_state(self, thread_name):
         try:
-            return self.modules[thread_name].state()
+            return self.threads[thread_name].state()
         except AttributeError:
             return THREAD_STATE_UNKNOWN
 

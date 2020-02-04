@@ -46,10 +46,7 @@ class CH341LibusbDriver:
     def __init__(self, state_listener=None):
         self.devices = {}
         self.interface = {}
-        if state_listener is None:
-            self.state_listener = lambda code: None  # Code, Name, Message
-        else:
-            self.state_listener = state_listener
+        self.state_listener = state_listener
         self.state = None
 
     def set_status(self, code):
@@ -57,67 +54,25 @@ class CH341LibusbDriver:
         if isinstance(code, int):
             self.state = code
 
-    def choose_device(self, devices, index):
-        """
-        We have a choice of different devices and must choose which one to connect to.
-
-        :param devices: List of devices to choose from.
-        :param index: Index of the device we were asked to choose.
-        :return: Device chosen.
-        """
-
-        for i, dev in enumerate(devices):
-            # self.log("Device %d Bus: %d Address %d" % (i, dev.bus, dev.address))
-            pass
-        if devices is None or len(devices) == 0:
-            return None
-        else:
-            return devices[index]
-        # if self.kernel.usb_index == -1:
-        #     if self.kernel.usb_address == -1 and self.kernel.usb_bus == -1:
-        #         if len(d) > 0:
-        #             self.usb = d[0]
-        #     else:
-        #         for dev in d:
-        #             if (self.kernel.usb_address == -1 or self.kernel.usb_address == dev.address) and \
-        #                     (self.kernel.usb_bus == -1 or self.kernel.usb_bus == dev.bus):
-        #                 self.usb = dev
-        #                 break
-        # else:
-        #     if len(d) > self.kernel.usb_index:
-        #         self.usb = d[self.kernel.usb_index]
-
     def connect_find(self, index=0):
         self.set_status(STATE_DRIVER_LIBUSB)
-        try:
-            self.set_status(STATE_DRIVER_FINDING_DEVICES)
-            devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
-        except usb.core.NoBackendError:
-            self.set_status(STATE_DRIVER_NO_BACKEND)
-            raise ConnectionError
+        self.set_status(STATE_DRIVER_FINDING_DEVICES)
+        devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
         devices = [d for d in devices]
         if len(devices) == 0:
             self.set_status(STATE_DEVICE_NOT_FOUND)
-            raise ConnectionError
-        self.set_status(STATE_DEVICE_FOUND)
-        self.set_status(devices)
-        device = self.choose_device(devices, index)
-        if device is None:
-            self.set_status(STATE_DEVICE_REJECTED)
-            raise ConnectionError
-        return device
-
-    def connect_interface(self, device):
-        self.set_status(STATE_USB_SET_CONFIG)
-        device.set_configuration()
-        self.set_status(STATE_USB_CLAIM_INTERFACE)
+            raise ConnectionRefusedError
+        for d in devices:
+            self.set_status(STATE_DEVICE_FOUND)
+            string = str(d)
+            string = string.replace('\n', '\n\t')
+            self.set_status(string)
         try:
-            interface = device.get_active_configuration()[(0, 0)]
-            self.set_status(STATE_USB_CLAIM_INTERFACE_SUCCESS)
-            return interface
-        except usb.core.USBError:
-            self.set_status(STATE_USB_CLAIM_INTERFACE_FAIL)
-            raise ConnectionError
+            device = devices[index]
+        except IndexError:
+            self.set_status(STATE_DEVICE_REJECTED)
+            raise ConnectionRefusedError
+        return device
 
     def connect_detach(self, device, interface):
         try:
@@ -133,6 +88,18 @@ class CH341LibusbDriver:
             self.set_status(STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED)  # Driver does not permit kernel detaching.
             # Non-fatal error.
 
+    def connect_interface(self, device):
+        self.set_status(STATE_USB_SET_CONFIG)
+        device.set_configuration()
+        self.set_status(STATE_USB_SET_ACTIVE_CONFIG)
+        try:
+            interface = device.get_active_configuration()[(0, 0)]
+            self.set_status(STATE_USB_SET_ACTIVE_CONFIG_SUCCESS)
+            return interface
+        except usb.core.USBError:
+            self.set_status(STATE_USB_SET_ACTIVE_CONFIG_FAIL)
+            raise ConnectionError
+
     def connect_claim(self, device, interface):
         try:
             self.set_status(STATE_USB_CLAIM_INTERFACE)
@@ -140,6 +107,8 @@ class CH341LibusbDriver:
             self.set_status(STATE_USB_CLAIM_INTERFACE_SUCCESS)
         except usb.core.USBError:
             self.set_status(STATE_USB_CLAIM_INTERFACE_FAIL)
+            raise ConnectionRefusedError
+            # Already in use. This is critical.
 
     def disconnect_detach(self, device, interface):
         try:
@@ -186,7 +155,10 @@ class CH341LibusbDriver:
 
             self.set_status(STATE_USB_CONNECTED)
             return index
-        except ConnectionError:
+        except usb.core.NoBackendError:
+            self.set_status(STATE_DRIVER_NO_BACKEND)
+            return -1
+        except ConnectionRefusedError:
             self.set_status(STATE_CONNECTION_FAILED)
             return -1
 
@@ -199,10 +171,8 @@ class CH341LibusbDriver:
             try:
                 self.disconnect_detach(device, interface)
                 self.disconnect_interface(device, interface)
-                del self.interface[index]
                 self.disconnect_dispose(device)
                 self.disconnect_reset(device)
-                del self.devices[index]
                 self.set_status(STATE_USB_DISCONNECTED)
             except ConnectionError:
                 pass
@@ -286,18 +256,80 @@ class CH341LibusbDriver:
 
 
 class CH341Driver:
-    def __init__(self, driver_index, state_listener=None):
+    def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, state_listener=None):
+        if state_listener is None:
+            self.state_listener = lambda code: None  # Code, Name, Message
+        else:
+            self.state_listener = state_listener
         self.driver = CH341LibusbDriver(state_listener=state_listener)
-        self.driver_index = driver_index
+        self.driver_index = 0
+        self.index = index
+        self.bus = bus
+        self.address = address
+        self.serial = serial
+        self.chipv = chipv
         self.driver_value = None
+        self.state = None
+
+    def set_status(self, code):
+        self.state_listener(code)
+        self.state = code
+
+    def try_open(self, i):
+        """Tries to open device at index, with given criteria"""
+        self.driver_index = i
+        val = self.driver.CH341OpenDevice(self.driver_index)
+        self.driver_value = val
+        if val == -1:
+            self.set_status(STATE_CONNECTION_FAILED)
+            raise ConnectionRefusedError  # No more devices.
+        # There is a device.
+        if self.chipv != -1:
+            chipv = self.get_chip_version()
+            if self.chipv != chipv:
+                # Rejected.
+                self.set_status(STATE_DEVICE_REJECTED)
+                self.driver.CH341CloseDevice(self.driver_index)
+                self.driver_value = val
+                return -1
+        if self.bus != -1:
+            bus = self.driver.devices[val].bus
+            if self.bus != bus:
+                # Rejected.
+                self.set_status(STATE_DEVICE_REJECTED)
+                self.driver.CH341CloseDevice(self.driver_index)
+                self.driver_value = val
+                return -1
+        if self.address != -1:
+            address = self.driver.devices[val].bus
+            if self.address != address:
+                # Rejected
+                self.set_status(STATE_DEVICE_REJECTED)
+                self.driver.CH341CloseDevice(self.driver_index)
+                self.driver_value = val
+                return -1
+        if self.serial != -1:
+            pass  # No driver has a serial number.
+        # The device passes our tests.
+        return val
 
     def open(self):
+        """
+        Opens the driver for unknown criteria.
+        """
         if self.driver_value is None:
-            val = self.driver.CH341OpenDevice(self.driver_index)
-            if val == -1:
-                raise ConnectionRefusedError
-            self.driver_value = val
+            self.set_status(STATE_DRIVER_LIBUSB)
+            self.set_status(STATE_CONNECTING)
+            if self.index == -1:
+                for i in range(0, 16):
+                    if self.try_open(i) == 0:
+                        break  # We have our driver.
+            else:
+                self.try_open(self.index)
+            self.set_status(STATE_USB_CONNECTED)
+            self.set_status(STATE_CH341_PARAMODE)
             self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
+            self.set_status(STATE_CONNECTED)
 
     def close(self):
         self.driver.CH341CloseDevice(self.driver_index)

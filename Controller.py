@@ -310,25 +310,15 @@ class Controller(wx.Frame):
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
         if self.device is not None:
-            uid = self.device.uid
-            state = self.kernel.get_state(uid)
-            # TODO: This is questionable. getstate is for modules.
+            state = self.device.pipe.state
             if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-                self.kernel.start(uid)
+                self.device.pipe.start()
             elif state == THREAD_STATE_PAUSED:
-                self.kernel.resume(uid)
+                self.device.pipe.resume()
             elif state == THREAD_STATE_STARTED:
-                self.kernel.pause(uid)
+                self.device.pipe.pause()
             elif state == THREAD_STATE_ABORT:
-                self.kernel.reset(uid)
-
-    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        uid = self.device.uid
-        state = self.usb_state
-        if state == STATE_USB_DISCONNECTED or state == STATE_UNINITIALIZED:
-            self.device.execute("Start")
-        else:
-            self.device.execute("Stop")
+                self.device.pipe.reset()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         self.device.execute("Emergency Stop")
@@ -367,6 +357,19 @@ class Controller(wx.Frame):
         self.update_control_state = True
         self.control_state = state
         self.post_update()
+
+    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
+        state = self.device.pipe.usb_state
+        if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK):
+            try:
+                self.device.execute("Connect_USB")
+            except ConnectionRefusedError:
+                dlg = wx.MessageDialog(None, _("Connection Refused. See USB Log for detailed information."),
+                                       _("Manual Connection"), wx.OK | wx.ICON_WARNING)
+                result = dlg.ShowModal()
+                dlg.Destroy()
+        elif state in (STATE_CONNECTED, STATE_USB_CONNECTED):
+            self.device.execute("Disconnect_USB")
 
     def set_usb_button_by_state(self):
         state = self.usb_state

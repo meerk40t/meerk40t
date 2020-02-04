@@ -65,7 +65,11 @@ class Adjustments(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_flush_buffer, self.bitmap_flush_buffer)
         self.Bind(wx.EVT_BUTTON, self.on_button_safe_quit, self.bitmap_cancel)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_exit, self.bitmap_stop)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.SetFocus()
         # end wxGlade
+        self.kernel = None
+        self.device = None
 
     def __set_properties(self):
         # begin wxGlade: Adjustments.__set_properties
@@ -147,13 +151,12 @@ class Adjustments(wx.Frame):
         self.Layout()
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
-        self.autoclose = True
 
     def on_close(self, event):
         self.kernel.mark_window_closed("Adjustments")
         event.Skip()  # Call destroy as regular.
+        if self.device is not None:
+            self.device.execute("Realtime Resume")
 
     def set_kernel(self, kernel):
         self.kernel = kernel
@@ -168,6 +171,7 @@ class Adjustments(wx.Frame):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
+        self.device.execute("Realtime Pause")
 
     def on_slider_speed_override(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_slider_speed_override' not implemented!")
@@ -223,4 +227,10 @@ class Adjustments(wx.Frame):
 
     def on_button_emergency_exit(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_button_emergency_exit' not implemented!")
+        event.Skip()
+
+    def on_key_press(self, event):
+        keycode = event.GetKeyCode()
+        if keycode == wx.WXK_ESCAPE:
+            self.Close()
         event.Skip()

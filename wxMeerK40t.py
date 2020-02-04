@@ -667,19 +667,25 @@ class MeerK40t(wx.Frame):
         tree.CollapseAll()
         tree.ExpandAll()
 
+    def on_usb_error(self, value):
+        dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
+                               _("Usb Connection Problem."), wx.OK | wx.ICON_WARNING)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+
     def on_usb_status(self, value):
         if self.kernel is not None:
             self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
 
-    def on_control_state(self, value):
+    def on_pipe_state(self, value):
         if self.kernel is not None:
             self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_text_thread_state(value)), 1)
 
-    def on_writer_state(self, value):
+    def on_spooler_state(self, value):
         if self.kernel is not None:
             self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_text_thread_state(value)), 2)
 
-    def on_writer_mode(self, state):
+    def on_interpreter_mode(self, state):
         if state == 0:
             self.background_brush = wx.Brush("Grey")
         else:
@@ -695,24 +701,25 @@ class MeerK40t(wx.Frame):
             self.unlisten_device()
         self.device_listening = device
         if device is not None:
-            device.listen("pipe;usb", self.on_usb_status)
-            device.listen("pipe;thread", self.on_control_state)
-            device.listen("interpreter;state", self.on_writer_state)
-            device.listen("interpreter;position", self.update_position)
-            device.listen("interpreter;mode", self.on_writer_mode)
-            device.listen("bed_size", self.bed_changed)
+            device.listen('pipe;error', self.on_usb_error)
+            device.listen('pipe;usb_status', self.on_usb_status)
+            device.listen('pipe;thread', self.on_pipe_state)
+            device.listen('spooler;thread', self.on_spooler_state)
+            device.listen('interpreter;position', self.update_position)
+            device.listen('interpreter;mode', self.on_interpreter_mode)
+            device.listen('bed_size', self.bed_changed)
 
     def unlisten_device(self):
         if self.device_listening is None:
             return  # Can't unlisten to nothing, ---
         device = self.device_listening
         if device is not None:
-            device.unlisten("pipe;usb", self.on_usb_status)
-            device.unlisten("pipe;thread", self.on_control_state)
-            device.unlisten("interpreter;state", self.on_writer_state)
-            device.unlisten("interpreter;position", self.update_position)
-            device.unlisten("interpreter;mode", self.on_writer_mode)
-            device.unlisten("bed_size", self.bed_changed)
+            device.unlisten('pipe;error', self.on_usb_error)
+            device.unlisten('pipe;usb_state', self.on_usb_status)
+            device.unlisten('pipe;thread', self.on_pipe_state)
+            device.unlisten('interpreter;position', self.update_position)
+            device.unlisten('interpreter;mode', self.on_interpreter_mode)
+            device.unlisten('bed_size', self.bed_changed)
 
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
