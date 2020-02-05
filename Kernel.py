@@ -158,6 +158,44 @@ class Device:
         self.location = ''
         self.hold_condition = lambda e: False
 
+    def _start_debugging(self):
+        import functools
+        import datetime
+        import types
+        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+        debug_file = open(filename, "a")
+        debug_file.write("\n\n\n")
+
+        def debug(func, obj):
+            @functools.wraps(func)
+            def wrapper_debug(*args, **kwargs):
+                args_repr = [repr(a) for a in args]
+                kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
+                signature = ", ".join(args_repr + kwargs_repr)
+                start = f"Calling {obj}.{func.__name__}({signature})"
+                debug_file.write(start + '\n')
+                print(start)
+                t = time.time()
+                value = func(*args, **kwargs)
+                t = time.time() - t
+                finish = f"    {func.__name__!r} returned {value!r} after {t * 1000}ms"
+                print(finish)
+                debug_file.write(finish + '\n')
+                debug_file.flush()
+                return value
+
+            return wrapper_debug
+
+        for obj in (self, self.spooler, self.pipe, self.interpreter):
+            for attr in dir(obj):
+                if attr.startswith('_'):
+                    continue
+                fn = getattr(obj, attr)
+                if not isinstance(fn, types.FunctionType) and \
+                        not isinstance(fn, types.MethodType):
+                    continue
+                setattr(obj, attr, debug(fn, obj))
+
     def hold(self):
         if self.spooler.thread.state == THREAD_STATE_ABORT:
             raise InterruptedError
@@ -294,7 +332,7 @@ class SpoolerThread(Thread):
                 except AttributeError:
                     gen = element
                 for e in gen():
-                    if isinstance(e, (tuple,list)):
+                    if isinstance(e, (tuple, list)):
                         command = e[0]
                         if len(e) >= 2:
                             values = e[1:]
@@ -330,6 +368,9 @@ class Spooler:
         self.queue = []
         self.thread = None
         self.reset_thread()
+
+    def __repr__(self):
+        return "Spooler()"
 
     def thread_state_update(self):
         if self.thread is None:

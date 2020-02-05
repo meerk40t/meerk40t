@@ -13,8 +13,12 @@ from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 
 class K40StockDevice(Device):
-    def __init__(self):
+    def __init__(self, uid=None):
         Device.__init__(self)
+        self.uid = uid
+
+    def __repr__(self):
+        return "K40StockDevice(uid='%s')" % str(self.uid)
 
     def initialize(self, kernel, name=''):
         self.kernel = kernel
@@ -47,6 +51,7 @@ class K40StockDevice(Device):
         self.signal("bed_size", (self.bed_width, self.bed_height))
 
         self.add_control("Emergency Stop", self.emergency_stop)
+        self.add_control("Debug Device", self._start_debugging)
 
         kernel.add_device(name, self)
         self.open()
@@ -62,7 +67,7 @@ class K40StockDevice(Device):
 
     def close(self):
         self.spooler.clear_queue()
-        self.interpreter.emergency_stop()
+        self.emergency_stop()
         self.pipe.close()
 
 

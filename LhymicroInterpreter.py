@@ -95,6 +95,9 @@ class LhymicroInterpreter(Interpreter):
         # backend.add_control("acceleration Breaks 40mm/s", break_acceleration40)
         # backend.add_control("acceleration Breaks off", break_acceleration_inf)
 
+    def __repr__(self):
+        return "LhymicroInterpreter()"
+
     def on_plot(self, x, y, on):
         self.device.signal('interpreter;plot', (x, y, on))
         self.device.hold()

@@ -129,7 +129,7 @@ class ControllerQueueThread(threading.Thread):
                 if count > 100:
                     count = 100
                 time.sleep(0.01 * count)  # will tick up to 1 second waits if process queue never works.
-                count += 1
+                count += 4
                 if self.controller.state == THREAD_STATE_PAUSED:
                     self.set_state(THREAD_STATE_PAUSED)
                     while self.controller.state == THREAD_STATE_PAUSED:
@@ -178,39 +178,6 @@ class K40Controller(Pipe):
         self.device.add_control("Stop", self.stop)
         self.device.add_control("Status Update", self.update_status)
 
-        def start_debugging():
-            import functools
-            import datetime
-            filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-            debug_file = open(filename, "a")
-            debug_file.write("\nStarting Controller Debug Sequence.\n")
-
-            def debug(func):
-                @functools.wraps(func)
-                def wrapper_debug(*args, **kwargs):
-                    args_repr = [repr(a) for a in args]  # 1
-                    kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]  # 2
-                    signature = ", ".join(args_repr + kwargs_repr)  # 3
-                    debug_file.write(f"Calling {func.__name__}({signature})\n")
-                    value = func(*args, **kwargs)
-                    debug_file.write(f"{func.__name__!r} returned {value!r}\n")  # 4
-                    debug_file.flush()
-                    return value
-
-                return wrapper_debug
-
-            for attr in dir(self):
-                if attr.startswith('_'):
-                    continue
-                fn = getattr(self, attr)
-                if not callable(fn):
-                    continue
-                if fn is debug:
-                    continue
-                setattr(self, attr, debug(fn))
-
-        self.device.add_control("Debug Controller", start_debugging)
-
         def abort_wait():
             self.abort_waiting = True
 
@@ -227,6 +194,9 @@ class K40Controller(Pipe):
             self.start()
 
         self.device.add_control("Resume", resume_k40)
+
+    def __repr__(self):
+        return "K40Controller()"
 
     def __len__(self):
         return len(self.buffer) + len(self.queue) + len(self.preempt)
