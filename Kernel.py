@@ -60,7 +60,7 @@ class KernelJob:
 
 class Scheduler(Thread):
     def __init__(self, kernel):
-        Thread.__init__(self)
+        Thread.__init__(self, name='Meerk40t-Scheduler')
         self.daemon = True
         self.kernel = kernel
         self.state = THREAD_STATE_UNSTARTED
@@ -215,7 +215,7 @@ class SpoolerThread(Thread):
     """
 
     def __init__(self, spooler):
-        Thread.__init__(self)
+        Thread.__init__(self, name='MeerK40t-Spooler')
         self.spooler = spooler
         self.state = None
         self.set_state(THREAD_STATE_UNSTARTED)

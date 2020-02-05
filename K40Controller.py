@@ -83,7 +83,7 @@ class ControllerQueueThread(threading.Thread):
     it will pause.
     """
     def __init__(self, controller):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name='K40-Controller')
         self.controller = controller
         self.state = None
         self.set_state(THREAD_STATE_UNSTARTED)
