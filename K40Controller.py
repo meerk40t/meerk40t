@@ -126,10 +126,13 @@ class ControllerQueueThread(threading.Thread):
                 count = 0
             else:
                 # No packet could be sent.
+                if count > 10:
+                    if self.controller.device.quit:
+                        self.controller.state = THREAD_STATE_FINISHED
                 if count > 100:
                     count = 100
                 time.sleep(0.01 * count)  # will tick up to 1 second waits if process queue never works.
-                count += 4
+                count += 2
                 if self.controller.state == THREAD_STATE_PAUSED:
                     self.set_state(THREAD_STATE_PAUSED)
                     while self.controller.state == THREAD_STATE_PAUSED:

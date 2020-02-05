@@ -30,6 +30,7 @@ class K40StockDevice(Device):
         self.setting(int, 'usb_version', -1)
 
         self.setting(bool, 'mock', False)
+        self.setting(bool, 'quit', False)
         self.setting(int, 'packet_count', 0)
         self.setting(int, 'rejected_count', 0)
         self.setting(int, "buffer_max", 900)
