@@ -42,6 +42,12 @@ class KernelJob:
         return self.next_run is not None and time.time() >= self.next_run
 
     def run(self):
+        """
+        Scheduler Job: updates the values for next_run and times. Removing if necessary.
+        Executes the process requested in the SchedulerThread.
+
+        :return:
+        """
         if self.paused:
             return
         self.next_run = None
@@ -67,22 +73,40 @@ class Scheduler(Thread):
         self.jobs = []
 
     def add_job(self, run, args=(), interval=1.0, times=None):
+        """
+        Adds a job to the scheduler.
+
+        :param run: function to run
+        :param args: arguments to give to that function.
+        :param interval: in seconds, how often should the job be run.
+        :param times: limit on number of executions.
+        :return: Reference to the job added.
+        """
         job = KernelJob(self, run, args, interval, times)
         self.jobs.append(job)
         return job
 
     def run(self):
+        """
+        Scheduler main loop.
+        Check the Scheduler thread state, and whether it should abort or pause.
+        Check each job, and if that job is scheduled to run. Executes that job.
+        :return:
+        """
         self.state = THREAD_STATE_STARTED
         while self.state != THREAD_STATE_FINISHED:
             time.sleep(0.005)  # 200 ticks a second.
             if self.state == THREAD_STATE_ABORT:
                 break
             while self.state == THREAD_STATE_PAUSED:
+                # The scheduler is paused.
                 time.sleep(1.0)
             for job in self.jobs:
+                # Checking if jobs should run.
                 if job.scheduled:
                     job.run()
         self.state = THREAD_STATE_FINISHED
+        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
         self.kernel.shutdown()
 
     def state(self):
@@ -244,6 +268,18 @@ class SpoolerThread(Thread):
         self.abort(1)
 
     def run(self):
+        """
+        Main loop for the Spooler Thread.
+
+        This runs the spooled laser commands sent do the device and turns those commands whatever the interpreter needs
+        to send to the pipe. This code runs through all spooled objects which are either generators or code with a
+        'generate' function that produces a generator. And the generators, in turn, yield a series of laser commands.
+
+        The spooler automatically exits when there is no data left to spool.
+        The spooler holds based on the device hold() commands, which should block the thread as needed.
+        The call to hold() will either instantly return, decide to hold, or throw an InterruptError.
+        The error will be caught and cause the thread to terminate.
+        """
         command_index = 0
         self.set_state(THREAD_STATE_STARTED)
         try:

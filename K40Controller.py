@@ -74,7 +74,6 @@ def onewire_crc_lookup(line):
         crc = crc_table[crc & 0x0f] ^ crc_table[16 + ((crc >> 4) & 0x0f)]
     return crc
 
-
 class ControllerQueueThread(threading.Thread):
     """
     The ControllerQueue thread matches the state of the controller to the state
@@ -148,7 +147,6 @@ class ControllerQueueThread(threading.Thread):
 class K40Controller(Pipe):
     def __init__(self, device=None):
         Pipe.__init__(self, device)
-        self.debug = lambda m: None
         self.debug_file = None
         self.driver = None
         self.state = THREAD_STATE_UNSTARTED
@@ -177,9 +175,34 @@ class K40Controller(Pipe):
         self.device.add_control("Status Update", self.update_status)
 
         def start_debugging():
-            self.debug_file = open("meerk40t_debug.txt", "a")
-            self.debug = self.debug_file.write
-            self.debug("Beginning debug:  %d\n" % time.time())
+            import functools
+            import datetime
+            filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+            debug_file = open(filename, "a")
+            debug_file.write("\nStarting Controller Debug Sequence.\n")
+
+            def debug(func):
+                @functools.wraps(func)
+                def wrapper_debug(*args, **kwargs):
+                    args_repr = [repr(a) for a in args]  # 1
+                    kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]  # 2
+                    signature = ", ".join(args_repr + kwargs_repr)  # 3
+                    debug_file.write(f"Calling {func.__name__}({signature})\n")
+                    value = func(*args, **kwargs)
+                    debug_file.write(f"{func.__name__!r} returned {value!r}\n")  # 4
+                    debug_file.flush()
+                    return value
+                return wrapper_debug
+
+            for attr in dir(self):
+                if attr.startswith('_'):
+                    continue
+                fn = getattr(self, attr)
+                if not callable(fn):
+                    continue
+                if fn is debug:
+                    continue
+                setattr(self, attr, debug(fn))
 
         self.device.add_control("Debug Controller", start_debugging)
 
@@ -201,21 +224,22 @@ class K40Controller(Pipe):
         self.device.add_control("Resume", resume_k40)
 
     def __len__(self):
-        return len(self.buffer) + len(self.queue)
+        return len(self.buffer) + len(self.queue) + len(self.preempt)
 
+    def _debug(func):
+        return func
+
+    @_debug
     def thread_state_update(self, state):
-        self.debug("Controller Thread State: %d" % state)
-        if self.debug_file is not None:
-            self.debug_file.flush()
         self.device.signal('pipe;thread', state)
 
     @property
     def name(self):
         return self.device.uid
 
+    @_debug
     def open(self):
         if self.driver is None:
-            self.debug("Opening Driver\n")
             self.detect_driver_and_open()
         else:
             # Update criteria
@@ -228,29 +252,29 @@ class K40Controller(Pipe):
         if self.driver is None:
             raise ConnectionRefusedError
 
+    @_debug
     def close(self):
         if self.driver is not None:
-            self.debug("Closing Driver\n")
             self.driver.close()
 
+    @_debug
     def write(self, bytes_to_write):
-        self.debug("Data To Controller: %s\n" % bytes_to_write)
         self.queue_lock.acquire(True)
         self.queue += bytes_to_write
         self.queue_lock.release()
         self.start()
         return self
 
+    @_debug
     def read(self, size=-1):
-        self.debug("Status: %s\n" % str(self.status))
         return self.status
 
+    @_debug
     def realtime_write(self, bytes_to_write):
         """
         Preempting commands.
         Commands to be sent to the front of the buffer.
         """
-        self.debug("Realtime write: %s\n" % bytes_to_write)
         self.preempt_lock.acquire(True)
         self.preempt = bytes_to_write + self.preempt
         self.preempt_lock.release()
@@ -259,6 +283,7 @@ class K40Controller(Pipe):
             self.state = THREAD_STATE_STARTED
         return self
 
+    @_debug
     def state_listener(self, code):
         if isinstance(code, int):
             self.usb_state = code
@@ -269,6 +294,7 @@ class K40Controller(Pipe):
         else:
             self.log(str(code))
 
+    @_debug
     def detect_driver_and_open(self):
         # TODO: Multi-Match the specific requirements of the backend driver protocol.
         # Connection-Permitted- If you match more than one device. You should connect to the one that lets you connect.
@@ -310,14 +336,17 @@ class K40Controller(Pipe):
         # except ImportError:
         #     pass
 
+    @_debug
     def log(self, info):
         update = str(info) + '\n'
         self.device.log(update)
         self.device.signal("pipe;device_log", update)
 
+    @_debug
     def state(self):
         return self.thread.state
 
+    @_debug
     def start(self):
         if self.state == THREAD_STATE_ABORT:
             # We cannot reset an aborted thread without specifically calling reset.
@@ -327,38 +356,39 @@ class K40Controller(Pipe):
         if self.state == THREAD_STATE_UNSTARTED:
             self.state = THREAD_STATE_STARTED
             self.thread.start()
-            self.debug("Controller Start\n")
 
+    @_debug
     def resume(self):
-        self.debug("Controller Resume\n")
         self.state = THREAD_STATE_STARTED
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.start()
 
+    @_debug
     def pause(self):
-        self.debug("Controller Pause\n")
         self.state = THREAD_STATE_PAUSED
         if self.thread.state == THREAD_STATE_UNSTARTED:
             self.thread.start()
 
+    @_debug
     def abort(self):
-        self.debug("Controller Abort\n")
         self.state = THREAD_STATE_ABORT
         self.buffer = b''
         self.queue = b''
         self.device.signal('pipe;buffer', 0)
 
+    @_debug
     def reset(self):
-        self.debug("Controller Reset\n")
         self.buffer = b''
         self.queue = b''
         self.thread = ControllerQueueThread(self)
         self.device.add_thread("controller;thread", self.thread)
         self.state = THREAD_STATE_UNSTARTED
 
+    @_debug
     def stop(self):
         self.abort()
 
+    @_debug
     def process_queue(self):
         """
         Attempts to process the buffer/queue
@@ -374,9 +404,7 @@ class K40Controller(Pipe):
 
         :return: queue process success.
         """
-        self.debug("Processing Queue\n")
         if len(self.queue):  # check for and append queue
-            self.debug("Adding to queue: %s\n" % self.queue)
             self.queue_lock.acquire(True)
             self.buffer += self.queue
             self.queue = b''
@@ -384,13 +412,11 @@ class K40Controller(Pipe):
             self.device.signal('pipe;buffer', len(self.buffer))
 
         if len(self.preempt):  # check for and prepend preempt
-            self.debug("Adding to premept: %s\n" % self.preempt)
             self.preempt_lock.acquire(True)
             self.buffer = self.preempt + self.buffer
             self.preempt = b''
             self.preempt_lock.release()
         if len(self.buffer) == 0:
-            self.debug("Queue Buffer Empty.\n")
             return False
 
         # Find buffer of 30 or containing '\n'.
@@ -405,7 +431,6 @@ class K40Controller(Pipe):
         if packet.endswith((b'-', b'*', b'&', b'!')):
             packet += self.buffer[length:length + 1]
             length += 1
-        self.debug("Making packet: %s\n" % packet)
         post_send_command = None
         # find pipe commands.
         if packet.endswith(b'\n'):
@@ -424,67 +449,58 @@ class K40Controller(Pipe):
                 packet = packet[:-1]
             if len(packet) != 0:
                 packet += b'F' * (30 - len(packet))  # Padding. '\n'
-            self.debug("Special Packet: %s\n" % packet)
         if self.state == THREAD_STATE_PAUSED:
-            self.debug("Aborting due to pause.\n")
             return False  # Abort due to pause.
 
         # Packet is prepared and ready to send.
         if self.device.mock:
-            self.debug("Mock Driver.\n")
             self.state_listener(STATE_DRIVER_MOCK)
         else:
             self.open()
 
         if len(packet) == 30:
             # check that latest state is okay.
-            self.debug("Checking OK\n")
             self.wait_ok()
-            self.debug("OK\n")
 
             if self.state == THREAD_STATE_PAUSED:
-                self.debug("Aborting due to pause, post OK\n")
                 return False  # Paused during packet fetch.
             self.send_packet(packet)
         else:
             if len(packet) != 0:  # packet isn't just commands.
-                self.debug("Quitting on packet: %s\n" % packet)
                 return False  # This packet cannot be sent. Toss it back.
-            self.debug("Packet was entirely commands.\n")
         self.buffer = self.buffer[length:]
         self.device.signal('pipe;buffer', len(self.buffer))
         # Bug skips send packet and as such the post send errors?
         if post_send_command is not None:
-            self.debug("Performing post_send_command: %s\n" % (str(post_send_command)))
             # Post send command could be wait_finished, and might have a broken pipe.
             # But should report that packet was sent.
             try:
                 post_send_command()
             except ConnectionError:
                 pass
-        self.debug("Packet Done.\n")
         return True  # A packet was prepped and sent correctly.
 
+    @_debug
     def send_packet(self, packet):
         if self.device.mock:
             time.sleep(0.1)
         else:
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
-        self.debug("Sending Packet: %s\n" % packet)
         self.packet_count += 1
         self.device.signal("pipe;packet", convert_to_list_bytes(packet))
         self.device.signal("pipe;packet_text", packet)
 
+    @_debug
     def update_status(self):
         if self.device.mock:
             self.status = [255, 206, 0, 0, 0, 1]
             time.sleep(0.01)
         else:
             self.status = self.driver.get_status()
-            self.debug("Status Updated: %s\n" % str(self.status))
         self.device.signal("pipe;status", self.status)
 
+    @_debug
     def wait_ok(self):
         i = 0
         while self.state != THREAD_STATE_ABORT:
@@ -496,7 +512,6 @@ class K40Controller(Pipe):
                 self.rejected_count += 1
             if status == STATUS_OK:
                 break
-            self.debug("Packet not OK, %d\n" % self.status[1])
             time.sleep(0.05)
             self.device.signal("pipe;wait", STATUS_OK, i)
             i += 1
@@ -504,6 +519,7 @@ class K40Controller(Pipe):
                 self.abort_waiting = False
                 return  # Wait abort was requested.
 
+    @_debug
     def wait_finished(self):
         i = 0
         while True:
@@ -512,7 +528,6 @@ class K40Controller(Pipe):
                 self.status = [255, STATUS_FINISH, 0, 0, 0, 1]
             status = self.status[1]
             if status == STATUS_PACKET_REJECTED:
-                self.debug("Packet rejected.\n")
                 self.rejected_count += 1
             if status & 0x02 == 0:
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
