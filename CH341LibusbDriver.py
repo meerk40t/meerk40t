@@ -41,6 +41,10 @@ class CH341LibusbDriver:
 
     To this end, this should duplicate the names of the function calls. And the use of index to reference which
     connection to use for each command.
+
+    All the commands during the opening phase will raise a ConnectionRefusedError.
+    All commands during read and write raise ConnectionErrors
+    All commands during close don't care about errors, if it broke it's likely already closed.
     """
 
     def __init__(self, state_listener=None):
@@ -57,7 +61,10 @@ class CH341LibusbDriver:
     def connect_find(self, index=0):
         self.set_status(STATE_DRIVER_LIBUSB)
         self.set_status(STATE_DRIVER_FINDING_DEVICES)
-        devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
+        try:
+            devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
+        except usb.core.USBError:
+            raise ConnectionRefusedError
         devices = [d for d in devices]
         if len(devices) == 0:
             self.set_status(STATE_DEVICE_NOT_FOUND)
@@ -83,7 +90,7 @@ class CH341LibusbDriver:
                     self.set_status(STATE_USB_DETACH_KERNEL_SUCCESS)
                 except usb.core.USBError:
                     self.set_status(STATE_USB_DETACH_KERNEL_FAIL)
-                    raise ConnectionError
+                    raise ConnectionRefusedError
         except NotImplementedError:
             self.set_status(STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED)  # Driver does not permit kernel detaching.
             # Non-fatal error.
@@ -98,7 +105,7 @@ class CH341LibusbDriver:
             return interface
         except usb.core.USBError:
             self.set_status(STATE_USB_SET_ACTIVE_CONFIG_FAIL)
-            raise ConnectionError
+            raise ConnectionRefusedError
 
     def connect_claim(self, device, interface):
         try:
@@ -130,12 +137,17 @@ class CH341LibusbDriver:
             self.set_status(STATE_USB_RELEASE_INTERFACE_FAIL)
 
     def disconnect_dispose(self, device):
-        self.set_status(STATE_USB_DISPOSING_RESOURCES)
-        usb.util.dispose_resources(device)
+        try:
+            self.set_status(STATE_USB_DISPOSING_RESOURCES)
+            usb.util.dispose_resources(device)
+            #self.set_status(STATE_USB_DISPOSING_RESOURCES_SUCCESS)
+        except usb.core.USBError:
+            #self.set_status(STATE_USB_DISPOSING_RESOURCES_FAIL)
+            pass
 
     def disconnect_reset(self, device):
-        self.set_status(STATE_USB_RESET)
         try:
+            self.set_status(STATE_USB_RESET)
             device.reset()
             self.set_status(STATE_USB_RESET_SUCCESS)
         except usb.core.USBError:
@@ -184,24 +196,30 @@ class CH341LibusbDriver:
         value = mode << 8
         if mode < 256:
             value |= 2
-        device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
-                             bRequest=mCH341_PARA_INIT,
-                             wValue=value,
-                             wIndex=0,
-                             data_or_wLength=0,
-                             timeout=500)
-        # 0x40, 177, 0x8800, 0, 0
+        try:
+            device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
+                                 bRequest=mCH341_PARA_INIT,
+                                 wValue=value,
+                                 wIndex=0,
+                                 data_or_wLength=0,
+                                 timeout=500)
+            # 0x40, 177, 0x8800, 0, 0
+        except usb.core.USBError:
+            raise ConnectionError
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
         device = self.devices[index]
         value = 0x2525
-        device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
-                             bRequest=mCH341_SET_PARA_MODE,
-                             wValue=value,
-                             wIndex=index,
-                             data_or_wLength=mode << 8 | mode,
-                             timeout=500)
-        # 0x40, 154, 0x2525, 257, 0
+        try:
+            device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
+                                 bRequest=mCH341_SET_PARA_MODE,
+                                 wValue=value,
+                                 wIndex=index,
+                                 data_or_wLength=mode << 8 | mode,
+                                 timeout=500)
+            # 0x40, 154, 0x2525, 257, 0
+        except usb.core.USBError:
+            raise ConnectionError
 
     def CH341EppWrite(self, index=0, buffer=None, length=0, pipe=0):
         if buffer is not None:
@@ -213,30 +231,39 @@ class CH341LibusbDriver:
                 else:
                     packet = [mCH341_PARA_CMD_W1] + data[:31]
                 data = data[31:]
-                device.write(BULK_WRITE_ENDPOINT, packet, 10000)
+                try:
+                    device.write(BULK_WRITE_ENDPOINT, packet, 10000)
+                except usb.core.USBError:
+                    raise ConnectionError
 
     def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
         try:
             return self.devices[index].read(BULK_READ_ENDPOINT, length, 10000)
-        except usb.USBError:
-            return None
+        except usb.core.USBError:
+            raise ConnectionError
 
     def CH341GetStatus(self, index=0, status=[0]):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: datats, 15: addrs"""
         device = self.devices[index]
-        device.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
-        status[0] = device.read(BULK_READ_ENDPOINT, 6, 10000)
+        try:
+            device.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
+            status[0] = device.read(BULK_READ_ENDPOINT, 6, 10000)
+        except usb.core.USBError:
+            raise ConnectionError
         return status[0]
 
         # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
     def CH341GetVerIC(self, index=0):
         device = self.devices[index]
-        buffer = device.ctrl_transfer(bmRequestType=mCH341_VENDOR_READ,
-                                      bRequest=mCH341A_GET_VER,
-                                      wValue=0,
-                                      wIndex=0,
-                                      data_or_wLength=2,
-                                      timeout=5000)
+        try:
+            buffer = device.ctrl_transfer(bmRequestType=mCH341_VENDOR_READ,
+                                          bRequest=mCH341A_GET_VER,
+                                          wValue=0,
+                                          wIndex=0,
+                                          data_or_wLength=2,
+                                          timeout=5000)
+        except usb.core.USBError:
+            raise ConnectionError
         if len(buffer) < 0:
             return 2
         else:

@@ -7,6 +7,7 @@ STATE_DRIVER_CH341 = 4
 STATE_DRIVER_MOCK = 5
 STATE_DRIVER_FINDING_DEVICES = 10
 STATE_DRIVER_NO_BACKEND = 20
+STATE_DRIVER_NO_LIBUSB = 21
 STATE_DEVICE_FOUND = 30
 STATE_DEVICE_NOT_FOUND = 50
 STATE_DEVICE_REJECTED = 60
@@ -64,6 +65,8 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("Finding devices.")
     elif code == STATE_DRIVER_NO_BACKEND:
         return _("PyUsb detected no backend LibUSB driver.")
+    elif code == STATE_DRIVER_NO_LIBUSB:
+        return _("PyUsb is not installed. Skipping.")
     elif code == STATE_DEVICE_FOUND:
         return _("K40 device detected:")
     elif code == STATE_DEVICE_NOT_FOUND:

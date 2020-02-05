@@ -281,9 +281,8 @@ class K40Controller(Pipe):
             return
         except ConnectionRefusedError:
             self.driver = None
-        # TODO: Implement Import Errors
-        # except ImportError:
-        #     pass
+        except ImportError:
+             self.state_listener(STATE_DRIVER_NO_LIBUSB)
         try:
             from CH341WindllDriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
@@ -296,9 +295,6 @@ class K40Controller(Pipe):
             self.state_listener(STATE_CONNECTED)
         except ConnectionRefusedError:
             self.driver = None
-        # TODO: Implement Import Errors.
-        # except ImportError:
-        #     pass
 
     def log(self, info):
         update = str(info) + '\n'
@@ -415,23 +411,31 @@ class K40Controller(Pipe):
 
         if len(packet) == 30:
             # check that latest state is okay.
-            self.wait_ok()
+            try:
+                self.wait_ok()
+            except ConnectionError:
+                return False # Wait suffered connection error.
 
             if self.state == THREAD_STATE_PAUSED:
                 return False  # Paused during packet fetch.
-            self.send_packet(packet)
+            try:
+                self.send_packet(packet)
+            except ConnectionError:
+                return False # Error exactly at packet send assumes no packet sent.
         else:
             if len(packet) != 0:  # packet isn't just commands.
                 return False  # This packet cannot be sent. Toss it back.
+
+        # Packet must have been sent.
         self.buffer = self.buffer[length:]
         self.device.signal('pipe;buffer', len(self.buffer))
-        # Bug skips send packet and as such the post send errors?
+
         if post_send_command is not None:
             # Post send command could be wait_finished, and might have a broken pipe.
-            # But should report that packet was sent.
             try:
                 post_send_command()
             except ConnectionError:
+                # We should have already sent the packet. So this should be fine.
                 pass
         return True  # A packet was prepped and sent correctly.
 
@@ -478,6 +482,8 @@ class K40Controller(Pipe):
             if self.device.mock:  # Mock controller
                 self.status = [255, STATUS_FINISH, 0, 0, 0, 1]
             status = self.status[1]
+            if status == 0:
+                raise ConnectionError
             if status == STATUS_PACKET_REJECTED:
                 self.rejected_count += 1
             if status & 0x02 == 0:
