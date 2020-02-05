@@ -174,7 +174,7 @@ class LhymicroInterpreter(Interpreter):
         yield last_x, last_y, last_on
         self.on_plot(last_x, last_y, last_on)
 
-    def command(self, command, values):
+    def command(self, command, values=None):
         if command == COMMAND_LASER_OFF:
             self.up()
         elif command == COMMAND_LASER_ON:
@@ -602,11 +602,14 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         self.to_concat_mode()
         if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.device.board,
-                                                        d_ratio=self.d_ratio, gear=self.device._stepping_force)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed,
+                                                        self.raster_step,
+                                                        self.device.board,
+                                                        d_ratio=self.d_ratio)
         else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.device.board,
-                                                        gear=self.device._stepping_force)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed,
+                                                        self.raster_step,
+                                                        self.device.board)
         try:
             speed_code = bytes(speed_code)
         except TypeError:
