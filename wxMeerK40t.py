@@ -9,11 +9,13 @@ import traceback
 import wx
 import wx.ribbon as RB
 
+from About import About
 from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
 from Controller import Controller
 from DefaultModules import *
+from DeviceManager import DeviceManager
 from ElementProperty import ElementProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
@@ -23,11 +25,10 @@ from LaserOperation import *
 from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
 from Preferences import Preferences
-from Settings import Settings
 from RotarySettings import RotarySettings
+from Settings import Settings
 from Shutdown import Shutdown
 from UsbConnect import UsbConnect
-from DeviceManager import DeviceManager
 from ZMatrix import ZMatrix
 from icons import *
 from svgelements import *
@@ -113,6 +114,7 @@ ID_MENU_HIDE_PATH = idinc.new()
 ID_MENU_HIDE_TEXT = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
+ID_MENU_ABOUT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_DEVICE_MANAGER = idinc.new()
 ID_MENU_PREFERENCES = idinc.new()
@@ -230,6 +232,7 @@ class MeerK40t(wx.Frame):
 
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(ID_MENU_WEBPAGE, _("Webpage"), "")
+        wxglade_tmp_menu.Append(ID_MENU_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
@@ -259,6 +262,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
+        self.Bind(wx.EVT_MENU, self.open_about, id=ID_MENU_ABOUT)
         self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, self.open_devices, id=ID_MENU_DEVICE_MANAGER)
         self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
@@ -1408,7 +1412,9 @@ class MeerK40t(wx.Frame):
         dlg.Destroy()
 
     def open_transform_dialog(self):
-        dlg = wx.TextEntryDialog(self, _("Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."), _("Transform Entry"), '')
+        dlg = wx.TextEntryDialog(self, _(
+            "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."),
+                                 _("Transform Entry"), '')
         dlg.SetValue('')
 
         if dlg.ShowModal() == wx.ID_OK:
@@ -1477,6 +1483,15 @@ class MeerK40t(wx.Frame):
         :return:
         """
         self.kernel.open_window("Rotary")
+
+    def open_about(self, event):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Open About dialog.
+
+        :param event:
+        :return:
+        """
+        self.kernel.open_window("About")
 
     def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1548,7 +1563,7 @@ class MeerK40t(wx.Frame):
         :param event:
         :return:
         """
-        window = self.kernel.open_window("JobInfo")
+        self.kernel.open_window("JobInfo")
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -2012,6 +2027,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window("Settings", Settings)
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)
+        kernel.add_window("About", About)
         kernel.add_window("DeviceManager", DeviceManager)
         kernel.add_window("Keymap", Keymap)
         kernel.add_window("UsbConnect", UsbConnect)
@@ -2055,6 +2071,7 @@ class wxMeerK40t(Module, wx.App):
             self.kernel('language', (lang, language_code, language_name, language_index))
 
         return update_language
+
 
 # end of class MeerK40tGui
 def handleGUIException(exc_type, exc_value, exc_traceback):

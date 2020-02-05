@@ -2097,7 +2097,10 @@ class Matrix:
                     self.pre_rotate(angle, x_param)
             elif SVG_TRANSFORM_SKEW == name:
                 angle_a = Angle.parse(params[0])
-                angle_b = Angle.parse(params[1])
+                try:
+                    angle_b = Angle.parse(params[1])
+                except IndexError: # this isn't valid.
+                    continue
                 try:
                     x_param = Length(params[2]).value()
                 except IndexError:
