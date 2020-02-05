@@ -944,11 +944,6 @@ class Kernel:
         elif state == THREAD_STATE_UNKNOWN:
             return _("Unknown")
 
-    def get_text_usb_state(self, state):
-        _ = self.translation
-        return ''
-        # TODO: process states here.
-
     def get_state(self, thread_name):
         try:
             return self.threads[thread_name].state()

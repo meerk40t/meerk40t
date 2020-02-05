@@ -8,12 +8,12 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
-parser.add_argument('-c', '--convert', action='store_true', help='convert filetypes')
+parser.add_argument('-e', '--egv', type=str, help='writes raw egv data to the controller')
 parser.add_argument('-p', '--path', type=str, help='SVG Path command')
 parser.add_argument('-i', '--input', type=argparse.FileType('r'), help='input file name')
 parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='output file name')
 parser.add_argument('-v', '--verbose', action='store_true', help='display verbose debugging')
-parser.add_argument('-m', '--mock', action='store_true', help='Use mock usb device.')
+parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 args = parser.parse_args(sys.argv[1:])
 
 if not args.no_gui:
@@ -41,11 +41,18 @@ if args.mock:
     kernel.device.setting(bool, 'mock', True)
     kernel.device.mock = True
 
+if args.egv is not None:
+    kernel.device.pipe.write(bytes(args.egv.replace('$', '\n') + '\n',"utf8"))
+
 if args.auto:
     kernel.classify(kernel.elements)
     kernel.device.spooler.send_job(kernel.operations)
     kernel.device.setting(bool, 'quit', True)
     kernel.device.quit = True
+
+if args.output is not None:
+    import os
+    kernel.save(os.path.realpath(args.output.name))
 
 kernel.boot()
 if not args.no_gui:

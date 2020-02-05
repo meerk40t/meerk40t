@@ -263,8 +263,6 @@ class K40Controller(Pipe):
             self.log(str(code))
 
     def detect_driver_and_open(self):
-        # TODO: Multi-Match the specific requirements of the backend driver protocol.
-        # Connection-Permitted- If you match more than one device. You should connect to the one that lets you connect.
         index = self.device.usb_index
         bus = self.device.usb_bus
         address = self.device.usb_address

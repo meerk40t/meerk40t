@@ -72,28 +72,27 @@ class LhymicroInterpreter(Interpreter):
 
         device.add_control("Realtime Pause", self.pause)
         device.add_control("Realtime Resume", self.resume)
-        # TODO: Consider Restoring this code.
 
-        # def break_acceleration10():
-        #     self.device._acceleration_breaks = 10.0
-        #
-        # def break_acceleration20():
-        #     self.device._acceleration_breaks = 20.0
-        #
-        # def break_acceleration30():
-        #     self.device._acceleration_breaks = 30.0
-        #
-        # def break_acceleration40():
-        #     self.device._acceleration_breaks = 40.0
-        #
-        # def break_acceleration_inf():
-        #     self.device._acceleration_breaks = float("inf")
-        #
-        # backend.add_control("acceleration Breaks 10mm/s", break_acceleration10)
-        # backend.add_control("acceleration Breaks 20mm/s", break_acceleration20)
-        # backend.add_control("acceleration Breaks 30mm/s", break_acceleration30)
-        # backend.add_control("acceleration Breaks 40mm/s", break_acceleration40)
-        # backend.add_control("acceleration Breaks off", break_acceleration_inf)
+        def break_acceleration10():
+            self.device._acceleration_breaks = 10.0
+
+        def break_acceleration20():
+            self.device._acceleration_breaks = 20.0
+
+        def break_acceleration30():
+            self.device._acceleration_breaks = 30.0
+
+        def break_acceleration40():
+            self.device._acceleration_breaks = 40.0
+
+        def break_acceleration_inf():
+            self.device._acceleration_breaks = float("inf")
+
+        self.device.add_control("acceleration Breaks 10mm/s", break_acceleration10)
+        self.device.add_control("acceleration Breaks 20mm/s", break_acceleration20)
+        self.device.add_control("acceleration Breaks 30mm/s", break_acceleration30)
+        self.device.add_control("acceleration Breaks 40mm/s", break_acceleration40)
+        self.device.add_control("acceleration Breaks off", break_acceleration_inf)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
