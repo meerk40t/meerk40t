@@ -189,7 +189,7 @@ class CH341LibusbDriver:
                              wValue=value,
                              wIndex=0,
                              data_or_wLength=0,
-                             timeout=5000)
+                             timeout=500)
         # 0x40, 177, 0x8800, 0, 0
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
@@ -200,7 +200,7 @@ class CH341LibusbDriver:
                              wValue=value,
                              wIndex=index,
                              data_or_wLength=mode << 8 | mode,
-                             timeout=5000)
+                             timeout=500)
         # 0x40, 154, 0x2525, 257, 0
 
     def CH341EppWrite(self, index=0, buffer=None, length=0, pipe=0):

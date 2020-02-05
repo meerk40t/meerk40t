@@ -401,6 +401,7 @@ class MeerK40t(wx.Frame):
         if kernel.window_height < 300:
             kernel.window_height = 300
 
+        kernel.add_control("Transform", self.open_transform_dialog)
         kernel.add_control("Path", self.open_path_dialog)
         kernel.add_control("FPS", self.open_fps_dialog)
         kernel.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
@@ -1032,6 +1033,7 @@ class MeerK40t(wx.Frame):
         self.kernel.keymap[wx.WXK_F6] = MappedKey('F6', "window JobSpooler")
         self.kernel.keymap[wx.WXK_F7] = MappedKey('F7', "window Controller")
         self.kernel.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
+        self.kernel.keymap[wx.WXK_F9] = MappedKey('F9', "control Transform")
 
     def execute_string_action(self, action, *args):
         device = self.kernel.device
@@ -1404,6 +1406,33 @@ class MeerK40t(wx.Frame):
             except ValueError:
                 pass
         dlg.Destroy()
+
+    def open_transform_dialog(self):
+        dlg = wx.TextEntryDialog(self, _("Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."), _("Transform Entry"), '')
+        dlg.SetValue('')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            p = self.kernel.device
+            m = str(dlg.GetValue())
+            m = m.replace('$x', str(p.current_x))
+            m = m.replace('$y', str(p.current_y))
+            mx = Matrix(m)
+            wmils = p.bed_width * 39.37
+            hmils = p.bed_height * 39.37
+            mx.render(ppi=1000, width=wmils, height=hmils)
+            if mx.is_identity():
+                dlg.Destroy()
+                dlg = wx.MessageDialog(None, _("The entered command does nothing."),
+                                       _("Non-Useful Matrix."), wx.OK | wx.ICON_WARNING)
+                result = dlg.ShowModal()
+                dlg.Destroy()
+            else:
+                for e in self.kernel.elements.flat_elements(passes=False):
+                    try:
+                        e.element *= mx
+                    except AttributeError:
+                        pass
+                self.kernel.signal('elements', 0)
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
