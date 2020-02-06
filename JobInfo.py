@@ -143,7 +143,7 @@ class JobInfo(wx.Frame):
         if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
             def scale_project():
                 p = self.device
-                scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.spooler.current_x, p.spooler.current_y)
+                scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
                 for e in self.job_items:
                     try:
                         e.element *= scale_str
