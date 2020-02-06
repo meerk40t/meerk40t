@@ -13,6 +13,8 @@ from icons import *
 _ = wx.GetTranslation
 
 
+# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
+
 class Controller(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Controller.__init__
@@ -100,7 +102,7 @@ class Controller(wx.Frame):
                 self.device.unlisten("pipe;usb_state", self.on_usb_state)
                 self.device.unlisten("pipe;thread", self.on_control_state)
         except KeyError:
-            pass # Must have not registered at start because of no device.
+            pass  # Must have not registered at start because of no device.
         self.kernel.mark_window_closed("Controller")
         self.kernel = None
         event.Skip()  # delegate destroy to super
@@ -116,7 +118,8 @@ class Controller(wx.Frame):
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
         for control_name, control in self.kernel.controls.items():
-            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name), path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name),
+                     path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)

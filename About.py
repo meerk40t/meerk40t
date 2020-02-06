@@ -2,6 +2,9 @@ import wx
 from icons import icon_meerk40t
 
 
+_ = wx.GetTranslation
+
+
 class About(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: About.__init__
@@ -16,7 +19,6 @@ class About(wx.Frame):
         self.kernel = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-
     def on_close(self, event):
         self.kernel.mark_window_closed("About")
         self.kernel = None
@@ -24,7 +26,7 @@ class About(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: About.__set_properties
-        self.SetTitle("frame")
+        self.SetTitle(_("About"))
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
         # end wxGlade
 

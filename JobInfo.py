@@ -150,6 +150,7 @@ class JobInfo(wx.Frame):
                     except AttributeError:
                         pass
                 self.jobadd_actualize_image()
+
             self.required_preprocessing_operations.append(scale_project)
 
     def set_job_items(self, elements):

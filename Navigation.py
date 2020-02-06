@@ -11,6 +11,8 @@ from icons import *
 _ = wx.GetTranslation
 
 
+# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
+
 # begin wxGlade: dependencies
 # end wxGlade
 
@@ -153,6 +155,7 @@ class Navigation(wx.Frame):
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, value
             yield COMMAND_LASER_OFF
+
         self.device.send_job(timed_fire)
 
     def move_top(self, evt):

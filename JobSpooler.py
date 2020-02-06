@@ -6,6 +6,8 @@ from icons import icons8_connected_50, icons8_play_50
 _ = wx.GetTranslation
 
 
+# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
+
 class JobSpooler(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobSpooler.__init__
@@ -163,7 +165,7 @@ class JobSpooler(wx.Frame):
                     settings = " ".join(settings)
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, _("n/a"))
-                    self.list_job_spool.SetItem(m, 8, _("unknown")) # time estimate
+                    self.list_job_spool.SetItem(m, 8, _("unknown"))  # time estimate
                 i += 1
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>

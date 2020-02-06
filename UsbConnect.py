@@ -3,6 +3,9 @@ import wx
 _ = wx.GetTranslation
 
 
+# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
+
+
 class UsbConnect(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: UsbConnect.__init__
@@ -51,7 +54,7 @@ class UsbConnect(wx.Frame):
                 self.usblog_text.SetValue(device.device_log)
                 self.usblog_text.AppendText("\n")
             except RuntimeError:
-                pass # must have closed before signal hit.
+                pass  # must have closed before signal hit.
         except AttributeError:
             return
 
