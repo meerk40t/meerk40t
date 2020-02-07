@@ -20,8 +20,7 @@ VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
 
 class LaserNode(list):
     """
-    LaserNodes wrap an SVGElement. And maintains an tree like datastructure which is converted
-    into code to be processed by the LhymicroWriter or any compatible writer.
+    LaserNodes wrap an SVGElement. And maintains an tree like datastructure.
 
     All LaserNodes contain:
     'parent' refers to the parent object.
@@ -53,29 +52,17 @@ class LaserNode(list):
             self.element = element
         else:
             self.element = SVGElement()
+
         if self.speed is not None:
             self.speed = float(self.speed)
-        # else:
-        #     if isinstance(element, SVGImage):
-        #         self.speed = 150.0
-        #     else:
-        #         self.speed = 20.0
         if self.passes is not None:
             self.passes = int(self.passes)
-        # else:
-        #     self.passes = 1
         if self.power is not None:
             self.power = float(self.power)
-        # else:
-        #     self.power = 1000.0
         if self.raster_step is not None:
             self.raster_step = int(self.raster_step)
-        # else:
-        #     self.raster_step = 1
         if self.raster_direction is not None:
             self.raster_direction = int(self.raster_direction)
-        # else:
-        #     self.raster_direction = 0
 
         if self.stroke is None or self.stroke == 'none':
             if isinstance(element, SVGElement):
@@ -84,14 +71,14 @@ class LaserNode(list):
                 self.stroke = Color('black')
             else:
                 self.stroke = Color('green')
-        # if isinstance(element, SVGImage):
-        #     # Converting all images to RGBA.
-        #     element.image = element.image.convert("RGBA")
         elif isinstance(element, SVGText):
             # Converting x and y value into matrix values.
             self.transform.pre_translate(element.x, element.y)
             self.element.x = 0
             self.element.y = 0
+
+    def __hash__(self):
+        return id(self)
 
     def __eq__(self, other):
         return other is self

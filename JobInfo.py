@@ -141,7 +141,7 @@ class JobInfo(wx.Frame):
 
     def jobadd_scale_rotary(self):
         if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
-            def scale_project():
+            def scale_for_rotary():
                 p = self.device
                 scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
                 for e in self.job_items:
@@ -151,7 +151,7 @@ class JobInfo(wx.Frame):
                         pass
                 self.jobadd_actualize_image()
 
-            self.required_preprocessing_operations.append(scale_project)
+            self.required_preprocessing_operations.append(scale_for_rotary)
 
     def set_job_items(self, elements):
         self.job_items = elements

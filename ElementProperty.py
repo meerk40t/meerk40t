@@ -53,12 +53,12 @@ class ElementProperty(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_FF0)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_speed_dratio, self.checkbox_custom_d_ratio)
         # end wxGlade
-        self.project = None
+        self.kernel = None
         self.element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.project.mark_window_closed("ElementProperty")
+        self.kernel.mark_window_closed("ElementProperty")
         event.Skip()  # Call destroy.
 
     def set_elements(self, operation):
@@ -95,8 +95,8 @@ class ElementProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_kernel(self, project):
-        self.project = project
+    def set_kernel(self, kernel):
+        self.kernel = kernel
 
     def __set_properties(self):
         # begin wxGlade: ElementProperty.__set_properties
@@ -183,8 +183,8 @@ class ElementProperty(wx.Frame):
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.element.name = self.text_name.GetValue()
-            if self.project is not None:
-                self.project("elements", 0)
+            if self.kernel is not None:
+                self.kernel("elements", 0)
         except AttributeError:
             pass
 
@@ -197,8 +197,8 @@ class ElementProperty(wx.Frame):
                 self.element.speed = self.spin_speed_set.GetValue()
             except AttributeError:
                 return
-        if self.project is not None:
-            self.project("elements", 0)
+        if self.kernel is not None:
+            self.kernel("elements", 0)
 
     def on_spin_power(self, event):
         if isinstance(self.element, LaserNode):
@@ -226,8 +226,8 @@ class ElementProperty(wx.Frame):
     def on_spin_passes(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.element.passes = self.spin_passes.GetValue()
-            if self.project is not None:
-                self.project("elements", 0)
+            if self.kernel is not None:
+                self.kernel("elements", 0)
         except AttributeError:
             return
 
@@ -240,8 +240,8 @@ class ElementProperty(wx.Frame):
                 self.element.raster_step = self.spin_step_size.GetValue()
             except AttributeError:
                 return
-        if self.project is not None:
-            self.project("elements", 0)
+        if self.kernel is not None:
+            self.kernel("elements", 0)
 
     def on_combobox_rasterdirection(self, event):  # wxGlade: Preferences.<event_handler>
         if isinstance(self.element, LaserNode):
@@ -266,7 +266,7 @@ class ElementProperty(wx.Frame):
                 self.element.stroke = Color(color)
             except AttributeError:
                 return
-        if self.project is not None:
-            self.project("elements", 0)
+        if self.kernel is not None:
+            self.kernel("elements", 0)
 
 # end of class ElementProperty

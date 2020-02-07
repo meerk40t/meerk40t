@@ -50,13 +50,10 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.4.0"
+MEERK40T_VERSION = "0.5.0"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
-
-# begin wxGlade: dependencies
-# end wxGlade
 
 class IdInc:
     """
@@ -147,13 +144,9 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-
         self.DragAcceptFiles(True)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT)  # wx.FULL_REPAINT_ON_RESIZE |
-        self.tree_images = wx.ImageList()
-        self.tree_images.Create(width=20, height=20)
-        self.tree.SetImageList(self.tree_images)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT)
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 
@@ -296,19 +289,6 @@ class MeerK40t(wx.Frame):
 
         self.previous_position = None
 
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.tree)
-        # end wxGlade
-        # self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
-
-        # end wxGlade
-        self.dragging_element = None
-        self.dragging_parent = None
-        # self.SetDoubleBuffered(True)
-
         self.matrix = ZMatrix()
         self.identity = ZMatrix()
         self.matrix.Reset()
@@ -359,13 +339,20 @@ class MeerK40t(wx.Frame):
 
         self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
         self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
+
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_press)  # todo: check this.
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         self.fps_job = None
         self.kernel = None
+        self.root = None  # RootNode value, must have kernel for init.
         self.device_listening = None
+
+    def notify_change(self):
+        self.kernel("elements", 0)
 
     def add_language_menu(self):
         if os.path.exists('./locale'):
@@ -399,6 +386,7 @@ class MeerK40t(wx.Frame):
         if kernel.fps <= 0:
             kernel.fps = 60
         self.renderer = LaserRender(kernel)
+        self.root = RootNode(kernel, self)
 
         if kernel.window_width < 300:
             kernel.window_width = 300
@@ -418,7 +406,6 @@ class MeerK40t(wx.Frame):
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
         self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
         self.add_language_menu()
-        self.kernel.elements_change_listener = self.tree_update
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.kernel.draw_mode & 0x0001 != 0)
@@ -444,11 +431,16 @@ class MeerK40t(wx.Frame):
         m.Check(self.kernel.draw_mode & 0x0800 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TEXT)
         m.Check(self.kernel.draw_mode & 0x1000 != 0)
-        self.refresh_tree_elements()
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.space_changed(0)
         self.default_keymap()
+
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
 
     def set_fps(self, fps):
         if fps == 0:
@@ -465,212 +457,6 @@ class MeerK40t(wx.Frame):
         :return:
         """
         self.request_refresh()
-        self.refresh_tree_elements()
-
-    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler begin for the tree.
-
-        :param event:
-        :return:
-        """
-        self.dragging_element = None
-        self.dragging_parent = None
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is self.kernel.operations or element is self.kernel.elements:
-            event.Skip()
-            return
-        self.dragging_parent = self.tree.GetItemParent(item)
-        self.dragging_parent = self.tree.GetItemData(self.dragging_parent)
-        self.dragging_element = element
-        event.Allow()
-
-    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler end for the tree
-
-        :param event:
-        :return:
-        """
-        if self.dragging_element is None:
-            event.Skip()
-            return
-        drag_element = self.dragging_element
-        drag_parent = self.dragging_parent
-        self.dragging_element = None
-        self.dragging_parent = None
-
-        e = event.GetItem()
-        if e is None:
-            event.Skip()
-            return
-        if e.ID is None:
-            event.Skip()
-            return
-        drop_element = self.tree.GetItemData(e)
-        if drop_element is None or drop_element == drag_element:
-            event.Skip()
-            return
-        if drag_element is self.kernel.operations:
-            event.Skip()
-            return
-        if drag_element is self.kernel.elements:
-            event.Skip()
-            return
-        if isinstance(drag_element, LaserNode):
-            if drop_element is self.kernel.operations:
-                self.kernel.classify(drag_element)
-                event.Allow()
-                self.refresh_tree_elements()
-                return
-            elif isinstance(drop_element, LaserOperation):
-                if isinstance(drop_element, EngraveOperation) and drag_element.type == 'image':
-                    event.Skip()
-                    self.kernel.signal("Error", "Cannot add image to engrave operation.")
-                    return
-                drop_element.append(drag_element.element)
-                event.Allow()
-                self.refresh_tree_elements()
-                return
-            elif isinstance(drop_element, LaserNode):
-                if drop_element.type == 'root':  # Project
-                    drag_parent.remove(drag_element)
-                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
-                        drag_parent.parent.remove(drag_parent)
-
-                    if drag_element.type != 'group':
-                        group = LaserNode()
-                        group.append(drag_element)
-                        group.update(drag_element)  # Group gets element property.
-                        drop_element.append(group)
-                    else:
-                        drop_element.append(drag_element)
-                    event.Allow()
-                    return
-                if drop_element.type == 'group':  # Group
-                    drag_parent.remove(drag_element)
-                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
-                        drag_parent.parent.remove(drag_parent)
-                    drop_element.append(drag_element)
-                    event.Allow()
-                    return
-        elif isinstance(drag_element, LaserOperation):
-            if drop_element is self.kernel.operations:
-                self.kernel.operations.remove(drag_element)
-                self.kernel.operations.append(drag_element)
-                event.Allow()
-                self.refresh_tree_elements()
-                return
-        event.Skip()
-
-    def on_item_right_click(self, event):
-        """
-        Right click of element in tree.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item is None:
-            return
-        if item.ID is None:
-            return
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            self.kernel.set_selected(element)
-            self.create_menu(element)
-        event.Skip()
-
-    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Tree item is double-clicked. Launches ElementProperty dialog.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            if isinstance(element, LaserNode) or isinstance(element, LaserOperation):
-                self.kernel.open_window("ElementProperty").set_elements(element)
-
-    def on_item_changed(self, event):
-        """
-        Tree menu item is changed. Modify the selection.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            self.kernel.set_selected(element)
-
-    def add_element(self, tree, node, element):
-        """
-        Add a element to the tree.
-
-        :param tree:
-        :param node:
-        :param element:
-        :return:
-        """
-        if isinstance(element, LaserOperation):
-            item = tree.AppendItem(node, str(element))
-            tree.SetItemData(item, element)
-            for subitem in element:
-                self.add_element(tree, item, subitem)
-        elif isinstance(element, SVGElement):
-            item = tree.AppendItem(node, str(element))
-            tree.SetItemData(item, element)
-        elif isinstance(element, LaserNode):
-            item = tree.AppendItem(node, str(element))
-            tree.SetItemData(item, element)
-            try:
-                tree.SetItemBackgroundColour(item, wx.Colour(swizzlecolor(element.fill)))
-            except AttributeError:
-                pass
-            try:
-                tree.SetItemTextColour(item, wx.Colour(swizzlecolor(element.stroke)))
-            except AttributeError:
-                pass
-            t = element.type
-            if t == 'image':
-                image = self.renderer.make_thumbnail(element, width=20, height=20)
-            else:
-                image = self.renderer.make_raster(element, width=20, height=20, bitmap=True)
-            if image is not None:
-                id = self.tree_images.Add(bitmap=image)
-                tree.SetItemImage(item, image=id)
-            for subitem in element:
-                self.add_element(tree, item, subitem)
-        else:
-            print(element)
-
-    def refresh_tree_elements(self):
-        """
-        Rebuild tree elements
-
-        :return:
-        """
-        tree = self.tree
-        tree.DeleteAllItems()
-        root = self.tree.AddRoot("Root")
-        operations = tree.AppendItem(root, "Operations")
-        self.tree.SetItemData(root, self.kernel.operations)
-
-        self.tree.SetItemData(operations, self.kernel.operations)
-        for subitem in self.kernel.operations:
-            self.add_element(tree, operations, subitem)
-
-        elements = tree.AppendItem(root, "Elements")
-        self.tree.SetItemData(elements, self.kernel.elements)
-        for subitem in self.kernel.elements:
-            self.add_element(tree, elements, subitem)
-
-        tree.CollapseAll()
-        tree.ExpandAll()
 
     def on_usb_error(self, value):
         dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
@@ -774,6 +560,16 @@ class MeerK40t(wx.Frame):
         # main_sizer.Fit(self)
         self.Layout()
 
+    def load(self, pathname):
+        results = self.kernel.load(pathname)
+        if results is not None:
+            elements, pathname, basename = results
+            ops = self.kernel.classify(elements)
+            self.root.add_operations_group(ops, pathname, basename)
+            self.root.add_element_group(elements, pathname, basename)
+            return True
+        return False
+
     def on_drop_file(self, event):
         """
         Drop file handler
@@ -784,9 +580,7 @@ class MeerK40t(wx.Frame):
         rejected = 0
         rejected_files = []
         for pathname in event.GetFiles():
-            result = self.kernel.load(pathname)
-            if result is not None:
-                self.kernel.classify(result)
+            if self.load(pathname):
                 accepted += 1
             else:
                 rejected += 1
@@ -797,10 +591,8 @@ class MeerK40t(wx.Frame):
             dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
-        self.refresh_tree_elements()
-
-    def tree_update(self):
-        self.refresh_tree_elements()
+        if accepted != 0:
+            self.root.notify_tree_data_change()
 
     def on_paint(self, event):
         try:
@@ -968,7 +760,7 @@ class MeerK40t(wx.Frame):
         self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.renderer.set_selected_by_position(self.previous_scene_position)
+        self.root.set_selected_by_position(self.previous_scene_position)
         self.move_function = self.move_selected
 
     def on_left_mouse_up(self, event):
@@ -978,21 +770,21 @@ class MeerK40t(wx.Frame):
         self.previous_window_position = None
         self.previous_scene_position = None
         self.move_function = self.move_pan
-        self.renderer.validate()
+        self.root.validate()
 
     def on_mouse_double_click(self, event):
         position = event.GetPosition()
         position = self.convert_window_to_scene(position)
-        self.renderer.set_selected_by_position(position)
-        if self.kernel.selected is not None:
-            self.kernel.open_window("ElementProperty").set_elements(self.kernel.selected)
+        self.root.set_selected_by_position(position)
+        if self.root.selected_elements is not None:
+            self.kernel.open_window("ElementProperty").set_elements(self.root.selected_elements)
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
         self.request_refresh()
 
     def move_selected(self, wdx, wdy, sdx, sdy):
-        self.kernel.move_selected(sdx, sdy)
+        self.root.move_selected(sdx, sdy)
         self.request_refresh()
 
     def on_mouse_move(self, event):
@@ -1017,8 +809,8 @@ class MeerK40t(wx.Frame):
     def on_right_mouse_down(self, event):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-        self.renderer.set_selected_by_position(self.popup_scene_position)
-        self.create_menu(self.kernel.selected)
+        self.root.set_selected_by_position(self.popup_scene_position)
+        self.root.create_menu(self.root.selected_elements)
 
     def on_right_mouse_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
@@ -1102,8 +894,8 @@ class MeerK40t(wx.Frame):
             args = str(action).split(' ')
             self.execute_string_action(*args)
 
-    def focus_on_project(self):
-        bbox = self.renderer.bbox(self.kernel.elements)
+    def focus_on_elements(self):
+        bbox = self.root.bbox(self.kernel.elements)
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
@@ -1267,14 +1059,16 @@ class MeerK40t(wx.Frame):
         dc.DrawRectangle(0, 0, wmils, hmils)
 
     def on_draw_selection(self, dc, draw_mode):
-        if self.kernel.selected is not None and self.kernel.selected.scene_bounds is not None:
+        """Draw Selection Box"""
+        bounds = self.root.selected_bounds()
+        if bounds is not None:
             linewidth = 3.0 / self.matrix.GetScaleX()
             # f = 2 * linewidth
             # g = 2 * f
             self.selection_pen.SetWidth(linewidth)
             dc.SetPen(self.selection_pen)
             dc.SetBrush(wx.BLACK_BRUSH)
-            x0, y0, x1, y1 = self.kernel.selected.scene_bounds
+            x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
             center_y = (y0 + y1) / 2.0
             dc.DrawLine(center_x, 0, center_x, y0)
@@ -1314,10 +1108,10 @@ class MeerK40t(wx.Frame):
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.working_file = None
-        self.kernel.elements = LaserNode(parent=self.kernel)
+        self.kernel.elements = []
         self.kernel.operations = []
         self.request_refresh()
-        self.tree_update()
+        self.root.notify_tree_cleared()
         # self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -1328,8 +1122,7 @@ class MeerK40t(wx.Frame):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
-            result = self.kernel.load(pathname)
-            self.kernel.classify(result)
+            self.load(pathname)
 
     def on_click_save(self, event):
         if self.working_file is None:
@@ -1372,7 +1165,7 @@ class MeerK40t(wx.Frame):
         """
         Zoom size button press.
         """
-        self.focus_on_project()
+        self.focus_on_elements()
 
     def toggle_draw_mode(self, bits):
         """
@@ -1433,9 +1226,9 @@ class MeerK40t(wx.Frame):
                 result = dlg.ShowModal()
                 dlg.Destroy()
             else:
-                for e in self.kernel.elements.flat_elements(passes=False):
+                for element in self.kernel.elements:
                     try:
-                        e.element *= mx
+                        element *= mx
                     except AttributeError:
                         pass
                 self.kernel.signal('elements', 0)
@@ -1448,13 +1241,9 @@ class MeerK40t(wx.Frame):
             path = Path(dlg.GetValue())
             path.fill = 'black'
             path.stroke = 'black'
-            group = LaserNode()
-            group.name = 'Path'
-            self.kernel.elements.append(group)
-
             p = abs(path)
-            self.kernel.operations.append(EngraveOperation(p))
-            group.append(LaserNode(p))
+            self.kernel.elements.append(p)
+            self.kernel.classify(p)
         dlg.Destroy()
 
     def open_settings(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -1575,87 +1364,657 @@ class MeerK40t(wx.Frame):
         import webbrowser
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
-    def create_menu(self, element):
-        """Create menu items. This is used for both the scene and the tree to create menu items."""
-        if element is None:
+
+class Node(list):
+    """Generic Node Type for use with RootNode"""
+
+    def __init__(self, data_object):
+        list.__init__(self)
+        self.parent = None
+        self.root = None
+        self.object = data_object
+        self.name = str(data_object)
+        self.item = None
+
+        self.filepath = None
+        self.bounds = None
+        self.needs_updating = False
+        self.linked = []
+        try:
+            self.bounds = data_object.bbox()
+        except AttributeError:
+            pass
+
+    def __eq__(self, other):
+        return other is self
+
+    def insert_all(self, position, add_list):
+        """Group insert to trigger the notification only once."""
+        for add_node in reversed(add_list):
+            self.insert(position, add_node)
+
+    def insert(self, index, add_node):
+        if add_node.parent is not None:
+            raise ValueError("Still has a parent.")
+        if add_node in self:
+            raise ValueError("Already part of list.")
+        list.insert(self, index, add_node)
+        add_node.parent = self
+        add_node.root = self.root
+
+    def append_all(self, add_list):
+        """Group append to trigger the notification only once."""
+        for add_node in add_list:
+            self.append(add_node)
+
+    def append(self, add_node, notify=True):
+        if add_node.parent is not None:
+            raise ValueError("Still has a parent.")
+        if add_node in self:
+            raise ValueError("Already part of list.")
+        list.append(self, add_node)
+        add_node.parent = self
+        add_node.root = self.root
+        self.root.initialize_node(add_node)
+        self.notify_added(add_node)
+
+    def remove(self, remove_node):
+        list.remove(self, remove_node)
+        remove_node.parent = None
+        remove_node.root = None
+        self.notify_removed(remove_node)
+
+    def detach(self):
+        if self.parent is not None:
+            self.parent.remove(self)
+
+    def notify_change(self):
+        """Generic unknown change."""
+
+        if self.parent == self:
+            raise ValueError
+        if self.parent is not None:
+            self.parent.notify_change()
+
+    def notify_added(self, node):
+        """This node is has been added to the tree."""
+
+        if self.parent == self:
+            raise ValueError
+        if self.parent is not None:
+            self.parent.notify_added(node)
+
+    def notify_removed(self, node):
+        """This node has been removed from the tree."""
+
+        if self.parent == self:
+            raise ValueError
+        if self.parent is not None:
+            self.parent.notify_removed(node)
+
+
+class RootNode(Node):
+    """"Nodes are the presentation layer used to wrap the LaserOperations and the SVGElement classes. Stored in the
+    kernel. This is to allow nested structures beyond the flat structure of the actual data. It serves to help with
+    menu creation, name, drag and drop, bounding box cache, tree element updates.
+
+    The tree is structured with two main sub-elements of the RootNode, these are the Operations and the Elements.
+
+    The Operations each contain a list of elements which they run in order and are stored within actual operations.
+
+    The Elements are merely the list of elements stored in their desired ordered. This order changing should reflect
+    those changes back to the flat structure in kernel. By a depth first search of the tree.
+
+    Deleting an element from the tree should remove that element from the operations.
+    Deleting an operation should make no change to the elements structure.
+    Selecting an operation should select all the elements it contains, and those elements should be highlighted in
+    the elements part of the tree.
+    Selecting an element should select all the places that element is found in the operations part of the tree.
+
+    The .scene_bounds() function should give the bounds. This should also deal with caching etc.
+    There should be a need to have the Render function cache information in the lookup.
+
+    All the nodes store a refrence to their given tree item. So that a determination can be made when those items have
+    changed and provide piecemeal updates to the tree rather than recreating the entire thing.
+
+    """
+
+    def __init__(self, kernel, gui):
+        Node.__init__(self, "Project")
+        self.root = self
+        self.parent = self
+
+        self.kernel = kernel
+        self.gui = gui
+        self.tree = gui.tree
+        self.renderer = gui.renderer
+
+        self.bounds = [0, 0, 0, 0]
+        self.selected_elements = []
+        self.selected_operations = []
+
+        self.tree_images = wx.ImageList()
+        self.tree_images.Create(width=20, height=20)
+        self.tree_lookup = {}
+        self.tree.SetImageList(self.tree_images)
+
+        self.dragging_element = None
+        self.dragging_parent = None
+
+        self.item = self.tree.AddRoot(self.name)
+
+        self.node_elements = Node("Elements")
+        self.node_operations = Node("Operations")
+        self.append(self.node_operations)
+        self.append(self.node_elements)
+        self.build_tree(self.node_operations, self.kernel.operations)
+        self.build_tree(self.node_elements, self.kernel.elements)
+
+    def build_tree(self, parent_node, objects):
+        if not isinstance(objects, list):
             return
-        gui = self
+        for obj in objects:
+            node = Node(obj)
+            parent_node.append(Node(obj))
+            self.build_tree(node, obj)
+
+    def notify_change(self):
+        self.kernel("elements",0)
+
+    def notify_added(self, node):
+        self.kernel("elements", 0)
+
+    def notify_removed(self, node):
+        self.kernel("elements", 0)
+
+    def notify_tree_data_change(self):
+        self.rebuild_item_tree()
+
+    def notify_tree_data_cleared(self):
+        self.rebuild_item_tree()
+
+    def selected_bounds(self):
+        return self.bbox(self.selected_elements)
+
+    def bbox(self, elements):
+        boundary_points = []
+        for e in elements:
+            box = e.bbox()
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
+
+    def add_operations_group(self, ops, pathname, basename):
+        group = Node(basename)
+        group.filepath = pathname
+        self.node_operations.append(group)
+        for op in ops:
+            op_node = Node(op)
+            group.append(op_node)
+            for element in op:
+                element_node = Node(element)
+                op_node.append(element_node)
+
+    def add_element_group(self, elements, pathname, basename):
+        """Called to add element group of elements, as loaded with the given filename and filepath."""
+        group = Node(basename)
+        group.filepath = pathname
+        self.node_elements.append(group)
+        for e in elements:
+            element_node = Node(e)
+            group.append(element_node)
+
+    def initialize_node(self, node):
+        parent_item = node.parent.item
+        item = self.tree.AppendItem(parent_item, node.name)
+        node.item = item
+        tree = self.tree
+        element = node.object
+        if id(element) in self.tree_lookup:
+            links = self.tree_lookup[id(element)]
+            links.append(node)
+        else:
+            self.tree_lookup[id(element)] = [node]
+        tree.SetItemData(item, node)
+        try:
+            fill = element.values['fill']
+            color = wx.Colour(swizzlecolor(Color(fill).value))
+            tree.SetItemBackgroundColour(item, color)
+        except AttributeError:
+            pass
+        try:
+            stroke = element.values['stroke']
+            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            tree.SetItemTextColour(item, color)
+        except AttributeError:
+            pass
+        if isinstance(element, SVGImage):
+            image = self.renderer.make_thumbnail(element, width=20, height=20)
+        else:
+            try:
+                image = self.renderer.make_raster(node, element.bbox(), width=20, height=20, bitmap=True)
+            except AttributeError:
+                image = None  # Likely string value and can't make icon.
+        if image is not None:
+            image_id = self.tree_images.Add(bitmap=image)
+            tree.SetItemImage(item, image=image_id)
+        return item
+
+    def add_element(self, tree_node, node, element):
+        """
+        Add a element to the tree.
+
+        :param tree_node:
+        :param node:
+        :param element:
+        :return:
+        """
+        node_item = self.initialize_node(node)
+        if isinstance(element, LaserOperation):
+            tree_node.SetItemData(node_item, element)
+            for subitem in element:
+                self.add_element(tree_node, node_item, subitem)
+        elif isinstance(element, SVGElement):
+            tree_node.SetItemData(node_item, element)
+        elif isinstance(element, LaserNode):  # TODO: This has changed.
+            node_item = tree_node.AppendItem(node, str(element))
+        else:
+            print(element)
+
+    def rebuild_items(self, tree, node):
+        for n in node:
+            self.rebuild_items(tree, n)
+        self.initialize_node(node)
+
+    def rebuild_item_tree(self):
+        """
+        Rebuild tree elements
+        :return:
+        """
+
+        tree = self.tree
+        # tree.DeleteAllItems()
+        # root = self.tree.AddRoot(self.name)
+        # self.tree_lookup = {}
+        # self.rebuild_items(tree, self)
+        #
+        # for subitem in self.kernel.operations:
+        #     self.add_element(tree, operations, subitem)
+        #
+        # elements = tree.AppendItem(root, "Elements")
+        # self.tree.SetItemData(elements, self.kernel.elements)
+        # for subitem in self.kernel.elements:
+        #     self.add_element(tree, elements, subitem)
+        #
+        # tree.CollapseAll()
+        tree.ExpandAll()
+
+    def select_operations_by_elements(self):
+        """
+        Selects operations by selected elements.
+        :return:
+        """
+        self.selected_operations = []
+        for op in self.kernel.operations:
+            for element in self.selected_elements:
+                if element in op:
+                    self.selected_operations.append(op)
+                    break
+
+    def select_elements_by_operations(self):
+        """
+        Selects elements by selected operations.
+        :return:
+        """
+        self.selected_elements = list()
+        for selected_op in self.selected_operations:
+            self.selected_elements.extend([e for e in selected_op if e not in self.selected_elements])
+
+    def set_selected_elements(self, selected):
+        if selected is None:
+            selected = []
+        else:
+            if not isinstance(selected, list):
+                selected = [selected]
+        self.selected_elements = selected
+        self.select_operations_by_elements()
+
+    def set_selected_operations(self, selected):
+        if selected is None:
+            selected = []
+        else:
+            if not isinstance(selected, list):
+                selected = [selected]
+        self.selected_operations = selected
+        self.select_elements_by_operations()
+
+    def set_selected(self, selected):
+        """Sets the selected element. This could be a LaserOperation or a LaserNode."""
+        if selected is None:
+            self.selected_elements = []
+            self.selected_operations = []
+        else:
+            if isinstance(selected, SVGElement):
+                self.set_selected_elements([selected])
+            elif isinstance(selected, LaserOperation):
+                self.set_selected_operations([selected])
+            elif isinstance(selected, list):
+                elements = [e for e in selected if isinstance(e, SVGElement)]
+                operations = [o for o in selected if isinstance(o, LaserOperation)]
+                if len(elements) == 0:  # Elements is empty
+                    if len(operations) > 0:  # Operations is not empty.
+                        self.set_selected_operations(operations)
+                else:  # Elements is not empty.
+                    if len(operations) == 0:
+                        self.set_selected_elements(elements)
+                    else:
+                        self.selected_operations = operations
+                        self.selected_elements = elements # Can't do a selected call based on this.
+        self.kernel("selection", self.selected_elements)
+        self.kernel("selected_ops", self.selected_operations)
+
+    def move_selected(self, dx, dy):
+        if self.selected_elements is None:
+            return
+        for element in self.selected_elements:
+            element.transform.post_translate(dx,dy)
+
+    def on_drag_begin_handler(self, event):
+        """
+        Drag handler begin for the tree.
+
+        :param event:
+        :return:
+        """
+        self.dragging_element = None
+        self.dragging_parent = None
+
+        item = event.GetItem()
+        element = self.tree.GetItemData(item)
+        if element is self.kernel.operations or element is self.kernel.elements:
+            event.Skip()
+            return
+        self.dragging_parent = self.tree.GetItemParent(item)
+        self.dragging_parent = self.tree.GetItemData(self.dragging_parent)
+        self.dragging_element = element
+        event.Allow()
+
+    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Drag handler end for the tree
+
+        :param event:
+        :return:
+        """
+        if self.dragging_element is None:
+            event.Skip()
+            return
+        drag_element = self.dragging_element
+        drag_parent = self.dragging_parent
+        self.dragging_element = None
+        self.dragging_parent = None
+
+        e = event.GetItem()
+        if e is None:
+            event.Skip()
+            return
+        if e.ID is None:
+            event.Skip()
+            return
+        drop_element = self.tree.GetItemData(e)
+        if drop_element is None or drop_element == drag_element:
+            event.Skip()
+            return
+        if drag_element is self.kernel.operations:
+            event.Skip()
+            return
+        if drag_element is self.kernel.elements:  # TODO: This has changed.
+            event.Skip()
+            return
+        if isinstance(drag_element, LaserNode):
+            if drop_element is self.kernel.operations:
+                self.kernel.classify(drag_element)
+                event.Allow()
+                self.rebuild_item_tree()
+                return
+            elif isinstance(drop_element, LaserOperation):
+                if isinstance(drop_element, EngraveOperation) and drag_element.type == 'image':
+                    event.Skip()
+                    self.kernel.signal("Error", "Cannot add image to engrave operation.")
+                    return
+                drop_element.append(drag_element.element)
+                event.Allow()
+                self.rebuild_item_tree()
+                return
+            elif isinstance(drop_element, LaserNode):
+                if drop_element.type == 'root':  # Project
+                    drag_parent.remove(drag_element)
+                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
+                        drag_parent.parent.remove(drag_parent)
+
+                    if drag_element.type != 'group':
+                        group = LaserNode()
+                        group.append(drag_element)
+                        group.update(drag_element)  # Group gets element property.
+                        drop_element.append(group)
+                    else:
+                        drop_element.append(drag_element)
+                    event.Allow()
+                    return
+                if drop_element.type == 'group':  # Group
+                    drag_parent.remove(drag_element)
+                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
+                        drag_parent.parent.remove(drag_parent)
+                    drop_element.append(drag_element)
+                    event.Allow()
+                    return
+        elif isinstance(drag_element, LaserOperation):
+            if drop_element is self.kernel.operations:
+                self.kernel.operations.remove(drag_element)
+                self.kernel.operations.append(drag_element)
+                event.Allow()
+                self.rebuild_item_tree()
+                return
+        event.Skip()
+
+    def on_item_right_click(self, event):
+        """
+        Right click of element in tree.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item is None:
+            return
+        node = self.tree.GetItemData(item)
+        self.root.set_selected(node.object)
+        self.root.create_menu(self.gui, node)
+        event.Skip()
+
+    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
+        """
+        Tree item is double-clicked. Launches ElementProperty dialog.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        element = self.tree.GetItemData(item)
+        if element is not None:
+            if isinstance(element, LaserNode) or isinstance(element, LaserOperation):
+                self.kernel.open_window("ElementProperty").set_elements(element)
+
+    def on_item_changed(self, event):
+        """
+        Tree menu item is changed. Modify the selection.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        node = self.tree.GetItemData(item)
+        if node is None:
+            return
+        self.set_selected(node.object)
+        if self.selected_operations is not None:
+            for o in self.selected_operations:
+                try:
+                    nodes = self.tree_lookup[id(o)]
+                    for node in nodes:
+                        self.tree.SelectItem(node.item, True)
+                except KeyError:
+                    pass
+        if self.selected_elements is not None:
+            for e in self.selected_elements:
+                try:
+                    nodes = self.tree_lookup[id(e)]
+                    for node in nodes:
+                        self.tree.SelectItem(node.item, True)
+                except KeyError:
+                    pass
+
+    def set_selected_by_position(self, position):
+        self.set_selected_elements(None)
+        self.validate()
+        for e in reversed(self.kernel.elements):
+            bounds = e.bbox()
+            if bounds is None:
+                continue
+            if self.contains(bounds, position):
+                self.root.set_selected_elements(e)
+                break
+
+    def contains(self, box, x, y=None):
+        if y is None:
+            x, y = x
+        return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+    def validate(self, node=None):
+        return
+        # TODO: Validate is supposed to refresh the scene bounds but without scene bounds it does nothing.
+        if node is None:
+            # Default call.
+            node = self.kernel.elements
+
+        node.scene_bound = None  # delete bounds
+        for element in node:
+            self.validate(element)  # validate all subelements.
+        if len(node) == 0:  # Leaf Node.
+            try:
+                node.scene_bounds = node.element.bbox()
+            except AttributeError:
+                pass
+            return
+        # Group node.
+        xvals = []
+        yvals = []
+        for e in node:
+            bounds = e.scene_bounds
+            if bounds is None:
+                continue
+            xvals.append(bounds[0])
+            xvals.append(bounds[2])
+            yvals.append(bounds[1])
+            yvals.append(bounds[3])
+        if len(xvals) == 0:
+            return
+        node.scene_bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+
+    def create_menu(self, gui, node):
+        """Create menu items. This is used for both the scene and the tree to create menu items."""
+        if node is None:
+            return
         menu = wx.Menu()
-        if isinstance(element, LaserNode):
-            t = element.type
+        if isinstance(node, LaserNode):
+            t = node.type
             if t != 'root':
-                gui.Bind(wx.EVT_MENU, self.menu_remove(element),
-                         menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_remove(node),
+                         menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
                 if t == 'group':
-                    fpath = element['filepath']
+                    fpath = node['filepath']
                     if fpath is not None:
                         name = os.path.basename(fpath)
-                        gui.Bind(wx.EVT_MENU, self.menu_reload(element),
+                        gui.Bind(wx.EVT_MENU, self.menu_reload(node),
                                  menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
-                        if len(element) > 1:
-                            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(element),
+                        if len(node) > 1:
+                            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
                                      menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
                 else:
-                    if element.passes != 1:
-                        gui.Bind(wx.EVT_MENU, self.menu_split_passes(element),
+                    if node.passes != 1:
+                        gui.Bind(wx.EVT_MENU, self.menu_split_passes(node),
                                  menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_hull(element),
+                gui.Bind(wx.EVT_MENU, self.menu_hull(node),
                          menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_execute(element),
+                gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                          menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_reset(element),
+                gui.Bind(wx.EVT_MENU, self.menu_reset(node),
                          menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
                 path_scale_sub_menu = wx.Menu()
                 for i in range(1, 25):
-                    gui.Bind(wx.EVT_MENU, self.menu_scale(element, 6.0 / float(i)),
+                    gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
                              path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
                                                         wx.ITEM_NORMAL))
                 menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
                 path_rotate_sub_menu = wx.Menu()
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(wx.EVT_MENU, self.menu_rotate(element, 1.0 / float(i)),
+                    gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
                              path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
                                                          "",
                                                          wx.ITEM_NORMAL))
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(wx.EVT_MENU, self.menu_rotate(element, -1.0 / float(i)),
+                    gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
                              path_rotate_sub_menu.Append(wx.ID_ANY,
                                                          _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
                                                          wx.ITEM_NORMAL))
                 menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-            if element.contains_type('path'):
+            if node.contains_type('path'):
                 vector_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_subpath(element),
+                gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
                          vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster(element),
+                gui.Bind(wx.EVT_MENU, self.menu_raster(node),
                          vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_reify(element),
+                gui.Bind(wx.EVT_MENU, self.menu_reify(node),
                          menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
                 menu.AppendSubMenu(vector_menu, _("Vector"))
-            if element.contains_type('image'):
+            if node.contains_type('image'):
                 image_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(element),
+                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
                          image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_dither(element),
+                gui.Bind(wx.EVT_MENU, self.menu_dither(node),
                          image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster_native(element),
+                gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
                          image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
                 image_sub_menu_step = wx.Menu()
                 for i in range(1, 8):
-                    gui.Bind(wx.EVT_MENU, self.menu_step(element, i),
+                    gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
                              image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
                 image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
                 menu.AppendSubMenu(image_menu, _("Raster"))
-            if element.contains_type('text'):
+            if node.contains_type('text'):
                 text_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_remove(element, types=(SVGText)),
+                gui.Bind(wx.EVT_MENU, self.menu_remove(node, types=(SVGText)),
                          text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
                 menu.AppendSubMenu(text_menu, _("Text"))
-        elif isinstance(element, LaserOperation):
-            gui.Bind(wx.EVT_MENU, self.menu_remove(element),
-                     menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL))
+        elif isinstance(node, LaserOperation):
+            gui.Bind(wx.EVT_MENU, self.menu_remove(node),
+                     menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -1754,11 +2113,19 @@ class MeerK40t(wx.Frame):
 
         def specific(event):
             renderer = LaserRender(self.kernel)
+            if not isinstance(group, list):
+                group = [group]
+            bounds = group[0].bbox()  # TODO: This should really work on large collections of subobjects
+            if bounds is None:
+                return None
+            # TODO: get full subbounds.
+            # def make_raster(self, group, bounds, width=None, height=None, bitmap=False):
             image = renderer.make_raster(element, types='path')
-            xmin, ymin, xmax, ymax = self.kernel.selected.scene_bounds
-            image_element = LaserNode(SVGImage(image=image))
-            self.kernel.selected.append(image_element)
-            image_element.element.transform.post_translate(xmin, ymin)
+            xmin, ymin, xmax, ymax = self.root.selected_bounds()
+            image_element = SVGImage(image=image)
+            self.root.selected_elements.append(image_element)
+            self.kernel.classify(image_element)
+            image_element.transform.post_translate(xmin, ymin)
             self.kernel("elements", 0)
 
         return specific
@@ -1819,13 +2186,13 @@ class MeerK40t(wx.Frame):
         :param element:
         :return:
         """
-
+        # TODO: Element must have filepath.
         filepath = element['filepath']
 
         def specific(event):
             for e in reversed(element):
                 e.detach()
-            self.kernel.load(filepath, group=element)
+            self.gui.load(filepath)
 
         return specific
 
@@ -1843,14 +2210,14 @@ class MeerK40t(wx.Frame):
                         element.parent.remove(element)
                     except AttributeError:
                         pass
-                    self.kernel.set_selected(None)
+                    self.set_selected_elements(None)
                 else:
                     for e in element.all_children_of_type(types=types):
                         try:
                             e.parent.remove(e)
                         except AttributeError:
                             pass
-                    self.kernel.set_selected(None)
+                    self.set_selected_elements(None)
         else:
             def delete_element(event):
                 self.kernel.operations.remove(element)
@@ -1867,7 +2234,7 @@ class MeerK40t(wx.Frame):
         """
 
         def specific(event):
-            for e in element.all_children_of_type(types=('path', 'image', 'text')):
+            for e in self.kernel.elements:
                 if e.passes != 1:
                     parent = e.parent
                     position = parent.index(e)
@@ -1876,10 +2243,10 @@ class MeerK40t(wx.Frame):
                     e.passes = 1
                     all = []
                     for i in range(0, passes):
-                        all.append(LaserNode(e))
+                        all.append(e)
                     parent.insert_all(position, all)
+            self.set_selected_elements(None)
             self.kernel("elements", 0)
-            self.kernel.set_selected(None)
 
         return specific
 
@@ -1892,18 +2259,15 @@ class MeerK40t(wx.Frame):
         """
 
         def specific(event):
-            context = element
-            for e in element.all_children_of_type(types=('path')):
-                e.detach()
-                p = abs(e.element)
+            for e in [e for e in self.kernel.elements if isinstance(e, Path)]:
+                p = abs(e)
                 add = []
                 for subpath in p.as_subpaths():
-                    subelement = LaserNode(Path(subpath))
-                    subelement.element.values.update(e.element.values)
+                    subelement = Path(subpath)
                     add.append(subelement)
-                context.append_all(add)
+                self.kernel.elements.append_all(add)
             self.kernel("elements", 0)
-            self.kernel.set_selected(None)
+            self.set_selected_elements(None)
 
         return specific
 
@@ -1956,9 +2320,8 @@ class MeerK40t(wx.Frame):
             path.move(*pts)
             path.closed()
             path.stroke = Color('black')
-            context = element.parent
-            context.append(LaserNode(path))
-            self.kernel.set_selected(None)
+            self.kernel.elements.append(path)
+            self.set_selected_elements(None)
 
         return convex_hull
 

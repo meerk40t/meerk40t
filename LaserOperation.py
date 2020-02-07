@@ -25,7 +25,7 @@ class LaserOperation(list):
 
         power = 1000
         if 'power' in obj.values and obj.values['power'] is not None:
-            power = int(obj.values['power'])
+            power = float(obj.values['power'])
         self.power = power
 
         dratio = None

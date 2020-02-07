@@ -1,8 +1,8 @@
 import time
 from threading import *
 
-from LaserNode import LaserNode
 from LaserOperation import *
+from svgelements import Path, SVGElement
 
 THREAD_STATE_UNKNOWN = -1
 THREAD_STATE_UNSTARTED = 0
@@ -566,7 +566,7 @@ class Kernel:
     """
 
     def __init__(self, config=None):
-        self.elements = LaserNode(parent=self)
+        self.elements = []
         self.operations = []
 
         self.config = None
@@ -580,12 +580,11 @@ class Kernel:
         self.open_windows = {}
 
         self.backends = {}
-        self.devices = {}
 
+        self.devices = {}
         self.device = None
 
         self.effects = []
-
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []
@@ -593,17 +592,16 @@ class Kernel:
         self.queue_lock = Lock()
         self.message_queue = {}
         self.is_queue_processing = False
-        self.run_later = lambda listener, message: listener(message)
 
-        self.selected = None
-        self.selected_operation = None
+        self.run_later = lambda listener, message: listener(message)
+        self.shutdown_watcher = lambda i, e, o: True
+        self.translation = lambda e: e  # Default for this code is do nothing.
+
         self.keymap = {}
 
-        self.translation = lambda e: e  # Default for this code is do nothing.
         if config is not None:
             self.set_config(config)
         self.cron = None
-        self.shutdown_watcher = lambda i, e, o: True
 
     def __str__(self):
         return "Project"
@@ -986,45 +984,48 @@ class Kernel:
         except AttributeError:
             pass
 
-    def set_selected(self, selected):
-        """Sets the selected element. This could be a LaserOperation or a LaserNode."""
-        if selected is None:
-            self.selected = None
-            self.selected_operation = None
-        else:
-            if isinstance(selected, LaserNode):
-                self.selected = selected
-            else:
-                self.selected_operation = selected
-        self("selection", self.selected)
+    def remove_element_from_operations(self, element):
+        for q in self.operations:
+            if element in q:
+                q.remove(element)
 
-    def notify_change(self):
-        self("elements", 0)
+    def remove_orphaned_operations(self):
+        for q in list(self.operations):
+            if len(q) == 0:
+                self.operations.remove(q)
 
-    def move_selected(self, dx, dy):
-        if self.selected is None:
+    def classify(self, elements):
+        """
+        Classify does the initial placement of elements as operations.
+        RasterOperation is the default for images.
+        If element strokes are red they get classed as cut operations
+        If they are otherwise they get classed as engrave.
+        """
+        if elements is None:
             return
-        self.selected.move(dx, dy)
-        for e in self.selected:
-            e.move(dx, dy)
-
-    def classify(self, lasernode):
-        if lasernode is None:
-            return
-        for element in lasernode.flat_elements(types=('image', 'text', 'path')):
-            if element.type == 'image':
-                self.operations.append(RasterOperation(element.element))
-            elif element.type == 'path':
+        ops = []
+        for element in elements:
+            if isinstance(element, SVGImage):
+                ops.append(RasterOperation(element))
+            elif isinstance(element, Path):
                 if element.stroke == "red":
-                    self.operations.append(CutOperation(element.element))
+                    ops.append(CutOperation(element))
                 else:
-                    self.operations.append(EngraveOperation(element.element))
+                    ops.append(EngraveOperation(element))
+        self.operations.extend(ops)
+        return ops
 
-    def load(self, pathname, group=None):
+    def load(self, pathname):
         for loader_name, loader in self.loaders.items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    return loader.load(pathname, group)
+                    results = loader.load(pathname)
+                    if results is None:
+                        continue
+                    elements, pathname, basename = results
+                    self.elements.extend(elements)
+                    self('elements', elements)
+                    return elements, pathname, basename
         return None
 
     def load_types(self, all=True):

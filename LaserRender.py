@@ -19,41 +19,40 @@ def swizzlecolor(c):
 
 
 class LaserRender:
-    def __init__(self, project):
-        self.project = project
+    def __init__(self, kernel):
+        self.kernel = kernel
         self.cache = None
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
     def render(self, dc, draw_mode):
-        if draw_mode & 0x1C00 == 0:
-            types = ('image', 'path', 'text')
-        else:
+        elements = self.kernel.elements
+        if draw_mode & 0x1C00 != 0:
             types = []
             if draw_mode & 0x0400 == 0:
-                types.append('path')
+                types.append(Path)
             if draw_mode & 0x0800 == 0:
-                types.append('image')
+                types.append(SVGImage)
             if draw_mode & 0x1000 == 0:
-                types.append('text')
-            types = tuple(types)
-        for element in self.project.elements.flat_elements(types=types, passes=False):
+                types.append(SVGText)
+            elements = [e for e in self.kernel if isinstance(e, tuple(*types))]
+        for element in elements:
             try:
                 element.draw(element, dc, draw_mode)
             except AttributeError:
-                if isinstance(element.element, Path):
+                if isinstance(element, Path):
                     element.draw = self.draw_path
-                elif isinstance(element.element, SVGImage):
+                elif isinstance(element, SVGImage):
                     element.draw = self.draw_image
-                elif isinstance(element.element, SVGText):
+                elif isinstance(element, SVGText):
                     element.draw = self.draw_text
                 else:
                     element.draw = self.draw_path
-            try:
-                element.draw(element, dc, draw_mode)
-            except AttributeError:
-                pass  # This should not have happened.
+            # try:
+            element.draw(element, dc, draw_mode)
+            # except AttributeError:
+            #     pass  # This should not have happened.
 
     def generate_path(self, path):
         object_path = abs(path)
@@ -64,23 +63,15 @@ class LaserRender:
         yield COMMAND_RAPID_MOVE, first_point
         yield COMMAND_PLOT, plot
 
-    def make_path(self, gc, element):
+    def make_path(self, gc, path):
         p = gc.CreatePath()
         parse = LaserCommandPathParser(p)
-        path = element.element
 
         for event in self.generate_path(path):
             parse.command(event)
         return p
 
-    def make_raster(self, group, width=None, height=None, bitmap=False, types=('path', 'text', 'image')):
-        flat_elements = list(group.flat_elements(types=types, passes=False))
-        bounds = group.scene_bounds
-        if bounds is None:
-            self.validate()
-            bounds = group.scene_bounds
-        if bounds is None:
-            return None
+    def make_raster(self, group, bounds, width=None, height=None, bitmap=False):
         xmin, ymin, xmax, ymax = bounds
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -102,7 +93,7 @@ class LaserRender:
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
 
-        for e in flat_elements:
+        for e in group:
             element = e.element
             matrix = element.transform
             old_matrix = Matrix(matrix)
@@ -153,31 +144,35 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def draw_path(self, node, dc, draw_mode):
+    def draw_path(self, element, dc, draw_mode):
         """Default draw routine for the laser element.
         If the generate is defined this will draw the
         element as a series of lines, as defined by generate."""
         try:
-            matrix = node.element.transform
+            matrix = element.transform
         except AttributeError:
             matrix = Matrix()
         drawfills = draw_mode & 1 == 0
         drawstrokes = draw_mode & 64 == 0
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_pen(gc, node.stroke, width=node.stroke_width)
-        self.set_brush(gc, node.fill)
+        try:
+            sw = element.values['stroke_width']
+            self.set_pen(gc, element.stroke, width=sw)
+        except KeyError:
+            self.set_pen(gc, element.stroke)
+        self.set_brush(gc, element.fill)
         cache = None
         try:
-            cache = node.cache
+            cache = element.cache
         except AttributeError:
             pass
         if cache is None:
-            node.cache = self.make_path(gc, node)
-        if drawfills and node.fill is not None:
-            gc.FillPath(node.cache)
-        if drawstrokes and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            element.cache = self.make_path(gc, element)
+        if drawfills and element.fill is not None:
+            gc.FillPath(element.cache)
+        if drawstrokes and element.stroke is not None:
+            gc.StrokePath(element.cache)
 
     def draw_text(self, node, dc, draw_mode):
         try:
@@ -190,7 +185,7 @@ class LaserRender:
             dc.DrawText(node.element.text, matrix.value_trans_x(), matrix.value_trans_y())
 
     def make_thumbnail(self, node, maximum=None, width=None, height=None):
-        pil_data = node.element.image
+        pil_data = node.object.image
         image_width, image_height = pil_data.size
         if width is not None and height is None:
             height = width * image_height / float(image_width)
@@ -234,70 +229,6 @@ class LaserRender:
             node.c_width, node.c_height = node.element.image.size
             node.cache = self.make_thumbnail(node, maximum=max_allowed)
         gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
-
-    def set_selected_by_position(self, position):
-        self.project.set_selected(None)
-        self.validate()
-        for e in reversed(list(self.project.elements.flat_elements(types=('image', 'path', 'text'), passes=False))):
-            bounds = e.scene_bounds
-            if bounds is None:
-                continue
-            if e.contains(position):
-                if e.parent is not None:
-                    e = e.parent
-                self.project.set_selected(e)
-                break
-
-    def validate(self, node=None):
-        if node is None:
-            # Default call.
-            node = self.project.elements
-
-        node.scene_bound = None  # delete bounds
-        for element in node:
-            self.validate(element)  # validate all subelements.
-        if len(node) == 0:  # Leaf Node.
-            try:
-                node.scene_bounds = node.element.bbox()
-            except AttributeError:
-                pass
-            return
-        # Group node.
-        xvals = []
-        yvals = []
-        for e in node:
-            bounds = e.scene_bounds
-            if bounds is None:
-                continue
-            xvals.append(bounds[0])
-            xvals.append(bounds[2])
-            yvals.append(bounds[1])
-            yvals.append(bounds[3])
-        if len(xvals) == 0:
-            return
-        node.scene_bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
-
-    def bbox(self, elements):
-        boundary_points = []
-        for e in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
-            box = e.scene_bounds
-            if box is None:
-                continue
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
 
 
 class LaserCommandPathParser:
