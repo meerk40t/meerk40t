@@ -3,11 +3,11 @@ from io import BytesIO
 
 from base64 import b64encode
 
+from svgelements import *
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
 from LaserCommandConstants import COMMAND_RESET
 from LhymicroInterpreter import LhymicroInterpreter
-from LaserNode import *
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 

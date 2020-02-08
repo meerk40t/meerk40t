@@ -16,7 +16,7 @@ from BufferView import BufferView
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
-from ElementProperty import ElementProperty
+# from ElementProperty import ElementProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
 from Kernel import *
@@ -770,7 +770,6 @@ class MeerK40t(wx.Frame):
         self.previous_window_position = None
         self.previous_scene_position = None
         self.move_function = self.move_pan
-        self.root.validate()
 
     def on_mouse_double_click(self, event):
         position = event.GetPosition()
@@ -1366,94 +1365,104 @@ class MeerK40t(wx.Frame):
 
 
 class Node(list):
-    """Generic Node Type for use with RootNode"""
+    """
+    Generic Node Type for use with RootNode
+    Creating the object registers the position in the tree according to the parent and root.
+    Deleting the object deregisters the node in the tree.
+    """
 
-    def __init__(self, data_object):
+    def __init__(self, data_object, parent, root):
         list.__init__(self)
-        self.parent = None
-        self.root = None
+        self.parent = parent
+        self.root = root
         self.object = data_object
         self.name = str(data_object)
-        self.item = None
-
+        parent.append(self)
         self.filepath = None
-        self.bounds = None
-        self.needs_updating = False
-        self.linked = []
         try:
             self.bounds = data_object.bbox()
         except AttributeError:
+            self.bounds = None
+        parent_item = parent.item
+        tree = root.tree
+        item = tree.AppendItem(parent_item, self.name)
+        self.item = item
+        if id(data_object) in self.root.tree_lookup:
+            links = self.root.tree_lookup[id(data_object)]
+            links.append(self)
+        else:
+            self.root.tree_lookup[id(data_object)] = [self]
+        tree.SetItemData(self.item, self)
+        try:
+            fill = data_object.values['fill']
+            color = wx.Colour(swizzlecolor(Color(fill).value))
+            tree.SetItemBackgroundColour(item, color)
+        except AttributeError:
             pass
+        try:
+            stroke = data_object.values['stroke']
+            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            tree.SetItemTextColour(item, color)
+        except AttributeError:
+            pass
+        if isinstance(data_object, SVGImage):
+            image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
+            image_id = self.root.tree_images.Add(bitmap=image)
+            tree.SetItemImage(item, image=image_id)
+        else:
+            try:
+                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
+                if image is not None:
+                    image_id = self.root.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+            except AttributeError:
+                pass
+        root.notify_added(self)
+
+    def remove_node(self):
+        for q in self:
+            q.remove_node()
+        root = self.root
+        root.tree_lookup[id(self.object)].remove(self)
+        self.parent.remove(self)
+        try:
+            root.tree.Delete(self.item)
+        except RuntimeError:
+            return
+        root.notify_removed(self)
+        self.item = None
+        self.parent = None
+        self.root = None
 
     def __eq__(self, other):
         return other is self
 
-    def insert_all(self, position, add_list):
-        """Group insert to trigger the notification only once."""
-        for add_node in reversed(add_list):
-            self.insert(position, add_node)
+    def contains_path(self):
+        if isinstance(self.object, Path):
+            return True
+        for q in self:
+            if q.contains_path():
+                return True
+        return False
 
-    def insert(self, index, add_node):
-        if add_node.parent is not None:
-            raise ValueError("Still has a parent.")
-        if add_node in self:
-            raise ValueError("Already part of list.")
-        list.insert(self, index, add_node)
-        add_node.parent = self
-        add_node.root = self.root
+    def contains_image(self):
+        if isinstance(self.object, SVGImage):
+            return True
+        for q in self:
+            if q.contains_image():
+                return True
+        return False
 
-    def append_all(self, add_list):
-        """Group append to trigger the notification only once."""
-        for add_node in add_list:
-            self.append(add_node)
-
-    def append(self, add_node, notify=True):
-        if add_node.parent is not None:
-            raise ValueError("Still has a parent.")
-        if add_node in self:
-            raise ValueError("Already part of list.")
-        list.append(self, add_node)
-        add_node.parent = self
-        add_node.root = self.root
-        self.root.initialize_node(add_node)
-        self.notify_added(add_node)
-
-    def remove(self, remove_node):
-        list.remove(self, remove_node)
-        remove_node.parent = None
-        remove_node.root = None
-        self.notify_removed(remove_node)
-
-    def detach(self):
-        if self.parent is not None:
-            self.parent.remove(self)
-
-    def notify_change(self):
-        """Generic unknown change."""
-
-        if self.parent == self:
-            raise ValueError
-        if self.parent is not None:
-            self.parent.notify_change()
-
-    def notify_added(self, node):
-        """This node is has been added to the tree."""
-
-        if self.parent == self:
-            raise ValueError
-        if self.parent is not None:
-            self.parent.notify_added(node)
-
-    def notify_removed(self, node):
-        """This node has been removed from the tree."""
-
-        if self.parent == self:
-            raise ValueError
-        if self.parent is not None:
-            self.parent.notify_removed(node)
+    def contains_text(self):
+        if isinstance(self.object, SVGText):
+            return True
+        for q in self:
+            if q.contains_text():
+                return True
+        return False
 
 
-class RootNode(Node):
+class RootNode(list):
     """"Nodes are the presentation layer used to wrap the LaserOperations and the SVGElement classes. Stored in the
     kernel. This is to allow nested structures beyond the flat structure of the actual data. It serves to help with
     menu creation, name, drag and drop, bounding box cache, tree element updates.
@@ -1474,15 +1483,17 @@ class RootNode(Node):
     The .scene_bounds() function should give the bounds. This should also deal with caching etc.
     There should be a need to have the Render function cache information in the lookup.
 
-    All the nodes store a refrence to their given tree item. So that a determination can be made when those items have
+    All the nodes store a reference to their given tree item. So that a determination can be made when those items have
     changed and provide piecemeal updates to the tree rather than recreating the entire thing.
 
     """
 
     def __init__(self, kernel, gui):
-        Node.__init__(self, "Project")
+        list.__init__(self)
         self.root = self
         self.parent = self
+        self.object = "Project"
+        self.name = "Project"
 
         self.kernel = kernel
         self.gui = gui
@@ -1503,23 +1514,17 @@ class RootNode(Node):
 
         self.item = self.tree.AddRoot(self.name)
 
-        self.node_elements = Node("Elements")
-        self.node_operations = Node("Operations")
-        self.append(self.node_operations)
-        self.append(self.node_elements)
+        self.node_operations = Node("Operations", self, self)
         self.build_tree(self.node_operations, self.kernel.operations)
+        self.node_elements = Node("Elements", self, self)
         self.build_tree(self.node_elements, self.kernel.elements)
 
     def build_tree(self, parent_node, objects):
         if not isinstance(objects, list):
             return
         for obj in objects:
-            node = Node(obj)
-            parent_node.append(Node(obj))
+            node = Node(obj, parent_node, self)
             self.build_tree(node, obj)
-
-    def notify_change(self):
-        self.kernel("elements",0)
 
     def notify_added(self, node):
         self.kernel("elements", 0)
@@ -1539,7 +1544,7 @@ class RootNode(Node):
     def bbox(self, elements):
         boundary_points = []
         for e in elements:
-            box = e.bbox()
+            box = e.bbox(False)
             if box is None:
                 continue
             top_left = e.transform.point_in_matrix_space([box[0], box[1]])
@@ -1559,60 +1564,15 @@ class RootNode(Node):
         return xmin, ymin, xmax, ymax
 
     def add_operations_group(self, ops, pathname, basename):
-        group = Node(basename)
+        group = Node(basename, self.node_operations, self)
         group.filepath = pathname
-        self.node_operations.append(group)
-        for op in ops:
-            op_node = Node(op)
-            group.append(op_node)
-            for element in op:
-                element_node = Node(element)
-                op_node.append(element_node)
+        self.build_tree(group, ops)
 
     def add_element_group(self, elements, pathname, basename):
         """Called to add element group of elements, as loaded with the given filename and filepath."""
-        group = Node(basename)
+        group = Node(basename, self.node_elements, self)
         group.filepath = pathname
-        self.node_elements.append(group)
-        for e in elements:
-            element_node = Node(e)
-            group.append(element_node)
-
-    def initialize_node(self, node):
-        parent_item = node.parent.item
-        item = self.tree.AppendItem(parent_item, node.name)
-        node.item = item
-        tree = self.tree
-        element = node.object
-        if id(element) in self.tree_lookup:
-            links = self.tree_lookup[id(element)]
-            links.append(node)
-        else:
-            self.tree_lookup[id(element)] = [node]
-        tree.SetItemData(item, node)
-        try:
-            fill = element.values['fill']
-            color = wx.Colour(swizzlecolor(Color(fill).value))
-            tree.SetItemBackgroundColour(item, color)
-        except AttributeError:
-            pass
-        try:
-            stroke = element.values['stroke']
-            color = wx.Colour(swizzlecolor(Color(stroke).value))
-            tree.SetItemTextColour(item, color)
-        except AttributeError:
-            pass
-        if isinstance(element, SVGImage):
-            image = self.renderer.make_thumbnail(element, width=20, height=20)
-        else:
-            try:
-                image = self.renderer.make_raster(node, element.bbox(), width=20, height=20, bitmap=True)
-            except AttributeError:
-                image = None  # Likely string value and can't make icon.
-        if image is not None:
-            image_id = self.tree_images.Add(bitmap=image)
-            tree.SetItemImage(item, image=image_id)
-        return item
+        self.build_tree(group, elements)
 
     def add_element(self, tree_node, node, element):
         """
@@ -1630,8 +1590,6 @@ class RootNode(Node):
                 self.add_element(tree_node, node_item, subitem)
         elif isinstance(element, SVGElement):
             tree_node.SetItemData(node_item, element)
-        elif isinstance(element, LaserNode):  # TODO: This has changed.
-            node_item = tree_node.AppendItem(node, str(element))
         else:
             print(element)
 
@@ -1645,22 +1603,7 @@ class RootNode(Node):
         Rebuild tree elements
         :return:
         """
-
         tree = self.tree
-        # tree.DeleteAllItems()
-        # root = self.tree.AddRoot(self.name)
-        # self.tree_lookup = {}
-        # self.rebuild_items(tree, self)
-        #
-        # for subitem in self.kernel.operations:
-        #     self.add_element(tree, operations, subitem)
-        #
-        # elements = tree.AppendItem(root, "Elements")
-        # self.tree.SetItemData(elements, self.kernel.elements)
-        # for subitem in self.kernel.elements:
-        #     self.add_element(tree, elements, subitem)
-        #
-        # tree.CollapseAll()
         tree.ExpandAll()
 
     def select_operations_by_elements(self):
@@ -1731,7 +1674,7 @@ class RootNode(Node):
         if self.selected_elements is None:
             return
         for element in self.selected_elements:
-            element.transform.post_translate(dx,dy)
+            element.transform.post_translate(dx, dy)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1785,7 +1728,7 @@ class RootNode(Node):
         if drag_element is self.kernel.elements:  # TODO: This has changed.
             event.Skip()
             return
-        if isinstance(drag_element, LaserNode):
+        if isinstance(drag_element, Node):
             if drop_element is self.kernel.operations:
                 self.kernel.classify(drag_element)
                 event.Allow()
@@ -1800,14 +1743,14 @@ class RootNode(Node):
                 event.Allow()
                 self.rebuild_item_tree()
                 return
-            elif isinstance(drop_element, LaserNode):
+            elif isinstance(drop_element, Node):
                 if drop_element.type == 'root':  # Project
                     drag_parent.remove(drag_element)
                     if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
                         drag_parent.parent.remove(drag_parent)
 
                     if drag_element.type != 'group':
-                        group = LaserNode()
+                        group = Node()
                         group.append(drag_element)
                         group.update(drag_element)  # Group gets element property.
                         drop_element.append(group)
@@ -1846,7 +1789,7 @@ class RootNode(Node):
         self.root.create_menu(self.gui, node)
         event.Skip()
 
-    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
+    def on_item_activated(self, event):
         """
         Tree item is double-clicked. Launches ElementProperty dialog.
 
@@ -1854,10 +1797,10 @@ class RootNode(Node):
         :return:
         """
         item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            if isinstance(element, LaserNode) or isinstance(element, LaserOperation):
-                self.kernel.open_window("ElementProperty").set_elements(element)
+        node = self.tree.GetItemData(item)
+        if node is not None:
+            if isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
+                self.kernel.open_window("ElementProperty").set_elements(node.object)
 
     def on_item_changed(self, event):
         """
@@ -1890,7 +1833,6 @@ class RootNode(Node):
 
     def set_selected_by_position(self, position):
         self.set_selected_elements(None)
-        self.validate()
         for e in reversed(self.kernel.elements):
             bounds = e.bbox()
             if bounds is None:
@@ -1905,18 +1847,14 @@ class RootNode(Node):
         return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
     def validate(self, node=None):
-        return
-        # TODO: Validate is supposed to refresh the scene bounds but without scene bounds it does nothing.
         if node is None:
-            # Default call.
-            node = self.kernel.elements
-
-        node.scene_bound = None  # delete bounds
-        for element in node:
-            self.validate(element)  # validate all subelements.
+            return
+        node.bounds = None  # delete bounds
+        for subnode in node:
+            self.validate(subnode)  # validate all subelements.
         if len(node) == 0:  # Leaf Node.
             try:
-                node.scene_bounds = node.element.bbox()
+                node.bounds = node.element.bbox()
             except AttributeError:
                 pass
             return
@@ -1924,7 +1862,7 @@ class RootNode(Node):
         xvals = []
         yvals = []
         for e in node:
-            bounds = e.scene_bounds
+            bounds = e.bounds
             if bounds is None:
                 continue
             xvals.append(bounds[0])
@@ -1933,88 +1871,86 @@ class RootNode(Node):
             yvals.append(bounds[3])
         if len(xvals) == 0:
             return
-        node.scene_bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+        node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
 
     def create_menu(self, gui, node):
         """Create menu items. This is used for both the scene and the tree to create menu items."""
         if node is None:
             return
         menu = wx.Menu()
-        if isinstance(node, LaserNode):
-            t = node.type
-            if t != 'root':
-                gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-                         menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
-                if t == 'group':
-                    fpath = node['filepath']
-                    if fpath is not None:
-                        name = os.path.basename(fpath)
-                        gui.Bind(wx.EVT_MENU, self.menu_reload(node),
-                                 menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
-                        if len(node) > 1:
-                            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
-                                     menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
-                else:
-                    if node.passes != 1:
-                        gui.Bind(wx.EVT_MENU, self.menu_split_passes(node),
-                                 menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_hull(node),
-                         menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_execute(node),
-                         menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_reset(node),
-                         menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
-                path_scale_sub_menu = wx.Menu()
-                for i in range(1, 25):
-                    gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
-                             path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
-                                                        wx.ITEM_NORMAL))
-                menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
-                path_rotate_sub_menu = wx.Menu()
-                for i in range(2, 13):
-                    angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
-                                                         "",
-                                                         wx.ITEM_NORMAL))
-                for i in range(2, 13):
-                    angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                         _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
-                                                         wx.ITEM_NORMAL))
-                menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-            if node.contains_type('path'):
-                vector_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
-                         vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster(node),
-                         vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_reify(node),
-                         menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
-                menu.AppendSubMenu(vector_menu, _("Vector"))
-            if node.contains_type('image'):
-                image_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
-                         image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_dither(node),
-                         image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
-                         image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
-                image_sub_menu_step = wx.Menu()
-                for i in range(1, 8):
-                    gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
-                             image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
-                image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
-                menu.AppendSubMenu(image_menu, _("Raster"))
-            if node.contains_type('text'):
-                text_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_remove(node, types=(SVGText)),
-                         text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
-                menu.AppendSubMenu(text_menu, _("Text"))
-        elif isinstance(node, LaserOperation):
+        if isinstance(node, RootNode):
+            return
+        gui.Bind(wx.EVT_MENU, self.menu_remove(node),
+                menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+        if node.filepath is not None:
+            fpath = node.filepath
+            if fpath is not None:
+                name = os.path.basename(fpath)
+                gui.Bind(wx.EVT_MENU, self.menu_reload(node),
+                        menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+                if len(node) > 1:
+                    gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
+                            menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+        if hasattr(node, 'filename') and node.passes is not None and node.passes != 1:
+            gui.Bind(wx.EVT_MENU, self.menu_split_passes(node),
+                    menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, self.menu_hull(node),
+                menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, self.menu_execute(node),
+                menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+        gui.Bind(wx.EVT_MENU, self.menu_reset(node),
+                menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+        path_scale_sub_menu = wx.Menu()
+        for i in range(1, 25):
+            gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
+                    path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                                                wx.ITEM_NORMAL))
+        menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
+        path_rotate_sub_menu = wx.Menu()
+        for i in range(2, 13):
+            angle = Angle.turns(1.0 / float(i))
+            gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
+                    path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                                                "",
+                                                wx.ITEM_NORMAL))
+        for i in range(2, 13):
+            angle = Angle.turns(1.0 / float(i))
+            gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
+                    path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                                                wx.ITEM_NORMAL))
+        menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
+        if node.contains_path():
+            vector_menu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
+                    vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_raster(node),
+                    vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_reify(node),
+                    menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(vector_menu, _("Vector"))
+        if node.contains_image():
+            image_menu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
+                    image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_dither(node),
+                    image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
+                    image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
+            image_sub_menu_step = wx.Menu()
+            for i in range(1, 8):
+                gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
+                        image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+            image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
+            menu.AppendSubMenu(image_menu, _("Raster"))
+        if node.contains_text():
+            text_menu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, self.menu_remove(node, types=(SVGText)),
+                    text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(text_menu, _("Text"))
+        if isinstance(node.object, LaserOperation):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-                     menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+            menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -2187,43 +2123,46 @@ class RootNode(Node):
         :return:
         """
         # TODO: Element must have filepath.
-        filepath = element['filepath']
-
         def specific(event):
+            filepath = element['filepath']
             for e in reversed(element):
                 e.detach()
             self.gui.load(filepath)
 
         return specific
 
-    def menu_remove(self, element, types=None):
+    def menu_remove(self, remove_node):
         """
         Menu to remove an element from the scene.
 
-        :param element:
+        :param node:
         :return:
         """
-        if isinstance(element, LaserNode):
-            def delete_element(event):
-                if types is None:
-                    try:
-                        element.parent.remove(element)
-                    except AttributeError:
-                        pass
-                    self.set_selected_elements(None)
-                else:
-                    for e in element.all_children_of_type(types=types):
-                        try:
-                            e.parent.remove(e)
-                        except AttributeError:
-                            pass
-                    self.set_selected_elements(None)
-        else:
-            def delete_element(event):
-                self.kernel.operations.remove(element)
-                self.kernel("elements", 0)
 
-        return delete_element
+        def specific(event):
+            node = remove_node
+            try:
+                if isinstance(node.parent.object, LaserOperation):
+                    # Removed subnode of LaserOperation node, remove elemnt from op.
+                    node.parent.object.remove(node.object)
+                    node.detach()
+            except AttributeError:
+                pass
+            try:
+                if isinstance(node.parent, RootNode):
+                    # Attempting to remove main object node under root. Clear.
+                    node.clear()
+            except AttributeError:
+                pass
+            try:
+                if isinstance(node.object, SVGElement) and isinstance(node.parent.object, str):
+                    # Removing Element node, removing the relevant element too.
+                    self.root.kernel.elements.remove(node.object)
+            except AttributeError:
+                pass
+            node.remove_node()
+
+        return specific
 
     def menu_split_passes(self, element):
         """
@@ -2384,7 +2323,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.setting(int, 'language', None)
 
         kernel.add_window('Shutdown', Shutdown)
-        kernel.add_window('ElementProperty', ElementProperty)
+        # kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
         kernel.add_window("Settings", Settings)

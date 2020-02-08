@@ -1,7 +1,7 @@
 import wx
 from PIL import Image
 
-from LaserNode import *
+from svgelements import *
 from ZMatrix import ZMatrix
 from LaserCommandConstants import *
 
@@ -185,7 +185,7 @@ class LaserRender:
             dc.DrawText(node.element.text, matrix.value_trans_x(), matrix.value_trans_y())
 
     def make_thumbnail(self, node, maximum=None, width=None, height=None):
-        pil_data = node.object.image
+        pil_data = node.image
         image_width, image_height = pil_data.size
         if width is not None and height is None:
             height = width * image_height / float(image_width)
@@ -226,7 +226,7 @@ class LaserRender:
                 max_allowed = node.max_allowed
             except AttributeError:
                 max_allowed = 2048
-            node.c_width, node.c_height = node.element.image.size
+            node.c_width, node.c_height = node.image.size
             node.cache = self.make_thumbnail(node, maximum=max_allowed)
         gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
 
