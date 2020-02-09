@@ -40,8 +40,6 @@ class LaserOperation(list):
                 for element in obj:
                     element_copy = copy(element)
                     self.append(element_copy)
-                    if isinstance(element, SVGImage):
-                        element_copy.image = element_copy.image.copy()
 
     def __str__(self):
         parts = []

@@ -17,6 +17,7 @@ from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
 # from ElementProperty import ElementProperty
+from ElementFunctions import ElementFunctions
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
 from Kernel import *
@@ -809,7 +810,9 @@ class MeerK40t(wx.Frame):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
         self.root.set_selected_by_position(self.popup_scene_position)
-        self.root.create_menu(self.root.selected_elements)
+        if len(self.root.selected_elements) == 0:
+            return
+        self.root.create_menu(self, self.root.selected_elements[0])
 
     def on_right_mouse_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
@@ -1403,18 +1406,7 @@ class Node(list):
             tree.SetItemTextColour(item, color)
         except AttributeError:
             pass
-        if isinstance(data_object, SVGImage):
-            image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
-            image_id = self.root.tree_images.Add(bitmap=image)
-            tree.SetItemImage(item, image=image_id)
-        else:
-            try:
-                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
-                if image is not None:
-                    image_id = self.root.tree_images.Add(bitmap=image)
-                    tree.SetItemImage(item, image=image_id)
-            except AttributeError:
-                pass
+        self.set_icon()
         root.notify_added(self)
 
     def remove_node(self):
@@ -1434,6 +1426,25 @@ class Node(list):
 
     def __eq__(self, other):
         return other is self
+
+    def set_icon(self):
+        root = self.root
+        item = self.item
+        data_object = self.object
+        tree = root.tree
+        if isinstance(data_object, SVGImage):
+            image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
+            image_id = self.root.tree_images.Add(bitmap=image)
+            tree.SetItemImage(item, image=image_id)
+        else:
+            try:
+                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
+                if image is not None:
+                    image_id = self.root.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+                    tree.Update()
+            except AttributeError:
+                pass
 
     def contains_path(self):
         if isinstance(self.object, Path):
@@ -1810,6 +1821,14 @@ class RootNode(list):
 
     def create_menu(self, gui, node):
         """Create menu items. This is used for both the scene and the tree to create menu items."""
+        if isinstance(node, SVGElement):
+            match_node = node
+            node = None
+            for group in self.node_elements:
+                for subnode in group:
+                    if subnode.object is match_node:
+                        node = subnode
+                        break
         if node is None:
             return
         menu = wx.Menu()
@@ -1929,19 +1948,22 @@ class RootNode(list):
 
         return specific
 
-    def menu_raster_actualize(self, element):
+    def menu_raster_actualize(self, node: Node):
         """
         Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                if isinstance(e, SVGImage):
-                    e.make_actual()
-            self.kernel(_("elements"), 0)
+            element = node.object
+            if isinstance(element, SVGImage):
+                ElementFunctions.make_actual(element)
+                # node.bounds = element.bbox()
+                node.bounds = None
+                node.set_icon()
+            self.kernel("elements", 0)
 
         return specific
 
@@ -2021,18 +2043,17 @@ class RootNode(list):
 
         return specific
 
-    def menu_reset(self, element):
+    def menu_reset(self, node):
         """
         Menu to reset transformations applied to elements.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                e.element.transform.reset()
-                self.kernel("elements", 0)
+            node.object.transform.reset()
+            self.kernel("elements", 0)
 
         return specific
 
