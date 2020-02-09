@@ -1407,14 +1407,14 @@ class Node(list):
         else:
             self.root.tree_lookup[id(data_object)] = [self]
         tree.SetItemData(self.item, self)
-        try:
-            fill = data_object.values[SVG_ATTR_FILL]
-            color = wx.Colour(swizzlecolor(Color(fill).value))
-            tree.SetItemBackgroundColour(item, color)
-        except AttributeError:
-            pass
-        except KeyError:
-            pass
+        # try:
+        #     fill = data_object.values[SVG_ATTR_FILL]
+        #     color = wx.Colour(swizzlecolor(Color(fill).value))
+        #     tree.SetItemBackgroundColour(item, color)
+        # except AttributeError:
+        #     pass
+        # except KeyError:
+        #     pass
         try:
             stroke = data_object.values[SVG_ATTR_STROKE]
             color = wx.Colour(swizzlecolor(Color(stroke).value))
@@ -2266,7 +2266,10 @@ class RootNode(list):
                     pts += [q for q in epath.as_points()]
                 elif isinstance(obj, SVGImage):
                     bounds = obj.bbox()
-                    pts += [(bounds[0], bounds[1]), (bounds[0], bounds[3]), (bounds[2], bounds[1]), (bounds[2], bounds[3])]
+                    pts += [(bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3])]
         hull = [p for p in Point.convex_hull(pts)]
         if len(hull) == 0:
             return None
