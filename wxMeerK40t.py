@@ -1111,7 +1111,6 @@ class MeerK40t(wx.Frame):
         self.kernel.operations = []
         self.request_refresh()
         self.root.notify_tree_cleared()
-        # self.Refresh()
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -1808,70 +1807,6 @@ class RootNode(list):
         if len(xvals) == 0:
             return
         node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
-
-    def reify_matrix(self):
-        """Apply the matrix to the path and reset matrix."""
-        self.element = abs(self.element)
-        self.scene_bounds = None
-
-    def needs_actualization(self):
-        if self.type != 'image':
-            return False
-        m = self.transform
-        s = self.raster_step
-        return m.a != s or m.b != 0.0 or m.c != 0.0 or m.d != s
-
-    def set_native(self):
-        tx = self.transform.value_trans_x()
-        ty = self.transform.value_trans_y()
-        step = float(self.raster_step)
-
-        self.transform.reset()
-        self.transform.post_scale(step, step)
-        self.transform.post_translate(tx, ty)
-        step = float(self.raster_step)
-        self.transform.pre_scale(step, step)
-
-    def make_actual(self):
-        """
-        Makes PIL image actual in that it manipulates the pixels to actually exist
-        rather than simply apply the transform on the image to give the resulting image.
-        Since our goal is to raster the images real pixels this is required.
-
-        SVG matrices are defined as follows.
-        [a c e]
-        [b d f]
-
-        Pil requires a, c, e, b, d, f accordingly.
-        """
-        if not isinstance(self.element, SVGImage):
-            return
-
-        from PIL import Image
-
-        image = self.element.image
-        self.cache = None
-        m = self.transform
-        step = float(self.raster_step)
-
-        tx = m.value_trans_x()
-        ty = m.value_trans_y()
-        m.e = 0.0
-        m.f = 0.0
-        self.element.transform.pre_scale(1.0 / step, 1.0 / step)
-        bbox = self.element.bbox()
-        width = int(ceil(bbox[2] - bbox[0]))
-        height = int(ceil(bbox[3] - bbox[1]))
-        m.inverse()
-        image = image.transform((width, height), Image.AFFINE, (m.a, m.c, m.e, m.b, m.d, m.f),
-                                resample=Image.BICUBIC)
-        self.transform.reset()
-        self.transform.post_scale(step, step)
-        self.transform.post_translate(tx, ty)
-        self.element.image = image
-        self.element.image_width = width
-        self.element.image_height = height
-        self.scene_bounds = None
 
     def create_menu(self, gui, node):
         """Create menu items. This is used for both the scene and the tree to create menu items."""

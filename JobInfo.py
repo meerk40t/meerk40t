@@ -1,7 +1,11 @@
+from copy import copy
+
 import wx
 
 from LaserCommandConstants import *
+from LaserOperation import LaserOperation
 from icons import icons8_laser_beam_52, icons8_route_50
+from ElementFunctions import ElementFunctions
 
 _ = wx.GetTranslation
 
@@ -118,55 +122,41 @@ class JobInfo(wx.Frame):
                 self.required_preprocessing_operations.append(remove_text)
                 break
 
+    def conditional_jobadd_actualize_image(self):
+        for o in self.job_items:
+            if isinstance(o, LaserOperation):
+                for e in o:
+                    if ElementFunctions.needs_actualization(e):
+                        self.jobadd_actualize_image()
+                        return
+
     def jobadd_actualize_image(self):
-        for e in self.job_items:
-            try:
-                t = e.type
-            except AttributeError:
-                t = 'function'
-            try:
-                if e.needs_actualization():
-                    def actualize():
-                        for e in self.job_items:
-                            try:
-                                if e.needs_actualization():
-                                    e.make_actual()
-                            except AttributeError:
-                                pass
+        def actualize():
+            for o in self.job_items:
+                if isinstance(o, LaserOperation):
+                    for e in o:
+                        if ElementFunctions.needs_actualization(e):
+                            ElementFunctions.make_actual(e)
+        self.required_preprocessing_operations.append(actualize)
 
-                    self.required_preprocessing_operations.append(actualize)
-                    break
-            except AttributeError:
-                pass
-
-    def jobadd_scale_rotary(self):
+    def conditional_jobadd_scale_rotary(self):
         if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
-            def scale_for_rotary():
-                p = self.device
-                scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
-                for e in self.job_items:
-                    try:
-                        e.element *= scale_str
-                    except AttributeError:
-                        pass
-                self.jobadd_actualize_image()
-
-            self.required_preprocessing_operations.append(scale_for_rotary)
-
-    def set_job_items(self, elements):
-        self.job_items = elements
-        self.jobadd_remove_text()
-        self.jobadd_actualize_image()
-        if self.device.rotary:
             self.jobadd_scale_rotary()
 
-        if self.device.autobeep:
-            self.jobadd_beep(None)
+    def jobadd_scale_rotary(self):
+        def scale_for_rotary():
+            p = self.device
+            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
+            for o in self.job_items:
+                if isinstance(o, LaserOperation):
+                    for e in o:
+                        try:
+                            e *= scale_str
+                        except AttributeError:
+                            pass
+            self.conditional_jobadd_actualize_image()
 
-        if self.device.autohome:
-            self.jobadd_home(None)
-
-        self.update_gui()
+        self.required_preprocessing_operations.append(scale_for_rotary)
 
     def set_device(self, device):
         self.device = device
@@ -189,7 +179,19 @@ class JobInfo(wx.Frame):
         self.set_device(kernel.device)
         self.required_preprocessing_operations = []
         self.job_items = []
-        self.set_job_items(kernel.operations[:])
+        for op in kernel.operations:
+            self.job_items.append(copy(op))
+        self.jobadd_remove_text()
+        self.conditional_jobadd_actualize_image()
+        if self.device.rotary:
+            self.conditional_jobadd_scale_rotary()
+
+        if self.device.autobeep:
+            self.jobadd_beep(None)
+
+        if self.device.autohome:
+            self.jobadd_home(None)
+
         self.update_gui()
 
     def on_close(self, event):
@@ -242,12 +244,11 @@ class JobInfo(wx.Frame):
             self.on_button_job_spooler()
             self.kernel.close_old_window("JobInfo")
         else:
-            # copy of operations, so operations can add ops.
+            # Using copy of operations, so operations can add ops.
             ops = self.required_preprocessing_operations[:]
             self.required_preprocessing_operations = []
             for op in ops:
                 op()
-            # TODO: break the connection between elements in kernel and the elements here.
             self.kernel('elements', 0)
             self.update_gui()
 

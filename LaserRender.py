@@ -211,7 +211,7 @@ class LaserRender:
 
     def draw_image(self, node, dc, draw_mode):
         try:
-            matrix = node.element.transform
+            matrix = node.transform
         except AttributeError:
             matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)

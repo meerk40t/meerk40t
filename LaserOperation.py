@@ -1,6 +1,8 @@
+from copy import copy
+
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
-from svgelements import Length, SVGImage
+from svgelements import Length, SVGImage, SVGElement
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_SPEED = 'speed'
@@ -16,18 +18,30 @@ class LaserOperation(list):
     Laser operations are a type of list and should contain SVGElement based objects
     """
 
-    def __init__(self, obj=None):
+    def __init__(self, *args):
         list.__init__(self)
-        self.speed = 20
-        self.power = 1000
+        self.speed = None
+        self.power = None
         self.dratio = None
-        if obj is not None:
-            if 'speed' in obj.values and obj.values['speed'] is not None:
-                self.speed = float(obj.values['speed'])
-            if 'power' in obj.values and obj.values['power'] is not None:
-                self.power = float(obj.values['power'])
-            if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
-                self.dratio = float(obj.values['d_ratio'])
+        if len(args) == 1:
+            obj = args[0]
+            if isinstance(obj, SVGElement):
+                if 'speed' in obj.values and obj.values['speed'] is not None:
+                    self.speed = float(obj.values['speed'])
+                if 'power' in obj.values and obj.values['power'] is not None:
+                    self.power = float(obj.values['power'])
+                if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
+                    self.dratio = float(obj.values['d_ratio'])
+                self.append(obj)
+            elif isinstance(obj, LaserOperation):
+                self.speed = obj.speed
+                self.power = obj.power
+                self.dratio = obj.power
+                for element in obj:
+                    element_copy = copy(element)
+                    self.append(element_copy)
+                    if isinstance(element, SVGImage):
+                        element_copy.image = element_copy.image.copy()
 
     def __str__(self):
         parts = []
@@ -37,32 +51,42 @@ class LaserOperation(list):
             parts.append("dratio=%f" % self.dratio)
         return "Unknown Operation: (%s)" % ", ".join(parts)
 
+    def __copy__(self):
+        return LaserOperation(self)
+
 
 class RasterOperation(LaserOperation):
     """
     Defines the default raster operation to be done and the properties needed.
     """
 
-    def __init__(self, image=None):
-        LaserOperation.__init__(self, image)
-        self.speed = 150.0
+    def __init__(self, *args):
+        LaserOperation.__init__(self, *args)
+        if self.speed is None:
+            self.speed = 150.0
+        if self.power is None:
+            self.power = 1000.0
         self.raster_step = 1
         self.raster_direction = 0
         self.unidirectional = False
         self.overscan = 20
-
-        if image is not None:
-            if 'speed' in image.values and image.values['speed'] is not None:
-                self.speed = float(image.values['speed'])
-            if 'raster_step' in image.values and image.values['raster_step'] is not None:
-                self.raster_step = int(image.values['raster_step'])
-            if 'raster_direction' in image.values and image.values['raster_direction'] is not None:
-                self.raster_direction = int(image.values['raster_direction'])
-            if 'unidirectional' in image.values and image.values['unidirectional'] is not None:
-                self.unidirectional = bool(image.values['unidirectional'])
-            if 'overscan' in image.values and image.values['overscan'] is not None:
-                self.overscan = int(image.values['overscan'])
-            self.append(image)
+        if len(args) == 1:
+            obj = args[0]
+            if isinstance(obj, SVGElement):
+                if 'raster_step' in obj.values and obj.values['raster_step'] is not None:
+                    self.raster_step = int(obj.values['raster_step'])
+                if 'raster_direction' in obj.values and obj.values['raster_direction'] is not None:
+                    self.raster_direction = int(obj.values['raster_direction'])
+                if 'unidirectional' in obj.values and obj.values['unidirectional'] is not None:
+                    self.unidirectional = bool(obj.values['unidirectional'])
+                if 'overscan' in obj.values and obj.values['overscan'] is not None:
+                    self.overscan = int(obj.values['overscan'])
+                self.append(obj)
+            elif isinstance(obj, RasterOperation):
+                self.raster_step = obj.raster_step
+                self.raster_direction = obj.raster_direction
+                self.unidirectional = obj.unidirectional
+                self.overscan = obj.overscan
 
     def __str__(self):
         parts = []
@@ -71,6 +95,9 @@ class RasterOperation(LaserOperation):
         parts.append("direction=%d" % self.raster_direction)
         parts.append("overscan=%d" % self.overscan)
         return "Raster: (%s)" % ", ".join(parts)
+
+    def __copy__(self):
+        return RasterOperation(self)
 
     def generate(self):
         yield COMMAND_SET_SPEED, self.speed
@@ -148,21 +175,21 @@ class EngraveOperation(LaserOperation):
     object being engraved on.
     """
 
-    def __init__(self, path=None):
-        LaserOperation.__init__(self, path)
-
-        speed = 35.0
-        if path is not None:
-            if 'speed' in path.values and path.values['speed'] is not None:
-                speed = float(path.values['speed'])
-            self.append(path)
-        self.speed = speed
+    def __init__(self, *args):
+        LaserOperation.__init__(self, *args)
+        if self.speed is None:
+            self.speed = 35.0
+        if self.power is None:
+            self.power = 1000.0
 
     def __str__(self):
         parts = []
         parts.append("speed=%f" % self.speed)
         parts.append("power=%f" % self.power)
         return "Engrave: (%s)" % ", ".join(parts)
+
+    def __copy__(self):
+        return EngraveOperation(self)
 
     def generate(self):
         yield COMMAND_SET_SPEED, self.speed
@@ -186,21 +213,21 @@ class CutOperation(LaserOperation):
     Defines the default vector cut operation.
     """
 
-    def __init__(self, path=None):
-        LaserOperation.__init__(self, path)
-
-        speed = 10.0
-        if path is not None:
-            if 'speed' in path.values and path.values['speed'] is not None:
-                speed = float(path.values['speed'])
-            self.append(path)
-        self.speed = speed
+    def __init__(self, *args):
+        LaserOperation.__init__(self, *args)
+        if self.speed is None:
+            self.speed = 35.0
+        if self.power is None:
+            self.power = 1000.0
 
     def __str__(self):
         parts = []
         parts.append("speed=%f" % self.speed)
         parts.append("power=%f" % self.power)
         return "Cut: (%s)" % ", ".join(parts)
+
+    def __copy__(self):
+        return CutOperation(self)
 
     def generate(self):
         yield COMMAND_SET_SPEED, self.speed
