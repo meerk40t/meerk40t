@@ -1438,13 +1438,51 @@ class Node(list):
             tree.SetItemImage(item, image=image_id)
         else:
             try:
-                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
+                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20,
+                                                       bitmap=True)
                 if image is not None:
                     image_id = self.root.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
                     tree.Update()
             except AttributeError:
                 pass
+
+    def center(self):
+        try:
+            bounds = self.bounds
+            return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
+        except Exception:
+            return None
+
+    def bbox(self):
+        return Node.bounding_box(self.object)
+
+    @staticmethod
+    def bounding_box(elements):
+        if isinstance(elements, SVGElement):
+            elements = [elements]
+        elif isinstance(elements, Node):
+            elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+        boundary_points = []
+        for e in elements:
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
 
     def contains_path(self):
         if isinstance(self.object, Path):
@@ -1561,29 +1599,10 @@ class RootNode(list):
         tree.ExpandAll()
 
     def selected_bounds(self):
-        return self.bbox(self.selected_elements)
+        return Node.bounding_box(self.selected_elements)
 
-    def bbox(self, elements):
-        boundary_points = []
-        for e in elements:
-            box = e.bbox(False)
-            if box is None:
-                continue
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
+    def bbox(self):
+        return Node.bounding_box(self.kernel.elements)
 
     def set_selected_elements(self, selected):
         if selected is None:
@@ -1619,8 +1638,15 @@ class RootNode(list):
     def move_selected(self, dx, dy):
         if self.selected_elements is None:
             return
-        for element in self.selected_elements:
-            element.transform.post_translate(dx, dy)
+        if len(self.selected_elements) == 0:
+            return
+        for group in self.node_elements:
+            for n in group:
+                if n.object in self.selected_elements:
+                    for n in group:
+                        if isinstance(n.object, SVGElement):
+                            n.object.transform.post_translate(dx,dy)
+                    break
 
     def on_drag_begin_handler(self, event):
         """
@@ -1835,115 +1861,96 @@ class RootNode(list):
         if isinstance(node, RootNode):
             return
         gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-                menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
         if node.filepath is not None:
             fpath = node.filepath
             if fpath is not None:
                 name = os.path.basename(fpath)
                 gui.Bind(wx.EVT_MENU, self.menu_reload(node),
-                        menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+                         menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
                 if len(node) > 1:
                     gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
-                            menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+                             menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
         if hasattr(node, 'filename') and node.passes is not None and node.passes != 1:
             gui.Bind(wx.EVT_MENU, self.menu_split_passes(node),
-                    menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
+                     menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, self.menu_hull(node),
-                menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, self.menu_execute(node),
-                menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, self.menu_reset(node),
-                menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
         path_scale_sub_menu = wx.Menu()
         for i in range(1, 25):
             gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
-                    path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                     path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
                                                 wx.ITEM_NORMAL))
         menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
         path_rotate_sub_menu = wx.Menu()
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
             gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                    path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
-                                                "",
-                                                wx.ITEM_NORMAL))
+                     path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                                                 "",
+                                                 wx.ITEM_NORMAL))
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
             gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
-                    path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
-                                                wx.ITEM_NORMAL))
+                     path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                 _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                                                 wx.ITEM_NORMAL))
         menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
         if node.contains_path():
             vector_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
-                    vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
+                     vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, self.menu_raster(node),
-                    vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
+                     vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, self.menu_reify(node),
-                    menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
+                     menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(vector_menu, _("Vector"))
         if node.contains_image():
             image_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
-                    image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
+                     image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, self.menu_dither(node),
-                    image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+                     image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
-                    image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
+                     image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
             image_sub_menu_step = wx.Menu()
             for i in range(1, 8):
                 gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
-                        image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+                         image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
             image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
             menu.AppendSubMenu(image_menu, _("Raster"))
         if node.contains_text():
             text_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_remove(node, types=(SVGText)),
-                    text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
+                     text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(text_menu, _("Text"))
         if isinstance(node.object, LaserOperation):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-            menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+                     menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
 
-    def menu_scale(self, element, value):
-        """
-        Menu scale.
-
-        :param element:
-        :param value:
-        :return:
-        """
-
-        def specific(event):
-            center = element.center
-            if center is not None:
-                for e in self.kernel.elements:
-                    e.element.transform.post_scale(value, value, center[0], center[1])
-                self.kernel("elements", 0)
-
-        return specific
-
-    def menu_step(self, element, step_value):
+    def menu_step(self, node, step_value):
         """
         Change raster step values of subelements.
 
-        :param element:
+        :param node:
         :param step_value:
         :return:
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                if isinstance(e, SVGImage):
-                    old_step = e.raster_step
-                    e.raster_step = step_value
-                    scale = float(step_value) / float(old_step)
-                    m = e.transform
-                    e.transform.post_scale(scale, scale, m.e, m.f)
+            for e in node.parent:
+                old_step = e.raster_step
+                e.raster_step = step_value
+                scale = float(step_value) / float(old_step)
+                m = e.transform
+                e.transform.post_scale(scale, scale, m.e, m.f)
             self.kernel("elements", 0)
 
         return specific
@@ -2057,11 +2064,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_rotate(self, element, value):
+    def menu_rotate(self, node, value):
         """
         Menu to rotate an element.
 
-        :param element:
+        :param node:
         :param value:
         :return:
         """
@@ -2069,10 +2076,41 @@ class RootNode(list):
         value *= tau
 
         def specific(event):
-            center = element.center
-            for e in self.kernel.elements:
-                e.transform.post_rotate(value, center[0], center[1])
+
+            bounds = Node.bounding_box(node.parent)
+
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            # center = node.parent.center()
+
+            for e in node.parent:
+                obj = e.object
+                obj.transform.post_rotate(value, center_x, center_y)
             self.kernel("elements", 0)
+
+        return specific
+
+    def menu_scale(self, node, value):
+        """
+        Menu scale.
+
+        :param node:
+        :param value:
+        :return:
+        """
+
+        def specific(event):
+
+            bounds = Node.bounding_box(node.parent)
+
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            # center = node.parent.center()
+
+            for e in node.parent:
+                obj = e.object
+                obj.transform.post_scale(value, value, center_x, center_y)
+                self.kernel("elements", 0)
 
         return specific
 
@@ -2083,6 +2121,7 @@ class RootNode(list):
         :param element:
         :return:
         """
+
         # TODO: Element must have filepath.
         def specific(event):
             filepath = element['filepath']
