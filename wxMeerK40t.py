@@ -1366,6 +1366,16 @@ class MeerK40t(wx.Frame):
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
 
+NODE_ROOT = 0
+NODE_OPERATION_BRANCH = 1
+NODE_OPERATION_GROUP = 2
+NODE_OPERATION = 3
+NODE_OPERATION_ELEMENT = 4
+NODE_ELEMENTS_BRANCH = 10
+NODE_ELEMENT_GROUP = 11
+NODE_ELEMENT = 12
+
+
 class Node(list):
     """
     Generic Node Type for use with RootNode
@@ -1373,12 +1383,13 @@ class Node(list):
     Deleting the object deregisters the node in the tree.
     """
 
-    def __init__(self, data_object, parent, root):
+    def __init__(self, node_type,  data_object, parent, root):
         list.__init__(self)
         self.parent = parent
         self.root = root
         self.object = data_object
         self.name = str(data_object)
+        self.type = node_type
 
         self.passes = 1
         parent.append(self)
@@ -1415,6 +1426,13 @@ class Node(list):
         self.set_icon()
         root.notify_added(self)
 
+    def __str__(self):
+        return "Node(%s, %d)" % (str(self.item), self.type)
+
+    def __repr__(self):
+        # ode_type,  data_object, parent, root
+        return "Node(%d, %s, %s, %s)" % (self.node_type, str(self.data_object), str(self.parent), str(self.root))
+
     def remove_node(self):
         for q in self:
             q.remove_node()
@@ -1429,6 +1447,7 @@ class Node(list):
         self.item = None
         self.parent = None
         self.root = None
+        self.type = -1
 
     def __eq__(self, other):
         return other is self
@@ -1550,6 +1569,7 @@ class RootNode(list):
         self.parent = self
         self.object = "Project"
         self.name = "Project"
+        self.type = NODE_ROOT
 
         self.kernel = kernel
         self.gui = gui
@@ -1565,31 +1585,31 @@ class RootNode(list):
         self.tree_lookup = {}
         self.tree.SetImageList(self.tree_images)
 
-        self.dragging_element = None
+        self.dragging_node = None
         self.dragging_parent = None
 
         self.item = self.tree.AddRoot(self.name)
 
-        self.node_operations = Node("Operations", self, self)
+        self.node_operations = Node(NODE_OPERATION_BRANCH, "Operations", self, self)
         self.build_tree(self.node_operations, self.kernel.operations)
-        self.node_elements = Node("Elements", self, self)
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, "Elements", self, self)
         self.build_tree(self.node_elements, self.kernel.elements)
 
     def build_tree(self, parent_node, objects):
         if not isinstance(objects, list):
             return
         for obj in objects:
-            node = Node(obj, parent_node, self)
+            node = Node(parent_node.type + 1, obj, parent_node, self)
             self.build_tree(node, obj)
 
     def add_operations_group(self, ops, pathname, basename):
-        group = Node(basename, self.node_operations, self)
+        group = Node(NODE_OPERATION_GROUP, basename, self.node_operations, self)
         group.filepath = pathname
         self.build_tree(group, ops)
 
     def add_element_group(self, elements, pathname, basename):
         """Called to add element group of elements, as loaded with the given pathname and basename."""
-        group = Node(basename, self.node_elements, self)
+        group = Node(NODE_ELEMENT_GROUP, basename, self.node_elements, self)
         group.filepath = pathname
         self.build_tree(group, elements)
 
@@ -1671,96 +1691,87 @@ class RootNode(list):
         :param event:
         :return:
         """
-        self.dragging_element = None
-        self.dragging_parent = None
+        self.dragging_node = None
 
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is self.kernel.operations or element is self.kernel.elements:
+        drag_item = event.GetItem()
+        node = self.tree.GetItemData(drag_item)
+        if node.type == NODE_ELEMENTS_BRANCH or node.type == NODE_ELEMENTS_BRANCH:
             event.Skip()
             return
-        self.dragging_parent = self.tree.GetItemParent(item)
-        self.dragging_parent = self.tree.GetItemData(self.dragging_parent)
-        self.dragging_element = element
+        self.dragging_node = node
         event.Allow()
 
-    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
+    def on_drag_end_handler(self, event):
         """
         Drag handler end for the tree
 
         :param event:
         :return:
         """
-        if self.dragging_element is None:
+        if self.dragging_node is None:
             event.Skip()
             return
-        drag_element = self.dragging_element
-        drag_parent = self.dragging_parent
-        self.dragging_element = None
-        self.dragging_parent = None
+        drag_node = self.dragging_node
+        self.dragging_node = None
 
-        e = event.GetItem()
-        if e is None:
+        drop_item = event.GetItem()
+        if drop_item is None:
             event.Skip()
             return
-        if e.ID is None:
+        if drop_item.ID is None:
             event.Skip()
             return
-        drop_element = self.tree.GetItemData(e)
-        if drop_element is None or drop_element == drag_element:
+
+        drop_node = self.tree.GetItemData(drop_item)
+        if drop_node is None or drop_node == drag_node:
             event.Skip()
             return
-        if drag_element is self.kernel.operations:
-            event.Skip()
-            return
-        if drag_element is self.kernel.elements:  # TODO: This has changed.
-            event.Skip()
-            return
-        if isinstance(drag_element, Node):
-            if drop_element is self.kernel.operations:
-                self.kernel.classify(drag_element)
+        if drag_node.type == NODE_ELEMENT:
+            if drop_node.type == NODE_OPERATION:
+                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
-            elif isinstance(drop_element, LaserOperation):
-                if isinstance(drop_element, EngraveOperation) and drag_element.type == 'image':
-                    event.Skip()
-                    self.kernel.signal("Error", "Cannot add image to engrave operation.")
-                    return
-                drop_element.append(drag_element.element)
+            elif drop_node.type == NODE_ELEMENT:
+                pos = drop_node.parent.index(drop_node)
+                print("Drop postion: %d" % pos)
+                obj = drag_node.object
+                parent = drop_node.parent
+                drag_node.remove_node()
+                Node(NODE_ELEMENT, obj, parent, self)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
-            elif isinstance(drop_element, Node):
-                if drop_element.type == 'root':  # Project
-                    drag_parent.remove(drag_element)
-                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
-                        drag_parent.parent.remove(drag_parent)
-
-                    if drag_element.type != 'group':
-                        group = Node()
-                        group.append(drag_element)
-                        group.update(drag_element)  # Group gets element property.
-                        drop_element.append(group)
-                    else:
-                        drop_element.append(drag_element)
-                    event.Allow()
-                    return
-                if drop_element.type == 'group':  # Group
-                    drag_parent.remove(drag_element)
-                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
-                        drag_parent.parent.remove(drag_parent)
-                    drop_element.append(drag_element)
-                    event.Allow()
-                    return
-        elif isinstance(drag_element, LaserOperation):
-            if drop_element is self.kernel.operations:
-                self.kernel.operations.remove(drag_element)
-                self.kernel.operations.append(drag_element)
+            elif drop_node.type == NODE_ELEMENT_GROUP:
+                obj = drag_node.object
+                parent = drop_node
+                drag_node.remove_node()
+                Node(NODE_ELEMENT, obj, parent, self)
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+            elif drop_node.type == NODE_OPERATION_ELEMENT:
+                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+        if drag_node.type == NODE_OPERATION_ELEMENT:
+            if drop_node.type == NODE_OPERATION:
+                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
+                drag_node.remove_node()
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+            if drop_node.type == NODE_OPERATION_ELEMENT:
+                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
+                drag_node.remove_node()
                 event.Allow()
                 self.notify_tree_data_change()
                 return
         event.Skip()
+        # Do not allow images added to engrave or cut operations
+        # Group dragged into group, creates subgroup.
+        # LaserOperation Elements dragged from one LaserOperation to another.
 
     def on_item_right_click(self, event):
         """
@@ -1976,7 +1987,7 @@ class RootNode(list):
 
         return specific
 
-    def menu_raster_actualize(self, node: Node):
+    def menu_raster_actualize(self, node):
         """
         Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
 
@@ -2027,7 +2038,7 @@ class RootNode(list):
 
         return specific
 
-    def menu_raster(self, node: Node):
+    def menu_raster(self, node):
         """
         Convert a vector element into a raster element.
 

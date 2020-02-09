@@ -214,7 +214,7 @@ class CutOperation(LaserOperation):
     def __init__(self, *args):
         LaserOperation.__init__(self, *args)
         if self.speed is None:
-            self.speed = 35.0
+            self.speed = 10.0
         if self.power is None:
             self.power = 1000.0
 
