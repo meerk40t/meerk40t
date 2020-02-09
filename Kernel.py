@@ -2,7 +2,7 @@ import time
 from threading import *
 
 from LaserOperation import *
-from svgelements import Path, SVGElement
+from svgelements import Path
 
 THREAD_STATE_UNKNOWN = -1
 THREAD_STATE_UNSTARTED = 0
@@ -1003,17 +1003,21 @@ class Kernel:
         """
         if elements is None:
             return
-        ops = []
+        raster = RasterOperation()
+        engrave = EngraveOperation()
+        cut = CutOperation()
         for element in elements:
-            if isinstance(element, SVGImage):
-                ops.append(RasterOperation(element))
-            elif isinstance(element, Path):
+            if isinstance(element, Path):
                 if element.stroke == "red":
-                    ops.append(CutOperation(element))
-                else:
-                    ops.append(EngraveOperation(element))
-        self.operations.extend(ops)
-        return ops
+                    cut.append(element)
+                elif element.stroke == "blue":
+                    engrave.append(element)
+            if element.fill is not None and element.fill != "none":
+                raster.append(element)
+        self.operations.append(raster)
+        self.operations.append(engrave)
+        self.operations.append(cut)
+        return [raster, engrave, cut]
 
     def load(self, pathname):
         for loader_name, loader in self.loaders.items():

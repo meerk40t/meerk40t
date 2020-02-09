@@ -160,7 +160,7 @@ class SVGWriter:
                                'raster_direction', 'raster_step', 'd_ratio',
                                'font-family', 'font-size', 'font-weight'):
                         subelement.set(key, str(val))
-            else: # Image.
+            else:  # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 element.image.save(stream, format='PNG')

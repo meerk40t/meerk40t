@@ -1967,7 +1967,7 @@ class RootNode(list):
         def specific(event):
             center = element.center
             if center is not None:
-                for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
+                for e in self.kernel.elements:
                     e.element.transform.post_scale(value, value, center[0], center[1])
                 self.kernel("elements", 0)
 
@@ -1983,12 +1983,13 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                old_step = e.raster_step
-                e.raster_step = step_value
-                scale = float(step_value) / float(old_step)
-                m = e.transform
-                e.transform.post_scale(scale, scale, m.e, m.f)
+            for e in self.kernel.elements:
+                if isinstance(e, SVGImage):
+                    old_step = e.raster_step
+                    e.raster_step = step_value
+                    scale = float(step_value) / float(old_step)
+                    m = e.transform
+                    e.transform.post_scale(scale, scale, m.e, m.f)
             self.kernel("elements", 0)
 
         return specific
@@ -2002,8 +2003,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                e.make_actual()
+            for e in self.kernel.elements:
+                if isinstance(e, SVGImage):
+                    e.make_actual()
             self.kernel(_("elements"), 0)
 
         return specific
@@ -2017,8 +2019,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                e.set_native()
+            for e in self.kernel.elements:
+                if isinstance(e, SVGImage):
+                    e.set_native()
             self.kernel("elements", 0)
 
         return specific
@@ -2032,9 +2035,10 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                e.element.image = e.element.image.convert("1")
-                e.cache = None
+            for e in self.kernel.elements:
+                if isinstance(e, SVGImage):
+                    e.element.image = e.element.image.convert("1")
+                    e.cache = None
             self.kernel("elements", 0)
 
         return specific
@@ -2075,9 +2079,10 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('path'), passes=False):
-                e.reify_matrix()
-                self.kernel("elements", 0)
+            for e in self.kernel.elements:
+                if isinstance(e, Path):
+                    e.reify_matrix()
+                    self.kernel("elements", 0)
 
         return specific
 
@@ -2090,7 +2095,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
+            for e in self.kernel.elements:
                 e.element.transform.reset()
                 self.kernel("elements", 0)
 
@@ -2109,7 +2114,7 @@ class RootNode(list):
 
         def specific(event):
             center = element.center
-            for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
+            for e in self.kernel.elements:
                 e.transform.post_rotate(value, center[0], center[1])
             self.kernel("elements", 0)
 
@@ -2231,7 +2236,7 @@ class RootNode(list):
         :return:
         """
         pts = []
-        for e in element.flat_elements(types=('image', 'path'), passes=False):
+        for e in self.kernel.elements:
             if isinstance(e.element, Path):
                 epath = abs(e.element)
                 pts += [q for q in epath.as_points()]
