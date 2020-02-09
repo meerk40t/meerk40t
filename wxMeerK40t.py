@@ -1388,8 +1388,7 @@ class Node(list):
         item = tree.AppendItem(parent_item, self.name)
         self.item = item
         if id(data_object) in self.root.tree_lookup:
-            links = self.root.tree_lookup[id(data_object)]
-            links.append(self)
+            self.root.tree_lookup[id(data_object)].append(self)
         else:
             self.root.tree_lookup[id(data_object)] = [self]
         tree.SetItemData(self.item, self)
@@ -1526,6 +1525,17 @@ class RootNode(list):
             node = Node(obj, parent_node, self)
             self.build_tree(node, obj)
 
+    def add_operations_group(self, ops, pathname, basename):
+        group = Node(basename, self.node_operations, self)
+        group.filepath = pathname
+        self.build_tree(group, ops)
+
+    def add_element_group(self, elements, pathname, basename):
+        """Called to add element group of elements, as loaded with the given pathname and basename."""
+        group = Node(basename, self.node_elements, self)
+        group.filepath = pathname
+        self.build_tree(group, elements)
+
     def notify_added(self, node):
         self.kernel("elements", 0)
 
@@ -1533,10 +1543,12 @@ class RootNode(list):
         self.kernel("elements", 0)
 
     def notify_tree_data_change(self):
-        self.rebuild_item_tree()
+        tree = self.tree
+        tree.ExpandAll()
 
     def notify_tree_data_cleared(self):
-        self.rebuild_item_tree()
+        tree = self.tree
+        tree.ExpandAll()
 
     def selected_bounds(self):
         return self.bbox(self.selected_elements)
@@ -1563,70 +1575,6 @@ class RootNode(list):
         ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
 
-    def add_operations_group(self, ops, pathname, basename):
-        group = Node(basename, self.node_operations, self)
-        group.filepath = pathname
-        self.build_tree(group, ops)
-
-    def add_element_group(self, elements, pathname, basename):
-        """Called to add element group of elements, as loaded with the given filename and filepath."""
-        group = Node(basename, self.node_elements, self)
-        group.filepath = pathname
-        self.build_tree(group, elements)
-
-    def add_element(self, tree_node, node, element):
-        """
-        Add a element to the tree.
-
-        :param tree_node:
-        :param node:
-        :param element:
-        :return:
-        """
-        node_item = self.initialize_node(node)
-        if isinstance(element, LaserOperation):
-            tree_node.SetItemData(node_item, element)
-            for subitem in element:
-                self.add_element(tree_node, node_item, subitem)
-        elif isinstance(element, SVGElement):
-            tree_node.SetItemData(node_item, element)
-        else:
-            print(element)
-
-    def rebuild_items(self, tree, node):
-        for n in node:
-            self.rebuild_items(tree, n)
-        self.initialize_node(node)
-
-    def rebuild_item_tree(self):
-        """
-        Rebuild tree elements
-        :return:
-        """
-        tree = self.tree
-        tree.ExpandAll()
-
-    def select_operations_by_elements(self):
-        """
-        Selects operations by selected elements.
-        :return:
-        """
-        self.selected_operations = []
-        for op in self.kernel.operations:
-            for element in self.selected_elements:
-                if element in op:
-                    self.selected_operations.append(op)
-                    break
-
-    def select_elements_by_operations(self):
-        """
-        Selects elements by selected operations.
-        :return:
-        """
-        self.selected_elements = list()
-        for selected_op in self.selected_operations:
-            self.selected_elements.extend([e for e in selected_op if e not in self.selected_elements])
-
     def set_selected_elements(self, selected):
         if selected is None:
             selected = []
@@ -1634,7 +1582,7 @@ class RootNode(list):
             if not isinstance(selected, list):
                 selected = [selected]
         self.selected_elements = selected
-        self.select_operations_by_elements()
+        self.selected_operations = []
 
     def set_selected_operations(self, selected):
         if selected is None:
@@ -1642,8 +1590,8 @@ class RootNode(list):
         else:
             if not isinstance(selected, list):
                 selected = [selected]
+        self.selected_elements = []
         self.selected_operations = selected
-        self.select_elements_by_operations()
 
     def set_selected(self, selected):
         """Sets the selected element. This could be a LaserOperation or a LaserNode."""
@@ -1655,18 +1603,6 @@ class RootNode(list):
                 self.set_selected_elements([selected])
             elif isinstance(selected, LaserOperation):
                 self.set_selected_operations([selected])
-            elif isinstance(selected, list):
-                elements = [e for e in selected if isinstance(e, SVGElement)]
-                operations = [o for o in selected if isinstance(o, LaserOperation)]
-                if len(elements) == 0:  # Elements is empty
-                    if len(operations) > 0:  # Operations is not empty.
-                        self.set_selected_operations(operations)
-                else:  # Elements is not empty.
-                    if len(operations) == 0:
-                        self.set_selected_elements(elements)
-                    else:
-                        self.selected_operations = operations
-                        self.selected_elements = elements # Can't do a selected call based on this.
         self.kernel("selection", self.selected_elements)
         self.kernel("selected_ops", self.selected_operations)
 
@@ -1732,7 +1668,7 @@ class RootNode(list):
             if drop_element is self.kernel.operations:
                 self.kernel.classify(drag_element)
                 event.Allow()
-                self.rebuild_item_tree()
+                self.notify_tree_data_change()
                 return
             elif isinstance(drop_element, LaserOperation):
                 if isinstance(drop_element, EngraveOperation) and drag_element.type == 'image':
@@ -1741,7 +1677,7 @@ class RootNode(list):
                     return
                 drop_element.append(drag_element.element)
                 event.Allow()
-                self.rebuild_item_tree()
+                self.notify_tree_data_change()
                 return
             elif isinstance(drop_element, Node):
                 if drop_element.type == 'root':  # Project
@@ -1770,7 +1706,7 @@ class RootNode(list):
                 self.kernel.operations.remove(drag_element)
                 self.kernel.operations.append(drag_element)
                 event.Allow()
-                self.rebuild_item_tree()
+                self.notify_tree_data_change()
                 return
         event.Skip()
 
@@ -1872,6 +1808,70 @@ class RootNode(list):
         if len(xvals) == 0:
             return
         node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+
+    def reify_matrix(self):
+        """Apply the matrix to the path and reset matrix."""
+        self.element = abs(self.element)
+        self.scene_bounds = None
+
+    def needs_actualization(self):
+        if self.type != 'image':
+            return False
+        m = self.transform
+        s = self.raster_step
+        return m.a != s or m.b != 0.0 or m.c != 0.0 or m.d != s
+
+    def set_native(self):
+        tx = self.transform.value_trans_x()
+        ty = self.transform.value_trans_y()
+        step = float(self.raster_step)
+
+        self.transform.reset()
+        self.transform.post_scale(step, step)
+        self.transform.post_translate(tx, ty)
+        step = float(self.raster_step)
+        self.transform.pre_scale(step, step)
+
+    def make_actual(self):
+        """
+        Makes PIL image actual in that it manipulates the pixels to actually exist
+        rather than simply apply the transform on the image to give the resulting image.
+        Since our goal is to raster the images real pixels this is required.
+
+        SVG matrices are defined as follows.
+        [a c e]
+        [b d f]
+
+        Pil requires a, c, e, b, d, f accordingly.
+        """
+        if not isinstance(self.element, SVGImage):
+            return
+
+        from PIL import Image
+
+        image = self.element.image
+        self.cache = None
+        m = self.transform
+        step = float(self.raster_step)
+
+        tx = m.value_trans_x()
+        ty = m.value_trans_y()
+        m.e = 0.0
+        m.f = 0.0
+        self.element.transform.pre_scale(1.0 / step, 1.0 / step)
+        bbox = self.element.bbox()
+        width = int(ceil(bbox[2] - bbox[0]))
+        height = int(ceil(bbox[3] - bbox[1]))
+        m.inverse()
+        image = image.transform((width, height), Image.AFFINE, (m.a, m.c, m.e, m.b, m.d, m.f),
+                                resample=Image.BICUBIC)
+        self.transform.reset()
+        self.transform.post_scale(step, step)
+        self.transform.post_translate(tx, ty)
+        self.element.image = image
+        self.element.image_width = width
+        self.element.image_height = height
+        self.scene_bounds = None
 
     def create_menu(self, gui, node):
         """Create menu items. This is used for both the scene and the tree to create menu items."""
