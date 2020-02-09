@@ -16,7 +16,7 @@ from BufferView import BufferView
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
-# from ElementProperty import ElementProperty
+from ElementProperty import ElementProperty
 from ElementFunctions import ElementFunctions
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
@@ -1437,13 +1437,25 @@ class Node(list):
         for q in self:
             q.remove_node()
         root = self.root
-        root.tree_lookup[id(self.object)].remove(self)
+        print(len(root.kernel.elements))
+        links = root.tree_lookup[id(self.object)]
+        links.remove(self)
         self.parent.remove(self)
         try:
             root.tree.Delete(self.item)
         except RuntimeError:
             return
         root.notify_removed(self)
+
+        if self.type == NODE_ELEMENT:
+            print(len(root.kernel.elements))
+            if self.object in root.kernel.elements:
+                print("In elements!")
+            root.kernel.elements.remove(self.object)
+            for n in links:
+                n.remove_node()
+        elif self.type == NODE_OPERATION:
+            self.root.kernel.operations.remove(self.object)
         self.item = None
         self.parent = None
         self.root = None
@@ -2149,12 +2161,9 @@ class RootNode(list):
         :param node:
         :return:
         """
-
-        # TODO: Element must have filepath.
         def specific(event):
             filepath = node.filepath
-            for e in reversed(node):
-                e.detach()
+            node.remove_node()
             self.gui.load(filepath)
 
         return specific
@@ -2170,22 +2179,9 @@ class RootNode(list):
         def specific(event):
             node = remove_node
             try:
-                if isinstance(node.parent.object, LaserOperation):
-                    # Removed subnode of LaserOperation node, remove elemnt from op.
-                    node.parent.object.remove(node.object)
-                    node.detach()
-            except AttributeError:
-                pass
-            try:
                 if isinstance(node.parent, RootNode):
                     # Attempting to remove main object node under root. Clear.
                     node.clear()
-            except AttributeError:
-                pass
-            try:
-                if isinstance(node.object, SVGElement) and isinstance(node.parent.object, str):
-                    # Removing Element node, removing the relevant element too.
-                    self.root.kernel.elements.remove(node.object)
             except AttributeError:
                 pass
             node.remove_node()
@@ -2359,7 +2355,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.setting(int, 'language', None)
 
         kernel.add_window('Shutdown', Shutdown)
-        # kernel.add_window('ElementProperty', ElementProperty)
+        kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
         kernel.add_window("Settings", Settings)
