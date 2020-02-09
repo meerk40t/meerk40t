@@ -442,7 +442,7 @@ class K40Controller(Pipe):
 
     def send_packet(self, packet):
         if self.device.mock:
-            time.sleep(0.1)
+            time.sleep(0.04)
         else:
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)

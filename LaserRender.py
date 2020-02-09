@@ -110,6 +110,8 @@ class LaserRender:
                     stroke_width = Length(element.values[SVG_ATTR_STROKE_WIDTH]).value()
                 except AttributeError:
                     stroke_width = 1.0
+                except KeyError:
+                    stroke_width = 1.0
                 self.set_pen(gc, element.stroke, width=stroke_width * scale)
                 gc.FillPath(p)
                 gc.StrokePath(p)
