@@ -182,10 +182,9 @@ class JobInfo(wx.Frame):
         for op in kernel.operations:
             self.job_items.append(copy(op))
         self.jobadd_remove_text()
-        self.conditional_jobadd_actualize_image()
         if self.device.rotary:
             self.conditional_jobadd_scale_rotary()
-
+        self.conditional_jobadd_actualize_image()
         if self.device.autobeep:
             self.jobadd_beep(None)
 

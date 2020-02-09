@@ -1436,16 +1436,12 @@ class Node(list):
             image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
             image_id = self.root.tree_images.Add(bitmap=image)
             tree.SetItemImage(item, image=image_id)
-        else:
-            try:
-                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20,
-                                                       bitmap=True)
-                if image is not None:
-                    image_id = self.root.tree_images.Add(bitmap=image)
-                    tree.SetItemImage(item, image=image_id)
-                    tree.Update()
-            except AttributeError:
-                pass
+        if isinstance(data_object, Path):
+            image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
+            if image is not None:
+                image_id = self.root.tree_images.Add(bitmap=image)
+                tree.SetItemImage(item, image=image_id)
+                tree.Update()
 
     def center(self):
         try:
@@ -1483,6 +1479,13 @@ class Node(list):
         xmax = max([e[0] for e in boundary_points])
         ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
+
+    def objects_of_children(self, types):
+        if isinstance(self.object, types):
+            yield self.object
+        for q in self:
+            for o in q.objects_of_children(types):
+                yield o
 
     def contains_path(self):
         if isinstance(self.object, Path):
@@ -1640,12 +1643,15 @@ class RootNode(list):
             return
         if len(self.selected_elements) == 0:
             return
+        for group in self.selected_group():
+            for obj in group.objects_of_children(SVGElement):
+                obj.transform.post_translate(dx, dy)
+
+    def selected_group(self):
         for group in self.node_elements:
             for n in group:
                 if n.object in self.selected_elements:
-                    for n in group:
-                        if isinstance(n.object, SVGElement):
-                            n.object.transform.post_translate(dx,dy)
+                    yield group
                     break
 
     def on_drag_begin_handler(self, event):
@@ -1967,18 +1973,17 @@ class RootNode(list):
             element = node.object
             if isinstance(element, SVGImage):
                 ElementFunctions.make_actual(element)
-                # node.bounds = element.bbox()
                 node.bounds = None
                 node.set_icon()
             self.kernel("elements", 0)
 
         return specific
 
-    def menu_raster_native(self, element):
+    def menu_raster_native(self, node):
         """
         Reset the raster to native form validating the matrix for the given step value.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -1990,11 +1995,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_dither(self, element):
+    def menu_dither(self, node):
         """
         Change raster dither forcing raster elements to 1 bit.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -2007,11 +2012,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_raster(self, element):
+    def menu_raster(self, node):
         """
         Convert a vector element into a raster element.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -2024,7 +2029,7 @@ class RootNode(list):
                 return None
             # TODO: get full subbounds.
             # def make_raster(self, group, bounds, width=None, height=None, bitmap=False):
-            image = renderer.make_raster(element, types='path')
+            image = renderer.make_raster(node, types='path')
             xmin, ymin, xmax, ymax = self.root.selected_bounds()
             image_element = SVGImage(image=image)
             self.root.selected_elements.append(image_element)
@@ -2034,11 +2039,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_reify(self, element):
+    def menu_reify(self, node):
         """
         Reify elements so that the translations apply direct to the object.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -2114,18 +2119,18 @@ class RootNode(list):
 
         return specific
 
-    def menu_reload(self, element):
+    def menu_reload(self, node):
         """
         Menu to reload the element from the file on disk.
 
-        :param element:
+        :param node:
         :return:
         """
 
         # TODO: Element must have filepath.
         def specific(event):
-            filepath = element['filepath']
-            for e in reversed(element):
+            filepath = node.filepath
+            for e in reversed(node):
                 e.detach()
             self.gui.load(filepath)
 
@@ -2164,11 +2169,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_split_passes(self, element):
+    def menu_split_passes(self, node):
         """
         Menu to break element into subpath.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -2189,11 +2194,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_subpath(self, element):
+    def menu_subpath(self, node):
         """
         Menu to break element into subpath.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -2210,11 +2215,11 @@ class RootNode(list):
 
         return specific
 
-    def menu_execute(self, element):
+    def menu_execute(self, node):
         """
         Menu to launch Execute Job for the particular element.
 
-        :param element:
+        :param node:
         :return:
         """
 
@@ -2223,11 +2228,11 @@ class RootNode(list):
 
         return open_jobinfo_window
 
-    def get_convex_hull(self, element):
+    def get_convex_hull(self, node):
         """
         Processing function for menu_hull(element) to return the hull points.
 
-        :param element:
+        :param node:
         :return:
         """
         pts = []
@@ -2243,17 +2248,17 @@ class RootNode(list):
             return None
         return hull
 
-    def menu_hull(self, element):
+    def menu_hull(self, node):
         """
         Menu to return and add the convex hull of the element to the scene.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def convex_hull(event):
             path = Path()
-            pts = self.get_convex_hull(element)
+            pts = self.get_convex_hull(node)
             if pts is None:
                 return
             path.move(*pts)
@@ -2264,16 +2269,16 @@ class RootNode(list):
 
         return convex_hull
 
-    def menu_reverse_order(self, element):
+    def menu_reverse_order(self, node):
         """
         Menu to return and add the convex hull of the element to the scene.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            element.reverse()
+            node.reverse()
             self.kernel("elements", 0)
 
         return specific

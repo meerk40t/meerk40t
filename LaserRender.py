@@ -71,7 +71,7 @@ class LaserRender:
             parse.command(event)
         return p
 
-    def make_raster(self, group, bounds, width=None, height=None, bitmap=False):
+    def make_raster(self, element, bounds, width=None, height=None, bitmap=False):
         xmin, ymin, xmax, ymax = bounds
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -93,26 +93,28 @@ class LaserRender:
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
 
-        for e in group:
-            element = e.element
-            matrix = element.transform
-            old_matrix = Matrix(matrix)
+        matrix = element.transform
+        old_matrix = Matrix(matrix)
 
-            matrix.post_translate(-xmin, -ymin)
-            scale_x = width / float(image_width)
-            scale_y = height / float(image_height)
-            scale = min(scale_x, scale_y)
-            matrix.post_scale(scale)
-            if e.type == 'path':
-                p = self.make_path(gc, e)
-                self.set_brush(gc, e.fill)
-                self.set_pen(gc, e.stroke, width=e.stroke_width * scale)
-                gc.FillPath(p)
-                gc.StrokePath(p)
-                del p
-            # TODO: There is a need to raster a fragment of scene, including images.
-            # Such that make_raster and actualize are two sides of the same coin.
-            element.transform = old_matrix
+        # start loop
+        matrix.post_translate(-xmin, -ymin)
+        scale_x = width / float(image_width)
+        scale_y = height / float(image_height)
+        scale = min(scale_x, scale_y)
+        matrix.post_scale(scale)
+        if isinstance(element, Path):
+            p = self.make_path(gc, element)
+            self.set_brush(gc, element.fill)
+            try:
+                stroke_width = element.stroke_width
+            except AttributeError:
+                stroke_width = 1.0
+            self.set_pen(gc, element.stroke, width=stroke_width * scale)
+            gc.FillPath(p)
+            gc.StrokePath(p)
+            del p
+        element.transform = old_matrix
+        # end loop
 
         img = bmp.ConvertToImage()
         buf = img.GetData()
