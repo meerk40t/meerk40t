@@ -65,14 +65,14 @@ class ElementFunctions:
         self.scene_bounds = None
 
     @staticmethod
-    def set_native(self):
-        tx = self.transform.value_trans_x()
-        ty = self.transform.value_trans_y()
-        step = float(self.raster_step)
+    def set_native(element):
+        tx = element.transform.value_trans_x()
+        ty = element.transform.value_trans_y()
+        step = float(element.raster_step)
 
-        self.transform.reset()
-        self.transform.post_scale(step, step)
-        self.transform.post_translate(tx, ty)
-        step = float(self.raster_step)
-        self.transform.pre_scale(step, step)
+        element.transform.reset()
+        element.transform.post_scale(step, step)
+        element.transform.post_translate(tx, ty)
+        step = float(element.raster_step)
+        element.transform.pre_scale(step, step)
 

@@ -71,7 +71,7 @@ class LaserRender:
             parse.command(event)
         return p
 
-    def make_raster(self, element, bounds, width=None, height=None, bitmap=False):
+    def make_raster(self, elements, bounds, width=None, height=None, bitmap=False):
         xmin, ymin, xmax, ymax = bounds
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -92,29 +92,29 @@ class LaserRender:
         dc.SelectObject(bmp)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
+        if not isinstance(elements, list):
+            elements = [elements]
+        for element in elements:
+            matrix = element.transform
+            old_matrix = Matrix(matrix)
 
-        matrix = element.transform
-        old_matrix = Matrix(matrix)
-
-        # start loop
-        matrix.post_translate(-xmin, -ymin)
-        scale_x = width / float(image_width)
-        scale_y = height / float(image_height)
-        scale = min(scale_x, scale_y)
-        matrix.post_scale(scale)
-        if isinstance(element, Path):
-            p = self.make_path(gc, element)
-            self.set_brush(gc, element.fill)
-            try:
-                stroke_width = element.stroke_width
-            except AttributeError:
-                stroke_width = 1.0
-            self.set_pen(gc, element.stroke, width=stroke_width * scale)
-            gc.FillPath(p)
-            gc.StrokePath(p)
-            del p
-        element.transform = old_matrix
-        # end loop
+            matrix.post_translate(-xmin, -ymin)
+            scale_x = width / float(image_width)
+            scale_y = height / float(image_height)
+            scale = min(scale_x, scale_y)
+            matrix.post_scale(scale)
+            if isinstance(element, Path):
+                p = self.make_path(gc, element)
+                self.set_brush(gc, element.fill)
+                try:
+                    stroke_width = Length(element.values[SVG_ATTR_STROKE_WIDTH]).value()
+                except AttributeError:
+                    stroke_width = 1.0
+                self.set_pen(gc, element.stroke, width=stroke_width * scale)
+                gc.FillPath(p)
+                gc.StrokePath(p)
+                del p
+            element.transform = old_matrix
 
         img = bmp.ConvertToImage()
         buf = img.GetData()

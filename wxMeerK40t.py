@@ -1379,6 +1379,8 @@ class Node(list):
         self.root = root
         self.object = data_object
         self.name = str(data_object)
+
+        self.passes = 1
         parent.append(self)
         self.filepath = None
         try:
@@ -1395,16 +1397,20 @@ class Node(list):
             self.root.tree_lookup[id(data_object)] = [self]
         tree.SetItemData(self.item, self)
         try:
-            fill = data_object.values['fill']
+            fill = data_object.values[SVG_ATTR_FILL]
             color = wx.Colour(swizzlecolor(Color(fill).value))
             tree.SetItemBackgroundColour(item, color)
         except AttributeError:
             pass
+        except KeyError:
+            pass
         try:
-            stroke = data_object.values['stroke']
+            stroke = data_object.values[SVG_ATTR_STROKE]
             color = wx.Colour(swizzlecolor(Color(stroke).value))
             tree.SetItemTextColour(item, color)
         except AttributeError:
+            pass
+        except KeyError:
             pass
         self.set_icon()
         root.notify_added(self)
@@ -1647,12 +1653,16 @@ class RootNode(list):
             for obj in group.objects_of_children(SVGElement):
                 obj.transform.post_translate(dx, dy)
 
-    def selected_group(self):
+    def groups_containing(self, elements):
         for group in self.node_elements:
             for n in group:
-                if n.object in self.selected_elements:
+                if n.object in elements:
                     yield group
                     break
+
+    def selected_group(self):
+        for g in self.groups_containing(self.selected_elements):
+            yield g
 
     def on_drag_begin_handler(self, event):
         """
@@ -1867,17 +1877,18 @@ class RootNode(list):
         if isinstance(node, RootNode):
             return
         gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-                 menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+                 menu.Append(wx.ID_ANY, _("Remove: %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+
         if node.filepath is not None:
             fpath = node.filepath
             if fpath is not None:
                 name = os.path.basename(fpath)
                 gui.Bind(wx.EVT_MENU, self.menu_reload(node),
                          menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
-                if len(node) > 1:
-                    gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
-                             menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
-        if hasattr(node, 'filename') and node.passes is not None and node.passes != 1:
+        if len(node) > 1:
+            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
+                     menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+        if node.passes is not None and node.passes != 1:
             gui.Bind(wx.EVT_MENU, self.menu_split_passes(node),
                      menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, self.menu_hull(node),
@@ -1886,12 +1897,14 @@ class RootNode(list):
                  menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         gui.Bind(wx.EVT_MENU, self.menu_reset(node),
                  menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+
         path_scale_sub_menu = wx.Menu()
         for i in range(1, 25):
             gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
                      path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
                                                 wx.ITEM_NORMAL))
         menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
+
         path_rotate_sub_menu = wx.Menu()
         for i in range(2, 13):
             angle = Angle.turns(1.0 / float(i))
@@ -1906,6 +1919,7 @@ class RootNode(list):
                                                  _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
                                                  wx.ITEM_NORMAL))
         menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
+
         if node.contains_path():
             vector_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
@@ -1915,6 +1929,7 @@ class RootNode(list):
             gui.Bind(wx.EVT_MENU, self.menu_reify(node),
                      menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(vector_menu, _("Vector"))
+
         if node.contains_image():
             image_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
@@ -1924,19 +1939,19 @@ class RootNode(list):
             gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
                      image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
             image_sub_menu_step = wx.Menu()
+
             for i in range(1, 8):
                 gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
                          image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
             image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
             menu.AppendSubMenu(image_menu, _("Raster"))
+
         if node.contains_text():
             text_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_remove(node, types=(SVGText)),
                      text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(text_menu, _("Text"))
-        if isinstance(node.object, LaserOperation):
-            gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-                     menu.Append(wx.ID_ANY, _("Remove %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -1988,9 +2003,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                if isinstance(e, SVGImage):
-                    e.set_native()
+            element = node.object
+            if isinstance(element, SVGImage):
+                ElementFunctions.set_native(element)
             self.kernel("elements", 0)
 
         return specific
@@ -2004,15 +2019,15 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                if isinstance(e, SVGImage):
-                    e.element.image = e.element.image.convert("1")
-                    e.cache = None
+            element = node.object
+            if isinstance(element, SVGImage):
+                element.image = element.image.convert("1")
+                element.cache = None
             self.kernel("elements", 0)
 
         return specific
 
-    def menu_raster(self, node):
+    def menu_raster(self, node: Node):
         """
         Convert a vector element into a raster element.
 
@@ -2021,20 +2036,21 @@ class RootNode(list):
         """
 
         def specific(event):
-            renderer = LaserRender(self.kernel)
-            if not isinstance(group, list):
-                group = [group]
-            bounds = group[0].bbox()  # TODO: This should really work on large collections of subobjects
+            renderer = self.renderer
+            child_objects = list(node.objects_of_children(SVGElement))
+            bounds = Node.bounding_box(child_objects)
             if bounds is None:
                 return None
-            # TODO: get full subbounds.
-            # def make_raster(self, group, bounds, width=None, height=None, bitmap=False):
-            image = renderer.make_raster(node, types='path')
-            xmin, ymin, xmax, ymax = self.root.selected_bounds()
+            xmin, ymin, xmax, ymax = bounds
+
+            image = renderer.make_raster(child_objects, bounds)
             image_element = SVGImage(image=image)
-            self.root.selected_elements.append(image_element)
-            self.kernel.classify(image_element)
             image_element.transform.post_translate(xmin, ymin)
+
+            self.kernel.elements.append(image_element)
+            self.root.add_element_group(image_element, "generated raster", "raster")
+            self.tree.Update()
+            self.kernel.classify(image_element)
             self.kernel("elements", 0)
 
         return specific
@@ -2048,10 +2064,8 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                if isinstance(e, Path):
-                    e.reify_matrix()
-                    self.kernel("elements", 0)
+            node.object = abs(node.object)
+            self.kernel("elements", 0)
 
         return specific
 
@@ -2081,7 +2095,6 @@ class RootNode(list):
         value *= tau
 
         def specific(event):
-
             bounds = Node.bounding_box(node.parent)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
@@ -2105,7 +2118,6 @@ class RootNode(list):
         """
 
         def specific(event):
-
             bounds = Node.bounding_box(node.parent)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
