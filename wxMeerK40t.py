@@ -1437,8 +1437,8 @@ class Node(list):
         for q in self:
             q.remove_node()
         root = self.root
-        print(len(root.kernel.elements))
         links = root.tree_lookup[id(self.object)]
+        print(len(links))
         links.remove(self)
         self.parent.remove(self)
         try:
@@ -1447,10 +1447,8 @@ class Node(list):
             return
         root.notify_removed(self)
 
+        print(len(links))
         if self.type == NODE_ELEMENT:
-            print(len(root.kernel.elements))
-            if self.object in root.kernel.elements:
-                print("In elements!")
             root.kernel.elements.remove(self.object)
             for n in links:
                 n.remove_node()
@@ -1488,34 +1486,7 @@ class Node(list):
             return None
 
     def bbox(self):
-        return Node.bounding_box(self.object)
-
-    @staticmethod
-    def bounding_box(elements):
-        if isinstance(elements, SVGElement):
-            elements = [elements]
-        elif isinstance(elements, Node):
-            elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
-        boundary_points = []
-        for e in elements:
-            box = e.bbox(False)
-            if box is None:
-                continue
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
+        return ElementFunctions.bounding_box(self.object)
 
     def objects_of_children(self, types):
         if isinstance(self.object, types):
@@ -1640,10 +1611,10 @@ class RootNode(list):
         tree.ExpandAll()
 
     def selected_bounds(self):
-        return Node.bounding_box(self.selected_elements)
+        return ElementFunctions.bounding_box(self.selected_elements)
 
     def bbox(self):
-        return Node.bounding_box(self.kernel.elements)
+        return ElementFunctions.bounding_box(self.kernel.elements)
 
     def set_selected_elements(self, selected):
         if selected is None:

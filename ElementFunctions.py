@@ -76,3 +76,33 @@ class ElementFunctions:
         step = float(element.raster_step)
         element.transform.pre_scale(step, step)
 
+    @staticmethod
+    def bounding_box(elements):
+        if isinstance(elements, SVGElement):
+            elements = [elements]
+        elif isinstance(elements, list):
+            try:
+                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+            except AttributeError:
+                pass
+        boundary_points = []
+        for e in elements:
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
+

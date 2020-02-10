@@ -3,9 +3,10 @@ from copy import copy
 import wx
 
 from LaserCommandConstants import *
-from LaserOperation import LaserOperation
+from LaserOperation import LaserOperation, RasterOperation
+from LaserRender import LaserRender
 from icons import icons8_laser_beam_52, icons8_route_50
-from ElementFunctions import ElementFunctions
+from ElementFunctions import ElementFunctions, SVGImage, SVGElement
 
 _ = wx.GetTranslation
 
@@ -122,6 +123,31 @@ class JobInfo(wx.Frame):
                 self.required_preprocessing_operations.append(remove_text)
                 break
 
+    def conditional_jobadd_make_raster(self):
+        for o in self.job_items:
+            if isinstance(o, RasterOperation):
+                if len(o) != 1 and not isinstance(o[0], SVGImage):
+                    self.jobadd_make_raster()
+                    return
+
+    def jobadd_make_raster(self):
+        def make_image():
+            for op in self.job_items:
+                if isinstance(op, RasterOperation):
+                    renderer = LaserRender(self.kernel)
+                    bounds = ElementFunctions.bounding_box(op)
+                    if bounds is None:
+                        return None
+                    xmin, ymin, xmax, ymax = bounds
+
+                    image = renderer.make_raster(op, bounds)
+                    image_element = SVGImage(image=image)
+                    image_element.transform.post_translate(xmin, ymin)
+                    op.clear()
+                    op.append(image_element)
+
+        self.required_preprocessing_operations.append(make_image)
+
     def conditional_jobadd_actualize_image(self):
         for o in self.job_items:
             if isinstance(o, LaserOperation):
@@ -185,6 +211,7 @@ class JobInfo(wx.Frame):
         if self.device.rotary:
             self.conditional_jobadd_scale_rotary()
         self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
         if self.device.autobeep:
             self.jobadd_beep(None)
 
