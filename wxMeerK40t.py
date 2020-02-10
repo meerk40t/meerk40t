@@ -763,6 +763,7 @@ class MeerK40t(wx.Frame):
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
         self.root.set_selected_by_position(self.previous_scene_position)
         self.move_function = self.move_selected
+        self.request_refresh()
 
     def on_left_mouse_up(self, event):
         if self.scene.HasCapture():
