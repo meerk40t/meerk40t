@@ -607,7 +607,7 @@ class Kernel:
         return "Project"
 
     def __call__(self, code, *message):
-        self.signal(code, message)
+        self.signal(code, *message)
 
     def signal(self, code, *message):
         self.queue_lock.acquire(True)

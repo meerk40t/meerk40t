@@ -450,6 +450,16 @@ class MeerK40t(wx.Frame):
         self.kernel.fps = fps
         self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(self.kernel.fps))
 
+    def on_element_update(self, *args):
+        """
+        Called by 'element_property_update' when the properties of an element are changed.
+
+        :param args:
+        :return:
+        """
+        if self.root is not None:
+            self.root.on_element_update(*args)
+
     def on_elements_update(self, *args):
         """
         Called by 'elements' change. To refresh tree.
@@ -516,12 +526,14 @@ class MeerK40t(wx.Frame):
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
         self.kernel.listen("elements", self.on_elements_update)
+        self.kernel.listen("element_property_update", self.on_element_update)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
 
     def unlisten_scene(self):
         self.kernel.unlisten("device", self.on_device_switch)
         self.kernel.unlisten("elements", self.on_elements_update)
+        self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
 
@@ -544,11 +556,6 @@ class MeerK40t(wx.Frame):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-        # self.main_toolbar.Realize()
-
-        # self.scene.SetMinSize((1000, 880))
-        # self.scene.SetBackgroundColour(wx.Colour(200,200,200))
-        # end wxGlade
 
     def __do_layout(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1391,7 +1398,6 @@ class Node(list):
         self.object = data_object
         self.name = str(data_object)
         self.type = node_type
-
         self.passes = 1
         parent.append(self)
         self.filepath = None
@@ -1431,8 +1437,11 @@ class Node(list):
         return "Node(%s, %d)" % (str(self.item), self.type)
 
     def __repr__(self):
-        # ode_type,  data_object, parent, root
-        return "Node(%d, %s, %s, %s)" % (self.node_type, str(self.data_object), str(self.parent), str(self.root))
+        return "Node(%d, %s, %s, %s)" % (self.type, str(self.object), str(self.parent), str(self.root))
+
+    def update_name(self):
+        self.name = str(self.object)
+        self.root.tree.SetItemText(self.item, self.name)
 
     def remove_node(self):
         for q in self:
@@ -1610,6 +1619,15 @@ class RootNode(list):
     def notify_tree_data_cleared(self):
         tree = self.tree
         tree.ExpandAll()
+
+    def on_element_update(self, *args):
+        element = args[0]
+        try:
+            nodes = self.tree_lookup[id(element)]
+            for node in nodes:
+                self.tree.SetItemText(node.item, str(element))
+        except KeyError:
+            pass
 
     def selected_bounds(self):
         return ElementFunctions.bounding_box(self.selected_elements)
