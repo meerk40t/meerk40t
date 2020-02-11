@@ -1750,7 +1750,7 @@ class RootNode(list):
 
         drag_item = event.GetItem()
         node = self.tree.GetItemData(drag_item)
-        if node.type == NODE_ELEMENTS_BRANCH or node.type == NODE_OPERATION_BRANCH or\
+        if node.type == NODE_ELEMENTS_BRANCH or node.type == NODE_OPERATION_BRANCH or \
                 node.type == NODE_FILES_BRANCH or node.type == NODE_FILE_ELEMENT or node.type == NODE_FILE_FILE:
             event.Skip()
             return
@@ -1902,7 +1902,7 @@ class RootNode(list):
         if self.selected_elements is not None:
             select_bounds = self.selected_bounds()
             if select_bounds is not None and self.contains(select_bounds, position):
-                return # Select by position aborted since selection position within current select bounds.
+                return  # Select by position aborted since selection position within current select bounds.
         self.set_selected_elements(None)
         for e in reversed(self.kernel.elements):
             bounds = e.bbox()
@@ -1962,6 +1962,8 @@ class RootNode(list):
                 if element.object is match_object:
                     node = element
                     break
+        if node is None:
+            return
         menu = wx.Menu()
         if isinstance(node, RootNode):
             return
@@ -1973,8 +1975,8 @@ class RootNode(list):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
                      menu.Append(wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
-                gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
-                         menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
+                     menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
         if node.type == NODE_ROOT:
             pass
         elif node.type == NODE_OPERATION_BRANCH:
@@ -2257,13 +2259,20 @@ class RootNode(list):
 
         def specific(event):
             node = remove_node
-            try:
-                if isinstance(node.parent, RootNode):
-                    # Attempting to remove main object node under root. Clear.
-                    node.clear()
-            except AttributeError:
-                pass
-            node.remove_node()
+            if node.type == NODE_ELEMENT:
+                removed_object = node.object
+                self.kernel.elements.remove(removed_object)
+                for i in range(len(self.kernel.operations)):
+                    self.kernel.operations[i] = [e for e in self.kernel.operations[i]
+                                                 if e is not removed_object]
+                    if len(self.kernel.operations[i]) == 0:
+                        self.kernel.operations[i] = None
+                self.kernel.operations = [op for op in self.kernel.operations
+                                          if op is not None]
+            elif node.type == NODE_OPERATION:
+                self.kernel.operations.remove(node.object)
+            self.selected_elements.clear()
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2393,6 +2402,7 @@ class RootNode(list):
         def specific(event):
             node.object.clear()
             self.kernel.signal('rebuild_tree', 0)
+
         return specific
 
     def menu_reclassify_operations(self, node):
@@ -2401,16 +2411,19 @@ class RootNode(list):
             kernel.operations.clear()
             kernel.classify(kernel.elements)
             self.kernel.signal('rebuild_tree', 0)
+
         return specific
 
     def menu_convert_operation(self, node, name):
         def specific(event):
             raise NotImplementedError
+
         return specific
 
     def menu_convert_text(self, node):
         def specific(event):
             raise NotImplementedError
+
         return specific
 
 
