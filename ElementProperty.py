@@ -231,10 +231,14 @@ class ElementProperty(wx.Frame):
 
     def on_button_color(self, event):  # wxGlade: ElementProperty.<event_handler>
         button = event.EventObject
-        self.text_name.SetBackgroundColour(button.GetBackgroundColour())
+        color = button.GetBackgroundColour()
+        rgb = color.GetRGB()
+        self.text_name.SetBackgroundColour(color)
         self.text_name.Refresh()
-        color = swizzlecolor(button.GetBackgroundColour().GetRGB())
-        self.element.stroke = Color(color)
-        self.element.values[SVG_ATTR_STROKE] = Color(color).hex
+        color = swizzlecolor(rgb)
+        color = Color(color)
+        color.opacity = 1.0
+        self.element.stroke = color
+        self.element.values[SVG_ATTR_STROKE] = color.hex
         if self.kernel is not None:
             self.kernel.signal("element_property_update", self.element)
