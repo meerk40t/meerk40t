@@ -1955,96 +1955,113 @@ class RootNode(list):
         node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
 
     def create_menu(self, gui, node):
-        """Create menu items. This is used for both the scene and the tree to create menu items."""
-        if isinstance(node, SVGElement):
-            match_node = node
-            node = None
-            for group in self.node_elements:
-                for subnode in group:
-                    if subnode.object is match_node:
-                        node = subnode
-                        break
+        """
+        Create menu items. This is used for both the scene and the tree to create menu items.
+
+        :param gui: Gui used to create menu items.
+        :param node: The Node clicked on for the generated menu.
+        :return:
+        """
         if node is None:
             return
+        if isinstance(node, SVGElement):
+            # If this is called with an SVGElement rather than a Node. Convert them.
+            match_object = node
+            node = None
+            for element in self.node_elements:
+                if element.object is match_object:
+                    node = element
+                    break
         menu = wx.Menu()
         if isinstance(node, RootNode):
             return
-        gui.Bind(wx.EVT_MENU, self.menu_remove(node),
-                 menu.Append(wx.ID_ANY, _("Remove: %s") % str(node)[:16], "", wx.ITEM_NORMAL))
+        t = node.type
+        if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
+            gui.Bind(wx.EVT_MENU, self.menu_remove(node),
+                     menu.Append(wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL))
+        if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
+                gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
+                         menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+        if node.type == NODE_ROOT:
+            pass
+        elif node.type == NODE_OPERATION_BRANCH:
+            pass
+        elif node.type == NODE_ELEMENTS_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
+                     menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL))
+        elif node.type == NODE_FILES_BRANCH:
+            pass
+        elif node.type == NODE_OPERATION:
+            gui.Bind(wx.EVT_MENU, self.menu_execute(node),
+                     menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+            operation_convert_submenu = wx.Menu()
+            for name in ("Raster", "Engrave", "Cut"):
+                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name),
+                         operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL))
+            for name in ("ZDepth_Raster", "Cross-Engrave Raster", "Multishade_Raster", "Wait-Step_Raster"):
+                menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
+                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
+                menu_op.Enable(False)
+            menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
+            if isinstance(node.object, RasterOperation):
+                raster_step_menu = wx.Menu()
+                for i in range(1, 10):
+                    gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
+                             raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+                menu.AppendSubMenu(raster_step_menu, _("Step"))
+                gui.Bind(wx.EVT_MENU, self.menu_raster(node),
+                         menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
+        elif node.type == NODE_FILE_FILE:
+            if node.filepath is not None:
+                fpath = node.filepath
+                if fpath is not None:
+                    name = os.path.basename(fpath)
+                    gui.Bind(wx.EVT_MENU, self.menu_reload(node),
+                             menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+        elif node.type == NODE_ELEMENT:
+            gui.Bind(wx.EVT_MENU, self.menu_hull(node),
+                     menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_reset(node),
+                     menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+            path_scale_sub_menu = wx.Menu()
+            for i in range(1, 25):
+                gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
+                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                                                    wx.ITEM_NORMAL))
+            menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
 
-        if node.filepath is not None:
-            fpath = node.filepath
-            if fpath is not None:
-                name = os.path.basename(fpath)
-                gui.Bind(wx.EVT_MENU, self.menu_reload(node),
-                         menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
-        if len(node) > 1:
-            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
-                     menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
-        if node.passes is not None and node.passes != 1:
-            gui.Bind(wx.EVT_MENU, self.menu_split_passes(node),
-                     menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, self.menu_hull(node),
-                 menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, self.menu_execute(node),
-                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
-        gui.Bind(wx.EVT_MENU, self.menu_reset(node),
-                 menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
-
-        path_scale_sub_menu = wx.Menu()
-        for i in range(1, 25):
-            gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
-                     path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
-                                                wx.ITEM_NORMAL))
-        menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
-
-        path_rotate_sub_menu = wx.Menu()
-        for i in range(2, 13):
-            angle = Angle.turns(1.0 / float(i))
-            gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                     path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
-                                                 "",
-                                                 wx.ITEM_NORMAL))
-        for i in range(2, 13):
-            angle = Angle.turns(1.0 / float(i))
-            gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
-                     path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                 _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
-                                                 wx.ITEM_NORMAL))
-        menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-
-        if node.contains_path():
-            vector_menu = wx.Menu()
-            gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
-                     vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, self.menu_raster(node),
-                     vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
+            path_rotate_sub_menu = wx.Menu()
+            for i in range(2, 13):
+                angle = Angle.turns(1.0 / float(i))
+                gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
+                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                                                     "",
+                                                     wx.ITEM_NORMAL))
+            for i in range(2, 13):
+                angle = Angle.turns(1.0 / float(i))
+                gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
+                         path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                     _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                                                     wx.ITEM_NORMAL))
+            menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
             gui.Bind(wx.EVT_MENU, self.menu_reify(node),
                      menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
-            menu.AppendSubMenu(vector_menu, _("Vector"))
-
-        if node.contains_image():
-            image_menu = wx.Menu()
-            gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
-                     image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, self.menu_dither(node),
-                     image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
-                     image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
-            image_sub_menu_step = wx.Menu()
-
-            for i in range(1, 8):
-                gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
-                         image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
-            image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
-            menu.AppendSubMenu(image_menu, _("Raster"))
-
-        if node.contains_text():
-            text_menu = wx.Menu()
-            gui.Bind(wx.EVT_MENU, self.menu_remove(node, types=(SVGText)),
-                     text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
-            menu.AppendSubMenu(text_menu, _("Text"))
-
+            if isinstance(node.object, Path):
+                gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
+                         menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
+            if isinstance(node.object, SVGImage):
+                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
+                         menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_dither(node),
+                         menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
+                         menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
+            if isinstance(node.object, SVGText):
+                gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
+                         menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -2132,7 +2149,7 @@ class RootNode(list):
         def specific(event):
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
-            bounds = Node.bounding_box(child_objects)
+            bounds = ElementFunctions.bounding_box(child_objects)
             if bounds is None:
                 return None
             xmin, ymin, xmax, ymax = bounds
@@ -2189,7 +2206,7 @@ class RootNode(list):
         value *= tau
 
         def specific(event):
-            bounds = Node.bounding_box(node.parent)
+            bounds = ElementFunctions.bounding_box(node.parent)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2212,7 +2229,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = Node.bounding_box(node.parent)
+            bounds = ElementFunctions.bounding_box(node.parent)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2380,6 +2397,31 @@ class RootNode(list):
             node.reverse()
             self.kernel.signal('rebuild_tree', 0)
 
+        return specific
+
+    def menu_clear_all(self, node):
+        def specific(event):
+            raise NotImplementedError
+        return specific
+
+    def menu_reclassify_operations(self, node):
+        def specific(event):
+            raise NotImplementedError
+        return specific
+
+    def menu_convert_operation(self, node, name):
+        def specific(event):
+            raise NotImplementedError
+        return specific
+
+    def menu_clear_all(self, node):
+        def specific(event):
+            raise NotImplementedError
+        return specific
+
+    def menu_convert_text(self, node):
+        def specific(event):
+            raise NotImplementedError
         return specific
 
 
