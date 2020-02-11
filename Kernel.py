@@ -568,6 +568,7 @@ class Kernel:
     def __init__(self, config=None):
         self.elements = []
         self.operations = []
+        self.filenodes = {}
 
         self.config = None
 
@@ -1018,10 +1019,15 @@ class Kernel:
                     engrave.append(element)
             if isinstance(element, SVGImage) or (element.fill is not None and element.fill != "none"):
                 raster.append(element)
-        self.operations.append(raster)
-        self.operations.append(engrave)
-        self.operations.append(cut)
-        return [raster, engrave, cut]
+        ops = []
+        if len(raster) > 0:
+            ops.append(raster)
+        if len(engrave) > 0:
+            ops.append(engrave)
+        if len(cut) > 0:
+            ops.append(cut)
+        self.operations.extend(ops)
+        return ops
 
     def load(self, pathname):
         for loader_name, loader in self.loaders.items():
@@ -1031,6 +1037,7 @@ class Kernel:
                     if results is None:
                         continue
                     elements, pathname, basename = results
+                    self.filenodes[basename] = elements
                     self.elements.extend(elements)
                     self('elements', elements)
                     return elements, pathname, basename

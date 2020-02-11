@@ -467,6 +467,7 @@ class MeerK40t(wx.Frame):
         :param args:
         :return:
         """
+        self.root.rebuild_tree()
         self.request_refresh()
 
     def on_usb_error(self, value):
@@ -572,9 +573,7 @@ class MeerK40t(wx.Frame):
         results = self.kernel.load(pathname)
         if results is not None:
             elements, pathname, basename = results
-            ops = self.kernel.classify(elements)
-            self.root.add_operations_group(ops, pathname, basename)
-            self.root.add_element_group(elements, pathname, basename)
+            self.kernel.classify(elements)
             return True
         return False
 
@@ -666,7 +665,8 @@ class MeerK40t(wx.Frame):
         if self.kernel is None:
             return
         self.update_buffer_ui_thread()
-        self.Refresh()
+        self.scene.Refresh()
+        # self.Refresh()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
 
@@ -1382,6 +1382,9 @@ NODE_OPERATION_ELEMENT = 4
 NODE_ELEMENTS_BRANCH = 10
 NODE_ELEMENT_GROUP = 11
 NODE_ELEMENT = 12
+NODE_FILES_BRANCH = 20
+NODE_FILE_FILE = 21
+NODE_FILE_ELEMENT = 22
 
 
 class Node(list):
@@ -1391,7 +1394,7 @@ class Node(list):
     Deleting the object deregisters the node in the tree.
     """
 
-    def __init__(self, node_type,  data_object, parent, root):
+    def __init__(self, node_type,  data_object, parent, root, pos=None):
         list.__init__(self)
         self.parent = parent
         self.root = root
@@ -1407,7 +1410,10 @@ class Node(list):
             self.bounds = None
         parent_item = parent.item
         tree = root.tree
-        item = tree.AppendItem(parent_item, self.name)
+        if pos is None:
+            item = tree.AppendItem(parent_item, self.name)
+        else:
+            item = tree.InsertItem(parent_item, pos, self.name)
         self.item = item
         if id(data_object) in self.root.tree_lookup:
             self.root.tree_lookup[id(data_object)].append(self)
@@ -1442,6 +1448,12 @@ class Node(list):
     def update_name(self):
         self.name = str(self.object)
         self.root.tree.SetItemText(self.item, self.name)
+        try:
+            stroke = self.object.values[SVG_ATTR_STROKE]
+            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            self.root.tree.SetItemTextColour(self.item, color)
+        except AttributeError:
+            pass
 
     def remove_node(self):
         for q in self:
@@ -1457,36 +1469,58 @@ class Node(list):
             return
         root.notify_removed(self)
 
-        print(len(links))
         if self.type == NODE_ELEMENT:
             root.kernel.elements.remove(self.object)
             for n in links:
                 n.remove_node()
         elif self.type == NODE_OPERATION:
-            self.root.kernel.operations.remove(self.object)
+            try:
+                root.kernel.operations.remove(self.object)
+            except ValueError:
+                pass
         self.item = None
         self.parent = None
         self.root = None
         self.type = -1
 
+    def move_node(self, new_parent, pos=None):
+        tree = self.root.tree
+        item = self.item
+        image = tree.GetItemImage(item)
+        data = tree.GetItemData(item)
+        color = tree.GetItemTextColour(item)
+        tree.Delete(item)
+        if pos is None:
+            self.item = tree.AppendItem(new_parent.item, self.name)
+        else:
+            self.item = tree.InsertItem(new_parent.item, pos, self.name)
+        item = self.item
+        tree.SetItemImage(item, image)
+        tree.SetItemData(item, data)
+        tree.SetItemTextColour(item, color)
+
     def __eq__(self, other):
         return other is self
 
-    def set_icon(self):
+    def set_icon(self, icon=None):
         root = self.root
         item = self.item
         data_object = self.object
         tree = root.tree
-        if isinstance(data_object, SVGImage):
-            image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
-            image_id = self.root.tree_images.Add(bitmap=image)
-            tree.SetItemImage(item, image=image_id)
-        if isinstance(data_object, Path):
-            image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
-            if image is not None:
+        if icon is None:
+            if isinstance(data_object, SVGImage):
+                image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
                 image_id = self.root.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-                tree.Update()
+            if isinstance(data_object, Path):
+                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
+                if image is not None:
+                    image_id = self.root.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+                    tree.Update()
+        else:
+            image_id = self.root.tree_images.Add(bitmap=icon)
+            tree.SetItemImage(item, image=image_id)
 
     def center(self):
         try:
@@ -1573,27 +1607,54 @@ class RootNode(list):
         self.selected_elements = []
         self.selected_operations = []
 
-        self.tree_images = wx.ImageList()
-        self.tree_images.Create(width=20, height=20)
-        self.tree_lookup = {}
-        self.tree.SetImageList(self.tree_images)
-
+        self.item = None
         self.dragging_node = None
         self.dragging_parent = None
+        self.tree_images = None
+        self.tree_lookup = None
+        self.node_elements = None
+        self.node_operations = None
+        self.node_files = None
+        self.rebuild_tree()
 
+    def rebuild_tree(self):
+        self.tree.DeleteAllItems()
+        self.tree_images = wx.ImageList()
+        self.tree_images.Create(width=20, height=20)
+        self.tree_lookup = {}  # id(data_object) -> [ *nodes ]
+        self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
-
         self.node_operations = Node(NODE_OPERATION_BRANCH, "Operations", self, self)
+        self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
         self.build_tree(self.node_operations, self.kernel.operations)
+        for n in self.node_operations:
+            if isinstance(n.object, RasterOperation):
+                n.set_icon(icons8_direction_20.GetBitmap())
+            else:
+                n.set_icon(icons8_laser_beam_20.GetBitmap())
+
         self.node_elements = Node(NODE_ELEMENTS_BRANCH, "Elements", self, self)
+        self.node_elements.set_icon(icons8_vector_20.GetBitmap())
         self.build_tree(self.node_elements, self.kernel.elements)
 
+        self.node_files = Node(NODE_FILES_BRANCH, "Files", self, self)
+        self.node_files.set_icon(icons8_file_20.GetBitmap())
+        self.build_tree(self.node_files, self.kernel.filenodes)
+        for n in self.node_files:
+            n.set_icon(icons8_file_20.GetBitmap())
+        self.tree.ExpandAll()
+
     def build_tree(self, parent_node, objects):
-        if not isinstance(objects, list):
-            return
-        for obj in objects:
-            node = Node(parent_node.type + 1, obj, parent_node, self)
-            self.build_tree(node, obj)
+        if isinstance(objects, list):
+            for obj in objects:
+                node = Node(parent_node.type + 1, obj, parent_node, self)
+                self.build_tree(node, obj)
+        elif isinstance(objects, dict):
+            for obj_key, obj_value in objects.items():
+                node = Node(parent_node.type + 1, obj_key, parent_node, self)
+                if not isinstance(obj_value, (list,dict)):
+                    obj_value = [obj_value]
+                self.build_tree(node, obj_value)
 
     def add_operations_group(self, ops, pathname, basename):
         group = Node(NODE_OPERATION_GROUP, basename, self.node_operations, self)
@@ -1607,10 +1668,12 @@ class RootNode(list):
         self.build_tree(group, elements)
 
     def notify_added(self, node):
-        self.kernel("elements", 0)
+        # self.kernel("elements", 0)
+        pass
 
     def notify_removed(self, node):
-        self.kernel("elements", 0)
+        # self.kernel("elements", 0)
+        pass
 
     def notify_tree_data_change(self):
         tree = self.tree
@@ -1625,7 +1688,7 @@ class RootNode(list):
         try:
             nodes = self.tree_lookup[id(element)]
             for node in nodes:
-                self.tree.SetItemText(node.item, str(element))
+                node.update_name()
         except KeyError:
             pass
 
@@ -1730,25 +1793,25 @@ class RootNode(list):
             return
         if drag_node.type == NODE_ELEMENT:
             if drop_node.type == NODE_OPERATION:
+                # Dragging element into operation adds that element to the op.
                 Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
             elif drop_node.type == NODE_ELEMENT:
+                # Dragging element into element.
                 pos = drop_node.parent.index(drop_node)
-                print("Drop postion: %d" % pos)
                 obj = drag_node.object
                 parent = drop_node.parent
-                drag_node.remove_node()
-                Node(NODE_ELEMENT, obj, parent, self)
+                drag_node.move_node(parent, pos=pos)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
             elif drop_node.type == NODE_ELEMENT_GROUP:
+                # Dragging element into element group.
                 obj = drag_node.object
                 parent = drop_node
-                drag_node.remove_node()
-                Node(NODE_ELEMENT, obj, parent, self)
+                drag_node.move_node(parent)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
@@ -1979,13 +2042,14 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in node.parent:
-                old_step = e.raster_step
-                e.raster_step = step_value
-                scale = float(step_value) / float(old_step)
-                m = e.transform
-                e.transform.post_scale(scale, scale, m.e, m.f)
+            element = node.object
+            old_step = element.raster_step
+            element.raster_step = step_value
+            scale = float(step_value) / float(old_step)
+            m = element.transform
+            element.transform.post_scale(scale, scale, m.e, m.f)
             self.kernel("elements", 0)
+            self.kernel("element_property_update", node.object)
 
         return specific
 

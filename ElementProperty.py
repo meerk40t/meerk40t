@@ -235,5 +235,6 @@ class ElementProperty(wx.Frame):
         self.text_name.Refresh()
         color = swizzlecolor(button.GetBackgroundColour().GetRGB())
         self.element.stroke = Color(color)
+        self.element.values[SVG_ATTR_STROKE] = Color(color).hex
         if self.kernel is not None:
             self.kernel("element_property_update", self.element)
