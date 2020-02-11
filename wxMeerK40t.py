@@ -2086,9 +2086,10 @@ class RootNode(list):
                 element.raster_step = step_value
             elif isinstance(element, SVGElement):
                 if VARIABLE_NAME_RASTER_STEP in element.values:
-                    old_step = element.values[VARIABLE_NAME_RASTER_STEP]
+                    old_step = float(element.values[VARIABLE_NAME_RASTER_STEP])
                 else:
                     old_step = 1
+                element.values[VARIABLE_NAME_RASTER_STEP] = str(step_value)
                 scale = float(step_value) / float(old_step)
                 m = element.transform
                 element.transform.post_scale(scale, scale, m.e, m.f)
