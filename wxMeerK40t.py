@@ -307,7 +307,7 @@ class MeerK40t(wx.Frame):
         self.guide_lines = None
         self.laserpath = [(0, 0, 0, 0)] * 1000
         self.laserpath_index = 0
-        self.move_function = self.move_pan
+        self.mouse_move_function = self.move_pan
         self.working_file = None
 
         self.__set_properties()
@@ -769,7 +769,7 @@ class MeerK40t(wx.Frame):
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
         self.root.set_selected_by_position(self.previous_scene_position)
-        self.move_function = self.move_selected
+        self.mouse_move_function = self.move_selected
         self.request_refresh()
 
     def on_left_mouse_up(self, event):
@@ -778,7 +778,7 @@ class MeerK40t(wx.Frame):
             self.scene.ReleaseMouse()
         self.previous_window_position = None
         self.previous_scene_position = None
-        self.move_function = self.move_pan
+        self.mouse_move_function = self.move_pan
 
     def on_mouse_double_click(self, event):
         position = event.GetPosition()
@@ -810,7 +810,7 @@ class MeerK40t(wx.Frame):
         sdy = (scene_position[1] - self.previous_scene_position[1])
         wdx = (window_position[0] - self.previous_window_position[0])
         wdy = (window_position[1] - self.previous_window_position[1])
-        self.move_function(wdx, wdy, sdx, sdy)
+        self.mouse_move_function(wdx, wdy, sdx, sdy)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
 
@@ -1708,7 +1708,7 @@ class RootNode(list):
             if not isinstance(selected, list):
                 selected = [selected]
         self.selected_elements = selected
-        self.selected_operations = []
+        self.selected_operations.clear()
 
     def set_selected_operations(self, selected):
         if selected is None:
@@ -1716,15 +1716,14 @@ class RootNode(list):
         else:
             if not isinstance(selected, list):
                 selected = [selected]
-        self.selected_elements = []
+        self.selected_elements.clear()
         self.selected_operations = selected
 
     def set_selected(self, selected):
         """Sets the selected element. This could be a LaserOperation or a LaserNode."""
-        if selected is None:
-            self.selected_elements = []
-            self.selected_operations = []
-        else:
+        self.selected_elements.clear()
+        self.selected_operations.clear()
+        if selected is not None:
             if isinstance(selected, SVGElement):
                 self.set_selected_elements([selected])
             elif isinstance(selected, LaserOperation):
@@ -1737,20 +1736,8 @@ class RootNode(list):
             return
         if len(self.selected_elements) == 0:
             return
-        for group in self.selected_group():
-            for obj in group.objects_of_children(SVGElement):
-                obj.transform.post_translate(dx, dy)
-
-    def groups_containing(self, elements):
-        for group in self.node_elements:
-            for n in group:
-                if n.object in elements:
-                    yield group
-                    break
-
-    def selected_group(self):
-        for g in self.groups_containing(self.selected_elements):
-            yield g
+        for obj in self.selected_elements:
+            obj.transform.post_translate(dx, dy)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1892,27 +1879,30 @@ class RootNode(list):
         """
         item = event.GetItem()
         node = self.tree.GetItemData(item)
+
+        self.selected_elements.clear()
+        self.selected_operations.clear()
         if node is None:
             return
-        self.set_selected(node.object)
-        if self.selected_operations is not None:
-            for o in self.selected_operations:
-                try:
-                    nodes = self.tree_lookup[id(o)]
-                    for node in nodes:
-                        self.tree.SelectItem(node.item, True)
-                except KeyError:
-                    pass
-        if self.selected_elements is not None:
-            for e in self.selected_elements:
-                try:
-                    nodes = self.tree_lookup[id(e)]
-                    for node in nodes:
-                        self.tree.SelectItem(node.item, True)
-                except KeyError:
-                    pass
+        if node.type == NODE_ELEMENTS_BRANCH:
+            for n in self.node_elements:
+                self.tree.SelectItem(n.item, True)
+            # self.selected_operations = list(self.kernel.elements)
+            self.gui.request_refresh()
+            return
+        for item in list(self.tree.GetSelections()):
+            node = self.tree.GetItemData(item)
+            if node.type == NODE_ELEMENT:
+                self.selected_elements.append(node.object)
+            elif node.type == NODE_OPERATION:
+                self.selected_operations.append(node.object)
+        self.gui.request_refresh()
 
     def set_selected_by_position(self, position):
+        if self.selected_elements is not None:
+            select_bounds = self.selected_bounds()
+            if select_bounds is not None and self.contains(select_bounds, position):
+                return # Select by position aborted since selection position within current select bounds.
         self.set_selected_elements(None)
         for e in reversed(self.kernel.elements):
             bounds = e.bbox()
@@ -2401,20 +2391,19 @@ class RootNode(list):
 
     def menu_clear_all(self, node):
         def specific(event):
-            raise NotImplementedError
+            node.object.clear()
+            self.kernel.signal('rebuild_tree', 0)
         return specific
 
     def menu_reclassify_operations(self, node):
         def specific(event):
-            raise NotImplementedError
+            kernel = node.root.kernel
+            kernel.operations.clear()
+            kernel.classify(kernel.elements)
+            self.kernel.signal('rebuild_tree', 0)
         return specific
 
     def menu_convert_operation(self, node, name):
-        def specific(event):
-            raise NotImplementedError
-        return specific
-
-    def menu_clear_all(self, node):
         def specific(event):
             raise NotImplementedError
         return specific
