@@ -1660,14 +1660,10 @@ class RootNode(list):
                 self.build_tree(node, obj_value)
 
     def add_operations_group(self, ops, pathname, basename):
-        # group = Node(NODE_OPERATION_GROUP, basename, self.node_operations, self)
-        # group.filepath = pathname
         self.build_tree(self.node_operations, ops)
 
     def add_element_group(self, elements, pathname, basename):
         """Called to add element group of elements, as loaded with the given pathname and basename."""
-        # group = Node(NODE_ELEMENT_GROUP, basename, self.node_elements, self)
-        # group.filepath = pathname
         self.build_tree(self.node_elements, elements)
 
     def notify_added(self, node):
@@ -2281,12 +2277,15 @@ class RootNode(list):
                 removed_object = node.object
                 self.kernel.elements.remove(removed_object)
                 for i in range(len(self.kernel.operations)):
-                    self.kernel.operations[i] = [e for e in self.kernel.operations[i]
-                                                 if e is not removed_object]
+                    elems = [e for e in self.kernel.operations[i] if e is not removed_object]
+                    self.kernel.operations[i].clear()
+                    self.kernel.operations[i].extend(elems)
                     if len(self.kernel.operations[i]) == 0:
                         self.kernel.operations[i] = None
-                self.kernel.operations = [op for op in self.kernel.operations
-                                          if op is not None]
+                ops = [op for op in self.kernel.operations if op is not None]
+                self.kernel.operations.clear()
+                self.kernel.operations.extend(ops)
+                
             elif node.type == NODE_OPERATION:
                 self.kernel.operations.remove(node.object)
             elif node.type == NODE_FILE_FILE:
