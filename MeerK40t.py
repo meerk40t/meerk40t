@@ -5,6 +5,7 @@ from Kernel import *
 
 kernel = Kernel()
 
+# TODO: Needs an option to change default speed, etc, parameters.
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')

@@ -1968,6 +1968,9 @@ class RootNode(list):
         if isinstance(node, RootNode):
             return
         t = node.type
+        if t == NODE_OPERATION:
+            gui.Bind(wx.EVT_MENU, self.menu_execute(node),
+                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
             gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
@@ -1977,22 +1980,21 @@ class RootNode(list):
         if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
             gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
                      menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
-        if node.type == NODE_ROOT:
+        if t == NODE_ROOT:
             pass
-        elif node.type == NODE_OPERATION_BRANCH:
+        elif t == NODE_OPERATION_BRANCH:
             pass
-        elif node.type == NODE_ELEMENTS_BRANCH:
+        elif t == NODE_ELEMENTS_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
                      menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL))
-        elif node.type == NODE_FILES_BRANCH:
+        elif t == NODE_FILES_BRANCH:
             pass
-        elif node.type == NODE_OPERATION:
-            gui.Bind(wx.EVT_MENU, self.menu_execute(node),
-                     menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+        elif t == NODE_OPERATION:
             operation_convert_submenu = wx.Menu()
             for name in ("Raster", "Engrave", "Cut"):
-                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name),
-                         operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL))
+                menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
+                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
+                menu_op.Enable(False)
             for name in ("ZDepth_Raster", "Cross-Engrave Raster", "Multishade_Raster", "Wait-Step_Raster"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
@@ -2006,14 +2008,20 @@ class RootNode(list):
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster(node),
                          menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
-        elif node.type == NODE_FILE_FILE:
+        elif t == NODE_FILE_FILE:
             if node.filepath is not None:
                 fpath = node.filepath
                 if fpath is not None:
                     name = os.path.basename(fpath)
                     gui.Bind(wx.EVT_MENU, self.menu_reload(node),
                              menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
-        elif node.type == NODE_ELEMENT:
+        elif t == NODE_ELEMENT:
+            duplicate_menu = wx.Menu()
+            for i in range(1, 10):
+                gui.Bind(wx.EVT_MENU, self.menu_duplicate(node, i),
+                         duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
+
             gui.Bind(wx.EVT_MENU, self.menu_hull(node),
                      menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, self.menu_reset(node),
@@ -2045,6 +2053,11 @@ class RootNode(list):
                 gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
                          menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
             if isinstance(node.object, SVGImage):
+                raster_step_menu = wx.Menu()
+                for i in range(1, 10):
+                    gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
+                             raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+                menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_dither(node),
@@ -2069,12 +2082,16 @@ class RootNode(list):
 
         def specific(event):
             element = node.object
-            old_step = element.raster_step
-            element.raster_step = step_value
-            scale = float(step_value) / float(old_step)
-            m = element.transform
-            element.transform.post_scale(scale, scale, m.e, m.f)
-            self.kernel.signal('rebuild_tree', 0)
+            if isinstance(element, RasterOperation):
+                element.raster_step = step_value
+            elif isinstance(element, SVGElement):
+                if VARIABLE_NAME_RASTER_STEP in element.values:
+                    old_step = element.values[VARIABLE_NAME_RASTER_STEP]
+                else:
+                    old_step = 1
+                scale = float(step_value) / float(old_step)
+                m = element.transform
+                element.transform.post_scale(scale, scale, m.e, m.f)
             self.kernel.signal("element_property_update", node.object)
 
         return specific
@@ -2278,7 +2295,7 @@ class RootNode(list):
 
         return specific
 
-    def menu_split_passes(self, node):
+    def menu_duplicate(self, node, copies):
         """
         Menu to break element into subpath.
 
@@ -2287,17 +2304,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.kernel.elements:
-                if e.passes != 1:
-                    parent = e.parent
-                    position = parent.index(e)
-                    e.detach()
-                    passes = e.passes
-                    e.passes = 1
-                    all = []
-                    for i in range(0, passes):
-                        all.append(e)
-                    parent.insert_all(position, all)
+            adding_elements = [copy(e) for e in list(self.selected_elements) * copies]
+            self.kernel.elements.extend(adding_elements)
+            self.kernel.classify(adding_elements)
             self.set_selected_elements(None)
             self.kernel.signal('rebuild_tree', 0)
 
