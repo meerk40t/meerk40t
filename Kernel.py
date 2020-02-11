@@ -1010,16 +1010,18 @@ class Kernel:
 
         if not isinstance(elements, list):
             elements = [elements]
-
+        ops = []
         for element in elements:
             if isinstance(element, Path):
                 if element.stroke == "red":
                     cut.append(element)
                 elif element.stroke == "blue":
                     engrave.append(element)
-            if isinstance(element, SVGImage) or (element.fill is not None and element.fill != "none"):
+            if isinstance(element, SVGImage):
+                ops.append(RasterOperation(element))
+            elif element.fill is not None and element.fill != "none":
                 raster.append(element)
-        ops = []
+
         if len(raster) > 0:
             ops.append(raster)
         if len(engrave) > 0:

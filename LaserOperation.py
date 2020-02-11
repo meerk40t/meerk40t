@@ -79,7 +79,6 @@ class RasterOperation(LaserOperation):
                     self.unidirectional = bool(obj.values['unidirectional'])
                 if 'overscan' in obj.values and obj.values['overscan'] is not None:
                     self.overscan = int(obj.values['overscan'])
-                self.append(obj)
             elif isinstance(obj, RasterOperation):
                 self.raster_step = obj.raster_step
                 self.raster_direction = obj.raster_direction

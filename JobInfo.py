@@ -124,9 +124,9 @@ class JobInfo(wx.Frame):
                 break
 
     def conditional_jobadd_make_raster(self):
-        for o in self.job_items:
-            if isinstance(o, RasterOperation):
-                if len(o) != 1 and not isinstance(o[0], SVGImage):
+        for op in self.job_items:
+            if isinstance(op, RasterOperation):
+                if len(op) != 1 or not isinstance(op[0], SVGImage):
                     self.jobadd_make_raster()
                     return
 
@@ -134,6 +134,8 @@ class JobInfo(wx.Frame):
         def make_image():
             for op in self.job_items:
                 if isinstance(op, RasterOperation):
+                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                        continue
                     renderer = LaserRender(self.kernel)
                     bounds = ElementFunctions.bounding_box(op)
                     if bounds is None:
