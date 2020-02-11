@@ -7,6 +7,7 @@ from svgelements import Length, SVGImage, SVGElement
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_SPEED = 'speed'
 VARIABLE_NAME_POWER = 'power'
+VARIABLE_NAME_OVERSCAN = 'overscan'
 VARIABLE_NAME_DRATIO = 'd_ratio'
 VARIABLE_NAME_RASTER_STEP = 'raster_step'
 VARIABLE_NAME_RASTER_DIRECTION = 'raster_direction'
@@ -26,12 +27,7 @@ class LaserOperation(list):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                if 'speed' in obj.values and obj.values['speed'] is not None:
-                    self.speed = float(obj.values['speed'])
-                if 'power' in obj.values and obj.values['power'] is not None:
-                    self.power = float(obj.values['power'])
-                if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
-                    self.dratio = float(obj.values['d_ratio'])
+                self.set_properties(obj)
                 self.append(obj)
             elif isinstance(obj, LaserOperation):
                 self.speed = obj.speed
@@ -52,6 +48,26 @@ class LaserOperation(list):
     def __copy__(self):
         return LaserOperation(self)
 
+    def has_same_properties(self, obj):
+        if 'speed' in obj.values and obj.values['speed'] is not None:
+            if self.speed != float(obj.values['speed']):
+                return False
+        if 'power' in obj.values and obj.values['power'] is not None:
+            if self.power != float(obj.values['power']):
+                return False
+        if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
+            if self.dratio != float(obj.values['d_ratio']):
+                return False
+        return True
+
+    def set_properties(self, obj):
+        if 'speed' in obj.values and obj.values['speed'] is not None:
+            self.speed = float(obj.values['speed'])
+        if 'power' in obj.values and obj.values['power'] is not None:
+            self.power = float(obj.values['power'])
+        if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
+            self.dratio = float(obj.values['d_ratio'])
+
 
 class RasterOperation(LaserOperation):
     """
@@ -71,14 +87,7 @@ class RasterOperation(LaserOperation):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                if 'raster_step' in obj.values and obj.values['raster_step'] is not None:
-                    self.raster_step = int(obj.values['raster_step'])
-                if 'raster_direction' in obj.values and obj.values['raster_direction'] is not None:
-                    self.raster_direction = int(obj.values['raster_direction'])
-                if 'unidirectional' in obj.values and obj.values['unidirectional'] is not None:
-                    self.unidirectional = bool(obj.values['unidirectional'])
-                if 'overscan' in obj.values and obj.values['overscan'] is not None:
-                    self.overscan = int(obj.values['overscan'])
+                self.set_properties(obj)
             elif isinstance(obj, RasterOperation):
                 self.raster_step = obj.raster_step
                 self.raster_direction = obj.raster_direction
@@ -95,6 +104,31 @@ class RasterOperation(LaserOperation):
 
     def __copy__(self):
         return RasterOperation(self)
+
+    def set_properties(self, obj):
+        if 'raster_step' in obj.values and obj.values['raster_step'] is not None:
+            self.raster_step = int(obj.values['raster_step'])
+        if 'raster_direction' in obj.values and obj.values['raster_direction'] is not None:
+            self.raster_direction = int(obj.values['raster_direction'])
+        if 'unidirectional' in obj.values and obj.values['unidirectional'] is not None:
+            self.unidirectional = bool(obj.values['unidirectional'])
+        if 'overscan' in obj.values and obj.values['overscan'] is not None:
+            self.overscan = int(obj.values['overscan'])
+
+    def has_same_properties(self, obj):
+        if 'raster_step' in obj.values and obj.values['raster_step'] is not None:
+            if self.raster_step != int(obj.values['raster_step']):
+                return False
+        if 'raster_direction' in obj.values and obj.values['raster_direction'] is not None:
+            if self.raster_direction != int(obj.values['raster_direction']):
+                return False
+        if 'unidirectional' in obj.values and obj.values['unidirectional'] is not None:
+            if self.unidirectional != bool(obj.values['unidirectional']):
+                return False
+        if 'overscan' in obj.values and obj.values['overscan'] is not None:
+            if self.overscan != int(obj.values['overscan']):
+                return False
+        return True
 
     def generate(self):
         yield COMMAND_SET_SPEED, self.speed
@@ -241,3 +275,5 @@ class CutOperation(LaserOperation):
             yield COMMAND_MODE_COMPACT, 0
             yield COMMAND_PLOT, plot
             yield COMMAND_MODE_DEFAULT, 0
+
+

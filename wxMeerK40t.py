@@ -2271,6 +2271,8 @@ class RootNode(list):
                                           if op is not None]
             elif node.type == NODE_OPERATION:
                 self.kernel.operations.remove(node.object)
+            elif node.type == NODE_FILE_FILE:
+                del self.kernel.filenodes[node.name]
             self.selected_elements.clear()
             self.kernel.signal('rebuild_tree', 0)
 
@@ -2400,6 +2402,15 @@ class RootNode(list):
 
     def menu_clear_all(self, node):
         def specific(event):
+            if node.type == NODE_ELEMENTS_BRANCH:
+                elements = self.kernel.elements
+                for i in range(len(self.kernel.operations)):
+                    self.kernel.operations[i] = [e for e in self.kernel.operations[i]
+                                                 if e not in elements]
+                    if len(self.kernel.operations[i]) == 0:
+                        self.kernel.operations[i] = None
+                self.kernel.operations = [op for op in self.kernel.operations
+                                          if op is not None]
             node.object.clear()
             self.kernel.signal('rebuild_tree', 0)
 

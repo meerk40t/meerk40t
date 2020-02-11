@@ -1004,30 +1004,45 @@ class Kernel:
         """
         if elements is None:
             return
-        raster = RasterOperation()
-        engrave = EngraveOperation()
-        cut = CutOperation()
+        raster = None
+        engrave = None
+        cut = None
+        rasters = []
+        engraves = []
+        cuts = []
 
         if not isinstance(elements, list):
             elements = [elements]
-        ops = []
         for element in elements:
             if isinstance(element, Path):
                 if element.stroke == "red":
+                    if cut is None or not cut.has_same_properties(element):
+                        cut = CutOperation()
+                        cuts.append(cut)
+                        cut.set_properties(element)
                     cut.append(element)
                 elif element.stroke == "blue":
+                    if engrave is None or not engrave.has_same_properties(element):
+                        engrave = EngraveOperation()
+                        engraves.append(engrave)
+                        engrave.set_properties(element)
                     engrave.append(element)
             if isinstance(element, SVGImage):
-                ops.append(RasterOperation(element))
+                # TODO: Add SVGImages to overall Raster
+                rasters.append(RasterOperation(element))
             elif element.fill is not None and element.fill != "none":
+                if raster is None or not raster.has_same_properties(element):
+                    raster = RasterOperation()
+                    rasters.append(raster)
+                    raster.set_properties(element)
                 raster.append(element)
-
-        if len(raster) > 0:
-            ops.append(raster)
-        if len(engrave) > 0:
-            ops.append(engrave)
-        if len(cut) > 0:
-            ops.append(cut)
+        rasters = [r for r in rasters if len(r) != 0]
+        engraves = [r for r in engraves if len(r) != 0]
+        cuts = [r for r in cuts if len(r) != 0]
+        ops = []
+        ops.extend(rasters)
+        ops.extend(engraves)
+        ops.extend(cuts)
         self.operations.extend(ops)
         return ops
 
