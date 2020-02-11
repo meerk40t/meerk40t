@@ -1798,10 +1798,14 @@ class RootNode(list):
                 return
             elif drop_node.type == NODE_OPERATION_ELEMENT:
                 drag_node.object.append(drop_node.parent.object)
-                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
+            elif drop_node.type == NODE_OPERATION_BRANCH:
+                obj = drag_node.object
+                self.kernel.classify(obj)
+                event.Allow()
+                self.notify_tree_data_change()
         elif drag_node.type == NODE_OPERATION_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging from op element to operation.
@@ -2285,7 +2289,7 @@ class RootNode(list):
                 ops = [op for op in self.kernel.operations if op is not None]
                 self.kernel.operations.clear()
                 self.kernel.operations.extend(ops)
-                
+
             elif node.type == NODE_OPERATION:
                 self.kernel.operations.remove(node.object)
             elif node.type == NODE_FILE_FILE:
