@@ -16,8 +16,8 @@ from BufferView import BufferView
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
-from ElementProperty import ElementProperty
 from ElementFunctions import ElementFunctions
+from ElementProperty import ElementProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
 from Kernel import *
@@ -147,7 +147,7 @@ class MeerK40t(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
         self.DragAcceptFiles(True)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 
@@ -353,7 +353,7 @@ class MeerK40t(wx.Frame):
         self.device_listening = None
 
     def notify_change(self):
-        self.kernel("elements", 0)
+        self.kernel.signal('rebuild_tree', 0)
 
     def add_language_menu(self):
         if os.path.exists('./locale'):
@@ -460,7 +460,7 @@ class MeerK40t(wx.Frame):
         if self.root is not None:
             self.root.on_element_update(*args)
 
-    def on_elements_update(self, *args):
+    def on_rebuild_tree_request(self, *args):
         """
         Called by 'elements' change. To refresh tree.
 
@@ -526,14 +526,14 @@ class MeerK40t(wx.Frame):
 
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
-        self.kernel.listen("elements", self.on_elements_update)
+        self.kernel.listen('rebuild_tree', self.on_rebuild_tree_request)
         self.kernel.listen("element_property_update", self.on_element_update)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
 
     def unlisten_scene(self):
         self.kernel.unlisten("device", self.on_device_switch)
-        self.kernel.unlisten("elements", self.on_elements_update)
+        self.kernel.unlisten('rebuild_tree', self.on_rebuild_tree_request)
         self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
@@ -1240,7 +1240,7 @@ class MeerK40t(wx.Frame):
                         element *= mx
                     except AttributeError:
                         pass
-                self.kernel.signal('elements', 0)
+                self.kernel.signal('rebuild_tree', 0)
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
@@ -1375,16 +1375,14 @@ class MeerK40t(wx.Frame):
 
 
 NODE_ROOT = 0
-NODE_OPERATION_BRANCH = 1
-NODE_OPERATION_GROUP = 2
-NODE_OPERATION = 3
-NODE_OPERATION_ELEMENT = 4
-NODE_ELEMENTS_BRANCH = 10
-NODE_ELEMENT_GROUP = 11
-NODE_ELEMENT = 12
-NODE_FILES_BRANCH = 20
-NODE_FILE_FILE = 21
-NODE_FILE_ELEMENT = 22
+NODE_OPERATION_BRANCH = 10
+NODE_OPERATION = 11
+NODE_OPERATION_ELEMENT = 12
+NODE_ELEMENTS_BRANCH = 20
+NODE_ELEMENT = 21
+NODE_FILES_BRANCH = 30
+NODE_FILE_FILE = 31
+NODE_FILE_ELEMENT = 32
 
 
 class Node(list):
@@ -1394,12 +1392,15 @@ class Node(list):
     Deleting the object deregisters the node in the tree.
     """
 
-    def __init__(self, node_type,  data_object, parent, root, pos=None):
+    def __init__(self, node_type, data_object, parent, root, pos=None, name=None):
         list.__init__(self)
         self.parent = parent
         self.root = root
         self.object = data_object
-        self.name = str(data_object)
+        if name is None:
+            self.name = str(data_object)
+        else:
+            self.name = name
         self.type = node_type
         self.passes = 1
         parent.append(self)
@@ -1436,6 +1437,8 @@ class Node(list):
             pass
         except KeyError:
             pass
+        except TypeError:
+            pass
         self.set_icon()
         root.notify_added(self)
 
@@ -1460,7 +1463,6 @@ class Node(list):
             q.remove_node()
         root = self.root
         links = root.tree_lookup[id(self.object)]
-        print(len(links))
         links.remove(self)
         self.parent.remove(self)
         try:
@@ -1469,15 +1471,15 @@ class Node(list):
             return
         root.notify_removed(self)
 
-        if self.type == NODE_ELEMENT:
-            root.kernel.elements.remove(self.object)
-            for n in links:
-                n.remove_node()
-        elif self.type == NODE_OPERATION:
-            try:
-                root.kernel.operations.remove(self.object)
-            except ValueError:
-                pass
+        # if self.type == NODE_ELEMENT:
+        #     root.kernel.elements.remove(self.object)
+        #     for n in links:
+        #         n.remove_node()
+        # elif self.type == NODE_OPERATION:
+        #     try:
+        #         root.kernel.operations.remove(self.object)
+        #     except ValueError:
+        #         pass
         self.item = None
         self.parent = None
         self.root = None
@@ -1513,7 +1515,8 @@ class Node(list):
                 image_id = self.root.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             if isinstance(data_object, Path):
-                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20, bitmap=True)
+                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20,
+                                                       bitmap=True)
                 if image is not None:
                     image_id = self.root.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
@@ -1624,7 +1627,7 @@ class RootNode(list):
         self.tree_lookup = {}  # id(data_object) -> [ *nodes ]
         self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
-        self.node_operations = Node(NODE_OPERATION_BRANCH, "Operations", self, self)
+        self.node_operations = Node(NODE_OPERATION_BRANCH, self.kernel.operations, self, self, name=_("Operations"))
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
         self.build_tree(self.node_operations, self.kernel.operations)
         for n in self.node_operations:
@@ -1633,11 +1636,11 @@ class RootNode(list):
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
 
-        self.node_elements = Node(NODE_ELEMENTS_BRANCH, "Elements", self, self)
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, self.kernel.elements, self, self, name=_("Elements"))
         self.node_elements.set_icon(icons8_vector_20.GetBitmap())
         self.build_tree(self.node_elements, self.kernel.elements)
 
-        self.node_files = Node(NODE_FILES_BRANCH, "Files", self, self)
+        self.node_files = Node(NODE_FILES_BRANCH, self.kernel.filenodes, self, self, name=_("Files"))
         self.node_files.set_icon(icons8_file_20.GetBitmap())
         self.build_tree(self.node_files, self.kernel.filenodes)
         for n in self.node_files:
@@ -1652,36 +1655,36 @@ class RootNode(list):
         elif isinstance(objects, dict):
             for obj_key, obj_value in objects.items():
                 node = Node(parent_node.type + 1, obj_key, parent_node, self)
-                if not isinstance(obj_value, (list,dict)):
+                if not isinstance(obj_value, (list, dict)):
                     obj_value = [obj_value]
                 self.build_tree(node, obj_value)
 
     def add_operations_group(self, ops, pathname, basename):
-        group = Node(NODE_OPERATION_GROUP, basename, self.node_operations, self)
-        group.filepath = pathname
-        self.build_tree(group, ops)
+        # group = Node(NODE_OPERATION_GROUP, basename, self.node_operations, self)
+        # group.filepath = pathname
+        self.build_tree(self.node_operations, ops)
 
     def add_element_group(self, elements, pathname, basename):
         """Called to add element group of elements, as loaded with the given pathname and basename."""
-        group = Node(NODE_ELEMENT_GROUP, basename, self.node_elements, self)
-        group.filepath = pathname
-        self.build_tree(group, elements)
+        # group = Node(NODE_ELEMENT_GROUP, basename, self.node_elements, self)
+        # group.filepath = pathname
+        self.build_tree(self.node_elements, elements)
 
     def notify_added(self, node):
-        # self.kernel("elements", 0)
         pass
 
     def notify_removed(self, node):
-        # self.kernel("elements", 0)
         pass
 
     def notify_tree_data_change(self):
-        tree = self.tree
-        tree.ExpandAll()
+        self.kernel.signal("rebuild_tree", 0)
+        # tree = self.tree
+        # tree.ExpandAll()
 
     def notify_tree_data_cleared(self):
-        tree = self.tree
-        tree.ExpandAll()
+        self.kernel.signal("rebuild_tree", 0)
+        # tree = self.tree
+        # tree.ExpandAll()
 
     def on_element_update(self, *args):
         element = args[0]
@@ -1726,8 +1729,8 @@ class RootNode(list):
                 self.set_selected_elements([selected])
             elif isinstance(selected, LaserOperation):
                 self.set_selected_operations([selected])
-        self.kernel("selection", self.selected_elements)
-        self.kernel("selected_ops", self.selected_operations)
+        self.kernel.signal("selection", self.selected_elements)
+        self.kernel.signal("selected_ops", self.selected_operations)
 
     def move_selected(self, dx, dy):
         if self.selected_elements is None:
@@ -1760,7 +1763,8 @@ class RootNode(list):
 
         drag_item = event.GetItem()
         node = self.tree.GetItemData(drag_item)
-        if node.type == NODE_ELEMENTS_BRANCH or node.type == NODE_ELEMENTS_BRANCH:
+        if node.type == NODE_ELEMENTS_BRANCH or node.type == NODE_OPERATION_BRANCH or\
+                node.type == NODE_FILES_BRANCH or node.type == NODE_FILE_ELEMENT or node.type == NODE_FILE_FILE:
             event.Skip()
             return
         self.dragging_node = node
@@ -1794,45 +1798,58 @@ class RootNode(list):
         if drag_node.type == NODE_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging element into operation adds that element to the op.
-                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
-                event.Allow()
+                drop_node.object.append(drag_node.object)
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
                 self.notify_tree_data_change()
+                event.Allow()
                 return
             elif drop_node.type == NODE_ELEMENT:
                 # Dragging element into element.
-                pos = drop_node.parent.index(drop_node)
-                obj = drag_node.object
-                parent = drop_node.parent
-                drag_node.move_node(parent, pos=pos)
-                event.Allow()
+                drag_node.parent.object.remove(drag_node.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
+                # parent = drop_node.parent
+                # drag_node.move_node(parent, pos=pos)
                 self.notify_tree_data_change()
-                return
-            elif drop_node.type == NODE_ELEMENT_GROUP:
-                # Dragging element into element group.
-                obj = drag_node.object
-                parent = drop_node
-                drag_node.move_node(parent)
                 event.Allow()
-                self.notify_tree_data_change()
                 return
             elif drop_node.type == NODE_OPERATION_ELEMENT:
-                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
+                drag_node.object.append(drop_node.parent.object)
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
-        if drag_node.type == NODE_OPERATION_ELEMENT:
+        elif drag_node.type == NODE_OPERATION_ELEMENT:
             if drop_node.type == NODE_OPERATION:
-                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
-                drag_node.remove_node()
+                # Dragging from op element to operation.
+                drag_node.parent.object.remove(drag_node.object)
+                drop_node.object.append(drag_node.object)
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
+                # drag_node.remove_node()
                 event.Allow()
                 self.notify_tree_data_change()
                 return
             if drop_node.type == NODE_OPERATION_ELEMENT:
-                Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
-                drag_node.remove_node()
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
+                drag_node.parent.object.remove(drag_node.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
+        elif drag_node.type == NODE_OPERATION:
+            if drop_node.type == NODE_OPERATION:
+                # Dragging operation to different operation.
+                drag_node.parent.object.remove(drag_node.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+            elif drop_node.type == NODE_OPERATION_BRANCH:
+                # Dragging operation to op branch.
+                pass
+
         event.Skip()
         # Do not allow images added to engrave or cut operations
         # Group dragged into group, creates subgroup.
@@ -2048,8 +2065,8 @@ class RootNode(list):
             scale = float(step_value) / float(old_step)
             m = element.transform
             element.transform.post_scale(scale, scale, m.e, m.f)
-            self.kernel("elements", 0)
-            self.kernel("element_property_update", node.object)
+            self.kernel.signal('rebuild_tree', 0)
+            self.kernel.signal("element_property_update", node.object)
 
         return specific
 
@@ -2067,7 +2084,7 @@ class RootNode(list):
                 ElementFunctions.make_actual(element)
                 node.bounds = None
                 node.set_icon()
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2083,7 +2100,7 @@ class RootNode(list):
             element = node.object
             if isinstance(element, SVGImage):
                 ElementFunctions.set_native(element)
-            self.kernel("elements", 0)
+            self.kernel.signal("elements", 0)
 
         return specific
 
@@ -2100,7 +2117,7 @@ class RootNode(list):
             if isinstance(element, SVGImage):
                 element.image = element.image.convert("1")
                 element.cache = None
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2128,7 +2145,7 @@ class RootNode(list):
             self.root.add_element_group(image_element, "generated raster", "raster")
             self.tree.Update()
             self.kernel.classify(image_element)
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2142,7 +2159,7 @@ class RootNode(list):
 
         def specific(event):
             node.object = abs(node.object)
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2156,7 +2173,7 @@ class RootNode(list):
 
         def specific(event):
             node.object.transform.reset()
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2181,7 +2198,7 @@ class RootNode(list):
             for e in node.parent:
                 obj = e.object
                 obj.transform.post_rotate(value, center_x, center_y)
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2204,7 +2221,7 @@ class RootNode(list):
             for e in node.parent:
                 obj = e.object
                 obj.transform.post_scale(value, value, center_x, center_y)
-                self.kernel("elements", 0)
+                self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2215,6 +2232,7 @@ class RootNode(list):
         :param node:
         :return:
         """
+
         def specific(event):
             filepath = node.filepath
             node.remove_node()
@@ -2263,7 +2281,7 @@ class RootNode(list):
                         all.append(e)
                     parent.insert_all(position, all)
             self.set_selected_elements(None)
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2283,7 +2301,7 @@ class RootNode(list):
                     subelement = Path(subpath)
                     add.append(subelement)
                 self.kernel.elements.append_all(add)
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
             self.set_selected_elements(None)
 
         return specific
@@ -2360,7 +2378,7 @@ class RootNode(list):
 
         def specific(event):
             node.reverse()
-            self.kernel("elements", 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2456,7 +2474,7 @@ class wxMeerK40t(Module, wx.App):
                 self.locale.AddCatalog('meerk40t')
             else:
                 self.locale = None
-            self.kernel('language', (lang, language_code, language_name, language_index))
+            self.kernel.signal('language', (lang, language_code, language_name, language_index))
 
         return update_language
 

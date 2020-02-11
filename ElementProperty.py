@@ -195,39 +195,39 @@ class ElementProperty(wx.Frame):
         try:
             self.element.name = self.text_name.GetValue()
             if self.kernel is not None:
-                self.kernel("element_property_update", self.element)
+                self.kernel.signal("element_property_update", self.element)
         except AttributeError:
             pass
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.element.speed = self.spin_speed_set.GetValue()
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)
 
     def on_spin_power(self, event):
         self.element.power = self.spin_power_set.GetValue()
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.element.dratio = self.spin_speed_dratio.GetValue()
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)
 
     def on_spin_passes(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.element.passes = self.spin_passes.GetValue()
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.element.raster_step = self.spin_step_size.GetValue()
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)
 
     def on_combobox_rasterdirection(self, event):  # wxGlade: Preferences.<event_handler>
         self.element.raster_direction = self.combo_raster_direction.GetSelection()
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)
 
     def on_button_color(self, event):  # wxGlade: ElementProperty.<event_handler>
         button = event.EventObject
@@ -237,4 +237,4 @@ class ElementProperty(wx.Frame):
         self.element.stroke = Color(color)
         self.element.values[SVG_ATTR_STROKE] = Color(color).hex
         if self.kernel is not None:
-            self.kernel("element_property_update", self.element)
+            self.kernel.signal("element_property_update", self.element)

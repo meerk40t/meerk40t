@@ -275,7 +275,6 @@ class JobInfo(wx.Frame):
             self.required_preprocessing_operations = []
             for op in ops:
                 op()
-            self.kernel('elements', 0)
             self.update_gui()
 
     def on_listbox_element_click(self, event):  # wxGlade: JobInfo.<event_handler>
