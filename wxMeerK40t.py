@@ -2345,17 +2345,16 @@ class RootNode(list):
         :return:
         """
         pts = []
-        for group in self.root.selected_group():
-            for obj in group.objects_of_children(SVGElement):
-                if isinstance(obj, Path):
-                    epath = abs(obj)
-                    pts += [q for q in epath.as_points()]
-                elif isinstance(obj, SVGImage):
-                    bounds = obj.bbox()
-                    pts += [(bounds[0], bounds[1]),
-                            (bounds[0], bounds[3]),
-                            (bounds[2], bounds[1]),
-                            (bounds[2], bounds[3])]
+        for obj in self.selected_elements:
+            if isinstance(obj, Path):
+                epath = abs(obj)
+                pts += [q for q in epath.as_points()]
+            elif isinstance(obj, SVGImage):
+                bounds = obj.bbox()
+                pts += [(bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3])]
         hull = [p for p in Point.convex_hull(pts)]
         if len(hull) == 0:
             return None
@@ -2378,11 +2377,9 @@ class RootNode(list):
             path.closed()
             path.stroke = Color('black')
             self.kernel.elements.append(path)
-            group = Node(NODE_ELEMENT_GROUP, "Convex Hull", self.node_elements, self.root)
-            Node(NODE_ELEMENT, path, group, self.root)
-            self.set_selected_elements(None)
-            self.tree.CollapseAll()
-            self.tree.ExpandAll()
+            self.set_selected_elements(path)
+            self.kernel.signal('rebuild_tree', 0)
+
 
         return convex_hull
 
@@ -2395,7 +2392,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            node.reverse()
+            node.object.reverse()
             self.kernel.signal('rebuild_tree', 0)
 
         return specific

@@ -178,15 +178,15 @@ class LaserRender:
         if drawstrokes and element.stroke is not None:
             gc.StrokePath(element.cache)
 
-    def draw_text(self, node, dc, draw_mode):
+    def draw_text(self, element, dc, draw_mode):
         try:
-            matrix = node.element.transform
+            matrix = element.transform
         except AttributeError:
             matrix = Matrix()
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if node.element.text is not None:
-            dc.DrawText(node.element.text, matrix.value_trans_x(), matrix.value_trans_y())
+        if element.text is not None:
+            dc.DrawText(element.text, matrix.value_trans_x(), matrix.value_trans_y())
 
     def make_thumbnail(self, node, maximum=None, width=None, height=None):
         pil_data = node.image
