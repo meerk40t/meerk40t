@@ -1890,6 +1890,14 @@ class RootNode(list):
             # self.selected_operations = list(self.kernel.elements)
             self.gui.request_refresh()
             return
+        if node.type == NODE_FILE_FILE:
+            for n in node:
+                obj = n.object
+                links = self.tree_lookup[id(obj)]
+                for link in links:
+                    self.tree.SelectItem(link.item, True)
+            self.gui.request_refresh()
+            return
         for item in list(self.tree.GetSelections()):
             node = self.tree.GetItemData(item)
             if node.type == NODE_ELEMENT:
