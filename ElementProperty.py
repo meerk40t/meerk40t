@@ -236,8 +236,7 @@ class ElementProperty(wx.Frame):
         self.text_name.SetBackgroundColour(color)
         self.text_name.Refresh()
         color = swizzlecolor(rgb)
-        color = Color(color)
-        color.opacity = 1.0
+        color = Color(color, 1.0)
         self.element.stroke = color
         self.element.values[SVG_ATTR_STROKE] = color.hex
         if self.kernel is not None:
