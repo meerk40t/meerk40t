@@ -71,22 +71,25 @@ class LaserRender:
             parse.command(event)
         return p
 
-    def make_raster(self, elements, bounds, width=None, height=None, bitmap=False):
+    def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
         xmin, ymin, xmax, ymax = bounds
+
         image_width = int(xmax - xmin)
         if image_width == 0:
             image_width = 1
+
         image_height = int(ymax - ymin)
         if image_height == 0:
             image_height = 1
+
         if width is None:
             width = image_width
-        else:
-            width = int(width)
         if height is None:
             height = image_height
-        else:
-            height = int(height)
+        width /= float(step)
+        height /= float(step)
+        width = int(width)
+        height = int(height)
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -94,6 +97,7 @@ class LaserRender:
         gc = wx.GraphicsContext.Create(dc)
         if not isinstance(elements, list):
             elements = [elements]
+
         for element in elements:
             matrix = element.transform
             old_matrix = Matrix(matrix)

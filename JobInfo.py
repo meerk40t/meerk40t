@@ -142,7 +142,7 @@ class JobInfo(wx.Frame):
                         return None
                     xmin, ymin, xmax, ymax = bounds
 
-                    image = renderer.make_raster(op, bounds)
+                    image = renderer.make_raster(op, bounds, step=op.raster_step)
                     image_element = SVGImage(image=image)
                     image_element.transform.post_translate(xmin, ymin)
                     op.clear()
