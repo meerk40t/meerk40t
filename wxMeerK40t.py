@@ -2209,8 +2209,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            node.object.transform.reset()
-            self.kernel.signal('rebuild_tree', 0)
+            for e in self.selected_elements:
+                e.transform.reset()
+            self.gui.request_refresh()
 
         return specific
 
