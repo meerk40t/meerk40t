@@ -1854,7 +1854,7 @@ class RootNode(list):
         if item is None:
             return
         node = self.tree.GetItemData(item)
-        self.root.set_selected(node.object)
+
         self.root.create_menu(self.gui, node)
         event.Skip()
 
@@ -2248,16 +2248,15 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = ElementFunctions.bounding_box(node.parent)
+            bounds = ElementFunctions.bounding_box(self.selected_elements)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             # center = node.parent.center()
 
-            for e in node.parent:
-                obj = e.object
+            for obj in self.selected_elements:
                 obj.transform.post_scale(value, value, center_x, center_y)
-                self.kernel.signal('rebuild_tree', 0)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
