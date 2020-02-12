@@ -1361,7 +1361,8 @@ class MeerK40t(wx.Frame):
         :param event:
         :return:
         """
-        self.kernel.open_window("JobInfo")
+        self.kernel.open_window("JobInfo").set_operations(self.kernel.operations)
+
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -2354,8 +2355,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            window = self.kernel.open_window("JobInfo")
-            window.set_operations(node.object)
+            self.kernel.open_window("JobInfo").set_operations(self.selected_operations)
 
         return open_jobinfo_window
 

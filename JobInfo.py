@@ -189,13 +189,12 @@ class JobInfo(wx.Frame):
     def set_operations(self, operations):
         if not isinstance(operations, list):
             operations = [operations]
-        if self.required_preprocessing_operations in None:
+        if self.required_preprocessing_operations is None:
             self.required_preprocessing_operations = []
         else:
             self.required_preprocessing_operations.clear()
         self.job_items.clear()
-        self.job_items.extend(operations)
-        for op in self.kernel.operations:
+        for op in operations:
             self.job_items.append(copy(op))
         self.calculate_preprocesses(operations)
         self.update_gui()
