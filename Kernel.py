@@ -2,7 +2,7 @@ import time
 from threading import *
 
 from LaserOperation import *
-from svgelements import Path
+from svgelements import Path, SVGText
 
 THREAD_STATE_UNKNOWN = -1
 THREAD_STATE_UNSTARTED = 0
@@ -1027,15 +1027,17 @@ class Kernel:
                         engraves.append(engrave)
                         engrave.set_properties(element)
                     engrave.append(element)
-            if isinstance(element, SVGImage):
+                else:
+                    if raster is None or not raster.has_same_properties(element):
+                        raster = RasterOperation()
+                        rasters.append(raster)
+                        raster.set_properties(element)
+                    raster.append(element)
+            elif isinstance(element, SVGImage):
                 # TODO: Add SVGImages to overall Raster
                 rasters.append(RasterOperation(element))
-            elif element.fill is not None and element.fill != "none":
-                if raster is None or not raster.has_same_properties(element):
-                    raster = RasterOperation()
-                    rasters.append(raster)
-                    raster.set_properties(element)
-                raster.append(element)
+            elif isinstance(element, SVGText):
+                pass  # I can't process actual text.
         rasters = [r for r in rasters if len(r) != 0]
         engraves = [r for r in engraves if len(r) != 0]
         cuts = [r for r in cuts if len(r) != 0]
