@@ -2332,13 +2332,13 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in [e for e in self.kernel.elements if isinstance(e, Path)]:
+            for e in self.selected_elements:
                 p = abs(e)
                 add = []
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
                     add.append(subelement)
-                self.kernel.elements.append_all(add)
+                self.kernel.elements.extend(add)
             self.kernel.signal('rebuild_tree', 0)
             self.set_selected_elements(None)
 
