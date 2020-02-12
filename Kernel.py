@@ -1057,7 +1057,7 @@ class Kernel:
                     if results is None:
                         continue
                     elements, pathname, basename = results
-                    self.filenodes[basename] = elements
+                    self.filenodes[pathname] = elements
                     self.elements.extend(elements)
                     self.signal('rebuild_tree', elements)
                     return elements, pathname, basename

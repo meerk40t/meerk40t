@@ -1656,6 +1656,7 @@ class RootNode(list):
         elif isinstance(objects, dict):
             for obj_key, obj_value in objects.items():
                 node = Node(parent_node.type + 1, obj_key, parent_node, self)
+                node.filepath = obj_key
                 if not isinstance(obj_value, (list, dict)):
                     obj_value = [obj_value]
                 self.build_tree(node, obj_value)
@@ -2019,11 +2020,9 @@ class RootNode(list):
                          menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
         elif t == NODE_FILE_FILE:
             if node.filepath is not None:
-                fpath = node.filepath
-                if fpath is not None:
-                    name = os.path.basename(fpath)
-                    gui.Bind(wx.EVT_MENU, self.menu_reload(node),
-                             menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+                name = os.path.basename(node.filepath)
+                gui.Bind(wx.EVT_MENU, self.menu_reload(node),
+                            menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
         elif t == NODE_ELEMENT:
             duplicate_menu = wx.Menu()
             for i in range(1, 10):
@@ -2231,8 +2230,7 @@ class RootNode(list):
             center_y = (bounds[3] + bounds[1]) / 2.0
             # center = node.parent.center()
 
-            for e in node.parent:
-                obj = e.object
+            for obj in self.selected_elements:
                 obj.transform.post_rotate(value, center_x, center_y)
             self.kernel.signal('rebuild_tree', 0)
 
@@ -2270,7 +2268,6 @@ class RootNode(list):
 
         def specific(event):
             filepath = node.filepath
-            node.remove_node()
             self.gui.load(filepath)
 
         return specific
