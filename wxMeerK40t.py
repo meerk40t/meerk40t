@@ -2177,9 +2177,9 @@ class RootNode(list):
             image_element.transform.post_translate(xmin, ymin)
 
             self.kernel.elements.append(image_element)
-            self.root.add_element_group(image_element, "generated raster", "raster")
-            self.tree.Update()
-            self.kernel.classify(image_element)
+            node.object.clear()
+            self.build_tree(self.node_elements, image_element)
+            node.object.append(image_element)
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
