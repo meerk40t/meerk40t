@@ -2193,7 +2193,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            node.object = abs(node.object)
+            for element in self.selected_elements:
+                element.reify()
+                element.cache = None
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
