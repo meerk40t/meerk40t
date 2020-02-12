@@ -6357,6 +6357,8 @@ class SVGImage(GraphicObject, Transformable):
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
         self.url = None
+        self.data = None
+        self.viewbox = None
         if len(args) == 1:
             if isinstance(args[0], dict):
                 values = args[0]

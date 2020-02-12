@@ -1027,7 +1027,9 @@ class Kernel:
                         engraves.append(engrave)
                         engrave.set_properties(element)
                     engrave.append(element)
-                else:
+                print(element.fill)
+                if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
+                    # not classed already, or was already classed but has a fill.
                     if raster is None or not raster.has_same_properties(element):
                         raster = RasterOperation()
                         rasters.append(raster)
