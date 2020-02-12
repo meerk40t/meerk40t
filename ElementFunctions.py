@@ -8,7 +8,8 @@ class ElementFunctions:
         if not isinstance(image, SVGImage):
             return False
         m = image.transform
-        if 'raster_step' in image.values: # todo: This should draw values parent operation it has no connection to.
+        if 'raster_step' in image.values:
+            # todo: This should draw values parent operation it has no connection to.
             s = float(image.values['raster_step'])
         else:
             s = 1.0
@@ -39,12 +40,13 @@ class ElementFunctions:
         else:
             step = 1.0
 
+        image.transform.pre_scale(1.0 / step, 1.0 / step)
         tx = m.value_trans_x()
         ty = m.value_trans_y()
         m.e = 0.0
         m.f = 0.0
         image.transform.pre_scale(1.0 / step, 1.0 / step)
-        bbox = image.bbox()
+        bbox = ElementFunctions.bounding_box(image)
         width = int(ceil(bbox[2] - bbox[0]))
         height = int(ceil(bbox[3] - bbox[1]))
         m.inverse()

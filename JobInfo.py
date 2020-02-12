@@ -186,6 +186,20 @@ class JobInfo(wx.Frame):
 
         self.required_preprocessing_operations.append(scale_for_rotary)
 
+    def set_operations(self, operations):
+        if not isinstance(operations, list):
+            operations = [operations]
+        if self.required_preprocessing_operations in None:
+            self.required_preprocessing_operations = []
+        else:
+            self.required_preprocessing_operations.clear()
+        self.job_items.clear()
+        self.job_items.extend(operations)
+        for op in self.kernel.operations:
+            self.job_items.append(copy(op))
+        self.calculate_preprocesses(operations)
+        self.update_gui()
+
     def set_device(self, device):
         self.device = device
         if self.device is None:
@@ -202,13 +216,7 @@ class JobInfo(wx.Frame):
             self.menu_autobeep.Check(device.autobeep)
             self.menu_autostart.Check(device.autostart)
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        self.set_device(kernel.device)
-        self.required_preprocessing_operations = []
-        self.job_items = []
-        for op in kernel.operations:
-            self.job_items.append(copy(op))
+    def calculate_preprocesses(self, head_node):
         self.jobadd_remove_text()
         if self.device.rotary:
             self.conditional_jobadd_scale_rotary()
@@ -221,6 +229,12 @@ class JobInfo(wx.Frame):
             self.jobadd_home(None)
 
         self.update_gui()
+
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.set_device(kernel.device)
+        self.required_preprocessing_operations = []
+        self.job_items = []
 
     def on_close(self, event):
         self.kernel.mark_window_closed("JobInfo")

@@ -1745,12 +1745,12 @@ class RootNode(list):
         self.dragging_node = None
 
         drag_item = event.GetItem()
-        node = self.tree.GetItemData(drag_item)
-        if node.type == NODE_ELEMENTS_BRANCH or node.type == NODE_OPERATION_BRANCH or \
-                node.type == NODE_FILES_BRANCH or node.type == NODE_FILE_ELEMENT or node.type == NODE_FILE_FILE:
+        node_data = self.tree.GetItemData(drag_item)
+        if node_data.type == NODE_ELEMENTS_BRANCH or node_data.type == NODE_OPERATION_BRANCH or \
+                node_data.type == NODE_FILES_BRANCH or node_data.type == NODE_FILE_ELEMENT or node_data.type == NODE_FILE_FILE:
             event.Skip()
             return
-        self.dragging_node = node
+        self.dragging_node = node_data
         event.Allow()
 
     def on_drag_end_handler(self, event):
@@ -2355,6 +2355,7 @@ class RootNode(list):
 
         def open_jobinfo_window(event):
             window = self.kernel.open_window("JobInfo")
+            window.set_operations(node.object)
 
         return open_jobinfo_window
 
