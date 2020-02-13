@@ -128,7 +128,9 @@ class JobInfo(wx.Frame):
             if isinstance(op, RasterOperation):
                 if len(op) == 0:
                     continue
-                elif len(op) >= 1 or not isinstance(op[0], SVGImage):
+                if len(op) == 1 and not isinstance(op[0], SVGImage):
+                    continue
+                if len(op) > 1:
                     self.jobadd_make_raster()
                     return True
         return False
@@ -155,18 +157,18 @@ class JobInfo(wx.Frame):
 
     def conditional_jobadd_actualize_image(self):
         for o in self.job_items:
-            if isinstance(o, LaserOperation):
+            if isinstance(o, RasterOperation):
                 for e in o:
-                    if ElementFunctions.needs_actualization(e):
+                    if ElementFunctions.needs_actualization(o,e):
                         self.jobadd_actualize_image()
                         return
 
     def jobadd_actualize_image(self):
         def actualize():
             for o in self.job_items:
-                if isinstance(o, LaserOperation):
+                if isinstance(o, RasterOperation):
                     for e in o:
-                        if ElementFunctions.needs_actualization(e):
+                        if ElementFunctions.needs_actualization(o,e):
                             ElementFunctions.make_actual(e)
         self.required_preprocessing_operations.append(actualize)
 

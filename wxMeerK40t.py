@@ -2089,12 +2089,18 @@ class RootNode(list):
                          menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
             if isinstance(node.object, SVGImage):
                 raster_step_menu = wx.Menu()
+
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
                     gui.Bind(wx.EVT_MENU, self.menu_raster_step_image(node, i), menu_item)
-                    step = float(node.object.values['raster_step'])
+                    if 'raster_step' in node.object.values:
+                        step = float(node.object.values['raster_step'])
+                    else:
+                        step = 1.0
                     if i == step:
-                        menu_item.Check(True)
+                        m = node.object.transform
+                        if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
+                            menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
@@ -2137,17 +2143,12 @@ class RootNode(list):
 
         def specific(event):
             element = node.object
-            if isinstance(element, RasterOperation):
-                element.raster_step = step_value
-            elif isinstance(element, SVGElement):
-                if VARIABLE_NAME_RASTER_STEP in element.values:
-                    old_step = float(element.values[VARIABLE_NAME_RASTER_STEP])
-                else:
-                    old_step = 1
-                element.values[VARIABLE_NAME_RASTER_STEP] = str(step_value)
-                scale = float(step_value) / float(old_step)
-                m = element.transform
-                element.transform.post_scale(scale, scale, m.e, m.f)
+            element.values[VARIABLE_NAME_RASTER_STEP] = str(step_value)
+            m = element.transform
+            tx = m.e
+            ty = m.f
+            element.transform = Matrix.scale(float(step_value), float(step_value))
+            element.transform.post_translate(tx, ty)
             self.kernel.signal("element_property_update", node.object)
             self.root.gui.request_refresh()
 
@@ -2337,10 +2338,11 @@ class RootNode(list):
         def specific(event):
             node = remove_node
             if node.type == NODE_ELEMENT:
-                removed_object = node.object
-                self.kernel.elements.remove(removed_object)
+                removed_objects = self.selected_elements
+                for e in removed_objects:
+                    self.kernel.elements.remove(e)
                 for i in range(len(self.kernel.operations)):
-                    elems = [e for e in self.kernel.operations[i] if e is not removed_object]
+                    elems = [e for e in self.kernel.operations[i] if e not in removed_objects]
                     self.kernel.operations[i].clear()
                     self.kernel.operations[i].extend(elems)
                     if len(self.kernel.operations[i]) == 0:

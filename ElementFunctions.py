@@ -1,19 +1,27 @@
+from LaserOperation import RasterOperation
 from svgelements import *
 
 
 class ElementFunctions:
 
     @staticmethod
-    def needs_actualization(image):
-        if not isinstance(image, SVGImage):
+    def needs_actualization(operation, image_element):
+        if not isinstance(image_element, SVGImage):
             return False
-        m = image.transform
-        if 'raster_step' in image.values:
-            # todo: This should draw values parent operation it has no connection to.
-            s = float(image.values['raster_step'])
+        if not isinstance(operation, RasterOperation):
+            return False
+        op_step = operation.raster_step
+        if 'raster_step' in image_element.values:
+            img_step = float(image_element.values['raster_step'])
         else:
-            s = 1.0
-        return m.a != s or m.b != 0.0 or m.c != 0.0 or m.d != s
+            img_step = 1.0
+        if op_step != img_step:
+            return True  # Different step values force require actualization.
+
+        m = image_element.transform
+        # Transformation must be uniform to permit native rastering.
+        return m.a != img_step or m.b != 0.0 or m.c != 0.0 or m.d != img_step
+
 
     @staticmethod
     def make_actual(image):
