@@ -332,8 +332,6 @@ class K40Controller(Pipe):
         self.device.signal('pipe;buffer', 0)
 
     def reset(self):
-        self.buffer = b''
-        self.queue = b''
         self.thread = ControllerQueueThread(self)
         self.device.add_thread("controller;thread", self.thread)
         self.state = THREAD_STATE_UNSTARTED
