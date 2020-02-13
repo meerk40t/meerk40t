@@ -196,7 +196,18 @@ class JobInfo(wx.Frame):
         self.job_items.clear()
         for op in operations:
             self.job_items.append(copy(op))
-        self.calculate_preprocesses(operations)
+
+        self.jobadd_remove_text()
+        if self.device.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
+        if self.device.autobeep:
+            self.jobadd_beep(None)
+
+        if self.device.autohome:
+            self.jobadd_home(None)
+
         self.update_gui()
 
     def set_device(self, device):
@@ -214,20 +225,6 @@ class JobInfo(wx.Frame):
             self.menu_autohome.Check(device.autohome)
             self.menu_autobeep.Check(device.autobeep)
             self.menu_autostart.Check(device.autostart)
-
-    def calculate_preprocesses(self, head_node):
-        self.jobadd_remove_text()
-        if self.device.rotary:
-            self.conditional_jobadd_scale_rotary()
-        self.conditional_jobadd_actualize_image()
-        self.conditional_jobadd_make_raster()
-        if self.device.autobeep:
-            self.jobadd_beep(None)
-
-        if self.device.autohome:
-            self.jobadd_home(None)
-
-        self.update_gui()
 
     def set_kernel(self, kernel):
         self.kernel = kernel

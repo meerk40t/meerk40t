@@ -1120,8 +1120,9 @@ class MeerK40t(wx.Frame):
         self.working_file = None
         self.kernel.elements = []
         self.kernel.operations = []
+        self.kernel.filenodes = {}
         self.request_refresh()
-        self.root.notify_tree_cleared()
+        self.kernel.signal('rebuild_tree', 0)
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -2013,7 +2014,7 @@ class RootNode(list):
             if isinstance(node.object, RasterOperation):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
-                    gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_operation(node, i),
                              raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster(node),
@@ -2063,7 +2064,7 @@ class RootNode(list):
             if isinstance(node.object, SVGImage):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
-                    gui.Bind(wx.EVT_MENU, self.menu_step(node, i),
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_image(node, i),
                              raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
@@ -2079,7 +2080,24 @@ class RootNode(list):
             gui.PopupMenu(menu)
             menu.Destroy()
 
-    def menu_step(self, node, step_value):
+    def menu_raster_step_operation(self, node, step_value):
+        """
+        Change raster step values of operation
+
+        :param node:
+        :param step_value:
+        :return:
+        """
+
+        def specific(event):
+            element = node.object
+            if isinstance(element, RasterOperation):
+                element.raster_step = step_value
+            self.kernel.signal("element_property_update", node.object)
+
+        return specific
+
+    def menu_raster_step_image(self, node, step_value):
         """
         Change raster step values of subelements.
 
@@ -2170,11 +2188,14 @@ class RootNode(list):
             bounds = ElementFunctions.bounding_box(child_objects)
             if bounds is None:
                 return None
+            step = float(node.object.raster_step)
             xmin, ymin, xmax, ymax = bounds
 
-            image = renderer.make_raster(child_objects, bounds)
+            image = renderer.make_raster(child_objects, bounds, width=(xmax-xmin)/step, height=(ymax-ymin)/step)
             image_element = SVGImage(image=image)
+            image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
+            image_element.values['raster_step'] = step
 
             self.kernel.elements.append(image_element)
             node.object.clear()
