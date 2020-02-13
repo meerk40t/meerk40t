@@ -2037,8 +2037,11 @@ class RootNode(list):
             if isinstance(node.object, RasterOperation):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
-                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_operation(node, i),
-                             raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+                    menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
+                    gui.Bind(wx.EVT_MENU,self.menu_raster_step_operation(node, i), menu_item)
+                    step = float(node.object.raster_step)
+                    if i == step:
+                        menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster(node),
                          menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
@@ -2087,8 +2090,11 @@ class RootNode(list):
             if isinstance(node.object, SVGImage):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
-                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_image(node, i),
-                             raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
+                    menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_image(node, i), menu_item)
+                    step = float(node.object.values['raster_step'])
+                    if i == step:
+                        menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
                 gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
@@ -2143,6 +2149,7 @@ class RootNode(list):
                 m = element.transform
                 element.transform.post_scale(scale, scale, m.e, m.f)
             self.kernel.signal("element_property_update", node.object)
+            self.root.gui.request_refresh()
 
         return specific
 

@@ -6,6 +6,9 @@ from Kernel import *
 kernel = Kernel()
 
 # TODO: Needs an option to change default speed, etc, parameters.
+# TODO: Needs home command / lock, unlock.
+# TODO: Needs command for load special module.
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')

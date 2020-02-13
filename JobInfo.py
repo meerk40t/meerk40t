@@ -126,9 +126,12 @@ class JobInfo(wx.Frame):
     def conditional_jobadd_make_raster(self):
         for op in self.job_items:
             if isinstance(op, RasterOperation):
-                if len(op) != 1 or not isinstance(op[0], SVGImage):
+                if len(op) == 0:
+                    continue
+                elif len(op) >= 1 or not isinstance(op[0], SVGImage):
                     self.jobadd_make_raster()
-                    return
+                    return True
+        return False
 
     def jobadd_make_raster(self):
         def make_image():
