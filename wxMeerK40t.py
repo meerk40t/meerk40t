@@ -2106,8 +2106,6 @@ class RootNode(list):
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_dither(node),
                          menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster_native(node),
-                         menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
             if isinstance(node.object, SVGText):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
                          menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
@@ -2169,22 +2167,6 @@ class RootNode(list):
                 node.bounds = None
                 node.set_icon()
             self.kernel.signal('rebuild_tree', 0)
-
-        return specific
-
-    def menu_raster_native(self, node):
-        """
-        Reset the raster to native form validating the matrix for the given step value.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            element = node.object
-            if isinstance(element, SVGImage):
-                ElementFunctions.set_native(element)
-            self.kernel.signal("elements", 0)
 
         return specific
 

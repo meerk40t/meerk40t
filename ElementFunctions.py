@@ -74,18 +74,6 @@ class ElementFunctions:
         self.scene_bounds = None
 
     @staticmethod
-    def set_native(element):
-        tx = element.transform.value_trans_x()
-        ty = element.transform.value_trans_y()
-        step = float(element.raster_step)
-
-        element.transform.reset()
-        element.transform.post_scale(step, step)
-        element.transform.post_translate(tx, ty)
-        step = float(element.raster_step)
-        element.transform.pre_scale(step, step)
-
-    @staticmethod
     def bounding_box(elements):
         if isinstance(elements, SVGElement):
             elements = [elements]
