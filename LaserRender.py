@@ -139,7 +139,7 @@ class LaserRender:
             self.pen.SetWidth(width)
             gc.SetPen(self.pen)
         else:
-            gc.SetPen(wx.TRANSPARENT_BRUSH)
+            gc.SetPen(wx.TRANSPARENT_PEN)
 
     def set_brush(self, gc, fill):
         c = fill
