@@ -133,14 +133,13 @@ class LaserRender:
 
     def set_pen(self, gc, stroke, width=1.0):
         c = swizzlecolor(stroke)
-        if c is None:
-            self.pen.SetColour(None)
-        else:
+        if c is not None and c != 'none':
             self.color.SetRGB(c)
             self.pen.SetColour(self.color)
-
-        self.pen.SetWidth(width)
-        gc.SetPen(self.pen)
+            self.pen.SetWidth(width)
+            gc.SetPen(self.pen)
+        else:
+            gc.SetPen(wx.TRANSPARENT_BRUSH)
 
     def set_brush(self, gc, fill):
         c = fill
