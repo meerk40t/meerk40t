@@ -53,7 +53,6 @@ class ElementFunctions:
         ty = m.value_trans_y()
         m.e = 0.0
         m.f = 0.0
-        image.transform.pre_scale(1.0 / step, 1.0 / step)
         bbox = ElementFunctions.bounding_box(image)
         width = int(ceil(bbox[2] - bbox[0]))
         height = int(ceil(bbox[3] - bbox[1]))
