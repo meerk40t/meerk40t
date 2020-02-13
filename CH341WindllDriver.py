@@ -16,7 +16,10 @@ class CH341Driver:
             self.state_listener = lambda code: None  # Code, Name, Message
         else:
             self.state_listener = state_listener
-        self.driver = windll.LoadLibrary("CH341DLL.dll")
+        try:
+            self.driver = windll.LoadLibrary("CH341DLL.dll")
+        except NameError:
+            raise ConnectionRefusedError
         self.driver_index = 0
         self.index = index
         self.bus = bus
