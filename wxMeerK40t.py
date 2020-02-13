@@ -2323,6 +2323,9 @@ class RootNode(list):
                 self.kernel.operations.remove(node.object)
             elif node.type == NODE_FILE_FILE:
                 del self.kernel.filenodes[node.name]
+            elif node.type == NODE_OPERATION_ELEMENT:
+                op = node.parent.object
+                op.remove(node.object)
             self.selected_elements.clear()
             self.kernel.signal('rebuild_tree', 0)
 
