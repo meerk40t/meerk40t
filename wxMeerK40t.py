@@ -398,6 +398,7 @@ class MeerK40t(wx.Frame):
         kernel.add_control("Path", self.open_path_dialog)
         kernel.add_control("FPS", self.open_fps_dialog)
         kernel.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        kernel.add_control("Home and Dot", self.run_home_and_dot_test)
 
         self.SetSize((kernel.window_width, kernel.window_height))
         bedwidth = kernel.bed_width
@@ -1249,12 +1250,34 @@ class MeerK40t(wx.Frame):
 
         if dlg.ShowModal() == wx.ID_OK:
             path = Path(dlg.GetValue())
-            path.fill = 'black'
-            path.stroke = 'black'
+            path.stroke = 'blue'
             p = abs(path)
             self.kernel.elements.append(p)
             self.kernel.classify(p)
+            self.kernel.signal("rebuild_tree", 0)
         dlg.Destroy()
+
+    def run_home_and_dot_test(self):
+        self.kernel.signal("rebuild_tree", 0)
+
+        def home_dot_test():
+            for i in range(25):
+                yield COMMAND_SET_ABSOLUTE
+                yield COMMAND_MODE_DEFAULT
+                yield COMMAND_HOME
+                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_RAPID_MOVE, (3000, 3000)
+                yield COMMAND_LOCK
+                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, 0.05
+                yield COMMAND_LASER_OFF
+                yield COMMAND_LOCK
+                yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_HOME
+            yield COMMAND_WAIT_BUFFER_EMPTY
+
+        self.kernel.device.spooler.send_job(home_dot_test)
 
     def open_settings(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
