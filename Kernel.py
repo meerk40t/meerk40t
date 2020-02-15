@@ -170,15 +170,16 @@ class Device:
             @functools.wraps(func)
             def wrapper_debug(*args, **kwargs):
                 args_repr = [repr(a) for a in args]
-                kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
+
+                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
-                start = f"Calling {obj}.{func.__name__}({signature})"
+                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
                 debug_file.write(start + '\n')
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
-                finish = f"    {func.__name__!r} returned {value!r} after {t * 1000}ms"
+                finish = "    %s returned %s after %fms" % (func.__name__, value, t*1000)
                 print(finish)
                 debug_file.write(finish + '\n')
                 debug_file.flush()

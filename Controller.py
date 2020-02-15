@@ -325,7 +325,6 @@ class Controller(wx.Frame):
                 self.device.pipe.queue = b''
                 self.device.pipe.reset()
 
-
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         self.device.execute("Emergency Stop")
 

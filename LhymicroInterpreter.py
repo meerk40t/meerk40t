@@ -73,27 +73,6 @@ class LhymicroInterpreter(Interpreter):
         device.add_control("Realtime Pause", self.pause)
         device.add_control("Realtime Resume", self.resume)
 
-        def break_acceleration10():
-            self.device._acceleration_breaks = 10.0
-
-        def break_acceleration20():
-            self.device._acceleration_breaks = 20.0
-
-        def break_acceleration30():
-            self.device._acceleration_breaks = 30.0
-
-        def break_acceleration40():
-            self.device._acceleration_breaks = 40.0
-
-        def break_acceleration_inf():
-            self.device._acceleration_breaks = float("inf")
-
-        self.device.add_control("acceleration Breaks 10mm/s", break_acceleration10)
-        self.device.add_control("acceleration Breaks 20mm/s", break_acceleration20)
-        self.device.add_control("acceleration Breaks 30mm/s", break_acceleration30)
-        self.device.add_control("acceleration Breaks 40mm/s", break_acceleration40)
-        self.device.add_control("acceleration Breaks off", break_acceleration_inf)
-
     def __repr__(self):
         return "LhymicroInterpreter()"
 
@@ -235,26 +214,12 @@ class LhymicroInterpreter(Interpreter):
             sy = self.device.current_y
             self.pulse_modulation = True
             try:
-                x2 = y2 = x1 = y1 = None
                 for x, y, on in self.group_plots(sx, sy, path.plot()):
                     if on == 0:
                         self.up()
                     else:
                         self.down()
-                    try:
-                        change = abs(((x2 > x1) - (x2 < x1) + (y2 > y1) - (y2 < y1)) -
-                                     ((x1 > x) - (x1 < x) + (y1 > y) - (y1 < y)))
-                    except TypeError:
-                        change = 0
-                    if self.state == STATE_COMPACT and \
-                            change >= 2 and \
-                            self.speed >= self.device._acceleration_breaks:
-                        self.to_default_mode()
-                        self.to_compact_mode()
-                        x1 = y1 = None
                     self.move_absolute(x, y)
-                    x2, y2 = x1, y1
-                    x1, y1 = x, y
             except RuntimeError:
                 return
         elif command == COMMAND_RASTER:
