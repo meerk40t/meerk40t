@@ -63,6 +63,8 @@ class ElementFunctions:
         image.transform.reset()
         image.transform.post_scale(step, step)
         image.transform.post_translate(tx, ty)
+        image.image_width = width
+        image.image_height = height
         image.image = pil_image
         pil_image.image_width = width
         pil_image.image_height = height

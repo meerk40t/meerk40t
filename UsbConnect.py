@@ -36,7 +36,7 @@ class UsbConnect(wx.Frame):
             dlg.Destroy()
             return
         self.device.listen('pipe;device_log', self.update_log)
-        self.usblog_text.SetValue(self.device.device_log)
+        self.usblog_text.SetValue(self.device._device_log)
         self.usblog_text.AppendText("\n")
 
     def on_close(self, event):
@@ -51,7 +51,7 @@ class UsbConnect(wx.Frame):
         try:
             device = self.kernel.device
             try:
-                self.usblog_text.SetValue(device.device_log)
+                self.usblog_text.SetValue(device._device_log)
                 self.usblog_text.AppendText("\n")
             except RuntimeError:
                 pass  # must have closed before signal hit.

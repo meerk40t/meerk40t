@@ -151,7 +151,7 @@ class Device:
         self.spooler = spooler
         self.interpreter = interpreter
         self.pipe = pipe
-        self.device_log = ''
+        self._device_log = ''
         self.current_x = 0
         self.current_y = 0
         self.state = -1
@@ -218,7 +218,7 @@ class Device:
         self.kernel.signal(self.uid + ';' + code, *message)
 
     def log(self, message):
-        self.device_log += message
+        self._device_log += message
         self.signal('pipe;device_log', message)
 
     def setting(self, setting_type, setting_name, default=None):
@@ -717,6 +717,8 @@ class Kernel:
             device = self.devices[device_name]
             if kill(SHUTDOWN_FLUSH, device_name, device):
                 device.flush()
+        if self.config is not None:
+            self.config.Flush()
         windows = list(self.open_windows)
         for i in range(0, len(windows)):
             window_name = windows[i]

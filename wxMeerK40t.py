@@ -342,7 +342,6 @@ class MeerK40t(wx.Frame):
         self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
 
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_press)  # todo: check this.
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
