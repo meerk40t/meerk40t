@@ -1,30 +1,23 @@
-from LaserOperation import RasterOperation
 from svgelements import *
 
 
 class ElementFunctions:
 
     @staticmethod
-    def needs_actualization(operation, image_element):
+    def needs_actualization(image_element, step_level=None):
         if not isinstance(image_element, SVGImage):
             return False
-        if not isinstance(operation, RasterOperation):
-            return False
-        op_step = operation.raster_step
-        if 'raster_step' in image_element.values:
-            img_step = float(image_element.values['raster_step'])
-        else:
-            img_step = 1.0
-        if op_step != img_step:
-            return True  # Different step values force require actualization.
-
+        if step_level is None:
+            if 'raster_step' in image_element.values:
+                step_level = float(image_element.values['raster_step'])
+            else:
+                step_level = 1.0
         m = image_element.transform
         # Transformation must be uniform to permit native rastering.
-        return m.a != img_step or m.b != 0.0 or m.c != 0.0 or m.d != img_step
-
+        return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
 
     @staticmethod
-    def make_actual(image):
+    def make_actual(image_element, step_level=None):
         """
         Makes PIL image actual in that it manipulates the pixels to actually exist
         rather than simply apply the transform on the image to give the resulting image.
@@ -36,38 +29,52 @@ class ElementFunctions:
 
         Pil requires a, c, e, b, d, f accordingly.
         """
-        if not isinstance(image, SVGImage):
+        if not isinstance(image_element, SVGImage):
             return
         from PIL import Image
 
-        pil_image = image.image
-        image.cache = None
-        m = image.transform
-        if 'raster_step' in image.values:
-            step = float(image.values['raster_step'])
-        else:
-            step = 1.0
-
-        image.transform.pre_scale(1.0 / step, 1.0 / step)
-        tx = m.value_trans_x()
-        ty = m.value_trans_y()
-        m.e = 0.0
-        m.f = 0.0
-        bbox = ElementFunctions.bounding_box(image)
-        width = int(ceil(bbox[2] - bbox[0]))
-        height = int(ceil(bbox[3] - bbox[1]))
+        pil_image = image_element.image
+        image_element.cache = None
+        m = image_element.transform
+        bbox = ElementFunctions.bounding_box([image_element])
+        tx = bbox[0]
+        ty = bbox[1]
+        m.post_translate(-tx, -ty)
+        element_width = int(ceil(bbox[2] - bbox[0]))
+        element_height = int(ceil(bbox[3] - bbox[1]))
+        if step_level is None:
+            # If we are not told the step amount either draw it from the object or set it to default.
+            if 'raster_step' in image_element.values:
+                step_level = float(image_element.values['raster_step'])
+            else:
+                step_level = 1.0
+        step_scale = 1 / step_level
+        m.pre_scale(step_scale, step_scale)
+        # step level requires the actual image be scaled down.
         m.inverse()
-        pil_image = pil_image.transform((width, height), Image.AFFINE,
+
+        if (m.value_skew_y() != 0.0 or m.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
+            # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
+            pil_image = pil_image.convert('RGBA')
+
+        pil_image = pil_image.transform((element_width, element_height), Image.AFFINE,
                                         (m.a, m.c, m.e, m.b, m.d, m.f),
                                         resample=Image.BICUBIC)
-        image.transform.reset()
-        image.transform.post_scale(step, step)
-        image.transform.post_translate(tx, ty)
-        image.image_width = width
-        image.image_height = height
-        image.image = pil_image
-        pil_image.image_width = width
-        pil_image.image_height = height
+        image_element.image_width, image_element.image_height = (element_width, element_height)
+        m.reset()
+
+        box = pil_image.getbbox()
+        width = box[2] - box[0]
+        height = box[3] - box[1]
+        if width != element_width and height != element_height:
+            image_element.image_width, image_element.image_height = (width, height)
+            pil_image = pil_image.crop(box)
+            m.post_translate(box[0], box[1])
+        # step level requires the new actualized matrix be scaled up.
+        m.post_scale(step_level, step_level)
+        m.post_translate(tx, ty)
+        image_element.image = pil_image
+
 
     @staticmethod
     def reify_matrix(self):

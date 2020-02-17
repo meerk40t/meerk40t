@@ -518,7 +518,7 @@ class MeerK40t(wx.Frame):
         device = self.device_listening
         if device is not None:
             device.unlisten('pipe;error', self.on_usb_error)
-            device.unlisten('pipe;usb_state', self.on_usb_status)
+            device.unlisten('pipe;usb_status', self.on_usb_status)
             device.unlisten('pipe;thread', self.on_pipe_state)
             device.unlisten('interpreter;position', self.update_position)
             device.unlisten('interpreter;mode', self.on_interpreter_mode)

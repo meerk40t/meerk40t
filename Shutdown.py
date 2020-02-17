@@ -40,6 +40,8 @@ class Shutdown(wx.Frame):
     def on_shutdown(self, flag, name, obj):
         if obj == self:  # Trying to shut down this window. That's a 'no'.
             return False
+        if self.text_shutdown is None:
+            return
         if flag == SHUTDOWN_BEGIN:
             self.text_shutdown.AppendText(_("Shutting down.\n"))
         elif flag == SHUTDOWN_FLUSH:
@@ -65,6 +67,10 @@ class Shutdown(wx.Frame):
         elif flag == SHUTDOWN_FINISH:
             self.text_shutdown.AppendText(_("Shutdown.\n"))
             if self.autoclose:
+                self.text_shutdown = None
+                # if self.kernel.run_later is not None:
+                #     self.kernel.run_later(self.Close, False)
+                # else:
                 self.Close()
         return True
 

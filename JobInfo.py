@@ -156,20 +156,20 @@ class JobInfo(wx.Frame):
         self.required_preprocessing_operations.append(make_image)
 
     def conditional_jobadd_actualize_image(self):
-        for o in self.job_items:
-            if isinstance(o, RasterOperation):
-                for e in o:
-                    if ElementFunctions.needs_actualization(o,e):
+        for op in self.job_items:
+            if isinstance(op, RasterOperation):
+                for elem in op:
+                    if ElementFunctions.needs_actualization(elem, op.raster_step):
                         self.jobadd_actualize_image()
                         return
 
     def jobadd_actualize_image(self):
         def actualize():
-            for o in self.job_items:
-                if isinstance(o, RasterOperation):
-                    for e in o:
-                        if ElementFunctions.needs_actualization(o,e):
-                            ElementFunctions.make_actual(e)
+            for op in self.job_items:
+                if isinstance(op, RasterOperation):
+                    for elem in op:
+                        if ElementFunctions.needs_actualization(elem, op.raster_step):
+                            ElementFunctions.make_actual(elem,op.raster_step)
         self.required_preprocessing_operations.append(actualize)
 
     def conditional_jobadd_scale_rotary(self):
