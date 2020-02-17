@@ -32,7 +32,7 @@ class LaserOperation(list):
             elif isinstance(obj, LaserOperation):
                 self.speed = obj.speed
                 self.power = obj.power
-                self.dratio = obj.power
+                self.dratio = obj.dratio
                 for element in obj:
                     element_copy = copy(element)
                     self.append(element_copy)

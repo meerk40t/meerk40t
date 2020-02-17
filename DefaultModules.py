@@ -89,6 +89,10 @@ class K40StockBackend(Module, Backend):
             if device == kernel.device_primary:
                 self.kernel.activate_device(device)
 
+    def shutdown(self, kernel):
+        self.kernel.remove_backend(self.uid)
+        self.kernel.remove_module(self.uid)
+
     def create_device(self, uid):
         device = K40StockDevice()
         device.initialize(self.kernel, uid)
@@ -101,6 +105,10 @@ class SVGWriter:
     def initialize(self, kernel, name=None):
         self.kernel = kernel
         kernel.add_saver("SVGWriter", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['SVGWriter']
 
     def save_types(self):
         yield "Scalable Vector Graphics", "svg", "image/svg+xml"
@@ -204,6 +212,10 @@ class SVGLoader:
         kernel.setting(int, "bed_height", 220)
         kernel.add_loader("SVGLoader", self)
 
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['SVGLoader']
+
     def load_types(self):
         yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
 
@@ -242,6 +254,10 @@ class EgvLoader:
         self.kernel = kernel
         kernel.add_loader("EGVLoader", self)
 
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['EgvLoader']
+
     def load_types(self):
         yield "Engrave Files", ("egv",), "application/x-egv"
 
@@ -272,6 +288,10 @@ class ImageLoader:
     def initialize(self, kernel, name=None):
         self.kernel = kernel
         kernel.add_loader("ImageLoader", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['ImageLoader']
 
     def load_types(self):
         yield "Portable Network Graphics", ("png",), "image/png"

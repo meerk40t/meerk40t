@@ -133,6 +133,8 @@ class Module:
 
     def shutdown(self, kernel):
         self.kernel = None
+        if self.name is not None:
+            del kernel.modules[self.name]
 
 
 class Backend:
@@ -903,6 +905,9 @@ class Kernel:
     def add_saver(self, saver_name, saver):
         self.savers[saver_name] = saver
 
+    def remove_backend(self, backend_name):
+        del self.backends[backend_name]
+
     def add_backend(self, backend_name, backend):
         self.backends[backend_name] = backend
 
@@ -987,16 +992,6 @@ class Kernel:
             self.modules[thread_name].stop()
         except AttributeError:
             pass
-
-    def remove_element_from_operations(self, element):
-        for q in self.operations:
-            if element in q:
-                q.remove(element)
-
-    def remove_orphaned_operations(self):
-        for q in list(self.operations):
-            if len(q) == 0:
-                self.operations.remove(q)
 
     def classify(self, elements):
         """

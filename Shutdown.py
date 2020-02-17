@@ -68,10 +68,10 @@ class Shutdown(wx.Frame):
             self.text_shutdown.AppendText(_("Shutdown.\n"))
             if self.autoclose:
                 self.text_shutdown = None
-                # if self.kernel.run_later is not None:
-                #     self.kernel.run_later(self.Close, False)
-                # else:
-                self.Close()
+                if self.kernel.run_later is not None:
+                    self.kernel.run_later(self.Close, False)
+                else:
+                    self.Close()
         return True
 
     def __set_properties(self):

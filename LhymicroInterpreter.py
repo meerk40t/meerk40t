@@ -361,7 +361,7 @@ class LhymicroInterpreter(Interpreter):
             self.pause()
         elif command == COMMAND_STATUS:
             status = self.get_status()
-            self.device.signal("interpreter;status", status)
+            self.device.signal('interpreter;status', status)
             return status
         elif command == COMMAND_RESUME:
             self.resume()

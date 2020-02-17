@@ -520,9 +520,11 @@ class MeerK40t(wx.Frame):
             device.unlisten('pipe;error', self.on_usb_error)
             device.unlisten('pipe;usb_status', self.on_usb_status)
             device.unlisten('pipe;thread', self.on_pipe_state)
+            device.unlisten('spooler;thread', self.on_spooler_state)
             device.unlisten('interpreter;position', self.update_position)
             device.unlisten('interpreter;mode', self.on_interpreter_mode)
             device.unlisten('bed_size', self.bed_changed)
+        self.device_listening = None
 
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
@@ -2561,6 +2563,10 @@ class wxMeerK40t(Module, wx.App):
         if language is not None and language != 0:
             self.language_to(language)(None)
         self.kernel.open_window("MeerK40t")
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['MeerK40t']
 
     def language_swap(self, lang):
         self.language_to(lang)(None)

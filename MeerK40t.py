@@ -114,4 +114,3 @@ if args.output is not None:
 kernel.boot()
 if not args.no_gui:
     meerk40tgui.MainLoop()
-    exit(0)
