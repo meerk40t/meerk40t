@@ -1476,6 +1476,8 @@ class Node(list):
 
     def update_name(self):
         self.name = str(self.object)
+        if len(self.name) >= 27:
+            self.name = self.name[:28] + '...'
         self.root.tree.SetItemText(self.item, self.name)
         try:
             stroke = self.object.values[SVG_ATTR_STROKE]
@@ -2337,7 +2339,7 @@ class RootNode(list):
             elif node.type == NODE_OPERATION:
                 self.kernel.operations.remove(node.object)
             elif node.type == NODE_FILE_FILE:
-                del self.kernel.filenodes[node.name]
+                del self.kernel.filenodes[node.filepath]
             elif node.type == NODE_OPERATION_ELEMENT:
                 op = node.parent.object
                 op.remove(node.object)
