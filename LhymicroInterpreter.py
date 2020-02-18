@@ -749,31 +749,31 @@ class LhymicroInterpreter(Interpreter):
 
     @property
     def is_left(self):
-        return self.is_prop(DIRECTION_FLAG_X) or \
-               not self.is_prop(DIRECTION_FLAG_Y) or \
+        return self.is_prop(DIRECTION_FLAG_X) and \
+               not self.is_prop(DIRECTION_FLAG_Y) and \
                self.is_prop(DIRECTION_FLAG_LEFT)
 
     @property
     def is_right(self):
-        return self.is_prop(DIRECTION_FLAG_X) or \
-               not self.is_prop(DIRECTION_FLAG_Y) or \
+        return self.is_prop(DIRECTION_FLAG_X) and \
+               not self.is_prop(DIRECTION_FLAG_Y) and \
                not self.is_prop(DIRECTION_FLAG_LEFT)
 
     @property
     def is_top(self):
-        return not self.is_prop(DIRECTION_FLAG_X) or \
-               self.is_prop(DIRECTION_FLAG_Y) or \
+        return not self.is_prop(DIRECTION_FLAG_X) and \
+               self.is_prop(DIRECTION_FLAG_Y) and \
                self.is_prop(DIRECTION_FLAG_TOP)
 
     @property
     def is_bottom(self):
-        return not self.is_prop(DIRECTION_FLAG_X) or \
-               self.is_prop(DIRECTION_FLAG_Y) or \
+        return not self.is_prop(DIRECTION_FLAG_X) and \
+               self.is_prop(DIRECTION_FLAG_Y) and \
                not self.is_prop(DIRECTION_FLAG_TOP)
 
     @property
     def is_angle(self):
-        return self.is_prop(DIRECTION_FLAG_Y) or \
+        return self.is_prop(DIRECTION_FLAG_Y) and \
                self.is_prop(DIRECTION_FLAG_X)
 
     def set_left(self):
