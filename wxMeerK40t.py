@@ -2558,10 +2558,17 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window("JobInfo", JobInfo)
         kernel.add_window("BufferView", BufferView)
         kernel.add_window("Adjustments", Adjustments)
+        kernel.add_control("Delete Settings", self.clear_control)
         language = kernel.language
         if language is not None and language != 0:
             self.language_to(language)(None)
         self.kernel.open_window("MeerK40t")
+
+    def clear_control(self):
+        if self.kernel.config is not None:
+            self.kernel.config.DeleteAll()
+            self.kernel.config = None
+            self.kernel.shutdown()
 
     def shutdown(self, kernel):
         self.kernel = None
