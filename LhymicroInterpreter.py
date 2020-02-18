@@ -18,15 +18,10 @@ COMMAND_ANGLE = b'M'
 COMMAND_ON = b'D'
 COMMAND_OFF = b'U'
 
-DIRECTION_FLAG_LEFT = 1
-DIRECTION_FLAG_TOP = 2
-DIRECTION_FLAG_X = 4
-DIRECTION_FLAG_Y = 8
-
-DIRECTION_RIGHT = DIRECTION_FLAG_X
-DIRECTION_LEFT = DIRECTION_FLAG_LEFT | DIRECTION_FLAG_X
-DIRECTION_TOP = DIRECTION_FLAG_TOP | DIRECTION_FLAG_Y
-DIRECTION_BOTTOM = DIRECTION_FLAG_Y
+DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
+DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
+DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
+DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -257,12 +252,16 @@ class LhymicroInterpreter(Interpreter):
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
                                 self.move_relative(0, dy + self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
                         else:
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
                                 self.move_relative(0, dy - self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
                     if on == 0:
@@ -308,12 +307,17 @@ class LhymicroInterpreter(Interpreter):
             d_ratio = values
             self.set_d_ratio(d_ratio)
         elif command == COMMAND_SET_DIRECTION:
-            x_dir, y_dir = values
-            self.properties &= ~0x03
-            if x_dir < 0:
+            # Left, Top, X-Momentum, Y-Momentum
+            left, top, x_dir, y_dir = values
+            self.properties = 0
+            if left:
                 self.set_prop(DIRECTION_FLAG_LEFT)
-            if y_dir < 0:
+            if top:
                 self.set_prop(DIRECTION_FLAG_TOP)
+            if x_dir:
+                self.set_prop(DIRECTION_FLAG_X)
+            if y_dir:
+                self.set_prop(DIRECTION_FLAG_Y)
         elif command == COMMAND_SET_INCREMENTAL:
             self.is_relative = True
         elif command == COMMAND_SET_ABSOLUTE:
@@ -702,6 +706,8 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
+        self.set_prop(DIRECTION_FLAG_X)  # Set both on
+        self.set_prop(DIRECTION_FLAG_Y)
         if dx > 0:  # Moving right
             if self.is_prop(DIRECTION_FLAG_LEFT):
                 controller.write(COMMAND_RIGHT)
@@ -721,14 +727,11 @@ class LhymicroInterpreter(Interpreter):
         self.device.current_x += dx
         self.device.current_y += dy
         self.check_bounds()
-        self.set_prop(DIRECTION_FLAG_X)
-        self.set_prop(DIRECTION_FLAG_Y)
         controller.write(COMMAND_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
-        """Declare direction should declare not only the alternative top or bottom direction but the current direction.
-        This is seen in LHYMicro-GL code for different rasters to begin going the correct orthological direction."""
-
+        """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
+        You cannot declare a diagonal direction."""
         controller = self.device.pipe
 
         if self.is_prop(DIRECTION_FLAG_LEFT):
@@ -739,20 +742,66 @@ class LhymicroInterpreter(Interpreter):
             y_dir = COMMAND_TOP
         else:
             y_dir = COMMAND_BOTTOM
-        if self.is_prop(DIRECTION_FLAG_X):
+        if self.is_prop(DIRECTION_FLAG_X):  # FLAG_Y is assumed to be !FLAG_X
             controller.write(y_dir + x_dir)
         else:
             controller.write(x_dir + y_dir)
 
+    @property
+    def is_left(self):
+        return self.is_prop(DIRECTION_FLAG_X) or \
+               not self.is_prop(DIRECTION_FLAG_Y) or \
+               self.is_prop(DIRECTION_FLAG_LEFT)
+
+    @property
+    def is_right(self):
+        return self.is_prop(DIRECTION_FLAG_X) or \
+               not self.is_prop(DIRECTION_FLAG_Y) or \
+               not self.is_prop(DIRECTION_FLAG_LEFT)
+
+    @property
+    def is_top(self):
+        return not self.is_prop(DIRECTION_FLAG_X) or \
+               self.is_prop(DIRECTION_FLAG_Y) or \
+               self.is_prop(DIRECTION_FLAG_TOP)
+
+    @property
+    def is_bottom(self):
+        return not self.is_prop(DIRECTION_FLAG_X) or \
+               self.is_prop(DIRECTION_FLAG_Y) or \
+               not self.is_prop(DIRECTION_FLAG_TOP)
+
+    @property
+    def is_angle(self):
+        return self.is_prop(DIRECTION_FLAG_Y) or \
+               self.is_prop(DIRECTION_FLAG_X)
+
+    def set_left(self):
+        self.set_prop(DIRECTION_FLAG_X)
+        self.unset_prop(DIRECTION_FLAG_Y)
+        self.set_prop(DIRECTION_FLAG_LEFT)
+
+    def set_right(self):
+        self.set_prop(DIRECTION_FLAG_X)
+        self.unset_prop(DIRECTION_FLAG_Y)
+        self.unset_prop(DIRECTION_FLAG_LEFT)
+
+    def set_top(self):
+        self.unset_prop(DIRECTION_FLAG_X)
+        self.set_prop(DIRECTION_FLAG_Y)
+        self.set_prop(DIRECTION_FLAG_TOP)
+
+    def set_bottom(self):
+        self.unset_prop(DIRECTION_FLAG_X)
+        self.set_prop(DIRECTION_FLAG_Y)
+        self.unset_prop(DIRECTION_FLAG_TOP)
+
     def move_right(self, dx=0):
         controller = self.device.pipe
         self.device.current_x += dx
-        if self.is_prop(DIRECTION_FLAG_Y) or not self.is_prop(DIRECTION_FLAG_X) \
-                or self.is_prop(DIRECTION_FLAG_LEFT) or self.state != STATE_COMPACT:
+        if not self.is_right or self.state != STATE_COMPACT:
             controller.write(COMMAND_RIGHT)
-            self.set_prop(DIRECTION_FLAG_X)
-            self.unset_prop(DIRECTION_FLAG_Y)
-            self.unset_prop(DIRECTION_FLAG_LEFT)
+            self.set_right()
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
@@ -760,12 +809,9 @@ class LhymicroInterpreter(Interpreter):
     def move_left(self, dx=0):
         controller = self.device.pipe
         self.device.current_x -= abs(dx)
-        if self.is_prop(DIRECTION_FLAG_Y) or not self.is_prop(DIRECTION_FLAG_X) \
-                or not self.is_prop(DIRECTION_FLAG_LEFT) or self.state != STATE_COMPACT:
+        if not self.is_left or self.state != STATE_COMPACT:
             controller.write(COMMAND_LEFT)
-            self.set_prop(DIRECTION_FLAG_X)
-            self.unset_prop(DIRECTION_FLAG_Y)
-            self.set_prop(DIRECTION_FLAG_LEFT)
+            self.set_left()
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
@@ -773,12 +819,9 @@ class LhymicroInterpreter(Interpreter):
     def move_bottom(self, dy=0):
         controller = self.device.pipe
         self.device.current_y += dy
-        if not self.is_prop(DIRECTION_FLAG_Y) or self.is_prop(DIRECTION_FLAG_X) \
-                or self.is_prop(DIRECTION_FLAG_TOP) or self.state != STATE_COMPACT:
+        if not self.is_bottom or self.state != STATE_COMPACT:
             controller.write(COMMAND_BOTTOM)
-            self.unset_prop(DIRECTION_FLAG_X)
-            self.set_prop(DIRECTION_FLAG_Y)
-            self.unset_prop(DIRECTION_FLAG_TOP)
+            self.set_bottom()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
@@ -786,12 +829,9 @@ class LhymicroInterpreter(Interpreter):
     def move_top(self, dy=0):
         controller = self.device.pipe
         self.device.current_y -= abs(dy)
-        if not self.is_prop(DIRECTION_FLAG_Y) or self.is_prop(DIRECTION_FLAG_X) \
-                or not self.is_prop(DIRECTION_FLAG_TOP) or self.state != STATE_COMPACT:
+        if not self.is_top or self.state != STATE_COMPACT:
             controller.write(COMMAND_TOP)
-            self.unset_prop(DIRECTION_FLAG_X)
-            self.set_prop(DIRECTION_FLAG_Y)
-            self.set_prop(DIRECTION_FLAG_TOP)
+            self.set_top()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()

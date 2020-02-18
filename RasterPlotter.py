@@ -186,13 +186,11 @@ class RasterPlotter:
         return self.offset_x + self.initial_x * self.step, self.offset_y + self.initial_y * self.step
 
     def initial_direction(self):
-        dx = 1
-        dy = 1
-        if (self.traversal & RIGHT) != 0:
-            dx = -1
-        if (self.traversal & BOTTOM) != 0:
-            dy = -1
-        return dx, dy
+        """Returns the initial direction in the form of Left, Top, X-Momentum, Y-Momentum
+        If we are rastering across the y, the x will have momentum.
+        """
+        t = self.traversal
+        return (t & RIGHT) != 0, (t & BOTTOM) != 0, (t & Y_AXIS) == 0, (t & Y_AXIS) != 0
 
     def plot(self):
         """
@@ -214,7 +212,12 @@ class RasterPlotter:
         step = self.step
 
         x, y = self.initial_position()
-        dx, dy = self.initial_direction()
+        dx = 1
+        dy = 1
+        if (self.traversal & RIGHT) != 0:
+            dx = -1
+        if (self.traversal & BOTTOM) != 0:
+            dy = -1
         yield offset_x + x * step, offset_y + y * step, 0
         if (traversal & Y_AXIS) != 0:
             # This code is for up/down across rastering.
