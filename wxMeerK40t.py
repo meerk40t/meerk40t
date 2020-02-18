@@ -2337,7 +2337,6 @@ class RootNode(list):
                 ops = [op for op in self.kernel.operations if op is not None]
                 self.kernel.operations.clear()
                 self.kernel.operations.extend(ops)
-
             elif node.type == NODE_OPERATION:
                 self.kernel.operations.remove(node.object)
             elif node.type == NODE_FILE_FILE:

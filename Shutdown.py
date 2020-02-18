@@ -101,5 +101,6 @@ class Shutdown(wx.Frame):
         wx.CallAfter(self.Close)
 
     def on_button_reload(self, event):  # wxGlade: Shutdown.<event_handler>
-        self.kernel.open_window('MeerK40t')
-        self.Close()
+        pass
+        # self.kernel.open_window('MeerK40t')
+        # self.Close()

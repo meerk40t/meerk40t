@@ -39,6 +39,7 @@ class CH341Driver:
         val = self.driver.CH341OpenDevice(self.driver_index)
         self.driver_value = val
         if val == -1:
+            self.driver_value = None
             self.set_status(STATE_CONNECTION_FAILED)
             raise ConnectionRefusedError  # No more devices.
         # There is a device.

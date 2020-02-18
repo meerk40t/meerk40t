@@ -47,10 +47,11 @@ class LhymicroInterpreter(Interpreter):
     def __init__(self, device):
         Interpreter.__init__(self, device)
         self.state = STATE_DEFAULT
-        self.is_on = False
         self.is_left = False
         self.is_top = False
+        self.is_angle = False
         self.is_relative = False
+        self.is_on = False
         self.raster_step = 0
         self.speed = 30
         self.power = 1000.0
@@ -58,6 +59,7 @@ class LhymicroInterpreter(Interpreter):
         self.default_SnP = None
         self.pulse_total = 0.0
         self.pulse_modulation = True
+        self.group_modulation = False
 
         current_x = device.current_x
         current_y = device.current_y
@@ -127,11 +129,19 @@ class LhymicroInterpreter(Interpreter):
                 plot_on = 1
             if self.pulse_modulation:
                 self.pulse_total += self.power * plot_on
-                if self.pulse_total >= 1000.0:
-                    on = 1
-                    self.pulse_total -= 1000.0
+                if self.group_modulation and last_on == 1:
+                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
+                    if self.pulse_total > 0.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
                 else:
-                    on = 0
+                    if self.pulse_total >= 1000.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
             else:
                 on = int(round(plot_on))
             if x == last_x + dx and y == last_y + dy and on == last_on:
@@ -684,6 +694,7 @@ class LhymicroInterpreter(Interpreter):
         self.device.current_x += dx
         self.device.current_y += dy
         self.check_bounds()
+        self.is_angle = True
         controller.write(COMMAND_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
@@ -700,8 +711,10 @@ class LhymicroInterpreter(Interpreter):
     def move_right(self, dx=0):
         controller = self.device.pipe
         self.device.current_x += dx
-        self.is_left = False
-        controller.write(COMMAND_RIGHT)
+        if self.is_left or self.is_angle or self.state != STATE_COMPACT:
+            self.is_left = False
+            controller.write(COMMAND_RIGHT)
+        self.is_angle = False
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
@@ -709,8 +722,10 @@ class LhymicroInterpreter(Interpreter):
     def move_left(self, dx=0):
         controller = self.device.pipe
         self.device.current_x -= abs(dx)
-        self.is_left = True
-        controller.write(COMMAND_LEFT)
+        if not self.is_left or self.is_angle or self.state != STATE_COMPACT:
+            self.is_left = True
+            controller.write(COMMAND_LEFT)
+        self.is_angle = False
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
@@ -718,8 +733,10 @@ class LhymicroInterpreter(Interpreter):
     def move_bottom(self, dy=0):
         controller = self.device.pipe
         self.device.current_y += dy
-        self.is_top = False
-        controller.write(COMMAND_BOTTOM)
+        if self.is_top or self.is_angle or self.state != STATE_COMPACT:
+            self.is_top = False
+            controller.write(COMMAND_BOTTOM)
+        self.is_angle = False
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
@@ -727,8 +744,10 @@ class LhymicroInterpreter(Interpreter):
     def move_top(self, dy=0):
         controller = self.device.pipe
         self.device.current_y -= abs(dy)
-        self.is_top = True
-        controller.write(COMMAND_TOP)
+        if not self.is_top or self.is_angle or self.state != STATE_COMPACT:
+            self.is_top = True
+            controller.write(COMMAND_TOP)
+        self.is_angle = False
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
