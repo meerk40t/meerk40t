@@ -773,7 +773,7 @@ class LhymicroInterpreter(Interpreter):
         self.device.current_y -= abs(dy)
         if self.properties != DIRECTION_TOP or self.state != STATE_COMPACT:
             controller.write(COMMAND_TOP)
-            self.properties = COMMAND_TOP
+            self.properties = DIRECTION_TOP
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
