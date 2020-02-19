@@ -45,11 +45,14 @@ class ImageProperty(wx.Frame):
         self.image_element = element
         try:
             self.spin_step_size.SetValue(element.values['raster_step'])
+            self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
         except KeyError:
             self.spin_step_size.SetValue(1)  # Default value
+            self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
         except AttributeError:
             self.combo_dpi.Enable(False)
             self.spin_step_size.Enable(False)
+
         try:
             bounds = self.image_element.bbox()
             self.text_x.SetValue("%f" % bounds[0])
@@ -58,7 +61,6 @@ class ImageProperty(wx.Frame):
             self.text_height.SetValue("%f" % (bounds[3] - bounds[1]))
         except AttributeError:
             pass
-
 
     def set_kernel(self, kernel):
         self.kernel = kernel

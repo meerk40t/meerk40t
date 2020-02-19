@@ -18,6 +18,7 @@ from DefaultModules import *
 from DeviceManager import DeviceManager
 from ElementFunctions import ElementFunctions
 from ElementProperty import ElementProperty
+from PathProperty import PathProperty
 from ImageProperty import ImageProperty
 from EngraveProperty import EngraveProperty
 from JobInfo import JobInfo
@@ -465,12 +466,21 @@ class MeerK40t(wx.Frame):
 
     def on_rebuild_tree_request(self, *args):
         """
-        Called by 'elements' change. To refresh tree.
+        Called by 'rebuild_tree' change. To refresh tree.
 
         :param args:
         :return:
         """
         self.root.rebuild_tree()
+        self.request_refresh()
+
+    def on_refresh_scene(self, *args):
+        """
+        Called by 'refresh_scene' change. To refresh tree.
+
+        :param args:
+        :return:
+        """
         self.request_refresh()
 
     def on_usb_error(self, value):
@@ -532,6 +542,7 @@ class MeerK40t(wx.Frame):
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
         self.kernel.listen('rebuild_tree', self.on_rebuild_tree_request)
+        self.kernel.listen('refresh_scene', self.on_refresh_scene)
         self.kernel.listen("element_property_update", self.on_element_update)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
@@ -539,6 +550,7 @@ class MeerK40t(wx.Frame):
     def unlisten_scene(self):
         self.kernel.unlisten("device", self.on_device_switch)
         self.kernel.unlisten('rebuild_tree', self.on_rebuild_tree_request)
+        self.kernel.unlisten('refresh_scene', self.on_refresh_scene)
         self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
@@ -1905,6 +1917,8 @@ class RootNode(list):
                 self.kernel.open_window("RasterProperty").set_operation(node.object)
             elif isinstance(node.object, (CutOperation, EngraveOperation)):
                 self.kernel.open_window("EngraveProperty").set_operation(node.object)
+            elif isinstance(node.object, Path):
+                self.kernel.open_window("PathProperty").set_element(node.object)
             elif isinstance(node.object, SVGImage):
                 self.kernel.open_window("ImageProperty").set_element(node.object)
             elif isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
@@ -2551,6 +2565,7 @@ class wxMeerK40t(Module, wx.App):
 
         kernel.add_window('Shutdown', Shutdown)
         kernel.add_window('ElementProperty', ElementProperty)
+        kernel.add_window('PathProperty', PathProperty)
         kernel.add_window('ImageProperty', ImageProperty)
         kernel.add_window('RasterProperty', RasterProperty)
         kernel.add_window('EngraveProperty', EngraveProperty)
