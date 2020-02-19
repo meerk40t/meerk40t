@@ -72,6 +72,8 @@ class LaserRender:
         return p
 
     def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
+        if bounds is None:
+            return None
         xmin, ymin, xmax, ymax = bounds
 
         image_width = int(xmax - xmin)

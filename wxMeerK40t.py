@@ -687,7 +687,7 @@ class MeerK40t(wx.Frame):
             dc.SetFont(font)
             dc.SetPen(wx.BLACK_PEN)
             s = dc.GetSize() / 2
-            dc.DrawText(_("Current OS cannot use transformation matrix. Skipping scene draw."), s[0] - 350, s[1])
+            dc.DrawText(_("Skipping scene draw. Current OS/wxPython cannot use TransformMatrix. Needs wxPython 4.1+"), s[0] - 350, s[1])
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc
