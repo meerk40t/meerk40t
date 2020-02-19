@@ -26,6 +26,7 @@ from LaserOperation import *
 from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
 from Preferences import Preferences
+from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
 from Shutdown import Shutdown
@@ -687,7 +688,8 @@ class MeerK40t(wx.Frame):
             dc.SetFont(font)
             dc.SetPen(wx.BLACK_PEN)
             s = dc.GetSize() / 2
-            dc.DrawText(_("Skipping scene draw. Current OS/wxPython cannot use TransformMatrix. Needs wxPython 4.1+"), s[0] - 350, s[1])
+            dc.DrawText(_("Skipping scene draw. Current OS/wxPython cannot use TransformMatrix. Needs wxPython 4.1+"),
+                        s[0] - 350, s[1])
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc
@@ -1388,7 +1390,6 @@ class MeerK40t(wx.Frame):
         """
         self.kernel.open_window("JobInfo").set_operations(self.kernel.operations)
 
-
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Launch webpage
@@ -1898,7 +1899,9 @@ class RootNode(list):
         item = event.GetItem()
         node = self.tree.GetItemData(item)
         if node is not None:
-            if isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
+            if isinstance(node.object, RasterOperation):
+                self.kernel.open_window("RasterProperty").set_operation(node.object)
+            elif isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
                 self.kernel.open_window("ElementProperty").set_elements(node.object)
 
     def on_item_changed(self, event):
@@ -2009,7 +2012,7 @@ class RootNode(list):
         t = node.type
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
-                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+                     menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
             gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
@@ -2043,7 +2046,7 @@ class RootNode(list):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
-                    gui.Bind(wx.EVT_MENU,self.menu_raster_step_operation(node, i), menu_item)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_operation(node, i), menu_item)
                     step = float(node.object.raster_step)
                     if i == step:
                         menu_item.Check(True)
@@ -2054,7 +2057,7 @@ class RootNode(list):
             if node.filepath is not None:
                 name = os.path.basename(node.filepath)
                 gui.Bind(wx.EVT_MENU, self.menu_reload(node),
-                            menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+                         menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
         elif t == NODE_ELEMENT:
             duplicate_menu = wx.Menu()
             for i in range(1, 10):
@@ -2209,7 +2212,7 @@ class RootNode(list):
             step = float(node.object.raster_step)
             xmin, ymin, xmax, ymax = bounds
 
-            image = renderer.make_raster(child_objects, bounds, width=(xmax-xmin)/step, height=(ymax-ymin)/step)
+            image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin) / step, height=(ymax - ymin) / step)
             image_element = SVGImage(image=image)
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
@@ -2443,7 +2446,6 @@ class RootNode(list):
             self.set_selected_elements(path)
             self.kernel.signal('rebuild_tree', 0)
 
-
         return convex_hull
 
     def menu_reverse_order(self, node):
@@ -2543,6 +2545,7 @@ class wxMeerK40t(Module, wx.App):
 
         kernel.add_window('Shutdown', Shutdown)
         kernel.add_window('ElementProperty', ElementProperty)
+        kernel.add_window('RasterProperty', RasterProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
         kernel.add_window("Settings", Settings)
