@@ -172,6 +172,10 @@ class Adjustments(wx.Frame):
             dlg.Destroy()
             return
         self.device.execute("Realtime Pause")
+        try:
+            self.checkbox_pattern_group.SetValue(self.device.interpreter.group_modulation)
+        except AttributeError:
+            pass
 
     def on_slider_speed_override(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_slider_speed_override' not implemented!")
@@ -194,8 +198,10 @@ class Adjustments(wx.Frame):
         event.Skip()
 
     def on_check_pattern_group(self, event):  # wxGlade: Adjustments.<event_handler>
-        print("Event handler 'on_check_pattern_group' not implemented!")
-        event.Skip()
+        try:
+            self.device.interpreter.group_modulation = self.checkbox_pattern_group.GetValue()
+        except AttributeError:
+            pass
 
     def on_button_adjust_top(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_button_adjust_top' not implemented!")

@@ -5,16 +5,21 @@ from Kernel import *
 
 kernel = Kernel()
 
+# TODO: Needs an option to change default speed, etc, parameters.
+# TODO: Needs home command / lock, unlock.
+# TODO: Needs command for load special module.
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
 parser.add_argument('-e', '--egv', type=str, help='writes raw egv data to the controller')
-parser.add_argument('-p', '--path', type=str, help='Add SVG Path command')
+parser.add_argument('-p', '--path', type=str, help='add SVG Path command')
 parser.add_argument('-c', '--control', nargs='+', help="execute control command")
 parser.add_argument('-i', '--input', type=argparse.FileType('r'), help='input file name')
 parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='output file name')
 parser.add_argument('-v', '--verbose', action='store_true', help='display verbose debugging')
+parser.add_argument('-t', '--transform', type=str, help="adds SVG Transform command")
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 parser.add_argument('-s', '--set', action='append', nargs='+', help='set a device variable')
 args = parser.parse_args(sys.argv[1:])
@@ -71,10 +76,15 @@ if args.input is not None:
 
 if args.path is not None:
     from svgelements import Path
-    kernel.elements.append(LaserNode(Path(args.path)))
+    kernel.elements.append(Path(args.path))
 
 if args.verbose:
     kernel.device.execute('Debug Device')
+
+if args.transform:
+    m = Matrix(args.transform)
+    for e in kernel.elements:
+        e *= m
 
 if args.mock:
     kernel.device.setting(bool, 'mock', True)

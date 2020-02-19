@@ -3,11 +3,11 @@ from io import BytesIO
 
 from base64 import b64encode
 
+from svgelements import *
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
 from LaserCommandConstants import COMMAND_RESET
 from LhymicroInterpreter import LhymicroInterpreter
-from LaserNode import *
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
@@ -89,6 +89,10 @@ class K40StockBackend(Module, Backend):
             if device == kernel.device_primary:
                 self.kernel.activate_device(device)
 
+    def shutdown(self, kernel):
+        self.kernel.remove_backend(self.uid)
+        self.kernel.remove_module(self.uid)
+
     def create_device(self, uid):
         device = K40StockDevice()
         device.initialize(self.kernel, uid)
@@ -101,6 +105,10 @@ class SVGWriter:
     def initialize(self, kernel, name=None):
         self.kernel = kernel
         kernel.add_saver("SVGWriter", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['SVGWriter']
 
     def save_types(self):
         yield "Scalable Vector Graphics", "svg", "image/svg+xml"
@@ -138,9 +146,8 @@ class SVGWriter:
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = self.kernel.elements
-        for node in elements.flat_elements(types=('image', 'path', 'text'), passes=False):
-            element = node.element
-            if node.type == 'path':
+        for element in elements:
+            if isinstance(element, Path):
                 subelement = SubElement(root, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d())
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
@@ -149,7 +156,7 @@ class SVGWriter:
                                'overscan', 'power', 'id', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
-            elif node.type == 'text':
+            elif isinstance(element, SVGText):
                 subelement = SubElement(root, SVG_TAG_TEXT)
                 subelement.text = element.text
                 t = Matrix(element.transform)
@@ -161,7 +168,7 @@ class SVGWriter:
                                'raster_direction', 'raster_step', 'd_ratio',
                                'font-family', 'font-size', 'font-weight'):
                         subelement.set(key, str(val))
-            else: # Image.
+            else:  # Image.
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 element.image.save(stream, format='PNG')
@@ -197,101 +204,94 @@ class SVGWriter:
 
 class SVGLoader:
     def __init__(self):
-        self.project = None
+        self.kernel = None
 
-    def initialize(self, project, name=None):
-        self.project = project
-        project.setting(int, "bed_width", 320)
-        project.setting(int, "bed_height", 220)
-        project.add_loader("SVGLoader", self)
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        kernel.setting(int, "bed_width", 320)
+        kernel.setting(int, "bed_height", 220)
+        kernel.add_loader("SVGLoader", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['SVGLoader']
 
     def load_types(self):
         yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
 
-    def load(self, pathname, group=None):
+    def load(self, pathname):
+        elements = []
+        basename = os.path.basename(pathname)
         scale_factor = 1000.0 / 96.0
-        svg = SVG(pathname).elements(width='%fmm' % (self.project.bed_width),
-                                     height='%fmm' % (self.project.bed_height),
+        svg = SVG(pathname).elements(width='%fmm' % (self.kernel.bed_width),
+                                     height='%fmm' % (self.kernel.bed_height),
                                      ppi=96.0,
                                      transform='scale(%f)' % scale_factor)
-        context = self.project.elements
-
-        if group is None:
-            group = LaserNode()
-            group['filepath'] = pathname
-            group.name = os.path.basename(pathname)
-            context.append(group)
-
-        context = group
-        append_list = []
         for element in svg:
             if isinstance(element, SVGText):
-                pe = LaserNode(element)
-                append_list.append(pe)
+                elements.append(element)
             elif isinstance(element, Path):
-                pe = LaserNode(element)
-                append_list.append(pe)
+                elements.append(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
-                pe = LaserNode(e)
-                append_list.append(pe)
+                elements.append(e)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
                     if element.image is not None:
-                        pe = LaserNode(element)
-                        append_list.append(pe)
+                        elements.append(element)
                 except OSError:
                     pass
-        context.append_all(append_list)
-        return context
+        return elements, pathname, basename
 
 
 class EgvLoader:
     def __init__(self):
-        self.project = None
+        self.kernel = None
 
-    def initialize(self, project, name=None):
-        self.project = project
-        project.add_loader("EGVLoader", self)
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        kernel.add_loader("EGVLoader", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['EgvLoader']
 
     def load_types(self):
         yield "Engrave Files", ("egv",), "application/x-egv"
 
-    def load(self, pathname, group):
-        context = self.project.elements
-        if group is None:
-            group = LaserNode()
-            group['filepath'] = pathname
-            group.name = os.path.basename(pathname)
-            context.append(group)
-        context = group
+    def load(self, pathname):
+        elements = []
+        basename = os.path.basename(pathname)
+
         for event in parse_egv(pathname):
             path = event['path']
             if len(path) > 0:
-                element = LaserNode(path)
-                context.append(element)
+                elements.append(path)
                 if 'speed' in event:
-                    element['speed'] = event['speed']
+                    path.values['speed'] = event['speed']
             if 'raster' in event:
                 raster = event['raster']
                 image = raster.get_image()
                 if image is not None:
-                    element = LaserNode(image)
-                    context.append(element)
+                    elements.append(image)
                     if 'speed' in event:
-                        element['speed'] = event['speed']
-        return context
+                        image.values['speed'] = event['speed']
+        return elements, pathname, basename
 
 
 class ImageLoader:
     def __init__(self):
-        self.project = None
+        self.kernel = None
 
-    def initialize(self, project, name=None):
-        self.project = project
-        project.add_loader("ImageLoader", self)
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        kernel.add_loader("ImageLoader", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['ImageLoader']
 
     def load_types(self):
         yield "Portable Network Graphics", ("png",), "image/png"
@@ -302,17 +302,9 @@ class ImageLoader:
         yield "JPEG Format", ("jpg", "jpeg", "jpe"), "image/jpeg"
         yield "Webp Format", ("webp",), "image/webp"
 
-    def load(self, pathname, group=None):
-        context = self.project.elements
+    def load(self, pathname):
+        basename = os.path.basename(pathname)
+
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
-        element = LaserNode(image)
-        if group is None:
-            group = LaserNode()
-            group.element.values.update(element.element.values)
-            group['filepath'] = pathname
-            group.name = os.path.basename(pathname)
-            context.append(group)
-        context = group
-        context.append(element)
-        return context
+        return [image], pathname, basename

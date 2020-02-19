@@ -28,6 +28,9 @@ correspondence "'Free and open source' means you can do anything with it like th
 The goal is to provide svg like path objects and structures. The svg standard 1.1 and elements of 2.0 will
 be used to provide much of the decisions within path objects. Such that if there is a question on
 implementation if the SVG documentation has a methodology it should be used.
+
+Though not required the SVGImage class acquires new functionality if provided with PIL as an import
+and the Arc can do exact arc calculations if scipy is installed.
 """
 
 MIN_DEPTH = 5
@@ -755,7 +758,7 @@ class Color(object):
     """
 
     def __init__(self, *args):
-        if len(args) == 1:
+        if 1 <= len(args) <= 2:
             v = args[0]
             if isinstance(v, Color):
                 self.value = v.value
@@ -763,6 +766,8 @@ class Color(object):
                 self.value = v
             else:
                 self.value = Color.parse(v)
+            if len(args) == 2:
+                self.opacity = float(args[1])
         elif len(args) == 3:
             r = args[0]
             g = args[1]
@@ -4532,9 +4537,11 @@ class Path(Shape, MutableSequence):
                 self._segments = list(args)
 
     def __copy__(self):
-        return Path(*map(copy, self._segments),
-                    transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                    apply=self.apply, id=self.id)
+        path = Path(self)
+        segs = path._segments
+        for i in range(0, len(segs)):
+            segs[i] = copy(segs[i])
+        return path
 
     def __getitem__(self, index):
         return self._segments[index]
@@ -5216,9 +5223,7 @@ class Rect(Shape):
         return "Rect(%s)" % params
 
     def __copy__(self):
-        return Rect(self.x, self.y, self.width, self.height, self.rx, self.ry,
-                    transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                    apply=self.apply, id=self.id)
+        return Rect(self)
 
     @property
     def implicit_position(self):
@@ -5718,9 +5723,7 @@ class Ellipse(_RoundShape):
         _RoundShape.__init__(self, *args, **kwargs)
 
     def __copy__(self):
-        return Ellipse(self.cx, self.cy, self.rx, self.ry,
-                       transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                       apply=self.apply, id=self.id)
+        return Ellipse(self)
 
     def _name(self):
         return self.__class__.__name__
@@ -5738,9 +5741,7 @@ class Circle(_RoundShape):
         _RoundShape.__init__(self, *args, **kwargs)
 
     def __copy__(self):
-        return Circle(self.cx, self.cy, self.rx, self.ry,
-                      transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                      apply=self.apply, id=self.id)
+        return Circle(self)
 
     def _name(self):
         return self.__class__.__name__
@@ -5818,9 +5819,7 @@ class SimpleLine(Shape):
         return "SimpleLine(%s)" % params
 
     def __copy__(self):
-        return SimpleLine(self.x1, self.y1, self.x2, self.y2,
-                          transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                          apply=self.apply, id=self.id)
+        return SimpleLine(self)
 
     @property
     def implicit_x1(self):
@@ -5911,7 +5910,7 @@ class _Polyshape(Shape):
         else:
             if isinstance(args[0], dict):
                 self._init_points(args[0])
-            elif isinstance(args[0], Polyline):
+            elif isinstance(args[0], _Polyshape):
                 s = args[0]
                 self._init_points(s.points)
             elif isinstance(args[0], (float, int, list, tuple, Point, str, complex)):
@@ -6017,9 +6016,7 @@ class Polyline(_Polyshape):
         _Polyshape.__init__(self, *args, **kwargs)
 
     def __copy__(self):
-        return Polyline(*self.points,
-                        transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                        apply=self.apply, id=self.id)
+        return Polyline(self)
 
     def _name(self):
         return self.__class__.__name__
@@ -6037,9 +6034,7 @@ class Polygon(_Polyshape):
         _Polyshape.__init__(self, *args, **kwargs)
 
     def __copy__(self):
-        return Polygon(*self.points,
-                       transform=Matrix(self.transform), stroke=Color(self.stroke), fill=Color(self.fill),
-                       apply=self.apply, id=self.id)
+        return Polygon(self)
 
     def _name(self):
         return self.__class__.__name__
@@ -6058,10 +6053,7 @@ class Subpath:
         self._end = end
 
     def __copy__(self):
-        p = Path()
-        for seg in self._path:
-            p.append(copy(seg))
-        return p
+        return Subpath(Path(self._path), self._start, self._end)
 
     def __getitem__(self, index):
         return self._path[self.index_to_path_index(index)]
@@ -6284,6 +6276,9 @@ class SVGText(GraphicObject, Transformable):
         self.dy = Length(values.get(SVG_ATTR_DY, self.dy)).value()
         self.path = None
 
+    def __copy__(self):
+        return SVGText(self)
+
     def _set_values_by_dict(self, values):
         if SVG_TAG_TEXT in values:
             self.text = values[SVG_TAG_TEXT]
@@ -6362,6 +6357,8 @@ class SVGImage(GraphicObject, Transformable):
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
         self.url = None
+        self.data = None
+        self.viewbox = None
         if len(args) == 1:
             if isinstance(args[0], dict):
                 values = args[0]
@@ -6405,6 +6402,14 @@ class SVGImage(GraphicObject, Transformable):
             self.viewbox.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
         if SVG_ATTR_HEIGHT in kwargs:
             self.viewbox.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
+
+    def __copy__(self):
+        """
+        Copy of SVGImage. This will not copy the .image subobject in a deep manner
+        since it's optional that that object will exist or not. As such if using PIL it would
+        be required to either say self.image = self.image.copy() or call .load() again.
+        """
+        return SVGImage(self)
 
     def load(self, directory=None):
         try:

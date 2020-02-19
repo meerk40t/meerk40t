@@ -163,8 +163,8 @@ class K40Controller(Pipe):
         self.preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
         self.queue_lock = threading.Lock()
         self.preempt_lock = threading.Lock()
-        self.packet_count = 0
-        self.rejected_count = 0
+        self.device.setting(int, 'packet_count',0)
+        self.device.setting(int, 'rejected_count', 0)
 
         self.status = [0] * 6
         self.usb_state = -1
@@ -300,7 +300,6 @@ class K40Controller(Pipe):
     def log(self, info):
         update = str(info) + '\n'
         self.device.log(update)
-        self.device.signal("pipe;device_log", update)
 
     def state(self):
         return self.thread.state
@@ -332,8 +331,6 @@ class K40Controller(Pipe):
         self.device.signal('pipe;buffer', 0)
 
     def reset(self):
-        self.buffer = b''
-        self.queue = b''
         self.thread = ControllerQueueThread(self)
         self.device.add_thread("controller;thread", self.thread)
         self.state = THREAD_STATE_UNSTARTED
@@ -413,21 +410,39 @@ class K40Controller(Pipe):
         if len(packet) == 30:
             # check that latest state is okay.
             try:
-                self.wait_ok()
+                self.wait_until_accepting_packets()
             except ConnectionError:
-                return False # Wait suffered connection error.
+                return False  # Wait suffered connection error.
 
             if self.state == THREAD_STATE_PAUSED:
                 return False  # Paused during packet fetch.
+
             try:
                 self.send_packet(packet)
             except ConnectionError:
-                return False # Error exactly at packet send assumes no packet sent.
+                return False  # Error exactly at packet send assumes no packet sent.
+            attempts = 0
+            status = 0
+            while attempts < 300:  # 200 * 300 = 60,000 = 60 seconds.
+                try:
+                    self.update_status()
+                    status = self.status[1]
+                    break
+                except ConnectionError:
+                    attempts += 1
+            if status == STATUS_PACKET_REJECTED:
+                self.device.rejected_count += 1
+                time.sleep(0.05)
+                # The packet was rejected. The sent data was not accepted. Return False.
+                return False
+            if status == 0:
+                raise ConnectionError  # Broken pipe.
+            self.device.packet_count += 1 # Everything went off without a problem.
         else:
-            if len(packet) != 0:  # packet isn't just commands.
+            if len(packet) != 0:  # packet isn't purely a commands len=0, or filled 30.
                 return False  # This packet cannot be sent. Toss it back.
 
-        # Packet must have been sent.
+        # Packet was processed.
         self.buffer = self.buffer[length:]
         self.device.signal('pipe;buffer', len(self.buffer))
 
@@ -442,11 +457,10 @@ class K40Controller(Pipe):
 
     def send_packet(self, packet):
         if self.device.mock:
-            time.sleep(0.1)
+            time.sleep(0.04)
         else:
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
-        self.packet_count += 1
         self.device.signal("pipe;packet", convert_to_list_bytes(packet))
         self.device.signal("pipe;packet_text", packet)
 
@@ -458,16 +472,15 @@ class K40Controller(Pipe):
             self.status = self.driver.get_status()
         self.device.signal("pipe;status", self.status)
 
-    def wait_ok(self):
+    def wait_until_accepting_packets(self):
         i = 0
         while self.state != THREAD_STATE_ABORT:
             self.update_status()
             status = self.status[1]
             if status == 0:
                 raise ConnectionError
-            if status == STATUS_PACKET_REJECTED:
-                self.rejected_count += 1
-            if status == STATUS_OK:
+            # StateBitWAIT = 0x00002000, 204, 206, 207
+            if status & 0x20 == 0:
                 break
             time.sleep(0.05)
             self.device.signal("pipe;wait", STATUS_OK, i)
@@ -486,7 +499,7 @@ class K40Controller(Pipe):
             if status == 0:
                 raise ConnectionError
             if status == STATUS_PACKET_REJECTED:
-                self.rejected_count += 1
+                self.device.rejected_count += 1
             if status & 0x02 == 0:
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
                 break

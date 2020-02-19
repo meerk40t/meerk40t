@@ -1,8 +1,8 @@
 import time
 from threading import *
 
-from LaserNode import LaserNode
 from LaserOperation import *
+from svgelements import Path, SVGText
 
 THREAD_STATE_UNKNOWN = -1
 THREAD_STATE_UNSTARTED = 0
@@ -133,6 +133,8 @@ class Module:
 
     def shutdown(self, kernel):
         self.kernel = None
+        if self.name is not None:
+            del kernel.modules[self.name]
 
 
 class Backend:
@@ -151,7 +153,7 @@ class Device:
         self.spooler = spooler
         self.interpreter = interpreter
         self.pipe = pipe
-        self.device_log = ''
+        self._device_log = ''
         self.current_x = 0
         self.current_y = 0
         self.state = -1
@@ -170,15 +172,16 @@ class Device:
             @functools.wraps(func)
             def wrapper_debug(*args, **kwargs):
                 args_repr = [repr(a) for a in args]
-                kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
+
+                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
-                start = f"Calling {obj}.{func.__name__}({signature})"
+                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
                 debug_file.write(start + '\n')
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
-                finish = f"    {func.__name__!r} returned {value!r} after {t * 1000}ms"
+                finish = "    %s returned %s after %fms" % (func.__name__, value, t*1000)
                 print(finish)
                 debug_file.write(finish + '\n')
                 debug_file.flush()
@@ -217,7 +220,7 @@ class Device:
         self.kernel.signal(self.uid + ';' + code, *message)
 
     def log(self, message):
-        self.device_log += message
+        self._device_log += message
         self.signal('pipe;device_log', message)
 
     def setting(self, setting_type, setting_name, default=None):
@@ -566,8 +569,9 @@ class Kernel:
     """
 
     def __init__(self, config=None):
-        self.elements = LaserNode(parent=self)
+        self.elements = []
         self.operations = []
+        self.filenodes = {}
 
         self.config = None
 
@@ -580,12 +584,11 @@ class Kernel:
         self.open_windows = {}
 
         self.backends = {}
-        self.devices = {}
 
+        self.devices = {}
         self.device = None
 
         self.effects = []
-
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []
@@ -593,23 +596,22 @@ class Kernel:
         self.queue_lock = Lock()
         self.message_queue = {}
         self.is_queue_processing = False
-        self.run_later = lambda listener, message: listener(message)
 
-        self.selected = None
-        self.selected_operation = None
+        self.run_later = lambda listener, message: listener(message)
+        self.shutdown_watcher = lambda i, e, o: True
+        self.translation = lambda e: e  # Default for this code is do nothing.
+
         self.keymap = {}
 
-        self.translation = lambda e: e  # Default for this code is do nothing.
         if config is not None:
             self.set_config(config)
         self.cron = None
-        self.shutdown_watcher = lambda i, e, o: True
 
     def __str__(self):
         return "Project"
 
     def __call__(self, code, *message):
-        self.signal(code, message)
+        self.signal(code, *message)
 
     def signal(self, code, *message):
         self.queue_lock.acquire(True)
@@ -717,6 +719,8 @@ class Kernel:
             device = self.devices[device_name]
             if kill(SHUTDOWN_FLUSH, device_name, device):
                 device.flush()
+        if self.config is not None:
+            self.config.Flush()
         windows = list(self.open_windows)
         for i in range(0, len(windows)):
             window_name = windows[i]
@@ -901,6 +905,9 @@ class Kernel:
     def add_saver(self, saver_name, saver):
         self.savers[saver_name] = saver
 
+    def remove_backend(self, backend_name):
+        del self.backends[backend_name]
+
     def add_backend(self, backend_name, backend):
         self.backends[backend_name] = backend
 
@@ -986,45 +993,72 @@ class Kernel:
         except AttributeError:
             pass
 
-    def set_selected(self, selected):
-        """Sets the selected element. This could be a LaserOperation or a LaserNode."""
-        if selected is None:
-            self.selected = None
-            self.selected_operation = None
-        else:
-            if isinstance(selected, LaserNode):
-                self.selected = selected
-            else:
-                self.selected_operation = selected
-        self("selection", self.selected)
-
-    def notify_change(self):
-        self("elements", 0)
-
-    def move_selected(self, dx, dy):
-        if self.selected is None:
+    def classify(self, elements):
+        """
+        Classify does the initial placement of elements as operations.
+        RasterOperation is the default for images.
+        If element strokes are red they get classed as cut operations
+        If they are otherwise they get classed as engrave.
+        """
+        if elements is None:
             return
-        self.selected.move(dx, dy)
-        for e in self.selected:
-            e.move(dx, dy)
+        raster = None
+        engrave = None
+        cut = None
+        rasters = []
+        engraves = []
+        cuts = []
 
-    def classify(self, lasernode):
-        if lasernode is None:
-            return
-        for element in lasernode.flat_elements(types=('image', 'text', 'path')):
-            if element.type == 'image':
-                self.operations.append(RasterOperation(element.element))
-            elif element.type == 'path':
+        if not isinstance(elements, list):
+            elements = [elements]
+        for element in elements:
+            if isinstance(element, Path):
                 if element.stroke == "red":
-                    self.operations.append(CutOperation(element.element))
-                else:
-                    self.operations.append(EngraveOperation(element.element))
+                    if cut is None or not cut.has_same_properties(element):
+                        cut = CutOperation()
+                        cuts.append(cut)
+                        cut.set_properties(element)
+                    cut.append(element)
+                elif element.stroke == "blue":
+                    if engrave is None or not engrave.has_same_properties(element):
+                        engrave = EngraveOperation()
+                        engraves.append(engrave)
+                        engrave.set_properties(element)
+                    engrave.append(element)
+                if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
+                    # not classed already, or was already classed but has a fill.
+                    if raster is None or not raster.has_same_properties(element):
+                        raster = RasterOperation()
+                        rasters.append(raster)
+                        raster.set_properties(element)
+                    raster.append(element)
+            elif isinstance(element, SVGImage):
+                # TODO: Add SVGImages to overall Raster
+                rasters.append(RasterOperation(element))
+            elif isinstance(element, SVGText):
+                pass  # I can't process actual text.
+        rasters = [r for r in rasters if len(r) != 0]
+        engraves = [r for r in engraves if len(r) != 0]
+        cuts = [r for r in cuts if len(r) != 0]
+        ops = []
+        ops.extend(rasters)
+        ops.extend(engraves)
+        ops.extend(cuts)
+        self.operations.extend(ops)
+        return ops
 
-    def load(self, pathname, group=None):
+    def load(self, pathname):
         for loader_name, loader in self.loaders.items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    return loader.load(pathname, group)
+                    results = loader.load(pathname)
+                    if results is None:
+                        continue
+                    elements, pathname, basename = results
+                    self.filenodes[pathname] = elements
+                    self.elements.extend(elements)
+                    self.signal('rebuild_tree', elements)
+                    return elements, pathname, basename
         return None
 
     def load_types(self, all=True):

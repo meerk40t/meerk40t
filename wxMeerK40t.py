@@ -16,6 +16,7 @@ from BufferView import BufferView
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
+from ElementFunctions import ElementFunctions
 from ElementProperty import ElementProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
@@ -50,13 +51,10 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.4.0"
+MEERK40T_VERSION = "0.5.0"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
-
-# begin wxGlade: dependencies
-# end wxGlade
 
 class IdInc:
     """
@@ -147,13 +145,9 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-
         self.DragAcceptFiles(True)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT)  # wx.FULL_REPAINT_ON_RESIZE |
-        self.tree_images = wx.ImageList()
-        self.tree_images.Create(width=20, height=20)
-        self.tree.SetImageList(self.tree_images)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 
@@ -296,19 +290,6 @@ class MeerK40t(wx.Frame):
 
         self.previous_position = None
 
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_drag_begin_handler, self.tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.on_drag_end_handler, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated, self.tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_changed, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_item_right_click, self.tree)
-        # end wxGlade
-        # self.Bind(wx.EVT_BUTTON, self.on_clicked_burn, id=ID_CUT_BURN_BUTTON)
-
-        # end wxGlade
-        self.dragging_element = None
-        self.dragging_parent = None
-        # self.SetDoubleBuffered(True)
-
         self.matrix = ZMatrix()
         self.identity = ZMatrix()
         self.matrix.Reset()
@@ -326,7 +307,7 @@ class MeerK40t(wx.Frame):
         self.guide_lines = None
         self.laserpath = [(0, 0, 0, 0)] * 1000
         self.laserpath_index = 0
-        self.move_function = self.move_pan
+        self.mouse_move_function = self.move_pan
         self.working_file = None
 
         self.__set_properties()
@@ -359,13 +340,19 @@ class MeerK40t(wx.Frame):
 
         self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
         self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
+
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         self.fps_job = None
         self.kernel = None
+        self.root = None  # RootNode value, must have kernel for init.
         self.device_listening = None
+
+    def notify_change(self):
+        self.kernel.signal('rebuild_tree', 0)
 
     def add_language_menu(self):
         if os.path.exists('./locale'):
@@ -399,6 +386,7 @@ class MeerK40t(wx.Frame):
         if kernel.fps <= 0:
             kernel.fps = 60
         self.renderer = LaserRender(kernel)
+        self.root = RootNode(kernel, self)
 
         if kernel.window_width < 300:
             kernel.window_width = 300
@@ -409,6 +397,7 @@ class MeerK40t(wx.Frame):
         kernel.add_control("Path", self.open_path_dialog)
         kernel.add_control("FPS", self.open_fps_dialog)
         kernel.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        kernel.add_control("Home and Dot", self.run_home_and_dot_test)
 
         self.SetSize((kernel.window_width, kernel.window_height))
         bedwidth = kernel.bed_width
@@ -418,7 +407,6 @@ class MeerK40t(wx.Frame):
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
         self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
         self.add_language_menu()
-        self.kernel.elements_change_listener = self.tree_update
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.kernel.draw_mode & 0x0001 != 0)
@@ -444,11 +432,16 @@ class MeerK40t(wx.Frame):
         m.Check(self.kernel.draw_mode & 0x0800 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TEXT)
         m.Check(self.kernel.draw_mode & 0x1000 != 0)
-        self.refresh_tree_elements()
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.space_changed(0)
         self.default_keymap()
+
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
 
     def set_fps(self, fps):
         if fps == 0:
@@ -457,220 +450,25 @@ class MeerK40t(wx.Frame):
         self.kernel.fps = fps
         self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(self.kernel.fps))
 
-    def on_elements_update(self, *args):
+    def on_element_update(self, *args):
+        """
+        Called by 'element_property_update' when the properties of an element are changed.
+
+        :param args:
+        :return:
+        """
+        if self.root is not None:
+            self.root.on_element_update(*args)
+
+    def on_rebuild_tree_request(self, *args):
         """
         Called by 'elements' change. To refresh tree.
 
         :param args:
         :return:
         """
+        self.root.rebuild_tree()
         self.request_refresh()
-        self.refresh_tree_elements()
-
-    def on_drag_begin_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler begin for the tree.
-
-        :param event:
-        :return:
-        """
-        self.dragging_element = None
-        self.dragging_parent = None
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is self.kernel.operations or element is self.kernel.elements:
-            event.Skip()
-            return
-        self.dragging_parent = self.tree.GetItemParent(item)
-        self.dragging_parent = self.tree.GetItemData(self.dragging_parent)
-        self.dragging_element = element
-        event.Allow()
-
-    def on_drag_end_handler(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Drag handler end for the tree
-
-        :param event:
-        :return:
-        """
-        if self.dragging_element is None:
-            event.Skip()
-            return
-        drag_element = self.dragging_element
-        drag_parent = self.dragging_parent
-        self.dragging_element = None
-        self.dragging_parent = None
-
-        e = event.GetItem()
-        if e is None:
-            event.Skip()
-            return
-        if e.ID is None:
-            event.Skip()
-            return
-        drop_element = self.tree.GetItemData(e)
-        if drop_element is None or drop_element == drag_element:
-            event.Skip()
-            return
-        if drag_element is self.kernel.operations:
-            event.Skip()
-            return
-        if drag_element is self.kernel.elements:
-            event.Skip()
-            return
-        if isinstance(drag_element, LaserNode):
-            if drop_element is self.kernel.operations:
-                self.kernel.classify(drag_element)
-                event.Allow()
-                self.refresh_tree_elements()
-                return
-            elif isinstance(drop_element, LaserOperation):
-                if isinstance(drop_element, EngraveOperation) and drag_element.type == 'image':
-                    event.Skip()
-                    self.kernel.signal("Error", "Cannot add image to engrave operation.")
-                    return
-                drop_element.append(drag_element.element)
-                event.Allow()
-                self.refresh_tree_elements()
-                return
-            elif isinstance(drop_element, LaserNode):
-                if drop_element.type == 'root':  # Project
-                    drag_parent.remove(drag_element)
-                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
-                        drag_parent.parent.remove(drag_parent)
-
-                    if drag_element.type != 'group':
-                        group = LaserNode()
-                        group.append(drag_element)
-                        group.update(drag_element)  # Group gets element property.
-                        drop_element.append(group)
-                    else:
-                        drop_element.append(drag_element)
-                    event.Allow()
-                    return
-                if drop_element.type == 'group':  # Group
-                    drag_parent.remove(drag_element)
-                    if len(drag_parent) == 0 and drag_parent.type == 'group' and drag_parent.name is None:
-                        drag_parent.parent.remove(drag_parent)
-                    drop_element.append(drag_element)
-                    event.Allow()
-                    return
-        elif isinstance(drag_element, LaserOperation):
-            if drop_element is self.kernel.operations:
-                self.kernel.operations.remove(drag_element)
-                self.kernel.operations.append(drag_element)
-                event.Allow()
-                self.refresh_tree_elements()
-                return
-        event.Skip()
-
-    def on_item_right_click(self, event):
-        """
-        Right click of element in tree.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        if item is None:
-            return
-        if item.ID is None:
-            return
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            self.kernel.set_selected(element)
-            self.create_menu(element)
-        event.Skip()
-
-    def on_item_activated(self, event):  # wxGlade: CutConfiguration.<event_handler>
-        """
-        Tree item is double-clicked. Launches ElementProperty dialog.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            if isinstance(element, LaserNode) or isinstance(element, LaserOperation):
-                self.kernel.open_window("ElementProperty").set_elements(element)
-
-    def on_item_changed(self, event):
-        """
-        Tree menu item is changed. Modify the selection.
-
-        :param event:
-        :return:
-        """
-        item = event.GetItem()
-        element = self.tree.GetItemData(item)
-        if element is not None:
-            self.kernel.set_selected(element)
-
-    def add_element(self, tree, node, element):
-        """
-        Add a element to the tree.
-
-        :param tree:
-        :param node:
-        :param element:
-        :return:
-        """
-        if isinstance(element, LaserOperation):
-            item = tree.AppendItem(node, str(element))
-            tree.SetItemData(item, element)
-            for subitem in element:
-                self.add_element(tree, item, subitem)
-        elif isinstance(element, SVGElement):
-            item = tree.AppendItem(node, str(element))
-            tree.SetItemData(item, element)
-        elif isinstance(element, LaserNode):
-            item = tree.AppendItem(node, str(element))
-            tree.SetItemData(item, element)
-            try:
-                tree.SetItemBackgroundColour(item, wx.Colour(swizzlecolor(element.fill)))
-            except AttributeError:
-                pass
-            try:
-                tree.SetItemTextColour(item, wx.Colour(swizzlecolor(element.stroke)))
-            except AttributeError:
-                pass
-            t = element.type
-            if t == 'image':
-                image = self.renderer.make_thumbnail(element, width=20, height=20)
-            else:
-                image = self.renderer.make_raster(element, width=20, height=20, bitmap=True)
-            if image is not None:
-                id = self.tree_images.Add(bitmap=image)
-                tree.SetItemImage(item, image=id)
-            for subitem in element:
-                self.add_element(tree, item, subitem)
-        else:
-            print(element)
-
-    def refresh_tree_elements(self):
-        """
-        Rebuild tree elements
-
-        :return:
-        """
-        tree = self.tree
-        tree.DeleteAllItems()
-        root = self.tree.AddRoot("Root")
-        operations = tree.AppendItem(root, "Operations")
-        self.tree.SetItemData(root, self.kernel.operations)
-
-        self.tree.SetItemData(operations, self.kernel.operations)
-        for subitem in self.kernel.operations:
-            self.add_element(tree, operations, subitem)
-
-        elements = tree.AppendItem(root, "Elements")
-        self.tree.SetItemData(elements, self.kernel.elements)
-        for subitem in self.kernel.elements:
-            self.add_element(tree, elements, subitem)
-
-        tree.CollapseAll()
-        tree.ExpandAll()
 
     def on_usb_error(self, value):
         dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
@@ -720,21 +518,25 @@ class MeerK40t(wx.Frame):
         device = self.device_listening
         if device is not None:
             device.unlisten('pipe;error', self.on_usb_error)
-            device.unlisten('pipe;usb_state', self.on_usb_status)
+            device.unlisten('pipe;usb_status', self.on_usb_status)
             device.unlisten('pipe;thread', self.on_pipe_state)
+            device.unlisten('spooler;thread', self.on_spooler_state)
             device.unlisten('interpreter;position', self.update_position)
             device.unlisten('interpreter;mode', self.on_interpreter_mode)
             device.unlisten('bed_size', self.bed_changed)
+        self.device_listening = None
 
     def listen_scene(self):
         self.kernel.listen("device", self.on_device_switch)
-        self.kernel.listen("elements", self.on_elements_update)
+        self.kernel.listen('rebuild_tree', self.on_rebuild_tree_request)
+        self.kernel.listen("element_property_update", self.on_element_update)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
 
     def unlisten_scene(self):
         self.kernel.unlisten("device", self.on_device_switch)
-        self.kernel.unlisten("elements", self.on_elements_update)
+        self.kernel.unlisten('rebuild_tree', self.on_rebuild_tree_request)
+        self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
 
@@ -757,11 +559,6 @@ class MeerK40t(wx.Frame):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-        # self.main_toolbar.Realize()
-
-        # self.scene.SetMinSize((1000, 880))
-        # self.scene.SetBackgroundColour(wx.Colour(200,200,200))
-        # end wxGlade
 
     def __do_layout(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -774,6 +571,14 @@ class MeerK40t(wx.Frame):
         # main_sizer.Fit(self)
         self.Layout()
 
+    def load(self, pathname):
+        results = self.kernel.load(pathname)
+        if results is not None:
+            elements, pathname, basename = results
+            self.kernel.classify(elements)
+            return True
+        return False
+
     def on_drop_file(self, event):
         """
         Drop file handler
@@ -784,9 +589,7 @@ class MeerK40t(wx.Frame):
         rejected = 0
         rejected_files = []
         for pathname in event.GetFiles():
-            result = self.kernel.load(pathname)
-            if result is not None:
-                self.kernel.classify(result)
+            if self.load(pathname):
                 accepted += 1
             else:
                 rejected += 1
@@ -797,10 +600,8 @@ class MeerK40t(wx.Frame):
             dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
-        self.refresh_tree_elements()
-
-    def tree_update(self):
-        self.refresh_tree_elements()
+        if accepted != 0:
+            self.root.notify_tree_data_change()
 
     def on_paint(self, event):
         try:
@@ -866,7 +667,8 @@ class MeerK40t(wx.Frame):
         if self.kernel is None:
             return
         self.update_buffer_ui_thread()
-        self.Refresh()
+        self.scene.Refresh()
+        # self.Refresh()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
 
@@ -968,8 +770,9 @@ class MeerK40t(wx.Frame):
         self.scene.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.renderer.set_selected_by_position(self.previous_scene_position)
-        self.move_function = self.move_selected
+        self.root.set_selected_by_position(self.previous_scene_position)
+        self.mouse_move_function = self.move_selected
+        self.request_refresh()
 
     def on_left_mouse_up(self, event):
         if self.scene.HasCapture():
@@ -977,22 +780,21 @@ class MeerK40t(wx.Frame):
             self.scene.ReleaseMouse()
         self.previous_window_position = None
         self.previous_scene_position = None
-        self.move_function = self.move_pan
-        self.renderer.validate()
+        self.mouse_move_function = self.move_pan
 
     def on_mouse_double_click(self, event):
         position = event.GetPosition()
         position = self.convert_window_to_scene(position)
-        self.renderer.set_selected_by_position(position)
-        if self.kernel.selected is not None:
-            self.kernel.open_window("ElementProperty").set_elements(self.kernel.selected)
+        self.root.set_selected_by_position(position)
+        if self.root.selected_elements is not None:
+            self.kernel.open_window("ElementProperty").set_elements(self.root.selected_elements)
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
         self.request_refresh()
 
     def move_selected(self, wdx, wdy, sdx, sdy):
-        self.kernel.move_selected(sdx, sdy)
+        self.root.move_selected(sdx, sdy)
         self.request_refresh()
 
     def on_mouse_move(self, event):
@@ -1010,15 +812,17 @@ class MeerK40t(wx.Frame):
         sdy = (scene_position[1] - self.previous_scene_position[1])
         wdx = (window_position[0] - self.previous_window_position[0])
         wdy = (window_position[1] - self.previous_window_position[1])
-        self.move_function(wdx, wdy, sdx, sdy)
+        self.mouse_move_function(wdx, wdy, sdx, sdy)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
 
     def on_right_mouse_down(self, event):
         self.popup_window_position = event.GetPosition()
         self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-        self.renderer.set_selected_by_position(self.popup_scene_position)
-        self.create_menu(self.kernel.selected)
+        self.root.set_selected_by_position(self.popup_scene_position)
+        if len(self.root.selected_elements) == 0:
+            return
+        self.root.create_menu(self, self.root.selected_elements[0])
 
     def on_right_mouse_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
@@ -1102,8 +906,8 @@ class MeerK40t(wx.Frame):
             args = str(action).split(' ')
             self.execute_string_action(*args)
 
-    def focus_on_project(self):
-        bbox = self.renderer.bbox(self.kernel.elements)
+    def focus_on_elements(self):
+        bbox = self.root.bbox(self.kernel.elements)
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
@@ -1267,14 +1071,16 @@ class MeerK40t(wx.Frame):
         dc.DrawRectangle(0, 0, wmils, hmils)
 
     def on_draw_selection(self, dc, draw_mode):
-        if self.kernel.selected is not None and self.kernel.selected.scene_bounds is not None:
+        """Draw Selection Box"""
+        bounds = self.root.selected_bounds()
+        if bounds is not None:
             linewidth = 3.0 / self.matrix.GetScaleX()
             # f = 2 * linewidth
             # g = 2 * f
             self.selection_pen.SetWidth(linewidth)
             dc.SetPen(self.selection_pen)
             dc.SetBrush(wx.BLACK_BRUSH)
-            x0, y0, x1, y1 = self.kernel.selected.scene_bounds
+            x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
             center_y = (y0 + y1) / 2.0
             dc.DrawLine(center_x, 0, center_x, y0)
@@ -1314,11 +1120,11 @@ class MeerK40t(wx.Frame):
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.working_file = None
-        self.kernel.elements = LaserNode(parent=self.kernel)
+        self.kernel.elements = []
         self.kernel.operations = []
+        self.kernel.filenodes = {}
         self.request_refresh()
-        self.tree_update()
-        # self.Refresh()
+        self.kernel.signal('rebuild_tree', 0)
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -1328,8 +1134,7 @@ class MeerK40t(wx.Frame):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
-            result = self.kernel.load(pathname)
-            self.kernel.classify(result)
+            self.load(pathname)
 
     def on_click_save(self, event):
         if self.working_file is None:
@@ -1372,7 +1177,7 @@ class MeerK40t(wx.Frame):
         """
         Zoom size button press.
         """
-        self.focus_on_project()
+        self.focus_on_elements()
 
     def toggle_draw_mode(self, bits):
         """
@@ -1433,12 +1238,12 @@ class MeerK40t(wx.Frame):
                 result = dlg.ShowModal()
                 dlg.Destroy()
             else:
-                for e in self.kernel.elements.flat_elements(passes=False):
+                for element in self.kernel.elements:
                     try:
-                        e.element *= mx
+                        element *= mx
                     except AttributeError:
                         pass
-                self.kernel.signal('elements', 0)
+                self.kernel.signal('rebuild_tree', 0)
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
@@ -1446,16 +1251,34 @@ class MeerK40t(wx.Frame):
 
         if dlg.ShowModal() == wx.ID_OK:
             path = Path(dlg.GetValue())
-            path.fill = 'black'
-            path.stroke = 'black'
-            group = LaserNode()
-            group.name = 'Path'
-            self.kernel.elements.append(group)
-
+            path.stroke = 'blue'
             p = abs(path)
-            self.kernel.operations.append(EngraveOperation(p))
-            group.append(LaserNode(p))
+            self.kernel.elements.append(p)
+            self.kernel.classify(p)
+            self.kernel.signal("rebuild_tree", 0)
         dlg.Destroy()
+
+    def run_home_and_dot_test(self):
+        self.kernel.signal("rebuild_tree", 0)
+
+        def home_dot_test():
+            for i in range(25):
+                yield COMMAND_SET_ABSOLUTE
+                yield COMMAND_MODE_DEFAULT
+                yield COMMAND_HOME
+                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_RAPID_MOVE, (3000, 3000)
+                yield COMMAND_LOCK
+                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, 0.05
+                yield COMMAND_LASER_OFF
+                yield COMMAND_LOCK
+                yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_HOME
+            yield COMMAND_WAIT_BUFFER_EMPTY
+
+        self.kernel.device.spooler.send_job(home_dot_test)
 
     def open_settings(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1563,7 +1386,8 @@ class MeerK40t(wx.Frame):
         :param event:
         :return:
         """
-        self.kernel.open_window("JobInfo")
+        self.kernel.open_window("JobInfo").set_operations(self.kernel.operations)
+
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1575,229 +1399,866 @@ class MeerK40t(wx.Frame):
         import webbrowser
         webbrowser.open(MEERK40T_WEBSITE, new=0, autoraise=True)
 
-    def create_menu(self, element):
-        """Create menu items. This is used for both the scene and the tree to create menu items."""
-        if element is None:
+
+NODE_ROOT = 0
+NODE_OPERATION_BRANCH = 10
+NODE_OPERATION = 11
+NODE_OPERATION_ELEMENT = 12
+NODE_ELEMENTS_BRANCH = 20
+NODE_ELEMENT = 21
+NODE_FILES_BRANCH = 30
+NODE_FILE_FILE = 31
+NODE_FILE_ELEMENT = 32
+
+
+class Node(list):
+    """
+    Generic Node Type for use with RootNode
+    Creating the object registers the position in the tree according to the parent and root.
+    Deleting the object deregisters the node in the tree.
+    """
+
+    def __init__(self, node_type, data_object, parent, root, pos=None, name=None):
+        list.__init__(self)
+        self.parent = parent
+        self.root = root
+        self.object = data_object
+        if name is None:
+            self.name = str(data_object)
+        else:
+            self.name = name
+        if len(self.name) >= 27:
+            self.name = self.name[:28] + '...'
+        self.type = node_type
+        self.passes = 1
+        parent.append(self)
+        self.filepath = None
+        try:
+            self.bounds = data_object.bbox()
+        except AttributeError:
+            self.bounds = None
+        parent_item = parent.item
+        tree = root.tree
+        if pos is None:
+            item = tree.AppendItem(parent_item, self.name)
+        else:
+            item = tree.InsertItem(parent_item, pos, self.name)
+        self.item = item
+        if id(data_object) in self.root.tree_lookup:
+            self.root.tree_lookup[id(data_object)].append(self)
+        else:
+            self.root.tree_lookup[id(data_object)] = [self]
+        tree.SetItemData(self.item, self)
+        # try:
+        #     fill = data_object.values[SVG_ATTR_FILL]
+        #     color = wx.Colour(swizzlecolor(Color(fill).value))
+        #     tree.SetItemBackgroundColour(item, color)
+        # except AttributeError:
+        #     pass
+        # except KeyError:
+        #     pass
+        try:
+            stroke = data_object.values[SVG_ATTR_STROKE]
+            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            tree.SetItemTextColour(item, color)
+        except AttributeError:
+            pass
+        except KeyError:
+            pass
+        except TypeError:
+            pass
+        self.set_icon()
+        root.notify_added(self)
+
+    def __str__(self):
+        return "Node(%s, %d)" % (str(self.item), self.type)
+
+    def __repr__(self):
+        return "Node(%d, %s, %s, %s)" % (self.type, str(self.object), str(self.parent), str(self.root))
+
+    def update_name(self):
+        self.name = str(self.object)
+        if len(self.name) >= 27:
+            self.name = self.name[:28] + '...'
+        self.root.tree.SetItemText(self.item, self.name)
+        try:
+            stroke = self.object.values[SVG_ATTR_STROKE]
+            color = wx.Colour(swizzlecolor(Color(stroke).value))
+            self.root.tree.SetItemTextColour(self.item, color)
+        except AttributeError:
+            pass
+
+    def remove_node(self):
+        for q in self:
+            q.remove_node()
+        root = self.root
+        links = root.tree_lookup[id(self.object)]
+        links.remove(self)
+        self.parent.remove(self)
+        try:
+            root.tree.Delete(self.item)
+        except RuntimeError:
             return
-        gui = self
+        root.notify_removed(self)
+
+        # if self.type == NODE_ELEMENT:
+        #     root.kernel.elements.remove(self.object)
+        #     for n in links:
+        #         n.remove_node()
+        # elif self.type == NODE_OPERATION:
+        #     try:
+        #         root.kernel.operations.remove(self.object)
+        #     except ValueError:
+        #         pass
+        self.item = None
+        self.parent = None
+        self.root = None
+        self.type = -1
+
+    def move_node(self, new_parent, pos=None):
+        tree = self.root.tree
+        item = self.item
+        image = tree.GetItemImage(item)
+        data = tree.GetItemData(item)
+        color = tree.GetItemTextColour(item)
+        tree.Delete(item)
+        if pos is None:
+            self.item = tree.AppendItem(new_parent.item, self.name)
+        else:
+            self.item = tree.InsertItem(new_parent.item, pos, self.name)
+        item = self.item
+        tree.SetItemImage(item, image)
+        tree.SetItemData(item, data)
+        tree.SetItemTextColour(item, color)
+
+    def __eq__(self, other):
+        return other is self
+
+    def set_icon(self, icon=None):
+        root = self.root
+        item = self.item
+        data_object = self.object
+        tree = root.tree
+        if icon is None:
+            if isinstance(data_object, SVGImage):
+                image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
+                image_id = self.root.tree_images.Add(bitmap=image)
+                tree.SetItemImage(item, image=image_id)
+            if isinstance(data_object, Path):
+                image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20,
+                                                       bitmap=True)
+                if image is not None:
+                    image_id = self.root.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+                    tree.Update()
+        else:
+            image_id = self.root.tree_images.Add(bitmap=icon)
+            tree.SetItemImage(item, image=image_id)
+
+    def center(self):
+        try:
+            bounds = self.bounds
+            return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
+        except Exception:
+            return None
+
+    def bbox(self):
+        return ElementFunctions.bounding_box(self.object)
+
+    def objects_of_children(self, types):
+        if isinstance(self.object, types):
+            yield self.object
+        for q in self:
+            for o in q.objects_of_children(types):
+                yield o
+
+    def contains_path(self):
+        if isinstance(self.object, Path):
+            return True
+        for q in self:
+            if q.contains_path():
+                return True
+        return False
+
+    def contains_image(self):
+        if isinstance(self.object, SVGImage):
+            return True
+        for q in self:
+            if q.contains_image():
+                return True
+        return False
+
+    def contains_text(self):
+        if isinstance(self.object, SVGText):
+            return True
+        for q in self:
+            if q.contains_text():
+                return True
+        return False
+
+
+class RootNode(list):
+    """"Nodes are the presentation layer used to wrap the LaserOperations and the SVGElement classes. Stored in the
+    kernel. This is to allow nested structures beyond the flat structure of the actual data. It serves to help with
+    menu creation, name, drag and drop, bounding box cache, tree element updates.
+
+    The tree is structured with two main sub-elements of the RootNode, these are the Operations and the Elements.
+
+    The Operations each contain a list of elements which they run in order and are stored within actual operations.
+
+    The Elements are merely the list of elements stored in their desired ordered. This order changing should reflect
+    those changes back to the flat structure in kernel. By a depth first search of the tree.
+
+    Deleting an element from the tree should remove that element from the operations.
+    Deleting an operation should make no change to the elements structure.
+    Selecting an operation should select all the elements it contains, and those elements should be highlighted in
+    the elements part of the tree.
+    Selecting an element should select all the places that element is found in the operations part of the tree.
+
+    The .scene_bounds() function should give the bounds. This should also deal with caching etc.
+    There should be a need to have the Render function cache information in the lookup.
+
+    All the nodes store a reference to their given tree item. So that a determination can be made when those items have
+    changed and provide piecemeal updates to the tree rather than recreating the entire thing.
+
+    """
+
+    def __init__(self, kernel, gui):
+        list.__init__(self)
+        self.root = self
+        self.parent = self
+        self.object = "Project"
+        self.name = "Project"
+        self.type = NODE_ROOT
+
+        self.kernel = kernel
+        self.gui = gui
+        self.tree = gui.tree
+        self.renderer = gui.renderer
+
+        self.bounds = [0, 0, 0, 0]
+        self.selected_elements = []
+        self.selected_operations = []
+
+        self.item = None
+        self.dragging_node = None
+        self.dragging_parent = None
+        self.tree_images = None
+        self.tree_lookup = None
+        self.node_elements = None
+        self.node_operations = None
+        self.node_files = None
+        self.rebuild_tree()
+
+    def rebuild_tree(self):
+        self.tree.DeleteAllItems()
+        self.tree_images = wx.ImageList()
+        self.tree_images.Create(width=20, height=20)
+        self.tree_lookup = {}  # id(data_object) -> [ *nodes ]
+        self.tree.SetImageList(self.tree_images)
+        self.item = self.tree.AddRoot(self.name)
+        self.node_operations = Node(NODE_OPERATION_BRANCH, self.kernel.operations, self, self, name=_("Operations"))
+        self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
+        self.build_tree(self.node_operations, self.kernel.operations)
+        for n in self.node_operations:
+            if isinstance(n.object, RasterOperation):
+                n.set_icon(icons8_direction_20.GetBitmap())
+            else:
+                n.set_icon(icons8_laser_beam_20.GetBitmap())
+
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, self.kernel.elements, self, self, name=_("Elements"))
+        self.node_elements.set_icon(icons8_vector_20.GetBitmap())
+        self.build_tree(self.node_elements, self.kernel.elements)
+
+        self.node_files = Node(NODE_FILES_BRANCH, self.kernel.filenodes, self, self, name=_("Files"))
+        self.node_files.set_icon(icons8_file_20.GetBitmap())
+        self.build_tree(self.node_files, self.kernel.filenodes)
+        for n in self.node_files:
+            n.set_icon(icons8_file_20.GetBitmap())
+        self.tree.ExpandAll()
+
+    def build_tree(self, parent_node, objects):
+        if isinstance(objects, list):
+            for obj in objects:
+                node = Node(parent_node.type + 1, obj, parent_node, self)
+                self.build_tree(node, obj)
+        elif isinstance(objects, dict):
+            for obj_key, obj_value in objects.items():
+                node = Node(parent_node.type + 1, obj_key, parent_node, self)
+                node.filepath = obj_key
+                if not isinstance(obj_value, (list, dict)):
+                    obj_value = [obj_value]
+                self.build_tree(node, obj_value)
+
+    def add_operations_group(self, ops, pathname, basename):
+        self.build_tree(self.node_operations, ops)
+
+    def add_element_group(self, elements, pathname, basename):
+        """Called to add element group of elements, as loaded with the given pathname and basename."""
+        self.build_tree(self.node_elements, elements)
+
+    def notify_added(self, node):
+        pass
+
+    def notify_removed(self, node):
+        pass
+
+    def notify_tree_data_change(self):
+        self.kernel.signal("rebuild_tree", 0)
+        # tree = self.tree
+        # tree.ExpandAll()
+
+    def notify_tree_data_cleared(self):
+        self.kernel.signal("rebuild_tree", 0)
+        # tree = self.tree
+        # tree.ExpandAll()
+
+    def on_element_update(self, *args):
+        element = args[0]
+        try:
+            nodes = self.tree_lookup[id(element)]
+            for node in nodes:
+                node.update_name()
+        except KeyError:
+            pass
+
+    def selected_bounds(self):
+        return ElementFunctions.bounding_box(self.selected_elements)
+
+    def bbox(self):
+        return ElementFunctions.bounding_box(self.kernel.elements)
+
+    def set_selected_elements(self, selected):
+        if selected is None:
+            selected = []
+        else:
+            if not isinstance(selected, list):
+                selected = [selected]
+        self.selected_elements = selected
+        self.selected_operations.clear()
+
+    def set_selected_operations(self, selected):
+        if selected is None:
+            selected = []
+        else:
+            if not isinstance(selected, list):
+                selected = [selected]
+        self.selected_elements.clear()
+        self.selected_operations = selected
+
+    def set_selected(self, selected):
+        """Sets the selected element. This could be a LaserOperation or a LaserNode."""
+        self.selected_elements.clear()
+        self.selected_operations.clear()
+        if selected is not None:
+            if isinstance(selected, SVGElement):
+                self.set_selected_elements([selected])
+            elif isinstance(selected, LaserOperation):
+                self.set_selected_operations([selected])
+        self.kernel.signal("selection", self.selected_elements)
+        self.kernel.signal("selected_ops", self.selected_operations)
+
+    def move_selected(self, dx, dy):
+        if self.selected_elements is None:
+            return
+        if len(self.selected_elements) == 0:
+            return
+        for obj in self.selected_elements:
+            obj.transform.post_translate(dx, dy)
+
+    def on_drag_begin_handler(self, event):
+        """
+        Drag handler begin for the tree.
+
+        :param event:
+        :return:
+        """
+        self.dragging_node = None
+
+        drag_item = event.GetItem()
+        node_data = self.tree.GetItemData(drag_item)
+        if node_data.type == NODE_ELEMENTS_BRANCH or node_data.type == NODE_OPERATION_BRANCH or \
+                node_data.type == NODE_FILES_BRANCH or node_data.type == NODE_FILE_ELEMENT or node_data.type == NODE_FILE_FILE:
+            event.Skip()
+            return
+        self.dragging_node = node_data
+        event.Allow()
+
+    def on_drag_end_handler(self, event):
+        """
+        Drag handler end for the tree
+
+        :param event:
+        :return:
+        """
+        if self.dragging_node is None:
+            event.Skip()
+            return
+        drag_node = self.dragging_node
+        self.dragging_node = None
+
+        drop_item = event.GetItem()
+        if drop_item is None:
+            event.Skip()
+            return
+        if drop_item.ID is None:
+            event.Skip()
+            return
+
+        drop_node = self.tree.GetItemData(drop_item)
+        if drop_node is None or drop_node == drag_node:
+            event.Skip()
+            return
+        if drag_node.type == NODE_ELEMENT:
+            if drop_node.type == NODE_OPERATION:
+                # Dragging element into operation adds that element to the op.
+                drop_node.object.append(drag_node.object)
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
+                self.notify_tree_data_change()
+                event.Allow()
+                return
+            elif drop_node.type == NODE_ELEMENT:
+                # Dragging element into element.
+                drag_node.parent.object.remove(drag_node.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
+                # parent = drop_node.parent
+                # drag_node.move_node(parent, pos=pos)
+                self.notify_tree_data_change()
+                event.Allow()
+                return
+            elif drop_node.type == NODE_OPERATION_ELEMENT:
+                drag_node.object.append(drop_node.parent.object)
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+            elif drop_node.type == NODE_OPERATION_BRANCH:
+                obj = drag_node.object
+                self.kernel.classify(obj)
+                event.Allow()
+                self.notify_tree_data_change()
+        elif drag_node.type == NODE_OPERATION_ELEMENT:
+            if drop_node.type == NODE_OPERATION:
+                # Dragging from op element to operation.
+                drag_node.parent.object.remove(drag_node.object)
+                drop_node.object.append(drag_node.object)
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
+                # drag_node.remove_node()
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+            if drop_node.type == NODE_OPERATION_ELEMENT:
+                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
+                drag_node.parent.object.remove(drag_node.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+        elif drag_node.type == NODE_OPERATION:
+            if drop_node.type == NODE_OPERATION:
+                # Dragging operation to different operation.
+                drag_node.parent.object.remove(drag_node.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
+                event.Allow()
+                self.notify_tree_data_change()
+                return
+            elif drop_node.type == NODE_OPERATION_BRANCH:
+                # Dragging operation to op branch.
+                pass
+
+        event.Skip()
+        # Do not allow images added to engrave or cut operations
+        # Group dragged into group, creates subgroup.
+        # LaserOperation Elements dragged from one LaserOperation to another.
+
+    def on_item_right_click(self, event):
+        """
+        Right click of element in tree.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        if item is None:
+            return
+        node = self.tree.GetItemData(item)
+
+        self.root.create_menu(self.gui, node)
+        event.Skip()
+
+    def on_item_activated(self, event):
+        """
+        Tree item is double-clicked. Launches ElementProperty dialog.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        node = self.tree.GetItemData(item)
+        if node is not None:
+            if isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
+                self.kernel.open_window("ElementProperty").set_elements(node.object)
+
+    def on_item_changed(self, event):
+        """
+        Tree menu item is changed. Modify the selection.
+
+        :param event:
+        :return:
+        """
+        item = event.GetItem()
+        node = self.tree.GetItemData(item)
+
+        self.selected_elements.clear()
+        self.selected_operations.clear()
+        if node is None:
+            return
+        if node.type == NODE_ELEMENTS_BRANCH:
+            for n in self.node_elements:
+                self.tree.SelectItem(n.item, True)
+            # self.selected_operations = list(self.kernel.elements)
+            self.gui.request_refresh()
+            return
+        if node.type == NODE_FILE_FILE:
+            for n in node:
+                obj = n.object
+                links = self.tree_lookup[id(obj)]
+                for link in links:
+                    self.tree.SelectItem(link.item, True)
+            self.gui.request_refresh()
+            return
+        for item in list(self.tree.GetSelections()):
+            node = self.tree.GetItemData(item)
+            if node.type == NODE_ELEMENT:
+                self.selected_elements.append(node.object)
+            elif node.type == NODE_OPERATION:
+                self.selected_operations.append(node.object)
+        self.gui.request_refresh()
+
+    def set_selected_by_position(self, position):
+        if self.selected_elements is not None:
+            select_bounds = self.selected_bounds()
+            if select_bounds is not None and self.contains(select_bounds, position):
+                return  # Select by position aborted since selection position within current select bounds.
+        self.set_selected_elements(None)
+        for e in reversed(self.kernel.elements):
+            bounds = e.bbox()
+            if bounds is None:
+                continue
+            if self.contains(bounds, position):
+                self.root.set_selected_elements(e)
+                break
+
+    def contains(self, box, x, y=None):
+        if y is None:
+            x, y = x
+        return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+    def validate(self, node=None):
+        if node is None:
+            return
+        node.bounds = None  # delete bounds
+        for subnode in node:
+            self.validate(subnode)  # validate all subelements.
+        if len(node) == 0:  # Leaf Node.
+            try:
+                node.bounds = node.element.bbox()
+            except AttributeError:
+                pass
+            return
+        # Group node.
+        xvals = []
+        yvals = []
+        for e in node:
+            bounds = e.bounds
+            if bounds is None:
+                continue
+            xvals.append(bounds[0])
+            xvals.append(bounds[2])
+            yvals.append(bounds[1])
+            yvals.append(bounds[3])
+        if len(xvals) == 0:
+            return
+        node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
+
+    def create_menu(self, gui, node):
+        """
+        Create menu items. This is used for both the scene and the tree to create menu items.
+
+        :param gui: Gui used to create menu items.
+        :param node: The Node clicked on for the generated menu.
+        :return:
+        """
+        if node is None:
+            return
+        if isinstance(node, SVGElement):
+            # If this is called with an SVGElement rather than a Node. Convert them.
+            match_object = node
+            node = None
+            for element in self.node_elements:
+                if element.object is match_object:
+                    node = element
+                    break
+        if node is None:
+            return
         menu = wx.Menu()
-        if isinstance(element, LaserNode):
-            t = element.type
-            if t != 'root':
-                gui.Bind(wx.EVT_MENU, self.menu_remove(element),
-                         menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL))
-                if t == 'group':
-                    fpath = element['filepath']
-                    if fpath is not None:
-                        name = os.path.basename(fpath)
-                        gui.Bind(wx.EVT_MENU, self.menu_reload(element),
-                                 menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
-                        if len(element) > 1:
-                            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(element),
-                                     menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
-                else:
-                    if element.passes != 1:
-                        gui.Bind(wx.EVT_MENU, self.menu_split_passes(element),
-                                 menu.Append(wx.ID_ANY, _("Split Passes"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_hull(element),
-                         menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_execute(element),
-                         menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_reset(element),
-                         menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
-                path_scale_sub_menu = wx.Menu()
-                for i in range(1, 25):
-                    gui.Bind(wx.EVT_MENU, self.menu_scale(element, 6.0 / float(i)),
-                             path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
-                                                        wx.ITEM_NORMAL))
-                menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
-                path_rotate_sub_menu = wx.Menu()
-                for i in range(2, 13):
-                    angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(wx.EVT_MENU, self.menu_rotate(element, 1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
-                                                         "",
-                                                         wx.ITEM_NORMAL))
-                for i in range(2, 13):
-                    angle = Angle.turns(1.0 / float(i))
-                    gui.Bind(wx.EVT_MENU, self.menu_rotate(element, -1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                         _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
-                                                         wx.ITEM_NORMAL))
-                menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-            if element.contains_type('path'):
-                vector_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_subpath(element),
-                         vector_menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster(element),
-                         vector_menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_reify(element),
-                         menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
-                menu.AppendSubMenu(vector_menu, _("Vector"))
-            if element.contains_type('image'):
-                image_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(element),
-                         image_menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_dither(element),
-                         image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_raster_native(element),
-                         image_menu.Append(wx.ID_ANY, _("Set to Native"), "", wx.ITEM_NORMAL))
-                image_sub_menu_step = wx.Menu()
-                for i in range(1, 8):
-                    gui.Bind(wx.EVT_MENU, self.menu_step(element, i),
-                             image_sub_menu_step.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_NORMAL))
-                image_menu.AppendSubMenu(image_sub_menu_step, _("Step"))
-                menu.AppendSubMenu(image_menu, _("Raster"))
-            if element.contains_type('text'):
-                text_menu = wx.Menu()
-                gui.Bind(wx.EVT_MENU, self.menu_remove(element, types=(SVGText)),
-                         text_menu.Append(wx.ID_ANY, _("Remove Text"), "", wx.ITEM_NORMAL))
-                menu.AppendSubMenu(text_menu, _("Text"))
-        elif isinstance(element, LaserOperation):
-            gui.Bind(wx.EVT_MENU, self.menu_remove(element),
-                     menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL))
+        if isinstance(node, RootNode):
+            return
+        t = node.type
+        if t == NODE_OPERATION:
+            gui.Bind(wx.EVT_MENU, self.menu_execute(node),
+                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+        if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
+            gui.Bind(wx.EVT_MENU, self.menu_remove(node),
+                     menu.Append(wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL))
+        if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
+            gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
+                     menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
+        if t == NODE_ROOT:
+            pass
+        elif t == NODE_OPERATION_BRANCH:
+            pass
+        elif t == NODE_ELEMENTS_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
+                     menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL))
+        elif t == NODE_FILES_BRANCH:
+            pass
+        elif t == NODE_OPERATION:
+            operation_convert_submenu = wx.Menu()
+            for name in ("Raster", "Engrave", "Cut"):
+                menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
+                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
+                menu_op.Enable(False)
+            for name in ("ZDepth_Raster", "Cross-Engrave Raster", "Multishade_Raster", "Wait-Step_Raster"):
+                menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
+                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
+                menu_op.Enable(False)
+            menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
+            if isinstance(node.object, RasterOperation):
+                raster_step_menu = wx.Menu()
+                for i in range(1, 10):
+                    menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
+                    gui.Bind(wx.EVT_MENU,self.menu_raster_step_operation(node, i), menu_item)
+                    step = float(node.object.raster_step)
+                    if i == step:
+                        menu_item.Check(True)
+                menu.AppendSubMenu(raster_step_menu, _("Step"))
+                gui.Bind(wx.EVT_MENU, self.menu_raster(node),
+                         menu.Append(wx.ID_ANY, _("Make Raster Image"), "", wx.ITEM_NORMAL))
+        elif t == NODE_FILE_FILE:
+            if node.filepath is not None:
+                name = os.path.basename(node.filepath)
+                gui.Bind(wx.EVT_MENU, self.menu_reload(node),
+                            menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+        elif t == NODE_ELEMENT:
+            duplicate_menu = wx.Menu()
+            for i in range(1, 10):
+                gui.Bind(wx.EVT_MENU, self.menu_duplicate(node, i),
+                         duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
+
+            gui.Bind(wx.EVT_MENU, self.menu_hull(node),
+                     menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, self.menu_reset(node),
+                     menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+            path_scale_sub_menu = wx.Menu()
+            for i in range(1, 25):
+                gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
+                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                                                    wx.ITEM_NORMAL))
+            menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
+
+            path_rotate_sub_menu = wx.Menu()
+            for i in range(2, 13):
+                angle = Angle.turns(1.0 / float(i))
+                gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
+                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                                                     "",
+                                                     wx.ITEM_NORMAL))
+            for i in range(2, 13):
+                angle = Angle.turns(1.0 / float(i))
+                gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
+                         path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                     _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                                                     wx.ITEM_NORMAL))
+            menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
+            gui.Bind(wx.EVT_MENU, self.menu_reify(node),
+                     menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
+            if isinstance(node.object, Path):
+                gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
+                         menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
+            if isinstance(node.object, SVGImage):
+                raster_step_menu = wx.Menu()
+
+                for i in range(1, 10):
+                    menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_image(node, i), menu_item)
+                    if 'raster_step' in node.object.values:
+                        step = float(node.object.values['raster_step'])
+                    else:
+                        step = 1.0
+                    if i == step:
+                        m = node.object.transform
+                        if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
+                            menu_item.Check(True)
+                menu.AppendSubMenu(raster_step_menu, _("Step"))
+                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
+                         menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_dither(node),
+                         menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+            if isinstance(node.object, SVGText):
+                gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
+                         menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
 
-    def menu_scale(self, element, value):
+    def menu_raster_step_operation(self, node, step_value):
         """
-        Menu scale.
+        Change raster step values of operation
 
-        :param element:
-        :param value:
-        :return:
-        """
-
-        def specific(event):
-            center = element.center
-            if center is not None:
-                for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
-                    e.element.transform.post_scale(value, value, center[0], center[1])
-                self.kernel("elements", 0)
-
-        return specific
-
-    def menu_step(self, element, step_value):
-        """
-        Change raster step values of subelements.
-
-        :param element:
+        :param node:
         :param step_value:
         :return:
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                old_step = e.raster_step
-                e.raster_step = step_value
-                scale = float(step_value) / float(old_step)
-                m = e.transform
-                e.transform.post_scale(scale, scale, m.e, m.f)
-            self.kernel("elements", 0)
+            element = node.object
+            if isinstance(element, RasterOperation):
+                element.raster_step = step_value
+            self.kernel.signal("element_property_update", node.object)
 
         return specific
 
-    def menu_raster_actualize(self, element):
+    def menu_raster_step_image(self, node, step_value):
+        """
+        Change raster step values of subelements.
+
+        :param node:
+        :param step_value:
+        :return:
+        """
+
+        def specific(event):
+            element = node.object
+            element.values[VARIABLE_NAME_RASTER_STEP] = str(step_value)
+            m = element.transform
+            tx = m.e
+            ty = m.f
+            element.transform = Matrix.scale(float(step_value), float(step_value))
+            element.transform.post_translate(tx, ty)
+            self.kernel.signal("element_property_update", node.object)
+            self.root.gui.request_refresh()
+
+        return specific
+
+    def menu_raster_actualize(self, node):
         """
         Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                e.make_actual()
-            self.kernel(_("elements"), 0)
+            element = node.object
+            if isinstance(element, SVGImage):
+                ElementFunctions.make_actual(element)
+                node.bounds = None
+                node.set_icon()
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
-    def menu_raster_native(self, element):
-        """
-        Reset the raster to native form validating the matrix for the given step value.
-
-        :param element:
-        :return:
-        """
-
-        def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                e.set_native()
-            self.kernel("elements", 0)
-
-        return specific
-
-    def menu_dither(self, element):
+    def menu_dither(self, node):
         """
         Change raster dither forcing raster elements to 1 bit.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image'), passes=False):
-                e.element.image = e.element.image.convert("1")
-                e.cache = None
-            self.kernel("elements", 0)
+            element = node.object
+            if isinstance(element, SVGImage):
+                element.image = element.image.convert("1")
+                element.cache = None
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
-    def menu_raster(self, element):
+    def menu_raster(self, node):
         """
         Convert a vector element into a raster element.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            renderer = LaserRender(self.kernel)
-            image = renderer.make_raster(element, types='path')
-            xmin, ymin, xmax, ymax = self.kernel.selected.scene_bounds
-            image_element = LaserNode(SVGImage(image=image))
-            self.kernel.selected.append(image_element)
-            image_element.element.transform.post_translate(xmin, ymin)
-            self.kernel("elements", 0)
+            renderer = self.renderer
+            child_objects = list(node.objects_of_children(SVGElement))
+            bounds = ElementFunctions.bounding_box(child_objects)
+            if bounds is None:
+                return None
+            step = float(node.object.raster_step)
+            xmin, ymin, xmax, ymax = bounds
+
+            image = renderer.make_raster(child_objects, bounds, width=(xmax-xmin)/step, height=(ymax-ymin)/step)
+            image_element = SVGImage(image=image)
+            image_element.transform.post_scale(step, step)
+            image_element.transform.post_translate(xmin, ymin)
+            image_element.values['raster_step'] = step
+
+            self.kernel.elements.append(image_element)
+            node.object.clear()
+            self.build_tree(self.node_elements, image_element)
+            node.object.append(image_element)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
-    def menu_reify(self, element):
+    def menu_reify(self, node):
         """
         Reify elements so that the translations apply direct to the object.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('path'), passes=False):
-                e.reify_matrix()
-                self.kernel("elements", 0)
+            for element in self.selected_elements:
+                element.reify()
+                element.cache = None
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
-    def menu_reset(self, element):
+    def menu_reset(self, node):
         """
         Menu to reset transformations applied to elements.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
-                e.element.transform.reset()
-                self.kernel("elements", 0)
+            for e in self.selected_elements:
+                e.transform.reset()
+            self.gui.request_refresh()
 
         return specific
 
-    def menu_rotate(self, element, value):
+    def menu_rotate(self, node, value):
         """
         Menu to rotate an element.
 
-        :param element:
+        :param node:
         :param value:
         :return:
         """
@@ -1805,174 +2266,234 @@ class MeerK40t(wx.Frame):
         value *= tau
 
         def specific(event):
-            center = element.center
-            for e in element.flat_elements(types=('image', 'path', 'text'), passes=False):
-                e.transform.post_rotate(value, center[0], center[1])
-            self.kernel("elements", 0)
+            bounds = ElementFunctions.bounding_box(node.parent)
+
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            # center = node.parent.center()
+
+            for obj in self.selected_elements:
+                obj.transform.post_rotate(value, center_x, center_y)
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
-    def menu_reload(self, element):
+    def menu_scale(self, node, value):
+        """
+        Menu scale.
+
+        :param node:
+        :param value:
+        :return:
+        """
+
+        def specific(event):
+            bounds = ElementFunctions.bounding_box(self.selected_elements)
+
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            # center = node.parent.center()
+
+            for obj in self.selected_elements:
+                obj.transform.post_scale(value, value, center_x, center_y)
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_reload(self, node):
         """
         Menu to reload the element from the file on disk.
 
-        :param element:
+        :param node:
         :return:
         """
 
-        filepath = element['filepath']
-
         def specific(event):
-            for e in reversed(element):
-                e.detach()
-            self.kernel.load(filepath, group=element)
+            filepath = node.filepath
+            self.gui.load(filepath)
 
         return specific
 
-    def menu_remove(self, element, types=None):
+    def menu_remove(self, remove_node):
         """
         Menu to remove an element from the scene.
 
-        :param element:
-        :return:
-        """
-        if isinstance(element, LaserNode):
-            def delete_element(event):
-                if types is None:
-                    try:
-                        element.parent.remove(element)
-                    except AttributeError:
-                        pass
-                    self.kernel.set_selected(None)
-                else:
-                    for e in element.all_children_of_type(types=types):
-                        try:
-                            e.parent.remove(e)
-                        except AttributeError:
-                            pass
-                    self.kernel.set_selected(None)
-        else:
-            def delete_element(event):
-                self.kernel.operations.remove(element)
-                self.kernel("elements", 0)
-
-        return delete_element
-
-    def menu_split_passes(self, element):
-        """
-        Menu to break element into subpath.
-
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            for e in element.all_children_of_type(types=('path', 'image', 'text')):
-                if e.passes != 1:
-                    parent = e.parent
-                    position = parent.index(e)
-                    e.detach()
-                    passes = e.passes
-                    e.passes = 1
-                    all = []
-                    for i in range(0, passes):
-                        all.append(LaserNode(e))
-                    parent.insert_all(position, all)
-            self.kernel("elements", 0)
-            self.kernel.set_selected(None)
+            node = remove_node
+            if node.type == NODE_ELEMENT:
+                removed_objects = self.selected_elements
+                for e in removed_objects:
+                    self.kernel.elements.remove(e)
+                for i in range(len(self.kernel.operations)):
+                    elems = [e for e in self.kernel.operations[i] if e not in removed_objects]
+                    self.kernel.operations[i].clear()
+                    self.kernel.operations[i].extend(elems)
+                    if len(self.kernel.operations[i]) == 0:
+                        self.kernel.operations[i] = None
+                ops = [op for op in self.kernel.operations if op is not None]
+                self.kernel.operations.clear()
+                self.kernel.operations.extend(ops)
+            elif node.type == NODE_OPERATION:
+                self.kernel.operations.remove(node.object)
+            elif node.type == NODE_FILE_FILE:
+                del self.kernel.filenodes[node.filepath]
+            elif node.type == NODE_OPERATION_ELEMENT:
+                op = node.parent.object
+                op.remove(node.object)
+            self.selected_elements.clear()
+            self.kernel.signal('rebuild_tree', 0)
 
         return specific
 
-    def menu_subpath(self, element):
+    def menu_duplicate(self, node, copies):
         """
         Menu to break element into subpath.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            context = element
-            for e in element.all_children_of_type(types=('path')):
-                e.detach()
-                p = abs(e.element)
+            adding_elements = [copy(e) for e in list(self.selected_elements) * copies]
+            self.kernel.elements.extend(adding_elements)
+            self.kernel.classify(adding_elements)
+            self.set_selected_elements(None)
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_subpath(self, node):
+        """
+        Menu to break element into subpath.
+
+        :param node:
+        :return:
+        """
+
+        def specific(event):
+            for e in self.selected_elements:
+                p = abs(e)
                 add = []
                 for subpath in p.as_subpaths():
-                    subelement = LaserNode(Path(subpath))
-                    subelement.element.values.update(e.element.values)
+                    subelement = Path(subpath)
                     add.append(subelement)
-                context.append_all(add)
-            self.kernel("elements", 0)
-            self.kernel.set_selected(None)
+                self.kernel.elements.extend(add)
+            self.kernel.signal('rebuild_tree', 0)
+            self.set_selected_elements(None)
 
         return specific
 
-    def menu_execute(self, element):
+    def menu_execute(self, node):
         """
         Menu to launch Execute Job for the particular element.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def open_jobinfo_window(event):
-            window = self.kernel.open_window("JobInfo")
+            self.kernel.open_window("JobInfo").set_operations(self.selected_operations)
 
         return open_jobinfo_window
 
-    def get_convex_hull(self, element):
+    def get_convex_hull(self, node):
         """
         Processing function for menu_hull(element) to return the hull points.
 
-        :param element:
+        :param node:
         :return:
         """
         pts = []
-        for e in element.flat_elements(types=('image', 'path'), passes=False):
-            if isinstance(e.element, Path):
-                epath = abs(e.element)
+        for obj in self.selected_elements:
+            if isinstance(obj, Path):
+                epath = abs(obj)
                 pts += [q for q in epath.as_points()]
-            elif isinstance(e.element, SVGImage):
-                bounds = e.scene_bounds
-                pts += [(bounds[0], bounds[1]), (bounds[0], bounds[3]), (bounds[2], bounds[1]), (bounds[2], bounds[3])]
+            elif isinstance(obj, SVGImage):
+                bounds = obj.bbox()
+                pts += [(bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3])]
         hull = [p for p in Point.convex_hull(pts)]
         if len(hull) == 0:
             return None
         return hull
 
-    def menu_hull(self, element):
+    def menu_hull(self, node):
         """
         Menu to return and add the convex hull of the element to the scene.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def convex_hull(event):
             path = Path()
-            pts = self.get_convex_hull(element)
+            pts = self.get_convex_hull(node)
             if pts is None:
                 return
             path.move(*pts)
             path.closed()
             path.stroke = Color('black')
-            context = element.parent
-            context.append(LaserNode(path))
-            self.kernel.set_selected(None)
+            self.kernel.elements.append(path)
+            self.set_selected_elements(path)
+            self.kernel.signal('rebuild_tree', 0)
+
 
         return convex_hull
 
-    def menu_reverse_order(self, element):
+    def menu_reverse_order(self, node):
         """
         Menu to return and add the convex hull of the element to the scene.
 
-        :param element:
+        :param node:
         :return:
         """
 
         def specific(event):
-            element.reverse()
-            self.kernel("elements", 0)
+            node.object.reverse()
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_clear_all(self, node):
+        def specific(event):
+            if node.type == NODE_ELEMENTS_BRANCH:
+                elements = self.kernel.elements
+                for i in range(len(self.kernel.operations)):
+                    self.kernel.operations[i] = [e for e in self.kernel.operations[i]
+                                                 if e not in elements]
+                    if len(self.kernel.operations[i]) == 0:
+                        self.kernel.operations[i] = None
+                self.kernel.operations = [op for op in self.kernel.operations
+                                          if op is not None]
+            node.object.clear()
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_reclassify_operations(self, node):
+        def specific(event):
+            kernel = node.root.kernel
+            kernel.operations.clear()
+            kernel.classify(kernel.elements)
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_convert_operation(self, node, name):
+        def specific(event):
+            raise NotImplementedError
+
+        return specific
+
+    def menu_convert_text(self, node):
+        def specific(event):
+            raise NotImplementedError
 
         return specific
 
@@ -2037,10 +2558,21 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window("JobInfo", JobInfo)
         kernel.add_window("BufferView", BufferView)
         kernel.add_window("Adjustments", Adjustments)
+        kernel.add_control("Delete Settings", self.clear_control)
         language = kernel.language
         if language is not None and language != 0:
             self.language_to(language)(None)
         self.kernel.open_window("MeerK40t")
+
+    def clear_control(self):
+        if self.kernel.config is not None:
+            self.kernel.config.DeleteAll()
+            self.kernel.config = None
+            self.kernel.shutdown()
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['MeerK40t']
 
     def language_swap(self, lang):
         self.language_to(lang)(None)
@@ -2068,7 +2600,7 @@ class wxMeerK40t(Module, wx.App):
                 self.locale.AddCatalog('meerk40t')
             else:
                 self.locale = None
-            self.kernel('language', (lang, language_code, language_name, language_index))
+            self.kernel.signal('language', (lang, language_code, language_name, language_index))
 
         return update_language
 

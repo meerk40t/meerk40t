@@ -18,6 +18,11 @@ COMMAND_ANGLE = b'M'
 COMMAND_ON = b'D'
 COMMAND_OFF = b'U'
 
+DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
+DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
+DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
+DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
+
 STATE_ABORT = -1
 STATE_DEFAULT = 0
 STATE_CONCAT = 1
@@ -47,10 +52,9 @@ class LhymicroInterpreter(Interpreter):
     def __init__(self, device):
         Interpreter.__init__(self, device)
         self.state = STATE_DEFAULT
-        self.is_on = False
-        self.is_left = False
-        self.is_top = False
+        self.properties = 0
         self.is_relative = False
+        self.is_on = False
         self.raster_step = 0
         self.speed = 30
         self.power = 1000.0
@@ -58,6 +62,7 @@ class LhymicroInterpreter(Interpreter):
         self.default_SnP = None
         self.pulse_total = 0.0
         self.pulse_modulation = True
+        self.group_modulation = False
 
         current_x = device.current_x
         current_y = device.current_y
@@ -72,27 +77,6 @@ class LhymicroInterpreter(Interpreter):
 
         device.add_control("Realtime Pause", self.pause)
         device.add_control("Realtime Resume", self.resume)
-
-        def break_acceleration10():
-            self.device._acceleration_breaks = 10.0
-
-        def break_acceleration20():
-            self.device._acceleration_breaks = 20.0
-
-        def break_acceleration30():
-            self.device._acceleration_breaks = 30.0
-
-        def break_acceleration40():
-            self.device._acceleration_breaks = 40.0
-
-        def break_acceleration_inf():
-            self.device._acceleration_breaks = float("inf")
-
-        self.device.add_control("acceleration Breaks 10mm/s", break_acceleration10)
-        self.device.add_control("acceleration Breaks 20mm/s", break_acceleration20)
-        self.device.add_control("acceleration Breaks 30mm/s", break_acceleration30)
-        self.device.add_control("acceleration Breaks 40mm/s", break_acceleration40)
-        self.device.add_control("acceleration Breaks off", break_acceleration_inf)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -148,11 +132,19 @@ class LhymicroInterpreter(Interpreter):
                 plot_on = 1
             if self.pulse_modulation:
                 self.pulse_total += self.power * plot_on
-                if self.pulse_total >= 1000.0:
-                    on = 1
-                    self.pulse_total -= 1000.0
+                if self.group_modulation and last_on == 1:
+                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
+                    if self.pulse_total > 0.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
                 else:
-                    on = 0
+                    if self.pulse_total >= 1000.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
             else:
                 on = int(round(plot_on))
             if x == last_x + dx and y == last_y + dy and on == last_on:
@@ -235,26 +227,12 @@ class LhymicroInterpreter(Interpreter):
             sy = self.device.current_y
             self.pulse_modulation = True
             try:
-                x2 = y2 = x1 = y1 = None
                 for x, y, on in self.group_plots(sx, sy, path.plot()):
                     if on == 0:
                         self.up()
                     else:
                         self.down()
-                    try:
-                        change = abs(((x2 > x1) - (x2 < x1) + (y2 > y1) - (y2 < y1)) -
-                                     ((x1 > x) - (x1 < x) + (y1 > y) - (y1 < y)))
-                    except TypeError:
-                        change = 0
-                    if self.state == STATE_COMPACT and \
-                            change >= 2 and \
-                            self.speed >= self.device._acceleration_breaks:
-                        self.to_default_mode()
-                        self.to_compact_mode()
-                        x1 = y1 = None
                     self.move_absolute(x, y)
-                    x2, y2 = x1, y1
-                    x1, y1 = x, y
             except RuntimeError:
                 return
         elif command == COMMAND_RASTER:
@@ -269,24 +247,46 @@ class LhymicroInterpreter(Interpreter):
                     dy = y - sy
                     sx = x
                     sy = y
-                    if dy != 0:
-                        if self.is_top:
+
+                    if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
+                        if self.is_prop(DIRECTION_FLAG_TOP):
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
                                 self.move_relative(0, dy + self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
                         else:
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
                                 self.move_relative(0, dy - self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
-                    if on == 0:
-                        self.up()
+                    elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
+                        if self.is_prop(DIRECTION_FLAG_LEFT):
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx + self.raster_step,0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
+                        else:
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx - self.raster_step,0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
                     else:
-                        self.down()
-                    if dx != 0:
+                        if on == 0:
+                            self.up()
+                        else:
+                            self.down()
                         self.move_relative(dx, dy)
             except RuntimeError:
                 return
@@ -325,9 +325,17 @@ class LhymicroInterpreter(Interpreter):
             d_ratio = values
             self.set_d_ratio(d_ratio)
         elif command == COMMAND_SET_DIRECTION:
-            x_dir, y_dir = values
-            self.is_left = x_dir < 0
-            self.is_top = y_dir < 0
+            # Left, Top, X-Momentum, Y-Momentum
+            left, top, x_dir, y_dir = values
+            self.properties = 0
+            if left:
+                self.set_prop(DIRECTION_FLAG_LEFT)
+            if top:
+                self.set_prop(DIRECTION_FLAG_TOP)
+            if x_dir:
+                self.set_prop(DIRECTION_FLAG_X)
+            if y_dir:
+                self.set_prop(DIRECTION_FLAG_Y)
         elif command == COMMAND_SET_INCREMENTAL:
             self.is_relative = True
         elif command == COMMAND_SET_ABSOLUTE:
@@ -396,7 +404,7 @@ class LhymicroInterpreter(Interpreter):
             self.pause()
         elif command == COMMAND_STATUS:
             status = self.get_status()
-            self.device.signal("interpreter;status", status)
+            self.device.signal('interpreter;status', status)
             return status
         elif command == COMMAND_RESUME:
             self.resume()
@@ -408,6 +416,21 @@ class LhymicroInterpreter(Interpreter):
         parts.append("speed=%f" % self.speed)
         parts.append("power=%d" % self.power)
         return ";".join(parts)
+
+    def set_prop(self, mask):
+        self.properties |= mask
+
+    def unset_prop(self, mask):
+        self.properties &= ~mask
+
+    def is_prop(self, mask):
+        return bool(self.properties & mask)
+
+    def toggle_prop(self, mask):
+        if self.is_prop(mask):
+            self.unset_prop(mask)
+        else:
+            self.set_prop(mask)
 
     def pause(self):
         self.device.pipe.realtime_write(b'PN!\n')
@@ -622,12 +645,13 @@ class LhymicroInterpreter(Interpreter):
 
     def h_switch(self):
         controller = self.device.pipe
-        if self.is_left:
+        if self.is_prop(DIRECTION_FLAG_LEFT):
             controller.write(COMMAND_RIGHT)
+            self.unset_prop(DIRECTION_FLAG_LEFT)
         else:
             controller.write(COMMAND_LEFT)
-        self.is_left = not self.is_left
-        if self.is_top:
+            self.set_prop(DIRECTION_FLAG_LEFT)
+        if self.is_prop(DIRECTION_FLAG_TOP):
             self.device.current_y -= self.raster_step
         else:
             self.device.current_y += self.raster_step
@@ -635,12 +659,13 @@ class LhymicroInterpreter(Interpreter):
 
     def v_switch(self):
         controller = self.device.pipe
-        if self.is_top:
+        if self.is_prop(DIRECTION_FLAG_TOP):
             controller.write(COMMAND_BOTTOM)
+            self.unset_prop(DIRECTION_FLAG_TOP)
         else:
             controller.write(COMMAND_TOP)
-        self.is_top = not self.is_top
-        if self.is_left:
+            self.set_prop(DIRECTION_FLAG_TOP)
+        if self.is_prop(DIRECTION_FLAG_LEFT):
             self.device.current_x -= self.raster_step
         else:
             self.device.current_x += self.raster_step
@@ -681,8 +706,7 @@ class LhymicroInterpreter(Interpreter):
 
     def reset_modes(self):
         self.is_on = False
-        self.is_left = False
-        self.is_top = False
+        self.properties = 0
 
     def move_x(self, dx):
         if dx > 0:
@@ -700,43 +724,102 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
+        self.set_prop(DIRECTION_FLAG_X)  # Set both on
+        self.set_prop(DIRECTION_FLAG_Y)
         if dx > 0:  # Moving right
-            if self.is_left:
+            if self.is_prop(DIRECTION_FLAG_LEFT):
                 controller.write(COMMAND_RIGHT)
-                self.is_left = False
+                self.unset_prop(DIRECTION_FLAG_LEFT)
         else:  # Moving left
-            if not self.is_left:
+            if not self.is_prop(DIRECTION_FLAG_LEFT):
                 controller.write(COMMAND_LEFT)
-                self.is_left = True
+                self.set_prop(DIRECTION_FLAG_LEFT)
         if dy > 0:  # Moving bottom
-            if self.is_top:
+            if self.is_prop(DIRECTION_FLAG_TOP):
                 controller.write(COMMAND_BOTTOM)
-                self.is_top = False
+                self.unset_prop(DIRECTION_FLAG_TOP)
         else:  # Moving top
-            if not self.is_top:
+            if not self.is_prop(DIRECTION_FLAG_TOP):
                 controller.write(COMMAND_TOP)
-                self.is_top = True
+                self.set_prop(DIRECTION_FLAG_TOP)
         self.device.current_x += dx
         self.device.current_y += dy
         self.check_bounds()
         controller.write(COMMAND_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
+        """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
+        You cannot declare a diagonal direction."""
         controller = self.device.pipe
-        if self.is_top:
-            controller.write(COMMAND_TOP)
+
+        if self.is_prop(DIRECTION_FLAG_LEFT):
+            x_dir = COMMAND_LEFT
         else:
-            controller.write(COMMAND_BOTTOM)
-        if self.is_left:
-            controller.write(COMMAND_LEFT)
+            x_dir = COMMAND_RIGHT
+        if self.is_prop(DIRECTION_FLAG_TOP):
+            y_dir = COMMAND_TOP
         else:
-            controller.write(COMMAND_RIGHT)
+            y_dir = COMMAND_BOTTOM
+        if self.is_prop(DIRECTION_FLAG_X):  # FLAG_Y is assumed to be !FLAG_X
+            controller.write(y_dir + x_dir)
+        else:
+            controller.write(x_dir + y_dir)
+
+    @property
+    def is_left(self):
+        return self.is_prop(DIRECTION_FLAG_X) and \
+               not self.is_prop(DIRECTION_FLAG_Y) and \
+               self.is_prop(DIRECTION_FLAG_LEFT)
+
+    @property
+    def is_right(self):
+        return self.is_prop(DIRECTION_FLAG_X) and \
+               not self.is_prop(DIRECTION_FLAG_Y) and \
+               not self.is_prop(DIRECTION_FLAG_LEFT)
+
+    @property
+    def is_top(self):
+        return not self.is_prop(DIRECTION_FLAG_X) and \
+               self.is_prop(DIRECTION_FLAG_Y) and \
+               self.is_prop(DIRECTION_FLAG_TOP)
+
+    @property
+    def is_bottom(self):
+        return not self.is_prop(DIRECTION_FLAG_X) and \
+               self.is_prop(DIRECTION_FLAG_Y) and \
+               not self.is_prop(DIRECTION_FLAG_TOP)
+
+    @property
+    def is_angle(self):
+        return self.is_prop(DIRECTION_FLAG_Y) and \
+               self.is_prop(DIRECTION_FLAG_X)
+
+    def set_left(self):
+        self.set_prop(DIRECTION_FLAG_X)
+        self.unset_prop(DIRECTION_FLAG_Y)
+        self.set_prop(DIRECTION_FLAG_LEFT)
+
+    def set_right(self):
+        self.set_prop(DIRECTION_FLAG_X)
+        self.unset_prop(DIRECTION_FLAG_Y)
+        self.unset_prop(DIRECTION_FLAG_LEFT)
+
+    def set_top(self):
+        self.unset_prop(DIRECTION_FLAG_X)
+        self.set_prop(DIRECTION_FLAG_Y)
+        self.set_prop(DIRECTION_FLAG_TOP)
+
+    def set_bottom(self):
+        self.unset_prop(DIRECTION_FLAG_X)
+        self.set_prop(DIRECTION_FLAG_Y)
+        self.unset_prop(DIRECTION_FLAG_TOP)
 
     def move_right(self, dx=0):
         controller = self.device.pipe
         self.device.current_x += dx
-        self.is_left = False
-        controller.write(COMMAND_RIGHT)
+        if not self.is_right or self.state != STATE_COMPACT:
+            controller.write(COMMAND_RIGHT)
+            self.set_right()
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
@@ -744,8 +827,9 @@ class LhymicroInterpreter(Interpreter):
     def move_left(self, dx=0):
         controller = self.device.pipe
         self.device.current_x -= abs(dx)
-        self.is_left = True
-        controller.write(COMMAND_LEFT)
+        if not self.is_left or self.state != STATE_COMPACT:
+            controller.write(COMMAND_LEFT)
+            self.set_left()
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
@@ -753,8 +837,9 @@ class LhymicroInterpreter(Interpreter):
     def move_bottom(self, dy=0):
         controller = self.device.pipe
         self.device.current_y += dy
-        self.is_top = False
-        controller.write(COMMAND_BOTTOM)
+        if not self.is_bottom or self.state != STATE_COMPACT:
+            controller.write(COMMAND_BOTTOM)
+            self.set_bottom()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
@@ -762,8 +847,9 @@ class LhymicroInterpreter(Interpreter):
     def move_top(self, dy=0):
         controller = self.device.pipe
         self.device.current_y -= abs(dy)
-        self.is_top = True
-        controller.write(COMMAND_TOP)
+        if not self.is_top or self.state != STATE_COMPACT:
+            controller.write(COMMAND_TOP)
+            self.set_top()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()

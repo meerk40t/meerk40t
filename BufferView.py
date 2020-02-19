@@ -25,9 +25,9 @@ class BufferView(wx.Frame):
         self.kernel = None
         event.Skip()  # Call destroy as regular.
 
-    def set_kernel(self, project):
-        self.kernel = project
-        self.device = project.device
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)

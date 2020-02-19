@@ -43,6 +43,8 @@ STATE_USB_RELEASE_INTERFACE_SUCCESS = 1210
 STATE_USB_RELEASE_INTERFACE_FAIL = 1220
 
 STATE_USB_DISPOSING_RESOURCES = 1300
+STATE_USB_DISPOSING_RESOURCES_SUCCESS = 1310
+STATE_USB_DISPOSING_RESOURCES_FAIL = 1320
 STATE_USB_RESET = 1400
 STATE_USB_RESET_SUCCESS = 1410
 STATE_USB_RESET_FAIL = 1420
@@ -118,6 +120,10 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("Interface did not exist.")
     elif code == STATE_USB_DISPOSING_RESOURCES:
         return _("Attempting to dispose resources.")
+    elif code == STATE_USB_DISPOSING_RESOURCES_SUCCESS:
+        return _("Dispose Resources: Success")
+    elif code == STATE_USB_DISPOSING_RESOURCES_FAIL:
+        return _("Dispose Resources: Fail")
     elif code == STATE_USB_RESET:
         return _("Attempting USB reset.")
     elif code == STATE_USB_RESET_FAIL:

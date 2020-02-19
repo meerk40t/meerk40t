@@ -140,9 +140,9 @@ class CH341LibusbDriver:
         try:
             self.set_status(STATE_USB_DISPOSING_RESOURCES)
             usb.util.dispose_resources(device)
-            #self.set_status(STATE_USB_DISPOSING_RESOURCES_SUCCESS)
+            self.set_status(STATE_USB_DISPOSING_RESOURCES_SUCCESS)
         except usb.core.USBError:
-            #self.set_status(STATE_USB_DISPOSING_RESOURCES_FAIL)
+            self.set_status(STATE_USB_DISPOSING_RESOURCES_FAIL)
             pass
 
     def disconnect_reset(self, device):
@@ -163,8 +163,12 @@ class CH341LibusbDriver:
             self.interface[index] = interface
 
             self.connect_detach(device, interface)
-            self.connect_claim(device, interface)
-
+            try:
+                self.connect_claim(device, interface)
+            except ConnectionRefusedError:
+                # Attempting interface cycle.
+                self.disconnect_interface(device, interface)
+                self.connect_claim(device, interface)
             self.set_status(STATE_USB_CONNECTED)
             return index
         except usb.core.NoBackendError:
@@ -232,22 +236,22 @@ class CH341LibusbDriver:
                     packet = [mCH341_PARA_CMD_W1] + data[:31]
                 data = data[31:]
                 try:
-                    device.write(BULK_WRITE_ENDPOINT, packet, 10000)
+                    device.write(BULK_WRITE_ENDPOINT, packet, 200)
                 except usb.core.USBError:
                     raise ConnectionError
 
     def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
         try:
-            return self.devices[index].read(BULK_READ_ENDPOINT, length, 10000)
+            return self.devices[index].read(BULK_READ_ENDPOINT, length, 200)
         except usb.core.USBError:
             raise ConnectionError
 
     def CH341GetStatus(self, index=0, status=[0]):
-        """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: datats, 15: addrs"""
+        """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: datas, 15: addrs"""
         device = self.devices[index]
         try:
-            device.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 10000)
-            status[0] = device.read(BULK_READ_ENDPOINT, 6, 10000)
+            device.write(BULK_WRITE_ENDPOINT, [mCH341_PARA_CMD_STS], 200)
+            status[0] = device.read(BULK_READ_ENDPOINT, 6, 200)
         except usb.core.USBError:
             raise ConnectionError
         return status[0]
@@ -261,7 +265,7 @@ class CH341LibusbDriver:
                                           wValue=0,
                                           wIndex=0,
                                           data_or_wLength=2,
-                                          timeout=5000)
+                                          timeout=200)
         except usb.core.USBError:
             raise ConnectionError
         if len(buffer) < 0:
@@ -308,6 +312,7 @@ class CH341Driver:
         val = self.driver.CH341OpenDevice(self.driver_index)
         self.driver_value = val
         if val == -1:
+            self.driver_value = None
             self.set_status(STATE_CONNECTION_FAILED)
             raise ConnectionRefusedError  # No more devices.
         # There is a device.

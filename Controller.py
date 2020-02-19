@@ -321,6 +321,8 @@ class Controller(wx.Frame):
             elif state == THREAD_STATE_STARTED:
                 self.device.pipe.pause()
             elif state == THREAD_STATE_ABORT:
+                self.device.pipe.buffer = b''
+                self.device.pipe.queue = b''
                 self.device.pipe.reset()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>

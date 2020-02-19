@@ -1,7 +1,12 @@
+from copy import copy
+
 import wx
 
 from LaserCommandConstants import *
+from LaserOperation import LaserOperation, RasterOperation
+from LaserRender import LaserRender
 from icons import icons8_laser_beam_52, icons8_route_50
+from ElementFunctions import ElementFunctions, SVGImage, SVGElement
 
 _ = wx.GetTranslation
 
@@ -118,48 +123,90 @@ class JobInfo(wx.Frame):
                 self.required_preprocessing_operations.append(remove_text)
                 break
 
+    def conditional_jobadd_make_raster(self):
+        for op in self.job_items:
+            if isinstance(op, RasterOperation):
+                if len(op) == 0:
+                    continue
+                if len(op) == 1 and not isinstance(op[0], SVGImage):
+                    continue
+                if len(op) > 1:
+                    self.jobadd_make_raster()
+                    return True
+        return False
+
+    def jobadd_make_raster(self):
+        def make_image():
+            for op in self.job_items:
+                if isinstance(op, RasterOperation):
+                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                        continue
+                    renderer = LaserRender(self.kernel)
+                    bounds = ElementFunctions.bounding_box(op)
+                    if bounds is None:
+                        return None
+                    xmin, ymin, xmax, ymax = bounds
+
+                    image = renderer.make_raster(op, bounds, step=op.raster_step)
+                    image_element = SVGImage(image=image)
+                    image_element.transform.post_translate(xmin, ymin)
+                    op.clear()
+                    op.append(image_element)
+
+        self.required_preprocessing_operations.append(make_image)
+
+    def conditional_jobadd_actualize_image(self):
+        for op in self.job_items:
+            if isinstance(op, RasterOperation):
+                for elem in op:
+                    if ElementFunctions.needs_actualization(elem, op.raster_step):
+                        self.jobadd_actualize_image()
+                        return
+
     def jobadd_actualize_image(self):
-        for e in self.job_items:
-            try:
-                t = e.type
-            except AttributeError:
-                t = 'function'
-            try:
-                if e.needs_actualization():
-                    def actualize():
-                        for e in self.job_items:
-                            try:
-                                if e.needs_actualization():
-                                    e.make_actual()
-                            except AttributeError:
-                                pass
+        def actualize():
+            for op in self.job_items:
+                if isinstance(op, RasterOperation):
+                    for elem in op:
+                        if ElementFunctions.needs_actualization(elem, op.raster_step):
+                            ElementFunctions.make_actual(elem,op.raster_step)
+        self.required_preprocessing_operations.append(actualize)
 
-                    self.required_preprocessing_operations.append(actualize)
-                    break
-            except AttributeError:
-                pass
-
-    def jobadd_scale_rotary(self):
+    def conditional_jobadd_scale_rotary(self):
         if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
-            def scale_project():
-                p = self.device
-                scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
-                for e in self.job_items:
-                    try:
-                        e.element *= scale_str
-                    except AttributeError:
-                        pass
-                self.jobadd_actualize_image()
-
-            self.required_preprocessing_operations.append(scale_project)
-
-    def set_job_items(self, elements):
-        self.job_items = elements
-        self.jobadd_remove_text()
-        self.jobadd_actualize_image()
-        if self.device.rotary:
             self.jobadd_scale_rotary()
 
+    def jobadd_scale_rotary(self):
+        def scale_for_rotary():
+            p = self.device
+            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
+            for o in self.job_items:
+                if isinstance(o, LaserOperation):
+                    for e in o:
+                        try:
+                            e *= scale_str
+                        except AttributeError:
+                            pass
+            self.conditional_jobadd_actualize_image()
+
+        self.required_preprocessing_operations.append(scale_for_rotary)
+
+    def set_operations(self, operations):
+        if not isinstance(operations, list):
+            operations = [operations]
+        if self.required_preprocessing_operations is None:
+            self.required_preprocessing_operations = []
+        else:
+            self.required_preprocessing_operations.clear()
+        self.job_items.clear()
+        for op in operations:
+            self.job_items.append(copy(op))
+
+        self.jobadd_remove_text()
+        if self.device.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
         if self.device.autobeep:
             self.jobadd_beep(None)
 
@@ -189,8 +236,6 @@ class JobInfo(wx.Frame):
         self.set_device(kernel.device)
         self.required_preprocessing_operations = []
         self.job_items = []
-        self.set_job_items(kernel.operations[:])
-        self.update_gui()
 
     def on_close(self, event):
         self.kernel.mark_window_closed("JobInfo")
@@ -242,13 +287,11 @@ class JobInfo(wx.Frame):
             self.on_button_job_spooler()
             self.kernel.close_old_window("JobInfo")
         else:
-            # copy of operations, so operations can add ops.
+            # Using copy of operations, so operations can add ops.
             ops = self.required_preprocessing_operations[:]
             self.required_preprocessing_operations = []
             for op in ops:
                 op()
-            # TODO: break the connection between elements in kernel and the elements here.
-            self.kernel('elements', 0)
             self.update_gui()
 
     def on_listbox_element_click(self, event):  # wxGlade: JobInfo.<event_handler>
