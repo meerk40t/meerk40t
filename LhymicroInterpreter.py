@@ -247,7 +247,8 @@ class LhymicroInterpreter(Interpreter):
                     dy = y - sy
                     sx = x
                     sy = y
-                    if dy != 0:
+
+                    if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
                         if self.is_prop(DIRECTION_FLAG_TOP):
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
@@ -264,11 +265,28 @@ class LhymicroInterpreter(Interpreter):
                                 self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
-                    if on == 0:
-                        self.up()
+                    elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
+                        if self.is_prop(DIRECTION_FLAG_LEFT):
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx + self.raster_step,0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
+                        else:
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx - self.raster_step,0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
                     else:
-                        self.down()
-                    if dx != 0:
+                        if on == 0:
+                            self.up()
+                        else:
+                            self.down()
                         self.move_relative(dx, dy)
             except RuntimeError:
                 return

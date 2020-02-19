@@ -1,7 +1,7 @@
 from copy import copy
 
 from LaserCommandConstants import *
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM
+from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT
 from svgelements import Length, SVGImage, SVGElement
 
 VARIABLE_NAME_NAME = 'name'
@@ -132,20 +132,24 @@ class RasterOperation(LaserOperation):
 
     def generate(self):
         yield COMMAND_SET_SPEED, self.speed
-
         direction = self.raster_direction
         step = self.raster_step
         yield COMMAND_SET_POWER, self.power
 
+        yield COMMAND_SET_STEP, step
         traverse = 0
         if direction == 0:
-            yield COMMAND_SET_STEP, step
             traverse |= X_AXIS
             traverse |= TOP
         elif direction == 1:
-            yield COMMAND_SET_STEP, step
             traverse |= X_AXIS
             traverse |= BOTTOM
+        elif direction == 2:
+            traverse |= Y_AXIS
+            traverse |= RIGHT
+        elif direction == 3:
+            traverse |= Y_AXIS
+            traverse |= LEFT
 
         for svgimage in self:
             if not isinstance(svgimage, SVGImage):
