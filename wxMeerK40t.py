@@ -18,6 +18,7 @@ from DefaultModules import *
 from DeviceManager import DeviceManager
 from ElementFunctions import ElementFunctions
 from ElementProperty import ElementProperty
+from EngraveProperty import EngraveProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
 from Kernel import *
@@ -1901,6 +1902,8 @@ class RootNode(list):
         if node is not None:
             if isinstance(node.object, RasterOperation):
                 self.kernel.open_window("RasterProperty").set_operation(node.object)
+            elif isinstance(node.object, (CutOperation, EngraveOperation)):
+                self.kernel.open_window("EngraveProperty").set_operation(node.object)
             elif isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
                 self.kernel.open_window("ElementProperty").set_elements(node.object)
 
@@ -2546,6 +2549,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window('Shutdown', Shutdown)
         kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('RasterProperty', RasterProperty)
+        kernel.add_window('EngraveProperty', EngraveProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
         kernel.add_window("Settings", Settings)
