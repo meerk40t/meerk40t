@@ -1,7 +1,12 @@
+from copy import copy
+
 import wx
 
 from LaserCommandConstants import *
+from LaserOperation import LaserOperation, RasterOperation
+from LaserRender import LaserRender
 from icons import icons8_laser_beam_52, icons8_route_50
+from ElementFunctions import ElementFunctions, SVGImage, SVGElement
 
 _ = wx.GetTranslation
 
@@ -64,11 +69,13 @@ class JobInfo(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_start_job, self.button_writer_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_job_spooler, self.button_job_spooler)
         # end wxGlade
-        self.project = None
+        self.kernel = None
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.elements = None
-        self.operations = None
+
+        self.device = None
+        self.job_items = None
+        self.required_preprocessing_operations = None
 
     def spool_trace_simple(self, event):
         print("Spool Simple.")
@@ -81,7 +88,7 @@ class JobInfo(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_HOME
 
-        self.elements.append(home)
+        self.job_items.append(home)
         self.update_gui()
 
     def jobadd_wait(self, event):
@@ -91,7 +98,7 @@ class JobInfo(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_WAIT, wait_amount
 
-        self.elements.append(wait)
+        self.job_items.append(wait)
         self.update_gui()
 
     def jobadd_beep(self, event):
@@ -99,93 +106,140 @@ class JobInfo(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
             yield COMMAND_BEEP
 
-        self.elements.append(beep)
+        self.job_items.append(beep)
         self.update_gui()
 
     def jobadd_remove_text(self):
-        for e in self.elements:
+        for e in self.job_items:
             try:
                 t = e.type
             except AttributeError:
                 t = 'function'
             if t == 'text':
                 def remove_text():
-                    self.elements = [e for e in self.elements if not hasattr(e, 'type') or e.type != 'text']
+                    self.job_items = [e for e in self.job_items if not hasattr(e, 'type') or e.type != 'text']
                     self.update_gui()
 
-                self.operations.append(remove_text)
+                self.required_preprocessing_operations.append(remove_text)
                 break
 
+    def conditional_jobadd_make_raster(self):
+        for op in self.job_items:
+            if isinstance(op, RasterOperation):
+                if len(op) == 0:
+                    continue
+                if len(op) == 1 and not isinstance(op[0], SVGImage):
+                    continue
+                if len(op) > 1:
+                    self.jobadd_make_raster()
+                    return True
+        return False
+
+    def jobadd_make_raster(self):
+        def make_image():
+            for op in self.job_items:
+                if isinstance(op, RasterOperation):
+                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                        continue
+                    renderer = LaserRender(self.kernel)
+                    bounds = ElementFunctions.bounding_box(op)
+                    if bounds is None:
+                        return None
+                    xmin, ymin, xmax, ymax = bounds
+
+                    image = renderer.make_raster(op, bounds, step=op.raster_step)
+                    image_element = SVGImage(image=image)
+                    image_element.transform.post_translate(xmin, ymin)
+                    op.clear()
+                    op.append(image_element)
+
+        self.required_preprocessing_operations.append(make_image)
+
+    def conditional_jobadd_actualize_image(self):
+        for op in self.job_items:
+            if isinstance(op, RasterOperation):
+                for elem in op:
+                    if ElementFunctions.needs_actualization(elem, op.raster_step):
+                        self.jobadd_actualize_image()
+                        return
+
     def jobadd_actualize_image(self):
-        for e in self.elements:
-            try:
-                t = e.type
-            except AttributeError:
-                t = 'function'
-            try:
-                if e.needs_actualization():
-                    def actualize():
-                        for e in self.elements:
-                            try:
-                                if e.needs_actualization():
-                                    e.make_actual()
-                            except AttributeError:
-                                pass
+        def actualize():
+            for op in self.job_items:
+                if isinstance(op, RasterOperation):
+                    for elem in op:
+                        if ElementFunctions.needs_actualization(elem, op.raster_step):
+                            ElementFunctions.make_actual(elem,op.raster_step)
+        self.required_preprocessing_operations.append(actualize)
 
-                    self.operations.append(actualize)
-                    break
-            except AttributeError:
-                pass
-
-    def jobadd_scale_rotary(self):
-        if self.project.scale_x != 1.0 or self.project.scale_y != 1.0:
-            def scale_project():
-                p = self.project
-                scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.spooler.current_x, p.spooler.current_y)
-                for e in self.elements:
-                    try:
-                        e.element *= scale_str
-                    except AttributeError:
-                        pass
-                self.jobadd_actualize_image()
-            self.operations.append(scale_project)
-
-    def set_elements(self, elements):
-        self.elements = elements
-        self.jobadd_remove_text()
-        self.jobadd_actualize_image()
-        if self.project.rotary:
+    def conditional_jobadd_scale_rotary(self):
+        if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
             self.jobadd_scale_rotary()
 
-        if self.project.autobeep:
+    def jobadd_scale_rotary(self):
+        def scale_for_rotary():
+            p = self.device
+            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
+            for o in self.job_items:
+                if isinstance(o, LaserOperation):
+                    for e in o:
+                        try:
+                            e *= scale_str
+                        except AttributeError:
+                            pass
+            self.conditional_jobadd_actualize_image()
+
+        self.required_preprocessing_operations.append(scale_for_rotary)
+
+    def set_operations(self, operations):
+        if not isinstance(operations, list):
+            operations = [operations]
+        if self.required_preprocessing_operations is None:
+            self.required_preprocessing_operations = []
+        else:
+            self.required_preprocessing_operations.clear()
+        self.job_items.clear()
+        for op in operations:
+            self.job_items.append(copy(op))
+
+        self.jobadd_remove_text()
+        if self.device.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
+        if self.device.autobeep:
             self.jobadd_beep(None)
 
-        if self.project.autohome:
+        if self.device.autohome:
             self.jobadd_home(None)
-        self.update_gui()
-
-    def set_project(self, project, operations=None):
-        self.project = project
-        self.operations = operations
-        project.setting(bool, 'rotary', False)
-        project.setting(float, 'scale_x', 1.0)
-        project.setting(float, 'scale_y', 1.0)
-        project.setting(bool, "autohome", False)
-        project.setting(bool, "autobeep", True)
-        project.setting(bool, "autostart", True)
-        self.menu_autohome.Check(project.autohome)
-        self.menu_autobeep.Check(project.autobeep)
-        self.menu_autostart.Check(project.autostart)
-        if self.elements is None:
-            self.elements = []
-        if self.operations is None:
-            self.operations = []
 
         self.update_gui()
+
+    def set_device(self, device):
+        self.device = device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.menu_autohome.Check(device.autohome)
+            self.menu_autobeep.Check(device.autobeep)
+            self.menu_autostart.Check(device.autostart)
+
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.set_device(kernel.device)
+        self.required_preprocessing_operations = []
+        self.job_items = []
 
     def on_close(self, event):
-        self.project.mark_window_closed("JobInfo")
-        self.project = None
+        self.kernel.mark_window_closed("JobInfo")
+        self.kernel = None
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -215,34 +269,29 @@ class JobInfo(wx.Frame):
         self.Centre()
         # end wxGlade
 
-    def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.spooler.thread.limit_buffer = not self.project.spooler.thread.limit_buffer
-
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.autostart = self.menu_autostart.IsChecked()
+        self.device.autostart = self.menu_autostart.IsChecked()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.autohome = self.menu_autohome.IsChecked()
+        self.device.autohome = self.menu_autohome.IsChecked()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.autobeep = self.menu_autobeep.IsChecked()
+        self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.project.open_window("JobSpooler")
+        self.kernel.open_window("JobSpooler")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        if len(self.operations) == 0:
-            self.project.spooler.add_queue(self.elements)
+        if len(self.required_preprocessing_operations) == 0:
+            self.device.send_job(self.job_items)
             self.on_button_job_spooler()
-            self.project.close_old_window("JobInfo")
+            self.kernel.close_old_window("JobInfo")
         else:
-            # copy of operations, so operations can add ops.
-            ops = self.operations[:]
-            self.operations = []
+            # Using copy of operations, so operations can add ops.
+            ops = self.required_preprocessing_operations[:]
+            self.required_preprocessing_operations = []
             for op in ops:
                 op()
-
-            self.project('elements', 0)
             self.update_gui()
 
     def on_listbox_element_click(self, event):  # wxGlade: JobInfo.<event_handler>
@@ -271,12 +320,12 @@ class JobInfo(wx.Frame):
 
         self.operations_listbox.Clear()
         self.elements_listbox.Clear()
-        elements = self.elements
-        operations = self.operations
+        elements = self.job_items
+        operations = self.required_preprocessing_operations
         if elements is not None and len(elements) != 0:
-            self.elements_listbox.InsertItems([name_str(e) for e in self.elements], 0)
+            self.elements_listbox.InsertItems([name_str(e) for e in self.job_items], 0)
         if operations is not None and len(operations) != 0:
-            self.operations_listbox.InsertItems([name_str(e) for e in self.operations], 0)
+            self.operations_listbox.InsertItems([name_str(e) for e in self.required_preprocessing_operations], 0)
 
             self.button_writer_control.SetLabelText(_("Execute Operations"))
             self.button_writer_control.SetBackgroundColour(wx.Colour(255, 255, 102))

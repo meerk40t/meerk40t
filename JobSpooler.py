@@ -6,6 +6,8 @@ from icons import icons8_connected_50, icons8_play_50
 _ = wx.GetTranslation
 
 
+# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
+
 class JobSpooler(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobSpooler.__init__
@@ -33,12 +35,13 @@ class JobSpooler(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_start_job, self.button_spooler_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_controller, self.button_controller)
         # end wxGlade
-        self.project = None
+        self.kernel = None
         self.dirty = False
         self.update_buffer_size = False
         self.update_spooler_state = False
         self.update_spooler = False
 
+        self.device = None
         self.elements_progress = 0
         self.elements_progress_total = 0
         self.command_index = 0
@@ -46,27 +49,39 @@ class JobSpooler(wx.Frame):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_project(self, project):
-        self.project = project
-        project.setting(str, "_controller_buffer", b'')
-        project.setting(str, "_controller_queue", b'')
-        project.setting(int, "buffer_max", 600)
-        project.setting(bool, "buffer_limit", True)
-        project.listen("spooler", self.on_spooler_update)
-        project.listen("buffer", self.on_buffer_update)
-        project.listen("writer", self.on_spooler_state)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+            return
+        self.device.setting(str, "board", "M2")
+        self.device.setting(int, "buffer_max", 900)
+        self.device.setting(bool, "buffer_limit", True)
+        self.device.listen('spooler;thread', self.on_spooler_state)
+        self.device.listen("spooler;queue", self.on_spooler_update)
+        self.device.listen("pipe;buffer", self.on_buffer_update)
 
         self.set_spooler_button_by_state()
-        self.checkbox_limit_buffer.SetValue(self.project.buffer_limit)
-        self.spin_packet_buffer_max.SetValue(self.project.buffer_max)
+        self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
+        self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
         self.refresh_spooler_list()
 
     def on_close(self, event):
-        self.project.unlisten("spooler", self.on_spooler_update)
-        self.project.unlisten("buffer", self.on_buffer_update)
-        self.project.unlisten("writer", self.on_spooler_state)
-        self.project.mark_window_closed("JobSpooler")
-        self.project = None
+        if self.device is not None:
+            self.device.unlisten('spooler;thread', self.on_spooler_state)
+            self.device.unlisten("spooler;queue", self.on_spooler_update)
+            self.device.unlisten("pipe;buffer", self.on_buffer_update)
+        self.kernel.mark_window_closed("JobSpooler")
+        self.kernel = None
+        self.device = None
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -117,10 +132,10 @@ class JobSpooler(wx.Frame):
 
     def refresh_spooler_list(self):
         self.list_job_spool.DeleteAllItems()
-        if len(self.project.spooler.queue) > 0:
-            pass
+        if len(self.device.spooler.queue) > 0:
             # This should actually process and update the queue items.
-            for i, e in enumerate(self.project.spooler.queue):
+            i = 0
+            for e in self.device.spooler.queue:
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
                     try:
@@ -132,7 +147,7 @@ class JobSpooler(wx.Frame):
                         self.list_job_spool.SetItem(m, 2, _("Executing"))
                     else:
                         self.list_job_spool.SetItem(m, 2, _("Queued"))
-                    self.list_job_spool.SetItem(m, 3, self.project.board)
+                    self.list_job_spool.SetItem(m, 3, self.device.board)
                     settings = []
                     if t == 'path':
                         self.list_job_spool.SetItem(m, 4, _("Path"))
@@ -145,14 +160,13 @@ class JobSpooler(wx.Frame):
                                 settings.append(_("overscan=%d" % int(e['overscan'])))
                             except ValueError:
                                 pass
-                    # elif isinstance(e, RawElement):
-                    #     self.list_job_spool.SetItem(m, 4, "Raw")
                     if t in ('image', 'path', 'text'):
                         self.list_job_spool.SetItem(m, 5, _("%.1fmm/s" % (e.speed)))
                     settings = " ".join(settings)
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, _("n/a"))
-                    self.list_job_spool.SetItem(m, 8, _("unknown"))
+                    self.list_job_spool.SetItem(m, 8, _("unknown"))  # time estimate
+                i += 1
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         event.Skip()
@@ -163,7 +177,7 @@ class JobSpooler(wx.Frame):
             event.Skip()
             return  # We can't delete the running element.
         try:
-            element = self.project.spooler.queue[index]
+            element = self.device.spooler.queue[index]
         except IndexError:
             return
         menu = wx.Menu()
@@ -176,57 +190,54 @@ class JobSpooler(wx.Frame):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            self.project.spooler.queue = []
+            self.device.spooler.queue = []
             self.refresh_spooler_list()
 
         return delete
 
     def on_tree_popup_delete(self, element):
         def delete(event):
-            self.project.spooler.queue.remove(element)
+            self.device.spooler.queue.remove(element)
             self.refresh_spooler_list()
 
         return delete
 
     def on_check_limit_packet_buffer(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.project.buffer_limit = not self.project.buffer_limit
+        self.device.buffer_limit = not self.device.buffer_limit
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.project is not None:
-            self.project.buffer_max = self.spin_packet_buffer_max.GetValue()
+        if self.device is not None:
+            self.device.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.project is not None:
-            self.project.autostart = not self.project.autostart
+        if self.device is not None:
+            self.device.autostart = not self.device.autostart
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.project is not None:
-            self.project.autohome = not self.project.autohome
+        if self.device is not None:
+            self.device.autohome = not self.device.autohome
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        if self.project is not None:
-            self.project.autobeep = not self.project.autobeep
+        if self.device is not None:
+            self.device.autobeep = not self.device.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
-        self.project.open_window("Controller")
+        self.kernel.open_window("Controller")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        state = self.project.spooler.thread.state
+        spooler = self.device.spooler
+        state = spooler.thread.state
         if state == THREAD_STATE_STARTED:
-            self.project.spooler.thread.pause()
-            self.set_spooler_button_by_state()
+            spooler.thread.pause()
         elif state == THREAD_STATE_PAUSED:
-            self.project.spooler.thread.resume()
-            self.set_spooler_button_by_state()
+            spooler.thread.resume()
         elif state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.project.spooler.start_queue_consumer()
-            self.set_spooler_button_by_state()
+            spooler.start_queue_consumer()
         elif state == THREAD_STATE_ABORT:
-            self.project("abort", 0)
-            self.project.spooler.reset_thread()
+            spooler.reset_thread()
 
     def set_spooler_button_by_state(self):
-        state = self.project.spooler.thread.state
+        state = self.device.spooler.thread.state
         if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
             self.button_spooler_control.SetBackgroundColour("#009900")
             self.button_spooler_control.SetLabel(_("Start Job"))
@@ -246,12 +257,12 @@ class JobSpooler(wx.Frame):
             wx.CallAfter(self.post_update_on_gui_thread)
 
     def post_update_on_gui_thread(self):
-        if self.project is None:
+        if self.kernel is None:
             return  # left over update on closed window
 
         if self.update_buffer_size:
             self.update_buffer_size = False
-            buffer_size = len(self.project._controller_buffer) + len(self.project._controller_queue)
+            buffer_size = len(self.device.pipe)
             self.text_packet_buffer.SetValue(str(buffer_size))
             self.gauge_controller.SetRange(self.spin_packet_buffer_max.GetValue())
             max = self.gauge_controller.GetRange()

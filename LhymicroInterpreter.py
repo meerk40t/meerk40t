@@ -1,15 +1,12 @@
-import threading
-
-from K40Controller import K40Controller
 from Kernel import *
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
 from svgelements import *
 
 """
-Lhymicro provides Lhystudio specific coding for elements and sends it to the K40Controller backend to write to the usb
+LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend to write to the usb
 the intent is that this class could be switched out for a different class and control a different type of laser if need
-be. The middle language of generated commands from the ProjectNodes are able to be interpreted by a different driver
+be. The middle language of generated commands from the LaserNodes are able to be interpreted by a different driver
 or methodology. 
 """
 
@@ -21,6 +18,12 @@ COMMAND_ANGLE = b'M'
 COMMAND_ON = b'D'
 COMMAND_OFF = b'U'
 
+DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
+DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
+DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
+DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
+
+STATE_ABORT = -1
 STATE_DEFAULT = 0
 STATE_CONCAT = 1
 STATE_COMPACT = 2
@@ -45,111 +48,13 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
-class SpoolerThread(threading.Thread):
-    def __init__(self, project, spooler, controller):
-        threading.Thread.__init__(self)
-        self.project = project
-        project.setting(str, "_controller_buffer", b'')
-        project.setting(str, "_controller_queue", b'')
-        project.setting(bool, "autostart_controller", True)
-        project.setting(int, "buffer_max", 900)
-        project.setting(bool, "buffer_limit", True)
-        self.spooler = spooler
-        self.controller = controller
-
-        self.buffer_size = -1
-        self.state = THREAD_STATE_UNSTARTED
-        self.project("writer", self.state)
-
-    def start_element_producer(self):
-        if self.state != THREAD_STATE_ABORT:
-            self.state = THREAD_STATE_STARTED
-            self.project("writer", self.state)
-            self.start()
-
-    def pause(self):
-        self.state = THREAD_STATE_PAUSED
-        self.project("writer", self.state)
-
-    def resume(self):
-        self.state = THREAD_STATE_STARTED
-        self.project("writer", self.state)
-
-    def abort(self, val):
-        if val != 0:
-            self.state = THREAD_STATE_ABORT
-            self.project("writer", self.state)
-
-    def stop(self):
-        self.abort(1)
-
-    def get_buffer_size(self):
-        return len(self.project._controller_buffer) + len(self.project._controller_queue)
-
-    def thread_pause_check(self, *args):
-        while (self.project.buffer_limit and self.get_buffer_size() > self.project.buffer_max) or \
-                self.state == THREAD_STATE_PAUSED:
-            # Backend is full. Or we are paused. We're waiting.
-            time.sleep(0.1)
-            if self.state == THREAD_STATE_ABORT:
-                raise StopIteration  # abort called.
-        if self.state == THREAD_STATE_ABORT:
-            raise StopIteration  # abort called.
-
-    def run(self):
-        command_index = 0
-        self.project.listen("buffer", self.update_buffer_size)
-        self.project.listen("abort", self.abort)
-        self.spooler.on_plot = self.thread_pause_check
-        try:
-            while True:
-                element = self.spooler.peek()
-                if element is None:
-                    raise StopIteration
-                self.thread_pause_check()
-                try:
-                    gen = element.generate
-                except AttributeError:
-                    gen = element
-                for e in gen():
-                    try:
-                        command, values = e
-                    except TypeError:
-                        command = e
-                        values = 0
-                    command_index += 1
-                    self.thread_pause_check()
-                    self.project("command", command_index)
-                    self.project.spooler.command(command, values)
-                self.spooler.pop()
-                self.project("spooler", element)
-        except StopIteration:
-            pass  # We aborted the loop.
-        # Final listener calls.
-        self.spooler.on_plot = None
-        self.project.unlisten("abort", self.abort)
-        self.project.unlisten("buffer", self.update_buffer_size)
-        if self.state == THREAD_STATE_ABORT:
-            self.spooler.clear_queue()
-            self.spooler.state = STATE_DEFAULT
-            self.project("writer_mode", self.spooler.state)
-            return  # Must no do anything else. Just die as fast as possible.
-        self.project.autostart_controller = True
-        self.state = THREAD_STATE_FINISHED
-        self.project("writer", self.state)
-
-    def update_buffer_size(self, size):
-        self.buffer_size = size
-
-
-class LhymicroWriter:
-    def __init__(self, current_x=0, current_y=0):
-        self.project = None
+class LhymicroInterpreter(Interpreter):
+    def __init__(self, device):
+        Interpreter.__init__(self, device)
         self.state = STATE_DEFAULT
-        self.is_on = False
-        self.is_left = False
-        self.is_top = False
+        self.properties = 0
         self.is_relative = False
+        self.is_on = False
         self.raster_step = 0
         self.speed = 30
         self.power = 1000.0
@@ -157,9 +62,10 @@ class LhymicroWriter:
         self.default_SnP = None
         self.pulse_total = 0.0
         self.pulse_modulation = True
+        self.group_modulation = False
 
-        self.current_x = current_x
-        self.current_y = current_y
+        current_x = device.current_x
+        current_y = device.current_y
         self.next_x = current_x
         self.next_y = current_y
         self.max_x = current_x
@@ -168,107 +74,16 @@ class LhymicroWriter:
         self.min_y = current_y
         self.start_x = current_x
         self.start_y = current_y
-        self.on_plot = None
-        self.queue_lock = threading.Lock()
-        self.queue = []
-        self.thread = None
 
-    def initialize(self, project):
-        self.project = project
-        self.project.spooler = self
-        project.setting(str, "board", "M2")
-        project.setting(bool, "autolock", True)
-        project.setting(bool, "autostart", True)
-        project.setting(bool, "rotary", False)
-        project.setting(float, "scale_x", 1.0)
-        project.setting(float, "scale_y", 1.0)
-        project.autostart = True  # Setting still exists but false values do weird things.
+        device.add_control("Realtime Pause", self.pause)
+        device.add_control("Realtime Resume", self.resume)
 
-        def spool(commands):
-            self.send_job(commands)
+    def __repr__(self):
+        return "LhymicroInterpreter()"
 
-        project.add_control("Spool", spool)
-        if self.project.controller is None:
-            self.project.controller = K40Controller()
-            self.project.add_module(self.project.controller)
-
-        project.add_control("Emergency Stop", self.emergency_stop)
-
-        self.thread = SpoolerThread(project, self, self.project.controller)
-        project.add_thread("K40Spooler", self.thread)
-
-    def emergency_stop(self):
-        self.clear_queue()
-        self.thread.state = THREAD_STATE_ABORT
-        self.project._controller_buffer = b''
-        self.project._controller_queue = b''
-        self.abort()
-
-    def peek(self):
-        if len(self.queue) == 0:
-            return None
-        return self.queue[0]
-
-    def pop(self):
-        if len(self.queue) == 0:
-            return None
-        self.queue_lock.acquire()
-        queue_head = self.queue[0]
-        del self.queue[0]
-        self.queue_lock.release()
-        return queue_head
-
-    def clear_queue(self):
-        self.queue_lock.acquire()
-        self.queue = []
-        self.queue_lock.release()
-        self.project("spooler", 0)
-
-    def add_queue(self, elements):
-        self.queue_lock.acquire()
-        self.queue += elements
-        self.queue_lock.release()
-        if self.project.autostart:
-            self.start_queue_consumer()
-        self.project("spooler", 0)
-
-    def send_job(self, element):
-        self.queue_lock.acquire()
-        self.queue.append(element)
-        self.queue_lock.release()
-        if self.project.autostart:
-            self.start_queue_consumer()
-        self.project("spooler", 0)
-
-    def reset_thread(self):
-        self.thread = SpoolerThread(self.project, self, self.project.controller)
-        self.project("writer", self.thread.state)
-
-    def start_queue_consumer(self):
-        if self.thread.state == THREAD_STATE_ABORT:
-            # We cannot reset an aborted thread without specifically calling reset.
-            return
-        if self.thread.state == THREAD_STATE_FINISHED:
-            self.thread = SpoolerThread(self.project, self, self.project.controller)
-        if self.thread.state == THREAD_STATE_UNSTARTED:
-            self.thread.state = THREAD_STATE_STARTED
-            self.thread.start()
-            self.project("writer", self.thread.state)
-
-    def open(self):
-        try:
-            self.project.controller.open()
-        except AttributeError:
-            pass
-        self.reset_modes()
-        self.state = STATE_DEFAULT
-
-    def close(self):
-        self.to_default_mode()
-        try:
-            self.project.controller.close()
-        except AttributeError:
-            pass
+    def on_plot(self, x, y, on):
+        self.device.signal('interpreter;plot', (x, y, on))
+        self.device.hold()
 
     def ungroup_plots(self, generate):
         current_x = None
@@ -301,7 +116,6 @@ class LhymicroWriter:
                 yield current_x, current_y, on
 
     def group_plots(self, start_x, start_y, generate):
-        """PPI is Pulses per inch."""
         last_x = start_x
         last_y = start_y
         last_on = 0
@@ -318,11 +132,19 @@ class LhymicroWriter:
                 plot_on = 1
             if self.pulse_modulation:
                 self.pulse_total += self.power * plot_on
-                if self.pulse_total >= 1000.0:
-                    on = 1
-                    self.pulse_total -= 1000.0
+                if self.group_modulation and last_on == 1:
+                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
+                    if self.pulse_total > 0.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
                 else:
-                    on = 0
+                    if self.pulse_total >= 1000.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
             else:
                 on = int(round(plot_on))
             if x == last_x + dx and y == last_y + dy and on == last_on:
@@ -330,8 +152,7 @@ class LhymicroWriter:
                 last_y = y
                 continue
             yield last_x, last_y, last_on
-            if self.on_plot is not None:
-                self.on_plot(last_x, last_y, last_on)
+            self.on_plot(last_x, last_y, last_on)
             dx = x - last_x
             dy = y - last_y
             if abs(dx) > 1 or abs(dy) > 1:
@@ -342,10 +163,9 @@ class LhymicroWriter:
             last_y = y
             last_on = on
         yield last_x, last_y, last_on
-        if self.on_plot is not None:
-            self.on_plot(last_x, last_y, last_on)
+        self.on_plot(last_x, last_y, last_on)
 
-    def command(self, command, values):
+    def command(self, command, values=None):
         if command == COMMAND_LASER_OFF:
             self.up()
         elif command == COMMAND_LASER_ON:
@@ -356,8 +176,8 @@ class LhymicroWriter:
             self.move(x, y)
         elif command == COMMAND_SHIFT:
             x, y = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.up()
             self.pulse_modulation = False
             if self.state == STATE_COMPACT:
@@ -367,8 +187,8 @@ class LhymicroWriter:
                 self.move(x, y)
         elif command == COMMAND_MOVE:
             x, y = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.pulse_modulation = self.is_on
 
             if self.state == STATE_COMPACT:
@@ -378,8 +198,8 @@ class LhymicroWriter:
                 self.move(x, y)
         elif command == COMMAND_CUT:
             x, y = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
                 if on == 0:
@@ -403,8 +223,8 @@ class LhymicroWriter:
                 return
             first_point = path.first_point
             self.move_absolute(first_point[0], first_point[1])
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.pulse_modulation = True
             try:
                 for x, y, on in self.group_plots(sx, sy, path.plot()):
@@ -417,8 +237,8 @@ class LhymicroWriter:
                 return
         elif command == COMMAND_RASTER:
             raster = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.pulse_modulation = True
             try:
                 for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
@@ -427,31 +247,53 @@ class LhymicroWriter:
                     dy = y - sy
                     sx = x
                     sy = y
-                    if dy != 0:
-                        if self.is_top:
+
+                    if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
+                        if self.is_prop(DIRECTION_FLAG_TOP):
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
                                 self.move_relative(0, dy + self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
                         else:
                             if abs(dy) > self.raster_step:
                                 self.to_concat_mode()
                                 self.move_relative(0, dy - self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
                                 self.to_compact_mode()
                             self.h_switch()
-                    if on == 0:
-                        self.up()
+                    elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
+                        if self.is_prop(DIRECTION_FLAG_LEFT):
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx + self.raster_step,0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
+                        else:
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx - self.raster_step,0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
                     else:
-                        self.down()
-                    if dx != 0:
+                        if on == 0:
+                            self.up()
+                        else:
+                            self.down()
                         self.move_relative(dx, dy)
             except RuntimeError:
                 return
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
                 if on == 0:
@@ -461,8 +303,8 @@ class LhymicroWriter:
                 self.move_absolute(x, y)
         elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, ex, ey = values
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.device.current_x
+            sy = self.device.current_y
             self.pulse_modulation = True
             for x, y, on in self.group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
                 if on == 0:
@@ -483,17 +325,25 @@ class LhymicroWriter:
             d_ratio = values
             self.set_d_ratio(d_ratio)
         elif command == COMMAND_SET_DIRECTION:
-            x_dir, y_dir = values
-            self.is_left = x_dir < 0
-            self.is_top = y_dir < 0
+            # Left, Top, X-Momentum, Y-Momentum
+            left, top, x_dir, y_dir = values
+            self.properties = 0
+            if left:
+                self.set_prop(DIRECTION_FLAG_LEFT)
+            if top:
+                self.set_prop(DIRECTION_FLAG_TOP)
+            if x_dir:
+                self.set_prop(DIRECTION_FLAG_X)
+            if y_dir:
+                self.set_prop(DIRECTION_FLAG_Y)
         elif command == COMMAND_SET_INCREMENTAL:
             self.is_relative = True
         elif command == COMMAND_SET_ABSOLUTE:
             self.is_relative = False
         elif command == COMMAND_SET_POSITION:
             x, y = values
-            self.current_x = x
-            self.current_y = y
+            self.device.current_x = x
+            self.device.current_y = y
         elif command == COMMAND_MODE_COMPACT:
             self.to_compact_mode()
         elif command == COMMAND_MODE_DEFAULT:
@@ -504,15 +354,89 @@ class LhymicroWriter:
             t = values
             time.sleep(t)
         elif command == COMMAND_WAIT_BUFFER_EMPTY:
-            if self.thread is not None:
-                while self.thread.buffer_size > 0:
-                    time.sleep(0.05)
+            while len(self.device.pipe) > 0:
+                time.sleep(0.05)
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
         elif command == COMMAND_FUNCTION:
             t = values
             if callable(t):
                 t()
+        elif command == COMMAND_CLOSE:
+            self.to_default_mode()
+        elif command == COMMAND_OPEN:
+            self.reset_modes()
+            self.state = STATE_DEFAULT
+            self.device.signal('interpreter;mode', self.state)
+        elif command == COMMAND_RESET:
+            self.device.pipe.realtime_write(b'I*\n')
+            self.state = STATE_DEFAULT
+            self.device.signal('interpreter;mode', self.state)
+        elif command == COMMAND_PAUSE:
+            self.pause()
+        elif command == COMMAND_STATUS:
+            self.device.signal("interpreter;status", self.get_status())
+        elif command == COMMAND_RESUME:
+            pass  # This command can't be processed since we should be paused.
+
+    def realtime_command(self, command, values=None):
+        if command == COMMAND_SET_SPEED:
+            speed = values
+            self.set_speed(speed)
+        elif command == COMMAND_SET_POWER:
+            power = values
+            self.set_power(power)
+        elif command == COMMAND_SET_STEP:
+            step = values
+            self.set_step(step)
+        elif command == COMMAND_SET_D_RATIO:
+            d_ratio = values
+            self.set_d_ratio(d_ratio)
+        elif command == COMMAND_SET_POSITION:
+            x, y = values
+            self.device.current_x = x
+            self.device.current_y = y
+        elif command == COMMAND_RESET:
+            self.device.pipe.realtime_write(b'I*\n')
+            self.state = STATE_DEFAULT
+            self.device.signal('interpreter;mode', self.state)
+        elif command == COMMAND_PAUSE:
+            self.pause()
+        elif command == COMMAND_STATUS:
+            status = self.get_status()
+            self.device.signal('interpreter;status', status)
+            return status
+        elif command == COMMAND_RESUME:
+            self.resume()
+
+    def get_status(self):
+        parts = []
+        parts.append("x=%f" % self.device.current_x)
+        parts.append("y=%f" % self.device.current_y)
+        parts.append("speed=%f" % self.speed)
+        parts.append("power=%d" % self.power)
+        return ";".join(parts)
+
+    def set_prop(self, mask):
+        self.properties |= mask
+
+    def unset_prop(self, mask):
+        self.properties &= ~mask
+
+    def is_prop(self, mask):
+        return bool(self.properties & mask)
+
+    def toggle_prop(self, mask):
+        if self.is_prop(mask):
+            self.unset_prop(mask)
+        else:
+            self.set_prop(mask)
+
+    def pause(self):
+        self.device.pipe.realtime_write(b'PN!\n')
+
+    def resume(self):
+        self.device.pipe.realtime_write(b'PN&\n')
 
     def move(self, x, y):
         if self.is_relative:
@@ -521,7 +445,7 @@ class LhymicroWriter:
             self.move_absolute(x, y)
 
     def move_absolute(self, x, y):
-        self.move_relative(x - self.current_x, y - self.current_y)
+        self.move_relative(x - self.device.current_x, y - self.device.current_y)
 
     def move_relative(self, dx, dy):
         if abs(dx) == 0 and abs(dy) == 0:
@@ -529,19 +453,19 @@ class LhymicroWriter:
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == STATE_DEFAULT:
-            self.project.controller += b'I'
+            self.device.pipe.write(b'I')
             if dx != 0:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.project.controller += b'S1P\n'
-            if not self.project.autolock:
-                self.project.controller += b'IS2P\n'
+            self.device.pipe.write(b'S1P\n')
+            if not self.device.autolock:
+                self.device.pipe.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                for x, y, on in self.group_plots(self.current_x, self.current_y,
-                                                 Line.plot_line(self.current_x, self.current_y,
-                                                                self.current_x + dx, self.current_y + dy)
+                for x, y, on in self.group_plots(self.device.current_x, self.device.current_y,
+                                                 Line.plot_line(self.device.current_x, self.device.current_y,
+                                                                self.device.current_x + dx, self.device.current_y + dy)
                                                  ):
                     self.move_absolute(x, y)
             elif abs(dx) == abs(dy):
@@ -555,9 +479,10 @@ class LhymicroWriter:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.project.controller += b'N'
+            self.device.pipe.write(b'N')
         self.check_bounds()
-        self.project("position", (self.current_x, self.current_y, self.current_x - dx, self.current_y - dy))
+        self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
+                                                    self.device.current_x - dx, self.device.current_y - dy))
 
     def move_xy_line(self, delta_x, delta_y):
         """Strictly speaking if this happens it is because of a bug.
@@ -643,139 +568,145 @@ class LhymicroWriter:
     def down(self):
         if self.is_on:
             return False
-        controller = self.project.controller
+        controller = self.device.pipe
         if self.state == STATE_DEFAULT:
-            controller += b'I'
-            controller += COMMAND_ON
-            controller += b'S1P\n'
-            if not self.project.autolock:
-                controller += b'IS2P\n'
+            controller.write(b'I')
+            controller.write(COMMAND_ON)
+            controller.write(b'S1P\n')
+            if not self.device.autolock:
+                controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller += COMMAND_ON
+            controller.write(COMMAND_ON)
         elif self.state == STATE_CONCAT:
-            controller += COMMAND_ON
-            controller += b'N'
+            controller.write(COMMAND_ON)
+            controller.write(b'N')
         self.is_on = True
         return True
 
     def up(self):
-        controller = self.project.controller
+        controller = self.device.pipe
         if not self.is_on:
             return False
         if self.state == STATE_DEFAULT:
-            controller += b'I'
-            controller += COMMAND_OFF
-            controller += b'S1P\n'
-            if not self.project.autolock:
-                controller += b'IS2P\n'
+            controller.write(b'I')
+            controller.write(COMMAND_OFF)
+            controller.write(b'S1P\n')
+            if not self.device.autolock:
+                controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller += COMMAND_OFF
+            controller.write(COMMAND_OFF)
         elif self.state == STATE_CONCAT:
-            controller += COMMAND_OFF
-            controller += b'N'
+            controller.write(COMMAND_OFF)
+            controller.write(b'N')
         self.is_on = False
         return True
 
     def to_default_mode(self):
-        controller = self.project.controller
+        controller = self.device.pipe
         if self.state == STATE_CONCAT:
-            controller += b'S1P\n'
-            if not self.project.autolock:
-                controller += b'IS2P\n'
+            controller.write(b'S1P\n')
+            if not self.device.autolock:
+                controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller += b'FNSE-\n'
+            controller.write(b'FNSE-\n')
             self.reset_modes()
         self.state = STATE_DEFAULT
-        self.project("writer_mode", self.state)
+        self.device.signal('interpreter;mode', self.state)
 
     def to_concat_mode(self):
-        controller = self.project.controller
+        controller = self.device.pipe
         self.to_default_mode()
-        controller += b'I'
+        controller.write(b'I')
         self.state = STATE_CONCAT
-        self.project("writer_mode", self.state)
+        self.device.signal('interpreter;mode', self.state)
 
     def to_compact_mode(self):
-        controller = self.project.controller
+        controller = self.device.pipe
         self.to_concat_mode()
         if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board,
+            speed_code = LaserSpeed.get_code_from_speed(self.speed,
+                                                        self.raster_step,
+                                                        self.device.board,
                                                         d_ratio=self.d_ratio)
         else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed, self.raster_step, self.project.board)
+            speed_code = LaserSpeed.get_code_from_speed(self.speed,
+                                                        self.raster_step,
+                                                        self.device.board)
         try:
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        controller += speed_code
-        controller += b'N'
+        controller.write(speed_code)
+        controller.write(b'N')
         self.declare_directions()
-        controller += b'S1E'
+        controller.write(b'S1E')
         self.state = STATE_COMPACT
-        self.project("writer_mode", self.state)
+        self.device.signal('interpreter;mode', self.state)
 
     def h_switch(self):
-        controller = self.project.controller
-        if self.is_left:
-            controller += COMMAND_RIGHT
+        controller = self.device.pipe
+        if self.is_prop(DIRECTION_FLAG_LEFT):
+            controller.write(COMMAND_RIGHT)
+            self.unset_prop(DIRECTION_FLAG_LEFT)
         else:
-            controller += COMMAND_LEFT
-        self.is_left = not self.is_left
-        if self.is_top:
-            self.current_y -= self.raster_step
+            controller.write(COMMAND_LEFT)
+            self.set_prop(DIRECTION_FLAG_LEFT)
+        if self.is_prop(DIRECTION_FLAG_TOP):
+            self.device.current_y -= self.raster_step
         else:
-            self.current_y += self.raster_step
+            self.device.current_y += self.raster_step
         self.is_on = False
 
     def v_switch(self):
-        controller = self.project.controller
-        if self.is_top:
-            controller += COMMAND_BOTTOM
+        controller = self.device.pipe
+        if self.is_prop(DIRECTION_FLAG_TOP):
+            controller.write(COMMAND_BOTTOM)
+            self.unset_prop(DIRECTION_FLAG_TOP)
         else:
-            controller += COMMAND_TOP
-        self.is_top = not self.is_top
-        if self.is_left:
-            self.current_x -= self.raster_step
+            controller.write(COMMAND_TOP)
+            self.set_prop(DIRECTION_FLAG_TOP)
+        if self.is_prop(DIRECTION_FLAG_LEFT):
+            self.device.current_x -= self.raster_step
         else:
-            self.current_x += self.raster_step
+            self.device.current_x += self.raster_step
         self.is_on = False
 
     def home(self):
-        controller = self.project.controller
+        controller = self.device.pipe
         self.to_default_mode()
-        controller += b'IPP\n'
-        old_x = self.current_x
-        old_y = self.current_y
-        self.current_x = 0
-        self.current_y = 0
+        controller.write(b'IPP\n')
+        old_x = self.device.current_x
+        old_y = self.device.current_y
+        self.device.current_x = 0
+        self.device.current_y = 0
         self.reset_modes()
         self.state = STATE_DEFAULT
-        self.project("position", (self.current_x, self.current_y, old_x, old_y))
+        self.device.signal('interpreter;mode', self.state)
+        self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y, old_x, old_y))
 
     def lock_rail(self):
-        controller = self.project.controller
+        controller = self.device.pipe
         self.to_default_mode()
-        controller += b'IS1P\n'
+        controller.write(b'IS1P\n')
 
     def unlock_rail(self, abort=False):
-        controller = self.project.controller
+        controller = self.device.pipe
         self.to_default_mode()
-        controller += b'IS2P\n'
+        controller.write(b'IS2P\n')
 
     def abort(self):
-        controller = self.project.controller
-        controller += b'I\n'
+        controller = self.device.pipe
+        controller.write(b'I\n')
 
     def check_bounds(self):
-        self.min_x = min(self.min_x, self.current_x)
-        self.min_y = min(self.min_y, self.current_y)
-        self.max_x = max(self.max_x, self.current_x)
-        self.max_y = max(self.max_y, self.current_y)
+        self.min_x = min(self.min_x, self.device.current_x)
+        self.min_y = min(self.min_y, self.device.current_y)
+        self.max_x = max(self.max_x, self.device.current_x)
+        self.max_y = max(self.max_y, self.device.current_y)
 
     def reset_modes(self):
         self.is_on = False
-        self.is_left = False
-        self.is_top = False
+        self.properties = 0
 
     def move_x(self, dx):
         if dx > 0:
@@ -790,73 +721,135 @@ class LhymicroWriter:
             self.move_top(dy)
 
     def move_angle(self, dx, dy):
-        controller = self.project.controller
+        controller = self.device.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
+        self.set_prop(DIRECTION_FLAG_X)  # Set both on
+        self.set_prop(DIRECTION_FLAG_Y)
         if dx > 0:  # Moving right
-            if self.is_left:
-                controller += COMMAND_RIGHT
-                self.is_left = False
+            if self.is_prop(DIRECTION_FLAG_LEFT):
+                controller.write(COMMAND_RIGHT)
+                self.unset_prop(DIRECTION_FLAG_LEFT)
         else:  # Moving left
-            if not self.is_left:
-                controller += COMMAND_LEFT
-                self.is_left = True
+            if not self.is_prop(DIRECTION_FLAG_LEFT):
+                controller.write(COMMAND_LEFT)
+                self.set_prop(DIRECTION_FLAG_LEFT)
         if dy > 0:  # Moving bottom
-            if self.is_top:
-                controller += COMMAND_BOTTOM
-                self.is_top = False
+            if self.is_prop(DIRECTION_FLAG_TOP):
+                controller.write(COMMAND_BOTTOM)
+                self.unset_prop(DIRECTION_FLAG_TOP)
         else:  # Moving top
-            if not self.is_top:
-                controller += COMMAND_TOP
-                self.is_top = True
-        self.current_x += dx
-        self.current_y += dy
+            if not self.is_prop(DIRECTION_FLAG_TOP):
+                controller.write(COMMAND_TOP)
+                self.set_prop(DIRECTION_FLAG_TOP)
+        self.device.current_x += dx
+        self.device.current_y += dy
         self.check_bounds()
-        controller += COMMAND_ANGLE + lhymicro_distance(abs(dy))
+        controller.write(COMMAND_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
-        controller = self.project.controller
-        if self.is_top:
-            controller += COMMAND_TOP
+        """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
+        You cannot declare a diagonal direction."""
+        controller = self.device.pipe
+
+        if self.is_prop(DIRECTION_FLAG_LEFT):
+            x_dir = COMMAND_LEFT
         else:
-            controller += COMMAND_BOTTOM
-        if self.is_left:
-            controller += COMMAND_LEFT
+            x_dir = COMMAND_RIGHT
+        if self.is_prop(DIRECTION_FLAG_TOP):
+            y_dir = COMMAND_TOP
         else:
-            controller += COMMAND_RIGHT
+            y_dir = COMMAND_BOTTOM
+        if self.is_prop(DIRECTION_FLAG_X):  # FLAG_Y is assumed to be !FLAG_X
+            controller.write(y_dir + x_dir)
+        else:
+            controller.write(x_dir + y_dir)
+
+    @property
+    def is_left(self):
+        return self.is_prop(DIRECTION_FLAG_X) and \
+               not self.is_prop(DIRECTION_FLAG_Y) and \
+               self.is_prop(DIRECTION_FLAG_LEFT)
+
+    @property
+    def is_right(self):
+        return self.is_prop(DIRECTION_FLAG_X) and \
+               not self.is_prop(DIRECTION_FLAG_Y) and \
+               not self.is_prop(DIRECTION_FLAG_LEFT)
+
+    @property
+    def is_top(self):
+        return not self.is_prop(DIRECTION_FLAG_X) and \
+               self.is_prop(DIRECTION_FLAG_Y) and \
+               self.is_prop(DIRECTION_FLAG_TOP)
+
+    @property
+    def is_bottom(self):
+        return not self.is_prop(DIRECTION_FLAG_X) and \
+               self.is_prop(DIRECTION_FLAG_Y) and \
+               not self.is_prop(DIRECTION_FLAG_TOP)
+
+    @property
+    def is_angle(self):
+        return self.is_prop(DIRECTION_FLAG_Y) and \
+               self.is_prop(DIRECTION_FLAG_X)
+
+    def set_left(self):
+        self.set_prop(DIRECTION_FLAG_X)
+        self.unset_prop(DIRECTION_FLAG_Y)
+        self.set_prop(DIRECTION_FLAG_LEFT)
+
+    def set_right(self):
+        self.set_prop(DIRECTION_FLAG_X)
+        self.unset_prop(DIRECTION_FLAG_Y)
+        self.unset_prop(DIRECTION_FLAG_LEFT)
+
+    def set_top(self):
+        self.unset_prop(DIRECTION_FLAG_X)
+        self.set_prop(DIRECTION_FLAG_Y)
+        self.set_prop(DIRECTION_FLAG_TOP)
+
+    def set_bottom(self):
+        self.unset_prop(DIRECTION_FLAG_X)
+        self.set_prop(DIRECTION_FLAG_Y)
+        self.unset_prop(DIRECTION_FLAG_TOP)
 
     def move_right(self, dx=0):
-        controller = self.project.controller
-        self.current_x += dx
-        self.is_left = False
-        controller += COMMAND_RIGHT
+        controller = self.device.pipe
+        self.device.current_x += dx
+        if not self.is_right or self.state != STATE_COMPACT:
+            controller.write(COMMAND_RIGHT)
+            self.set_right()
         if dx != 0:
-            controller += lhymicro_distance(abs(dx))
+            controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_left(self, dx=0):
-        controller = self.project.controller
-        self.current_x -= abs(dx)
-        self.is_left = True
-        controller += COMMAND_LEFT
+        controller = self.device.pipe
+        self.device.current_x -= abs(dx)
+        if not self.is_left or self.state != STATE_COMPACT:
+            controller.write(COMMAND_LEFT)
+            self.set_left()
         if dx != 0:
-            controller += lhymicro_distance(abs(dx))
+            controller.write(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        controller = self.project.controller
-        self.current_y += dy
-        self.is_top = False
-        controller += COMMAND_BOTTOM
+        controller = self.device.pipe
+        self.device.current_y += dy
+        if not self.is_bottom or self.state != STATE_COMPACT:
+            controller.write(COMMAND_BOTTOM)
+            self.set_bottom()
         if dy != 0:
-            controller += lhymicro_distance(abs(dy))
+            controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
     def move_top(self, dy=0):
-        controller = self.project.controller
-        self.current_y -= abs(dy)
-        self.is_top = True
-        controller += COMMAND_TOP
+        controller = self.device.pipe
+        self.device.current_y -= abs(dy)
+        if not self.is_top or self.state != STATE_COMPACT:
+            controller.write(COMMAND_TOP)
+            self.set_top()
         if dy != 0:
-            controller += lhymicro_distance(abs(dy))
+            controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()

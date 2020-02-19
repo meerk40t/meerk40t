@@ -42,7 +42,7 @@ class ColorDefine(wx.Frame):
         self.project = None
         self.index = None
 
-    def set_project(self, project):
+    def set_kernel(self, project):
         self.project = project
         self.refresh_list()
         self.load_color_data("Vector")

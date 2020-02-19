@@ -1,10 +1,20 @@
-# Rapid move is move performed in default mode. This implicitly converts to default mode.
-# Move doesn't imply anything about the laser mode.
-# Cut means the laser is on for this process.
-# Shift means the laser is off for this process.
-# Simple means the move must be an octent change. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
-# COMMAND_PLOT takes a plot object with a .plot() function which generates single pixel plot commands.
-# COMMAND_RASTER takes a plot object with a .plot() function which generates raster commands.
+"""
+Laser Commands are a middle language of commands for spooling and interpreting.
+
+Some commands have a implication:
+'Rapid' implies the command is performed in default mode.
+'Cut' implies the laser is on for the command.
+'Shift' implies the laser is off for this command.
+'Simple' means the movement must be an octent move. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
+
+Move alone doesn't imply anything about the laser mode.
+
+COMMAND_PLOT: takes a plot object with a .plot() function which generates simple plot commands.
+COMMAND_RASTER: takes a plot object with a .plot() function which generates simple raster commands.
+
+A COMMAND_RESUME would have to be issued in realtime since in a paused state the commands
+will not be processed.
+"""
 
 COMMAND_LASER_OFF = 1  # Turns laser off
 COMMAND_LASER_ON = 2  # Tuns laser on
@@ -40,4 +50,12 @@ COMMAND_HOME = 300  # Homes the device
 COMMAND_LOCK = 301  # Locks the rail
 COMMAND_UNLOCK = 302  # Unlocks the rail.
 COMMAND_BEEP = 320  # Beep.
-COMMAND_FUNCTION = 350  # Execute the function given by this command.
+COMMAND_FUNCTION = 350  # Execute the function given by this command. Blocking.
+COMMAND_SIGNAL = 360  # Sends the signal, given: "signal_name", operands.
+COMMAND_OPEN = 400  # Opens the channel, general hello.
+COMMAND_CLOSE = 500  # The channel will close. No valid commands will be parsed after this.
+
+COMMAND_RESET = 600  # Resets the state, purges buffers is issued.
+COMMAND_PAUSE = 610  # Issue a pause command.
+COMMAND_RESUME = 620  # Issue a resume command.
+COMMAND_STATUS = 630  # Issue a status command.

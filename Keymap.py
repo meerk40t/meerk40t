@@ -20,17 +20,17 @@ class Keymap(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
         # end wxGlade
-        self.project = None
+        self.kernel = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.project.mark_window_closed("Keymap")
+        self.kernel.mark_window_closed("Keymap")
         event.Skip()  # Call destroy.
 
-    def set_project(self, project):
-        self.project = project
-        project.setting(bool, "mouse_zoom_invert", False)
-        self.check_invert_mouse_zoom.SetValue(self.project.mouse_zoom_invert)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        kernel.setting(bool, "mouse_zoom_invert", False)
+        self.check_invert_mouse_zoom.SetValue(self.kernel.mouse_zoom_invert)
         self.reload_keymap()
 
     def __set_properties(self):
@@ -56,15 +56,15 @@ class Keymap(wx.Frame):
 
     def reload_keymap(self):
         i = 0
-        for key in self.project.keymap:
-            action = self.project.keymap[key]
+        for key in self.kernel.keymap:
+            action = self.kernel.keymap[key]
             m = self.list_keymap.InsertItem(i, str(action))
             i += 1
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(action.command))
 
     def on_check_mouse_zoom_invert(self, event):  # wxGlade: Keymap.<event_handler>
-        self.project.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
+        self.kernel.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
 
     def on_button_add_hotkey(self, event):  # wxGlade: Keymap.<event_handler>
         pass

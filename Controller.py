@@ -5,12 +5,15 @@
 
 import wx
 
+from CH341DriverBase import *
 from K40Controller import get_code_string_from_code
 from Kernel import *
 from icons import *
 
 _ = wx.GetTranslation
 
+
+# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
 
 class Controller(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -47,15 +50,17 @@ class Controller(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_bufferview, self.button_buffer_viewer)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.project = None
+        self.kernel = None
+        self.device = None
+        self.uid = None
         self.dirty = False
         self.status_data = None
         self.packet_data = None
         self.packet_string = b''
         self.buffer_size = 0
         self.buffer_max = 0
-        self.usb_status = ""
         self.control_state = None
+        self.usb_state = None
 
         self.update_packet_string = False
         self.update_packet_data = False
@@ -65,33 +70,46 @@ class Controller(wx.Frame):
         self.update_usb_status = False
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
-    def set_project(self, project):
-        self.project = project
-        self.project.setting(int, "packet_count", 0)
-        self.project.setting(str, "_usb_state", None)
-        self.project.listen("status", self.update_status)
-        self.project.listen("packet", self.update_packet)
-        self.project.listen("packet_text", self.update_packet_text)
-        self.project.listen("buffer", self.on_buffer_update)
-        self.project.listen("usb_state", self.on_usb_state)
-        self.project.listen("control_thread", self.on_control_state)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.device.listen("pipe;status", self.update_status)
+            self.device.listen("pipe;packet", self.update_packet)
+            self.device.listen("pipe;packet_text", self.update_packet_text)
+            self.device.listen("pipe;buffer", self.on_buffer_update)
+            self.device.listen("pipe;usb_state", self.on_usb_state)
+            self.device.listen("pipe;thread", self.on_control_state)
+
         self.set_controller_button_by_state()
 
     def on_close(self, event):
-        self.project.unlisten("status", self.update_status)
-        self.project.unlisten("packet", self.update_packet)
-        self.project.unlisten("packet_text", self.update_packet_text)
-        self.project.unlisten("buffer", self.on_buffer_update)
-        self.project.unlisten("usb_state", self.on_usb_state)
-        self.project.unlisten("control_thread", self.on_control_state)
-
-        self.project.mark_window_closed("Controller")
-        self.project = None
+        try:
+            if self.device is not None:
+                self.device.unlisten("pipe;status", self.update_status)
+                self.device.unlisten("pipe;packet", self.update_packet)
+                self.device.unlisten("pipe;packet_text", self.update_packet_text)
+                self.device.unlisten("pipe;buffer", self.on_buffer_update)
+                self.device.unlisten("pipe;usb_state", self.on_usb_state)
+                self.device.unlisten("pipe;thread", self.on_control_state)
+        except KeyError:
+            pass  # Must have not registered at start because of no device.
+        self.kernel.mark_window_closed("Controller")
+        self.kernel = None
         event.Skip()  # delegate destroy to super
 
     def kernel_execute(self, control_name):
         def menu_element(event):
-            self.project.execute(control_name)
+            self.kernel.execute(control_name)
 
         return menu_element
 
@@ -99,8 +117,9 @@ class Controller(wx.Frame):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
-        for control_name, control in self.project.controls.items():
-            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name), path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
+        for control_name, control in self.kernel.controls.items():
+            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name),
+                     path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -235,7 +254,7 @@ class Controller(wx.Frame):
             wx.CallAfter(self.post_update_on_gui_thread)
 
     def post_update_on_gui_thread(self):
-        if self.project is None:
+        if self.kernel is None:
             return  # was closed this is just a leftover update.
 
         update = False
@@ -267,8 +286,8 @@ class Controller(wx.Frame):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(get_code_string_from_code(status_data[1]))
-            self.packet_count_text.SetValue(str(self.project.packet_count))
-            self.rejected_packet_count_text.SetValue(str(self.project.rejected_count))
+            self.packet_count_text.SetValue(str(self.device.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.device.rejected_count))
             update = True
         if self.update_buffer_size:
             self.update_buffer_size = False
@@ -280,12 +299,12 @@ class Controller(wx.Frame):
             update = True
         if self.update_control_state:
             self.update_control_state = False
-            self.text_controller_status.SetValue(self.project.get_state_string_from_state(self.control_state))
+            self.text_controller_status.SetValue(self.kernel.get_text_thread_state(self.control_state))
             self.set_controller_button_by_state()
             update = True
         if self.update_usb_status:
             self.update_usb_status = False
-            self.text_usb_status.SetValue(self.usb_status)
+            self.text_usb_status.SetValue(get_name_for_status(self.usb_state, translation=_))
             self.set_usb_button_by_state()
             update = True
         if update:
@@ -293,29 +312,24 @@ class Controller(wx.Frame):
         self.dirty = False
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.project.get_state("K40Controller")
-        if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.project.start("K40Controller")
-        elif state == THREAD_STATE_PAUSED:
-            self.project.resume("K40Controller")
-        elif state == THREAD_STATE_STARTED:
-            self.project.pause("K40Controller")
-        elif state == THREAD_STATE_ABORT:
-            self.project("abort", 0)
-            self.project.reset("K40Controller")
-
-    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.project._usb_state
-        if state is None or state == "Disconnected" or state == "Uninitialized":
-            self.project.execute("K40Usb-Start")
-        else:
-            self.project.execute("K40Usb-Stop")
+        if self.device is not None:
+            state = self.device.pipe.state
+            if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
+                self.device.pipe.start()
+            elif state == THREAD_STATE_PAUSED:
+                self.device.pipe.resume()
+            elif state == THREAD_STATE_STARTED:
+                self.device.pipe.pause()
+            elif state == THREAD_STATE_ABORT:
+                self.device.pipe.buffer = b''
+                self.device.pipe.queue = b''
+                self.device.pipe.reset()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.execute("Emergency Stop")
+        self.device.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        self.project.open_window("BufferView")
+        self.kernel.open_window("BufferView")
 
     def update_status(self, data):
         self.update_status_data = True
@@ -334,10 +348,10 @@ class Controller(wx.Frame):
 
     def on_usb_state(self, status):
         self.update_usb_status = True
-        self.usb_status = status
+        self.usb_state = status
         self.post_update()
 
-    def on_buffer_update(self, value):
+    def on_buffer_update(self, value, *args):
         self.update_buffer_size = True
         self.buffer_size = value
         if self.buffer_size > self.buffer_max:
@@ -349,35 +363,48 @@ class Controller(wx.Frame):
         self.control_state = state
         self.post_update()
 
+    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
+        state = self.device.pipe.usb_state
+        if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK):
+            try:
+                self.device.execute("Connect_USB")
+            except ConnectionRefusedError:
+                dlg = wx.MessageDialog(None, _("Connection Refused. See USB Log for detailed information."),
+                                       _("Manual Connection"), wx.OK | wx.ICON_WARNING)
+                result = dlg.ShowModal()
+                dlg.Destroy()
+        elif state in (STATE_CONNECTED, STATE_USB_CONNECTED):
+            self.device.execute("Disconnect_USB")
+
     def set_usb_button_by_state(self):
-        status = self.usb_status
-        if status == "Not Found" or "No Driver":
+        state = self.usb_state
+        status = get_name_for_status(state, translation=_)
+        if state == STATE_CONNECTION_FAILED or state == STATE_DRIVER_NO_BACKEND:
             self.button_usb_connect.SetBackgroundColour("#dfdf00")
             self.button_usb_connect.SetLabel(status)
             self.button_usb_connect.SetValue(True)
             self.button_usb_connect.Enable()
-        elif status == "Uninitialized" or status == "Disconnected":
+        elif state == STATE_UNINITIALIZED or state == STATE_USB_DISCONNECTED:
             self.button_usb_connect.SetBackgroundColour("#ffff00")
             self.button_usb_connect.SetLabel("Connect")
             self.button_usb_connect.SetValue(True)
             self.button_usb_connect.Enable()
-        elif status == "Disconnecting":
+        elif state == STATE_USB_SET_DISCONNECTING:
             self.button_usb_connect.SetBackgroundColour("#ffff00")
             self.button_usb_connect.SetLabel("Disconnecting...")
             self.button_usb_connect.SetValue(True)
             self.button_usb_connect.Disable()
-        elif status == "Connected":
+        elif state == STATE_USB_CONNECTED or state == STATE_CONNECTED:
             self.button_usb_connect.SetBackgroundColour("#00ff00")
             self.button_usb_connect.SetLabel("Disconnect")
             self.button_usb_connect.SetValue(False)
             self.button_usb_connect.Enable()
-        elif status == "Connecting":
+        elif status == STATE_CONNECTING:
             self.button_usb_connect.SetBackgroundColour("#ffff00")
             self.button_usb_connect.SetLabel("Connecting...")
             self.button_usb_connect.SetValue(False)
             self.button_usb_connect.Disable()
-        else:
-            print(status)
+        # print(status)
 
     def set_controller_button_by_state(self):
         state = self.control_state

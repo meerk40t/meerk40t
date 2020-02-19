@@ -1,18 +1,13 @@
 import wx
 
-# begin wxGlade: dependencies
-# end wxGlade
-
-# begin wxGlade: extracode
-# end wxGlade
-
 _ = wx.GetTranslation
 
+#TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
 
 class BufferView(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: BufferView.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((697, 584))
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -21,25 +16,45 @@ class BufferView(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
-        self.project = None
+        self.kernel = None
+        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.project.mark_window_closed("BufferView")
-        self.project = None
+        self.kernel.mark_window_closed("BufferView")
+        self.kernel = None
         event.Skip()  # Call destroy as regular.
 
-    def set_project(self, project):
-        self.project = project
-        project.setting(str, '_controller_queue', b'')
-        project.setting(str, '_controller_buffer', b'')
-        buffer = self.project._controller_buffer + self.project._controller_queue
-        try:
-            bufferstr = buffer.decode()
-        except ValueError:
-            bufferstr = buffer.decode("ascii")
-        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
-        self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.device = kernel.device
+        if self.device is None:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
+                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            pipe = self.device.pipe
+            buffer = None
+            if pipe is not None:
+                try:
+                    buffer = pipe.buffer + pipe.queue
+                except AttributeError:
+                    buffer = None
+            if buffer is None:
+                buffer = _("Could not find buffer.\n")
+
+            try:
+                bufferstr = buffer.decode()
+            except ValueError:
+                bufferstr = buffer.decode("ascii")
+
+            self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
+            self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
 
     def __set_properties(self):
         # begin wxGlade: BufferView.__set_properties
