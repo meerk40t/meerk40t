@@ -2134,9 +2134,17 @@ class RootNode(list):
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_dither(node),
                          menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+                raster_zdepth_menu = wx.Menu()
+
+                for i in range(2, 10):
+                    menu_item = raster_zdepth_menu.Append(wx.ID_ANY, _("Divide Into %d Images") % i, "", wx.ITEM_NORMAL)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_zdepth(node, i), menu_item)
+                menu.AppendSubMenu(raster_zdepth_menu, _("ZDepth Divide"))
+
             if isinstance(node.object, SVGText):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
                          menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
+
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -2209,8 +2217,65 @@ class RootNode(list):
         def specific(event):
             element = node.object
             if isinstance(element, SVGImage):
-                element.image = element.image.convert("1")
+                img = element.image
+                if img.mode == 'RGBA':
+                    pixel_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            if pixel_data[x, y][3] == 0:
+                                pixel_data[x, y] = (255, 255, 255, 255)
+                element.image = img.convert("1")
                 element.cache = None
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_raster_zdepth(self, node, divide=7):
+        """
+        Subdivides an image into a zdepth image set.
+
+        :param node: SVGImage node.
+        :return: zdepth function
+        """
+
+        def specific(event):
+            element = node.object
+            if not isinstance(element, SVGImage):
+                return
+            adding_elements = []
+            if element.image.mode != 'RGBA':
+                element.image = element.image.convert('RGBA')
+            width, height = element.image.size
+            band = 255 / divide
+            for i in range(0, divide):
+                threshold_min = i * band
+                threshold_max = threshold_min + band
+                print(threshold_max)
+
+                image_element = copy(element)
+                image_element.image = image_element.image.copy()
+                img = image_element.image
+
+                new_data = img.load()
+                for y in range(height):
+                    for x in range(width):
+                        pixel = new_data[x, y]
+                        gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
+                        if threshold_min >= gray:
+                            new_data[x, y] = (0, 0, 0, 255)
+                        elif threshold_max < gray:
+                            new_data[x, y] = (255, 255, 255, 255)
+                        else:  # threshold_min <= grey < threshold_max
+                            v = gray - threshold_min
+                            v *= divide
+                            v = int(round(v))
+                            new_data[x, y] = (v, v, v, 255)
+                image_element.image = image_element.image.convert('1')
+                adding_elements.append(image_element)
+            self.kernel.elements.extend(adding_elements)
+            self.kernel.classify(adding_elements)
+            self.set_selected_elements(None)
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
