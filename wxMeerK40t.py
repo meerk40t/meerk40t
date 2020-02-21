@@ -16,7 +16,7 @@ from BufferView import BufferView
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
-from ElementFunctions import ElementFunctions
+from OperationPreprocessor import OperationPreprocessor
 from EngraveProperty import EngraveProperty
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
@@ -1577,7 +1577,7 @@ class Node(list):
             return None
 
     def bbox(self):
-        return ElementFunctions.bounding_box(self.object)
+        return OperationPreprocessor.bounding_box(self.object)
 
     def objects_of_children(self, types):
         if isinstance(self.object, types):
@@ -1737,10 +1737,10 @@ class RootNode(list):
             pass
 
     def selected_bounds(self):
-        return ElementFunctions.bounding_box(self.selected_elements)
+        return OperationPreprocessor.bounding_box(self.selected_elements)
 
     def bbox(self):
-        return ElementFunctions.bounding_box(self.kernel.elements)
+        return OperationPreprocessor.bounding_box(self.kernel.elements)
 
     def set_selected_elements(self, selected):
         if selected is None:
@@ -2212,7 +2212,7 @@ class RootNode(list):
         def specific(event):
             element = node.object
             if isinstance(element, SVGImage):
-                ElementFunctions.make_actual(element)
+                OperationPreprocessor.make_actual(element)
                 node.bounds = None
                 node.set_icon()
             self.kernel.signal('rebuild_tree', 0)
@@ -2263,12 +2263,11 @@ class RootNode(list):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                print(threshold_max)
 
                 image_element = copy(element)
                 image_element.image = image_element.image.copy()
-                if ElementFunctions.needs_actualization(image_element):
-                    ElementFunctions.make_actual(image_element)
+                if OperationPreprocessor.needs_actualization(image_element):
+                    OperationPreprocessor.make_actual(image_element)
                 img = image_element.image
                 new_data = img.load()
                 width, height = img.size
@@ -2308,7 +2307,7 @@ class RootNode(list):
         def specific(event):
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
-            bounds = ElementFunctions.bounding_box(child_objects)
+            bounds = OperationPreprocessor.bounding_box(child_objects)
             if bounds is None:
                 return None
             step = float(node.object.raster_step)
@@ -2371,7 +2370,7 @@ class RootNode(list):
         value *= tau
 
         def specific(event):
-            bounds = ElementFunctions.bounding_box(node.parent)
+            bounds = OperationPreprocessor.bounding_box(node.parent)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2393,7 +2392,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = ElementFunctions.bounding_box(self.selected_elements)
+            bounds = OperationPreprocessor.bounding_box(self.selected_elements)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0

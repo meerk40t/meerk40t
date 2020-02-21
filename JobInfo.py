@@ -1,12 +1,8 @@
-from copy import copy
-
 import wx
 
-from LaserCommandConstants import *
-from LaserOperation import LaserOperation, RasterOperation, CutOperation, EngraveOperation
-from LaserRender import LaserRender
+from LaserOperation import *
 from icons import icons8_laser_beam_52, icons8_route_50
-from ElementFunctions import ElementFunctions, SVGImage, SVGElement
+from OperationPreprocessor import OperationPreprocessor
 
 _ = wx.GetTranslation
 
@@ -55,6 +51,8 @@ class JobInfo(wx.Frame):
         self.Bind(wx.EVT_MENU, self.jobadd_wait, id=t.GetId())
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep"), "")
         self.Bind(wx.EVT_MENU, self.jobadd_beep, id=t.GetId())
+        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Interrupt"), "")
+        self.Bind(wx.EVT_MENU, self.jobadd_interrupt, id=t.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Add"))
         self.SetMenuBar(self.JobInfo_menubar)
         # Menu Bar end
@@ -69,13 +67,13 @@ class JobInfo(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_start_job, self.button_writer_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_job_spooler, self.button_job_spooler)
         # end wxGlade
-        self.kernel = None
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        self.preprocessor = OperationPreprocessor()
+        self.kernel = None
         self.device = None
-        self.job_items = None
-        self.required_preprocessing_commands = None
+        self.operations = []
 
     def spool_trace_simple(self, event):
         print("Spool Simple.")
@@ -84,135 +82,46 @@ class JobInfo(wx.Frame):
         print("Spool Hull.")
 
     def jobadd_home(self, event):
-        def home():
-            yield COMMAND_WAIT_BUFFER_EMPTY
-            yield COMMAND_HOME
-
-        self.job_items.append(home)
+        self.operations.append(OperationPreprocessor.home)
         self.update_gui()
 
     def jobadd_wait(self, event):
-        wait_amount = 5.0
-
-        def wait():
-            yield COMMAND_WAIT_BUFFER_EMPTY
-            yield COMMAND_WAIT, wait_amount
-
-        self.job_items.append(wait)
+        self.operations.append(OperationPreprocessor.wait)
         self.update_gui()
 
     def jobadd_beep(self, event):
-        def beep():
-            yield COMMAND_WAIT_BUFFER_EMPTY
-            yield COMMAND_BEEP
-
-        self.job_items.append(beep)
+        self.operations.append(OperationPreprocessor.beep)
         self.update_gui()
 
-    def jobadd_remove_text(self):
-        for e in self.job_items:
-            try:
-                t = e.type
-            except AttributeError:
-                t = 'function'
-            if t == 'text':
-                def remove_text():
-                    self.job_items = [e for e in self.job_items if not hasattr(e, 'type') or e.type != 'text']
-                    self.update_gui()
+    def jobadd_interrupt(self, event):
+        self.operations.append(self.interrupt)
 
-                self.required_preprocessing_commands.append(remove_text)
-                break
+    def interrupt(self):
+        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_FUNCTION, self.interrupt_popup
 
-    def conditional_jobadd_make_raster(self):
-        for op in self.job_items:
-            if isinstance(op, RasterOperation):
-                if len(op) == 0:
-                    continue
-                if len(op) == 1 and not isinstance(op[0], SVGImage):
-                    continue
-                if len(op) > 1:
-                    self.jobadd_make_raster()
-                    return True
-        return False
-
-    def jobadd_make_raster(self):
-        def make_image():
-            for op in self.job_items:
-                if isinstance(op, RasterOperation):
-                    if len(op) == 1 and isinstance(op[0], SVGImage):
-                        continue
-                    renderer = LaserRender(self.kernel)
-                    bounds = ElementFunctions.bounding_box(op)
-                    if bounds is None:
-                        return None
-                    xmin, ymin, xmax, ymax = bounds
-
-                    image = renderer.make_raster(op, bounds, step=op.raster_step)
-                    image_element = SVGImage(image=image)
-                    image_element.transform.post_translate(xmin, ymin)
-                    op.clear()
-                    op.append(image_element)
-
-        self.required_preprocessing_commands.append(make_image)
-
-    def conditional_jobadd_actualize_image(self):
-        for op in self.job_items:
-            if isinstance(op, RasterOperation):
-                for elem in op:
-                    if ElementFunctions.needs_actualization(elem, op.raster_step):
-                        self.jobadd_actualize_image()
-                        return
-
-    def jobadd_actualize_image(self):
-        def actualize():
-            for op in self.job_items:
-                if isinstance(op, RasterOperation):
-                    for elem in op:
-                        if ElementFunctions.needs_actualization(elem, op.raster_step):
-                            ElementFunctions.make_actual(elem,op.raster_step)
-        self.required_preprocessing_commands.append(actualize)
-
-    def conditional_jobadd_scale_rotary(self):
-        if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
-            self.jobadd_scale_rotary()
-
-    def jobadd_scale_rotary(self):
-        def scale_for_rotary():
-            p = self.device
-            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
-            for o in self.job_items:
-                if isinstance(o, LaserOperation):
-                    for e in o:
-                        try:
-                            e *= scale_str
-                        except AttributeError:
-                            pass
-            self.conditional_jobadd_actualize_image()
-
-        self.required_preprocessing_commands.append(scale_for_rotary)
+    def interrupt_popup(self):
+        dlg = wx.MessageDialog(None, _("Spooling Interrupted. Press OK to Continue."),
+                               _("Interrupt"), wx.OK)
+        result = dlg.ShowModal()
+        dlg.Destroy()
 
     def set_operations(self, operations):
+        self.preprocessor.kernel = self.kernel
+        self.preprocessor.device = self.device
+
         if not isinstance(operations, list):
             operations = [operations]
-        if self.required_preprocessing_commands is None:
-            self.required_preprocessing_commands = []
-        else:
-            self.required_preprocessing_commands.clear()
-        self.job_items.clear()
+        self.operations.clear()
         for op in operations:
-            self.job_items.append(copy(op))
-
-        self.jobadd_remove_text()
-        if self.device.rotary:
-            self.conditional_jobadd_scale_rotary()
-        self.conditional_jobadd_actualize_image()
-        self.conditional_jobadd_make_raster()
+            self.operations.append(copy(op))
         if self.device.autobeep:
             self.jobadd_beep(None)
 
         if self.device.autohome:
             self.jobadd_home(None)
 
+        self.preprocessor.process(self.operations)
         self.update_gui()
 
     def set_device(self, device):
@@ -234,8 +143,7 @@ class JobInfo(wx.Frame):
     def set_kernel(self, kernel):
         self.kernel = kernel
         self.set_device(kernel.device)
-        self.required_preprocessing_commands = []
-        self.job_items = []
+        self.operations = []
         self.kernel.listen("element_property_update", self.on_element_property_update)
 
     def on_close(self, event):
@@ -284,16 +192,12 @@ class JobInfo(wx.Frame):
         self.kernel.open_window("JobSpooler")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
-        if len(self.required_preprocessing_commands) == 0:
-            self.device.send_job(self.job_items)
+        if len(self.preprocessor.commands) == 0:
+            self.device.send_job(self.operations)
             self.on_button_job_spooler()
             self.kernel.close_old_window("JobInfo")
         else:
-            # Using copy of commands, so commands can add ops.
-            ops = self.required_preprocessing_commands[:]
-            self.required_preprocessing_commands = []
-            for op in ops:
-                op()
+            self.preprocessor.execute()
             self.update_gui()
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
@@ -303,7 +207,7 @@ class JobInfo(wx.Frame):
         node_index = self.operations_listbox.GetSelection()
         if node_index == -1:
             return
-        obj = self.job_items[node_index]
+        obj = self.operations[node_index]
 
         if isinstance(obj, RasterOperation):
             self.kernel.open_window("RasterProperty").set_operation(obj)
@@ -332,12 +236,12 @@ class JobInfo(wx.Frame):
 
         self.commands_listbox.Clear()
         self.operations_listbox.Clear()
-        operations = self.job_items
-        commands = self.required_preprocessing_commands
+        operations = self.operations
+        commands = self.preprocessor.commands
         if operations is not None and len(operations) != 0:
-            self.operations_listbox.InsertItems([name_str(e) for e in self.job_items], 0)
+            self.operations_listbox.InsertItems([name_str(e) for e in self.operations], 0)
         if commands is not None and len(commands) != 0:
-            self.commands_listbox.InsertItems([name_str(e) for e in self.required_preprocessing_commands], 0)
+            self.commands_listbox.InsertItems([name_str(e) for e in self.preprocessor.commands], 0)
 
             self.button_writer_control.SetLabelText(_("Execute Commands"))
             self.button_writer_control.SetBackgroundColour(wx.Colour(255, 255, 102))
