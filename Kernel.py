@@ -41,6 +41,10 @@ class KernelJob:
     def scheduled(self):
         return self.next_run is not None and time.time() >= self.next_run
 
+    def cancel(self):
+        self.times = -1
+        self.scheduler.jobs.remove(self)
+
     def run(self):
         """
         Scheduler Job: updates the values for next_run and times. Removing if necessary.
@@ -56,6 +60,8 @@ class KernelJob:
             self.times = self.times - 1
             if self.times <= 0:
                 self.scheduler.jobs.remove(self)
+            if self.times < 0:
+                return
         if isinstance(self.args, tuple):
             self.process(*self.args)
         else:
