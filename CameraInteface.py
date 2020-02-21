@@ -40,8 +40,8 @@ class CameraInterface(wx.Frame):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
                     value.Enable(False)
-            dlg = wx.MessageDialog(None, _(_("This Interface Requires OpenCV: 'pip install opencv-python-headless'")),
-                                   _(_("Error")), wx.OK | wx.ICON_ERROR)
+            dlg = wx.MessageDialog(None, _("This Interface Requires OpenCV: 'pip install opencv-python-headless'"),
+                                   _("Error"), wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
             dlg.Destroy()
             return
@@ -52,8 +52,8 @@ class CameraInterface(wx.Frame):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
                     value.Enable(False)
-            dlg = wx.MessageDialog(None, _(_("No Webcam found.")),
-                                   _(_("Error")), wx.OK | wx.ICON_ERROR)
+            dlg = wx.MessageDialog(None, _("No Webcam found."),
+                                   _("Error"), wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
             dlg.Destroy()
             self.capture = None
@@ -131,8 +131,8 @@ class CameraInterface(wx.Frame):
         self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        dlg = wx.MessageDialog(None, _(_("This feature is not implemented.")),
-                               _(_("Not Implemented")), wx.OK)
+        dlg = wx.MessageDialog(None, _("This feature is not implemented."),
+                               _("Not Implemented"), wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 

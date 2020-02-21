@@ -13,10 +13,10 @@ from About import About
 from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
+from CameraInteface import CameraInterface
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
-from OperationPreprocessor import OperationPreprocessor
 from EngraveProperty import EngraveProperty
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
@@ -26,9 +26,9 @@ from Keymap import Keymap
 from LaserOperation import *
 from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
+from OperationPreprocessor import OperationPreprocessor
 from PathProperty import PathProperty
 from Preferences import Preferences
-from CameraInteface import CameraInterface
 from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
@@ -493,15 +493,15 @@ class MeerK40t(wx.Frame):
 
     def on_usb_status(self, value):
         if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
+            self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
     def on_pipe_state(self, value):
         if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_text_thread_state(value)), 1)
+            self.main_statusbar.SetStatusText(_("Controller: %s") % self.kernel.get_text_thread_state(value), 1)
 
     def on_spooler_state(self, value):
         if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_text_thread_state(value)), 2)
+            self.main_statusbar.SetStatusText(_("Spooler: %s") % self.kernel.get_text_thread_state(value), 2)
 
     def on_interpreter_mode(self, state):
         if state == 0:
@@ -577,7 +577,7 @@ class MeerK40t(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle(_("MeerK40t v%s" % MEERK40T_VERSION))
+        self.SetTitle(_("MeerK40t v%s") % MEERK40T_VERSION)
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
@@ -623,7 +623,7 @@ class MeerK40t(wx.Frame):
                 rejected_files.append(pathname)
         if rejected != 0:
             reject = "\n".join(rejected_files)
-            err_msg = _("Some files were unrecognized:\n%s" % reject)
+            err_msg = _("Some files were unrecognized:\n%s") % reject
             dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
@@ -1102,7 +1102,6 @@ class MeerK40t(wx.Frame):
             gc = wx.GraphicsContext.Create(dc)
             gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
             gc.Destroy()
-
 
     def on_draw_selection(self, dc, draw_mode):
         """Draw Selection Box"""
@@ -2124,7 +2123,7 @@ class RootNode(list):
             path_scale_sub_menu = wx.Menu()
             for i in range(1, 25):
                 gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
-                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%") % (600.0 / float(i)), "",
                                                     wx.ITEM_NORMAL))
             menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
 
@@ -2132,14 +2131,14 @@ class RootNode(list):
             for i in range(2, 13):
                 angle = Angle.turns(1.0 / float(i))
                 gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
                                                      "",
                                                      wx.ITEM_NORMAL))
             for i in range(2, 13):
                 angle = Angle.turns(1.0 / float(i))
                 gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
                          path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                     _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                                                     _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
                                                      wx.ITEM_NORMAL))
             menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
             gui.Bind(wx.EVT_MENU, self.menu_reify(node),
@@ -2747,10 +2746,11 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     try:
         import datetime
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-        print(_("Saving Log: %s" % filename))
+        print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
-            file.write(_("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION))
-            file.write(("Please report to: %s\n\n" % MEERK40T_ISSUES))
+            # Crash logs are not translated.
+            file.write("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION)
+            file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
     except:  # I already crashed once, if there's another here just ignore it.
