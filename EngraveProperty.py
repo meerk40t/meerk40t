@@ -22,11 +22,14 @@ class EngraveProperty(wx.Frame):
 
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_speed, self.spin_speed_set)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_speed, self.spin_speed_set)
+        self.Bind(wx.EVT_TEXT, self.on_spin_speed, self.spin_speed_set)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_power, self.spin_power_set)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_power, self.spin_power_set)
+        self.Bind(wx.EVT_TEXT, self.on_spin_power, self.spin_power_set)
         self.Bind(wx.EVT_CHECKBOX, lambda e: self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue()), self.checkbox_custom_d_ratio)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_speed_dratio, self.spin_speed_dratio)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_speed_dratio, self.spin_speed_dratio)
+        self.Bind(wx.EVT_TEXT, self.on_spin_speed_dratio, self.spin_speed_dratio)
         self.Bind(wx.EVT_CHECKBOX, lambda e: self.slider_accel.Enable(self.checkbox_custom_accel.GetValue()), self.checkbox_custom_accel)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
         self.kernel = None
@@ -63,8 +66,7 @@ class EngraveProperty(wx.Frame):
         except AttributeError:
             self.slider_accel.Enable(False)
             self.checkbox_custom_accel.Enable(False)
-
-
+        return self
 
     def set_kernel(self, kernel):
         self.kernel = kernel

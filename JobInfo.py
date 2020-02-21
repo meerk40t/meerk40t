@@ -3,7 +3,7 @@ from copy import copy
 import wx
 
 from LaserCommandConstants import *
-from LaserOperation import LaserOperation, RasterOperation
+from LaserOperation import LaserOperation, RasterOperation, CutOperation, EngraveOperation
 from LaserRender import LaserRender
 from icons import icons8_laser_beam_52, icons8_route_50
 from ElementFunctions import ElementFunctions, SVGImage, SVGElement
@@ -236,8 +236,10 @@ class JobInfo(wx.Frame):
         self.set_device(kernel.device)
         self.required_preprocessing_operations = []
         self.job_items = []
+        self.kernel.listen("element_property_update", self.on_element_property_update)
 
     def on_close(self, event):
+        self.kernel.unlisten("element_property_update", self.on_element_property_update)
         self.kernel.mark_window_closed("JobInfo")
         self.kernel = None
         event.Skip()  # Call destroy as regular.
@@ -295,11 +297,18 @@ class JobInfo(wx.Frame):
             self.update_gui()
 
     def on_listbox_element_click(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_listbox_element_click' not implemented!")
         event.Skip()
 
     def on_listbox_element_dclick(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_listbox_element_dclick' not implemented!")
+        node_index = self.elements_listbox.GetSelection()
+        if node_index == -1:
+            return
+        obj = self.job_items[node_index]
+
+        if isinstance(obj, RasterOperation):
+            self.kernel.open_window("RasterProperty").set_operation(obj)
+        elif isinstance(obj, (CutOperation, EngraveOperation)):
+            self.kernel.open_window("EngraveProperty").set_operation(obj)
         event.Skip()
 
     def on_listbox_operations_click(self, event):  # wxGlade: JobInfo.<event_handler>
@@ -309,6 +318,9 @@ class JobInfo(wx.Frame):
     def on_listbox_operations_dclick(self, event):  # wxGlade: JobInfo.<event_handler>
         print("Event handler 'on_listbox_operations_dclick' not implemented!")
         event.Skip()
+
+    def on_element_property_update(self, *args):
+        self.update_gui()
 
     def update_gui(self):
 

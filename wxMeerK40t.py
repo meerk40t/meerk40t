@@ -18,10 +18,8 @@ from DefaultModules import *
 from DeviceManager import DeviceManager
 from ElementFunctions import ElementFunctions
 from ElementProperty import ElementProperty
-from PathProperty import PathProperty
-from TextProperty import TextProperty
-from ImageProperty import ImageProperty
 from EngraveProperty import EngraveProperty
+from ImageProperty import ImageProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
 from Kernel import *
@@ -29,11 +27,13 @@ from Keymap import Keymap
 from LaserOperation import *
 from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
+from PathProperty import PathProperty
 from Preferences import Preferences
 from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
 from Shutdown import Shutdown
+from TextProperty import TextProperty
 from UsbConnect import UsbConnect
 from ZMatrix import ZMatrix
 from icons import *
@@ -803,8 +803,7 @@ class MeerK40t(wx.Frame):
         position = event.GetPosition()
         position = self.convert_window_to_scene(position)
         self.root.set_selected_by_position(position)
-        if self.root.selected_elements is not None:
-            self.kernel.open_window("ElementProperty").set_elements(self.root.selected_elements)
+        self.root.activate_selected_node()
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
@@ -1774,6 +1773,10 @@ class RootNode(list):
         self.kernel.signal("selection", self.selected_elements)
         self.kernel.signal("selected_ops", self.selected_operations)
 
+    def activate_selected_node(self):
+        if self.selected_elements is not None or len(self.selected_elements) != 0:
+            self.activated_object(self.selected_elements[0])
+
     def move_selected(self, dx, dy):
         if self.selected_elements is None:
             return
@@ -1913,19 +1916,27 @@ class RootNode(list):
         """
         item = event.GetItem()
         node = self.tree.GetItemData(item)
+        self.activated_node(node)
+
+    def activated_node(self, node):
         if node is not None:
-            if isinstance(node.object, RasterOperation):
-                self.kernel.open_window("RasterProperty").set_operation(node.object)
-            elif isinstance(node.object, (CutOperation, EngraveOperation)):
-                self.kernel.open_window("EngraveProperty").set_operation(node.object)
-            elif isinstance(node.object, Path):
-                self.kernel.open_window("PathProperty").set_element(node.object)
-            elif isinstance(node.object, SVGText):
-                self.kernel.open_window("TextProperty").set_element(node.object)
-            elif isinstance(node.object, SVGImage):
-                self.kernel.open_window("ImageProperty").set_element(node.object)
-            elif isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
-                self.kernel.open_window("ElementProperty").set_elements(node.object)
+            self.activated_object(node.object)
+
+    def activated_object(self, object):
+        if isinstance(object, RasterOperation):
+            self.kernel.open_window("RasterProperty").set_operation(object)
+        elif isinstance(object, (CutOperation, EngraveOperation)):
+            self.kernel.open_window("EngraveProperty").set_operation(object)
+        elif isinstance(object, Path):
+            self.kernel.open_window("PathProperty").set_element(object)
+        elif isinstance(object, SVGText):
+            self.kernel.open_window("TextProperty").set_element(object)
+        elif isinstance(object, SVGImage):
+            self.kernel.open_window("ImageProperty").set_element(object)
+        elif isinstance(object, SVGElement):
+            self.kernel.open_window("PathProperty").set_element(object)
+        elif isinstance(object, LaserOperation):
+            self.kernel.open_window("EngraveProperty").set_operation(object)
 
     def on_item_changed(self, event):
         """

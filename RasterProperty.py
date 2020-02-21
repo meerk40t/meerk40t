@@ -94,6 +94,7 @@ class RasterProperty(wx.Frame):
                 self.combo_second_pass.SetSelection(operation.second_pass)
         except AttributeError:
             self.combo_second_pass.Enable(False)
+        return self
 
     def set_kernel(self, kernel):
         self.kernel = kernel
