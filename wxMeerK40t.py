@@ -355,6 +355,7 @@ class MeerK40t(wx.Frame):
         self.kernel = None
         self.root = None  # RootNode value, must have kernel for init.
         self.device_listening = None
+        self.background = None
 
     def notify_change(self):
         self.kernel.signal('rebuild_tree', 0)
@@ -487,7 +488,7 @@ class MeerK40t(wx.Frame):
     def on_usb_error(self, value):
         dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
                                _("Usb Connection Problem."), wx.OK | wx.ICON_WARNING)
-        result = dlg.ShowModal()
+        dlg.ShowModal()
         dlg.Destroy()
 
     def on_usb_status(self, value):
@@ -508,6 +509,14 @@ class MeerK40t(wx.Frame):
         else:
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
+
+    def on_background_signal(self, background):
+        if isinstance(background, str):
+            return  # Assumed color.
+        if isinstance(background, int):
+            return  # Assumed color.
+        self.background = background
+        self.request_refresh()
 
     def on_device_switch(self, device):
         self.unlisten_device()
@@ -541,6 +550,7 @@ class MeerK40t(wx.Frame):
         self.device_listening = None
 
     def listen_scene(self):
+        self.kernel.listen("background", self.on_background_signal)
         self.kernel.listen("device", self.on_device_switch)
         self.kernel.listen('rebuild_tree', self.on_rebuild_tree_request)
         self.kernel.listen('refresh_scene', self.on_refresh_scene)
@@ -549,6 +559,7 @@ class MeerK40t(wx.Frame):
         self.kernel.listen("selection", self.selection_changed)
 
     def unlisten_scene(self):
+        self.kernel.unlisten("background", self.on_background_signal)
         self.kernel.unlisten("device", self.on_device_switch)
         self.kernel.unlisten('rebuild_tree', self.on_rebuild_tree_request)
         self.kernel.unlisten('refresh_scene', self.on_refresh_scene)
@@ -1084,8 +1095,14 @@ class MeerK40t(wx.Frame):
             v = self.kernel
         wmils = v.bed_width * 39.37
         hmils = v.bed_height * 39.37
-        dc.SetBrush(wx.WHITE_BRUSH)
-        dc.DrawRectangle(0, 0, wmils, hmils)
+        if self.background is None:
+            dc.SetBrush(wx.WHITE_BRUSH)
+            dc.DrawRectangle(0, 0, wmils, hmils)
+        else:
+            gc = wx.GraphicsContext.Create(dc)
+            gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
+            gc.Destroy()
+
 
     def on_draw_selection(self, dc, draw_mode):
         """Draw Selection Box"""

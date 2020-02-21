@@ -1,3 +1,5 @@
+from copy import copy
+
 import wx
 from icons import *
 
@@ -24,6 +26,7 @@ class CameraInterface(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
         self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
         self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
+        self.SetDoubleBuffered(True)
         # end wxGlade
         self.capture = None
         self.width = -1
@@ -37,8 +40,8 @@ class CameraInterface(wx.Frame):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
                     value.Enable(False)
-            dlg = wx.MessageDialog(None, _("This Interface Requires OpenCV: 'pip install opencv-python-headless'"),
-                                   _("Error"), wx.OK | wx.ICON_WARNING)
+            dlg = wx.MessageDialog(None, _(_("This Interface Requires OpenCV: 'pip install opencv-python-headless'")),
+                                   _(_("Error")), wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
             dlg.Destroy()
             return
@@ -49,8 +52,8 @@ class CameraInterface(wx.Frame):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
                     value.Enable(False)
-            dlg = wx.MessageDialog(None, _("No Webcam found."),
-                                   _("Error"), wx.OK | wx.ICON_WARNING)
+            dlg = wx.MessageDialog(None, _(_("No Webcam found.")),
+                                   _(_("Error")), wx.OK | wx.ICON_ERROR)
             result = dlg.ShowModal()
             dlg.Destroy()
             self.capture = None
@@ -81,14 +84,14 @@ class CameraInterface(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
-        self.SetTitle("CameraInterface")
-        self.button_update.SetToolTip("Update Scene")
+        self.SetTitle(_("CameraInterface"))
+        self.button_update.SetToolTip(_("Update Scene"))
         self.button_update.SetSize(self.button_update.GetBestSize())
-        self.button_export.SetToolTip("Export Snapsnot")
+        self.button_export.SetToolTip(_("Export Snapsnot"))
         self.button_export.SetSize(self.button_export.GetBestSize())
-        self.button_detect.SetToolTip("Detect Distortions/Calibration")
+        self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
         self.button_detect.SetSize(self.button_detect.GetBestSize())
-        self.display_camera.SetToolTip("Live Camera View")
+        self.display_camera.SetToolTip(_("Live Camera View"))
         # end wxGlade
 
     def __do_layout(self):
@@ -108,8 +111,12 @@ class CameraInterface(wx.Frame):
         # end wxGlade
 
     def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
-        print("Event handler 'on_button_update' not implemented!")
-        event.Skip()
+        import cv2
+        ret, frame = self.capture.read()
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            buffer = wx.Bitmap.FromBuffer(self.width, self.height, frame)
+            self.kernel.signal("background", buffer)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
         print("Event handler 'on_button_export' not implemented!")
@@ -124,7 +131,9 @@ class CameraInterface(wx.Frame):
         self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        print("Event handler 'on_button_detect' not implemented!")
-        event.Skip()
+        dlg = wx.MessageDialog(None, _(_("This feature is not implemented.")),
+                               _(_("Not Implemented")), wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
 
 # end of class CameraInterface
