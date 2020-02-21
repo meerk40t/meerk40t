@@ -28,6 +28,7 @@ from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
 from PathProperty import PathProperty
 from Preferences import Preferences
+from CameraInteface import CameraInterface
 from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
@@ -853,6 +854,7 @@ class MeerK40t(wx.Frame):
         self.kernel.keymap[ord('3')] = MappedKey('3', "set_position 3")
         self.kernel.keymap[ord('4')] = MappedKey('4', "set_position 4")
         self.kernel.keymap[ord('5')] = MappedKey('5', "set_position 5")
+        self.kernel.keymap[wx.WXK_F4] = MappedKey('F4', "window CameraInterface")
         self.kernel.keymap[wx.WXK_F6] = MappedKey('F6', "window JobSpooler")
         self.kernel.keymap[wx.WXK_F7] = MappedKey('F7', "window Controller")
         self.kernel.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
@@ -2652,6 +2654,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window('EngraveProperty', EngraveProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
+        kernel.add_window("CameraInterface", CameraInterface)
         kernel.add_window("Settings", Settings)
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)
