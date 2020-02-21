@@ -19,6 +19,7 @@ from DeviceManager import DeviceManager
 from ElementFunctions import ElementFunctions
 from ElementProperty import ElementProperty
 from PathProperty import PathProperty
+from TextProperty import TextProperty
 from ImageProperty import ImageProperty
 from EngraveProperty import EngraveProperty
 from JobInfo import JobInfo
@@ -1919,6 +1920,8 @@ class RootNode(list):
                 self.kernel.open_window("EngraveProperty").set_operation(node.object)
             elif isinstance(node.object, Path):
                 self.kernel.open_window("PathProperty").set_element(node.object)
+            elif isinstance(node.object, SVGText):
+                self.kernel.open_window("TextProperty").set_element(node.object)
             elif isinstance(node.object, SVGImage):
                 self.kernel.open_window("ImageProperty").set_element(node.object)
             elif isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
@@ -2057,7 +2060,7 @@ class RootNode(list):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)
-            for name in ("ZDepth_Raster", "Cross-Engrave Raster", "Multishade_Raster", "Wait-Step_Raster"):
+            for name in ("ZDepth_Raster", "Multishade_Raster", "Wait-Step_Raster"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)
@@ -2246,7 +2249,6 @@ class RootNode(list):
             adding_elements = []
             if element.image.mode != 'RGBA':
                 element.image = element.image.convert('RGBA')
-            width, height = element.image.size
             band = 255 / divide
             for i in range(0, divide):
                 threshold_min = i * band
@@ -2255,12 +2257,17 @@ class RootNode(list):
 
                 image_element = copy(element)
                 image_element.image = image_element.image.copy()
+                if ElementFunctions.needs_actualization(image_element):
+                    ElementFunctions.make_actual(image_element)
                 img = image_element.image
-
                 new_data = img.load()
+                width, height = img.size
                 for y in range(height):
                     for x in range(width):
                         pixel = new_data[x, y]
+                        if pixel[3] == 0:
+                            new_data[x, y] = (255, 255, 255, 255)
+                            continue
                         gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
                         if threshold_min >= gray:
                             new_data[x, y] = (0, 0, 0, 255)
@@ -2631,6 +2638,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window('Shutdown', Shutdown)
         kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('PathProperty', PathProperty)
+        kernel.add_window('TextProperty', TextProperty)
         kernel.add_window('ImageProperty', ImageProperty)
         kernel.add_window('RasterProperty', RasterProperty)
         kernel.add_window('EngraveProperty', EngraveProperty)
