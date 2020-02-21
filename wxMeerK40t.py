@@ -17,7 +17,6 @@ from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
 from ElementFunctions import ElementFunctions
-from ElementProperty import ElementProperty
 from EngraveProperty import EngraveProperty
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
@@ -1909,7 +1908,7 @@ class RootNode(list):
 
     def on_item_activated(self, event):
         """
-        Tree item is double-clicked. Launches ElementProperty dialog.
+        Tree item is double-clicked. Launches PropertyWindow associated with that object.
 
         :param event:
         :return:
@@ -1922,21 +1921,21 @@ class RootNode(list):
         if node is not None:
             self.activated_object(node.object)
 
-    def activated_object(self, object):
-        if isinstance(object, RasterOperation):
-            self.kernel.open_window("RasterProperty").set_operation(object)
-        elif isinstance(object, (CutOperation, EngraveOperation)):
-            self.kernel.open_window("EngraveProperty").set_operation(object)
-        elif isinstance(object, Path):
-            self.kernel.open_window("PathProperty").set_element(object)
-        elif isinstance(object, SVGText):
-            self.kernel.open_window("TextProperty").set_element(object)
-        elif isinstance(object, SVGImage):
-            self.kernel.open_window("ImageProperty").set_element(object)
-        elif isinstance(object, SVGElement):
-            self.kernel.open_window("PathProperty").set_element(object)
-        elif isinstance(object, LaserOperation):
-            self.kernel.open_window("EngraveProperty").set_operation(object)
+    def activated_object(self, obj):
+        if isinstance(obj, RasterOperation):
+            self.kernel.open_window("RasterProperty").set_operation(obj)
+        elif isinstance(obj, (CutOperation, EngraveOperation)):
+            self.kernel.open_window("EngraveProperty").set_operation(obj)
+        elif isinstance(obj, Path):
+            self.kernel.open_window("PathProperty").set_element(obj)
+        elif isinstance(obj, SVGText):
+            self.kernel.open_window("TextProperty").set_element(obj)
+        elif isinstance(obj, SVGImage):
+            self.kernel.open_window("ImageProperty").set_element(obj)
+        elif isinstance(obj, SVGElement):
+            self.kernel.open_window("PathProperty").set_element(obj)
+        elif isinstance(obj, LaserOperation):
+            self.kernel.open_window("EngraveProperty").set_operation(obj)
 
     def on_item_changed(self, event):
         """
@@ -2647,7 +2646,6 @@ class wxMeerK40t(Module, wx.App):
         kernel.setting(int, 'language', None)
 
         kernel.add_window('Shutdown', Shutdown)
-        kernel.add_window('ElementProperty', ElementProperty)
         kernel.add_window('PathProperty', PathProperty)
         kernel.add_window('TextProperty', TextProperty)
         kernel.add_window('ImageProperty', ImageProperty)
