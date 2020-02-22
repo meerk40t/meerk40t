@@ -89,6 +89,8 @@ class CameraInterface(wx.Frame):
     def fetch_image(self):
         if self.kernel is None:
             return
+        if self.capture is None:
+            return
         import cv2
         ret, self.frame = self.capture.read()
         if ret:
