@@ -44,10 +44,10 @@ class CameraInterface(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
-        try:
-            self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        except TypeError:
-            self.capture = cv2.VideoCapture(0)
+        # try:
+        #     self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        # except TypeError:
+        self.capture = cv2.VideoCapture(0)
         ret, self.frame = self.capture.read()
         if not ret:
             for attr in dir(self):
