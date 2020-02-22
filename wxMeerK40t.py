@@ -2092,6 +2092,11 @@ class RootNode(list):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
+            duplicate_menu = wx.Menu()
+            for i in range(2, 10):
+                gui.Bind(wx.EVT_MENU, self.menu_passes(node, i),
+                         duplicate_menu.Append(wx.ID_ANY, _("Perform %d passes.") % i, "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(duplicate_menu, _("Passes"))
             if isinstance(node.object, RasterOperation):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
@@ -2472,7 +2477,7 @@ class RootNode(list):
 
     def menu_duplicate(self, node, copies):
         """
-        Menu to break element into subpath.
+        Menu to duplicate elements.
 
         :param node:
         :return:
@@ -2483,6 +2488,22 @@ class RootNode(list):
             self.kernel.elements.extend(adding_elements)
             self.kernel.classify(adding_elements)
             self.set_selected_elements(None)
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_passes(self, node, copies):
+        """
+        Menu to duplicate operation element nodes
+
+        :param node:
+        :return:
+        """
+
+        def specific(event):
+            op = node.object
+            adding_elements = list(op) * copies
+            op.extend(adding_elements)
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
