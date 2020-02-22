@@ -10,14 +10,6 @@ be. The middle language of generated commands from the LaserNodes are able to be
 or methodology. 
 """
 
-COMMAND_RIGHT = b'B'
-COMMAND_LEFT = b'T'
-COMMAND_TOP = b'L'
-COMMAND_BOTTOM = b'R'
-COMMAND_ANGLE = b'M'
-COMMAND_ON = b'D'
-COMMAND_OFF = b'U'
-
 DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
 DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
 DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
@@ -51,6 +43,22 @@ def lhymicro_distance(v):
 class LhymicroInterpreter(Interpreter):
     def __init__(self, device):
         Interpreter.__init__(self, device)
+
+        self.CODE_RIGHT = b'B'
+        self.CODE_LEFT = b'T'
+        self.CODE_TOP = b'L'
+        self.CODE_BOTTOM = b'R'
+        self.CODE_ANGLE = b'M'
+        self.CODE_ON = b'D'
+        self.CODE_OFF = b'U'
+
+        self.device.setting(bool, "flip_x", False)
+        self.device.setting(bool, "flip_y", False)
+        self.device.setting(bool, "home_right", False)
+        self.device.setting(bool, "home_bottom", False)
+        self.device.setting(int, "home_adjust_x", 0)
+        self.device.setting(int, "home_adjust_y", 0)
+
         self.state = STATE_DEFAULT
         self.properties = 0
         self.is_relative = False
@@ -571,14 +579,14 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         if self.state == STATE_DEFAULT:
             controller.write(b'I')
-            controller.write(COMMAND_ON)
+            controller.write(self.CODE_ON)
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller.write(COMMAND_ON)
+            controller.write(self.CODE_ON)
         elif self.state == STATE_CONCAT:
-            controller.write(COMMAND_ON)
+            controller.write(self.CODE_ON)
             controller.write(b'N')
         self.is_on = True
         return True
@@ -589,14 +597,14 @@ class LhymicroInterpreter(Interpreter):
             return False
         if self.state == STATE_DEFAULT:
             controller.write(b'I')
-            controller.write(COMMAND_OFF)
+            controller.write(self.CODE_OFF)
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
-            controller.write(COMMAND_OFF)
+            controller.write(self.CODE_OFF)
         elif self.state == STATE_CONCAT:
-            controller.write(COMMAND_OFF)
+            controller.write(self.CODE_OFF)
             controller.write(b'N')
         self.is_on = False
         return True
@@ -646,10 +654,10 @@ class LhymicroInterpreter(Interpreter):
     def h_switch(self):
         controller = self.device.pipe
         if self.is_prop(DIRECTION_FLAG_LEFT):
-            controller.write(COMMAND_RIGHT)
+            controller.write(self.CODE_RIGHT)
             self.unset_prop(DIRECTION_FLAG_LEFT)
         else:
-            controller.write(COMMAND_LEFT)
+            controller.write(self.CODE_LEFT)
             self.set_prop(DIRECTION_FLAG_LEFT)
         if self.is_prop(DIRECTION_FLAG_TOP):
             self.device.current_y -= self.raster_step
@@ -660,10 +668,10 @@ class LhymicroInterpreter(Interpreter):
     def v_switch(self):
         controller = self.device.pipe
         if self.is_prop(DIRECTION_FLAG_TOP):
-            controller.write(COMMAND_BOTTOM)
+            controller.write(self.CODE_BOTTOM)
             self.unset_prop(DIRECTION_FLAG_TOP)
         else:
-            controller.write(COMMAND_TOP)
+            controller.write(self.CODE_TOP)
             self.set_prop(DIRECTION_FLAG_TOP)
         if self.is_prop(DIRECTION_FLAG_LEFT):
             self.device.current_x -= self.raster_step
@@ -728,24 +736,24 @@ class LhymicroInterpreter(Interpreter):
         self.set_prop(DIRECTION_FLAG_Y)
         if dx > 0:  # Moving right
             if self.is_prop(DIRECTION_FLAG_LEFT):
-                controller.write(COMMAND_RIGHT)
+                controller.write(self.CODE_RIGHT)
                 self.unset_prop(DIRECTION_FLAG_LEFT)
         else:  # Moving left
             if not self.is_prop(DIRECTION_FLAG_LEFT):
-                controller.write(COMMAND_LEFT)
+                controller.write(self.CODE_LEFT)
                 self.set_prop(DIRECTION_FLAG_LEFT)
         if dy > 0:  # Moving bottom
             if self.is_prop(DIRECTION_FLAG_TOP):
-                controller.write(COMMAND_BOTTOM)
+                controller.write(self.CODE_BOTTOM)
                 self.unset_prop(DIRECTION_FLAG_TOP)
         else:  # Moving top
             if not self.is_prop(DIRECTION_FLAG_TOP):
-                controller.write(COMMAND_TOP)
+                controller.write(self.CODE_TOP)
                 self.set_prop(DIRECTION_FLAG_TOP)
         self.device.current_x += dx
         self.device.current_y += dy
         self.check_bounds()
-        controller.write(COMMAND_ANGLE + lhymicro_distance(abs(dy)))
+        controller.write(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
@@ -753,13 +761,13 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
 
         if self.is_prop(DIRECTION_FLAG_LEFT):
-            x_dir = COMMAND_LEFT
+            x_dir = self.CODE_LEFT
         else:
-            x_dir = COMMAND_RIGHT
+            x_dir = self.CODE_RIGHT
         if self.is_prop(DIRECTION_FLAG_TOP):
-            y_dir = COMMAND_TOP
+            y_dir = self.CODE_TOP
         else:
-            y_dir = COMMAND_BOTTOM
+            y_dir = self.CODE_BOTTOM
         if self.is_prop(DIRECTION_FLAG_X):  # FLAG_Y is assumed to be !FLAG_X
             controller.write(y_dir + x_dir)
         else:
@@ -818,7 +826,7 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         self.device.current_x += dx
         if not self.is_right or self.state != STATE_COMPACT:
-            controller.write(COMMAND_RIGHT)
+            controller.write(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
@@ -828,7 +836,7 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         self.device.current_x -= abs(dx)
         if not self.is_left or self.state != STATE_COMPACT:
-            controller.write(COMMAND_LEFT)
+            controller.write(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
             controller.write(lhymicro_distance(abs(dx)))
@@ -838,7 +846,7 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         self.device.current_y += dy
         if not self.is_bottom or self.state != STATE_COMPACT:
-            controller.write(COMMAND_BOTTOM)
+            controller.write(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
@@ -848,7 +856,7 @@ class LhymicroInterpreter(Interpreter):
         controller = self.device.pipe
         self.device.current_y -= abs(dy)
         if not self.is_top or self.state != STATE_COMPACT:
-            controller.write(COMMAND_TOP)
+            controller.write(self.CODE_TOP)
             self.set_top()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))

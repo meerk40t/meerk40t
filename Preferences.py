@@ -75,6 +75,7 @@ class Preferences(wx.Frame):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autobeep, self.checkbox_autobeep)
         # end wxGlade
         self.kernel = None
+        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
@@ -91,9 +92,17 @@ class Preferences(wx.Frame):
                     value.Enable(False)
             dlg = wx.MessageDialog(None, _("You do not have a selected device."),
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
+            dlg.ShowModal()
             dlg.Destroy()
             return
+
+        self.device.setting(bool, "flip_x", False)
+        self.device.setting(bool, "flip_y", False)
+        self.device.setting(bool, "home_right", False)
+        self.device.setting(bool, "home_bottom", False)
+        self.device.setting(int, "home_adjust_x", 0)
+        self.device.setting(int, "home_adjust_y", 0)
+
         self.device.setting(bool, "mock", False)
         self.device.setting(bool, "autobeep", False)
         self.device.setting(bool, "autohome", False)
@@ -122,7 +131,7 @@ class Preferences(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
         self.SetTitle(_("Preferences"))
-        self.combobox_board.SetToolTip(_("Select the board to use. This has an effects the speedcodes used."))
+        self.combobox_board.SetToolTip(_("Select the board to use. This has affects the speedcodes used."))
         self.combobox_board.SetSelection(0)
         self.checkbox_flip_x.SetToolTip(_("Flip the Right and Left commands sent to the controller"))
         self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
@@ -225,36 +234,43 @@ class Preferences(wx.Frame):
         self.Layout()
         # end wxGlade
 
+    def calc_home_position(self):
+        x = 0
+        y = 0
+        if self.device.flip_x:
+            x = int(self.device.bed_width * 39.3701)
+        if self.device.flip_y:
+            y = int(self.device.bed_height * 39.3701)
+        return x, y
+
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.board = self.combobox_board.GetValue()
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_flip_x' not implemented!")
-        event.Skip()
+        self.device.flip_x = self.checkbox_flip_x
 
     def on_check_home_right(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_home_right' not implemented!")
-        event.Skip()
+        self.device.home_right = self.checkbox_home_right
 
     def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_flip_y' not implemented!")
-        event.Skip()
+        self.device.flip_y = self.checkbox_flip_y
 
     def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_home_bottom' not implemented!")
-        event.Skip()
+        self.device.home_bottom = self.checkbox_home_bottom
 
     def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'spin_on_home_x' not implemented!")
-        event.Skip()
+        self.device.home_adjust_x = self.spin_home_x.GetValue()
 
     def spin_on_home_y(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'spin_on_home_y' not implemented!")
-        event.Skip()
+        self.device.home_adjust_y = self.spin_home_y.GetValue()
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_button_set_home_current' not implemented!")
-        event.Skip()
+        current_x = self.device.current_x
+        current_y = self.device.current_y
+        self.device.home_adjust_x = current_x
+        self.device.home_adjust_y = current_y
+        self.spin_home_x.SetValue(self.device.home_adjust_x)
+        self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.bed_width = int(self.spin_bedwidth.GetValue())
