@@ -116,6 +116,10 @@ class Preferences(wx.Frame):
         self.device.setting(int, "usb_address", -1)
         self.device.setting(int, "usb_version", -1)
 
+        self.checkbox_flip_x.SetValue(self.device.flip_x)
+        self.checkbox_flip_y.SetValue(self.device.flip_y)
+        self.checkbox_home_right.SetValue(self.device.home_right)
+        self.checkbox_home_bottom.SetValue(self.device.home_bottom)
         self.checkbox_mock_usb.SetValue(self.device.mock)
         self.checkbox_autobeep.SetValue(self.device.autobeep)
         self.checkbox_autohome.SetValue(self.device.autohome)
@@ -127,6 +131,8 @@ class Preferences(wx.Frame):
         self.spin_device_bus.SetValue(self.device.usb_bus)
         self.spin_device_address.SetValue(self.device.usb_address)
         self.spin_device_version.SetValue(self.device.usb_version)
+        self.spin_home_x.SetValue(self.device.home_adjust_x)
+        self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
@@ -237,9 +243,9 @@ class Preferences(wx.Frame):
     def calc_home_position(self):
         x = 0
         y = 0
-        if self.device.flip_x:
+        if self.device.home_right:
             x = int(self.device.bed_width * 39.3701)
-        if self.device.flip_y:
+        if self.device.home_bottom:
             y = int(self.device.bed_height * 39.3701)
         return x, y
 
@@ -247,16 +253,18 @@ class Preferences(wx.Frame):
         self.device.board = self.combobox_board.GetValue()
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.flip_x = self.checkbox_flip_x
+        self.device.flip_x = self.checkbox_flip_x.GetValue()
+        self.device.execute("Update Codes")
 
     def on_check_home_right(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_right = self.checkbox_home_right
+        self.device.home_right = self.checkbox_home_right.GetValue()
 
     def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.flip_y = self.checkbox_flip_y
+        self.device.flip_y = self.checkbox_flip_y.GetValue()
+        self.kernel.execute("Update Codes")
 
     def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_bottom = self.checkbox_home_bottom
+        self.device.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.home_adjust_x = self.spin_home_x.GetValue()
@@ -265,8 +273,9 @@ class Preferences(wx.Frame):
         self.device.home_adjust_y = self.spin_home_y.GetValue()
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
-        current_x = self.device.current_x
-        current_y = self.device.current_y
+        x, y = self.calc_home_position()
+        current_x = self.device.current_x - x
+        current_y = self.device.current_y - y
         self.device.home_adjust_x = current_x
         self.device.home_adjust_y = current_y
         self.spin_home_x.SetValue(self.device.home_adjust_x)

@@ -43,6 +43,12 @@ def lhymicro_distance(v):
 class LhymicroInterpreter(Interpreter):
     def __init__(self, device):
         Interpreter.__init__(self, device)
+        self.device.setting(bool, "flip_x", False)
+        self.device.setting(bool, "flip_y", False)
+        self.device.setting(bool, "home_right", False)
+        self.device.setting(bool, "home_bottom", False)
+        self.device.setting(int, "home_adjust_x", 0)
+        self.device.setting(int, "home_adjust_y", 0)
 
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
@@ -51,13 +57,7 @@ class LhymicroInterpreter(Interpreter):
         self.CODE_ANGLE = b'M'
         self.CODE_ON = b'D'
         self.CODE_OFF = b'U'
-
-        self.device.setting(bool, "flip_x", False)
-        self.device.setting(bool, "flip_y", False)
-        self.device.setting(bool, "home_right", False)
-        self.device.setting(bool, "home_bottom", False)
-        self.device.setting(int, "home_adjust_x", 0)
-        self.device.setting(int, "home_adjust_y", 0)
+        self.update_codes()
 
         self.state = STATE_DEFAULT
         self.properties = 0
@@ -85,9 +85,24 @@ class LhymicroInterpreter(Interpreter):
 
         device.add_control("Realtime Pause", self.pause)
         device.add_control("Realtime Resume", self.resume)
+        device.add_control("Update Codes", self.update_codes)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
+
+    def update_codes(self):
+        if not self.device.flip_x:
+            self.CODE_RIGHT = b'B'
+            self.CODE_LEFT = b'T'
+        else:
+            self.CODE_RIGHT = b'T'
+            self.CODE_LEFT = b'B'
+        if not self.device.flip_y:
+            self.CODE_TOP = b'L'
+            self.CODE_BOTTOM = b'R'
+        else:
+            self.CODE_TOP = b'L'
+            self.CODE_BOTTOM = b'R'
 
     def on_plot(self, x, y, on):
         self.device.signal('interpreter;plot', (x, y, on))
@@ -679,16 +694,35 @@ class LhymicroInterpreter(Interpreter):
             self.device.current_x += self.raster_step
         self.is_on = False
 
+    def calc_home_position(self):
+        x = 0
+        y = 0
+        if self.device.home_right:
+            x = int(self.device.bed_width * 39.3701)
+        if self.device.home_bottom:
+            y = int(self.device.bed_height * 39.3701)
+        return x, y
+
     def home(self):
+        x, y = self.calc_home_position()
         controller = self.device.pipe
         self.to_default_mode()
         controller.write(b'IPP\n')
         old_x = self.device.current_x
         old_y = self.device.current_y
-        self.device.current_x = 0
-        self.device.current_y = 0
+        self.device.current_x = x
+        self.device.current_y = y
         self.reset_modes()
         self.state = STATE_DEFAULT
+        adjust_x = self.device.home_adjust_x
+        adjust_y = self.device.home_adjust_y
+        if adjust_x != 0 or adjust_y != 0:
+            # Perform post home adjustment.
+            self.move_relative(adjust_x, adjust_y)
+            # Erase adjustment
+            self.device.current_x = x
+            self.device.current_y = y
+
         self.device.signal('interpreter;mode', self.state)
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y, old_x, old_y))
 
