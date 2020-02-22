@@ -267,17 +267,17 @@ class Preferences(wx.Frame):
         self.device.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_adjust_x = self.spin_home_x.GetValue()
+        self.device.home_adjust_x = int(self.spin_home_x.GetValue())
 
     def spin_on_home_y(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_adjust_y = self.spin_home_y.GetValue()
+        self.device.home_adjust_y = int(self.spin_home_y.GetValue())
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
         x, y = self.calc_home_position()
         current_x = self.device.current_x - x
         current_y = self.device.current_y - y
-        self.device.home_adjust_x = current_x
-        self.device.home_adjust_y = current_y
+        self.device.home_adjust_x = int(current_x)
+        self.device.home_adjust_y = int(current_y)
         self.spin_home_x.SetValue(self.device.home_adjust_x)
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
