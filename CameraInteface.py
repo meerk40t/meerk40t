@@ -1,4 +1,5 @@
 import wx
+
 from icons import *
 
 _ = wx.GetTranslation
@@ -94,9 +95,14 @@ class CameraInterface(wx.Frame):
         ret, self.frame = self.capture.read()
         if ret:
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
-            self._Buffer.CopyFromBuffer(self.frame)
-            self.display_camera.Refresh(True)
-            wx.CallAfter(self.Update)
+            wx.CallAfter(self.update_in_gui_thread)
+
+    def update_in_gui_thread(self):
+        if self.kernel is None:
+            return
+        self._Buffer.CopyFromBuffer(self.frame)
+        self.display_camera.Refresh(True)
+        wx.CallAfter(self.Update)
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
