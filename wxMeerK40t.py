@@ -936,7 +936,7 @@ class MeerK40t(wx.Frame):
             self.execute_string_action(*args)
 
     def focus_on_elements(self):
-        bbox = self.root.bbox(self.kernel.elements)
+        bbox = self.root.bbox()
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
