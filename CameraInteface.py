@@ -56,7 +56,7 @@ class CameraInterface(wx.Frame):
                     value.Enable(False)
             dlg = wx.MessageDialog(None, _("No Webcam found."),
                                    _("Error"), wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
+            dlg.ShowModal()
             dlg.Destroy()
             self.capture = None
             return
@@ -90,22 +90,19 @@ class CameraInterface(wx.Frame):
         self.job = self.kernel.cron.add_job(self.fetch_image)
 
     def fetch_image(self):
-        if self.kernel is None:
-            return
-        if self.capture is None:
+        if self.kernel is None or self.capture is None:
             return
         import cv2
         ret, self.frame = self.capture.read()
         if ret:
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+            self._Buffer.CopyFromBuffer(self.frame)
             wx.CallAfter(self.update_in_gui_thread)
 
     def update_in_gui_thread(self):
         if self.kernel is None:
             return
-        self._Buffer.CopyFromBuffer(self.frame)
         self.display_camera.Refresh(True)
-        wx.CallAfter(self.Update)
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties

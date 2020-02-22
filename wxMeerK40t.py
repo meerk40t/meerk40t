@@ -695,7 +695,6 @@ class MeerK40t(wx.Frame):
             return
         self.update_buffer_ui_thread()
         self.scene.Refresh()
-        # self.Refresh()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
 
