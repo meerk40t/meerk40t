@@ -81,7 +81,6 @@ class CameraInterface(wx.Frame):
         event.Skip()  # Call destroy.
         self.job.cancel()
 
-
     def set_kernel(self, kernel):
         self.kernel = kernel
         self.job = self.kernel.cron.add_job(self.fetch_image)
@@ -96,8 +95,8 @@ class CameraInterface(wx.Frame):
         if ret:
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             self._Buffer.CopyFromBuffer(self.frame)
-
-            self.display_camera.Refresh()
+            self.display_camera.Refresh(True)
+            wx.CallAfter(self.Update)
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
