@@ -103,7 +103,7 @@ class JobInfo(wx.Frame):
     def interrupt_popup(self):
         dlg = wx.MessageDialog(None, _("Spooling Interrupted. Press OK to Continue."),
                                _("Interrupt"), wx.OK)
-        result = dlg.ShowModal()
+        dlg.ShowModal()
         dlg.Destroy()
 
     def set_operations(self, operations):

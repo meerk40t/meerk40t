@@ -32,7 +32,7 @@ class CameraInterface(wx.Frame):
         self.width = -1
         self.height = -1
         self.kernel = None
-        self.buffer = None
+        self._Buffer = None
         try:
             import cv2
         except ImportError:
@@ -60,28 +60,44 @@ class CameraInterface(wx.Frame):
             return
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.height, self.width = self.frame.shape[:2]
-        self.buffer = wx.Bitmap.FromBuffer(self.width, self.height, self.frame)
+        self._Buffer = wx.Bitmap.FromBuffer(self.width, self.height, self.frame)
         self.display_camera.SetSize((self.width, self.height))
+        self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
+        self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
         self.job = None
 
+    def on_erase(self, event):
+        pass
+
+    def on_paint(self, event):
+        try:
+            wx.BufferedPaintDC(self.display_camera, self._Buffer)
+        except RuntimeError:
+            pass
+
     def on_close(self, event):
+        if self.capture is not None:
+            self.capture.release()
         self.kernel.mark_window_closed("CameraInterface")
+        self.kernel = None
         event.Skip()  # Call destroy.
         self.job.cancel()
+
 
     def set_kernel(self, kernel):
         self.kernel = kernel
         self.job = self.kernel.cron.add_job(self.fetch_image)
 
     def fetch_image(self):
+        if self.kernel is None:
+            return
         import cv2
         ret, self.frame = self.capture.read()
         if ret:
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
-            self.buffer.CopyFromBuffer(self.frame)
-            self.display_camera.SetBitmap(self.buffer)
-            self.Refresh()
-            self.Update()
+            self._Buffer.CopyFromBuffer(self.frame)
+
+            self.display_camera.Refresh()
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
