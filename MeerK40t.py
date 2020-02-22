@@ -1,13 +1,30 @@
 import sys
 import argparse
+
 from DefaultModules import *
 from Kernel import *
 
+try:
+    from math import tau
+except ImportError:
+    from math import pi
+
+    tau = pi * 2
+
+"""
+Laser software for the Stock-LIHUIYU laserboard.
+
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed 
+open-source laser cutting software. See https://github.com/meerk40t/meerk40t
+for full details.
+
+"""
+
 kernel = Kernel()
 
-# TODO: Needs an option to change default speed, etc, parameters.
-# TODO: Needs home command / lock, unlock.
-# TODO: Needs command for load special module.
+# TODO: CLI Needs an option to change default speed, etc, parameters.
+# TODO: CLI Needs home command / lock, unlock.
+# TODO: CLI Needs command for load special module.
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')

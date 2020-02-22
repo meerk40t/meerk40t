@@ -39,14 +39,11 @@ class CameraInterface(wx.Frame):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
                     value.Enable(False)
-            dlg = wx.MessageDialog(None, _("This Interface Requires OpenCV: 'pip install opencv-python-headless'"),
-                                   _("Error"), wx.OK | wx.ICON_ERROR)
+            dlg = wx.MessageDialog(None, _("If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
+                                   _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
             return
-        # try:
-        #     self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        # except TypeError:
         self.capture = cv2.VideoCapture(0)
         ret, self.frame = self.capture.read()
         if not ret:
@@ -93,11 +90,14 @@ class CameraInterface(wx.Frame):
         if self.kernel is None or self.capture is None:
             return
         import cv2
-        ret, self.frame = self.capture.read()
-        if ret:
-            self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
-            self._Buffer.CopyFromBuffer(self.frame)
-            wx.CallAfter(self.update_in_gui_thread)
+        try:
+            ret, self.frame = self.capture.read()
+            if ret:
+                self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+                self._Buffer.CopyFromBuffer(self.frame)
+                wx.CallAfter(self.update_in_gui_thread)
+        except RuntimeError:
+            pass  # Failed to gain access to raw bitmap data: skip frame.
 
     def update_in_gui_thread(self):
         if self.kernel is None:

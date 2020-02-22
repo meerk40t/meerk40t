@@ -39,13 +39,6 @@ from ZMatrix import ZMatrix
 from icons import *
 from svgelements import *
 
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = pi * 2
-
 """
 Laser software for the Stock-LIHUIYU laserboard.
 
@@ -53,13 +46,15 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
 open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
+wxMeerK40t is the primary gui addon for MeerK40t. It requires wxPython for the interface.
+The Transformations work in Windows for wxPython 4.0+ and OSX/Linux wxPython 4.1+.
+
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.5.1"
+MEERK40T_VERSION = "0.5.2"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
-
 
 class IdInc:
     """
@@ -125,6 +120,7 @@ ID_MENU_SETTINGS = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
+ID_MENU_CAMERA = idinc.new()
 ID_MENU_USB = idinc.new()
 ID_MENU_SPOOLER = idinc.new()
 ID_MENU_JOB = idinc.new()
@@ -220,6 +216,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
+        wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
 
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
@@ -261,31 +258,32 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
-        self.Bind(wx.EVT_MENU, self.open_about, id=ID_MENU_ABOUT)
-        self.Bind(wx.EVT_MENU, self.open_alignment, id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, self.open_devices, id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, self.open_keymap, id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, self.open_preferences, id=ID_MENU_PREFERENCES)
-        self.Bind(wx.EVT_MENU, self.open_settings, id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, self.open_rotary, id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, self.open_navigation, id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, self.open_controller, id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, self.open_usb, id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, self.open_spooler, id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, self.open_job, id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("About"), id=ID_MENU_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Alignment"), id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("CameraInterface"), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("DeviceManager"), id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Keymap"), id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Preferences"), id=ID_MENU_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Settings"), id=ID_MENU_SETTINGS)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Rotary"), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Navigation"), id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Controller"), id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("UsbConnect"), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobSpooler"), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
-        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.open_job, id=ID_JOB)
+        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_JOB)
 
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_usb, id=ID_USB)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_navigation, id=ID_NAV)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_controller, id=ID_CONTROLLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_preferences, id=ID_PREFERENCES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_devices, id=ID_DEVICES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.open_spooler, id=ID_SPOOLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("UsbConnect"), id=ID_USB)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Navigation"), id=ID_NAV)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Controller"), id=ID_CONTROLLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Preferences"), id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("DeviceManager"), id=ID_DEVICES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("JobSpooler"), id=ID_SPOOLER)
 
         self.main_statusbar = self.CreateStatusBar(3)
 
@@ -713,8 +711,12 @@ class MeerK40t(wx.Frame):
             dc.SetFont(font)
             dc.SetPen(wx.BLACK_PEN)
             s = dc.GetSize() / 2
-            dc.DrawText(_("Skipping scene draw. Current OS/wxPython cannot use TransformMatrix. Needs wxPython 4.1+"),
+            dc.DrawText(_("Current OS/wxPython cannot use TransformMatrix."),
+                        s[0] - 350, s[1] - 40)
+            dc.DrawText(_("OSX/Linux will need wxPython 4.1+"),
                         s[0] - 350, s[1])
+            dc.DrawText(_("Skipping scene draw."),
+                        s[0] - 350, s[1] + 40)
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc
@@ -1311,114 +1313,6 @@ class MeerK40t(wx.Frame):
             yield COMMAND_WAIT_BUFFER_EMPTY
 
         self.kernel.device.spooler.send_job(home_dot_test)
-
-    def open_settings(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open preference dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Settings")
-
-    def open_preferences(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open preference dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Preferences")
-
-    def open_rotary(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open rotary dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Rotary")
-
-    def open_about(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open About dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("About")
-
-    def open_alignment(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Alignment Ally dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Alignment")
-
-    def open_keymap(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Keymap dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Keymap")
-
-    def open_devices(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open DeviceManager dialog
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("DeviceManager")
-
-    def open_usb(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open USB Log dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("UsbConnect")
-
-    def open_navigation(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Navigation dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Navigation")
-
-    def open_controller(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Controller dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("Controller")
-
-    def open_spooler(self, event):  # wxGlade: MeerK40t.<event_handler>
-        """
-        Open Job Spooler.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("JobSpooler")
-
-    def open_job(self, event=None):
-        """
-        Open Execute Job dialog.
-
-        :param event:
-        :return:
-        """
-        self.kernel.open_window("JobInfo").set_operations(self.kernel.operations)
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
