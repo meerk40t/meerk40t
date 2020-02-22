@@ -18,10 +18,10 @@ class Preferences(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((395, 424))
         self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
-        self.checkbox_1 = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
-        self.checkbox_3 = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
-        self.checkbox_2 = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
-        self.checkbox_4 = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
+        self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
+        self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Homes Right"))
+        self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
+        self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Homes Bottom"))
         self.checkbox_mock_usb = wx.CheckBox(self, wx.ID_ANY, _("Mock USB Connection Mode"))
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
@@ -40,10 +40,10 @@ class Preferences(wx.Frame):
         self.__do_layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combobox_boardtype, self.combobox_board)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_1)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_3)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_2)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_4)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_flip_x)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_flip_y)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_mock_usb, self.checkbox_mock_usb)
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
         self.Bind(wx.EVT_TEXT, self.spin_on_device_index, self.spin_device_index)
@@ -75,6 +75,7 @@ class Preferences(wx.Frame):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autobeep, self.checkbox_autobeep)
         # end wxGlade
         self.kernel = None
+        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
@@ -91,9 +92,17 @@ class Preferences(wx.Frame):
                     value.Enable(False)
             dlg = wx.MessageDialog(None, _("You do not have a selected device."),
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
+            dlg.ShowModal()
             dlg.Destroy()
             return
+
+        self.device.setting(bool, "flip_x", False)
+        self.device.setting(bool, "flip_y", False)
+        self.device.setting(bool, "home_right", False)
+        self.device.setting(bool, "home_bottom", False)
+        self.device.setting(int, "home_adjust_x", 0)
+        self.device.setting(int, "home_adjust_y", 0)
+
         self.device.setting(bool, "mock", False)
         self.device.setting(bool, "autobeep", False)
         self.device.setting(bool, "autohome", False)
@@ -107,6 +116,10 @@ class Preferences(wx.Frame):
         self.device.setting(int, "usb_address", -1)
         self.device.setting(int, "usb_version", -1)
 
+        self.checkbox_flip_x.SetValue(self.device.flip_x)
+        self.checkbox_flip_y.SetValue(self.device.flip_y)
+        self.checkbox_home_right.SetValue(self.device.home_right)
+        self.checkbox_home_bottom.SetValue(self.device.home_bottom)
         self.checkbox_mock_usb.SetValue(self.device.mock)
         self.checkbox_autobeep.SetValue(self.device.autobeep)
         self.checkbox_autohome.SetValue(self.device.autohome)
@@ -118,20 +131,18 @@ class Preferences(wx.Frame):
         self.spin_device_bus.SetValue(self.device.usb_bus)
         self.spin_device_address.SetValue(self.device.usb_address)
         self.spin_device_version.SetValue(self.device.usb_version)
+        self.spin_home_x.SetValue(self.device.home_adjust_x)
+        self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
         self.SetTitle(_("Preferences"))
-        self.combobox_board.SetToolTip(_("Select the board to use. This has an effects the speedcodes used."))
+        self.combobox_board.SetToolTip(_("Select the board to use. This has affects the speedcodes used."))
         self.combobox_board.SetSelection(0)
-        self.checkbox_1.SetToolTip(_("Flip the Right and Left commands sent to the controller"))
-        self.checkbox_1.Enable(False)
-        self.checkbox_3.SetToolTip(_("Indicates the device Home is on the right"))
-        self.checkbox_3.Enable(False)
-        self.checkbox_2.SetToolTip(_("Flip the Top and Bottom commands sent to the controller"))
-        self.checkbox_2.Enable(False)
-        self.checkbox_4.SetToolTip(_("Indicates the device Home is on the bottom"))
-        self.checkbox_4.Enable(False)
+        self.checkbox_flip_x.SetToolTip(_("Flip the Right and Left commands sent to the controller"))
+        self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
+        self.checkbox_flip_y.SetToolTip(_("Flip the Top and Bottom commands sent to the controller"))
+        self.checkbox_home_bottom.SetToolTip(_("Indicates the device Home is on the bottom"))
         self.checkbox_mock_usb.SetToolTip(
             _("DEBUG. Without a K40 connected continue to process things as if there was one."))
         self.spin_device_index.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
@@ -140,12 +151,9 @@ class Preferences(wx.Frame):
         self.spin_device_version.SetToolTip(_("-1 match anything. 0-255 match exactly that value."))
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
-        self.spin_home_x.Enable(False)
         self.spin_home_y.SetMinSize((80, 23))
         self.spin_home_y.SetToolTip(_("Translate Home Y"))
-        self.spin_home_y.Enable(False)
         self.button_home_by_current.SetToolTip(_("Set Home Position based on the current position"))
-        self.button_home_by_current.Enable(False)
         self.spin_bedwidth.SetMinSize((80, 23))
         self.spin_bedwidth.SetToolTip(_("Width of the laser bed."))
         self.spin_bedheight.SetMinSize((80, 23))
@@ -173,11 +181,11 @@ class Preferences(wx.Frame):
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
         sizer_board.Add(self.combobox_board, 0, 0, 0)
         sizer_board.Add((20, 20), 0, 0, 0)
-        sizer_17.Add(self.checkbox_1, 0, 0, 0)
-        sizer_17.Add(self.checkbox_3, 0, 0, 0)
+        sizer_17.Add(self.checkbox_flip_x, 0, 0, 0)
+        sizer_17.Add(self.checkbox_home_right, 0, 0, 0)
         sizer_board.Add(sizer_17, 1, wx.EXPAND, 0)
-        sizer_16.Add(self.checkbox_2, 0, 0, 0)
-        sizer_16.Add(self.checkbox_4, 0, 0, 0)
+        sizer_16.Add(self.checkbox_flip_y, 0, 0, 0)
+        sizer_16.Add(self.checkbox_home_bottom, 0, 0, 0)
         sizer_board.Add(sizer_16, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_board, 1, wx.EXPAND, 0)
         sizer_usb.Add(self.checkbox_mock_usb, 0, 0, 0)
@@ -232,36 +240,46 @@ class Preferences(wx.Frame):
         self.Layout()
         # end wxGlade
 
+    def calc_home_position(self):
+        x = 0
+        y = 0
+        if self.device.home_right:
+            x = int(self.device.bed_width * 39.3701)
+        if self.device.home_bottom:
+            y = int(self.device.bed_height * 39.3701)
+        return x, y
+
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.board = self.combobox_board.GetValue()
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_flip_x' not implemented!")
-        event.Skip()
+        self.device.flip_x = self.checkbox_flip_x.GetValue()
+        self.device.execute("Update Codes")
 
     def on_check_home_right(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_home_right' not implemented!")
-        event.Skip()
+        self.device.home_right = self.checkbox_home_right.GetValue()
 
     def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_flip_y' not implemented!")
-        event.Skip()
+        self.device.flip_y = self.checkbox_flip_y.GetValue()
+        self.kernel.execute("Update Codes")
 
     def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_check_home_bottom' not implemented!")
-        event.Skip()
+        self.device.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'spin_on_home_x' not implemented!")
-        event.Skip()
+        self.device.home_adjust_x = int(self.spin_home_x.GetValue())
 
     def spin_on_home_y(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'spin_on_home_y' not implemented!")
-        event.Skip()
+        self.device.home_adjust_y = int(self.spin_home_y.GetValue())
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
-        print("Event handler 'on_button_set_home_current' not implemented!")
-        event.Skip()
+        x, y = self.calc_home_position()
+        current_x = self.device.current_x - x
+        current_y = self.device.current_y - y
+        self.device.home_adjust_x = int(current_x)
+        self.device.home_adjust_y = int(current_y)
+        self.spin_home_x.SetValue(self.device.home_adjust_x)
+        self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.bed_width = int(self.spin_bedwidth.GetValue())

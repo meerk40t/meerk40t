@@ -72,6 +72,8 @@ class LaserRender:
         return p
 
     def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
+        if bounds is None:
+            return None
         xmin, ymin, xmax, ymax = bounds
 
         image_width = int(xmax - xmin)
@@ -132,9 +134,10 @@ class LaserRender:
         return image
 
     def set_pen(self, gc, stroke, width=1.0):
-        c = swizzlecolor(stroke)
+        c = stroke
         if c is not None and c != 'none':
-            self.color.SetRGB(c)
+            swizzle_color = swizzlecolor(c)
+            self.color.SetRGB(swizzle_color)
             self.pen.SetColour(self.color)
             self.pen.SetWidth(width)
             gc.SetPen(self.pen)

@@ -41,6 +41,10 @@ class KernelJob:
     def scheduled(self):
         return self.next_run is not None and time.time() >= self.next_run
 
+    def cancel(self):
+        self.times = -1
+        self.scheduler.jobs.remove(self)
+
     def run(self):
         """
         Scheduler Job: updates the values for next_run and times. Removing if necessary.
@@ -56,6 +60,8 @@ class KernelJob:
             self.times = self.times - 1
             if self.times <= 0:
                 self.scheduler.jobs.remove(self)
+            if self.times < 0:
+                return
         if isinstance(self.args, tuple):
             self.process(*self.args)
         else:
@@ -595,7 +601,7 @@ class Kernel:
         self.last_message = {}
         self.queue_lock = Lock()
         self.message_queue = {}
-        self.is_queue_processing = False
+        self._is_queue_processing = False
 
         self.run_later = lambda listener, message: listener(message)
         self.shutdown_watcher = lambda i, e, o: True
@@ -619,14 +625,14 @@ class Kernel:
         self.queue_lock.release()
 
     def delegate_messages(self):
-        if self.is_queue_processing:
+        if self._is_queue_processing:
             return
         self.run_later(self.process_queue, None)
 
     def process_queue(self, *args):
         if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
             return
-        self.is_queue_processing = True
+        self._is_queue_processing = True
         add = None
         remove = None
         self.queue_lock.acquire(True)
@@ -666,7 +672,7 @@ class Kernel:
                 for listener in listeners:
                     listener(*message)
             self.last_message[code] = message
-        self.is_queue_processing = False
+        self._is_queue_processing = False
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):

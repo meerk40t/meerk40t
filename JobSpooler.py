@@ -151,17 +151,17 @@ class JobSpooler(wx.Frame):
                     settings = []
                     if t == 'path':
                         self.list_job_spool.SetItem(m, 4, _("Path"))
-                        settings.append(_("power=%.0f" % (e.power)))
+                        settings.append(_("power=%.0f") % (e.power))
                     elif t == 'image':
                         self.list_job_spool.SetItem(m, 4, _("Raster"))
-                        settings.append(_("step=%d" % (e.raster_step)))
+                        settings.append(_("step=%d") % (e.raster_step))
                         if e['overscan'] is not None:
                             try:
-                                settings.append(_("overscan=%d" % int(e['overscan'])))
+                                settings.append(_("overscan=%d") % int(e['overscan']))
                             except ValueError:
                                 pass
-                    if t in ('image', 'path', 'text'):
-                        self.list_job_spool.SetItem(m, 5, _("%.1fmm/s" % (e.speed)))
+                    if isinstance(e, LaserOperation):
+                        self.list_job_spool.SetItem(m, 5, _("%.1fmm/s") % (e.speed))
                     settings = " ".join(settings)
                     self.list_job_spool.SetItem(m, 6, settings)
                     self.list_job_spool.SetItem(m, 7, _("n/a"))
@@ -181,7 +181,7 @@ class JobSpooler(wx.Frame):
         except IndexError:
             return
         menu = wx.Menu()
-        convert = menu.Append(wx.ID_ANY, _("Remove %s" % str(element)[:16]), "", wx.ITEM_NORMAL)
+        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)

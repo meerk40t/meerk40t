@@ -1,7 +1,115 @@
+
 from svgelements import *
+from LaserCommandConstants import *
+from LaserOperation import LaserOperation, RasterOperation, CutOperation, EngraveOperation
+from LaserRender import LaserRender
 
 
-class ElementFunctions:
+class OperationPreprocessor:
+
+    def __init__(self):
+        self.device = None
+        self.kernel = None
+        self.commands = []
+        self.operations = None
+
+    def process(self, operations):
+        self.operations = operations
+        if self.device.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
+
+    def execute(self):
+        # Using copy of commands, so commands can add ops.
+        commands = self.commands[:]
+        self.commands = []
+        for cmd in commands:
+            cmd()
+
+    def conditional_jobadd_make_raster(self):
+        for op in self.operations:
+            if isinstance(op, RasterOperation):
+                if len(op) == 0:
+                    continue
+                if len(op) == 1 and not isinstance(op[0], SVGImage):
+                    continue
+                if len(op) > 1:
+                    self.jobadd_make_raster()
+                    return True
+        return False
+
+    def jobadd_make_raster(self):
+        def make_image():
+            for op in self.operations:
+                if isinstance(op, RasterOperation):
+                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                        continue
+                    renderer = LaserRender(self.kernel)
+                    bounds = OperationPreprocessor.bounding_box(op)
+                    if bounds is None:
+                        return None
+                    xmin, ymin, xmax, ymax = bounds
+
+                    image = renderer.make_raster(op, bounds, step=op.raster_step)
+                    image_element = SVGImage(image=image)
+                    image_element.transform.post_translate(xmin, ymin)
+                    op.clear()
+                    op.append(image_element)
+
+        self.commands.append(make_image)
+
+    def conditional_jobadd_actualize_image(self):
+        for op in self.operations:
+            if isinstance(op, RasterOperation):
+                for elem in op:
+                    if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                        self.jobadd_actualize_image()
+                        return
+
+    def jobadd_actualize_image(self):
+        def actualize():
+            for op in self.operations:
+                if isinstance(op, RasterOperation):
+                    for elem in op:
+                        if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                            OperationPreprocessor.make_actual(elem, op.raster_step)
+        self.commands.append(actualize)
+
+    def conditional_jobadd_scale_rotary(self):
+        if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
+            self.jobadd_scale_rotary()
+
+    def jobadd_scale_rotary(self):
+        def scale_for_rotary():
+            p = self.device
+            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
+            for o in self.operations:
+                if isinstance(o, LaserOperation):
+                    for e in o:
+                        try:
+                            e *= scale_str
+                        except AttributeError:
+                            pass
+            self.conditional_jobadd_actualize_image()
+
+        self.commands.append(scale_for_rotary)
+
+    @staticmethod
+    def home():
+        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_HOME
+
+    @staticmethod
+    def wait():
+        wait_amount = 5.0
+        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT, wait_amount
+
+    @staticmethod
+    def beep():
+        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_BEEP
 
     @staticmethod
     def needs_actualization(image_element, step_level=None):
@@ -36,7 +144,7 @@ class ElementFunctions:
         pil_image = image_element.image
         image_element.cache = None
         m = image_element.transform
-        bbox = ElementFunctions.bounding_box([image_element])
+        bbox = OperationPreprocessor.bounding_box([image_element])
         tx = bbox[0]
         ty = bbox[1]
         m.post_translate(-tx, -ty)
@@ -74,7 +182,6 @@ class ElementFunctions:
         m.post_scale(step_level, step_level)
         m.post_translate(tx, ty)
         image_element.image = pil_image
-
 
     @staticmethod
     def reify_matrix(self):

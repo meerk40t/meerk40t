@@ -13,11 +13,12 @@ from About import About
 from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
+from CameraInteface import CameraInterface
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
-from ElementFunctions import ElementFunctions
-from ElementProperty import ElementProperty
+from EngraveProperty import EngraveProperty
+from ImageProperty import ImageProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
 from Kernel import *
@@ -25,10 +26,14 @@ from Keymap import Keymap
 from LaserOperation import *
 from LaserRender import LaserRender, swizzlecolor
 from Navigation import Navigation
+from OperationPreprocessor import OperationPreprocessor
+from PathProperty import PathProperty
 from Preferences import Preferences
+from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
 from Shutdown import Shutdown
+from TextProperty import TextProperty
 from UsbConnect import UsbConnect
 from ZMatrix import ZMatrix
 from icons import *
@@ -51,7 +56,7 @@ for full details.
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.5.0"
+MEERK40T_VERSION = "0.5.1"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -350,6 +355,7 @@ class MeerK40t(wx.Frame):
         self.kernel = None
         self.root = None  # RootNode value, must have kernel for init.
         self.device_listening = None
+        self.background = None
 
     def notify_change(self):
         self.kernel.signal('rebuild_tree', 0)
@@ -462,7 +468,7 @@ class MeerK40t(wx.Frame):
 
     def on_rebuild_tree_request(self, *args):
         """
-        Called by 'elements' change. To refresh tree.
+        Called by 'rebuild_tree' change. To refresh tree.
 
         :param args:
         :return:
@@ -470,23 +476,32 @@ class MeerK40t(wx.Frame):
         self.root.rebuild_tree()
         self.request_refresh()
 
+    def on_refresh_scene(self, *args):
+        """
+        Called by 'refresh_scene' change. To refresh tree.
+
+        :param args:
+        :return:
+        """
+        self.request_refresh()
+
     def on_usb_error(self, value):
         dlg = wx.MessageDialog(None, _("All attempts to connect to USB have failed."),
                                _("Usb Connection Problem."), wx.OK | wx.ICON_WARNING)
-        result = dlg.ShowModal()
+        dlg.ShowModal()
         dlg.Destroy()
 
     def on_usb_status(self, value):
         if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Usb: %s" % value), 0)
+            self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
     def on_pipe_state(self, value):
         if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Controller: %s" % self.kernel.get_text_thread_state(value)), 1)
+            self.main_statusbar.SetStatusText(_("Controller: %s") % self.kernel.get_text_thread_state(value), 1)
 
     def on_spooler_state(self, value):
         if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Spooler: %s" % self.kernel.get_text_thread_state(value)), 2)
+            self.main_statusbar.SetStatusText(_("Spooler: %s") % self.kernel.get_text_thread_state(value), 2)
 
     def on_interpreter_mode(self, state):
         if state == 0:
@@ -494,6 +509,14 @@ class MeerK40t(wx.Frame):
         else:
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
+
+    def on_background_signal(self, background):
+        if isinstance(background, str):
+            return  # Assumed color.
+        if isinstance(background, int):
+            return  # Assumed color.
+        self.background = background
+        self.request_refresh()
 
     def on_device_switch(self, device):
         self.unlisten_device()
@@ -527,15 +550,19 @@ class MeerK40t(wx.Frame):
         self.device_listening = None
 
     def listen_scene(self):
+        self.kernel.listen("background", self.on_background_signal)
         self.kernel.listen("device", self.on_device_switch)
         self.kernel.listen('rebuild_tree', self.on_rebuild_tree_request)
+        self.kernel.listen('refresh_scene', self.on_refresh_scene)
         self.kernel.listen("element_property_update", self.on_element_update)
         self.kernel.listen("units", self.space_changed)
         self.kernel.listen("selection", self.selection_changed)
 
     def unlisten_scene(self):
+        self.kernel.unlisten("background", self.on_background_signal)
         self.kernel.unlisten("device", self.on_device_switch)
         self.kernel.unlisten('rebuild_tree', self.on_rebuild_tree_request)
+        self.kernel.unlisten('refresh_scene', self.on_refresh_scene)
         self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selection", self.selection_changed)
@@ -550,7 +577,7 @@ class MeerK40t(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle(_("MeerK40t v%s" % MEERK40T_VERSION))
+        self.SetTitle(_("MeerK40t v%s") % MEERK40T_VERSION)
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
@@ -596,7 +623,7 @@ class MeerK40t(wx.Frame):
                 rejected_files.append(pathname)
         if rejected != 0:
             reject = "\n".join(rejected_files)
-            err_msg = _("Some files were unrecognized:\n%s" % reject)
+            err_msg = _("Some files were unrecognized:\n%s") % reject
             dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
@@ -668,7 +695,6 @@ class MeerK40t(wx.Frame):
             return
         self.update_buffer_ui_thread()
         self.scene.Refresh()
-        # self.Refresh()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
 
@@ -687,7 +713,8 @@ class MeerK40t(wx.Frame):
             dc.SetFont(font)
             dc.SetPen(wx.BLACK_PEN)
             s = dc.GetSize() / 2
-            dc.DrawText(_("Current OS cannot use transformation matrix. Skipping scene draw."), s[0] - 350, s[1])
+            dc.DrawText(_("Skipping scene draw. Current OS/wxPython cannot use TransformMatrix. Needs wxPython 4.1+"),
+                        s[0] - 350, s[1])
             dc.SetFont(original_font)
         self.on_draw_interface(dc)
         del dc
@@ -786,8 +813,7 @@ class MeerK40t(wx.Frame):
         position = event.GetPosition()
         position = self.convert_window_to_scene(position)
         self.root.set_selected_by_position(position)
-        if self.root.selected_elements is not None:
-            self.kernel.open_window("ElementProperty").set_elements(self.root.selected_elements)
+        self.root.activate_selected_node()
 
     def move_pan(self, wdx, wdy, sdx, sdy):
         self.scene_post_pan(wdx, wdy)
@@ -838,6 +864,7 @@ class MeerK40t(wx.Frame):
         self.kernel.keymap[ord('3')] = MappedKey('3', "set_position 3")
         self.kernel.keymap[ord('4')] = MappedKey('4', "set_position 4")
         self.kernel.keymap[ord('5')] = MappedKey('5', "set_position 5")
+        self.kernel.keymap[wx.WXK_F4] = MappedKey('F4', "window CameraInterface")
         self.kernel.keymap[wx.WXK_F6] = MappedKey('F6', "window JobSpooler")
         self.kernel.keymap[wx.WXK_F7] = MappedKey('F7', "window Controller")
         self.kernel.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
@@ -1067,8 +1094,13 @@ class MeerK40t(wx.Frame):
             v = self.kernel
         wmils = v.bed_width * 39.37
         hmils = v.bed_height * 39.37
-        dc.SetBrush(wx.WHITE_BRUSH)
-        dc.DrawRectangle(0, 0, wmils, hmils)
+        if self.background is None:
+            dc.SetBrush(wx.WHITE_BRUSH)
+            dc.DrawRectangle(0, 0, wmils, hmils)
+        else:
+            gc = wx.GraphicsContext.Create(dc)
+            gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
+            gc.Destroy()
 
     def on_draw_selection(self, dc, draw_mode):
         """Draw Selection Box"""
@@ -1388,7 +1420,6 @@ class MeerK40t(wx.Frame):
         """
         self.kernel.open_window("JobInfo").set_operations(self.kernel.operations)
 
-
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Launch webpage
@@ -1563,7 +1594,7 @@ class Node(list):
             return None
 
     def bbox(self):
-        return ElementFunctions.bounding_box(self.object)
+        return OperationPreprocessor.bounding_box(self.object)
 
     def objects_of_children(self, types):
         if isinstance(self.object, types):
@@ -1723,10 +1754,10 @@ class RootNode(list):
             pass
 
     def selected_bounds(self):
-        return ElementFunctions.bounding_box(self.selected_elements)
+        return OperationPreprocessor.bounding_box(self.selected_elements)
 
     def bbox(self):
-        return ElementFunctions.bounding_box(self.kernel.elements)
+        return OperationPreprocessor.bounding_box(self.kernel.elements)
 
     def set_selected_elements(self, selected):
         if selected is None:
@@ -1757,6 +1788,10 @@ class RootNode(list):
                 self.set_selected_operations([selected])
         self.kernel.signal("selection", self.selected_elements)
         self.kernel.signal("selected_ops", self.selected_operations)
+
+    def activate_selected_node(self):
+        if self.selected_elements is not None or len(self.selected_elements) != 0:
+            self.activated_object(self.selected_elements[0])
 
     def move_selected(self, dx, dy):
         if self.selected_elements is None:
@@ -1890,16 +1925,34 @@ class RootNode(list):
 
     def on_item_activated(self, event):
         """
-        Tree item is double-clicked. Launches ElementProperty dialog.
+        Tree item is double-clicked. Launches PropertyWindow associated with that object.
 
         :param event:
         :return:
         """
         item = event.GetItem()
         node = self.tree.GetItemData(item)
+        self.activated_node(node)
+
+    def activated_node(self, node):
         if node is not None:
-            if isinstance(node.object, SVGElement) or isinstance(node.object, LaserOperation):
-                self.kernel.open_window("ElementProperty").set_elements(node.object)
+            self.activated_object(node.object)
+
+    def activated_object(self, obj):
+        if isinstance(obj, RasterOperation):
+            self.kernel.open_window("RasterProperty").set_operation(obj)
+        elif isinstance(obj, (CutOperation, EngraveOperation)):
+            self.kernel.open_window("EngraveProperty").set_operation(obj)
+        elif isinstance(obj, Path):
+            self.kernel.open_window("PathProperty").set_element(obj)
+        elif isinstance(obj, SVGText):
+            self.kernel.open_window("TextProperty").set_element(obj)
+        elif isinstance(obj, SVGImage):
+            self.kernel.open_window("ImageProperty").set_element(obj)
+        elif isinstance(obj, SVGElement):
+            self.kernel.open_window("PathProperty").set_element(obj)
+        elif isinstance(obj, LaserOperation):
+            self.kernel.open_window("EngraveProperty").set_operation(obj)
 
     def on_item_changed(self, event):
         """
@@ -2009,7 +2062,7 @@ class RootNode(list):
         t = node.type
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
-                 menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
+                     menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
             gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
@@ -2034,16 +2087,23 @@ class RootNode(list):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)
-            for name in ("ZDepth_Raster", "Cross-Engrave Raster", "Multishade_Raster", "Wait-Step_Raster"):
+            for name in ("ZDepth_Raster", "Multishade_Raster", "Wait-Step_Raster"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
+            duplicate_menu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
+                     duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL))
+            for i in range(2, 10):
+                gui.Bind(wx.EVT_MENU, self.menu_passes(node, i),
+                         duplicate_menu.Append(wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(duplicate_menu, _("Passes"))
             if isinstance(node.object, RasterOperation):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
-                    gui.Bind(wx.EVT_MENU,self.menu_raster_step_operation(node, i), menu_item)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_step_operation(node, i), menu_item)
                     step = float(node.object.raster_step)
                     if i == step:
                         menu_item.Check(True)
@@ -2054,7 +2114,7 @@ class RootNode(list):
             if node.filepath is not None:
                 name = os.path.basename(node.filepath)
                 gui.Bind(wx.EVT_MENU, self.menu_reload(node),
-                            menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
+                         menu.Append(wx.ID_ANY, _("Reload %s") % name, "", wx.ITEM_NORMAL))
         elif t == NODE_ELEMENT:
             duplicate_menu = wx.Menu()
             for i in range(1, 10):
@@ -2069,7 +2129,7 @@ class RootNode(list):
             path_scale_sub_menu = wx.Menu()
             for i in range(1, 25):
                 gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
-                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%" % (600.0 / float(i))), "",
+                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%") % (600.0 / float(i)), "",
                                                     wx.ITEM_NORMAL))
             menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
 
@@ -2077,14 +2137,14 @@ class RootNode(list):
             for i in range(2, 13):
                 angle = Angle.turns(1.0 / float(i))
                 gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°" % (i, angle.as_degrees)),
+                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
                                                      "",
                                                      wx.ITEM_NORMAL))
             for i in range(2, 13):
                 angle = Angle.turns(1.0 / float(i))
                 gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
                          path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                     _(u"Rotate turn/%d, -%.0f°" % (i, angle.as_degrees)), "",
+                                                     _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
                                                      wx.ITEM_NORMAL))
             menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
             gui.Bind(wx.EVT_MENU, self.menu_reify(node),
@@ -2111,9 +2171,17 @@ class RootNode(list):
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_dither(node),
                          menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+                raster_zdepth_menu = wx.Menu()
+
+                for i in range(2, 10):
+                    menu_item = raster_zdepth_menu.Append(wx.ID_ANY, _("Divide Into %d Images") % i, "", wx.ITEM_NORMAL)
+                    gui.Bind(wx.EVT_MENU, self.menu_raster_zdepth(node, i), menu_item)
+                menu.AppendSubMenu(raster_zdepth_menu, _("ZDepth Divide"))
+
             if isinstance(node.object, SVGText):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
                          menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
+
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -2168,7 +2236,7 @@ class RootNode(list):
         def specific(event):
             element = node.object
             if isinstance(element, SVGImage):
-                ElementFunctions.make_actual(element)
+                OperationPreprocessor.make_actual(element)
                 node.bounds = None
                 node.set_icon()
             self.kernel.signal('rebuild_tree', 0)
@@ -2186,8 +2254,68 @@ class RootNode(list):
         def specific(event):
             element = node.object
             if isinstance(element, SVGImage):
-                element.image = element.image.convert("1")
+                img = element.image
+                if img.mode == 'RGBA':
+                    pixel_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            if pixel_data[x, y][3] == 0:
+                                pixel_data[x, y] = (255, 255, 255, 255)
+                element.image = img.convert("1")
                 element.cache = None
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_raster_zdepth(self, node, divide=7):
+        """
+        Subdivides an image into a zdepth image set.
+
+        :param node: SVGImage node.
+        :return: zdepth function
+        """
+
+        def specific(event):
+            element = node.object
+            if not isinstance(element, SVGImage):
+                return
+            adding_elements = []
+            if element.image.mode != 'RGBA':
+                element.image = element.image.convert('RGBA')
+            band = 255 / divide
+            for i in range(0, divide):
+                threshold_min = i * band
+                threshold_max = threshold_min + band
+
+                image_element = copy(element)
+                image_element.image = image_element.image.copy()
+                if OperationPreprocessor.needs_actualization(image_element):
+                    OperationPreprocessor.make_actual(image_element)
+                img = image_element.image
+                new_data = img.load()
+                width, height = img.size
+                for y in range(height):
+                    for x in range(width):
+                        pixel = new_data[x, y]
+                        if pixel[3] == 0:
+                            new_data[x, y] = (255, 255, 255, 255)
+                            continue
+                        gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
+                        if threshold_min >= gray:
+                            new_data[x, y] = (0, 0, 0, 255)
+                        elif threshold_max < gray:
+                            new_data[x, y] = (255, 255, 255, 255)
+                        else:  # threshold_min <= grey < threshold_max
+                            v = gray - threshold_min
+                            v *= divide
+                            v = int(round(v))
+                            new_data[x, y] = (v, v, v, 255)
+                image_element.image = image_element.image.convert('1')
+                adding_elements.append(image_element)
+            self.kernel.elements.extend(adding_elements)
+            self.kernel.classify(adding_elements)
+            self.set_selected_elements(None)
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
@@ -2203,13 +2331,13 @@ class RootNode(list):
         def specific(event):
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
-            bounds = ElementFunctions.bounding_box(child_objects)
+            bounds = OperationPreprocessor.bounding_box(child_objects)
             if bounds is None:
                 return None
             step = float(node.object.raster_step)
             xmin, ymin, xmax, ymax = bounds
 
-            image = renderer.make_raster(child_objects, bounds, width=(xmax-xmin)/step, height=(ymax-ymin)/step)
+            image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin) / step, height=(ymax - ymin) / step)
             image_element = SVGImage(image=image)
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
@@ -2266,7 +2394,7 @@ class RootNode(list):
         value *= tau
 
         def specific(event):
-            bounds = ElementFunctions.bounding_box(node.parent)
+            bounds = OperationPreprocessor.bounding_box(node.parent)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2288,7 +2416,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = ElementFunctions.bounding_box(self.selected_elements)
+            bounds = OperationPreprocessor.bounding_box(self.selected_elements)
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2351,7 +2479,7 @@ class RootNode(list):
 
     def menu_duplicate(self, node, copies):
         """
-        Menu to break element into subpath.
+        Menu to duplicate elements.
 
         :param node:
         :return:
@@ -2362,6 +2490,22 @@ class RootNode(list):
             self.kernel.elements.extend(adding_elements)
             self.kernel.classify(adding_elements)
             self.set_selected_elements(None)
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_passes(self, node, copies):
+        """
+        Menu to duplicate operation element nodes
+
+        :param node:
+        :return:
+        """
+
+        def specific(event):
+            op = node.object
+            adding_elements = list(op) * copies
+            op.extend(adding_elements)
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
@@ -2442,7 +2586,6 @@ class RootNode(list):
             self.kernel.elements.append(path)
             self.set_selected_elements(path)
             self.kernel.signal('rebuild_tree', 0)
-
 
         return convex_hull
 
@@ -2542,9 +2685,14 @@ class wxMeerK40t(Module, wx.App):
         kernel.setting(int, 'language', None)
 
         kernel.add_window('Shutdown', Shutdown)
-        kernel.add_window('ElementProperty', ElementProperty)
+        kernel.add_window('PathProperty', PathProperty)
+        kernel.add_window('TextProperty', TextProperty)
+        kernel.add_window('ImageProperty', ImageProperty)
+        kernel.add_window('RasterProperty', RasterProperty)
+        kernel.add_window('EngraveProperty', EngraveProperty)
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
+        kernel.add_window("CameraInterface", CameraInterface)
         kernel.add_window("Settings", Settings)
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)
@@ -2620,10 +2768,11 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     try:
         import datetime
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-        print(_("Saving Log: %s" % filename))
+        print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
-            file.write(_("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION))
-            file.write(("Please report to: %s\n\n" % MEERK40T_ISSUES))
+            # Crash logs are not translated.
+            file.write("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION)
+            file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
     except:  # I already crashed once, if there's another here just ignore it.
