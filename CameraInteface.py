@@ -81,6 +81,7 @@ class CameraInterface(wx.Frame):
             self.buffer.CopyFromBuffer(self.frame)
             self.display_camera.SetBitmap(self.buffer)
             self.Refresh()
+            self.Update()
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
