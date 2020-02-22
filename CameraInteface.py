@@ -1,5 +1,3 @@
-from copy import copy
-
 import wx
 from icons import *
 
@@ -17,7 +15,7 @@ class CameraInterface(wx.Frame):
         self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
         self.slider_fps = wx.Slider(self, wx.ID_ANY, 1, 0, 24, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
-        self.display_camera = wx.BitmapButton(self, wx.ID_ANY)
+        self.display_camera = wx.Panel(self, wx.ID_ANY)
 
         self.__set_properties()
         self.__do_layout()
@@ -42,10 +40,10 @@ class CameraInterface(wx.Frame):
                     value.Enable(False)
             dlg = wx.MessageDialog(None, _("This Interface Requires OpenCV: 'pip install opencv-python-headless'"),
                                    _("Error"), wx.OK | wx.ICON_ERROR)
-            result = dlg.ShowModal()
+            dlg.ShowModal()
             dlg.Destroy()
             return
-        self.capture = cv2.VideoCapture(0)
+        self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         ret, self.frame = self.capture.read()
         if not ret:
             for attr in dir(self):
