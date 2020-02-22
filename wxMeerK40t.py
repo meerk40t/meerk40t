@@ -2093,9 +2093,11 @@ class RootNode(list):
                 menu_op.Enable(False)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
             duplicate_menu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
+                     duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL))
             for i in range(2, 10):
                 gui.Bind(wx.EVT_MENU, self.menu_passes(node, i),
-                         duplicate_menu.Append(wx.ID_ANY, _("Perform %d passes.") % i, "", wx.ITEM_NORMAL))
+                         duplicate_menu.Append(wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Passes"))
             if isinstance(node.object, RasterOperation):
                 raster_step_menu = wx.Menu()
