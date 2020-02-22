@@ -101,8 +101,8 @@ class LhymicroInterpreter(Interpreter):
             self.CODE_TOP = b'L'
             self.CODE_BOTTOM = b'R'
         else:
-            self.CODE_TOP = b'L'
-            self.CODE_BOTTOM = b'R'
+            self.CODE_TOP = b'R'
+            self.CODE_BOTTOM = b'L'
 
     def on_plot(self, x, y, on):
         self.device.signal('interpreter;plot', (x, y, on))
