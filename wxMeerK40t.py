@@ -56,6 +56,7 @@ MEERK40T_VERSION = "0.5.2"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
+
 class IdInc:
     """
     Id Incrementor
@@ -391,6 +392,8 @@ class MeerK40t(wx.Frame):
             kernel.fps = 60
         self.renderer = LaserRender(kernel)
         self.root = RootNode(kernel, self)
+        kernel.setting(wx.App, 'root', self.root)
+        kernel.root = self.root
 
         if kernel.window_width < 300:
             kernel.window_width = 300
@@ -554,7 +557,7 @@ class MeerK40t(wx.Frame):
         self.kernel.listen('refresh_scene', self.on_refresh_scene)
         self.kernel.listen("element_property_update", self.on_element_update)
         self.kernel.listen("units", self.space_changed)
-        self.kernel.listen("selection", self.selection_changed)
+        self.kernel.listen("selected_elements", self.selection_changed)
 
     def unlisten_scene(self):
         self.kernel.unlisten("background", self.on_background_signal)
@@ -563,7 +566,7 @@ class MeerK40t(wx.Frame):
         self.kernel.unlisten('refresh_scene', self.on_refresh_scene)
         self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
-        self.kernel.unlisten("selection", self.selection_changed)
+        self.kernel.unlisten("selected_elements", self.selection_changed)
 
     def on_close(self, event):
         self.unlisten_device()
@@ -936,7 +939,7 @@ class MeerK40t(wx.Frame):
             self.execute_string_action(*args)
 
     def focus_on_elements(self):
-        bbox = self.root.bbox()
+        bbox = self.root.bounds
         if bbox is None:
             return
         self.focus_viewport_scene(bbox)
@@ -1106,7 +1109,7 @@ class MeerK40t(wx.Frame):
 
     def on_draw_selection(self, dc, draw_mode):
         """Draw Selection Box"""
-        bounds = self.root.selected_bounds()
+        bounds = self.root.bounds
         if bounds is not None:
             linewidth = 3.0 / self.matrix.GetScaleX()
             # f = 2 * linewidth
@@ -1561,7 +1564,7 @@ class RootNode(list):
         self.tree = gui.tree
         self.renderer = gui.renderer
 
-        self.bounds = [0, 0, 0, 0]
+        self.bounds = None
         self.selected_elements = []
         self.selected_operations = []
 
@@ -1647,44 +1650,36 @@ class RootNode(list):
         except KeyError:
             pass
 
-    def selected_bounds(self):
-        return OperationPreprocessor.bounding_box(self.selected_elements)
-
-    def bbox(self):
-        return OperationPreprocessor.bounding_box(self.kernel.elements)
-
     def set_selected_elements(self, selected):
-        if selected is None:
-            selected = []
-        else:
-            if not isinstance(selected, list):
-                selected = [selected]
-        self.selected_elements = selected
         self.selected_operations.clear()
-
-    def set_selected_operations(self, selected):
-        if selected is None:
-            selected = []
-        else:
-            if not isinstance(selected, list):
-                selected = [selected]
         self.selected_elements.clear()
-        self.selected_operations = selected
-
-    def set_selected(self, selected):
-        """Sets the selected element. This could be a LaserOperation or a LaserNode."""
-        self.selected_elements.clear()
-        self.selected_operations.clear()
         if selected is not None:
-            if isinstance(selected, SVGElement):
-                self.set_selected_elements([selected])
-            elif isinstance(selected, LaserOperation):
-                self.set_selected_operations([selected])
-        self.kernel.signal("selection", self.selected_elements)
+            if not isinstance(selected, list):
+                self.selected_elements.append(selected)
+            else:
+                self.selected_elements.extend(selected)
+        self.selection_updated()
+    def set_selected_operations(self, selected):
+        self.selected_operations.clear()
+        self.selected_elements.clear()
+        if selected is not None:
+            if not isinstance(selected, list):
+                self.selected_operations.append(selected)
+            else:
+                self.selected_operations.extend(selected)
+        self.selection_updated()
+
+    def selection_updated(self):
         self.kernel.signal("selected_ops", self.selected_operations)
+        self.kernel.signal("selected_elements", self.selected_elements)
+        self.selection_bounds_updated()
+
+    def selection_bounds_updated(self):
+        self.bounds = OperationPreprocessor.bounding_box(self.selected_elements)
+        self.kernel.signal("selected_bounds", self.bounds)
 
     def activate_selected_node(self):
-        if self.selected_elements is not None or len(self.selected_elements) != 0:
+        if self.selected_elements is not None and len(self.selected_elements) != 0:
             self.activated_object(self.selected_elements[0])
 
     def move_selected(self, dx, dy):
@@ -1694,6 +1689,9 @@ class RootNode(list):
             return
         for obj in self.selected_elements:
             obj.transform.post_translate(dx, dy)
+        b = self.bounds
+        self.bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
+        self.kernel.signal("selected_bounds", self.bounds)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1858,8 +1856,8 @@ class RootNode(list):
         item = event.GetItem()
         node = self.tree.GetItemData(item)
 
-        self.selected_elements.clear()
-        self.selected_operations.clear()
+        self.set_selected_elements(None)
+        self.set_selected_operations(None)
         if node is None:
             return
         if node.type == NODE_ELEMENTS_BRANCH:
@@ -1883,52 +1881,26 @@ class RootNode(list):
             elif node.type == NODE_OPERATION:
                 self.selected_operations.append(node.object)
         self.gui.request_refresh()
+        self.selection_updated()
 
     def set_selected_by_position(self, position):
         if self.selected_elements is not None:
-            select_bounds = self.selected_bounds()
-            if select_bounds is not None and self.contains(select_bounds, position):
+            if self.bounds is not None and self.contains(self.bounds, position):
                 return  # Select by position aborted since selection position within current select bounds.
-        self.set_selected_elements(None)
+        self.selected_elements.clear()
         for e in reversed(self.kernel.elements):
             bounds = e.bbox()
             if bounds is None:
                 continue
             if self.contains(bounds, position):
-                self.root.set_selected_elements(e)
-                break
+                self.set_selected_elements(e)
+                return
+        self.selection_updated()
 
     def contains(self, box, x, y=None):
         if y is None:
             x, y = x
         return box[0] <= x <= box[2] and box[1] <= y <= box[3]
-
-    def validate(self, node=None):
-        if node is None:
-            return
-        node.bounds = None  # delete bounds
-        for subnode in node:
-            self.validate(subnode)  # validate all subelements.
-        if len(node) == 0:  # Leaf Node.
-            try:
-                node.bounds = node.element.bbox()
-            except AttributeError:
-                pass
-            return
-        # Group node.
-        xvals = []
-        yvals = []
-        for e in node:
-            bounds = e.bounds
-            if bounds is None:
-                continue
-            xvals.append(bounds[0])
-            xvals.append(bounds[2])
-            yvals.append(bounds[1])
-            yvals.append(bounds[3])
-        if len(xvals) == 0:
-            return
-        node.bounds = [min(xvals), min(yvals), max(xvals), max(yvals)]
 
     def create_menu(self, gui, node):
         """
@@ -2133,8 +2105,8 @@ class RootNode(list):
                 OperationPreprocessor.make_actual(element)
                 node.bounds = None
                 node.set_icon()
+            self.selection_bounds_updated()
             self.kernel.signal('rebuild_tree', 0)
-
         return specific
 
     def menu_dither(self, node):
@@ -2241,6 +2213,7 @@ class RootNode(list):
             node.object.clear()
             self.build_tree(self.node_elements, image_element)
             node.object.append(image_element)
+            self.selection_bounds_updated()
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
@@ -2272,6 +2245,7 @@ class RootNode(list):
         def specific(event):
             for e in self.selected_elements:
                 e.transform.reset()
+            self.selection_bounds_updated()
             self.gui.request_refresh()
 
         return specific
@@ -2296,6 +2270,7 @@ class RootNode(list):
 
             for obj in self.selected_elements:
                 obj.transform.post_rotate(value, center_x, center_y)
+            self.selection_bounds_updated()
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
@@ -2310,7 +2285,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = OperationPreprocessor.bounding_box(self.selected_elements)
+            bounds = self.bounds
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
@@ -2318,6 +2293,7 @@ class RootNode(list):
 
             for obj in self.selected_elements:
                 obj.transform.post_scale(value, value, center_x, center_y)
+            self.selection_bounds_updated()
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
@@ -2366,7 +2342,7 @@ class RootNode(list):
             elif node.type == NODE_OPERATION_ELEMENT:
                 op = node.parent.object
                 op.remove(node.object)
-            self.selected_elements.clear()
+            self.set_selected_elements(None)
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
@@ -2509,6 +2485,7 @@ class RootNode(list):
                 self.kernel.operations = [op for op in self.kernel.operations
                                           if op is not None]
             node.object.clear()
+            self.selection_bounds_updated()
             self.kernel.signal('rebuild_tree', 0)
 
         return specific

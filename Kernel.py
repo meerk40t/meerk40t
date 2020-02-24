@@ -674,6 +674,12 @@ class Kernel:
             self.last_message[code] = message
         self._is_queue_processing = False
 
+    def last_signal(self, code):
+        try:
+            return self.last_message[code]
+        except KeyError:
+            return None
+
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
             if value is None:
