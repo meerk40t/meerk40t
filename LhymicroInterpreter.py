@@ -66,8 +66,8 @@ class LhymicroInterpreter(Interpreter):
         self.raster_step = 0
         self.speed = 30
         self.power = 1000.0
-        self.d_ratio = None
-        self.default_SnP = None
+        self.d_ratio = None  # None means to use speedcode default.
+        self.acceleration = None  # None means to use speedcode default
         self.pulse_total = 0.0
         self.pulse_modulation = True
         self.group_modulation = False
@@ -292,7 +292,7 @@ class LhymicroInterpreter(Interpreter):
                         if self.is_prop(DIRECTION_FLAG_LEFT):
                             if abs(dx) > self.raster_step:
                                 self.to_concat_mode()
-                                self.move_relative(dx + self.raster_step,0)
+                                self.move_relative(dx + self.raster_step, 0)
                                 self.set_prop(DIRECTION_FLAG_Y)
                                 self.unset_prop(DIRECTION_FLAG_X)
                                 self.to_compact_mode()
@@ -300,7 +300,7 @@ class LhymicroInterpreter(Interpreter):
                         else:
                             if abs(dx) > self.raster_step:
                                 self.to_concat_mode()
-                                self.move_relative(dx - self.raster_step,0)
+                                self.move_relative(dx - self.raster_step, 0)
                                 self.set_prop(DIRECTION_FLAG_Y)
                                 self.unset_prop(DIRECTION_FLAG_X)
                                 self.to_compact_mode()
@@ -385,6 +385,11 @@ class LhymicroInterpreter(Interpreter):
             t = values
             if callable(t):
                 t()
+        elif command == COMMAND_SIGNAL:
+            if isinstance(values, str):
+                self.device.signal(values, None)
+            elif len(values) >= 2:
+                self.device.signal(values[0], *values[1:])
         elif command == COMMAND_CLOSE:
             self.to_default_mode()
         elif command == COMMAND_OPEN:
@@ -576,6 +581,18 @@ class LhymicroInterpreter(Interpreter):
             self.to_concat_mode()
             self.to_compact_mode()
 
+    def set_acceleration(self, accel=None):
+        change = False
+        if self.acceleration != accel:
+            change = True
+            self.acceleration = accel
+        if not change:
+            return
+        if self.state == STATE_COMPACT:
+            # Compact mode means it's currently slowed. To make the change have an effect, compact must be exited.
+            self.to_concat_mode()
+            self.to_compact_mode()
+
     def set_step(self, step=None):
         change = False
         if self.raster_step != step:
@@ -638,8 +655,11 @@ class LhymicroInterpreter(Interpreter):
 
     def to_concat_mode(self):
         controller = self.device.pipe
-        self.to_default_mode()
-        controller.write(b'I')
+        if self.state == STATE_COMPACT:
+            controller.write(b'@NSE')
+            self.reset_modes()
+        elif self.state == STATE_DEFAULT:
+            controller.write(b'I')
         self.state = STATE_CONCAT
         self.device.signal('interpreter;mode', self.state)
 
