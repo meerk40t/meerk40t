@@ -1633,13 +1633,9 @@ class RootNode(list):
 
     def notify_tree_data_change(self):
         self.kernel.signal("rebuild_tree", 0)
-        # tree = self.tree
-        # tree.ExpandAll()
 
     def notify_tree_data_cleared(self):
         self.kernel.signal("rebuild_tree", 0)
-        # tree = self.tree
-        # tree.ExpandAll()
 
     def on_element_update(self, *args):
         element = args[0]
@@ -1713,7 +1709,7 @@ class RootNode(list):
 
     def on_drag_end_handler(self, event):
         """
-        Drag handler end for the tree
+        Drag end handler for the tree
 
         :param event:
         :return:
@@ -1866,13 +1862,19 @@ class RootNode(list):
             # self.selected_operations = list(self.kernel.elements)
             self.gui.request_refresh()
             return
-        if node.type == NODE_FILE_FILE:
+        elif node.type == NODE_FILE_FILE:
             for n in node:
                 obj = n.object
                 links = self.tree_lookup[id(obj)]
                 for link in links:
                     self.tree.SelectItem(link.item, True)
             self.gui.request_refresh()
+            return
+        elif node.type == NODE_OPERATION_ELEMENT:
+            obj = node.object
+            links = self.tree_lookup[id(obj)]
+            for link in links:
+                self.tree.SelectItem(link.item, True)
             return
         for item in list(self.tree.GetSelections()):
             node = self.tree.GetItemData(item)
