@@ -933,6 +933,8 @@ class MeerK40t(wx.Frame):
 
     def on_key_press(self, event):
         keycode = event.GetKeyCode()
+        if event.ControlDown():
+            pass
         if keycode in self.kernel.keymap:
             action = self.kernel.keymap[keycode].command
             args = str(action).split(' ')

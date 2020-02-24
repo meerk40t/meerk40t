@@ -438,7 +438,7 @@ class LhymicroInterpreter(Interpreter):
             self.resume()
 
     def get_status(self):
-        parts = []
+        parts = list()
         parts.append("x=%f" % self.device.current_x)
         parts.append("y=%f" % self.device.current_y)
         parts.append("speed=%f" % self.speed)

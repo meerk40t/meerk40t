@@ -98,6 +98,7 @@ class Navigation(wx.Frame):
         self.bounds = None
         self.design_locked = False
         self.drag_ready(False)
+        self.select_ready(False)
 
     def on_close(self, event):
         self.kernel.mark_window_closed("Navigation")
