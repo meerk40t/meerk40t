@@ -102,8 +102,8 @@ class Navigation(wx.Frame):
 
     def on_close(self, event):
         self.kernel.mark_window_closed("Navigation")
-        self.kernel.listen("selected_elements", self.on_selected_elements_change)
-        self.kernel.listen("selected_bounds", self.on_selected_bounds_change)
+        self.kernel.unlisten("selected_elements", self.on_selected_elements_change)
+        self.kernel.unlisten("selected_bounds", self.on_selected_bounds_change)
         event.Skip()  # Call destroy.
 
     def __set_properties(self):
