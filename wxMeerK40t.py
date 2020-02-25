@@ -294,6 +294,7 @@ class MeerK40t(wx.Frame):
 
         self.previous_position = None
 
+        self.bed_matrix = ZMatrix()
         self.matrix = ZMatrix()
         self.identity = ZMatrix()
         self.matrix.Reset()
@@ -355,6 +356,7 @@ class MeerK40t(wx.Frame):
         self.root = None  # RootNode value, must have kernel for init.
         self.device_listening = None
         self.background = None
+        self.background_matrix = None
 
     def notify_change(self):
         self.kernel.signal('rebuild_tree', 0)
@@ -517,6 +519,7 @@ class MeerK40t(wx.Frame):
         if isinstance(background, int):
             return  # Assumed color.
         self.background = background
+        self.background_matrix = Matrix()
         self.request_refresh()
 
     def on_device_switch(self, device):
@@ -935,6 +938,12 @@ class MeerK40t(wx.Frame):
         keycode = event.GetKeyCode()
         if event.ControlDown():
             pass
+        if event.AltDown():
+            pass
+        if event.ShiftDown():
+            pass
+        if event.MetaDown():
+            pass
         if keycode in self.kernel.keymap:
             action = self.kernel.keymap[keycode].command
             args = str(action).split(' ')
@@ -1106,8 +1115,10 @@ class MeerK40t(wx.Frame):
             dc.DrawRectangle(0, 0, wmils, hmils)
         else:
             gc = wx.GraphicsContext.Create(dc)
-            gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
-            gc.Destroy()
+            if dc.CanUseTransformMatrix():
+                dc.SetTransformMatrix(ZMatrix(self.background_matrix))
+                gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
+                gc.Destroy()
 
     def on_draw_selection(self, dc, draw_mode):
         """Draw Selection Box"""

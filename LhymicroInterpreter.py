@@ -43,6 +43,7 @@ def lhymicro_distance(v):
 class LhymicroInterpreter(Interpreter):
     def __init__(self, device):
         Interpreter.__init__(self, device)
+        self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
         self.device.setting(bool, "home_right", False)
@@ -91,18 +92,24 @@ class LhymicroInterpreter(Interpreter):
         return "LhymicroInterpreter()"
 
     def update_codes(self):
-        if not self.device.flip_x:
+        if not self.device.swap_xy:
             self.CODE_RIGHT = b'B'
             self.CODE_LEFT = b'T'
-        else:
-            self.CODE_RIGHT = b'T'
-            self.CODE_LEFT = b'B'
-        if not self.device.flip_y:
             self.CODE_TOP = b'L'
             self.CODE_BOTTOM = b'R'
         else:
-            self.CODE_TOP = b'R'
-            self.CODE_BOTTOM = b'L'
+            self.CODE_RIGHT = b'R'
+            self.CODE_LEFT = b'L'
+            self.CODE_TOP = b'T'
+            self.CODE_BOTTOM = b'B'
+        if self.device.flip_x:
+            q = self.CODE_LEFT
+            self.CODE_LEFT = self.CODE_RIGHT
+            self.CODE_RIGHT = q
+        if self.device.flip_y:
+            q = self.CODE_TOP
+            self.CODE_TOP = self.CODE_BOTTOM
+            self.CODE_BOTTOM = q
 
     def on_plot(self, x, y, on):
         self.device.signal('interpreter;plot', (x, y, on))

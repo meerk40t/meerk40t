@@ -8,7 +8,7 @@ Some commands have a implication:
 'Rapid' implies the command is performed in default mode.
 'Cut' implies the laser is on for the command.
 'Shift' implies the laser is off for this command.
-'Simple' means the movement must be an octent move. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
+'Simple' means the movement must be an octant move. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
 
 Move alone doesn't imply anything about the laser mode.
 
