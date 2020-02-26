@@ -34,26 +34,27 @@ class ServerThread(threading.Thread):
                     if self.state == THREAD_STATE_ABORT:
                         return
                 self.set_state(THREAD_STATE_STARTED)
-            write_data = self.connection.recv(1024)
+
+            push_message = self.server.pipe.read(1024)
+            if push_message is not None:
+                if isinstance(push_message, str):
+                    push_message = push_message.encode('utf8')
+                self.connection.send(push_message)
+
+            data_from_socket = self.connection.recv(1024)
             if self.server.pipe is not None:
                 if self.buffer is not None:
                     self.server.pipe.write(self.buffer)
                     self.buffer = None
-                read_data = self.server.pipe.read(1024)
-                if read_data is not None:
-                    if isinstance(read_data,str):
-                        read_data = read_data.encode('utf8')
-                    self.connection.send(read_data)
-                self.server.pipe.write(write_data)
-                read_data = self.server.pipe.read(1024)
-                if read_data is not None:
-                    if isinstance(read_data, str):
-                        read_data = read_data.encode('utf8')
-                    self.connection.send(read_data)
+                push_message = self.server.pipe.read(1024)
+                if push_message is not None:
+                    if isinstance(push_message, str):
+                        push_message = push_message.encode('utf8')
+                    self.connection.send(push_message)
             else:
                 if self.buffer is None:
                     self.buffer = b''
-                self.buffer += write_data
+                self.buffer += data_from_socket
         if self.connection is not None:
             self.connection.close()
 
