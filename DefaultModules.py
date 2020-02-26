@@ -106,7 +106,7 @@ class GRBLEmulator(Module):
         Module.__init__(self)
         # Pipe.__init__(self)
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
-        self.flip_y = -1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
+        self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
         self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
         self.move_mode = 0

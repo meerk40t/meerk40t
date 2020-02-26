@@ -39,22 +39,19 @@ class ServerThread(threading.Thread):
             if push_message is not None:
                 if isinstance(push_message, str):
                     push_message = push_message.encode('utf8')
+                    print(push_message)
                 self.connection.send(push_message)
 
             data_from_socket = self.connection.recv(1024)
-            if self.server.pipe is not None:
-                if self.buffer is not None:
-                    self.server.pipe.write(self.buffer)
-                    self.buffer = None
-                push_message = self.server.pipe.read(1024)
-                if push_message is not None:
-                    if isinstance(push_message, str):
-                        push_message = push_message.encode('utf8')
-                    self.connection.send(push_message)
-            else:
-                if self.buffer is None:
-                    self.buffer = b''
-                self.buffer += data_from_socket
+            self.server.pipe.write(data_from_socket)
+            print(data_from_socket)
+
+            push_message = self.server.pipe.read(1024)
+            if push_message is not None:
+                if isinstance(push_message, str):
+                    push_message = push_message.encode('utf8')
+                    print(push_message)
+                self.connection.send(push_message)
         if self.connection is not None:
             self.connection.close()
 
