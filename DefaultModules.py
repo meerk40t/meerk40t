@@ -5,7 +5,7 @@ from base64 import b64encode
 
 from svgelements import *
 from K40Controller import K40Controller
-from Kernel import Spooler, Module, Backend, Device
+from Kernel import Spooler, Module, Backend, Device, Pipe
 from LhymicroInterpreter import LhymicroInterpreter
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
@@ -101,28 +101,59 @@ class K40StockBackend(Module, Backend):
 
 
 class GRBLEmulator(Module):
+
     def __init__(self):
         Module.__init__(self)
-        self.kernel = None
+        # Pipe.__init__(self)
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = -1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
         self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
         self.move_mode = 0
+        self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
 
         self.comment = None
         self.code = ""
         self.value = ""
         self.command_map = {}
 
+    def close(self):
+        pass
+
+    def open(self):
+        pass
+
     def initialize(self, kernel, name=None):
+        Module.initialize(kernel, name)
         self.kernel = kernel
         self.name = name
-        self.kernel.add_control("grbl_pipe", self.write)
-        self.kernel.add_control("grbl_command", self.command)
 
     def shutdown(self, kernel):
         Module.shutdown(self, kernel)
+
+    def realtime_write(self, bytes_to_write):
+        interpreter = self.kernel.device.interpreter
+        if bytes_to_write == '?':  # Status report
+            if interpreter.state == 0:
+                state = 'Idle'
+            else:
+                state = 'Busy'
+            x = self.kernel.device.current_x / self.scale
+            y = self.kernel.device.current_y / self.scale
+            z = 0.0
+            parts = list()
+            parts.append(state)
+            parts.append('MPos:%f,%f,%f' % (x, y, z))
+            f = self.kernel.device.interpreter.speed / self.feed_scale
+            s = self.kernel.device.interpreter.power
+            parts.append('FS:%f,%d' % (f, s))
+            self.read_info = "<%s>\r\n" % '|'.join(parts)
+        elif bytes_to_write == '~':  # Resume.
+            interpreter.realtime_command(COMMAND_RESUME)
+        elif bytes_to_write == '!':  # Pause.
+            interpreter.realtime_command(COMMAND_PAUSE)
+        elif bytes_to_write == '\x18':  # Soft reset.
+            interpreter.realtime_command(COMMAND_RESET)
 
     def write(self, data):
         ord_a = ord('a')
@@ -130,8 +161,11 @@ class GRBLEmulator(Module):
         ord_z = ord('z')
         ord_Z = ord('Z')
         for b in data:
-            b_chr = chr(b)
-            is_end = b == ord('\n') or b == ord('\r')
+            c = chr(b)
+            if c == '?' or c == '~' or c == '!' or c == '\x18':
+                self.realtime_write(c) # Pick off realtime commands.
+                continue
+            is_end = c == '\n' or c == '\r'
             if self.comment is not None:
                 if b == ord(')') or is_end:
                     self.command_map['comment'] = self.comment
@@ -140,7 +174,7 @@ class GRBLEmulator(Module):
                         continue
                 else:
                     try:
-                        self.comment += str(b_chr)
+                        self.comment += str(c)
                     except UnicodeDecodeError:
                         pass  # skip utf8 fail
                     continue
@@ -165,26 +199,33 @@ class GRBLEmulator(Module):
 
             if ord_A <= b <= ord_Z:  # make lowercase.
                 b = b - ord_A + ord_a
-                b_chr = chr(b)
+                c = chr(b)
 
             is_letter = ord_a <= b <= ord_z
             if (is_letter or is_end) and len(self.code) != 0:
-                self.command_map[self.code] = float(self.value)
+                if self.code != "" and self.value != "":
+                    self.command_map[self.code] = float(self.value)
                 self.code = ""
                 self.value = ""
             if is_letter:
-                self.code += str(b_chr)
+                self.code += str(c)
                 continue
             elif is_end:
-                if len(self.command_map) == 0:
-                    continue
                 self.command(self.command_map)  # Execute GCode.
+                self.read_info = "ok\r\n"
                 self.command_map = {}
                 self.code = ""
                 self.value = ""
                 continue
 
+    def read(self, size=-1):
+        r = self.read_info
+        self.read_info = None
+        return r
+
     def command(self, gc):
+        if len(self.command_map) == 0:
+            return
         interpreter = self.kernel.device.interpreter
         if 'comment' in gc:
             comment = gc['comment']

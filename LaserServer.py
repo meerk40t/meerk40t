@@ -1,6 +1,5 @@
 import socket
 import threading
-import time
 
 from Kernel import *
 
@@ -27,9 +26,7 @@ class ServerThread(threading.Thread):
                 try:
                     self.connection, self.addr = self.server.socket.accept()
                 except OSError:
-                    continue  # Socket was killed.
-                self.connection.send(b'Connected.\r\n')
-                time.sleep(0.01)
+                    break  # Socket was killed.
                 continue
             if self.state == THREAD_STATE_PAUSED:
                 while self.state == THREAD_STATE_PAUSED:
@@ -37,16 +34,26 @@ class ServerThread(threading.Thread):
                     if self.state == THREAD_STATE_ABORT:
                         return
                 self.set_state(THREAD_STATE_STARTED)
-            data = self.connection.recv(1024)
+            write_data = self.connection.recv(1024)
             if self.server.pipe is not None:
                 if self.buffer is not None:
                     self.server.pipe.write(self.buffer)
                     self.buffer = None
-                self.server.pipe.write(data)
+                read_data = self.server.pipe.read(1024)
+                if read_data is not None:
+                    if isinstance(read_data,str):
+                        read_data = read_data.encode('utf8')
+                    self.connection.send(read_data)
+                self.server.pipe.write(write_data)
+                read_data = self.server.pipe.read(1024)
+                if read_data is not None:
+                    if isinstance(read_data, str):
+                        read_data = read_data.encode('utf8')
+                    self.connection.send(read_data)
             else:
                 if self.buffer is None:
                     self.buffer = b''
-                self.buffer += data
+                self.buffer += write_data
         if self.connection is not None:
             self.connection.close()
 
