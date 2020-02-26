@@ -234,6 +234,9 @@ class GRBLEmulator(Module):
             v = gc['f']
             feed_rate = self.feed_scale * v
             interpreter.command(COMMAND_SET_SPEED, feed_rate)
+        if 's' in gc:
+            v = gc['s']
+            interpreter.command(COMMAND_SET_POWER, v)
         if 'g' in gc:
             g_value = gc['g']
             if g_value == 0.0:
