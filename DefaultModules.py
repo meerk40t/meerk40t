@@ -221,9 +221,9 @@ class GRBLEmulator(Module):
             elif gc['g'] == 20.0 or gc['g'] == 70.0:
                 self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
             elif gc['g'] == 90.0:
-                interpreter.command(COMMAND_SET_ABSOLUTE, True)
+                interpreter.command(COMMAND_SET_ABSOLUTE)
             elif gc['g'] == 91.0:
-                interpreter.command(COMMAND_SET_ABSOLUTE, False)
+                interpreter.command(COMMAND_SET_INCREMENTAL)
             elif gc['g'] == 94.0:
                 # Feed Rate in Units / Minute
                 self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
