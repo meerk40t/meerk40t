@@ -30,6 +30,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
+parser.add_argument('-g', '--grbl', type=int, help='run grbl-emulator on given port.')
 parser.add_argument('-e', '--egv', type=str, help='writes raw egv data to the controller')
 parser.add_argument('-p', '--path', type=str, help='add SVG Path command')
 parser.add_argument('-c', '--control', nargs='+', help="execute control command")
@@ -50,7 +51,14 @@ kernel.add_module('SVGLoader', SVGLoader())
 kernel.add_module('ImageLoader', ImageLoader())
 kernel.add_module('EgvLoader', EgvLoader())
 kernel.add_module('SVGWriter', SVGWriter())
+emulator = GRBLEmulator()
+kernel.add_module('GrblEmulator', emulator)
 
+if args.grbl is not None:
+    from LaserServer import *
+    server = LaserServer(args.grbl)
+    server.set_pipe(emulator)
+    kernel.add_module('GRBLServer', server)
 
 if args.list is not None:
     list_name = 'type'

@@ -6,10 +6,12 @@ from base64 import b64encode
 from svgelements import *
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
-from LaserCommandConstants import COMMAND_RESET
 from LhymicroInterpreter import LhymicroInterpreter
 from EgvParser import parse_egv
 from xml.etree.cElementTree import Element, ElementTree, SubElement
+from LaserCommandConstants import *
+
+MILS_PER_MM = 39.3701
 
 
 class K40StockDevice(Device):
@@ -96,6 +98,163 @@ class K40StockBackend(Module, Backend):
     def create_device(self, uid):
         device = K40StockDevice()
         device.initialize(self.kernel, uid)
+
+
+class GRBLEmulator(Module):
+    def __init__(self):
+        Module.__init__(self)
+        self.kernel = None
+        self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
+        self.flip_y = -1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
+        self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+        self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
+        self.move_mode = 0
+
+        self.comment = None
+        self.code = ""
+        self.value = ""
+        self.command_map = {}
+
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        self.name = name
+        self.kernel.add_control("grbl_pipe", self.write)
+        self.kernel.add_control("grbl_command", self.command)
+
+    def shutdown(self, kernel):
+        Module.shutdown(self, kernel)
+
+    def write(self, data):
+        ord_a = ord('a')
+        ord_A = ord('A')
+        ord_z = ord('z')
+        ord_Z = ord('Z')
+        for b in data:
+            b_chr = chr(b)
+            is_end = b == ord('\n') or b == ord('\r')
+            if self.comment is not None:
+                if b == ord(')') or is_end:
+                    self.command_map['comment'] = self.comment
+                    self.comment = None
+                    if not is_end:
+                        continue
+                else:
+                    try:
+                        self.comment += str(b_chr)
+                    except UnicodeDecodeError:
+                        pass  # skip utf8 fail
+                    continue
+            if b == ord('('):
+                self.comment = ""
+                continue
+            elif b == ord(';'):
+                self.comment = ""
+                continue
+            elif b == ord('\t'):
+                continue
+            elif b == ord(' '):
+                continue
+            elif b == ord('/') and len(self.code) == 0:
+                continue
+            if ord('0') <= b <= ord('9') \
+                    or b == ord('+') \
+                    or b == ord('-') \
+                    or b == ord('.'):
+                self.value += chr(b)
+                continue
+
+            if ord_A <= b <= ord_Z:  # make lowercase.
+                b = b - ord_A + ord_a
+                b_chr = chr(b)
+
+            is_letter = ord_a <= b <= ord_z
+            if (is_letter or is_end) and len(self.code) != 0:
+                self.command_map[self.code] = float(self.value)
+                self.code = ""
+                self.value = ""
+            if is_letter:
+                self.code += str(b_chr)
+                continue
+            elif is_end:
+                if len(self.command_map) == 0:
+                    continue
+                self.command(self.command_map)  # Execute GCode.
+                self.command_map = {}
+                self.code = ""
+                self.value = ""
+                continue
+
+    def command(self, gc):
+        interpreter = self.kernel.device.interpreter
+        if 'comment' in gc:
+            comment = gc['comment']
+            pass
+        if 'f' in gc:  # Feed_rate
+            v = gc['f']
+            feed_rate = self.feed_scale * v
+            interpreter.command(COMMAND_SET_SPEED, feed_rate)
+        if 'g' in gc:
+            g_value = gc['g']
+            if g_value == 0.0:
+                self.move_mode = 0
+            elif g_value == 1.0:
+                self.move_mode = 1
+            elif g_value == 2.0:  # CW_ARC
+                self.move_mode = 2
+            elif g_value == 3.0:  # CCW_ARC
+                self.move_mode = 3
+            elif gc['g'] == 4.0:  # DWELL
+                interpreter.command(COMMAND_MODE_DEFAULT)
+                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                if 'p' in gc:
+                    p = float(gc['p']) / 1000.0
+                    interpreter.command(COMMAND_WAIT, p)
+                if 's' in gc:
+                    s = float(gc['s'])
+                    interpreter.command(COMMAND_WAIT, s)
+            elif gc['g'] == 28.0:
+                interpreter.command(COMMAND_MODE_DEFAULT)
+                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                interpreter.command(COMMAND_HOME)
+            elif gc['g'] == 21.0 or gc['g'] == 71.0:
+                self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
+            elif gc['g'] == 20.0 or gc['g'] == 70.0:
+                self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
+            elif gc['g'] == 90.0:
+                interpreter.command(COMMAND_SET_ABSOLUTE, True)
+            elif gc['g'] == 91.0:
+                interpreter.command(COMMAND_SET_ABSOLUTE, False)
+            elif gc['g'] == 94.0:
+                # Feed Rate in Units / Minute
+                self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
+        if 'm' in gc:
+            v = gc['m']
+            if v == 30:
+                return
+            if v == 3 or v == 4:
+                interpreter.command(COMMAND_LASER_ON)
+            elif v == 5:
+                interpreter.command(COMMAND_LASER_OFF)
+        if 'x' in gc or 'y' in gc:
+            if self.move_mode == 0:
+                interpreter.command(COMMAND_LASER_OFF)
+                interpreter.command(COMMAND_MODE_DEFAULT)
+            elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
+                interpreter.command(COMMAND_MODE_COMPACT)
+            if 'x' in gc:
+                x = gc['x'] * self.scale * self.flip_x
+            else:
+                x = 0
+            if 'y' in gc:
+                y = gc['y'] * self.scale * self.flip_y
+            else:
+                y = 0
+            if self.move_mode == 0 or self.move_mode == 1:
+                interpreter.command(COMMAND_MOVE, (x, y))
+            elif self.move_mode == 2:
+                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
+            elif self.move_mode == 3:
+                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
 
 
 class SVGWriter:

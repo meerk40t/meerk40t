@@ -942,8 +942,8 @@ class Kernel:
     def execute(self, control_name, *args):
         self.controls[control_name](*args)
 
-    def add_thread(self, thread_name, object):
-        self.threads[thread_name] = object
+    def add_thread(self, thread_name, obj):
+        self.threads[thread_name] = obj
 
     def remove_thread(self, thread_name):
         del self.threads[thread_name]
