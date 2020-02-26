@@ -44,9 +44,9 @@ class ServerThread(threading.Thread):
                 self.connection.send(push_message)
 
             data_from_socket = self.connection.recv(1024)
-            self.server.pipe.write(data_from_socket)
             if len(data_from_socket) != 0:
-                print(data_from_socket)
+                print("Processing Gcode: %s" % str(data_from_socket))
+            self.server.pipe.write(data_from_socket)
 
             push_message = self.server.pipe.read(1024)
             if push_message is not None:

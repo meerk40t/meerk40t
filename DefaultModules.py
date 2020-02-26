@@ -252,7 +252,7 @@ class GRBLEmulator(Module):
                 interpreter.command(COMMAND_MODE_DEFAULT)
                 interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
                 if 'p' in gc:
-                    p = float(gc['p']) / 1000.0
+                    p = float(gc['p'])
                     interpreter.command(COMMAND_WAIT, p)
                 if 's' in gc:
                     s = float(gc['s'])

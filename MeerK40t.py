@@ -54,12 +54,13 @@ kernel.add_module('SVGWriter', SVGWriter())
 emulator = GRBLEmulator()
 kernel.add_module('GrblEmulator', emulator)
 
-# if args.grbl is not None:
-from LaserServer import *
-server = LaserServer(args.grbl)
-server = LaserServer(23)
-server.set_pipe(emulator)
-kernel.add_module('GRBLServer', server)
+if args.grbl is not None:
+    from LaserServer import *
+    server = LaserServer(args.grbl)
+    server = LaserServer(23)
+    server.set_pipe(emulator)
+    kernel.add_module('GRBLServer', server)
+
 
 if args.list is not None:
     list_name = 'type'
