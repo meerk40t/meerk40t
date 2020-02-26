@@ -236,7 +236,7 @@ class LhymicroInterpreter(Interpreter):
                     self.up()
                 else:
                     self.down()
-                self.move_absolute(x, y)
+                self.move(x, y)
         elif command == COMMAND_HSTEP:
             self.v_switch()
         elif command == COMMAND_VSTEP:

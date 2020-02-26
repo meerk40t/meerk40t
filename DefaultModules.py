@@ -110,6 +110,7 @@ class GRBLEmulator(Module):
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
         self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
         self.move_mode = 0
+        self.on_mode = 1
         self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
 
         self.comment = None
@@ -276,8 +277,9 @@ class GRBLEmulator(Module):
             if v == 30:
                 return
             if v == 3 or v == 4:
-                interpreter.command(COMMAND_LASER_ON)
+                self.on_mode = True
             elif v == 5:
+                self.on_mode = False
                 interpreter.command(COMMAND_LASER_OFF)
         if 'x' in gc or 'y' in gc:
             if self.move_mode == 0:
@@ -293,7 +295,12 @@ class GRBLEmulator(Module):
                 y = gc['y'] * self.scale * self.flip_y
             else:
                 y = 0
-            if self.move_mode == 0 or self.move_mode == 1:
+            if self.move_mode == 0:
+                interpreter.command(COMMAND_LASER_OFF)
+                interpreter.command(COMMAND_MOVE, (x, y))
+            elif self.move_mode == 1:
+                if self.on_mode:
+                    interpreter.command(COMMAND_LASER_ON)
                 interpreter.command(COMMAND_MOVE, (x, y))
             elif self.move_mode == 2:
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
