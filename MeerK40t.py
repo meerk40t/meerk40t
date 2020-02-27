@@ -50,6 +50,7 @@ kernel.add_module('K40Stock', K40StockBackend())
 kernel.add_module('SVGLoader', SVGLoader())
 kernel.add_module('ImageLoader', ImageLoader())
 kernel.add_module('EgvLoader', EgvLoader())
+kernel.add_module("DxfLoader", DxfLoader())
 kernel.add_module('SVGWriter', SVGWriter())
 emulator = GRBLEmulator()
 kernel.add_module('GrblEmulator', emulator)
@@ -57,7 +58,7 @@ kernel.add_module('GrblEmulator', emulator)
 if args.grbl is not None:
     from LaserServer import *
     server = LaserServer(args.grbl)
-    server = LaserServer(23)
+
     server.set_pipe(emulator)
     kernel.add_module('GRBLServer', server)
 

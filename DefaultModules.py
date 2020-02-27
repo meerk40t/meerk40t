@@ -1,15 +1,14 @@
 import os
-from io import BytesIO
-
 from base64 import b64encode
-
-from svgelements import *
-from K40Controller import K40Controller
-from Kernel import Spooler, Module, Backend, Device, Pipe
-from LhymicroInterpreter import LhymicroInterpreter
-from EgvParser import parse_egv
+from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
+
+from EgvParser import parse_egv
+from K40Controller import K40Controller
+from Kernel import Spooler, Module, Backend, Device
 from LaserCommandConstants import *
+from LhymicroInterpreter import LhymicroInterpreter
+from svgelements import *
 
 MILS_PER_MM = 39.3701
 
@@ -164,7 +163,7 @@ class GRBLEmulator(Module):
         for b in data:
             c = chr(b)
             if c == '?' or c == '~' or c == '!' or c == '\x18':
-                self.realtime_write(c) # Pick off realtime commands.
+                self.realtime_write(c)  # Pick off realtime commands.
                 continue
             is_end = c == '\n' or c == '\r'
             if self.comment is not None:
@@ -518,3 +517,161 @@ class ImageLoader:
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
         return [image], pathname, basename
+
+
+class DxfLoader:
+    def __init__(self):
+        self.kernel = None
+
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        kernel.add_loader("DxfLoader", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['DxfLoader']
+
+    def load_types(self):
+        yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
+
+    def load(self, pathname):
+        import ezdxf
+        basename = os.path.basename(pathname)
+        dxf = ezdxf.readfile(pathname)
+        elements = []
+        for entity in dxf.entities:
+            try:
+                entity.transform_to_wcs()
+            except AttributeError:
+                pass
+            if entity.dxftype() == 'CIRCLE':
+                element = Circle(center=entity.center, r=entity.radius)
+            elif entity.dxftype() == 'ARC':
+                element = Path(Arc(center=entity.center,
+                                   r=entity.radius,
+                                   start_angle=Angle.degrees(dxf.start_angle),
+                                   end_angle=Angle.degrees(dxf.end_angle)))
+            elif entity.dxftype() == 'ELLIPSE':
+                element = Ellipse(center=entity.center,
+                                  # major axis is vector
+                                  # ratio is the ratio of major to minor.
+                                  start_point=dxf.start_point,
+                                  end_point=dxf.end_point,
+                                  start_angle=dxf.start_param,
+                                  end_angle=dxf.end_param)
+            elif entity.dxftype() == 'LINE':
+                #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
+                try:
+                    element = SimpleLine(x0=entity.start[0], y0=entity.start[1], x1=entity.end[0], y1=entity.end[1])
+                except AttributeError:
+                    continue  # Why doesn't this have a start and end. I was it should.
+            elif entity.dxftype() == 'LWPOLYLINE':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
+                if entity.closed:
+                    points = list(entity)
+                    element = Polygon(*list((p[0], p[1]) for p in points))
+                else:
+                    points = list(entity)
+                    element = Polyline(*list((p[0], p[1]) for p in points))
+                # TODO: If bulges are defined they should be included as arcs.
+            elif entity.dxftype() == 'HATCH':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
+                element = Path()
+                if entity.bgcolor is not None:
+                    Path.fill = Color(entity.bgcolor)
+                for p in entity.paths:
+                    if p.path_type_flags & 2:
+                        for v in p.vertices:
+                            element.line(v[0], v[1])
+                        if p.is_closed:
+                            element.closed()
+                    else:
+                        for e in p.edges:
+                            if type(e) == "LineEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.LineEdge
+                                element.line(e.start, e.end)
+                            elif type(e) == "ArcEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.ArcEdge
+                                element += Arc(center=e.center,
+                                               radius=e.radius,
+                                               start_angle=Angle.degrees(e.start_angle),
+                                               end_angle=Angle.degrees(e.end_angle),
+                                               ccw=e.is_counter_clockwise)
+                            elif type(e) == "EllipseEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.EllipseEdge
+                                element += Arc(radius=e.radius,
+                                               start_angle=Angle.degrees(e.start_angle),
+                                               end_angle=Angle.degrees(e.end_angle),
+                                               ccw=e.is_counter_clockwise)
+                            elif type(e) == "SplineEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.SplineEdge
+                                if e.degree == 3:
+                                    for i in range(len(e.knot_values)):
+                                        control = e.control_values[i]
+                                        knot = e.knot_values[i]
+                                        element.quad(control, knot)
+                                elif e.degree == 4:
+                                    for i in range(len(e.knot_values)):
+                                        control1 = e.control_values[2 * i]
+                                        control2 = e.control_values[2 * i + 1]
+                                        knot = e.knot_values[i]
+                                        element.cubic(control1, control2, knot)
+                                else:
+                                    for i in range(len(e.knot_values)):
+                                        knot = e.knot_values[i]
+                                        element.line(knot)
+            elif entity.dxftype() == 'IMAGE':
+                bottom_left_position = entity.insert
+                size = entity.image_size
+                imagedef = entity.image_def_handle
+                element = SVGImage(href=imagedef.filename,
+                                   x=bottom_left_position[0],
+                                   y=bottom_left_position[1] - size[1],
+                                   width=size[0],
+                                   height=size[1])
+            elif entity.dxftype() == 'MTEXT':
+                insert = entity.insert
+                element = SVGText(x=insert[0], y=insert[1], text=entity.text)
+            elif entity.dxftype() == 'TEXT':
+                insert = entity.insert
+                element = SVGText(x=insert[0], y=insert[1], text=entity.text)
+            elif entity.dxftype() == 'POLYLINE':
+                if entity.is_2d_polyline():
+                    if entity.is_closed:
+                        element = Polygon(entity.points())
+                    else:
+                        element = Polyline(entity.points())
+            elif entity.dxftype() == 'SOLID' or entity.dxftype() == 'TRACE':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
+                element = Path(entity)
+                element.closed()
+                element.fill = Color('Black')
+            elif entity.dxftype() == 'SPLINE':
+                element = Path()
+
+                if entity.degree == 3:
+                    for i in range(entity.n_fit_points):
+                        element.quad(
+                            entity.control_points[i],
+                            entity.fit_point[i]
+                        )
+                elif entity.degree == 4:
+                    for i in range(entity.n_fit_points):
+                        element.quad(
+                            entity.control_points[2*i],
+                            entity.control_points[2 * i + 1],
+                            entity.fit_point[i]
+                        )
+                else:
+                    for i in range(entity.n_fit_points):
+                        element.line(entity.fit_point[i])
+            else:
+                continue
+                # Might be something unsupported.
+            if entity.rgb is not None:
+                element.stroke = Color(entity.rgb)
+            else:
+                element.stroke = Color('black')
+            elements.append(Path(element))
+
+        return elements, pathname, basename
