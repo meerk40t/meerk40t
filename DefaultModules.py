@@ -535,23 +535,33 @@ class DxfLoader:
         yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
 
     def load(self, pathname):
+        """"
+        Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
+
+        Dxf data has an origin point located in the lower left corner. +y -> top
+        """
         import ezdxf
+
         basename = os.path.basename(pathname)
         dxf = ezdxf.readfile(pathname)
         elements = []
         for entity in dxf.entities:
-            # try:
-            #     entity.transform_to_wcs(entity.ucs)
-            # except AttributeError:
-            #     pass
+
+            try:
+                entity.transform_to_wcs(entity.ocs())
+            except AttributeError:
+                pass
+
+            print(entity.dxftype())
             if entity.dxftype() == 'CIRCLE':
                 element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
             elif entity.dxftype() == 'ARC':
-                element = Path(Arc(center=entity.dxf.center,
-                                   r=entity.dxf.radius,
-                                   start_angle=Angle.degrees(entity.dxf.start_angle),
-                                   end_angle=Angle.degrees(entity.dxf.end_angle)))
+                circ = Circle(center=entity.dxf.center,
+                              r=entity.dxf.radius)
+                element = Path(circ.arc_angle(Angle.degrees(entity.dxf.start_angle),
+                                              Angle.degrees(entity.dxf.end_angle)))
             elif entity.dxftype() == 'ELLIPSE':
+                # TODO: needs more math, axis is vector, ratio is to minor.
                 element = Ellipse(center=entity.dxf.center,
                                   # major axis is vector
                                   # ratio is the ratio of major to minor.
@@ -561,15 +571,16 @@ class DxfLoader:
                                   end_angle=dxf.end_param)
             elif entity.dxftype() == 'LINE':
                 #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
-                element = SimpleLine(x0=entity.dxf.start[0], y0=entity.dxf.start[1], x1=entity.dxf.end[0], y1=entity.dxf.end[1])
+                element = SimpleLine(x0=entity.dxf.start[0], y0=entity.dxf.start[1],
+                                     x1=entity.dxf.end[0], y1=entity.dxf.end[1])
             elif entity.dxftype() == 'LWPOLYLINE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
                 if entity.closed:
                     points = list(entity)
-                    element = Polygon([(p[0],p[1]) for p in points()])
+                    element = Polygon([(p[0], p[1]) for p in points()])
                 else:
                     points = list(entity)
-                    element = Polyline([(p[0],p[1]) for p in points()])
+                    element = Polyline([(p[0], p[1]) for p in points()])
                 # TODO: If bulges are defined they should be included as arcs.
             elif entity.dxftype() == 'HATCH':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
@@ -628,16 +639,16 @@ class DxfLoader:
                                    height=size[1])
             elif entity.dxftype() == 'MTEXT':
                 insert = entity.insert
-                element = SVGText(x=insert[0], y=insert[1], text=entity.text)
+                element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
             elif entity.dxftype() == 'TEXT':
                 insert = entity.insert
-                element = SVGText(x=insert[0], y=insert[1], text=entity.text)
+                element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
             elif entity.dxftype() == 'POLYLINE':
                 if entity.is_2d_polyline:
                     if entity.is_closed:
-                        element = Polygon([(p[0],p[1]) for p in entity.points()])
+                        element = Polygon([(p[0], p[1]) for p in entity.points()])
                     else:
-                        element = Polyline([(p[0],p[1]) for p in entity.points()])
+                        element = Polyline([(p[0], p[1]) for p in entity.points()])
             elif entity.dxftype() == 'SOLID' or entity.dxftype() == 'TRACE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
                 element = Path(entity)
@@ -645,23 +656,31 @@ class DxfLoader:
                 element.fill = Color('Black')
             elif entity.dxftype() == 'SPLINE':
                 element = Path()
-
-                if entity.dxf.degree == 3:
-                    for i in range(entity.dxf.n_fit_points):
-                        element.quad(
-                            entity.dxf.control_points[i],
-                            entity.dxf.fit_point[i]
-                        )
-                elif entity.dxf.degree == 4:
-                    for i in range(entity.dxf.n_fit_points):
-                        element.quad(
-                            entity.dxf.control_points[2*i],
-                            entity.dxf.control_points[2 * i + 1],
-                            entity.dxf.fit_point[i]
-                        )
-                else:
-                    for i in range(entity.dxf.n_fit_points):
-                        element.line(entity.dxf.fit_point[i])
+                # TODO: Additional research.
+                # if entity.dxf.degree == 3:
+                #     element.move(entity.knots[0])
+                #     print(entity.dxf.n_control_points)
+                #     for i in range(1, entity.dxf.n_knots):
+                #         print(entity.knots[i])
+                #         print(entity.control_points[i-1])
+                #         element.quad(
+                #             entity.control_points[i-1],
+                #             entity.knots[i]
+                #         )
+                # elif entity.dxf.degree == 4:
+                #     element.move(entity.knots[0])
+                #     for i in range(1, entity.dxf.n_knots):
+                #         element.quad(
+                #             entity.control_points[2 * i - 2],
+                #             entity.control_points[2 * i - 1],
+                #             entity.knots[i]
+                #         )
+                # else:
+                element.move(entity.control_points[0])
+                for i in range(1, entity.dxf.n_control_points):
+                    element.line(entity.control_points[i])
+                if entity.closed:
+                    element.closed()
             else:
                 continue
                 # Might be something unsupported.
@@ -669,6 +688,8 @@ class DxfLoader:
                 element.stroke = Color(entity.rgb)
             else:
                 element.stroke = Color('black')
-            elements.append(Path(element))
+            element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
+            element.transform.post_translate_y(self.kernel.bed_height * MILS_PER_MM)
+            elements.append(abs(Path(element)))
 
         return elements, pathname, basename
