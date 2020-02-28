@@ -9,14 +9,14 @@ class LaserSpeed:
 
     This is the standard library for converting to and from speed code information for LHYMICRO-GL.
 
-    The units in the speed code have particular bands/gears which slightly modifies the equations used
+    The units in the speed code have acceleration/deceleration factors which slightly modifies the equations used
     to convert between values and speeds. The fundamental units within the speed code values are period-ticks.
     All values relate to a value in the counter to count off the number of oscillations within the
-    (typically 22.1184) Mhz crystal. The max value here is 65535, potentially with the addition of a diagonal delay.
+    (typically 22.1184) Mhz crystal. The max value here is 65535, with the addition of a diagonal delay.
 
     For the M2 board, the original Chinese Software gave a slope of 12120. However experiments with the actual
-    physical speed put this value at 11142, which properly reflects all speeds tend to be at 91.98% of the requested
-    speed.
+    physical speed put this value at 11142, which properly reflects that all speeds tend to be at 91.98% of the
+    requested speed.
 
     The board is ultimately controlling a stepper motor and the speed a stepper motor travels is the result of
     the time between the ticks. Since the crystal oscillator is the same, the delay is controlled by the counted
@@ -27,65 +27,87 @@ class LaserSpeed:
     equal to 25.4 mm/s. If we want a 2 ms delay, which is half the speed (0.5kHz, 0.5 inches/second, 12.7 mm/s)
     we do 65536 - (5120 + 24240) which gives us a value of 36176. This would be encoded as a 16 bit number
     broken up into 2 ascii 3 digit strings between 0-255. 141 for the high bits and 80 for the low bits.
-    So CV01410801 where the final character "1" is the gearing equation we used.
+    So CV01410801 where the final character "1" is the acceleration factor since it's within that range.
 
     The speed in mm/s is also used for determining which gearing to use and as a factor for the horizontal
-    encoded value, for some boards (B2, M2). Slowing down the device down while traveling diagonal to make the
+    encoded value, for some boards (B2, M2). Slowing down the device down while traveling diagonal makes the
     diagonal and orthogonal take the same amount of time (thereby cutting to the same depth). These are the same
     period-ticks units and is simply summed with the 65536 - (b + mT) value in cases that both stepper motors
     are used.
+
+    The LASER- prefix codes are corrected in the following ways. They will not return negative values. They will give
+    speeds that are correctly the speed requested. They will not truncate at the high side of speeds so speeds beyond
+    480mm/s are accepted.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, *args):
+        if len(args) == 1:
+            if isinstance(args[0], (float,int)):
+                speed = 30
+
+        self.code_value = None
+        self.acceleration = 1
+        self.step_value = None
+        self.diagonal = None
+        self.raster_step = None
 
     @staticmethod
     def get_speed_from_code(speed_code, board="LASER-M2"):
-        code_value, gear, step_value, diagonal, raster_step = LaserSpeed.parse_speed_code(speed_code)
-        b, m, gear = LaserSpeed.get_gearing(board, gear=gear, uses_raster_step=raster_step != 0)
+        """
+        Gets the speed expected from a speedcode. Should calculate the expected speed from the data code given.
+        :param speed_code: The speedcode to check.
+        :param board: The board this speedcode was made for.
+        :return:
+        """
+        code_value, accel, step_value, diagonal, raster_step = LaserSpeed.parse_speed_code(speed_code)
+        b, m, accel = LaserSpeed.get_equation(board, accel=accel, raster_horizontal=raster_step != 0)
         return LaserSpeed.get_speed_from_value(code_value, b, m)
 
     @staticmethod
-    def get_code_from_speed(mm_per_second, raster_step=0, board="LASER-M2", d_ratio=0.261199033289, gear=None):
+    def get_code_from_speed(mm_per_second, raster_step=0, board="LASER-M2",
+                            d_ratio=0.261199033289, accel=None, twelfth=None):
         """
         Get a speedcode from a given speed. The raster step appends the 'G' value and uses speed ranges.
         The d_ratio uses the default/auto ratio. The gearing is optional and forces the speedcode to work
-        for that particular gearing. Gear=0 refers to C-suffix notation speeds.
+        for that particular gearing.
+
+
 
         :param mm_per_second: speed to convert to code.
-        :param raster_step: raster step mode to use.
+        :param raster_step: raster step mode to use. Use (g0,g1) tuple for unidirectional valuations.
         :param board: Nano Board Model to do the conversion for.
         :param d_ratio: M1, M2, B1, B2 have ratio of optional speed
-        :param gear: Optional force gearing rather than default gear for that speed.
+        :param accel: Optional force acceleration code rather than default gear for that speed.
+        :param twelfth: Optional force suffix_c mode for the board. (True forces suffix_c on, False forces it off)
         :return: speed code produced.
         """
         if mm_per_second > 240 and raster_step == 0:
             mm_per_second = 19.05  # Arbitrary default speed for out range value.
-        b, m, gear = LaserSpeed.get_gearing(board, mm_per_second, raster_step != 0, gear)
+        b, m, accel = LaserSpeed.get_equation(board, mm_per_second, raster_step != 0, accel)
 
         speed_value = LaserSpeed.get_value_from_speed(mm_per_second, b, m)
         encoded_speed = LaserSpeed.encode_value(speed_value)
 
         if raster_step != 0:
-            if gear == 0:  # There is no C suffix notation for gear raster step.
-                gear = 1
+            if accel == 0:  # There is no C suffix notation for gear raster step.
+                accel = 1
             return "V%s%1dG%03d" % (
                 encoded_speed,
-                gear,
+                accel,
                 raster_step
             )
 
         if d_ratio == 0 or board == "A" or board == "B" or board == "M" or board == "LASER-A" or board == "LASER-B" or board == "LASER-M":
             # We do not need the diagonal code.
             if raster_step == 0:
-                if gear == 0:
+                if accel == 0:
                     return "CV%s1C" % (
                         encoded_speed
                     )
                 else:
                     return "CV%s%1d" % (
                         encoded_speed,
-                        gear)
+                        accel)
         else:
             step_value = min(int(floor(mm_per_second) + 1), 128)
             frequency_kHz = float(mm_per_second) / 25.4
@@ -95,7 +117,7 @@ class LaserSpeed:
                 period_in_ms = 0
             d_value = d_ratio * m * period_in_ms / float(step_value)
             encoded_diagonal = LaserSpeed.encode_value(d_value)
-            if gear == 0:
+            if accel == 0:
                 return "CV%s1%03d%sC" % (
                     encoded_speed,
                     step_value,
@@ -104,7 +126,7 @@ class LaserSpeed:
             else:
                 return "CV%s%1d%03d%s" % (
                     encoded_speed,
-                    gear,
+                    accel,
                     step_value,
                     encoded_diagonal)
 
@@ -203,12 +225,20 @@ class LaserSpeed:
         return "%03d%03d" % (b1, b0)
 
     @staticmethod
-    def get_gear_for_speed(mm_per_second, uses_raster_step=False):
+    def get_accel_for_speed(mm_per_second, raster_horizontal=False, raster_vertical=False):
+        """
+        Gets the acceleration factor for a particular speed.
+
+        :param mm_per_second: Speed to find acceleration value for.
+        :param raster_horizontal: Whether this speed is for a horizontal rastering. (top-to-bottom, y-axis speed)
+        :param raster_vertical: Whether this speed is for a vertical rastering. (left-to-right, x-axis speed)
+        :return: 1-4: Value for the accel factor.
+        """
         if mm_per_second <= 25.4:
             return 1
         if 25.4 < mm_per_second <= 60:
             return 2
-        if not uses_raster_step:
+        if not raster_horizontal:
             if 60 < mm_per_second < 127:
                 return 3
             if 127 <= mm_per_second:
@@ -222,7 +252,7 @@ class LaserSpeed:
                 return 4
 
     @staticmethod
-    def get_gearing(board, mm_per_second=None, uses_raster_step=False, gear=None):
+    def get_equation(board, mm_per_second=None, raster_horizontal=False, raster_vertical=False, accel=None):
         """The gearing equations are divided into two sets distinct groups.
         The LASER-[ABM][12]? values and the [ABM][12]? values. If the 'BOARD'
         prefix is specified it will give the correct value to create a given speed.
@@ -235,13 +265,13 @@ class LaserSpeed:
         board being twice the M2 board. However it is not known for A or B, B1 or B2
         In this case LASER-X returns the same value as X.
         """
-        if gear is None:
-            gear = LaserSpeed.get_gear_for_speed(mm_per_second, uses_raster_step)
+        if accel is None:
+            accel = LaserSpeed.get_accel_for_speed(mm_per_second, raster_horizontal)
             if board == "B2":
                 if mm_per_second < 7:
                     # speeds below 9.509 will be in error. But the Chinese Software drew the line for suffix-C at
                     # 7 so, this package does as well. Even though it means impossible speeds at between 7 and 9.509.
-                    if uses_raster_step:
+                    if raster_horizontal:
                         return 784.0, 2020.0, 1
                         # C-suffix code, pretending to be gear 1, the results are raster
                         # speedcodes that do not actually provide full circle capabilities.
@@ -249,21 +279,21 @@ class LaserSpeed:
                         # emulate the Chinese software this is added because that is how it
                         # works in that package.
                     else:
-                        gear = 0
+                        accel = 0
                         # Use C-suffice notation.
             elif board == "LASER-B2":
                 if mm_per_second < 8.75:
-                    if uses_raster_step:
+                    if raster_horizontal:
                         return 784.0, 1858.0, 1
                     # Speeds below 8.75 will be in error.
                     # The LASER-XX spec is intended to fix things, so the error code range of the B2 are dismissed
-                    gear = 0  # Use C-suffix notion below this level.
+                    accel = 0  # Use C-suffix notion below this level.
             elif board == "M2":
                 if mm_per_second < 7:
-                    gear = 0  # Use C-suffix notion below this level.
+                    accel = 0  # Use C-suffix notion below this level.
             elif board == "LASER-M2":
                 if mm_per_second < 7:
-                    gear = 0  # Use C-suffix notion below this level.
+                    accel = 0  # Use C-suffix notion below this level.
         A_B_B1 = [
             (784.0, 2000.0, 0),  # A, B, B1 have no known suffix-C equations.
             (784.0, 2000.0, 1),
@@ -330,7 +360,7 @@ class LaserSpeed:
                 (6144.0, 11148.0, 4)
             ],
         }
-        return speedcode_dict[board][gear]
+        return speedcode_dict[board][accel]
 
     @staticmethod
     def validate_speed(mm_per_second, board, uses_raster_step=False):

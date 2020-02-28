@@ -540,19 +540,19 @@ class DxfLoader:
         dxf = ezdxf.readfile(pathname)
         elements = []
         for entity in dxf.entities:
-            try:
-                entity.transform_to_wcs()
-            except AttributeError:
-                pass
+            # try:
+            #     entity.transform_to_wcs(entity.ucs)
+            # except AttributeError:
+            #     pass
             if entity.dxftype() == 'CIRCLE':
-                element = Circle(center=entity.center, r=entity.radius)
+                element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
             elif entity.dxftype() == 'ARC':
-                element = Path(Arc(center=entity.center,
-                                   r=entity.radius,
-                                   start_angle=Angle.degrees(dxf.start_angle),
-                                   end_angle=Angle.degrees(dxf.end_angle)))
+                element = Path(Arc(center=entity.dxf.center,
+                                   r=entity.dxf.radius,
+                                   start_angle=Angle.degrees(entity.dxf.start_angle),
+                                   end_angle=Angle.degrees(entity.dxf.end_angle)))
             elif entity.dxftype() == 'ELLIPSE':
-                element = Ellipse(center=entity.center,
+                element = Ellipse(center=entity.dxf.center,
                                   # major axis is vector
                                   # ratio is the ratio of major to minor.
                                   start_point=dxf.start_point,
@@ -561,18 +561,15 @@ class DxfLoader:
                                   end_angle=dxf.end_param)
             elif entity.dxftype() == 'LINE':
                 #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
-                try:
-                    element = SimpleLine(x0=entity.start[0], y0=entity.start[1], x1=entity.end[0], y1=entity.end[1])
-                except AttributeError:
-                    continue  # Why doesn't this have a start and end. I was it should.
+                element = SimpleLine(x0=entity.dxf.start[0], y0=entity.dxf.start[1], x1=entity.dxf.end[0], y1=entity.dxf.end[1])
             elif entity.dxftype() == 'LWPOLYLINE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
                 if entity.closed:
                     points = list(entity)
-                    element = Polygon(*list((p[0], p[1]) for p in points))
+                    element = Polygon([(p[0],p[1]) for p in points()])
                 else:
                     points = list(entity)
-                    element = Polyline(*list((p[0], p[1]) for p in points))
+                    element = Polyline([(p[0],p[1]) for p in points()])
                 # TODO: If bulges are defined they should be included as arcs.
             elif entity.dxftype() == 'HATCH':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
@@ -636,11 +633,11 @@ class DxfLoader:
                 insert = entity.insert
                 element = SVGText(x=insert[0], y=insert[1], text=entity.text)
             elif entity.dxftype() == 'POLYLINE':
-                if entity.is_2d_polyline():
+                if entity.is_2d_polyline:
                     if entity.is_closed:
-                        element = Polygon(entity.points())
+                        element = Polygon([(p[0],p[1]) for p in entity.points()])
                     else:
-                        element = Polyline(entity.points())
+                        element = Polyline([(p[0],p[1]) for p in entity.points()])
             elif entity.dxftype() == 'SOLID' or entity.dxftype() == 'TRACE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
                 element = Path(entity)
@@ -649,22 +646,22 @@ class DxfLoader:
             elif entity.dxftype() == 'SPLINE':
                 element = Path()
 
-                if entity.degree == 3:
-                    for i in range(entity.n_fit_points):
+                if entity.dxf.degree == 3:
+                    for i in range(entity.dxf.n_fit_points):
                         element.quad(
-                            entity.control_points[i],
-                            entity.fit_point[i]
+                            entity.dxf.control_points[i],
+                            entity.dxf.fit_point[i]
                         )
-                elif entity.degree == 4:
-                    for i in range(entity.n_fit_points):
+                elif entity.dxf.degree == 4:
+                    for i in range(entity.dxf.n_fit_points):
                         element.quad(
-                            entity.control_points[2*i],
-                            entity.control_points[2 * i + 1],
-                            entity.fit_point[i]
+                            entity.dxf.control_points[2*i],
+                            entity.dxf.control_points[2 * i + 1],
+                            entity.dxf.fit_point[i]
                         )
                 else:
-                    for i in range(entity.n_fit_points):
-                        element.line(entity.fit_point[i])
+                    for i in range(entity.dxf.n_fit_points):
+                        element.line(entity.dxf.fit_point[i])
             else:
                 continue
                 # Might be something unsupported.
