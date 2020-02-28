@@ -551,8 +551,6 @@ class DxfLoader:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
-
-            print(entity.dxftype())
             if entity.dxftype() == 'CIRCLE':
                 element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
             elif entity.dxftype() == 'ARC':
@@ -575,11 +573,10 @@ class DxfLoader:
                                      x1=entity.dxf.end[0], y1=entity.dxf.end[1])
             elif entity.dxftype() == 'LWPOLYLINE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
+                points = list(entity)
                 if entity.closed:
-                    points = list(entity)
                     element = Polygon([(p[0], p[1]) for p in points()])
                 else:
-                    points = list(entity)
                     element = Polyline([(p[0], p[1]) for p in points()])
                 # TODO: If bulges are defined they should be included as arcs.
             elif entity.dxftype() == 'HATCH':
@@ -600,11 +597,9 @@ class DxfLoader:
                                 element.line(e.start, e.end)
                             elif type(e) == "ArcEdge":
                                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.ArcEdge
-                                element += Arc(center=e.center,
-                                               radius=e.radius,
-                                               start_angle=Angle.degrees(e.start_angle),
-                                               end_angle=Angle.degrees(e.end_angle),
-                                               ccw=e.is_counter_clockwise)
+                                circ = Circle(center=e.center,
+                                               radius=e.radius,)
+                                element += circ.arc_angle(Angle.degrees(e.start_angle), Angle.degrees(e.end_angle))
                             elif type(e) == "EllipseEdge":
                                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.EllipseEdge
                                 element += Arc(radius=e.radius,
