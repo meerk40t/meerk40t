@@ -26,16 +26,6 @@ class JobInfo(wx.Frame):
         # Menu Bar
         self.JobInfo_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Simple"), "")
-        self.Bind(wx.EVT_MENU, self.spool_trace_simple, id=t.GetId())
-        t.Enable(False)
-
-        t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Trace Hull"), "")
-        self.Bind(wx.EVT_MENU, self.spool_trace_hull, id=t.GetId())
-        t.Enable(False)
-        self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Run"))
-
-        wxglade_tmp_menu = wx.Menu()
         self.menu_autostart = wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_auto_start_controller, id=self.menu_autostart.GetId())
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
@@ -74,12 +64,6 @@ class JobInfo(wx.Frame):
         self.kernel = None
         self.device = None
         self.operations = []
-
-    def spool_trace_simple(self, event):
-        print("Spool Simple.")
-
-    def spool_trace_hull(self, event):
-        print("Spool Hull.")
 
     def jobadd_home(self, event):
         self.operations.append(OperationPreprocessor.home)

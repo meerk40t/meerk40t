@@ -1,6 +1,7 @@
 import wx
 
 from icons import *
+from svgelements import SVGImage
 
 _ = wx.GetTranslation
 
@@ -64,6 +65,8 @@ class CameraInterface(wx.Frame):
         self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
         self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
         self.job = None
+        self.fisheye_d = None
+        self.fisheye_k = None
 
     def on_erase(self, event):
         pass
@@ -84,16 +87,34 @@ class CameraInterface(wx.Frame):
 
     def set_kernel(self, kernel):
         self.kernel = kernel
+        self.kernel.setting(str, 'fisheye', '')
         self.job = self.kernel.cron.add_job(self.fetch_image)
+        if kernel.fisheye is not None and len(kernel.fisheye) != 0:
+            self.kernel.fisheye_d, self.kernel.fisheye_k = repr(kernel.fisheye)
+
+    def capture_frame(self):
+        import cv2
+        ret, frame = self.capture.read()
+        if self.fisheye_k is not None and self.fisheye_d is not None:
+            K = self.kernel.fisheye_k
+            D = self.kernel.fisheye_d
+            DIM = frame.shape[:2][::-1]
+            import numpy as np
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), K, DIM, cv2.CV_16SC2)
+            frame = cv2.remap(frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if ret:
+            return frame
+        else:
+            return None
 
     def fetch_image(self):
         if self.kernel is None or self.capture is None:
             return
-        import cv2
         try:
-            ret, self.frame = self.capture.read()
-            if ret:
-                self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+            self.frame = self.capture_frame()
+            if self.frame is not None:
                 self._Buffer.CopyFromBuffer(self.frame)
                 wx.CallAfter(self.update_in_gui_thread)
         except RuntimeError:
@@ -133,16 +154,22 @@ class CameraInterface(wx.Frame):
         # end wxGlade
 
     def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
-        import cv2
-        ret, frame = self.capture.read()
-        if ret:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = self.capture_frame()
+        if frame is not None:
             buffer = wx.Bitmap.FromBuffer(self.width, self.height, frame)
             self.kernel.signal("background", buffer)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
-        print("Event handler 'on_button_export' not implemented!")
-        event.Skip()
+        frame = self.capture_frame()
+        if frame is not None:
+            from PIL import Image
+            img = Image.fromarray(frame)
+            obj = SVGImage()
+            obj.image = img
+            obj.image_width = self.width
+            obj.image_height = self.height
+            self.kernel.elements.append(obj)
+            self.kernel.signal('refresh_elements')
 
     def on_slider_fps(self, event):  # wxGlade: CameraInterface.<event_handler>
         fps = self.slider_fps.GetValue()
