@@ -95,6 +95,7 @@ class JobInfo(wx.Frame):
 
     def jobadd_interrupt(self, event):
         self.operations.append(self.interrupt)
+        self.update_gui()
 
     def interrupt(self):
         yield COMMAND_WAIT_BUFFER_EMPTY
