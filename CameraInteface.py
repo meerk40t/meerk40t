@@ -15,6 +15,7 @@ class CameraInterface(wx.Frame):
 
         self.button_update = wx.BitmapButton(self, wx.ID_ANY, icons8_camera_50.GetBitmap())
         self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
+        self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Fisheye"))
         self.slider_fps = wx.Slider(self, wx.ID_ANY, 1, 0, 24, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
         self.display_camera = wx.Panel(self, wx.ID_ANY)
@@ -24,6 +25,7 @@ class CameraInterface(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
+        # self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
         self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
         self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
         self.SetDoubleBuffered(True)
@@ -65,8 +67,12 @@ class CameraInterface(wx.Frame):
         self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
         self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
         self.job = None
-        self.fisheye_d = None
         self.fisheye_k = None
+        self.fisheye_d = None
+
+        # Used during calibration.
+        self.objpoints = []  # 3d point in real world space
+        self.imgpoints = []  # 2d points in image plane.
 
     def on_erase(self, event):
         pass
@@ -90,24 +96,27 @@ class CameraInterface(wx.Frame):
         self.kernel.setting(str, 'fisheye', '')
         self.job = self.kernel.cron.add_job(self.fetch_image)
         if kernel.fisheye is not None and len(kernel.fisheye) != 0:
-            self.kernel.fisheye_d, self.kernel.fisheye_k = repr(kernel.fisheye)
+            self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
 
-    def capture_frame(self):
+    def capture_frame(self, raw=False):
         import cv2
         ret, frame = self.capture.read()
-        if self.fisheye_k is not None and self.fisheye_d is not None:
-            K = self.kernel.fisheye_k
-            D = self.kernel.fisheye_d
-            DIM = frame.shape[:2][::-1]
+        if not ret or frame is None:
+            return None
+
+        if not raw and\
+                self.fisheye_k is not None and \
+                self.fisheye_d is not None and \
+                not self.check_fisheye.GetValue():
+            # Unfisheye the drawing
             import numpy as np
+            K = np.array(self.fisheye_k)
+            D = np.array(self.fisheye_d)
+            DIM = frame.shape[:2][::-1]
             map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), K, DIM, cv2.CV_16SC2)
             frame = cv2.remap(frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        if ret:
-            return frame
-        else:
-            return None
+        return frame
 
     def fetch_image(self):
         if self.kernel is None or self.capture is None:
@@ -145,6 +154,7 @@ class CameraInterface(wx.Frame):
         sizer_2.Add(self.button_export, 0, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_2.Add(label_1, 1, 0, 0)
+        sizer_2.Add(self.check_fisheye, 0, 0, 0)
         sizer_2.Add(self.slider_fps, 0, wx.EXPAND, 0)
         sizer_2.Add(self.button_detect, 0, 0, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
@@ -180,9 +190,71 @@ class CameraInterface(wx.Frame):
         self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        dlg = wx.MessageDialog(None, _("This feature is not implemented."),
-                               _("Not Implemented"), wx.OK)
+        try:
+            import cv2
+            import numpy as np
+        except:
+            dlg = wx.MessageDialog(None, _("Could not import Camera requirements"),
+                                _("Imports Failed"), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+        CHECKERBOARD = (6, 9)
+        subpix_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
+        calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_CHECK_COND + cv2.fisheye.CALIB_FIX_SKEW
+        objp = np.zeros((1, CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
+        objp[0, :, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+
+        frame = self.capture_frame(raw=True)
+        img = frame
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Find the chess board corners
+        ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD,
+                                                     cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
+            # If found, add object points, image points (after refining them)
+
+        if ret:
+            self.objpoints.append(objp)
+            cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
+            self.imgpoints.append(corners)
+        else:
+            dlg = wx.MessageDialog(None, _("Checkerboard 6x9 pattern not found."),
+                                   _("Pattern not found."), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+        N_OK = len(self.objpoints)
+        K = np.zeros((3, 3))
+        D = np.zeros((4, 1))
+        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
+        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
+        try:
+            rms, a, b, c, d = \
+                cv2.fisheye.calibrate(
+                    self.objpoints,
+                    self.imgpoints,
+                    gray.shape[::-1],
+                    K,
+                    D,
+                    rvecs,
+                    tvecs,
+                    calibration_flags,
+                    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
+                )
+        except cv2.error:
+            # Ill conditioned matrix for input values.
+            self.objpoints = self.objpoints[:-1] # Deleting the last entry.
+            self.imgpoints = self.imgpoints[:-1]
+            dlg = wx.MessageDialog(None, _("Ill-conditioned Matrix. Keep trying."),
+                                   _("Matrix."), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+        dlg = wx.MessageDialog(None, _("Success. %d images so far." % len(self.objpoints)),
+                               _("Image Captured"), wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
+        self.kernel.fisheye = repr([K.tolist(), D.tolist()])
+        self.fisheye_k = K.tolist()
+        self.fisheye_d = D.tolist()
 
 # end of class CameraInterface
