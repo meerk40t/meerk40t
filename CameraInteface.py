@@ -15,7 +15,7 @@ class CameraInterface(wx.Frame):
 
         self.button_update = wx.BitmapButton(self, wx.ID_ANY, icons8_camera_50.GetBitmap())
         self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
-        self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Fisheye"))
+        self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
         self.slider_fps = wx.Slider(self, wx.ID_ANY, 1, 0, 24, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
         self.display_camera = wx.Panel(self, wx.ID_ANY)
@@ -25,7 +25,7 @@ class CameraInterface(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
-        # self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
         self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
         self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
         self.SetDoubleBuffered(True)
@@ -93,21 +93,27 @@ class CameraInterface(wx.Frame):
 
     def set_kernel(self, kernel):
         self.kernel = kernel
+        self.kernel.setting(int, 'camera_fps', 1)
+        self.kernel.setting(bool, 'camera_correction_fisheye', True)
         self.kernel.setting(str, 'fisheye', '')
+        self.check_fisheye.SetValue(kernel.camera_correction_fisheye)
         self.job = self.kernel.cron.add_job(self.fetch_image)
         if kernel.fisheye is not None and len(kernel.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
+
+        self.slider_fps.SetValue(kernel.camera_fps)
+        self.on_slider_fps(None)
 
     def capture_frame(self, raw=False):
         import cv2
         ret, frame = self.capture.read()
         if not ret or frame is None:
             return None
-
         if not raw and\
                 self.fisheye_k is not None and \
                 self.fisheye_d is not None and \
-                not self.check_fisheye.GetValue():
+                self.kernel is not None and \
+                self.kernel.camera_correction_fisheye:
             # Unfisheye the drawing
             import numpy as np
             K = np.array(self.fisheye_k)
@@ -163,6 +169,9 @@ class CameraInterface(wx.Frame):
         self.Layout()
         # end wxGlade
 
+    def on_check_fisheye(self, event):
+        self.kernel.camera_correction_fisheye = self.check_fisheye.GetValue()
+
     def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
         frame = self.capture_frame()
         if frame is not None:
@@ -179,7 +188,8 @@ class CameraInterface(wx.Frame):
             obj.image_width = self.width
             obj.image_height = self.height
             self.kernel.elements.append(obj)
-            self.kernel.signal('refresh_elements')
+            self.kernel.signal('refresh_elements',0)
+            self.kernel.signal('rebuild_tree',0)
 
     def on_slider_fps(self, event):  # wxGlade: CameraInterface.<event_handler>
         fps = self.slider_fps.GetValue()
@@ -187,6 +197,7 @@ class CameraInterface(wx.Frame):
             tick = 5
         else:
             tick = 1.0 / fps
+        self.kernel.camera_fps = fps
         self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
