@@ -563,77 +563,65 @@ class Navigation(wx.Frame):
         except ValueError:
             return
 
+    def matrix_updated(self):
+        self.kernel.signal('refresh_scene')
+        self.kernel.root.selection_bounds_updated()
+        self.update_matrix_text()
+        self.drag_ready(False)
+
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_scale(0.95, 0.95, self.device.current_x, self.device.current_y)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_scale(0.95, 0.95, self.device.current_x, self.device.current_y)
+            self.matrix_updated()
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_scale(1.05, 1.05, self.device.current_x, self.device.current_y)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_scale(1.05, 1.05, self.device.current_x, self.device.current_y)
+            self.matrix_updated()
 
     def on_translate_up(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_translate(0, -self.device.navigate_jog)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_translate(0, -self.device.navigate_jog)
+            self.matrix_updated()
 
     def on_translate_left(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_translate(-self.device.navigate_jog, 0)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_translate(-self.device.navigate_jog, 0)
+            self.matrix_updated()
 
     def on_translate_right(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_translate(self.device.navigate_jog, 0)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_translate(self.device.navigate_jog, 0)
+            self.matrix_updated()
 
     def on_reset(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.reset()
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.reset()
+            self.matrix_updated()
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_rotate(Angle.degrees(-5), self.device.current_x, self.device.current_y)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_rotate(Angle.degrees(-5), self.device.current_x, self.device.current_y)
+            self.matrix_updated()
 
     def on_translate_down(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_translate(0, self.device.navigate_jog)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_translate(0, self.device.navigate_jog)
+            self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            self.elements[0].transform.post_rotate(Angle.degrees(5), self.device.current_x, self.device.current_y)
-            self.kernel.signal('refresh_scene')
-            self.kernel.root.selection_bounds_updated()
-            self.update_matrix_text()
-            self.drag_ready(False)
+        if self.elements is not None:
+            for e in self.elements:
+                e.transform.post_rotate(Angle.degrees(5), self.device.current_x, self.device.current_y)
+            self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None and len(self.elements) == 1:
@@ -645,6 +633,7 @@ class Navigation(wx.Frame):
                 matrix.d = float(self.text_d.GetValue())
                 matrix.e = float(self.text_e.GetValue())
                 matrix.f = float(self.text_f.GetValue())
+                self.kernel.root.selection_bounds_updated()
             except ValueError:
                 self.update_matrix_text()
             self.drag_ready(False)
