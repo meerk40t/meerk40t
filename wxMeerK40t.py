@@ -2002,9 +2002,6 @@ class RootNode(list):
                 gui.Bind(wx.EVT_MENU, self.menu_duplicate(node, i),
                          duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
-
-            gui.Bind(wx.EVT_MENU, self.menu_hull(node),
-                     menu.Append(wx.ID_ANY, _("Convex Hull"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, self.menu_reset(node),
                      menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
             path_scale_sub_menu = wx.Menu()
@@ -2429,54 +2426,9 @@ class RootNode(list):
 
         return open_jobinfo_window
 
-    def get_convex_hull(self, node):
-        """
-        Processing function for menu_hull(element) to return the hull points.
-
-        :param node:
-        :return:
-        """
-        pts = []
-        for obj in self.selected_elements:
-            if isinstance(obj, Path):
-                epath = abs(obj)
-                pts += [q for q in epath.as_points()]
-            elif isinstance(obj, SVGImage):
-                bounds = obj.bbox()
-                pts += [(bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3])]
-        hull = [p for p in Point.convex_hull(pts)]
-        if len(hull) == 0:
-            return None
-        return hull
-
-    def menu_hull(self, node):
-        """
-        Menu to return and add the convex hull of the element to the scene.
-
-        :param node:
-        :return:
-        """
-
-        def convex_hull(event):
-            path = Path()
-            pts = self.get_convex_hull(node)
-            if pts is None:
-                return
-            path.move(*pts)
-            path.closed()
-            path.stroke = Color('black')
-            self.kernel.elements.append(path)
-            self.set_selected_elements(path)
-            self.kernel.signal('rebuild_tree', 0)
-
-        return convex_hull
-
     def menu_reverse_order(self, node):
         """
-        Menu to return and add the convex hull of the element to the scene.
+        Menu to return and reverse order of the element to the scene.
 
         :param node:
         :return:

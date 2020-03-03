@@ -7,7 +7,7 @@ import wx
 
 from LaserCommandConstants import *
 from icons import *
-from svgelements import Angle
+from svgelements import Angle, Point, SVGImage, Path
 
 _ = wx.GetTranslation
 
@@ -403,8 +403,8 @@ class Navigation(wx.Frame):
         self.button_align_corner_top_right.Enable(v)
         self.button_align_corner_bottom_left.Enable(v)
         self.button_align_corner_bottom_right.Enable(v)
-        self.button_align_trace_hull.Enable(False)
-        self.button_align_trace_quick.Enable(False)
+        self.button_align_trace_hull.Enable(v)
+        self.button_align_trace_quick.Enable(v)
         self.button_scale_down.Enable(v)
         self.button_scale_up.Enable(v)
         self.button_rotate_ccw.Enable(v)
@@ -531,13 +531,44 @@ class Navigation(wx.Frame):
         self.update_matrix_text()
 
     def on_button_align_trace_hull(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.elements
-        self.drag_ready(True)
+        pts = []
+        for obj in self.elements:
+            if isinstance(obj, Path):
+                epath = abs(obj)
+                pts += [q for q in epath.as_points()]
+            elif isinstance(obj, SVGImage):
+                bounds = obj.bbox()
+                pts += [(bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3])]
+        hull = [p for p in Point.convex_hull(pts)]
+        if len(hull) == 0:
+            return
+
+        def trace_hull():
+            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_LASER_OFF
+            for p in hull:
+                yield COMMAND_RAPID_MOVE, p
+
+        self.device.send_job(trace_hull)
 
     def on_button_align_trace_quick(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.kernel.last_signal('selected_bounds')
+        bbox = self.bounds
         if bbox is None:
             return
+
+        def trace_quick():
+            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_LASER_OFF
+            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[1])
+            yield COMMAND_RAPID_MOVE, (bbox[2], bbox[1])
+            yield COMMAND_RAPID_MOVE, (bbox[2], bbox[3])
+            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[3])
+            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[1])
+
+        self.device.send_job(trace_quick)
         self.drag_ready(True)
 
     def on_button_navigate_pulse(self, event):  # wxGlade: Navigation.<event_handler>
