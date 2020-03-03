@@ -215,7 +215,7 @@ class GRBLEmulator(Module):
                 if cmd == 0:  # Execute GCode.
                     self.read_info = "ok\r\n"
                 else:
-                    self.read_info = "error: %d\r\n" % cmd
+                    self.read_info = "error:%d\r\n" % cmd
                 self.command_map = {}
                 self.code = ""
                 self.value = ""
@@ -275,7 +275,7 @@ class GRBLEmulator(Module):
                 # Feed Rate in Units / Minute
                 self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
             else:
-                return 2
+                return 20 # Unsupported or invalid g-code command found in block.
         if 'm' in gc:
             v = gc['m']
             if v == 30:
@@ -286,7 +286,7 @@ class GRBLEmulator(Module):
                 self.on_mode = False
                 interpreter.command(COMMAND_LASER_OFF)
             else:
-                return 2
+                return 20
         if 'x' in gc or 'y' in gc:
             if self.move_mode == 0:
                 interpreter.command(COMMAND_LASER_OFF)
@@ -313,7 +313,7 @@ class GRBLEmulator(Module):
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
-        return 0
+        return 20 # Unsupported or invalid g-code command found in block.
 
 
 class SVGWriter:
