@@ -480,6 +480,7 @@ class LhymicroInterpreter(Interpreter):
             self.move_absolute(x, y)
 
     def move_absolute(self, x, y):
+
         self.move_relative(x - self.device.current_x, y - self.device.current_y)
 
     def move_relative(self, dx, dy):
