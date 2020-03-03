@@ -275,12 +275,12 @@ class GRBLEmulator(Module):
                 # Feed Rate in Units / Minute
                 self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
             else:
-                return 20 # Unsupported or invalid g-code command found in block.
+                return 20  # Unsupported or invalid g-code command found in block.
         if 'm' in gc:
             v = gc['m']
             if v == 30:
-                return
-            if v == 3 or v == 4:
+                return 0
+            elif v == 3 or v == 4:
                 self.on_mode = True
             elif v == 5:
                 self.on_mode = False
@@ -313,7 +313,7 @@ class GRBLEmulator(Module):
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
-        return 20 # Unsupported or invalid g-code command found in block.
+        return 0  # Unsupported or invalid g-code command found in block.
 
 
 class SVGWriter:
