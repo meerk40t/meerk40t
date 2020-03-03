@@ -342,7 +342,6 @@ class CameraInterface(wx.Frame):
         self.button_export.SetSize(self.button_export.GetBestSize())
         self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
         self.button_detect.SetSize(self.button_detect.GetBestSize())
-        self.display_camera.SetToolTip(_("Live Camera View"))
         # end wxGlade
 
     def __do_layout(self):
