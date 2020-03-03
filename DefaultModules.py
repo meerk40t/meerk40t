@@ -7,7 +7,7 @@ from EgvParser import parse_egv
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
 from LaserCommandConstants import *
-from LhymicroInterpreter import LhymicroInterpreter
+from LhymicroInterpreter import LhymicroInterpreter, STATE_COMPACT
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -211,8 +211,11 @@ class GRBLEmulator(Module):
                 self.code += str(c)
                 continue
             elif is_end:
-                self.command(self.command_map)  # Execute GCode.
-                self.read_info = "ok\r\n"
+                cmd = self.command(self.command_map)
+                if cmd == 0:  # Execute GCode.
+                    self.read_info = "ok\r\n"
+                else:
+                    self.read_info = "error: %d\r\n" % cmd
                 self.command_map = {}
                 self.code = ""
                 self.value = ""
@@ -271,6 +274,8 @@ class GRBLEmulator(Module):
             elif gc['g'] == 94.0:
                 # Feed Rate in Units / Minute
                 self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
+            else:
+                return 2
         if 'm' in gc:
             v = gc['m']
             if v == 30:
@@ -280,12 +285,15 @@ class GRBLEmulator(Module):
             elif v == 5:
                 self.on_mode = False
                 interpreter.command(COMMAND_LASER_OFF)
+            else:
+                return 2
         if 'x' in gc or 'y' in gc:
             if self.move_mode == 0:
                 interpreter.command(COMMAND_LASER_OFF)
                 interpreter.command(COMMAND_MODE_DEFAULT)
             elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
-                interpreter.command(COMMAND_MODE_COMPACT)
+                if interpreter.state != STATE_COMPACT:
+                    interpreter.command(COMMAND_MODE_COMPACT)
             if 'x' in gc:
                 x = gc['x'] * self.scale * self.flip_x
             else:
@@ -305,6 +313,7 @@ class GRBLEmulator(Module):
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
                 interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
+        return 0
 
 
 class SVGWriter:
