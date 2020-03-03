@@ -1,7 +1,7 @@
 # MeerK40t
 Laser software for the Stock-LIHUIYU laserboard.
 
-MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software. It's a replacement for LaserDrw, Corel Laser, and K40 Whisperer. It with the dual driver support it can run aside any of these programs. It's written in python and has precompiled versions for Windows, Mac OSX, and Raspberry Pi. Availible: https://github.com/meerk40t/meerk40t/releases
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software. It's a replacement for LaserDrw, Corel Laser, and K40 Whisperer. With the dual driver support it can run aside any of these programs. It's written in python and has precompiled versions for Windows, Mac OSX, and Raspberry Pi. Available: https://github.com/meerk40t/meerk40t/releases
 
 * Dual drivers, use either the Whisperer method or LaserDrw method. 
 * Grid/Guides, Zoom and Pan scene Navigation (use middle mouse button, mouse wheel).
@@ -95,7 +95,7 @@ The stock controller is not known for having power control, MeerK40t gives it po
 
 This does not mean you should overpower your laser with the knob? NO. Leave that knob alone.
 
-Most power modulation is done through hardware because most boards have the ability to process things and excute stuff. The Lhystudios (M2 Nano, etc) boards are different in that they are incredibly dumb. They execute very basic command directly on a micro-controller and do no planning or work directly on the device. This leaves everything to the software running the laser to constantly feed it new set of commands.
+Most power modulation is done through hardware because most boards have the ability to process things and execute stuff. The Lhystudios (M2 Nano, etc) boards are different in that they are incredibly dumb. They execute very basic command directly on a micro-controller and do no planning or work directly on the device. This leaves everything to the software running the laser to constantly feed it new set of commands.
 
 ## Driver
 
@@ -113,7 +113,7 @@ Jobs are spooled like a printer spooler, so that jobs are performed in sequence.
 
 ### Interpreter
 
-The main interpreter is the LhymicroInterpreter which converts LaserCommands into low level Lhymicro-GL code Any Interpreter is tasked with coverting such commands usable sets of bytes.
+The main interpreter is the LhymicroInterpreter which converts LaserCommands into low level Lhymicro-GL code Any Interpreter is tasked with converting such commands usable sets of bytes.
 
 ### Pipe
 
@@ -124,11 +124,11 @@ The system is agnostic with regard to where the data is going and should end up.
 
 ## SVG Paths.
 
-The SVG library is a seperate project based in `svgelements` which can be retrived `pip install svgelements`. It is, in part, derived fromcode I wrote for `mathandy/svgpathtools`, which is a tools expansions of `regebro/svg.path` library. It's one of the most expansive and full implementations of SVG in python.
+The SVG library is a separate project based in `svgelements` which can be retrieved `pip install svgelements`. It is, in part, derived from code I wrote for `mathandy/svgpathtools`, which is a tools expansions of `regebro/svg.path` library. It's one of the most expansive and full implementations of SVG in python.
 
 ## Curve Plotting
 
-The LIHUIYU series of boards are connected to two stepper motors, these can step one step in either direction, or trigger both at the same time. So everything in the K40 are made of positions at 1000dpi. Every movement is a step either orthogonally or diagonally, this means there are no actual curves only a series of very tiny steps in 1 of 8 possible directions. This is where the Zingl Plotter comes in. The Beauty of Bresenham's Algorithm ( http://members.chello.at/easyfilter/bresenham.html ) author, Zingl came up with a series of algorithms based on Bresenham's insights, which natively allows these curve plotting operations to be performed directly with the native shapes themselves. This means that there is no need to deal with more primative or subdivided elements. If we have a large curve or small curve it will always have perfect precision because we can natively use the curves themselves.
+The LIHUIYU series of boards are connected to two stepper motors, these can step one step in either direction, or trigger both at the same time. So everything in the K40 are made of positions at 1000dpi. Every movement is a step either orthogonality or diagonally, this means there are no actual curves only a series of very tiny steps in 1 of 8 possible directions. This is where the Zingl Plotter comes in. The Beauty of Bresenham's Algorithm ( http://members.chello.at/easyfilter/bresenham.html ) author, Zingl came up with a series of algorithms based on Bresenham's insights, which natively allows these curve plotting operations to be performed directly with the native shapes themselves. This means that there is no need to deal with more primitive or subdivided elements. If we have a large curve or small curve it will always have perfect precision because we can natively use the curves themselves.
 
 MeerK40t will draw pixel perfect curves (except for Arc which could be off). Which means if your design contains a Cubic Bezier curve, the program will draw it flawlessly.
 
