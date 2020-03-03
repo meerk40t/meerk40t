@@ -6,6 +6,7 @@ from svgelements import SVGImage, Matrix, Point
 
 _ = wx.GetTranslation
 
+CORNER_SIZE = 25
 
 class CameraInterface(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -101,6 +102,22 @@ class CameraInterface(wx.Frame):
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_camera_menu, self)
+
+    def on_camera_menu(self, event):
+        gui = self
+        menu = wx.Menu()
+        path_scale_sub_menu = wx.Menu()
+
+        gui.Bind(wx.EVT_MENU, self.reset_perspective,
+                    menu.Append(wx.ID_ANY, "Reset Perspective", "", wx.ITEM_NORMAL))
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
+
+    def reset_perspective(self, event):
+        self.perspective = None
+        self.kernel.perspective = ''
 
     def on_erase(self, event):
         pass
@@ -131,9 +148,10 @@ class CameraInterface(wx.Frame):
                           self.perspective[3][0], self.perspective[3][1])
             gc.SetPen(wx.BLUE_PEN)
             for p in self.perspective:
-                gc.StrokeLine(p[0]-5, p[1], p[0]+5, p[1])
-                gc.StrokeLine(p[0], p[1]-5, p[0], p[1]+5)
-                gc.DrawEllipse(p[0]-5, p[1]-5, 10, 10)
+                half = CORNER_SIZE / 2
+                gc.StrokeLine(p[0]-half, p[1], p[0]+half, p[1])
+                gc.StrokeLine(p[0], p[1]-half, p[0], p[1]+half)
+                gc.DrawEllipse(p[0]-half, p[1]-half, CORNER_SIZE, CORNER_SIZE)
         gc.PopState()
         gc.Destroy()
         del dc
@@ -182,8 +200,8 @@ class CameraInterface(wx.Frame):
         if self.corner_drag is None:
             self.scene_post_pan(wdx, wdy)
         else:
-            self.perspective[self.corner_drag][0] += wdx
-            self.perspective[self.corner_drag][1] += wdy
+            self.perspective[self.corner_drag][0] += sdx
+            self.perspective[self.corner_drag][1] += sdy
             self.kernel.perspective = repr(self.perspective)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
@@ -203,7 +221,8 @@ class CameraInterface(wx.Frame):
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
         self.corner_drag = None
         for i, p in enumerate(self.perspective):
-            if Point.distance(self.previous_scene_position, p) < 5:
+            half = CORNER_SIZE / 2
+            if Point.distance(self.previous_scene_position, p) < half:
                 self.corner_drag = i
                 break
 
