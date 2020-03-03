@@ -294,11 +294,7 @@ class MeerK40t(wx.Frame):
 
         self.previous_position = None
 
-        self.bed_matrix = ZMatrix()
-        self.matrix = ZMatrix()
-        self.identity = ZMatrix()
-        self.matrix.Reset()
-        self.identity.Reset()
+        self.matrix = Matrix()
         self.previous_window_position = None
         self.previous_scene_position = None
         self.popup_window_position = None
@@ -706,75 +702,64 @@ class MeerK40t(wx.Frame):
         """Performs the redraw of the data in the UI thread."""
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
-        self.on_draw_background(dc)
-        if dc.CanUseTransformMatrix():
-            dc.SetTransformMatrix(self.matrix)
-            self.on_draw_scene(dc)
-            dc.SetTransformMatrix(self.identity)
-        else:
-            original_font = dc.GetFont()
-            font = wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
-            dc.SetFont(font)
-            dc.SetPen(wx.BLACK_PEN)
-            s = dc.GetSize() / 2
-            dc.DrawText(_("Current OS/wxPython cannot use TransformMatrix."),
-                        s[0] - 350, s[1] - 40)
-            dc.DrawText(_("OSX/Linux will need wxPython 4.1+"),
-                        s[0] - 350, s[1])
-            dc.DrawText(_("Skipping scene draw."),
-                        s[0] - 350, s[1] + 40)
-            dc.SetFont(original_font)
-        self.on_draw_interface(dc)
+        dc.SetBackground(self.background_brush)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        self.on_draw_scene(gc, dc)
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix()))
+        self.on_draw_interface(gc, dc)
+        gc.Destroy()
         del dc
 
     def on_matrix_change(self):
         self.guide_lines = None
 
     def scene_matrix_reset(self):
-        self.matrix.Reset()
+        self.matrix.reset()
         self.on_matrix_change()
 
     def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.PostScale(sx, sy, ax, ay)
+        self.matrix.post_scale(sx, sy, ax, ay)
         self.on_matrix_change()
 
     def scene_post_pan(self, px, py):
-        self.matrix.PostTranslate(px, py)
+        self.matrix.post_translate(px, py)
         self.on_matrix_change()
 
     def scene_post_rotate(self, angle, rx=0, ry=0):
-        self.matrix.PostRotate(angle, rx, ry)
+        self.matrix.post_rotate(angle, rx, ry)
         self.on_matrix_change()
 
     def scene_pre_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.PreScale(sx, sy, ax, ay)
+        self.matrix.pre_scale(sx, sy, ax, ay)
         self.on_matrix_change()
 
     def scene_pre_pan(self, px, py):
-        self.matrix.PreTranslate(px, py)
+        self.matrix.pre_translate(px, py)
         self.on_matrix_change()
 
     def scene_pre_rotate(self, angle, rx=0, ry=0):
-        self.matrix.PreRotate(angle, rx, ry)
+        self.matrix.pre_rotate(angle, rx, ry)
         self.on_matrix_change()
 
     def get_scale_x(self):
-        return self.matrix.GetScaleX()
+        return self.matrix.value_scale_x()
 
     def get_scale_y(self):
-        return self.matrix.GetScaleY()
+        return self.matrix.value_scale_y()
 
     def get_skew_x(self):
-        return self.matrix.GetSkewX()
+        return self.matrix.value_skew_x()
 
     def get_skew_y(self):
-        return self.matrix.GetSkewY()
+        return self.matrix.value_skew_y()
 
     def get_translate_x(self):
-        return self.matrix.GetTranslateX()
+        return self.matrix.value_trans_x()
 
     def get_translate_y(self):
-        return self.matrix.GetTranslateY()
+        return self.matrix.value_trans_y()
 
     def on_mousewheel(self, event):
         rotation = event.GetWheelRotation()
@@ -990,25 +975,28 @@ class MeerK40t(wx.Frame):
 
         cx = ((right + left) / 2)
         cy = ((top + bottom) / 2)
-        self.matrix.Reset()
-        self.matrix.PostTranslate(-cx, -cy)
+        self.matrix.reset()
+        self.matrix.post_translate(-cx, -cy)
         if lock:
             scale = min(scale_x, scale_y)
             if scale != 0:
-                self.matrix.PostScale(scale)
+                self.matrix.post_scale(scale)
         else:
             if scale_x != 0 and scale_y != 0:
-                self.matrix.PostScale(scale_x, scale_y)
-        self.matrix.PostTranslate(window_width / 2.0, window_height / 2.0)
+                self.matrix.post_scale(scale_x, scale_y)
+        self.matrix.post_translate(window_width / 2.0, window_height / 2.0)
 
     def convert_scene_to_window(self, position):
-        return self.matrix.TransformPoint([position[0], position[1]])
+        point = [position[0], position[1]]
+        self.matrix.transform_point(point)
+        return point[0], point[1]
 
     def convert_window_to_scene(self, position):
-        return self.matrix.InverseTransformPoint([position[0], position[1]])
+        point = [position[0], position[1]]
+        self.matrix.point_in_inverse_space(point)
+        return point[0], point[1]
 
     def calculate_grid(self):
-        lines = []
         if self.kernel.device is not None:
             v = self.kernel.device
         else:
@@ -1019,29 +1007,36 @@ class MeerK40t(wx.Frame):
         convert = p.units_convert
         marks = p.units_marks
         step = convert * marks
+        starts = []
+        ends = []
         if step == 0:
-            self.grid = []
-            return
+            self.grid = None
+            return starts,ends
         x = 0.0
         while x < wmils:
-            lines.append((x, 0, x, hmils))
+            starts.append((x,0))
+            ends.append((x, hmils))
             x += step
         y = 0.0
         while y < hmils:
-            lines.append((0, y, wmils, y))
+            starts.append((0, y))
+            ends.append((wmils, y))
             y += step
-        self.grid = lines
+        self.grid = starts,ends
 
-    def on_draw_grid(self, dc):
+    def on_draw_grid(self, gc):
+        # Convert to GC.
         if self.grid is None:
             self.calculate_grid()
-        dc.DrawLineList(self.grid)
+        starts, ends = self.grid
+        gc.StrokeLineSegments(starts, ends)
+        # gc.DrawLineList(self.grid)
 
-    def on_draw_guides(self, dc):
+    def on_draw_guides(self, gc, dc):
         lines = []
         w, h = self.Size
         p = self.kernel
-        scaled_conversion = p.units_convert * self.matrix.GetScaleX()
+        scaled_conversion = p.units_convert * self.matrix.value_scale_x()
         if scaled_conversion == 0:
             return
 
@@ -1080,19 +1075,16 @@ class MeerK40t(wx.Frame):
             y += points
         dc.DrawLineList(lines)
 
-    def on_draw_background(self, dc):
-        dc.SetBackground(self.background_brush)
-        dc.Clear()
-
-    def on_draw_interface(self, dc):
+    def on_draw_interface(self, gc, dc):
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         if self.kernel.draw_mode & 2 == 0:
-            self.on_draw_guides(dc)
+            self.on_draw_guides(gc, dc)
         if self.kernel.draw_mode & 16 == 0:
             # Draw Reticle
+            # todo: convert to gc.
             dc.SetPen(wx.RED_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             try:
@@ -1103,7 +1095,7 @@ class MeerK40t(wx.Frame):
             except AttributeError:
                 pass
 
-    def on_draw_bed(self, dc):
+    def on_draw_bed(self, gc):
         if self.kernel.device is not None:
             v = self.kernel.device
         else:
@@ -1111,22 +1103,19 @@ class MeerK40t(wx.Frame):
         wmils = v.bed_width * 39.37
         hmils = v.bed_height * 39.37
         if self.background is None:
-            dc.SetBrush(wx.WHITE_BRUSH)
-            dc.DrawRectangle(0, 0, wmils, hmils)
+            # TODO: convert to GC
+            gc.SetBrush(wx.WHITE_BRUSH)
+            gc.DrawRectangle(0, 0, wmils, hmils)
         else:
-            gc = wx.GraphicsContext.Create(dc)
-            if dc.CanUseTransformMatrix():
-                dc.SetTransformMatrix(ZMatrix(self.background_matrix))
-                gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
-                gc.Destroy()
+            gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
+            gc.Destroy()
 
-    def on_draw_selection(self, dc, draw_mode):
+    def on_draw_selection(self, gc, dc, draw_mode):
         """Draw Selection Box"""
         bounds = self.root.bounds
         if bounds is not None:
-            linewidth = 3.0 / self.matrix.GetScaleX()
-            # f = 2 * linewidth
-            # g = 2 * f
+            # TODO: convert to GC.
+            linewidth = 3.0 / self.matrix.value_scale_x()
             self.selection_pen.SetWidth(linewidth)
             dc.SetPen(self.selection_pen)
             dc.SetBrush(wx.BLACK_BRUSH)
@@ -1147,26 +1136,27 @@ class MeerK40t(wx.Frame):
                 dc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 dc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
-    def on_draw_laserpath(self, dc, draw_mode):
+    def on_draw_laserpath(self, gc, dc, draw_mode):
+        # Convert to GC
         dc.SetPen(wx.BLUE_PEN)
         dc.DrawLineList(self.laserpath)
 
-    def on_draw_scene(self, dc):
-        self.on_draw_bed(dc)
-        dc.SetPen(wx.BLACK_PEN)
+    def on_draw_scene(self, gc, dc):
+        self.on_draw_bed(gc)
+        gc.SetPen(wx.BLACK_PEN)
         if self.kernel.draw_mode & 4 == 0:
-            self.on_draw_grid(dc)
+            self.on_draw_grid(gc)
         pen = wx.Pen(wx.BLACK)
         pen.SetWidth(1)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         if self.kernel is None:
             return
-        self.renderer.render(dc, self.kernel.draw_mode)
+        self.renderer.render(gc, self.kernel.draw_mode)
         if self.kernel.draw_mode & 32 == 0:
-            self.on_draw_selection(dc, self.kernel.draw_mode)
+            self.on_draw_selection(gc, dc, self.kernel.draw_mode)
         if self.kernel.draw_mode & 8 == 0:
-            self.on_draw_laserpath(dc, self.kernel.draw_mode)
+            self.on_draw_laserpath(gc, dc, self.kernel.draw_mode)
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         self.working_file = None
