@@ -134,8 +134,6 @@ class LaserRender:
             matrix = Matrix()
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, wx.BLACK)
         if element.text is not None:
             gc.DrawText(element.text, 0, 0)
             pass
