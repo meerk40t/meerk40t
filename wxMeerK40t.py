@@ -377,7 +377,7 @@ class MeerK40t(wx.Frame):
         kernel.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         kernel.setting(int, "window_width", 1200)
         kernel.setting(int, "window_height", 600)
-        kernel.setting(float, "units_convert", 39.37)
+        kernel.setting(float, "units_convert", MILS_IN_MM)
         kernel.setting(str, "units_name", 'mm')
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
@@ -1006,8 +1006,8 @@ class MeerK40t(wx.Frame):
         else:
             v = self.kernel
         p = self.kernel
-        wmils = v.bed_width * 39.37
-        hmils = v.bed_height * 39.37
+        wmils = v.bed_width * MILS_IN_MM
+        hmils = v.bed_height * MILS_IN_MM
         convert = p.units_convert
         marks = p.units_marks
         step = convert * marks
@@ -1015,7 +1015,7 @@ class MeerK40t(wx.Frame):
         ends = []
         if step == 0:
             self.grid = None
-            return starts,ends
+            return starts, ends
         x = 0.0
         while x < wmils:
             starts.append((x,0))
@@ -1112,10 +1112,9 @@ class MeerK40t(wx.Frame):
             v = self.kernel.device
         else:
             v = self.kernel
-        wmils = v.bed_width * 39.37
-        hmils = v.bed_height * 39.37
+        wmils = v.bed_width * MILS_IN_MM
+        hmils = v.bed_height * MILS_IN_MM
         if self.background is None:
-            # TODO: convert to GC
             gc.SetBrush(wx.WHITE_BRUSH)
             gc.DrawRectangle(0, 0, wmils, hmils)
         else:

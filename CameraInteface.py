@@ -2,7 +2,7 @@ import wx
 
 from ZMatrix import ZMatrix
 from icons import *
-from svgelements import SVGImage, Matrix
+from svgelements import SVGImage, Matrix, Point
 
 _ = wx.GetTranslation
 
@@ -36,8 +36,7 @@ class CameraInterface(wx.Frame):
         self.capture = None
         self.image_width = -1
         self.image_height = -1
-        self.previous_window_position = None
-        self.previous_scene_position = None
+
         self.kernel = None
         self._Buffer = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -70,6 +69,7 @@ class CameraInterface(wx.Frame):
         self.image_height, self.image_width = self.frame.shape[:2]
         self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
         self.display_camera.SetSize((self.image_width, self.image_height))
+        self.Layout()
         self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
         self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
 
@@ -82,15 +82,22 @@ class CameraInterface(wx.Frame):
         self.imgpoints = []  # 2d points in image plane.
 
         # Perspective Points
-        self.perpective = [[0, 0], [0, 1], [1, 1], [1, 0]]
+        self.perspective = None
 
+        self.display_camera.Bind(wx.EVT_ENTER_WINDOW,
+                                 lambda event: self.display_camera.SetFocus())  # Focus follows mouse.
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
+        self.corner_drag = None
         self.display_camera.Bind(wx.EVT_MOTION, self.on_mouse_move)
-
         self.display_camera.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-
-        self.display_camera.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
         self.display_camera.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
-        self.matrix = ZMatrix(Matrix())
+        self.display_camera.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
+
+        self.display_camera.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
+        self.display_camera.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
+        self.matrix = Matrix()
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
@@ -104,16 +111,35 @@ class CameraInterface(wx.Frame):
         except RuntimeError:
             pass
 
-    def on_refresh(self, event=None):
+    def on_update_buffer(self, event=None):
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
+        dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, self.matrix))
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        gc.PushState()
         gc.DrawBitmap(self.frame_bitmap, 0, 0, self.image_width, self.image_height)
+        if not self.kernel.camera_correction_perspective:
+            if self.perspective is None:
+                self.perspective = [0, 0], \
+                                   [self.image_width, 0], \
+                                   [self.image_width, self.image_height],\
+                                   [0, self.image_height]
+            gc.SetPen(wx.BLACK_DASHED_PEN)
+            gc.StrokeLines(self.perspective)
+            gc.StrokeLine(self.perspective[0][0], self.perspective[0][1],
+                          self.perspective[3][0], self.perspective[3][1])
+            gc.SetPen(wx.BLUE_PEN)
+            for p in self.perspective:
+                gc.StrokeLine(p[0]-5, p[1], p[0]+5, p[1])
+                gc.StrokeLine(p[0], p[1]-5, p[0], p[1]+5)
+                gc.DrawEllipse(p[0]-5, p[1]-5, 10, 10)
+        gc.PopState()
         gc.Destroy()
         del dc
 
     def on_size(self, event):
+        self.Layout()
         width, height = self.display_camera.ClientSize
         if width <= 0:
             width = 1
@@ -132,10 +158,12 @@ class CameraInterface(wx.Frame):
             self.job.cancel()
 
     def convert_scene_to_window(self, position):
-        return self.matrix.TransformPoint([position[0], position[1]])
+        point = self.matrix.point_in_matrix_space(position)
+        return point[0], point[1]
 
     def convert_window_to_scene(self, position):
-        return self.matrix.InverseTransformPoint([position[0], position[1]])
+        point = self.matrix.point_in_inverse_space(position)
+        return point[0], point[1]
 
     def on_mouse_move(self, event):
         if not event.Dragging():
@@ -144,7 +172,6 @@ class CameraInterface(wx.Frame):
             self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         if self.previous_window_position is None:
             return
-
         pos = event.GetPosition()
         window_position = pos.x, pos.y
         scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
@@ -152,22 +179,14 @@ class CameraInterface(wx.Frame):
         sdy = (scene_position[1] - self.previous_scene_position[1])
         wdx = (window_position[0] - self.previous_window_position[0])
         wdy = (window_position[1] - self.previous_window_position[1])
-        self.move_pan(wdx, wdy, sdx, sdy)
+        if self.corner_drag is None:
+            self.scene_post_pan(wdx, wdy)
+        else:
+            self.perspective[self.corner_drag][0] += wdx
+            self.perspective[self.corner_drag][1] += wdy
+            self.kernel.perspective = repr(self.perspective)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
-
-    def scene_post_pan(self, px, py):
-        self.matrix.PostTranslate(px, py)
-        self.on_refresh()
-        print(self.matrix)
-
-    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.PostScale(sx, sy, ax, ay)
-        self.on_refresh()
-        print(self.matrix)
-
-    def move_pan(self, wdx, wdy, sdx, sdy):
-        self.scene_post_pan(wdx, wdy)
 
     def on_mousewheel(self, event):
         rotation = event.GetWheelRotation()
@@ -179,18 +198,38 @@ class CameraInterface(wx.Frame):
         elif rotation < -1:
             self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
 
+    def on_mouse_left_down(self, event):
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+        self.corner_drag = None
+        for i, p in enumerate(self.perspective):
+            if Point.distance(self.previous_scene_position, p) < 5:
+                self.corner_drag = i
+                break
+
+    def on_mouse_left_up(self, event):
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        self.previous_window_position = None
+        self.previous_scene_position = None
+        self.corner_drag = None
+
     def on_mouse_middle_down(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-        self.CaptureMouse()
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
 
     def on_mouse_middle_up(self, event):
-        if self.HasCapture():
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-            self.ReleaseMouse()
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         self.previous_window_position = None
         self.previous_scene_position = None
+
+    def scene_post_pan(self, px, py):
+        self.matrix.post_translate(px, py)
+        self.on_update_buffer()
+
+    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
+        self.matrix.post_scale(sx, sy, ax, ay)
+        self.on_update_buffer()
 
     def set_kernel(self, kernel):
         self.kernel = kernel
@@ -206,8 +245,7 @@ class CameraInterface(wx.Frame):
         if kernel.fisheye is not None and len(kernel.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
         if kernel.perspective is not None and len(kernel.perspective) != 0:
-            self.perpective = eval(kernel.perspective)
-
+            self.perspective = eval(kernel.perspective)
         self.slider_fps.SetValue(kernel.camera_fps)
         self.on_slider_fps(None)
 
@@ -233,12 +271,15 @@ class CameraInterface(wx.Frame):
             bed_height = self.kernel.bed_height * 2
             width, height = frame.shape[:2][::-1]
             import numpy as np
-
-            rect = np.array([
-                [0, 0],
-                [width - 1, 0],
-                [width - 1, height - 1],
-                [0, height - 1]], dtype="float32")
+            if self.perspective is None:
+                rect = np.array([
+                    [0, 0],
+                    [width - 1, 0],
+                    [width - 1, height - 1],
+                    [0, height - 1]], dtype="float32")
+            else:
+                rect = np.array(
+                    self.perspective, dtype="float32")
             dst = np.array([
                 [0, 0],
                 [bed_width - 1, 0],
@@ -262,8 +303,7 @@ class CameraInterface(wx.Frame):
             self.frame = self.capture_frame()
             if self.frame is not None:
                 self.image_height, self.image_width = self.frame.shape[:2]
-                self._Buffer = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
-                # self._Buffer.CopyFromBuffer(self.frame)
+                self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
                 wx.CallAfter(self.update_in_gui_thread)
         except RuntimeError:
             pass  # Failed to gain access to raw bitmap data: skip frame.
@@ -271,6 +311,7 @@ class CameraInterface(wx.Frame):
     def update_in_gui_thread(self):
         if self.kernel is None:
             return
+        self.on_update_buffer()
         self.display_camera.Refresh(True)
 
     def __set_properties(self):
