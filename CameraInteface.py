@@ -203,6 +203,7 @@ class CameraInterface(wx.Frame):
             self.perspective[self.corner_drag][0] += sdx
             self.perspective[self.corner_drag][1] += sdy
             self.kernel.perspective = repr(self.perspective)
+            print("Perspective value changed: %s" % self.kernel.perspective)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
 
@@ -265,6 +266,7 @@ class CameraInterface(wx.Frame):
             self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
         if kernel.perspective is not None and len(kernel.perspective) != 0:
             self.perspective = eval(kernel.perspective)
+            print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(kernel.camera_fps)
         self.on_slider_fps(None)
 
