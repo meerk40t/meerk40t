@@ -352,7 +352,6 @@ class MeerK40t(wx.Frame):
         self.root = None  # RootNode value, must have kernel for init.
         self.device_listening = None
         self.background = None
-        self.background_matrix = None
 
     def notify_change(self):
         self.kernel.signal('rebuild_tree', 0)
@@ -515,7 +514,6 @@ class MeerK40t(wx.Frame):
         if isinstance(background, int):
             return  # Assumed color.
         self.background = background
-        self.background_matrix = Matrix()
         self.request_refresh()
 
     def on_device_switch(self, device):
@@ -1119,7 +1117,6 @@ class MeerK40t(wx.Frame):
             gc.DrawRectangle(0, 0, wmils, hmils)
         else:
             gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
-            gc.Destroy()
 
     def on_draw_selection(self, gc, draw_mode):
         """Draw Selection Box"""
