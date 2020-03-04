@@ -255,8 +255,8 @@ class CameraInterface(wx.Frame):
         self.kernel = kernel
         self.kernel.setting(int, 'camera_fps', 1)
         self.kernel.setting(bool, 'mouse_zoom_invert', False)
-        self.kernel.setting(bool, 'camera_correction_fisheye', True)
-        self.kernel.setting(bool, 'camera_correction_perspective', True)
+        self.kernel.setting(bool, 'camera_correction_fisheye', False)
+        self.kernel.setting(bool, 'camera_correction_perspective', False)
         self.kernel.setting(str, 'fisheye', '')
         self.kernel.setting(str, 'perspective', '')
         self.check_fisheye.SetValue(kernel.camera_correction_fisheye)
