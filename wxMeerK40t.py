@@ -2332,6 +2332,7 @@ class RootNode(list):
         def specific(event):
             node = remove_node
             if node.type == NODE_ELEMENT:
+                # Removing element can only have 1 copy.
                 removed_objects = self.selected_elements
                 for e in removed_objects:
                     self.kernel.elements.remove(e)
@@ -2345,12 +2346,19 @@ class RootNode(list):
                 self.kernel.operations.clear()
                 self.kernel.operations.extend(ops)
             elif node.type == NODE_OPERATION:
+                # Removing operation can only have 1 copy.
                 self.kernel.operations.remove(node.object)
             elif node.type == NODE_FILE_FILE:
+                # Removing file can only have 1 copy.
                 del self.kernel.filenodes[node.filepath]
             elif node.type == NODE_OPERATION_ELEMENT:
+                # Operation_element can occur many times in the same operation node.
+                index = node.parent.index(node)
                 op = node.parent.object
-                op.remove(node.object)
+                if index == -1:
+                    op.remove(node.object)
+                else:
+                    del op[index]
             self.set_selected_elements(None)
             self.kernel.signal('rebuild_tree', 0)
 
