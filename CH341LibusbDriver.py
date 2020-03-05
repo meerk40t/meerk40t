@@ -209,6 +209,7 @@ class CH341LibusbDriver:
                                  timeout=500)
             # 0x40, 177, 0x8800, 0, 0
         except usb.core.USBError:
+            # Device was not found. Timed out, etc.
             raise ConnectionError
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
@@ -360,7 +361,12 @@ class CH341Driver:
                 self.try_open(self.index)
             self.set_status(STATE_USB_CONNECTED)
             self.set_status(STATE_CH341_PARAMODE)
-            self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
+            try:
+                self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
+                self.set_status(STATE_CH341_PARAMODE_SUCCESS)
+            except ConnectionError:
+                self.set_status(STATE_CH341_PARAMODE_FAIL)
+                self.driver.CH341CloseDevice(self.driver_index)
             self.set_status(STATE_CONNECTED)
 
     def close(self):
