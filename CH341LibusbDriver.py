@@ -367,6 +367,7 @@ class CH341Driver:
             except ConnectionError:
                 self.set_status(STATE_CH341_PARAMODE_FAIL)
                 self.driver.CH341CloseDevice(self.driver_index)
+                raise ConnectionRefusedError
             self.set_status(STATE_CONNECTED)
 
     def close(self):
