@@ -1665,6 +1665,7 @@ class RootNode(list):
             else:
                 self.selected_elements.extend(selected)
         self.selection_updated()
+
     def set_selected_operations(self, selected):
         self.selected_operations.clear()
         self.selected_elements.clear()
@@ -1869,7 +1870,6 @@ class RootNode(list):
         if node.type == NODE_ELEMENTS_BRANCH:
             for n in self.node_elements:
                 self.tree.SelectItem(n.item, True)
-            # self.selected_operations = list(self.kernel.elements)
             self.gui.request_refresh()
             return
         elif node.type == NODE_FILE_FILE:
@@ -1882,6 +1882,8 @@ class RootNode(list):
             return
         elif node.type == NODE_OPERATION_ELEMENT:
             obj = node.object
+            if len(list(self.tree.GetSelections())) != 1:
+                return  # If this is a multi-selection event, do not select other nodeop_elements
             links = self.tree_lookup[id(obj)]
             for link in links:
                 self.tree.SelectItem(link.item, True)
@@ -1937,7 +1939,10 @@ class RootNode(list):
         menu = wx.Menu()
         if isinstance(node, RootNode):
             return
+
         t = node.type
+        selections = [self.tree.GetItemData(e) for e in self.tree.GetSelections()]
+        selections = [s for s in selections if s.type == t]
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                      menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
@@ -1947,6 +1952,9 @@ class RootNode(list):
         if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
                      menu.Append(wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL))
+        if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(selections) > 1:
+            gui.Bind(wx.EVT_MENU, self.menu_remove_multi(node),
+                     menu.Append(wx.ID_ANY, _("Remove: %d objects") % len(selections), "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
             gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
                      menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
@@ -2321,6 +2329,55 @@ class RootNode(list):
 
         return specific
 
+    def menu_remove_multi(self, remove_node):
+        """
+        Menu to remove an element from the scene.
+
+        :param node:
+        :return:
+        """
+
+        def specific(event):
+            node = remove_node
+
+            selections = [self.tree.GetItemData(e) for e in self.tree.GetSelections()]
+            selections = [s for s in selections if s.type == node.type]
+
+            if node.type == NODE_ELEMENT:
+                # Removing element can only have 1 copy.
+                removed_objects = self.selected_elements
+                for e in removed_objects:
+                    self.kernel.elements.remove(e)
+
+                for i in range(len(self.kernel.operations)):
+                    elems = [e for e in self.kernel.operations[i] if e not in removed_objects]
+                    self.kernel.operations[i].clear()
+                    self.kernel.operations[i].extend(elems)
+                    if len(self.kernel.operations[i]) == 0:
+                        self.kernel.operations[i] = None
+                ops = [op for op in self.kernel.operations if op is not None]
+                self.kernel.operations.clear()
+                self.kernel.operations.extend(ops)
+            elif node.type == NODE_OPERATION_ELEMENT:
+                # Operation_element can occur many times in the same operation node.
+                modified = []
+                for node in selections:
+                    index = node.parent.index(node)
+                    op = node.parent.object
+                    if index == -1:
+                        continue
+                    op[index] = None
+                    if op not in modified:
+                        modified.append(op)
+                for s in modified:
+                    op_elems = [op_elem for op_elem in s if op_elem is not None]
+                    s.clear()
+                    s.extend(op_elems)
+            self.set_selected_elements(None)
+            self.kernel.signal('rebuild_tree', 0)
+
+        return specific
+
     def menu_remove(self, remove_node):
         """
         Menu to remove an element from the scene.
@@ -2333,6 +2390,7 @@ class RootNode(list):
             node = remove_node
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
+                # All selected elements are removed.
                 removed_objects = self.selected_elements
                 for e in removed_objects:
                     self.kernel.elements.remove(e)
@@ -2363,6 +2421,7 @@ class RootNode(list):
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
+
 
     def menu_duplicate(self, node, copies):
         """
