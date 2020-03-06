@@ -1368,7 +1368,6 @@ class Node(list):
         if len(self.name) >= 27:
             self.name = self.name[:28] + '...'
         self.type = node_type
-        self.passes = 1
         parent.append(self)
         self.filepath = None
         try:
@@ -1387,14 +1386,6 @@ class Node(list):
         else:
             self.root.tree_lookup[id(data_object)] = [self]
         tree.SetItemData(self.item, self)
-        # try:
-        #     fill = data_object.values[SVG_ATTR_FILL]
-        #     color = wx.Colour(swizzlecolor(Color(fill).value))
-        #     tree.SetItemBackgroundColour(item, color)
-        # except AttributeError:
-        #     pass
-        # except KeyError:
-        #     pass
         try:
             stroke = data_object.values[SVG_ATTR_STROKE]
             color = wx.Colour(swizzlecolor(Color(stroke).value))
@@ -1438,16 +1429,6 @@ class Node(list):
         except RuntimeError:
             return
         root.notify_removed(self)
-
-        # if self.type == NODE_ELEMENT:
-        #     root.kernel.elements.remove(self.object)
-        #     for n in links:
-        #         n.remove_node()
-        # elif self.type == NODE_OPERATION:
-        #     try:
-        #         root.kernel.operations.remove(self.object)
-        #     except ValueError:
-        #         pass
         self.item = None
         self.parent = None
         self.root = None
@@ -1540,25 +1521,19 @@ class RootNode(list):
     kernel. This is to allow nested structures beyond the flat structure of the actual data. It serves to help with
     menu creation, name, drag and drop, bounding box cache, tree element updates.
 
-    The tree is structured with two main sub-elements of the RootNode, these are the Operations and the Elements.
+    The tree is structured with three main sub-elements of the RootNode, these are the Operations, the Elements, and
+    the files.
 
     The Operations each contain a list of elements which they run in order and are stored within actual operations.
 
-    The Elements are merely the list of elements stored in their desired ordered. This order changing should reflect
-    those changes back to the flat structure in kernel. By a depth first search of the tree.
+    Elements store the graphics elements stored within the scene. The Elements are a list of elements stored in their
+    desired ordered. This structure should reflect those changes back to structure in the kernel.
 
-    Deleting an element from the tree should remove that element from the operations.
+    Deleting an element from the tree should remove that element from any operation using it.
     Deleting an operation should make no change to the elements structure.
-    Selecting an operation should select all the elements it contains, and those elements should be highlighted in
-    the elements part of the tree.
-    Selecting an element should select all the places that element is found in the operations part of the tree.
-
-    The .scene_bounds() function should give the bounds. This should also deal with caching etc.
-    There should be a need to have the Render function cache information in the lookup.
 
     All the nodes store a reference to their given tree item. So that a determination can be made when those items have
     changed and provide piecemeal updates to the tree rather than recreating the entire thing.
-
     """
 
     def __init__(self, kernel, gui):
@@ -1592,7 +1567,7 @@ class RootNode(list):
         self.tree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
-        self.tree_lookup = {}  # id(data_object) -> [ *nodes ]
+        self.tree_lookup = {}
         self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
         self.node_operations = Node(NODE_OPERATION_BRANCH, self.kernel.operations, self, self, name=_("Operations"))
@@ -1627,13 +1602,6 @@ class RootNode(list):
                 if not isinstance(obj_value, (list, dict)):
                     obj_value = [obj_value]
                 self.build_tree(node, obj_value)
-
-    def add_operations_group(self, ops, pathname, basename):
-        self.build_tree(self.node_operations, ops)
-
-    def add_element_group(self, elements, pathname, basename):
-        """Called to add element group of elements, as loaded with the given pathname and basename."""
-        self.build_tree(self.node_elements, elements)
 
     def notify_added(self, node):
         pass
@@ -1747,7 +1715,6 @@ class RootNode(list):
             if drop_node.type == NODE_OPERATION:
                 # Dragging element into operation adds that element to the op.
                 drop_node.object.append(drag_node.object)
-                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
                 self.notify_tree_data_change()
                 event.Allow()
                 return
@@ -1756,8 +1723,6 @@ class RootNode(list):
                 drag_node.parent.object.remove(drag_node.object)
                 pos = drop_node.parent.object.index(drop_node.object)
                 drop_node.parent.object.insert(pos, drag_node.object)
-                # parent = drop_node.parent
-                # drag_node.move_node(parent, pos=pos)
                 self.notify_tree_data_change()
                 event.Allow()
                 return
@@ -1774,15 +1739,14 @@ class RootNode(list):
         elif drag_node.type == NODE_OPERATION_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging from op element to operation.
+                # TODO: BUG! There can be more than one copy of this object drag node parent.
                 drag_node.parent.object.remove(drag_node.object)
                 drop_node.object.append(drag_node.object)
-                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node, self)
-                # drag_node.remove_node()
                 event.Allow()
                 self.notify_tree_data_change()
                 return
             if drop_node.type == NODE_OPERATION_ELEMENT:
-                # Node(NODE_OPERATION_ELEMENT, drag_node.object, drop_node.parent, self)
+                # TODO: BUG! There can be more than one copy of object in dragnode parent.
                 drag_node.parent.object.remove(drag_node.object)
                 pos = drop_node.parent.object.index(drop_node.object)
                 drop_node.parent.object.insert(pos, drag_node.object)
@@ -2421,7 +2385,6 @@ class RootNode(list):
             self.kernel.signal('rebuild_tree', 0)
 
         return specific
-
 
     def menu_duplicate(self, node, copies):
         """

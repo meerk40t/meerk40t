@@ -1,7 +1,7 @@
 
 from svgelements import *
 from LaserCommandConstants import *
-from LaserOperation import LaserOperation, RasterOperation, CutOperation, EngraveOperation
+from LaserOperation import LaserOperation, RasterOperation
 from LaserRender import LaserRender
 
 
@@ -32,11 +32,10 @@ class OperationPreprocessor:
             if isinstance(op, RasterOperation):
                 if len(op) == 0:
                     continue
-                if len(op) == 1 and not isinstance(op[0], SVGImage):
-                    continue
-                if len(op) > 1:
-                    self.jobadd_make_raster()
-                    return True
+                if len(op) == 1 and isinstance(op[0], SVGImage):
+                    continue  # make raster not needed since its a single real raster.
+                self.jobadd_make_raster()
+                return True
         return False
 
     def jobadd_make_raster(self):
