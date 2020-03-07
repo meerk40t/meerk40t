@@ -1125,6 +1125,9 @@ class MeerK40t(wx.Frame):
         if bounds is not None:
             linewidth = 3.0 / self.matrix.value_scale_x()
             self.selection_pen.SetWidth(linewidth)
+            font = wx.Font(14.0 / self.matrix.value_scale_x(), wx.SWISS, wx.NORMAL, wx.BOLD)
+            gc.SetFont(font, wx.BLACK)
+
             gc.SetPen(self.selection_pen)
             gc.SetBrush(wx.BLACK_BRUSH)
             x0, y0, x1, y1 = bounds
