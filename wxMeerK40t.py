@@ -150,6 +150,7 @@ class MeerK40t(wx.Frame):
         self.DragAcceptFiles(True)
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
+        self.tree.ShouldScrollToChildOnFocus = lambda c:  False
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 
@@ -1834,7 +1835,7 @@ class RootNode(list):
         if node.type == NODE_ELEMENTS_BRANCH:
             for n in self.node_elements:
                 self.tree.SelectItem(n.item, True)
-            self.tree.SelectItem(node.item, True)
+            self.tree.SetFocusedItem(item)
             self.gui.request_refresh()
             return
         elif node.type == NODE_FILE_FILE:
@@ -1843,7 +1844,7 @@ class RootNode(list):
                 links = self.tree_lookup[id(obj)]
                 for link in links:
                     self.tree.SelectItem(link.item, True)
-            self.tree.SelectItem(node.item, True)
+            self.tree.SetFocusedItem(item)
             self.gui.request_refresh()
             return
         elif node.type == NODE_OPERATION_ELEMENT:
@@ -1853,7 +1854,7 @@ class RootNode(list):
             links = self.tree_lookup[id(obj)]
             for link in links:
                 self.tree.SelectItem(link.item, True)
-            self.tree.SelectItem(node.item, True)
+            self.tree.SetFocusedItem(item)
             return
         for item in list(self.tree.GetSelections()):
             node = self.tree.GetItemData(item)
