@@ -1834,6 +1834,7 @@ class RootNode(list):
         if node.type == NODE_ELEMENTS_BRANCH:
             for n in self.node_elements:
                 self.tree.SelectItem(n.item, True)
+            self.tree.SelectItem(node.item, True)
             self.gui.request_refresh()
             return
         elif node.type == NODE_FILE_FILE:
@@ -1842,6 +1843,7 @@ class RootNode(list):
                 links = self.tree_lookup[id(obj)]
                 for link in links:
                     self.tree.SelectItem(link.item, True)
+            self.tree.SelectItem(node.item, True)
             self.gui.request_refresh()
             return
         elif node.type == NODE_OPERATION_ELEMENT:
@@ -1851,6 +1853,7 @@ class RootNode(list):
             links = self.tree_lookup[id(obj)]
             for link in links:
                 self.tree.SelectItem(link.item, True)
+            self.tree.SelectItem(node.item, True)
             return
         for item in list(self.tree.GetSelections()):
             node = self.tree.GetItemData(item)
