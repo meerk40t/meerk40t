@@ -572,10 +572,10 @@ class DxfLoader:
                 element = Ellipse(center=entity.dxf.center,
                                   # major axis is vector
                                   # ratio is the ratio of major to minor.
-                                  start_point=dxf.start_point,
-                                  end_point=dxf.end_point,
-                                  start_angle=dxf.start_param,
-                                  end_angle=dxf.end_param)
+                                  start_point=entity.start_point,
+                                  end_point=entity.end_point,
+                                  start_angle=entity.dxf.start_param,
+                                  end_angle=entity.dxf.end_param)
             elif entity.dxftype() == 'LINE':
                 #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
                 element = SimpleLine(x1=entity.dxf.start[0], y1=entity.dxf.start[1],
@@ -642,10 +642,10 @@ class DxfLoader:
                                    width=size[0],
                                    height=size[1])
             elif entity.dxftype() == 'MTEXT':
-                insert = entity.insert
+                insert = entity.dxf.insert
                 element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
             elif entity.dxftype() == 'TEXT':
-                insert = entity.insert
+                insert = entity.dxf.insert
                 element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
             elif entity.dxftype() == 'POLYLINE':
                 if entity.is_2d_polyline:
@@ -655,7 +655,11 @@ class DxfLoader:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
             elif entity.dxftype() == 'SOLID' or entity.dxftype() == 'TRACE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
-                element = Path(entity)
+                element = Path()
+                element.move((entity[0][0],entity[0][1]))
+                element.line((entity[1][0], entity[1][1]))
+                element.line((entity[2][0], entity[2][1]))
+                element.line((entity[3][0], entity[3][1]))
                 element.closed()
                 element.fill = Color('Black')
             elif entity.dxftype() == 'SPLINE':
@@ -694,6 +698,9 @@ class DxfLoader:
                 element.stroke = Color('black')
             element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
             element.transform.post_translate_y(self.kernel.bed_height * MILS_PER_MM)
-            elements.append(abs(Path(element)))
+            if isinstance(element, SVGText):
+                elements.append(element)
+            else:
+                elements.append(abs(Path(element)))
 
         return elements, pathname, basename
