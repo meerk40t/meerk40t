@@ -133,7 +133,7 @@ class LaserSpeed:
         if not fix_limit and mm_per_second > 240 and raster_step == 0:
             mm_per_second = 19.05  # Arbitrary default speed for out range value.
         if acceleration is None:
-            acceleration = LaserSpeed.get_accel_for_speed(mm_per_second, raster_step != 0)
+            acceleration = LaserSpeed.get_accel_for_speed(mm_per_second, raster_step != 0, fix_speeds=fix_speeds)
         if suffix_c is None:
             suffix_c = LaserSpeed.get_suffix_c(board, mm_per_second)
 
@@ -312,7 +312,7 @@ class LaserSpeed:
         return "%03d%03d" % (b1, b0)
 
     @staticmethod
-    def get_accel_for_speed(mm_per_second, raster=False, raster_horizontal=True):
+    def get_accel_for_speed(mm_per_second, raster=False, raster_horizontal=True, fix_speeds=False):
         """
         Gets the acceleration factor for a particular speed.
 
@@ -325,6 +325,9 @@ class LaserSpeed:
         :param raster_horizontal: Whether this speed is for horizontal rastering (top-to-bottom, y-axis speed)
         :return: 1-4: Value for the accel factor.
         """
+        if fix_speeds:
+            # when speeds are fixed the values from the software were determined based on the flawed codes empirically
+            mm_per_second /= 0.919493599053179
         if mm_per_second <= 25.4:
             return 1
         if 25.4 < mm_per_second <= 60:
