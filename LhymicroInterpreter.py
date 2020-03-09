@@ -674,15 +674,15 @@ class LhymicroInterpreter(Interpreter):
     def to_compact_mode(self):
         controller = self.device.pipe
         self.to_concat_mode()
-        if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed,
-                                                        self.raster_step,
-                                                        self.device.board,
-                                                        d_ratio=self.d_ratio)
-        else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed,
-                                                        self.raster_step,
-                                                        self.device.board)
+        speed_code = LaserSpeed(
+            self.device.board,
+            self.speed,
+            self.raster_step,
+            d_ratio=self.d_ratio,
+            fix_limit=True,
+            fix_lows=True,
+            fix_speeds=False,
+            raster_horizontal=True).speedcode
         try:
             speed_code = bytes(speed_code)
         except TypeError:
