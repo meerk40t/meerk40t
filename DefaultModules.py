@@ -212,6 +212,7 @@ class GRBLEmulator(Module):
                 continue
             elif is_end:
                 cmd = self.command(self.command_map)
+
                 if cmd == 0:  # Execute GCode.
                     self.read_info = "ok\r\n"
                 else:
@@ -228,7 +229,7 @@ class GRBLEmulator(Module):
 
     def command(self, gc):
         if len(self.command_map) == 0:
-            return
+            return 0  # empty command ok
         interpreter = self.kernel.device.interpreter
         if 'comment' in gc:
             comment = gc['comment']
