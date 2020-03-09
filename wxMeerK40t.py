@@ -1743,17 +1743,26 @@ class RootNode(list):
         elif drag_node.type == NODE_OPERATION_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging from op element to operation.
-                # TODO: BUG! There can be more than one copy of this object drag node parent.
-                drag_node.parent.object.remove(drag_node.object)
+                index = drag_node.parent.index(drag_node)
+                drag_node.parent.object[index] = None
                 drop_node.object.append(drag_node.object)
+                op_elems = [op_elem for op_elem in drag_node.parent.object if op_elem is not None]
+                drag_node.parent.object.clear()
+                drag_node.parent.object.extend(op_elems)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
             if drop_node.type == NODE_OPERATION_ELEMENT:
-                # TODO: BUG! There can be more than one copy of object in dragnode parent.
-                drag_node.parent.object.remove(drag_node.object)
-                pos = drop_node.parent.object.index(drop_node.object)
+                index = drag_node.parent.index(drag_node)
+                drag_node.parent.object[index] = None
+
+                pos = drop_node.parent.index(drop_node)
                 drop_node.parent.object.insert(pos, drag_node.object)
+
+                op_elems = [op_elem for op_elem in drag_node.parent.object if op_elem is not None]
+                drag_node.parent.object.clear()
+                drag_node.parent.object.extend(op_elems)
+
                 event.Allow()
                 self.notify_tree_data_change()
                 return
