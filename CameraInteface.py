@@ -25,19 +25,19 @@ class CameraInterface(wx.Frame):
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "", wx.ITEM_RADIO)
         self.camera_0_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(0), id=item.GetId())
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(0), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 1"), "", wx.ITEM_RADIO)
         self.camera_1_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(1), id=item.GetId())
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(1), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 2"), "", wx.ITEM_RADIO)
         self.camera_2_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(2), id=item.GetId())
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(2), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 3"), "", wx.ITEM_RADIO)
         self.camera_3_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(3), id=item.GetId())
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(3), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 4"), "", wx.ITEM_RADIO)
         self.camera_4_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(4), id=item.GetId())
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(4), id=item.GetId())
         self.CameraInterface_menubar.Append(wxglade_tmp_menu, _("Camera"))
         self.SetMenuBar(self.CameraInterface_menubar)
         # Menu Bar
@@ -132,9 +132,21 @@ class CameraInterface(wx.Frame):
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
-    def initialize_camera(self, camera_index=0):
+    def swap_camera(self, camera_index=0):
         self.kernel.camera_index = camera_index
-        self.kernel.cron.add_job(self.gui_initialize_camera, times=1, interval=0)
+        self.close_camera()
+        self.queue_open_camera()
+
+    def close_camera(self):
+        if self.job is not None:
+            self.job.cancel()
+            self.job = None
+        if self.capture is not None:
+            self.kernel.cron.add_job(self.capture.release, times=1, interval=0)
+            self.capture = None
+
+    def queue_open_camera(self):
+        self.kernel.cron.add_job(self.gui_initialize_camera, times=1, interval=0.1)
 
     def gui_initialize_camera(self):
         try:
@@ -150,9 +162,6 @@ class CameraInterface(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
-        if self.capture is not None:
-            self.capture.release()
-            self.capture = None
         self.capture = cv2.VideoCapture(self.kernel.camera_index)
         ret, self.frame = self.capture.read()
         if not ret:
@@ -174,6 +183,7 @@ class CameraInterface(wx.Frame):
                 value.Enable(True)
         self.Refresh(eraseBackground=True)
         self.Update()
+        self.job = self.kernel.cron.add_job(self.fetch_image)
 
     def reset_perspective(self, event):
         self.perspective = None
@@ -234,10 +244,7 @@ class CameraInterface(wx.Frame):
         self.update_in_gui_thread()
 
     def on_close(self, event):
-        if self.job is not None:
-            self.job.cancel()
-        if self.capture is not None:
-            self.capture.release()
+        self.close_camera()
         self.kernel.mark_window_closed("CameraInterface")
         self.kernel = None
         event.Skip()  # Call destroy.
@@ -270,7 +277,7 @@ class CameraInterface(wx.Frame):
             self.perspective[self.corner_drag][0] += sdx
             self.perspective[self.corner_drag][1] += sdy
             self.kernel.perspective = repr(self.perspective)
-            print("Perspective value changed: %s" % self.kernel.perspective)
+            # print("Perspective value changed: %s" % self.kernel.perspective)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
 
@@ -329,16 +336,15 @@ class CameraInterface(wx.Frame):
         self.kernel.setting(str, 'perspective', '')
         self.check_fisheye.SetValue(kernel.camera_correction_fisheye)
         self.check_perspective.SetValue(kernel.camera_correction_perspective)
-        self.job = self.kernel.cron.add_job(self.fetch_image)
         if kernel.fisheye is not None and len(kernel.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
         if kernel.perspective is not None and len(kernel.perspective) != 0:
             self.perspective = eval(kernel.perspective)
-            print("Perspective value loaded: %s" % kernel.perspective)
+            # print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(kernel.camera_fps)
+        self.gui_initialize_camera()
         self.on_slider_fps(None)
 
-        self.gui_initialize_camera()
         if kernel.camera_index == 0:
             self.camera_0_menu.Check(True)
         elif kernel.camera_index == 1:
