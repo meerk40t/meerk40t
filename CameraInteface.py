@@ -106,6 +106,8 @@ class CameraInterface(wx.Frame):
         self.Bind(wx.EVT_SIZE, self.on_size, self)
 
     def initialize_camera(self, camera_index=0):
+        if self.capture is not None:
+            self.capture.release()
         self.kernel.camera_index = camera_index
         try:
             import cv2
