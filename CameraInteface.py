@@ -168,13 +168,11 @@ class CameraInterface(wx.Frame):
             return
         self.image_height, self.image_width = self.frame.shape[:2]
         self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
-        self.display_camera.SetSize((self.image_width, self.image_height))
         for attr in dir(self):
             value = getattr(self, attr)
             if isinstance(value, wx.Control):
                 value.Enable(True)
-        self.Layout()
-        self.Refresh()
+        self.Refresh(eraseBackground=True)
         self.Update()
 
     def reset_perspective(self, event):
@@ -339,7 +337,8 @@ class CameraInterface(wx.Frame):
             print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(kernel.camera_fps)
         self.on_slider_fps(None)
-        self.initialize_camera(self.kernel.camera_index)
+
+        self.gui_initialize_camera()
         if kernel.camera_index == 0:
             self.camera_0_menu.Check(True)
         elif kernel.camera_index == 1:
@@ -400,7 +399,6 @@ class CameraInterface(wx.Frame):
                 self.image_width = bed_width
                 self.image_height = bed_height
                 self.display_camera.SetSize((self.image_width, self.image_height))
-                self.Layout()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         self.image_height, self.image_width = frame.shape[:2]
         return frame
