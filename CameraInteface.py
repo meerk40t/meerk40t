@@ -30,15 +30,21 @@ class CameraInterface(wx.Frame):
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset Fisheye", "")
         self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
+
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 0", "", wx.ITEM_RADIO)
+        self.camera_0_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(0), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 1", "", wx.ITEM_RADIO)
+        self.camera_1_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(1), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 2", "", wx.ITEM_RADIO)
+        self.camera_2_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(2), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 3", "", wx.ITEM_RADIO)
+        self.camera_3_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(3), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 4", "", wx.ITEM_RADIO)
+        self.camera_4_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(4), id=item.GetId())
         self.CameraInterface_menubar.Append(wxglade_tmp_menu, "Camera")
         self.SetMenuBar(self.CameraInterface_menubar)
@@ -295,6 +301,16 @@ class CameraInterface(wx.Frame):
         self.slider_fps.SetValue(kernel.camera_fps)
         self.on_slider_fps(None)
         self.initialize_camera(self.kernel.camera_index)
+        if kernel.camera_index == 0:
+            self.camera_0_menu.Check(True)
+        elif kernel.camera_index == 1:
+            self.camera_1_menu.Check(True)
+        elif kernel.camera_index == 2:
+            self.camera_2_menu.Check(True)
+        elif kernel.camera_index == 3:
+            self.camera_3_menu.Check(True)
+        elif kernel.camera_index == 4:
+            self.camera_4_menu.Check(True)
 
     def capture_frame(self, raw=False):
         import cv2
