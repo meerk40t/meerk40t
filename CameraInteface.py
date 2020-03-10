@@ -135,18 +135,15 @@ class CameraInterface(wx.Frame):
     def swap_camera(self, camera_index=0):
         self.kernel.camera_index = camera_index
         self.close_camera()
-        self.queue_open_camera()
+        self.kernel.cron.add_job(self.gui_initialize_camera, times=1, interval=0.1)
 
     def close_camera(self):
         if self.job is not None:
             self.job.cancel()
             self.job = None
         if self.capture is not None:
-            self.kernel.cron.add_job(self.capture.release, times=1, interval=0)
+            self.capture.release()
             self.capture = None
-
-    def queue_open_camera(self):
-        self.kernel.cron.add_job(self.gui_initialize_camera, times=1, interval=0.1)
 
     def gui_initialize_camera(self):
         try:
