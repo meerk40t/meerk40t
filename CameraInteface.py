@@ -194,6 +194,8 @@ class CameraInterface(wx.Frame):
             pass
 
     def on_update_buffer(self, event=None):
+        if self.frame_bitmap is None:
+            return  # Need the bitmap to refresh.
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.Clear()
