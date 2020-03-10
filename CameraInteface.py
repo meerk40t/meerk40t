@@ -135,7 +135,7 @@ class CameraInterface(wx.Frame):
     def swap_camera(self, camera_index=0):
         self.kernel.camera_index = camera_index
         self.close_camera()
-        self.kernel.cron.add_job(self.gui_initialize_camera, times=1, interval=0.1)
+        self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
 
     def close_camera(self):
         if self.job is not None:
@@ -145,7 +145,7 @@ class CameraInterface(wx.Frame):
             self.capture.release()
             self.capture = None
 
-    def gui_initialize_camera(self):
+    def init_camera(self):
         try:
             import cv2
         except ImportError:
@@ -180,7 +180,8 @@ class CameraInterface(wx.Frame):
                 value.Enable(True)
         self.Refresh(eraseBackground=True)
         self.Update()
-        self.job = self.kernel.cron.add_job(self.fetch_image)
+        tick = 1.0 / self.kernel.camera_fps
+        self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
 
     def reset_perspective(self, event):
         self.perspective = None
@@ -339,8 +340,6 @@ class CameraInterface(wx.Frame):
             self.perspective = eval(kernel.perspective)
             # print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(kernel.camera_fps)
-        self.gui_initialize_camera()
-        self.on_slider_fps(None)
 
         if kernel.camera_index == 0:
             self.camera_0_menu.Check(True)
@@ -352,6 +351,7 @@ class CameraInterface(wx.Frame):
             self.camera_3_menu.Check(True)
         elif kernel.camera_index == 4:
             self.camera_4_menu.Check(True)
+        self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
 
     def capture_frame(self, raw=False):
         try:
@@ -456,7 +456,8 @@ class CameraInterface(wx.Frame):
         else:
             tick = 1.0 / fps
         self.kernel.camera_fps = fps
-        self.job.interval = tick
+        if self.job is not None:
+            self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
         try:
