@@ -22,6 +22,27 @@ class CameraInterface(wx.Frame):
         self.slider_fps = wx.Slider(self, wx.ID_ANY, 1, 0, 24, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
         self.display_camera = wx.Panel(self, wx.ID_ANY)
+        # Menu Bar
+        self.CameraInterface_menubar = wx.MenuBar()
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset Perspective", "")
+        self.Bind(wx.EVT_MENU, self.reset_perspective, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset Fisheye", "")
+        self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
+        wxglade_tmp_menu.AppendSeparator()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 0", "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(0), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 1", "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(1), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 2", "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(2), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 3", "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(3), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 4", "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(4), id=item.GetId())
+        self.CameraInterface_menubar.Append(wxglade_tmp_menu, "Camera")
+        self.SetMenuBar(self.CameraInterface_menubar)
+        # Menu Bar end
 
         self.__set_properties()
         self.__do_layout()
@@ -41,36 +62,9 @@ class CameraInterface(wx.Frame):
         self.kernel = None
         self._Buffer = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        try:
-            import cv2
-        except ImportError:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _(
-                "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
-                                   _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        self.capture = cv2.VideoCapture(0)
-        ret, self.frame = self.capture.read()
-        if not ret:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("No Webcam found."),
-                                   _("Error"), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
-            self.capture = None
-            return
-        self.image_height, self.image_width = self.frame.shape[:2]
-        self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
-        self.display_camera.SetSize((self.image_width, self.image_height))
-        self.Layout()
+
+        self.frame_bitmap = None
+
         self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
         self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
 
@@ -102,22 +96,52 @@ class CameraInterface(wx.Frame):
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_camera_menu, self)
 
-    def on_camera_menu(self, event):
-        gui = self
-        menu = wx.Menu()
-        path_scale_sub_menu = wx.Menu()
-
-        gui.Bind(wx.EVT_MENU, self.reset_perspective,
-                    menu.Append(wx.ID_ANY, "Reset Perspective", "", wx.ITEM_NORMAL))
-        if menu.MenuItemCount != 0:
-            gui.PopupMenu(menu)
-            menu.Destroy()
+    def initialize_camera(self, camera_index=0):
+        self.kernel.camera_index = camera_index
+        try:
+            import cv2
+        except ImportError:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _(
+                "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
+                                   _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+        self.capture = cv2.VideoCapture(camera_index)
+        ret, self.frame = self.capture.read()
+        if not ret:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("No Webcam found."),
+                                   _("Error"), wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            dlg.Destroy()
+            self.capture = None
+            return
+        self.image_height, self.image_width = self.frame.shape[:2]
+        self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
+        self.display_camera.SetSize((self.image_width, self.image_height))
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if isinstance(value, wx.Control):
+                value.Enable(True)
+        self.Layout()
 
     def reset_perspective(self, event):
         self.perspective = None
         self.kernel.perspective = ''
+
+    def reset_fisheye(self, event):
+        self.fisheye_k = None
+        self.fisheye_d = None
+        self.kernel.fisheye = ''
 
     def on_erase(self, event):
         pass
@@ -253,6 +277,7 @@ class CameraInterface(wx.Frame):
 
     def set_kernel(self, kernel):
         self.kernel = kernel
+        self.kernel.setting(int, 'camera_index', 0)
         self.kernel.setting(int, 'camera_fps', 1)
         self.kernel.setting(bool, 'mouse_zoom_invert', False)
         self.kernel.setting(bool, 'camera_correction_fisheye', False)
@@ -269,6 +294,7 @@ class CameraInterface(wx.Frame):
             print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(kernel.camera_fps)
         self.on_slider_fps(None)
+        self.initialize_camera(self.kernel.camera_index)
 
     def capture_frame(self, raw=False):
         import cv2
