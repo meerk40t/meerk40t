@@ -8,6 +8,7 @@ _ = wx.GetTranslation
 
 CORNER_SIZE = 25
 
+
 class CameraInterface(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: CameraInterface.__init__
@@ -73,6 +74,7 @@ class CameraInterface(wx.Frame):
 
         self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
         self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+        self.frame = None
 
         self.job = None
         self.fisheye_k = None
@@ -139,6 +141,9 @@ class CameraInterface(wx.Frame):
             if isinstance(value, wx.Control):
                 value.Enable(True)
         self.Layout()
+        self.Refresh()
+        self.Update()
+
 
     def reset_perspective(self, event):
         self.perspective = None
@@ -197,13 +202,13 @@ class CameraInterface(wx.Frame):
         self.update_in_gui_thread()
 
     def on_close(self, event):
+        if self.job is not None:
+            self.job.cancel()
         if self.capture is not None:
             self.capture.release()
         self.kernel.mark_window_closed("CameraInterface")
         self.kernel = None
         event.Skip()  # Call destroy.
-        if self.job is not None:
-            self.job.cancel()
 
     def convert_scene_to_window(self, position):
         point = self.matrix.point_in_matrix_space(position)
