@@ -134,6 +134,9 @@ class CameraInterface(wx.Frame):
 
     def initialize_camera(self, camera_index=0):
         self.kernel.camera_index = camera_index
+        self.kernel.cron.add_job(self.gui_initialize_camera, times=1, interval=0)
+
+    def gui_initialize_camera(self):
         try:
             import cv2
         except ImportError:
@@ -150,7 +153,7 @@ class CameraInterface(wx.Frame):
         if self.capture is not None:
             self.capture.release()
             self.capture = None
-        self.capture = cv2.VideoCapture(camera_index)
+        self.capture = cv2.VideoCapture(self.kernel.camera_index)
         ret, self.frame = self.capture.read()
         if not ret:
             for attr in dir(self):
@@ -173,7 +176,6 @@ class CameraInterface(wx.Frame):
         self.Layout()
         self.Refresh()
         self.Update()
-
 
     def reset_perspective(self, event):
         self.perspective = None
