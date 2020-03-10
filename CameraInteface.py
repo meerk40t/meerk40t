@@ -348,7 +348,14 @@ class CameraInterface(wx.Frame):
             self.camera_4_menu.Check(True)
 
     def capture_frame(self, raw=False):
-        import cv2
+        try:
+            import cv2
+        except ImportError:
+            return None
+        if self.capture is None:
+            return None
+        if self.kernel is None:
+            return None
         ret, frame = self.capture.read()
         if not ret or frame is None:
             return None
