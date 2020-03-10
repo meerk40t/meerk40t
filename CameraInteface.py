@@ -180,7 +180,10 @@ class CameraInterface(wx.Frame):
                 value.Enable(True)
         self.Refresh(eraseBackground=True)
         self.Update()
-        tick = 1.0 / self.kernel.camera_fps
+        try:
+            tick = 1.0 / self.kernel.camera_fps
+        except ZeroDivisionError:
+            tick = 5
         self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
 
     def reset_perspective(self, event):
