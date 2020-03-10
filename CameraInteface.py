@@ -146,6 +146,9 @@ class CameraInterface(wx.Frame):
             self.capture = None
 
     def init_camera(self):
+        if self.capture is not None:
+            self.capture.release()
+            self.capture = None
         try:
             import cv2
         except ImportError:
