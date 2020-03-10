@@ -14,16 +14,7 @@ class CameraInterface(wx.Frame):
         # begin wxGlade: CameraInterface.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((451, 489))
-
-        self.button_update = wx.BitmapButton(self, wx.ID_ANY, icons8_camera_50.GetBitmap())
-        self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
-        self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
-        self.check_perspective = wx.CheckBox(self, wx.ID_ANY, _("Correct Perspective"))
-        self.slider_fps = wx.Slider(self, wx.ID_ANY, 1, 0, 24, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
-        self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
-        self.display_camera = wx.Panel(self, wx.ID_ANY)
-        # Menu Bar
+        self.SetSize((608, 549))
         self.CameraInterface_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset Perspective", "")
@@ -49,8 +40,15 @@ class CameraInterface(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(4), id=item.GetId())
         self.CameraInterface_menubar.Append(wxglade_tmp_menu, "Camera")
         self.SetMenuBar(self.CameraInterface_menubar)
-        # Menu Bar end
+        # Menu Bar
 
+        self.button_update = wx.BitmapButton(self, wx.ID_ANY, icons8_camera_50.GetBitmap())
+        self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
+        self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
+        self.check_perspective = wx.CheckBox(self, wx.ID_ANY, _("Correct Perspective"))
+        self.slider_fps = wx.Slider(self, wx.ID_ANY, 1, 0, 24, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
+        self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
+        self.display_camera = wx.Panel(self, wx.ID_ANY)
         self.__set_properties()
         self.__do_layout()
 
@@ -104,6 +102,35 @@ class CameraInterface(wx.Frame):
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
+
+    def __do_layout(self):
+        # begin wxGlade: CameraInterface.__do_layout
+        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_3 = wx.BoxSizer(wx.VERTICAL)
+        sizer_2.Add(self.button_update, 0, 0, 0)
+        sizer_2.Add(self.button_export, 0, 0, 0)
+        sizer_3.Add(self.check_fisheye, 0, 0, 0)
+        sizer_3.Add(self.check_perspective, 0, 0, 0)
+        sizer_3.Add(self.slider_fps, 0, wx.EXPAND, 0)
+        sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
+        sizer_2.Add(self.button_detect, 0, 0, 0)
+        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
+        sizer_1.Add(self.display_camera, 10, wx.EXPAND, 0)
+        self.SetSizer(sizer_1)
+        self.Layout()
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: CameraInterface.__set_properties
+        self.SetTitle("CameraInterface")
+        self.button_update.SetToolTip("Update Image")
+        self.button_update.SetSize(self.button_update.GetBestSize())
+        self.button_export.SetToolTip("Export Snapsnot")
+        self.button_export.SetSize(self.button_export.GetBestSize())
+        self.button_detect.SetToolTip("Detect Distortions/Calibration")
+        self.button_detect.SetSize(self.button_detect.GetBestSize())
+        # end wxGlade
 
     def initialize_camera(self, camera_index=0):
         if self.capture is not None:
@@ -383,35 +410,6 @@ class CameraInterface(wx.Frame):
             return
         self.on_update_buffer()
         self.display_camera.Refresh(True)
-
-    def __set_properties(self):
-        # begin wxGlade: CameraInterface.__set_properties
-        self.SetTitle(_("CameraInterface"))
-        self.button_update.SetToolTip(_("Update Scene"))
-        self.button_update.SetSize(self.button_update.GetBestSize())
-        self.button_export.SetToolTip(_("Export Snapsnot"))
-        self.button_export.SetSize(self.button_export.GetBestSize())
-        self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
-        self.button_detect.SetSize(self.button_detect.GetBestSize())
-        # end wxGlade
-
-    def __do_layout(self):
-        # begin wxGlade: CameraInterface.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2.Add(self.button_update, 0, 0, 0)
-        sizer_2.Add(self.button_export, 0, 0, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_2.Add(label_1, 1, 0, 0)
-        sizer_2.Add(self.check_fisheye, 0, 0, 0)
-        sizer_2.Add(self.check_perspective, 0, 0, 0)
-        sizer_2.Add(self.slider_fps, 0, wx.EXPAND, 0)
-        sizer_2.Add(self.button_detect, 0, 0, 0)
-        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
-        sizer_1.Add(self.display_camera, 10, wx.EXPAND, 0)
-        self.SetSizer(sizer_1)
-        self.Layout()
-        # end wxGlade
 
     def on_check_perspective(self, event):
         self.kernel.camera_correction_perspective = self.check_perspective.GetValue()
