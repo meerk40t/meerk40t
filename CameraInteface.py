@@ -133,8 +133,6 @@ class CameraInterface(wx.Frame):
         # end wxGlade
 
     def initialize_camera(self, camera_index=0):
-        if self.capture is not None:
-            self.capture.release()
         self.kernel.camera_index = camera_index
         try:
             import cv2
@@ -149,6 +147,9 @@ class CameraInterface(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
+        if self.capture is not None:
+            self.capture.release()
+            self.capture = None
         self.capture = cv2.VideoCapture(camera_index)
         ret, self.frame = self.capture.read()
         if not ret:
