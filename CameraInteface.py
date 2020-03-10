@@ -17,28 +17,28 @@ class CameraInterface(wx.Frame):
         self.SetSize((608, 549))
         self.CameraInterface_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset Perspective", "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
         self.Bind(wx.EVT_MENU, self.reset_perspective, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Reset Fisheye", "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
         self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 0", "", wx.ITEM_RADIO)
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "", wx.ITEM_RADIO)
         self.camera_0_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(0), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 1", "", wx.ITEM_RADIO)
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 1"), "", wx.ITEM_RADIO)
         self.camera_1_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 2", "", wx.ITEM_RADIO)
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 2"), "", wx.ITEM_RADIO)
         self.camera_2_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(2), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 3", "", wx.ITEM_RADIO)
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 3"), "", wx.ITEM_RADIO)
         self.camera_3_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(3), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Set Camera 4", "", wx.ITEM_RADIO)
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 4"), "", wx.ITEM_RADIO)
         self.camera_4_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.initialize_camera(4), id=item.GetId())
-        self.CameraInterface_menubar.Append(wxglade_tmp_menu, "Camera")
+        self.CameraInterface_menubar.Append(wxglade_tmp_menu, _("Camera"))
         self.SetMenuBar(self.CameraInterface_menubar)
         # Menu Bar
 
@@ -124,11 +124,11 @@ class CameraInterface(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
         self.SetTitle("CameraInterface")
-        self.button_update.SetToolTip("Update Image")
+        self.button_update.SetToolTip(_("Update Image"))
         self.button_update.SetSize(self.button_update.GetBestSize())
-        self.button_export.SetToolTip("Export Snapsnot")
+        self.button_export.SetToolTip(_("Export Snapsnot"))
         self.button_export.SetSize(self.button_export.GetBestSize())
-        self.button_detect.SetToolTip("Detect Distortions/Calibration")
+        self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
