@@ -287,31 +287,40 @@ class CameraInterface(wx.Frame):
             self.capture = None
 
     def camera_error_requirement(self):
-        for attr in dir(self):
-            value = getattr(self, attr)
-            if isinstance(value, wx.Control):
-                value.Enable(False)
-        dlg = wx.MessageDialog(None, _(
-            "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
-                               _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
-        dlg.ShowModal()
-        dlg.Destroy()
+        try:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _(
+                "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
+                                   _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            dlg.Destroy()
+        except RuntimeError:
+            pass
 
     def camera_error_webcam(self):
-        for attr in dir(self):
-            value = getattr(self, attr)
-            if isinstance(value, wx.Control):
-                value.Enable(False)
-        dlg = wx.MessageDialog(None, _("No Webcam found."),
-                               _("Error"), wx.OK | wx.ICON_ERROR)
-        dlg.ShowModal()
-        dlg.Destroy()
+        try:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(False)
+            dlg = wx.MessageDialog(None, _("No Webcam found."),
+                                   _("Error"), wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            dlg.Destroy()
+        except RuntimeError:
+            pass
 
     def camera_success(self):
-        for attr in dir(self):
-            value = getattr(self, attr)
-            if isinstance(value, wx.Control):
-                value.Enable(True)
+        try:
+            for attr in dir(self):
+                value = getattr(self, attr)
+                if isinstance(value, wx.Control):
+                    value.Enable(True)
+        except RuntimeError:
+            pass
 
     def init_camera(self):
         if self.capture is not None:
