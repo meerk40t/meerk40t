@@ -1546,6 +1546,7 @@ class RootNode(list):
         self.object = "Project"
         self.name = "Project"
         self.semi_selected = []
+        self.highlighted = []
         self.type = NODE_ROOT
 
         self.kernel = kernel
@@ -1566,6 +1567,23 @@ class RootNode(list):
         self.node_operations = None
         self.node_files = None
         self.rebuild_tree()
+
+    def highlight_select(self, item):
+        if item not in self.highlighted:
+            self.highlighted.append(item)
+            self.tree.SetItemBackgroundColour(item, wx.YELLOW)
+
+    def highlight_unselect(self):
+        self.set_selected_elements(None)
+        self.set_selected_operations(None)
+        for item in self.highlighted:
+            self.tree.SetItemBackgroundColour(item, wx.WHITE)
+        self.highlighted.clear()
+
+    def highlight_select_all(self, objects):
+        for e in objects:
+            self.highlight_select(e)
+
 
     def semi_select(self, item):
         if item not in self.semi_selected:
@@ -1589,6 +1607,8 @@ class RootNode(list):
             self.semi_select(e)
 
     def rebuild_tree(self):
+        self.semi_selected.clear()
+        self.highlighted.clear()
         self.tree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
@@ -1864,10 +1884,17 @@ class RootNode(list):
         if node is None:
             return
         self.semi_unselect()
+        self.highlight_unselect()
         self.semi_select_all(self.tree.GetSelections())
         if node.type == NODE_ELEMENTS_BRANCH:
             for n in self.node_elements:
                 self.semi_select(n.item)
+            self.gui.request_refresh()
+            self.selection_updated()
+            return
+        elif node.type == NODE_OPERATION:
+            for n in node:
+                self.highlight_select(n.item)
             self.gui.request_refresh()
             self.selection_updated()
             return
