@@ -272,9 +272,11 @@ class CameraInterface(wx.Frame):
         self.fisheye_d = D.tolist()
 
     def swap_camera(self, camera_index=0):
+        self.camera_lock.acquire()
         self.kernel.camera_index = camera_index
         self.close_camera()
         self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
+        self.camera_lock.release()
 
     def close_camera(self):
         if self.job is not None:
@@ -312,9 +314,7 @@ class CameraInterface(wx.Frame):
                 value.Enable(True)
 
     def init_camera(self):
-        self.camera_lock.acquire()
         if self.capture is not None:
-            self.capture.release()
             self.capture = None
         try:
             import cv2
@@ -332,8 +332,8 @@ class CameraInterface(wx.Frame):
             tick = 1.0 / self.kernel.camera_fps
         except ZeroDivisionError:
             tick = 5
-        self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
-        self.camera_lock.release()
+        if self.kernel is not None:
+            self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
 
     def reset_perspective(self, event):
         self.perspective = None
