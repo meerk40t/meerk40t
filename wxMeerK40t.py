@@ -1767,15 +1767,31 @@ class RootNode(list):
                 return
             elif drop_node.type == NODE_ELEMENT:
                 # Dragging element into element.
-                drag_node.parent.object.remove(drag_node.object)
-                pos = drop_node.parent.object.index(drop_node.object)
-                drop_node.parent.object.insert(pos, drag_node.object)
+                if drag_node.parent is drop_node.parent:
+                    # Dragging and dropping within the same parent puts insert on other side.
+                    drag_index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[drag_index] = None
+                    drop_index = drop_node.parent.index(drop_node)
+                    if drag_index > drop_index:
+                        drop_node.parent.object.insert(drop_index, drag_node.object)
+                    else:
+                        drop_node.parent.object.insert(drop_index + 1, drag_node.object)
+                else:
+                    drag_index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[drag_index] = None
+
+                    drop_index = drop_node.parent.index(drop_node)
+                    drop_node.parent.object.insert(drop_index, drag_node.object)
+
+                nodes = [n for n in drag_node.parent.object if n is not None]
+                drag_node.parent.object.clear()
+                drag_node.parent.object.extend(nodes)
                 self.notify_tree_data_change()
                 event.Allow()
                 return
             elif drop_node.type == NODE_OPERATION_ELEMENT:
-                pos = drop_node.parent.object.index(drop_node.object)
-                drop_node.parent.object.insert(pos, drag_node.object)
+                drop_index = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(drop_index, drag_node.object)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
@@ -1787,35 +1803,35 @@ class RootNode(list):
         elif drag_node.type == NODE_OPERATION_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging from op element to operation.
-                index = drag_node.parent.index(drag_node)
-                drag_node.parent.object[index] = None
+                drag_index = drag_node.parent.index(drag_node)
+                drag_node.parent.object[drag_index] = None
                 drop_node.object.append(drag_node.object)
-                op_elems = [op_elem for op_elem in drag_node.parent.object if op_elem is not None]
+                nodes = [op_elem for op_elem in drag_node.parent.object if op_elem is not None]
                 drag_node.parent.object.clear()
-                drag_node.parent.object.extend(op_elems)
+                drag_node.parent.object.extend(nodes)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
             if drop_node.type == NODE_OPERATION_ELEMENT:
                 if drag_node.parent is drop_node.parent:
                     # Dragging and dropping within the same parent puts insert on other side.
-                    index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[index] = None
-                    pos = drop_node.parent.index(drop_node)
-                    if index > pos:
-                        drop_node.parent.object.insert(pos, drag_node.object)
+                    drag_index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[drag_index] = None
+                    drop_index = drop_node.parent.index(drop_node)
+                    if drag_index > drop_index:
+                        drop_node.parent.object.insert(drop_index, drag_node.object)
                     else:
-                        drop_node.parent.object.insert(pos + 1, drag_node.object)
+                        drop_node.parent.object.insert(drop_index + 1, drag_node.object)
                 else:
-                    index = drag_node.parent.index(drag_node)
-                    drag_node.parent.object[index] = None
+                    drag_index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[drag_index] = None
 
-                    pos = drop_node.parent.index(drop_node)
-                    drop_node.parent.object.insert(pos, drag_node.object)
+                    drop_index = drop_node.parent.index(drop_node)
+                    drop_node.parent.object.insert(drop_index, drag_node.object)
 
-                op_elems = [op_elem for op_elem in drag_node.parent.object if op_elem is not None]
+                nodes = [n for n in drag_node.parent.object if n is not None]
                 drag_node.parent.object.clear()
-                drag_node.parent.object.extend(op_elems)
+                drag_node.parent.object.extend(nodes)
 
                 event.Allow()
                 self.notify_tree_data_change()
