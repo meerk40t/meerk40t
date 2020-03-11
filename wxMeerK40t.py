@@ -1772,7 +1772,8 @@ class RootNode(list):
                 event.Allow()
                 return
             elif drop_node.type == NODE_OPERATION_ELEMENT:
-                drag_node.object.append(drop_node.parent.object)
+                pos = drop_node.parent.object.index(drop_node.object)
+                drop_node.parent.object.insert(pos, drag_node.object)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
