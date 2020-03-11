@@ -107,7 +107,6 @@ class CameraInterface(wx.Frame):
         self.camera_lock = threading.Lock()
 
     def __do_layout(self):
-        # begin wxGlade: CameraInterface.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
@@ -116,13 +115,12 @@ class CameraInterface(wx.Frame):
         sizer_3.Add(self.check_fisheye, 0, 0, 0)
         sizer_3.Add(self.check_perspective, 0, 0, 0)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-        sizer_2.Add(self.slider_fps, 0, wx.EXPAND, 0)
+        sizer_2.Add(self.slider_fps, 1, wx.EXPAND, 0)
         sizer_2.Add(self.button_detect, 0, 0, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
         sizer_1.Add(self.display_camera, 10, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
-        # end wxGlade
 
     def __set_properties(self):
         # begin wxGlade: CameraInterface.__set_properties
@@ -311,6 +309,7 @@ class CameraInterface(wx.Frame):
                 value.Enable(True)
 
     def init_camera(self):
+        self.camera_lock.acquire()
         if self.capture is not None:
             self.capture.release()
             self.capture = None
@@ -331,6 +330,7 @@ class CameraInterface(wx.Frame):
         except ZeroDivisionError:
             tick = 5
         self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
+        self.camera_lock.release()
 
     def reset_perspective(self, event):
         self.perspective = None
