@@ -271,18 +271,21 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Controller"), id=ID_MENU_CONTROLLER)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("UsbConnect"), id=ID_MENU_USB)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobSpooler"), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations),
+                  id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
-        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_JOB)
+        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
+                     lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_JOB)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("UsbConnect"), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Navigation"), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Controller"), id=ID_CONTROLLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Preferences"), id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Preferences"),
+                     id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("DeviceManager"), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("JobSpooler"), id=ID_SPOOLER)
 
@@ -306,7 +309,7 @@ class MeerK40t(wx.Frame):
         self.renderer = None
         self.grid = None
         self.guide_lines = None
-        self.laserpath = [[0,0] for i in range(1000)], [[0,0] for i in range(1000)]
+        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.mouse_move_function = self.move_pan
         self.working_file = None
@@ -1016,7 +1019,7 @@ class MeerK40t(wx.Frame):
             return starts, ends
         x = 0.0
         while x < wmils:
-            starts.append((x,0))
+            starts.append((x, 0))
             ends.append((x, hmils))
             x += step
         y = 0.0
@@ -1024,7 +1027,7 @@ class MeerK40t(wx.Frame):
             starts.append((0, y))
             ends.append((wmils, y))
             y += step
-        self.grid = starts,ends
+        self.grid = starts, ends
 
     def on_draw_grid(self, gc):
         # Convert to GC.
@@ -1068,7 +1071,7 @@ class MeerK40t(wx.Frame):
             mark_point = (x - sx) / scaled_conversion
             if round(mark_point * 1000) == 0:
                 mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau/4)
+            gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
             x += points
 
         y = offset_y
@@ -1584,7 +1587,6 @@ class RootNode(list):
         for e in objects:
             self.highlight_select(e)
 
-
     def semi_select(self, item):
         if item not in self.semi_selected:
             self.semi_selected.append(item)
@@ -1759,7 +1761,7 @@ class RootNode(list):
         if drag_node.type == NODE_ELEMENT:
             if drop_node.type == NODE_OPERATION:
                 # Dragging element into operation adds that element to the op.
-                drop_node.object.append(drag_node.object)
+                drop_node.object.insert(0, drag_node.object)
                 self.notify_tree_data_change()
                 event.Allow()
                 return
@@ -1795,11 +1797,21 @@ class RootNode(list):
                 self.notify_tree_data_change()
                 return
             if drop_node.type == NODE_OPERATION_ELEMENT:
-                index = drag_node.parent.index(drag_node)
-                drag_node.parent.object[index] = None
+                if drag_node.parent is drop_node.parent:
+                    # Dragging and dropping within the same parent puts insert on other side.
+                    index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[index] = None
+                    pos = drop_node.parent.index(drop_node)
+                    if index > pos:
+                        drop_node.parent.object.insert(pos, drag_node.object)
+                    else:
+                        drop_node.parent.object.insert(pos + 1, drag_node.object)
+                else:
+                    index = drag_node.parent.index(drag_node)
+                    drag_node.parent.object[index] = None
 
-                pos = drop_node.parent.index(drop_node)
-                drop_node.parent.object.insert(pos, drag_node.object)
+                    pos = drop_node.parent.index(drop_node)
+                    drop_node.parent.object.insert(pos, drag_node.object)
 
                 op_elems = [op_elem for op_elem in drag_node.parent.object if op_elem is not None]
                 drag_node.parent.object.clear()
@@ -1811,9 +1823,18 @@ class RootNode(list):
         elif drag_node.type == NODE_OPERATION:
             if drop_node.type == NODE_OPERATION:
                 # Dragging operation to different operation.
-                drag_node.parent.object.remove(drag_node.object)
-                pos = drop_node.parent.object.index(drop_node.object)
-                drop_node.parent.object.insert(pos, drag_node.object)
+                ops = drop_node.parent
+                drop_pos = ops.index(drop_node)
+                drag_pos = ops.index(drag_node)
+                ops.object[drag_pos] = None
+                if drag_pos > drop_pos:
+                    ops.object.insert(drop_pos, drag_node.object)
+                else:
+                    ops.object.insert(drop_pos + 1, drag_node.object)
+
+                nodes = [n for n in ops.object if n is not None]
+                ops.object.clear()
+                ops.object.extend(nodes)
                 event.Allow()
                 self.notify_tree_data_change()
                 return
@@ -2148,6 +2169,7 @@ class RootNode(list):
                 node.set_icon()
             self.selection_bounds_updated()
             self.kernel.signal('rebuild_tree', 0)
+
         return specific
 
     def menu_dither(self, node):
