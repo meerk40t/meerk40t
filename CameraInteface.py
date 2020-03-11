@@ -518,7 +518,8 @@ class CameraInterface(wx.Frame):
         if self.kernel is None:
             return
         self.on_update_buffer()
-        self.display_camera.Refresh(True)
+        self.Refresh(True)
+        self.Update()
 
     def on_check_perspective(self, event):
         self.kernel.camera_correction_perspective = self.check_perspective.GetValue()
