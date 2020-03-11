@@ -331,11 +331,6 @@ class CameraInterface(wx.Frame):
             wx.CallAfter(self.camera_error_requirement)
             return
         self.capture = cv2.VideoCapture(self.kernel.camera_index)
-        ret, frame = self.capture.read()
-        if not ret:
-            wx.CallAfter(self.camera_error_webcam)
-            self.capture = None
-            return
         wx.CallAfter(self.camera_success)
         try:
             tick = 1.0 / self.kernel.camera_fps
@@ -484,6 +479,8 @@ class CameraInterface(wx.Frame):
             return
         ret, frame = self.capture.read()
         if not ret or frame is None:
+            wx.CallAfter(self.camera_error_webcam)
+            self.capture = None
             self.camera_lock.release()
             return
         if not raw and \
