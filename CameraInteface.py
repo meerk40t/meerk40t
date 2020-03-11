@@ -174,7 +174,7 @@ class CameraInterface(wx.Frame):
 
     def on_size(self, event):
         self.Layout()
-        width, height = self.display_camera.ClientSize
+        width, height = self.ClientSize
         if width <= 0:
             width = 1
         if height <= 0:
@@ -191,10 +191,11 @@ class CameraInterface(wx.Frame):
         self.image_height, self.image_width = frame.shape[:2]
         self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
 
-        if bed_width != self.image_width or bed_height != self.image_height:
-            self.image_width = bed_width
-            self.image_height = bed_height
-            self.display_camera.SetSize((self.image_width, self.image_height))
+        if self.check_perspective.GetValue():
+            if bed_width != self.image_width or bed_height != self.image_height:
+                self.image_width = bed_width
+                self.image_height = bed_height
+                self.display_camera.SetSize((self.image_width, self.image_height))
         self.update_in_gui_thread()
 
     def on_camera_frame_raw(self, frame):
