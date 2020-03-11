@@ -169,6 +169,7 @@ class CameraInterface(wx.Frame):
         self.camera_lock.acquire()
         self.kernel.unlisten("camera_frame_raw", self.on_camera_frame_raw)
         self.kernel.unlisten("camera_frame", self.on_camera_frame)
+        self.kernel.signal("camera_frame_raw", None)
         self.close_camera()
         self.kernel.mark_window_closed("CameraInterface")
         self.kernel = None
@@ -202,6 +203,8 @@ class CameraInterface(wx.Frame):
         self.update_in_gui_thread()
 
     def on_camera_frame_raw(self, frame):
+        if frame is None:
+            return
         try:
             import cv2
             import numpy as np
