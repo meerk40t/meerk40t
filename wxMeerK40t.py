@@ -151,7 +151,6 @@ class MeerK40t(wx.Frame):
         self.DragAcceptFiles(True)
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
-        self.tree.ShouldScrollToChildOnFocus = lambda c:  False
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 

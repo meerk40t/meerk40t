@@ -52,27 +52,13 @@ class CameraInterface(wx.Frame):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
-        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_perspective, self.check_perspective)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
-        self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
-        self.SetDoubleBuffered(True)
-        # end wxGlade
+        self.kernel = None
         self.capture = None
         self.image_width = -1
         self.image_height = -1
-
-        self.kernel = None
         self._Buffer = None
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         self.frame_bitmap = None
-
-        self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
-        self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
-        self.frame = None
 
         self.job = None
         self.fisheye_k = None
@@ -85,12 +71,24 @@ class CameraInterface(wx.Frame):
         # Perspective Points
         self.perspective = None
 
-        self.display_camera.Bind(wx.EVT_ENTER_WINDOW,
-                                 lambda event: self.display_camera.SetFocus())  # Focus follows mouse.
         self.previous_window_position = None
         self.previous_scene_position = None
 
         self.corner_drag = None
+
+        self.matrix = Matrix()
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
+        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_fisheye, self.check_fisheye)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_perspective, self.check_perspective)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_fps, self.slider_fps)
+        self.Bind(wx.EVT_BUTTON, self.on_button_detect, self.button_detect)
+        self.SetDoubleBuffered(True)
+        # end wxGlade
+
+        self.display_camera.Bind(wx.EVT_PAINT, self.on_paint)
+        self.display_camera.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
         self.display_camera.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.display_camera.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         self.display_camera.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
@@ -98,7 +96,9 @@ class CameraInterface(wx.Frame):
 
         self.display_camera.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.display_camera.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
-        self.matrix = Matrix()
+        self.display_camera.Bind(wx.EVT_ENTER_WINDOW,
+                                 lambda event: self.display_camera.SetFocus())  # Focus follows mouse.
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
@@ -132,6 +132,138 @@ class CameraInterface(wx.Frame):
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+        self.kernel.setting(int, 'camera_index', 0)
+        self.kernel.setting(int, 'camera_fps', 1)
+        self.kernel.setting(bool, 'mouse_zoom_invert', False)
+        self.kernel.setting(bool, 'camera_correction_fisheye', False)
+        self.kernel.setting(bool, 'camera_correction_perspective', False)
+        self.kernel.setting(str, 'fisheye', '')
+        self.kernel.setting(str, 'perspective', '')
+        self.check_fisheye.SetValue(kernel.camera_correction_fisheye)
+        self.check_perspective.SetValue(kernel.camera_correction_perspective)
+        if kernel.fisheye is not None and len(kernel.fisheye) != 0:
+            self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
+        if kernel.perspective is not None and len(kernel.perspective) != 0:
+            self.perspective = eval(kernel.perspective)
+            # print("Perspective value loaded: %s" % kernel.perspective)
+        self.slider_fps.SetValue(kernel.camera_fps)
+
+        if kernel.camera_index == 0:
+            self.camera_0_menu.Check(True)
+        elif kernel.camera_index == 1:
+            self.camera_1_menu.Check(True)
+        elif kernel.camera_index == 2:
+            self.camera_2_menu.Check(True)
+        elif kernel.camera_index == 3:
+            self.camera_3_menu.Check(True)
+        elif kernel.camera_index == 4:
+            self.camera_4_menu.Check(True)
+        self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
+        self.kernel.listen("camera_frame", self.on_camera_frame)
+        self.kernel.listen("camera_frame_raw", self.on_camera_frame_raw)
+
+    def on_close(self, event):
+        self.kernel.unlisten("camera_frame_raw", self.on_camera_frame_raw)
+        self.kernel.unlisten("camera_frame", self.on_camera_frame)
+        self.close_camera()
+        self.kernel.mark_window_closed("CameraInterface")
+        self.kernel = None
+        event.Skip()  # Call destroy.
+
+    def on_size(self, event):
+        self.Layout()
+        width, height = self.display_camera.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+        self.update_in_gui_thread()
+
+    def on_camera_frame(self, frame):
+        if frame is None:
+            return
+        bed_width = self.kernel.bed_width * 2
+        bed_height = self.kernel.bed_height * 2
+
+        self.image_height, self.image_width = frame.shape[:2]
+        self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
+
+        if bed_width != self.image_width or bed_height != self.image_height:
+            self.image_width = bed_width
+            self.image_height = bed_height
+            self.display_camera.SetSize((self.image_width, self.image_height))
+        self.update_in_gui_thread()
+
+    def on_camera_frame_raw(self, frame):
+        try:
+            import cv2
+            import numpy as np
+        except:
+            dlg = wx.MessageDialog(None, _("Could not import Camera requirements"),
+                                   _("Imports Failed"), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+        CHECKERBOARD = (6, 9)
+        subpix_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
+        calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_CHECK_COND + cv2.fisheye.CALIB_FIX_SKEW
+        objp = np.zeros((1, CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
+        objp[0, :, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+
+        img = frame
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Find the chess board corners
+        ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD,
+                                                 cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
+        # If found, add object points, image points (after refining them)
+
+        if ret:
+            self.objpoints.append(objp)
+            cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
+            self.imgpoints.append(corners)
+        else:
+            dlg = wx.MessageDialog(None, _("Checkerboard 6x9 pattern not found."),
+                                   _("Pattern not found."), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+        N_OK = len(self.objpoints)
+        K = np.zeros((3, 3))
+        D = np.zeros((4, 1))
+        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
+        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
+        try:
+            rms, a, b, c, d = \
+                cv2.fisheye.calibrate(
+                    self.objpoints,
+                    self.imgpoints,
+                    gray.shape[::-1],
+                    K,
+                    D,
+                    rvecs,
+                    tvecs,
+                    calibration_flags,
+                    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
+                )
+        except cv2.error:
+            # Ill conditioned matrix for input values.
+            self.objpoints = self.objpoints[:-1]  # Deleting the last entry.
+            self.imgpoints = self.imgpoints[:-1]
+            dlg = wx.MessageDialog(None, _("Ill-conditioned Matrix. Keep trying."),
+                                   _("Matrix."), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+        dlg = wx.MessageDialog(None, _("Success. %d images so far." % len(self.objpoints)),
+                               _("Image Captured"), wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
+        self.kernel.fisheye = repr([K.tolist(), D.tolist()])
+        self.fisheye_k = K.tolist()
+        self.fisheye_d = D.tolist()
+
     def swap_camera(self, camera_index=0):
         self.kernel.camera_index = camera_index
         self.close_camera()
@@ -145,6 +277,33 @@ class CameraInterface(wx.Frame):
             self.capture.release()
             self.capture = None
 
+    def camera_error_requirement(self):
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if isinstance(value, wx.Control):
+                value.Enable(False)
+        dlg = wx.MessageDialog(None, _(
+            "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
+                               _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+        dlg.Destroy()
+
+    def camera_error_webcam(self):
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if isinstance(value, wx.Control):
+                value.Enable(False)
+        dlg = wx.MessageDialog(None, _("No Webcam found."),
+                               _("Error"), wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+        dlg.Destroy()
+
+    def camera_success(self):
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if isinstance(value, wx.Control):
+                value.Enable(True)
+
     def init_camera(self):
         if self.capture is not None:
             self.capture.release()
@@ -152,37 +311,15 @@ class CameraInterface(wx.Frame):
         try:
             import cv2
         except ImportError:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _(
-                "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
-                                   _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
+            wx.CallAfter(self.camera_error_requirement)
             return
         self.capture = cv2.VideoCapture(self.kernel.camera_index)
-        ret, self.frame = self.capture.read()
+        ret, frame = self.capture.read()
         if not ret:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("No Webcam found."),
-                                   _("Error"), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
+            wx.CallAfter(self.camera_error_webcam)
             self.capture = None
             return
-        self.image_height, self.image_width = self.frame.shape[:2]
-        self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
-        for attr in dir(self):
-            value = getattr(self, attr)
-            if isinstance(value, wx.Control):
-                value.Enable(True)
-        self.Refresh(eraseBackground=True)
-        self.Update()
+        wx.CallAfter(self.camera_success)
         try:
             tick = 1.0 / self.kernel.camera_fps
         except ZeroDivisionError:
@@ -221,7 +358,7 @@ class CameraInterface(wx.Frame):
             if self.perspective is None:
                 self.perspective = [0, 0], \
                                    [self.image_width, 0], \
-                                   [self.image_width, self.image_height],\
+                                   [self.image_width, self.image_height], \
                                    [0, self.image_height]
             gc.SetPen(wx.BLACK_DASHED_PEN)
             gc.StrokeLines(self.perspective)
@@ -230,28 +367,12 @@ class CameraInterface(wx.Frame):
             gc.SetPen(wx.BLUE_PEN)
             for p in self.perspective:
                 half = CORNER_SIZE / 2
-                gc.StrokeLine(p[0]-half, p[1], p[0]+half, p[1])
-                gc.StrokeLine(p[0], p[1]-half, p[0], p[1]+half)
-                gc.DrawEllipse(p[0]-half, p[1]-half, CORNER_SIZE, CORNER_SIZE)
+                gc.StrokeLine(p[0] - half, p[1], p[0] + half, p[1])
+                gc.StrokeLine(p[0], p[1] - half, p[0], p[1] + half)
+                gc.DrawEllipse(p[0] - half, p[1] - half, CORNER_SIZE, CORNER_SIZE)
         gc.PopState()
         gc.Destroy()
         del dc
-
-    def on_size(self, event):
-        self.Layout()
-        width, height = self.display_camera.ClientSize
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        self._Buffer = wx.Bitmap(width, height)
-        self.update_in_gui_thread()
-
-    def on_close(self, event):
-        self.close_camera()
-        self.kernel.mark_window_closed("CameraInterface")
-        self.kernel = None
-        event.Skip()  # Call destroy.
 
     def convert_scene_to_window(self, position):
         point = self.matrix.point_in_matrix_space(position)
@@ -329,48 +450,20 @@ class CameraInterface(wx.Frame):
         self.matrix.post_scale(sx, sy, ax, ay)
         self.on_update_buffer()
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        self.kernel.setting(int, 'camera_index', 0)
-        self.kernel.setting(int, 'camera_fps', 1)
-        self.kernel.setting(bool, 'mouse_zoom_invert', False)
-        self.kernel.setting(bool, 'camera_correction_fisheye', False)
-        self.kernel.setting(bool, 'camera_correction_perspective', False)
-        self.kernel.setting(str, 'fisheye', '')
-        self.kernel.setting(str, 'perspective', '')
-        self.check_fisheye.SetValue(kernel.camera_correction_fisheye)
-        self.check_perspective.SetValue(kernel.camera_correction_perspective)
-        if kernel.fisheye is not None and len(kernel.fisheye) != 0:
-            self.fisheye_k, self.fisheye_d = eval(kernel.fisheye)
-        if kernel.perspective is not None and len(kernel.perspective) != 0:
-            self.perspective = eval(kernel.perspective)
-            # print("Perspective value loaded: %s" % kernel.perspective)
-        self.slider_fps.SetValue(kernel.camera_fps)
-
-        if kernel.camera_index == 0:
-            self.camera_0_menu.Check(True)
-        elif kernel.camera_index == 1:
-            self.camera_1_menu.Check(True)
-        elif kernel.camera_index == 2:
-            self.camera_2_menu.Check(True)
-        elif kernel.camera_index == 3:
-            self.camera_3_menu.Check(True)
-        elif kernel.camera_index == 4:
-            self.camera_4_menu.Check(True)
-        self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
-
-    def capture_frame(self, raw=False):
+    def fetch_image(self, raw=False):
+        if self.kernel is None or self.capture is None:
+            return
         try:
             import cv2
         except ImportError:
-            return None
+            return
         if self.capture is None:
-            return None
+            return
         if self.kernel is None:
-            return None
+            return
         ret, frame = self.capture.read()
         if not ret or frame is None:
-            return None
+            return
         if not raw and \
                 self.fisheye_k is not None and \
                 self.fisheye_d is not None and \
@@ -404,25 +497,11 @@ class CameraInterface(wx.Frame):
                 [0, bed_height - 1]], dtype="float32")
             M = cv2.getPerspectiveTransform(rect, dst)
             frame = cv2.warpPerspective(frame, M, (bed_width, bed_height))
-            if bed_width != self.image_width or bed_height != self.image_height:
-                self.image_width = bed_width
-                self.image_height = bed_height
-                self.display_camera.SetSize((self.image_width, self.image_height))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        self.image_height, self.image_width = frame.shape[:2]
-        return frame
-
-    def fetch_image(self):
-        if self.kernel is None or self.capture is None:
-            return
-        try:
-            self.frame = self.capture_frame()
-            if self.frame is not None:
-                self.image_height, self.image_width = self.frame.shape[:2]
-                self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, self.frame)
-                wx.CallAfter(self.update_in_gui_thread)
-        except RuntimeError:
-            pass  # Failed to gain access to raw bitmap data: skip frame.
+        if raw:
+            self.kernel.signal("camera_frame_raw", frame)
+        else:
+            self.kernel.signal("camera_frame", frame)
 
     def update_in_gui_thread(self):
         if self.kernel is None:
@@ -437,13 +516,13 @@ class CameraInterface(wx.Frame):
         self.kernel.camera_correction_fisheye = self.check_fisheye.GetValue()
 
     def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
-        frame = self.capture_frame()
+        frame = self.kernel.last_signal("camera_frame")[0]
         if frame is not None:
             buffer = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
             self.kernel.signal("background", buffer)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
-        frame = self.capture_frame()
+        frame = self.kernel.last_signal("camera_frame")[0]
         if frame is not None:
             from PIL import Image
             img = Image.fromarray(frame)
@@ -466,69 +545,4 @@ class CameraInterface(wx.Frame):
             self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        try:
-            import cv2
-            import numpy as np
-        except:
-            dlg = wx.MessageDialog(None, _("Could not import Camera requirements"),
-                                   _("Imports Failed"), wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-        CHECKERBOARD = (6, 9)
-        subpix_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
-        calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_CHECK_COND + cv2.fisheye.CALIB_FIX_SKEW
-        objp = np.zeros((1, CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
-        objp[0, :, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
-
-        frame = self.capture_frame(raw=True)
-        img = frame
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # Find the chess board corners
-        ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD,
-                                                 cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
-        # If found, add object points, image points (after refining them)
-
-        if ret:
-            self.objpoints.append(objp)
-            cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
-            self.imgpoints.append(corners)
-        else:
-            dlg = wx.MessageDialog(None, _("Checkerboard 6x9 pattern not found."),
-                                   _("Pattern not found."), wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        N_OK = len(self.objpoints)
-        K = np.zeros((3, 3))
-        D = np.zeros((4, 1))
-        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
-        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
-        try:
-            rms, a, b, c, d = \
-                cv2.fisheye.calibrate(
-                    self.objpoints,
-                    self.imgpoints,
-                    gray.shape[::-1],
-                    K,
-                    D,
-                    rvecs,
-                    tvecs,
-                    calibration_flags,
-                    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
-                )
-        except cv2.error:
-            # Ill conditioned matrix for input values.
-            self.objpoints = self.objpoints[:-1]  # Deleting the last entry.
-            self.imgpoints = self.imgpoints[:-1]
-            dlg = wx.MessageDialog(None, _("Ill-conditioned Matrix. Keep trying."),
-                                   _("Matrix."), wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        dlg = wx.MessageDialog(None, _("Success. %d images so far." % len(self.objpoints)),
-                               _("Image Captured"), wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
-        self.kernel.fisheye = repr([K.tolist(), D.tolist()])
-        self.fisheye_k = K.tolist()
-        self.fisheye_d = D.tolist()
+        self.kernel.cron.add_job(self.fetch_image, args=True, times=1, interval=0)
