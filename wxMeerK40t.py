@@ -1568,12 +1568,25 @@ class RootNode(list):
         self.rebuild_tree()
 
     def semi_select(self, item):
-        self.semi_selected.append(item)
-        self.tree.SetItemBackgroundColour(item, wx.CYAN)
+        if item not in self.semi_selected:
+            self.semi_selected.append(item)
+            self.tree.SetItemBackgroundColour(item, wx.CYAN)
+            node = self.tree.GetItemData(item)
+            if node.type == NODE_ELEMENT:
+                self.selected_elements.append(node.object)
+            elif node.type == NODE_OPERATION:
+                self.selected_operations.append(node.object)
 
     def semi_unselect(self):
+        self.set_selected_elements(None)
+        self.set_selected_operations(None)
         for item in self.semi_selected:
             self.tree.SetItemBackgroundColour(item, wx.WHITE)
+        self.semi_selected.clear()
+
+    def semi_select_all(self, objects):
+        for e in objects:
+            self.semi_select(e)
 
     def rebuild_tree(self):
         self.tree.DeleteAllItems()
@@ -1848,15 +1861,15 @@ class RootNode(list):
         item = event.GetItem()
         node = self.tree.GetItemData(item)
 
-        self.set_selected_elements(None)
-        self.set_selected_operations(None)
         if node is None:
             return
         self.semi_unselect()
+        self.semi_select_all(self.tree.GetSelections())
         if node.type == NODE_ELEMENTS_BRANCH:
             for n in self.node_elements:
                 self.semi_select(n.item)
             self.gui.request_refresh()
+            self.selection_updated()
             return
         elif node.type == NODE_FILE_FILE:
             for n in node:
@@ -1865,21 +1878,17 @@ class RootNode(list):
                 for link in links:
                     self.semi_select(link.item)
             self.gui.request_refresh()
+            self.selection_updated()
             return
         elif node.type == NODE_OPERATION_ELEMENT:
             obj = node.object
-            if len(list(self.tree.GetSelections())) != 1:
+            if len(self.semi_selected) != 1:
                 return  # If this is a multi-selection event, do not select other nodeop_elements
             links = self.tree_lookup[id(obj)]
             for link in links:
                 self.semi_select(link.item)
+            self.selection_updated()
             return
-        for item in list(self.tree.GetSelections()):
-            node = self.tree.GetItemData(item)
-            if node.type == NODE_ELEMENT:
-                self.selected_elements.append(node.object)
-            elif node.type == NODE_OPERATION:
-                self.selected_operations.append(node.object)
         self.gui.request_refresh()
         self.selection_updated()
         event.Allow()
@@ -1928,7 +1937,7 @@ class RootNode(list):
             return
 
         t = node.type
-        selections = [self.tree.GetItemData(e) for e in self.tree.GetSelections()]
+        selections = [self.tree.GetItemData(e) for e in self.semi_selected]
         selections = [s for s in selections if s.type == t]
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
@@ -2327,7 +2336,7 @@ class RootNode(list):
         def specific(event):
             node = remove_node
 
-            selections = [self.tree.GetItemData(e) for e in self.tree.GetSelections()]
+            selections = [self.tree.GetItemData(e) for e in self.semi_selected]
             selections = [s for s in selections if s.type == node.type]
 
             if node.type == NODE_ELEMENT:
