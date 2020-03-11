@@ -1,3 +1,5 @@
+import threading
+
 import wx
 
 from ZMatrix import ZMatrix
@@ -102,6 +104,7 @@ class CameraInterface(wx.Frame):
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
+        self.camera_lock = threading.Lock()
 
     def __do_layout(self):
         # begin wxGlade: CameraInterface.__do_layout
@@ -165,12 +168,14 @@ class CameraInterface(wx.Frame):
         self.kernel.listen("camera_frame_raw", self.on_camera_frame_raw)
 
     def on_close(self, event):
+        self.camera_lock.acquire()
         self.kernel.unlisten("camera_frame_raw", self.on_camera_frame_raw)
         self.kernel.unlisten("camera_frame", self.on_camera_frame)
         self.close_camera()
         self.kernel.mark_window_closed("CameraInterface")
         self.kernel = None
         event.Skip()  # Call destroy.
+        self.camera_lock.release()
 
     def on_size(self, event):
         self.Layout()
@@ -351,6 +356,7 @@ class CameraInterface(wx.Frame):
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.Clear()
+        dc.SetBackground(wx.WHITE_BRUSH)
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         gc.PushState()
@@ -460,10 +466,13 @@ class CameraInterface(wx.Frame):
             return
         if self.capture is None:
             return
+        self.camera_lock.acquire()
         if self.kernel is None:
+            self.camera_lock.release()
             return
         ret, frame = self.capture.read()
         if not ret or frame is None:
+            self.camera_lock.release()
             return
         if not raw and \
                 self.fisheye_k is not None and \
@@ -503,6 +512,7 @@ class CameraInterface(wx.Frame):
             self.kernel.signal("camera_frame_raw", frame)
         else:
             self.kernel.signal("camera_frame", frame)
+        self.camera_lock.release()
 
     def update_in_gui_thread(self):
         if self.kernel is None:
