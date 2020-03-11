@@ -1,18 +1,36 @@
 import sys
 import argparse
+
 from DefaultModules import *
 from Kernel import *
 
+try:
+    from math import tau
+except ImportError:
+    from math import pi
+
+    tau = pi * 2
+
+"""
+Laser software for the Stock-LIHUIYU laserboard.
+
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed 
+open-source laser cutting software. See https://github.com/meerk40t/meerk40t
+for full details.
+
+"""
+
 kernel = Kernel()
 
-# TODO: Needs an option to change default speed, etc, parameters.
-# TODO: Needs home command / lock, unlock.
-# TODO: Needs command for load special module.
+# TODO: CLI Needs an option to change default speed, etc, parameters.
+# TODO: CLI Needs home command / lock, unlock.
+# TODO: CLI Needs command for load special module.
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
+parser.add_argument('-g', '--grbl', type=int, help='run grbl-emulator on given port.')
 parser.add_argument('-e', '--egv', type=str, help='writes raw egv data to the controller')
 parser.add_argument('-p', '--path', type=str, help='add SVG Path command')
 parser.add_argument('-c', '--control', nargs='+', help="execute control command")
@@ -32,7 +50,17 @@ kernel.add_module('K40Stock', K40StockBackend())
 kernel.add_module('SVGLoader', SVGLoader())
 kernel.add_module('ImageLoader', ImageLoader())
 kernel.add_module('EgvLoader', EgvLoader())
+kernel.add_module("DxfLoader", DxfLoader())
 kernel.add_module('SVGWriter', SVGWriter())
+emulator = GRBLEmulator()
+kernel.add_module('GrblEmulator', emulator)
+
+if args.grbl is not None:
+    from LaserServer import *
+    server = LaserServer(args.grbl)
+
+    server.set_pipe(emulator)
+    kernel.add_module('GRBLServer', server)
 
 
 if args.list is not None:

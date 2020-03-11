@@ -285,7 +285,7 @@ def parse_egv(f, board="M2"):
                 yield obj.data
                 obj = EgvPlotter(obj.x, obj.y)
                 code_value, gear, step_value, diagonal, raster_step = LaserSpeed.parse_speed_code(speed_code)
-                b, m, gear = LaserSpeed.get_gearing(board, gear=gear, uses_raster_step=raster_step != 0)
+                b, m, gear = LaserSpeed.get_equation(board, accel=gear, raster_horizontal=raster_step != 0)
                 speed = LaserSpeed.get_speed_from_value(code_value, b, m)
                 obj.data['step'] = raster_step
                 obj.data['speed'] = speed

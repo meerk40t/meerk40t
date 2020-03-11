@@ -22,6 +22,7 @@ class Preferences(wx.Frame):
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Homes Right"))
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Homes Bottom"))
+        self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, _("Swap X and Y"))
         self.checkbox_mock_usb = wx.CheckBox(self, wx.ID_ANY, _("Mock USB Connection Mode"))
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
@@ -40,6 +41,7 @@ class Preferences(wx.Frame):
         self.__do_layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combobox_boardtype, self.combobox_board)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_swap_xy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_flip_x)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_flip_y)
@@ -96,6 +98,7 @@ class Preferences(wx.Frame):
             dlg.Destroy()
             return
 
+        self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
         self.device.setting(bool, "home_right", False)
@@ -116,6 +119,7 @@ class Preferences(wx.Frame):
         self.device.setting(int, "usb_address", -1)
         self.device.setting(int, "usb_version", -1)
 
+        self.checkbox_swap_xy.SetValue(self.device.swap_xy)
         self.checkbox_flip_x.SetValue(self.device.flip_x)
         self.checkbox_flip_y.SetValue(self.device.flip_y)
         self.checkbox_home_right.SetValue(self.device.home_right)
@@ -139,6 +143,7 @@ class Preferences(wx.Frame):
         self.SetTitle(_("Preferences"))
         self.combobox_board.SetToolTip(_("Select the board to use. This has affects the speedcodes used."))
         self.combobox_board.SetSelection(0)
+        self.checkbox_swap_xy.SetToolTip(_("Swaps the X and Y axis. This happens before the FlipX and FlipY."))
         self.checkbox_flip_x.SetToolTip(_("Flip the Right and Left commands sent to the controller"))
         self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
         self.checkbox_flip_y.SetToolTip(_("Flip the Top and Bottom commands sent to the controller"))
@@ -187,6 +192,7 @@ class Preferences(wx.Frame):
         sizer_16.Add(self.checkbox_flip_y, 0, 0, 0)
         sizer_16.Add(self.checkbox_home_bottom, 0, 0, 0)
         sizer_board.Add(sizer_16, 1, wx.EXPAND, 0)
+        sizer_board.Add(self.checkbox_swap_xy, 0, 0, 0)
         sizer_1.Add(sizer_board, 1, wx.EXPAND, 0)
         sizer_usb.Add(self.checkbox_mock_usb, 0, 0, 0)
         label_6 = wx.StaticText(self, wx.ID_ANY, _("Device Index:"))
@@ -251,6 +257,10 @@ class Preferences(wx.Frame):
 
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.board = self.combobox_board.GetValue()
+
+    def on_check_swap_xy(self, event):  # wxGlade: Preferences.<event_handler>
+        self.device.swap_xy = self.checkbox_swap_xy.GetValue()
+        self.device.execute("Update Codes")
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.flip_x = self.checkbox_flip_x.GetValue()

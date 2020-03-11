@@ -85,7 +85,7 @@ class TextProperty(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("PathProperty")
+        self.kernel.mark_window_closed("TextProperty")
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -188,19 +188,28 @@ class TextProperty(wx.Frame):
         # end wxGlade
 
     def on_combo_font_size(self, event):  # wxGlade: TextProperty.<event_handler>
-        event.Skip()
+        pass
 
     def on_combo_font(self, event):  # wxGlade: TextProperty.<event_handler>
         event.Skip()
 
     def on_button_bold(self, event):  # wxGlade: TextProperty.<event_handler>
-        event.Skip()
+        dialog = wx.FontDialog(None, wx.FontData())
+        if dialog.ShowModal() == wx.ID_OK:
+            data = dialog.GetFontData()
+            font = data.GetChosenFont()
+            color = data.GetColour()
+            print(color)
+            print('"%s", %d pt\n' % (font.GetFaceName(), font.GetPointSize()))
+        dialog.Destroy()
 
     def on_button_italic(self, event):  # wxGlade: TextProperty.<event_handler>
-        event.Skip()
+        font_picker = wx.FontDialog()
+        font_picker.Show()
 
     def on_button_underline(self, event):  # wxGlade: TextProperty.<event_handler>
-        event.Skip()
+        font_picker = wx.FontDialog()
+        font_picker.Show()
 
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:

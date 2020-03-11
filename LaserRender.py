@@ -26,7 +26,14 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
-    def render(self, dc, draw_mode):
+    def render(self, gc, draw_mode):
+        """
+        Render scene information.
+
+        :param gc:
+        :param draw_mode:
+        :return:
+        """
         elements = self.kernel.elements
         if draw_mode & 0x1C00 != 0:
             types = []
@@ -39,7 +46,7 @@ class LaserRender:
             elements = [e for e in self.kernel if isinstance(e, tuple(*types))]
         for element in elements:
             try:
-                element.draw(element, dc, draw_mode)
+                element.draw(element, gc, draw_mode)
             except AttributeError:
                 if isinstance(element, Path):
                     element.draw = self.draw_path
@@ -49,10 +56,7 @@ class LaserRender:
                     element.draw = self.draw_text
                 else:
                     element.draw = self.draw_path
-            # try:
-            element.draw(element, dc, draw_mode)
-            # except AttributeError:
-            #     pass  # This should not have happened.
+            element.draw(element, gc, draw_mode)
 
     def generate_path(self, path):
         object_path = abs(path)
@@ -70,6 +74,92 @@ class LaserRender:
         for event in self.generate_path(path):
             parse.command(event)
         return p
+
+    def set_pen(self, gc, stroke, width=1.0):
+        c = stroke
+        if c is not None and c != 'none':
+            swizzle_color = swizzlecolor(c)
+            self.color.SetRGB(swizzle_color)
+            self.pen.SetColour(self.color)
+            self.pen.SetWidth(width)
+            gc.SetPen(self.pen)
+        else:
+            gc.SetPen(wx.TRANSPARENT_PEN)
+
+    def set_brush(self, gc, fill):
+        c = fill
+        if c is not None and c != 'none':
+            swizzle_color = swizzlecolor(c)
+            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+            self.brush.SetColour(self.color)
+            gc.SetBrush(self.brush)
+        else:
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+    def draw_path(self, element, gc, draw_mode):
+        """Default draw routine for the laser element.
+        If the generate is defined this will draw the
+        element as a series of lines, as defined by generate."""
+        try:
+            matrix = element.transform
+        except AttributeError:
+            matrix = Matrix()
+        drawfills = draw_mode & 1 == 0
+        drawstrokes = draw_mode & 64 == 0
+        gc.PushState()
+        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        try:
+            sw = element.values['stroke_width']
+            self.set_pen(gc, element.stroke, width=sw)
+        except KeyError:
+            self.set_pen(gc, element.stroke)
+        self.set_brush(gc, element.fill)
+        cache = None
+        try:
+            cache = element.cache
+        except AttributeError:
+            pass
+        if cache is None:
+            element.cache = self.make_path(gc, element)
+        if drawfills and element.fill is not None:
+            gc.FillPath(element.cache)
+        if drawstrokes and element.stroke is not None:
+            gc.StrokePath(element.cache)
+        gc.PopState()
+
+    def draw_text(self, element, gc, draw_mode):
+        try:
+            matrix = element.transform
+        except AttributeError:
+            matrix = Matrix()
+        gc.PushState()
+        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if element.text is not None:
+            gc.DrawText(element.text, 0, 0)
+            pass
+        gc.PopState()
+
+    def draw_image(self, node, gc, draw_mode):
+        try:
+            matrix = node.transform
+        except AttributeError:
+            matrix = Matrix()
+        gc.PushState()
+        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        cache = None
+        try:
+            cache = node.cache
+        except AttributeError:
+            pass
+        if cache is None:
+            try:
+                max_allowed = node.max_allowed
+            except AttributeError:
+                max_allowed = 2048
+            node.c_width, node.c_height = node.image.size
+            node.cache = self.make_thumbnail(node, maximum=max_allowed)
+        gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+        gc.PopState()
 
     def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
         if bounds is None:
@@ -133,67 +223,6 @@ class LaserRender:
             return bmp
         return image
 
-    def set_pen(self, gc, stroke, width=1.0):
-        c = stroke
-        if c is not None and c != 'none':
-            swizzle_color = swizzlecolor(c)
-            self.color.SetRGB(swizzle_color)
-            self.pen.SetColour(self.color)
-            self.pen.SetWidth(width)
-            gc.SetPen(self.pen)
-        else:
-            gc.SetPen(wx.TRANSPARENT_PEN)
-
-    def set_brush(self, gc, fill):
-        c = fill
-        if c is not None and c != 'none':
-            swizzle_color = swizzlecolor(c)
-            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
-            self.brush.SetColour(self.color)
-            gc.SetBrush(self.brush)
-        else:
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-    def draw_path(self, element, dc, draw_mode):
-        """Default draw routine for the laser element.
-        If the generate is defined this will draw the
-        element as a series of lines, as defined by generate."""
-        try:
-            matrix = element.transform
-        except AttributeError:
-            matrix = Matrix()
-        drawfills = draw_mode & 1 == 0
-        drawstrokes = draw_mode & 64 == 0
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        try:
-            sw = element.values['stroke_width']
-            self.set_pen(gc, element.stroke, width=sw)
-        except KeyError:
-            self.set_pen(gc, element.stroke)
-        self.set_brush(gc, element.fill)
-        cache = None
-        try:
-            cache = element.cache
-        except AttributeError:
-            pass
-        if cache is None:
-            element.cache = self.make_path(gc, element)
-        if drawfills and element.fill is not None:
-            gc.FillPath(element.cache)
-        if drawstrokes and element.stroke is not None:
-            gc.StrokePath(element.cache)
-
-    def draw_text(self, element, dc, draw_mode):
-        try:
-            matrix = element.transform
-        except AttributeError:
-            matrix = Matrix()
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if element.text is not None:
-            dc.DrawText(element.text, matrix.value_trans_x(), matrix.value_trans_y())
-
     def make_thumbnail(self, node, maximum=None, width=None, height=None):
         pil_data = node.image
         image_width, image_height = pil_data.size
@@ -218,27 +247,6 @@ class LaserRender:
             pil_data = pil_data.convert('RGBA')
         pil_bytes = pil_data.tobytes()
         return wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)
-
-    def draw_image(self, node, dc, draw_mode):
-        try:
-            matrix = node.transform
-        except AttributeError:
-            matrix = Matrix()
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        cache = None
-        try:
-            cache = node.cache
-        except AttributeError:
-            pass
-        if cache is None:
-            try:
-                max_allowed = node.max_allowed
-            except AttributeError:
-                max_allowed = 2048
-            node.c_width, node.c_height = node.image.size
-            node.cache = self.make_thumbnail(node, maximum=max_allowed)
-        gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
 
 
 class LaserCommandPathParser:

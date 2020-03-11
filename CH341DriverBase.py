@@ -28,6 +28,8 @@ STATE_USB_CLAIM_INTERFACE_FAIL = 320
 
 STATE_USB_CONNECTED = 400
 STATE_CH341_PARAMODE = 160
+STATE_CH341_PARAMODE_FAIL = 170
+STATE_CH341_PARAMODE_SUCCESS = 180
 
 STATE_CONNECTED = 600
 
@@ -102,6 +104,10 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("USB Connected.")
     elif code == STATE_CH341_PARAMODE:
         return _("Sending CH341 mode change to EPP1.9.")
+    elif code == STATE_CH341_PARAMODE_SUCCESS:
+        return _("CH341 mode change to EPP1.9: Success.")
+    elif code == STATE_CH341_PARAMODE_FAIL:
+        return _("CH341 mode change to EPP1.9: Fail.")
     elif code == STATE_CONNECTED:
         return _("Device Connected.\n")
     elif code == STATE_USB_SET_DISCONNECTING:

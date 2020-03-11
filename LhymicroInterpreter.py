@@ -43,6 +43,7 @@ def lhymicro_distance(v):
 class LhymicroInterpreter(Interpreter):
     def __init__(self, device):
         Interpreter.__init__(self, device)
+        self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
         self.device.setting(bool, "home_right", False)
@@ -66,8 +67,8 @@ class LhymicroInterpreter(Interpreter):
         self.raster_step = 0
         self.speed = 30
         self.power = 1000.0
-        self.d_ratio = None
-        self.default_SnP = None
+        self.d_ratio = None  # None means to use speedcode default.
+        self.acceleration = None  # None means to use speedcode default
         self.pulse_total = 0.0
         self.pulse_modulation = True
         self.group_modulation = False
@@ -91,18 +92,24 @@ class LhymicroInterpreter(Interpreter):
         return "LhymicroInterpreter()"
 
     def update_codes(self):
-        if not self.device.flip_x:
+        if not self.device.swap_xy:
             self.CODE_RIGHT = b'B'
             self.CODE_LEFT = b'T'
-        else:
-            self.CODE_RIGHT = b'T'
-            self.CODE_LEFT = b'B'
-        if not self.device.flip_y:
             self.CODE_TOP = b'L'
             self.CODE_BOTTOM = b'R'
         else:
-            self.CODE_TOP = b'R'
-            self.CODE_BOTTOM = b'L'
+            self.CODE_RIGHT = b'R'
+            self.CODE_LEFT = b'L'
+            self.CODE_TOP = b'T'
+            self.CODE_BOTTOM = b'B'
+        if self.device.flip_x:
+            q = self.CODE_LEFT
+            self.CODE_LEFT = self.CODE_RIGHT
+            self.CODE_RIGHT = q
+        if self.device.flip_y:
+            q = self.CODE_TOP
+            self.CODE_TOP = self.CODE_BOTTOM
+            self.CODE_BOTTOM = q
 
     def on_plot(self, x, y, on):
         self.device.signal('interpreter;plot', (x, y, on))
@@ -229,7 +236,7 @@ class LhymicroInterpreter(Interpreter):
                     self.up()
                 else:
                     self.down()
-                self.move_absolute(x, y)
+                self.move(x, y)
         elif command == COMMAND_HSTEP:
             self.v_switch()
         elif command == COMMAND_VSTEP:
@@ -292,7 +299,7 @@ class LhymicroInterpreter(Interpreter):
                         if self.is_prop(DIRECTION_FLAG_LEFT):
                             if abs(dx) > self.raster_step:
                                 self.to_concat_mode()
-                                self.move_relative(dx + self.raster_step,0)
+                                self.move_relative(dx + self.raster_step, 0)
                                 self.set_prop(DIRECTION_FLAG_Y)
                                 self.unset_prop(DIRECTION_FLAG_X)
                                 self.to_compact_mode()
@@ -300,7 +307,7 @@ class LhymicroInterpreter(Interpreter):
                         else:
                             if abs(dx) > self.raster_step:
                                 self.to_concat_mode()
-                                self.move_relative(dx - self.raster_step,0)
+                                self.move_relative(dx - self.raster_step, 0)
                                 self.set_prop(DIRECTION_FLAG_Y)
                                 self.unset_prop(DIRECTION_FLAG_X)
                                 self.to_compact_mode()
@@ -385,6 +392,11 @@ class LhymicroInterpreter(Interpreter):
             t = values
             if callable(t):
                 t()
+        elif command == COMMAND_SIGNAL:
+            if isinstance(values, str):
+                self.device.signal(values, None)
+            elif len(values) >= 2:
+                self.device.signal(values[0], *values[1:])
         elif command == COMMAND_CLOSE:
             self.to_default_mode()
         elif command == COMMAND_OPEN:
@@ -433,7 +445,7 @@ class LhymicroInterpreter(Interpreter):
             self.resume()
 
     def get_status(self):
-        parts = []
+        parts = list()
         parts.append("x=%f" % self.device.current_x)
         parts.append("y=%f" % self.device.current_y)
         parts.append("speed=%f" % self.speed)
@@ -468,6 +480,7 @@ class LhymicroInterpreter(Interpreter):
             self.move_absolute(x, y)
 
     def move_absolute(self, x, y):
+
         self.move_relative(x - self.device.current_x, y - self.device.current_y)
 
     def move_relative(self, dx, dy):
@@ -576,6 +589,18 @@ class LhymicroInterpreter(Interpreter):
             self.to_concat_mode()
             self.to_compact_mode()
 
+    def set_acceleration(self, accel=None):
+        change = False
+        if self.acceleration != accel:
+            change = True
+            self.acceleration = accel
+        if not change:
+            return
+        if self.state == STATE_COMPACT:
+            # Compact mode means it's currently slowed. To make the change have an effect, compact must be exited.
+            self.to_concat_mode()
+            self.to_compact_mode()
+
     def set_step(self, step=None):
         change = False
         if self.raster_step != step:
@@ -638,23 +663,26 @@ class LhymicroInterpreter(Interpreter):
 
     def to_concat_mode(self):
         controller = self.device.pipe
-        self.to_default_mode()
-        controller.write(b'I')
+        if self.state == STATE_COMPACT:
+            controller.write(b'@NSE')
+            self.reset_modes()
+        elif self.state == STATE_DEFAULT:
+            controller.write(b'I')
         self.state = STATE_CONCAT
         self.device.signal('interpreter;mode', self.state)
 
     def to_compact_mode(self):
         controller = self.device.pipe
         self.to_concat_mode()
-        if self.d_ratio is not None:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed,
-                                                        self.raster_step,
-                                                        self.device.board,
-                                                        d_ratio=self.d_ratio)
-        else:
-            speed_code = LaserSpeed.get_code_from_speed(self.speed,
-                                                        self.raster_step,
-                                                        self.device.board)
+        speed_code = LaserSpeed(
+            self.device.board,
+            self.speed,
+            self.raster_step,
+            d_ratio=self.d_ratio,
+            fix_limit=True,
+            fix_lows=True,
+            fix_speeds=False,
+            raster_horizontal=True).speedcode
         try:
             speed_code = bytes(speed_code)
         except TypeError:

@@ -197,11 +197,12 @@ class RasterOperation(LaserOperation):
                                    m.value_trans_x(),
                                    m.value_trans_y(),
                                    step, image_filter)
-            yield COMMAND_RAPID_MOVE, raster.initial_position_in_scene()
+            yield COMMAND_MODE_CONCAT, 0
+            yield COMMAND_SHIFT, raster.initial_position_in_scene()
             yield COMMAND_SET_DIRECTION, raster.initial_direction()
             yield COMMAND_MODE_COMPACT, 0
             yield COMMAND_RASTER, raster
-            yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_MODE_DEFAULT, 0
 
 
 class EngraveOperation(LaserOperation):
@@ -236,11 +237,12 @@ class EngraveOperation(LaserOperation):
             first_point = plot.first_point
             if first_point is None:
                 continue
-            yield COMMAND_RAPID_MOVE, first_point
+            yield COMMAND_MODE_CONCAT
+            yield COMMAND_SHIFT, first_point
             yield COMMAND_SET_STEP, 0
-            yield COMMAND_MODE_COMPACT, 0
+            yield COMMAND_MODE_COMPACT
             yield COMMAND_PLOT, plot
-            yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_MODE_DEFAULT
 
 
 class CutOperation(LaserOperation):
@@ -274,10 +276,11 @@ class CutOperation(LaserOperation):
             first_point = plot.first_point
             if first_point is None:
                 continue
-            yield COMMAND_RAPID_MOVE, first_point
+            yield COMMAND_MODE_CONCAT
+            yield COMMAND_SHIFT, first_point
             yield COMMAND_SET_STEP, 0
-            yield COMMAND_MODE_COMPACT, 0
+            yield COMMAND_MODE_COMPACT
             yield COMMAND_PLOT, plot
-            yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_MODE_DEFAULT
 
 

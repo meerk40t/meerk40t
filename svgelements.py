@@ -6249,6 +6249,7 @@ class SVGText(GraphicObject, Transformable):
         self.dx = 0
         self.dy = 0
         self.font = 0
+        self.path = None
         if len(args) == 1:
             if isinstance(args[0], dict):
                 values = args[0]
@@ -6274,7 +6275,6 @@ class SVGText(GraphicObject, Transformable):
         self.y = Length(values.get(SVG_ATTR_Y, self.y)).value()
         self.dx = Length(values.get(SVG_ATTR_DX, self.dx)).value()
         self.dy = Length(values.get(SVG_ATTR_DY, self.dy)).value()
-        self.path = None
 
     def __copy__(self):
         return SVGText(self)

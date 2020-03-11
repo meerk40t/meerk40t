@@ -1,11 +1,14 @@
 """
 Laser Commands are a middle language of commands for spooling and interpreting.
 
+NOTE: Never use the integer value, only the command name. The integer values are
+permitted to change.
+
 Some commands have a implication:
 'Rapid' implies the command is performed in default mode.
 'Cut' implies the laser is on for the command.
 'Shift' implies the laser is off for this command.
-'Simple' means the movement must be an octent move. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
+'Simple' means the movement must be an octant move. Either +-x, +-y, or +-x and +-y where abs(x) == abs(y).
 
 Move alone doesn't imply anything about the laser mode.
 
@@ -41,9 +44,10 @@ COMMAND_SET_SPEED = 200  # sets the speed for the device
 COMMAND_SET_POWER = 201  # sets the PPI power. Out of 1000.
 COMMAND_SET_STEP = 202  # sets the raster step for the device
 COMMAND_SET_D_RATIO = 203  # sets the d_ratio for the device
-COMMAND_SET_DIRECTION = 204  # sets the directions for the device.
-COMMAND_SET_INCREMENTAL = 205  # sets the commands to be relative to current position
-COMMAND_SET_ABSOLUTE = 206  # sets the commands to be absolute positions.
+COMMAND_SET_ACCELERATION = 204  # sets the acceleration for the device 1-4
+COMMAND_SET_DIRECTION = 205  # sets the directions for the device.
+COMMAND_SET_INCREMENTAL = 206  # sets the commands to be relative to current position
+COMMAND_SET_ABSOLUTE = 207  # sets the commands to be absolute positions.
 COMMAND_SET_POSITION = 210  # Without moving sets the current position to the given coord.
 
 COMMAND_HOME = 300  # Homes the device
@@ -52,10 +56,11 @@ COMMAND_UNLOCK = 302  # Unlocks the rail.
 COMMAND_BEEP = 320  # Beep.
 COMMAND_FUNCTION = 350  # Execute the function given by this command. Blocking.
 COMMAND_SIGNAL = 360  # Sends the signal, given: "signal_name", operands.
+
 COMMAND_OPEN = 400  # Opens the channel, general hello.
 COMMAND_CLOSE = 500  # The channel will close. No valid commands will be parsed after this.
 
-COMMAND_RESET = 600  # Resets the state, purges buffers is issued.
+COMMAND_RESET = 600  # Resets the state, purges buffers
 COMMAND_PAUSE = 610  # Issue a pause command.
 COMMAND_RESUME = 620  # Issue a resume command.
 COMMAND_STATUS = 630  # Issue a status command.

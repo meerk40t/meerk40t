@@ -1,15 +1,16 @@
 import os
-from io import BytesIO
-
 from base64 import b64encode
+from io import BytesIO
+from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from svgelements import *
+from EgvParser import parse_egv
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
-from LaserCommandConstants import COMMAND_RESET
-from LhymicroInterpreter import LhymicroInterpreter
-from EgvParser import parse_egv
-from xml.etree.cElementTree import Element, ElementTree, SubElement
+from LaserCommandConstants import *
+from LhymicroInterpreter import LhymicroInterpreter, STATE_COMPACT
+from svgelements import *
+
+MILS_PER_MM = 39.3701
 
 
 class K40StockDevice(Device):
@@ -96,6 +97,224 @@ class K40StockBackend(Module, Backend):
     def create_device(self, uid):
         device = K40StockDevice()
         device.initialize(self.kernel, uid)
+
+
+class GRBLEmulator(Module):
+
+    def __init__(self):
+        Module.__init__(self)
+        # Pipe.__init__(self)
+        self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
+        self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
+        self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+        self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
+        self.move_mode = 0
+        self.on_mode = 1
+        self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
+
+        self.comment = None
+        self.code = ""
+        self.value = ""
+        self.command_map = {}
+
+    def close(self):
+        pass
+
+    def open(self):
+        pass
+
+    def initialize(self, kernel, name=None):
+        Module.initialize(kernel, name)
+        self.kernel = kernel
+        self.name = name
+
+    def shutdown(self, kernel):
+        Module.shutdown(self, kernel)
+
+    def realtime_write(self, bytes_to_write):
+        interpreter = self.kernel.device.interpreter
+        if bytes_to_write == '?':  # Status report
+            if interpreter.state == 0:
+                state = 'Idle'
+            else:
+                state = 'Busy'
+            x = self.kernel.device.current_x / self.scale
+            y = self.kernel.device.current_y / self.scale
+            z = 0.0
+            parts = list()
+            parts.append(state)
+            parts.append('MPos:%f,%f,%f' % (x, y, z))
+            f = self.kernel.device.interpreter.speed / self.feed_scale
+            s = self.kernel.device.interpreter.power
+            parts.append('FS:%f,%d' % (f, s))
+            self.read_info = "<%s>\r\n" % '|'.join(parts)
+        elif bytes_to_write == '~':  # Resume.
+            interpreter.realtime_command(COMMAND_RESUME)
+        elif bytes_to_write == '!':  # Pause.
+            interpreter.realtime_command(COMMAND_PAUSE)
+        elif bytes_to_write == '\x18':  # Soft reset.
+            interpreter.realtime_command(COMMAND_RESET)
+
+    def write(self, data):
+        ord_a = ord('a')
+        ord_A = ord('A')
+        ord_z = ord('z')
+        ord_Z = ord('Z')
+        for b in data:
+            c = chr(b)
+            if c == '?' or c == '~' or c == '!' or c == '\x18':
+                self.realtime_write(c)  # Pick off realtime commands.
+                continue
+            is_end = c == '\n' or c == '\r'
+            if self.comment is not None:
+                if b == ord(')') or is_end:
+                    self.command_map['comment'] = self.comment
+                    self.comment = None
+                    if not is_end:
+                        continue
+                else:
+                    try:
+                        self.comment += str(c)
+                    except UnicodeDecodeError:
+                        pass  # skip utf8 fail
+                    continue
+            if b == ord('('):
+                self.comment = ""
+                continue
+            elif b == ord(';'):
+                self.comment = ""
+                continue
+            elif b == ord('\t'):
+                continue
+            elif b == ord(' '):
+                continue
+            elif b == ord('/') and len(self.code) == 0:
+                continue
+            if ord('0') <= b <= ord('9') \
+                    or b == ord('+') \
+                    or b == ord('-') \
+                    or b == ord('.'):
+                self.value += chr(b)
+                continue
+
+            if ord_A <= b <= ord_Z:  # make lowercase.
+                b = b - ord_A + ord_a
+                c = chr(b)
+
+            is_letter = ord_a <= b <= ord_z
+            if (is_letter or is_end) and len(self.code) != 0:
+                if self.code != "" and self.value != "":
+                    self.command_map[self.code] = float(self.value)
+                self.code = ""
+                self.value = ""
+            if is_letter:
+                self.code += str(c)
+                continue
+            elif is_end:
+                cmd = self.command(self.command_map)
+
+                if cmd == 0:  # Execute GCode.
+                    self.read_info = "ok\r\n"
+                else:
+                    self.read_info = "error:%d\r\n" % cmd
+                self.command_map = {}
+                self.code = ""
+                self.value = ""
+                continue
+
+    def read(self, size=-1):
+        r = self.read_info
+        self.read_info = None
+        return r
+
+    def command(self, gc):
+        if len(self.command_map) == 0:
+            return 0  # empty command ok
+        interpreter = self.kernel.device.interpreter
+        if 'comment' in gc:
+            comment = gc['comment']
+            pass
+        if 'f' in gc:  # Feed_rate
+            v = gc['f']
+            feed_rate = self.feed_scale * v
+            interpreter.command(COMMAND_SET_SPEED, feed_rate)
+        if 's' in gc:
+            v = gc['s']
+            interpreter.command(COMMAND_SET_POWER, v)
+        if 'g' in gc:
+            g_value = gc['g']
+            if g_value == 0.0:
+                self.move_mode = 0
+            elif g_value == 1.0:
+                self.move_mode = 1
+            elif g_value == 2.0:  # CW_ARC
+                self.move_mode = 2
+            elif g_value == 3.0:  # CCW_ARC
+                self.move_mode = 3
+            elif gc['g'] == 4.0:  # DWELL
+                interpreter.command(COMMAND_MODE_DEFAULT)
+                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                if 'p' in gc:
+                    p = float(gc['p'])
+                    interpreter.command(COMMAND_WAIT, p)
+                if 's' in gc:
+                    s = float(gc['s'])
+                    interpreter.command(COMMAND_WAIT, s)
+            elif gc['g'] == 28.0:
+                interpreter.command(COMMAND_MODE_DEFAULT)
+                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                interpreter.command(COMMAND_HOME)
+            elif gc['g'] == 21.0 or gc['g'] == 71.0:
+                self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
+            elif gc['g'] == 20.0 or gc['g'] == 70.0:
+                self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
+            elif gc['g'] == 90.0:
+                interpreter.command(COMMAND_SET_ABSOLUTE)
+            elif gc['g'] == 91.0:
+                interpreter.command(COMMAND_SET_INCREMENTAL)
+            elif gc['g'] == 94.0:
+                # Feed Rate in Units / Minute
+                self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
+            else:
+                return 20  # Unsupported or invalid g-code command found in block.
+        if 'm' in gc:
+            v = gc['m']
+            if v == 30:
+                return 0
+            elif v == 3 or v == 4:
+                self.on_mode = True
+            elif v == 5:
+                self.on_mode = False
+                interpreter.command(COMMAND_LASER_OFF)
+            else:
+                return 20
+        if 'x' in gc or 'y' in gc:
+            if self.move_mode == 0:
+                interpreter.command(COMMAND_LASER_OFF)
+                interpreter.command(COMMAND_MODE_DEFAULT)
+            elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
+                if interpreter.state != STATE_COMPACT:
+                    interpreter.command(COMMAND_MODE_COMPACT)
+            if 'x' in gc:
+                x = gc['x'] * self.scale * self.flip_x
+            else:
+                x = 0
+            if 'y' in gc:
+                y = gc['y'] * self.scale * self.flip_y
+            else:
+                y = 0
+            if self.move_mode == 0:
+                interpreter.command(COMMAND_LASER_OFF)
+                interpreter.command(COMMAND_MOVE, (x, y))
+            elif self.move_mode == 1:
+                if self.on_mode:
+                    interpreter.command(COMMAND_LASER_ON)
+                interpreter.command(COMMAND_MOVE, (x, y))
+            elif self.move_mode == 2:
+                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
+            elif self.move_mode == 3:
+                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
+        return 0  # Unsupported or invalid g-code command found in block.
 
 
 class SVGWriter:
@@ -308,3 +527,181 @@ class ImageLoader:
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
         return [image], pathname, basename
+
+
+class DxfLoader:
+    def __init__(self):
+        self.kernel = None
+
+    def initialize(self, kernel, name=None):
+        self.kernel = kernel
+        kernel.add_loader("DxfLoader", self)
+
+    def shutdown(self, kernel):
+        self.kernel = None
+        del kernel.modules['DxfLoader']
+
+    def load_types(self):
+        yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
+
+    def load(self, pathname):
+        """"
+        Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
+
+        Dxf data has an origin point located in the lower left corner. +y -> top
+        """
+        import ezdxf
+
+        basename = os.path.basename(pathname)
+        dxf = ezdxf.readfile(pathname)
+        elements = []
+        for entity in dxf.entities:
+
+            try:
+                entity.transform_to_wcs(entity.ocs())
+            except AttributeError:
+                pass
+            if entity.dxftype() == 'CIRCLE':
+                element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
+            elif entity.dxftype() == 'ARC':
+                circ = Circle(center=entity.dxf.center,
+                              r=entity.dxf.radius)
+                element = Path(circ.arc_angle(Angle.degrees(entity.dxf.start_angle),
+                                              Angle.degrees(entity.dxf.end_angle)))
+            elif entity.dxftype() == 'ELLIPSE':
+                # TODO: needs more math, axis is vector, ratio is to minor.
+                element = Ellipse(center=entity.dxf.center,
+                                  # major axis is vector
+                                  # ratio is the ratio of major to minor.
+                                  start_point=entity.start_point,
+                                  end_point=entity.end_point,
+                                  start_angle=entity.dxf.start_param,
+                                  end_angle=entity.dxf.end_param)
+            elif entity.dxftype() == 'LINE':
+                #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
+                element = SimpleLine(x1=entity.dxf.start[0], y1=entity.dxf.start[1],
+                                     x2=entity.dxf.end[0], y2=entity.dxf.end[1])
+            elif entity.dxftype() == 'LWPOLYLINE':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
+                points = list(entity)
+                if entity.closed:
+                    element = Polygon(*[(p[0], p[1]) for p in points])
+                else:
+                    element = Polyline(*[(p[0], p[1]) for p in points])
+                # TODO: If bulges are defined they should be included as arcs.
+            elif entity.dxftype() == 'HATCH':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
+                element = Path()
+                if entity.bgcolor is not None:
+                    Path.fill = Color(entity.bgcolor)
+                for p in entity.paths:
+                    if p.path_type_flags & 2:
+                        for v in p.vertices:
+                            element.line(v[0], v[1])
+                        if p.is_closed:
+                            element.closed()
+                    else:
+                        for e in p.edges:
+                            if type(e) == "LineEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.LineEdge
+                                element.line(e.start, e.end)
+                            elif type(e) == "ArcEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.ArcEdge
+                                circ = Circle(center=e.center,
+                                               radius=e.radius,)
+                                element += circ.arc_angle(Angle.degrees(e.start_angle), Angle.degrees(e.end_angle))
+                            elif type(e) == "EllipseEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.EllipseEdge
+                                element += Arc(radius=e.radius,
+                                               start_angle=Angle.degrees(e.start_angle),
+                                               end_angle=Angle.degrees(e.end_angle),
+                                               ccw=e.is_counter_clockwise)
+                            elif type(e) == "SplineEdge":
+                                # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.SplineEdge
+                                if e.degree == 3:
+                                    for i in range(len(e.knot_values)):
+                                        control = e.control_values[i]
+                                        knot = e.knot_values[i]
+                                        element.quad(control, knot)
+                                elif e.degree == 4:
+                                    for i in range(len(e.knot_values)):
+                                        control1 = e.control_values[2 * i]
+                                        control2 = e.control_values[2 * i + 1]
+                                        knot = e.knot_values[i]
+                                        element.cubic(control1, control2, knot)
+                                else:
+                                    for i in range(len(e.knot_values)):
+                                        knot = e.knot_values[i]
+                                        element.line(knot)
+            elif entity.dxftype() == 'IMAGE':
+                bottom_left_position = entity.insert
+                size = entity.image_size
+                imagedef = entity.image_def_handle
+                element = SVGImage(href=imagedef.filename,
+                                   x=bottom_left_position[0],
+                                   y=bottom_left_position[1] - size[1],
+                                   width=size[0],
+                                   height=size[1])
+            elif entity.dxftype() == 'MTEXT':
+                insert = entity.dxf.insert
+                element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
+            elif entity.dxftype() == 'TEXT':
+                insert = entity.dxf.insert
+                element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
+            elif entity.dxftype() == 'POLYLINE':
+                if entity.is_2d_polyline:
+                    if entity.is_closed:
+                        element = Polygon([(p[0], p[1]) for p in entity.points()])
+                    else:
+                        element = Polyline([(p[0], p[1]) for p in entity.points()])
+            elif entity.dxftype() == 'SOLID' or entity.dxftype() == 'TRACE':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
+                element = Path()
+                element.move((entity[0][0],entity[0][1]))
+                element.line((entity[1][0], entity[1][1]))
+                element.line((entity[2][0], entity[2][1]))
+                element.line((entity[3][0], entity[3][1]))
+                element.closed()
+                element.fill = Color('Black')
+            elif entity.dxftype() == 'SPLINE':
+                element = Path()
+                # TODO: Additional research.
+                # if entity.dxf.degree == 3:
+                #     element.move(entity.knots[0])
+                #     print(entity.dxf.n_control_points)
+                #     for i in range(1, entity.dxf.n_knots):
+                #         print(entity.knots[i])
+                #         print(entity.control_points[i-1])
+                #         element.quad(
+                #             entity.control_points[i-1],
+                #             entity.knots[i]
+                #         )
+                # elif entity.dxf.degree == 4:
+                #     element.move(entity.knots[0])
+                #     for i in range(1, entity.dxf.n_knots):
+                #         element.quad(
+                #             entity.control_points[2 * i - 2],
+                #             entity.control_points[2 * i - 1],
+                #             entity.knots[i]
+                #         )
+                # else:
+                element.move(entity.control_points[0])
+                for i in range(1, entity.dxf.n_control_points):
+                    element.line(entity.control_points[i])
+                if entity.closed:
+                    element.closed()
+            else:
+                continue
+                # Might be something unsupported.
+            if entity.rgb is not None:
+                element.stroke = Color(entity.rgb)
+            else:
+                element.stroke = Color('black')
+            element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
+            element.transform.post_translate_y(self.kernel.bed_height * MILS_PER_MM)
+            if isinstance(element, SVGText):
+                elements.append(element)
+            else:
+                elements.append(abs(Path(element)))
+
+        return elements, pathname, basename

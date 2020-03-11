@@ -674,6 +674,12 @@ class Kernel:
             self.last_message[code] = message
         self._is_queue_processing = False
 
+    def last_signal(self, code):
+        try:
+            return self.last_message[code]
+        except KeyError:
+            return None
+
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
             if value is None:
@@ -936,8 +942,8 @@ class Kernel:
     def execute(self, control_name, *args):
         self.controls[control_name](*args)
 
-    def add_thread(self, thread_name, object):
-        self.threads[thread_name] = object
+    def add_thread(self, thread_name, obj):
+        self.threads[thread_name] = obj
 
     def remove_thread(self, thread_name):
         del self.threads[thread_name]
