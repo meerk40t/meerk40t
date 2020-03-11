@@ -1954,6 +1954,15 @@ class RootNode(list):
                 self.semi_select(link.item)
             self.selection_updated()
             return
+        elif node.type == NODE_ELEMENT:
+            for item in self.tree.GetSelections():
+                node = self.tree.GetItemData(item)
+                obj = node.object
+                links = self.tree_lookup[id(obj)]
+                for link in links:
+                    self.semi_select(link.item)
+            self.selection_updated()
+            return
         self.gui.request_refresh()
         self.selection_updated()
         event.Allow()
