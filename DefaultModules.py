@@ -442,11 +442,12 @@ class SVGLoader:
         elements = []
         basename = os.path.basename(pathname)
         scale_factor = 1000.0 / 96.0
-        svg = SVG(pathname).elements(width='%fmm' % (self.kernel.bed_width),
-                                     height='%fmm' % (self.kernel.bed_height),
-                                     ppi=96.0,
-                                     transform='scale(%f)' % scale_factor)
-        for element in svg:
+        svg = SVG.parse(source=pathname,
+                        width='%fmm' % (self.kernel.bed_width),
+                        height='%fmm' % (self.kernel.bed_height),
+                        ppi=96.0,
+                        transform='scale(%f)' % scale_factor)
+        for element in svg.elements():
             if isinstance(element, SVGText):
                 elements.append(element)
             elif isinstance(element, Path):

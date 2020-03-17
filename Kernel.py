@@ -527,6 +527,33 @@ class Pipe:
         self.write(bytes_to_write)
 
 
+class Effect:
+    """
+    The select is a selections string for the exporting element selection.
+    The save is the export file to use.
+    The path refers to the external program.
+    The command is the command to call the path with.
+    The load is the file expected to exist when the execution finishes.
+    """
+    def __init__(self, select, save, path, command, load):
+        self.select = select
+        self.save = save
+        self.path = path
+        self.command = command
+        self.load = load
+
+
+class Modification:
+    """
+    Modifications are functions called on single SVGElement objects.
+    Type Input is the input type kind of element this is intended to act upon.
+    Type Output is the output type of the element this is intended to produce.
+    """
+    def __init__(self, input_type, output_type):
+        self.input_type = input_type
+        self.output_type = output_type
+
+
 class Kernel:
     """
     The kernel is the software framework that is tasked with the API implementation.
@@ -594,7 +621,8 @@ class Kernel:
         self.devices = {}
         self.device = None
 
-        self.effects = []
+        self.modifications = {}
+        self.effects = {}
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []

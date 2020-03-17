@@ -1,7 +1,7 @@
 from Kernel import *
 from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
-from svgelements import *
+from zinglplotter import ZinglPlotter
 
 """
 LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend to write to the usb
@@ -211,7 +211,7 @@ class LhymicroInterpreter(Interpreter):
             self.up()
             self.pulse_modulation = False
             if self.state == STATE_COMPACT:
-                for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
                     self.move(x, y)
             else:
                 self.move(x, y)
@@ -222,7 +222,7 @@ class LhymicroInterpreter(Interpreter):
             self.pulse_modulation = self.is_on
 
             if self.state == STATE_COMPACT:
-                for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+                for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
                     self.move(x, y)
             else:
                 self.move(x, y)
@@ -231,7 +231,7 @@ class LhymicroInterpreter(Interpreter):
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy, Line.plot_line(sx, sy, x, y)):
+            for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
                 if on == 0:
                     self.up()
                 else:
@@ -257,7 +257,7 @@ class LhymicroInterpreter(Interpreter):
             sy = self.device.current_y
             self.pulse_modulation = True
             try:
-                for x, y, on in self.group_plots(sx, sy, path.plot()):
+                for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_path(path)):
                     if on == 0:
                         self.up()
                     else:
@@ -325,7 +325,7 @@ class LhymicroInterpreter(Interpreter):
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy, QuadraticBezier.plot_quad_bezier(sx, sy, cx, cy, x, y)):
+            for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, x, y)):
                 if on == 0:
                     self.up()
                 else:
@@ -336,7 +336,7 @@ class LhymicroInterpreter(Interpreter):
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy, CubicBezier.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
+            for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
                 if on == 0:
                     self.up()
                 else:
@@ -500,7 +500,7 @@ class LhymicroInterpreter(Interpreter):
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in self.group_plots(self.device.current_x, self.device.current_y,
-                                                 Line.plot_line(self.device.current_x, self.device.current_y,
+                                                 ZinglPlotter.plot_line(self.device.current_x, self.device.current_y,
                                                                 self.device.current_x + dx, self.device.current_y + dy)
                                                  ):
                     self.move_absolute(x, y)

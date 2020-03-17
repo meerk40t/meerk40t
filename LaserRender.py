@@ -69,6 +69,7 @@ class LaserRender:
 
     def make_path(self, gc, path):
         p = gc.CreatePath()
+
         parse = LaserCommandPathParser(p)
 
         for event in self.generate_path(path):
@@ -132,11 +133,20 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
+
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if element.text is not None:
-            gc.DrawText(element.text, 0, 0)
+        try:
+            font = wx.Font(float(element.values.get('font-size', 12)), wx.SWISS, wx.NORMAL, wx.BOLD)
+            if element.values.get('fill') is None:
+                gc.SetFont(font, wx.BLACK)
+            else:
+                gc.SetFont(font, wx.Colour(swizzlecolor(Color(element.values['fill']))))
+            element.width, element.height = gc.GetTextExtent(element.text)
+        except ValueError:
             pass
+        if element.text is not None:
+            gc.DrawText(element.text, element.x, element.y - element.height)
         gc.PopState()
 
     def draw_image(self, node, gc, draw_mode):
