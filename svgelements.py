@@ -2471,13 +2471,23 @@ class SVGElement(object):
                 self.values = dict(s)
                 self.values.update(kwargs)
             elif isinstance(s, SVGElement):
-                self.id = s.id
-                self.values = dict(s.values)
+                self.property_by_object(s)
+                self.property_by_args(*args[1:])
                 return
         if self.values is None:
             self.values = dict(kwargs)
-        if SVG_ATTR_ID in self.values:
-            self.id = self.values[SVG_ATTR_ID]
+        self.property_by_values(self.values)
+        self.property_by_args(*args[1:])
+
+    def property_by_args(self, *args):
+        pass
+
+    def property_by_object(self, obj):
+        self.id = obj.id
+        self.values = dict(obj.values)
+
+    def property_by_values(self, values):
+        self.id = values.get(SVG_ATTR_ID)
 
 
 class Group(SVGElement, list):
@@ -2525,13 +2535,17 @@ class Transformable(SVGElement):
     """Any element that is transformable and has a transform property."""
 
     def __init__(self, *args, **kwargs):
+        self.transform = None
+        self.apply = None
         SVGElement.__init__(self, *args, **kwargs)
-        if len(args) >= 1:
-            s = args[0]
-            if isinstance(s, Transformable):
-                self.transform = Matrix(s.transform)
-                self.apply = s.apply
-                return
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        self.transform = Matrix(s.transform)
+        self.apply = s.apply
+
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
         self.transform = Matrix(self.values.get(SVG_ATTR_TRANSFORM, ''))
         self.apply = bool(self.values.get('apply', True))
 
@@ -2597,32 +2611,25 @@ class Transformable(SVGElement):
         return origin.angle_to(prx)
 
 
-class GraphicObject:
+class GraphicObject(SVGElement):
     """Any drawn element."""
 
     def __init__(self, *args, **kwargs):
         self.stroke = None
         self.fill = None
-        values = None
+        SVGElement.__init__(self, *args, **kwargs)
 
-        if len(args) >= 1:
-            s = args[0]
-            if isinstance(s, dict):
-                values = dict(s)
-                values.update(kwargs)
-            elif isinstance(s, GraphicObject):
-                if s.fill is None:
-                    self.fill = None
-                else:
-                    self.fill = Color(s.fill)
-                if s.stroke is None:
-                    self.stroke = None
-                else:
-                    self.stroke = Color(s.stroke)
-                return
-        if values is None:
-            values = dict(kwargs)
+    def property_by_object(self, s):
+        if s.fill is None:
+            self.fill = None
+        else:
+            self.fill = Color(s.fill)
+        if s.stroke is None:
+            self.stroke = None
+        else:
+            self.stroke = Color(s.stroke)
 
+    def property_by_values(self, values):
         if SVG_ATTR_STROKE in values:
             stroke = values[SVG_ATTR_STROKE]
             if stroke is None:
@@ -2665,6 +2672,14 @@ class Shape(GraphicObject, Transformable):
     def __init__(self, *args, **kwargs):
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+
+    def property_by_object(self, s):
+        Transformable.property_by_object(self, s)
+        GraphicObject.property_by_object(self, s)
+
+    def property_by_values(self, values):
+        Transformable.property_by_values(self, values)
+        GraphicObject.property_by_values(self, values)
 
     def __eq__(self, other):
         if not isinstance(other, Shape):
@@ -4046,13 +4061,6 @@ class Arc(PathSegment):
                 int(self.sweep >= 0),
                 self.end - current_point)
 
-    def plot(self):
-        # TODO: Should actually plot the arc according to the pixel-perfect standard. In this case we would plot a
-        # Bernstein weighted bezier curve.
-        for curve in self.as_cubic_curves():
-            for value in curve.plot():
-                yield value
-
 
 class Path(Shape, MutableSequence):
     """
@@ -4517,11 +4525,6 @@ class Path(Shape, MutableSequence):
         self._calc_lengths(error, min_depth)
         return self._length
 
-    def plot(self):
-        for segment in self._segments:
-            for e in segment.plot():
-                yield e
-
     def append(self, value):
         if isinstance(value, str):
             value = Path(value)
@@ -4681,56 +4684,50 @@ class Rect(Shape):
     """
 
     def __init__(self, *args, **kwargs):
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.rx = None
+        self.ry = None
         Shape.__init__(self, *args, **kwargs)
+        self._validate_rect()
+
+    def property_by_object(self, s):
+        Shape.property_by_object(self, s)
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+        self.rx = s.rx
+        self.ry = s.ry
+        self._validate_rect()
+
+    def property_by_values(self, values):
+        Shape.property_by_values(self, values)
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, 1)).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, 1)).value()
+        self.rx = Length(values.get(SVG_ATTR_RADIUS_X, None)).value()
+        self.ry = Length(values.get(SVG_ATTR_RADIUS_Y, None)).value()
+
+    def property_by_args(self, *args):
         arg_length = len(args)
-
-        if arg_length == 1:
-            s = args[0]
-            if isinstance(s, Rect):
-                self.x = s.x
-                self.y = s.y
-                self.width = s.width
-                self.height = s.height
-                self.rx = s.rx
-                self.ry = s.ry
-                self._validate_rect()
-                return
-            if isinstance(s, dict):
-                args = args[1:]
-                arg_length -= 1
-        values = self.values
-
         if arg_length >= 1:
             self.x = Length(args[0]).value()
-        else:
-            self.x = Length(values.get(SVG_ATTR_X, 0)).value()
-
         if arg_length >= 2:
             self.y = Length(args[1]).value()
-        else:
-            self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
-
         if arg_length >= 3:
             self.width = Length(args[2]).value()
-        else:
-            self.width = Length(values.get(SVG_ATTR_WIDTH, 1)).value()
-
         if arg_length >= 4:
             self.height = Length(args[3]).value()
-        else:
-            self.height = Length(values.get(SVG_ATTR_HEIGHT, 1)).value()
-
         if arg_length >= 5:
             self.rx = Length(args[4]).value()
-        else:
-            self.rx = Length(values.get(SVG_ATTR_RADIUS_X, None)).value()
-
         if arg_length >= 6:
             self.ry = Length(args[5]).value()
-        else:
-            self.ry = Length(values.get(SVG_ATTR_RADIUS_Y, None)).value()
-        self._init_shape(*args[6:])
-        self._validate_rect()
+        if arg_length >= 7:
+            self._init_shape(*args[6:])
 
     def _validate_rect(self):
         """None is 'auto' for values."""
@@ -4945,37 +4942,25 @@ class Rect(Shape):
 class _RoundShape(Shape):
 
     def __init__(self, *args, **kwargs):
+        self.cx = None
+        self.cy = None
+        self.rx = None
+        self.ry = None
         Shape.__init__(self, *args, **kwargs)
-        arg_length = len(args)
-        values = self.values
-        if arg_length >= 1:
-            s = args[0]
-            if isinstance(s, _RoundShape):
-                self.cx = s.cx
-                self.cy = s.cy
-                self.rx = s.rx
-                self.ry = s.ry
-                return
-            elif isinstance(s, dict):
-                args = args[1:]
-                arg_length -= 1
-        if arg_length >= 1:
-            self.cx = Length(args[0]).value()
-        else:
-            self.cx = Length(values.get(SVG_ATTR_CENTER_X)).value()
-        if arg_length >= 2:
-            self.cy = Length(args[1]).value()
-        else:
-            self.cy = Length(values.get(SVG_ATTR_CENTER_Y)).value()
-        if arg_length >= 3:
-            self.rx = Length(args[2]).value()
-        else:
-            self.rx = Length(values.get(SVG_ATTR_RADIUS_X)).value()
-        if arg_length >= 4:
-            self.ry = Length(args[3]).value()
-        else:
-            self.ry = Length(values.get(SVG_ATTR_RADIUS_Y)).value()
 
+    def property_by_object(self, s):
+        Shape.property_by_object(self, s)
+        self.cx = s.cx
+        self.cy = s.cy
+        self.rx = s.rx
+        self.ry = s.ry
+
+    def property_by_values(self, values):
+        Shape.property_by_values(self, values)
+        self.cx = Length(values.get(SVG_ATTR_CENTER_X)).value()
+        self.cy = Length(values.get(SVG_ATTR_CENTER_Y)).value()
+        self.rx = Length(values.get(SVG_ATTR_RADIUS_X)).value()
+        self.ry = Length(values.get(SVG_ATTR_RADIUS_Y)).value()
         r = Length(values.get(SVG_ATTR_RADIUS, None)).value()
         if r is not None:
             self.rx = r
@@ -4988,11 +4973,24 @@ class _RoundShape(Shape):
         center = values.get('center', None)
         if center is not None:
             self.cx, self.cy = Point(center)
+
         if self.cx is None:
             self.cx = 0
         if self.cy is None:
             self.cy = 0
-        self._init_shape(*args[4:])
+
+    def property_by_args(self, *args):
+        arg_length = len(args)
+        if arg_length >= 1:
+            self.cx = Length(args[0]).value()
+        if arg_length >= 2:
+            self.cy = Length(args[1]).value()
+        if arg_length >= 3:
+            self.rx = Length(args[2]).value()
+        if arg_length >= 4:
+            self.ry = Length(args[3]).value()
+        if arg_length >= 5:
+            self._init_shape(*args[4:])
 
     def __repr__(self):
         values = []
@@ -5283,24 +5281,28 @@ class SimpleLine(Shape):
     """
 
     def __init__(self, *args, **kwargs):
+        self.x1 = None
+        self.y1 = None
+        self.x2 = None
+        self.y2 = None
         Shape.__init__(self, *args, **kwargs)
-        arg_length = len(args)
-        if arg_length >= 1:
-            s = args[0]
-            if isinstance(s, SimpleLine):
-                self.x1 = s.x1
-                self.y1 = s.y1
-                self.x2 = s.x2
-                self.y2 = s.y2
-                return
-            if isinstance(s, dict):
-                args = args[1:]
-                arg_length -= 1
-        values = self.values
+
+    def property_by_object(self, s):
+        Shape.property_by_object(self, s)
+        self.x1 = s.x1
+        self.y1 = s.y1
+        self.x2 = s.x2
+        self.y2 = s.y2
+
+    def property_by_values(self, values):
+        Shape.property_by_values(self, values)
         self.x1 = Length(values.get(SVG_ATTR_X1, 0)).value()
         self.y1 = Length(values.get(SVG_ATTR_Y1, 0)).value()
         self.x2 = Length(values.get(SVG_ATTR_X2, 0)).value()
         self.y2 = Length(values.get(SVG_ATTR_Y2, 0)).value()
+
+    def property_by_args(self, *args):
+        arg_length = len(args)
         if arg_length >= 1:
             self.x1 = Length(args[0]).value()
         if arg_length >= 2:
@@ -5410,20 +5412,19 @@ class _Polyshape(Shape):
     """Base form of Polygon and Polyline since the objects are nearly the same."""
 
     def __init__(self, *args, **kwargs):
+        self.points = list()
         Shape.__init__(self, *args, **kwargs)
-        arg_length = len(args)
-        if arg_length == 0:
-            self._init_points(kwargs)
-        else:
-            if isinstance(args[0], dict):
-                self._init_points(args[0])
-            elif isinstance(args[0], _Polyshape):
-                s = args[0]
-                self._init_points(s.points)
-            elif isinstance(args[0], (float, int, list, tuple, Point, str, complex)):
-                self._init_points(args)
-            else:
-                self.points = list()
+
+    def property_by_object(self, s):
+        Shape.property_by_object(self, s)
+        self._init_points(s.points)
+
+    def property_by_values(self, values):
+        Shape.property_by_values(self, values)
+        self._init_points(values)
+
+    def property_by_args(self, *args):
+        self._init_points(args)
 
     def _init_points(self, points):
         if points is None:
@@ -5748,8 +5749,6 @@ class SVGText(GraphicObject, Transformable):
     """
 
     def __init__(self, *args, **kwargs):
-        Transformable.__init__(self, *args, **kwargs)
-        GraphicObject.__init__(self, *args, **kwargs)
         self.text = ''
         self.width = 0
         self.height = 0
@@ -5759,25 +5758,22 @@ class SVGText(GraphicObject, Transformable):
         self.dy = 0
         self.font = 0
         self.path = None
-        if len(args) == 1:
-            if isinstance(args[0], dict):
-                values = args[0]
-                self.text = values.get(SVG_TAG_TEXT, self.text)
-                self.font = values.get(SVG_ATTR_FONT, self.font)
-                self.x = Length(values.get(SVG_ATTR_X, self.x)).value()
-                self.y = Length(values.get(SVG_ATTR_Y, self.y)).value()
-                self.dx = Length(values.get(SVG_ATTR_DX, self.dx)).value()
-                self.dy = Length(values.get(SVG_ATTR_DY, self.dy)).value()
-            elif isinstance(args[0], SVGText):
-                s = args[0]
-                self.text = s.text
-                self.x = s.x
-                self.y = s.y
-                self.dx = s.dx
-                self.dy = s.dy
-                self.font = s.font
-                return
-        values = kwargs
+        Transformable.__init__(self, *args, **kwargs)
+        GraphicObject.__init__(self, *args, **kwargs)
+
+    def property_by_object(self, s):
+        Transformable.property_by_object(self, s)
+        GraphicObject.property_by_object(self, s)
+        self.text = s.text
+        self.x = s.x
+        self.y = s.y
+        self.dx = s.dx
+        self.dy = s.dy
+        self.font = s.font
+
+    def property_by_values(self, values):
+        Transformable.property_by_values(self, values)
+        GraphicObject.property_by_values(self, values)
         self.text = values.get(SVG_TAG_TEXT, self.text)
         self.font = values.get(SVG_ATTR_FONT, self.font)
         self.x = Length(values.get(SVG_ATTR_X, self.x)).value()
@@ -5787,32 +5783,6 @@ class SVGText(GraphicObject, Transformable):
 
     def __copy__(self):
         return SVGText(self)
-
-    def _set_values_by_dict(self, values):
-        if SVG_TAG_TEXT in values:
-            self.text = values[SVG_TAG_TEXT]
-        else:
-            self.text = ''
-        if SVG_ATTR_FONT in values:
-            self.font = values[SVG_ATTR_FONT]
-        else:
-            self.font = None
-        if SVG_ATTR_X in values:
-            self.x = Length(values[SVG_ATTR_X]).value()
-        else:
-            self.x = 0
-        if SVG_ATTR_Y in values:
-            self.y = Length(values[SVG_ATTR_Y]).value()
-        else:
-            self.y = 0
-        if SVG_ATTR_DX in values:
-            self.dx = Length(values[SVG_ATTR_DX]).value()
-        else:
-            self.dx = None
-        if SVG_ATTR_DY in values:
-            self.dy = Length(values[SVG_ATTR_DY]).value()
-        else:
-            self.dy = None
 
     def render(self, width=None, height=None, relative_length=None, **kwargs):
         if width is None and relative_length is not None:
@@ -5869,31 +5839,15 @@ class SVGImage(GraphicObject, Transformable):
     """
 
     def __init__(self, *args, **kwargs):
-        Transformable.__init__(self, *args, **kwargs)
-        GraphicObject.__init__(self, *args, **kwargs)
         self.url = None
         self.data = None
         self.viewbox = None
-        if len(args) == 1:
-            if isinstance(args[0], dict):
-                values = args[0]
-                if XLINK_HREF in values:
-                    self.url = values[XLINK_HREF]
-                elif SVG_HREF in values:
-                    self.url = values[SVG_HREF]
-                else:
-                    self.url = None
-                self.viewbox = Viewbox(values)
-            elif isinstance(args[0], SVGImage):
-                s = args[0]
-                self.url = s.url
-                self.data = s.data
-                self.viewbox = s.viewbox
-                self.image = s.image
-                self.image_width = s.image_width
-                self.image_height = s.image_height
-                return
-            self.data = None
+        self.image = None
+        self.image_width = None
+        self.image_height = None
+        Transformable.__init__(self, *args, **kwargs)
+        GraphicObject.__init__(self, *args, **kwargs)
+
         if self.url is not None:
             if self.url.startswith("data:image/"):
                 # Data URL
@@ -5906,17 +5860,33 @@ class SVGImage(GraphicObject, Transformable):
                     self.data = b64decode(self.url[23:])
                 elif self.url.startswith("data:image/svg+xml;base64,"):
                     self.data = b64decode(self.url[26:])
-        if 'image' in kwargs:
-            self.image = kwargs['image']
-            self.image_width, self.image_height = self.image.size
-        else:
-            self.image = None
-            self.image_width = None
-            self.image_height = None
+
         if SVG_ATTR_WIDTH in kwargs:
             self.viewbox.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
         if SVG_ATTR_HEIGHT in kwargs:
             self.viewbox.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
+
+    def property_by_object(self, s):
+        Transformable.property_by_object(self, s)
+        GraphicObject.property_by_object(self, s)
+        self.url = s.url
+        self.data = s.data
+        self.viewbox = s.viewbox
+        self.image = s.image
+        self.image_width = s.image_width
+        self.image_height = s.image_height
+
+    def property_by_values(self, values):
+        Transformable.property_by_values(self, values)
+        GraphicObject.property_by_values(self, values)
+        if XLINK_HREF in values:
+            self.url = values[XLINK_HREF]
+        elif SVG_HREF in values:
+            self.url = values[SVG_HREF]
+        self.viewbox = Viewbox(values)
+        if 'image' in values:
+            self.image = values['image']
+            self.image_width, self.image_height = self.image.size
 
     def __copy__(self):
         """
