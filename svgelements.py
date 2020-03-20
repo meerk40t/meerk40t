@@ -73,6 +73,7 @@ SVG_ATTR_STROKE = 'stroke'
 SVG_ATTR_STROKE_WIDTH = 'stroke-width'
 SVG_ATTR_TRANSFORM = 'transform'
 SVG_ATTR_STYLE = 'style'
+SVG_ATTR_CLASS = 'class'
 SVG_ATTR_CENTER_X = 'cx'
 SVG_ATTR_CENTER_Y = 'cy'
 SVG_ATTR_RADIUS_X = 'rx'
@@ -145,7 +146,7 @@ REGEX_COLOR_HSL = re.compile(
     r'hsla?\(\s*(%s)\s*,\s*(%s)%%\s*,\s*(%s)%%\s*(?:,\s*(%s)\s*)?\)' % (
         PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT))
 REGEX_LENGTH = re.compile('(%s)([A-Za-z%%]*)' % PATTERN_FLOAT)
-REGEX_CSS_STYLE = re.compile(r'([^{]+)\s*\{\s*([^}]+)\s*}')
+REGEX_CSS_STYLE = re.compile(r'([^{]+)\s*\{\s*([^}]+)\s*\}')
 
 
 # PathTokens class.
@@ -5835,7 +5836,13 @@ class SVGText(GraphicObject, Transformable):
         """
         if self.path is not None:
             return (self.path * self.transform).bbox(transformed=True)
-        return self.x, self.y - self.height, self.x + self.width, self.y
+        if not transformed:
+            return self.x, self.y - self.height, self.x + self.width, self.y
+        p = Point(self.x, self.y - self.height)
+        p *= self.transform
+        q = Point(self.x + self.width, self.y)
+        q *= self.transform
+        return p[0], p[1], q[0], q[1]
 
 
 class SVGDesc:
@@ -5876,6 +5883,7 @@ class SVGImage(GraphicObject, Transformable):
                     self.url = values[SVG_HREF]
                 else:
                     self.url = None
+                self.viewbox = Viewbox(values)
             elif isinstance(args[0], SVGImage):
                 s = args[0]
                 self.url = s.url
@@ -5885,7 +5893,6 @@ class SVGImage(GraphicObject, Transformable):
                 self.image_width = s.image_width
                 self.image_height = s.image_height
                 return
-            self.viewbox = Viewbox(values)
             self.data = None
         if self.url is not None:
             if self.url.startswith("data:image/"):
@@ -6225,6 +6232,7 @@ class SVG(Group):
     SVG is the SVG main object and also the embedded SVGs within it. It's a subtype of Group. The SVG has a viewbox,
     and parsing methods which can be used if given a stream, path, or svg string.
     """
+
     #  TODO: CSS class .value object.
     def __init__(self, *args, **kwargs):
         Group.__init__(self, *args, **kwargs)
@@ -6281,13 +6289,15 @@ class SVG(Group):
             values[SVG_ATTR_TRANSFORM] = transform
         for event, elem in iterparse(source, events=('start', 'end')):
             if event == 'start':
-                stack.append((context,values))
+                shadow_dom = None
+                stack.append((context, values))
                 current_values = values
                 values = {}
                 values.update(current_values)  # copy of dictionary
                 tag = elem.tag
                 if tag.startswith('{'):
                     tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                values[SVG_ATTR_TAG] = tag
 
                 # Non-propagating values.
                 if SVG_ATTR_PRESERVEASPECTRATIO in values:
@@ -6299,20 +6309,48 @@ class SVG(Group):
 
                 attributes = elem.attrib  # priority; lowest
 
-                # Split any Style block elements into parts; priority medium
-                if tag in styles:
-                    style = styles[tag]
-                    for equate in style.split(";"):
-                        equal_item = equate.split(":")
-                        if len(equal_item) == 2:
-                            attributes[equal_item[0]] = equal_item[1]
+                if SVG_TAG_USE == tag:
+                    url = None
+                    if XLINK_HREF in attributes:
+                        url = attributes[XLINK_HREF]
+                    if SVG_HREF in attributes:
+                        url = attributes[SVG_HREF]
+                    if url is not None:
+                        try:
+                            shadow_dom = copy(defs[url[1:]])
+                            tag = shadow_dom.values[SVG_ATTR_TAG]
+                        except KeyError:
+                            continue
 
+                # Split any Style block elements into parts; priority medium
+                style = ''
+                if '*' in styles:  # Select all.
+                    style += styles['*']
+                if tag in styles:  # selector type
+                    style += styles[tag]
+                if SVG_ATTR_ID in attributes:  # Selector id #id
+                    svg_id = attributes[SVG_ATTR_ID]
+                    css_tag = '#%s' % svg_id
+                    if css_tag in styles:
+                        style += styles[tag]
+                if SVG_ATTR_CLASS in attributes:  # Selector class .class
+                    for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
+                        css_tag = '.%s' % svg_class
+                        if css_tag in styles:
+                            style += styles[tag]
+                        css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
+                        if css_tag in styles:
+                            style += styles[tag]
                 # Split style element into parts; priority highest
                 if SVG_ATTR_STYLE in attributes:
-                    for equate in attributes[SVG_ATTR_STYLE].split(";"):
-                        equal_item = equate.split(":")
-                        if len(equal_item) == 2:
-                            attributes[equal_item[0]] = equal_item[1]
+                    style += attributes[SVG_ATTR_STYLE]
+                # Process style tag left to right.
+                for equate in style.split(";"):
+                    equal_item = equate.split(":")
+                    if len(equal_item) == 2:
+                        key = str(equal_item[0]).strip()
+                        value = str(equal_item[1]).strip()
+                        attributes[key] = value
 
                 if SVG_ATTR_FILL in attributes and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR:
                     if SVG_ATTR_COLOR in attributes:
@@ -6334,8 +6372,11 @@ class SVG(Group):
                                                          attributes[SVG_ATTR_TRANSFORM]
                     else:
                         attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
+                if shadow_dom is not None:
+                    shadow_dom.values.update(attributes)
+                    context.append(shadow_dom)
+                    continue
                 values.update(attributes)
-
                 if SVG_NAME_TAG == tag:
                     # The ordering for transformations on the SVG object are:
                     # explicit transform, parent transforms, attribute transforms, viewport transforms
@@ -6418,6 +6459,9 @@ class SVG(Group):
                     if match:
                         assignments = list(match.groups())
                         for i in range(0, len(assignments), 2):
-                            styles[assignments[i]] = assignments[i+1]
+                            key = assignments[i].strip()
+                            value = assignments[i + 1].strip()
+                            for selector in key.split(','):  # Can comma select subitems.
+                                styles[selector.strip()] = value
                 context, values = stack.pop()
         return root
