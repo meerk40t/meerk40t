@@ -52,7 +52,7 @@ The Transformations work in Windows for wxPython 4.0+ and OSX/Linux wxPython 4.1
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.5.2"
+MEERK40T_VERSION = "0.5.3"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 

@@ -2460,6 +2460,8 @@ class SVGElement(object):
     if args[0] is a dict or SVGElement class the value is used to seed the values.
     Else, the values consist of the kwargs used. The priority is such that kwargs
     will overwrite any previously set value.
+
+    If additional args exist these will be passed to property_by_args
     """
 
     def __init__(self, *args, **kwargs):
@@ -2468,16 +2470,18 @@ class SVGElement(object):
         if len(args) >= 1:
             s = args[0]
             if isinstance(s, dict):
+                args = args[1:]
                 self.values = dict(s)
                 self.values.update(kwargs)
             elif isinstance(s, SVGElement):
+                args = args[1:]
                 self.property_by_object(s)
-                self.property_by_args(*args[1:])
+                self.property_by_args(args)
                 return
         if self.values is None:
             self.values = dict(kwargs)
         self.property_by_values(self.values)
-        self.property_by_args(*args[1:])
+        self.property_by_args(*args)
 
     def property_by_args(self, *args):
         pass
@@ -6289,6 +6293,7 @@ class SVG(Group):
                         try:
                             shadow_dom = copy(defs[url[1:]])
                             tag = shadow_dom.values[SVG_ATTR_TAG]
+                            shadow_dom.property_by_values(shadow_dom.values)
                         except KeyError:
                             continue
 
