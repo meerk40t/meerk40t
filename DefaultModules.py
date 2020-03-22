@@ -111,11 +111,10 @@ class GRBLEmulator(Module):
         self.move_mode = 0
         self.on_mode = 1
         self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
+        self.buffer = ''
+        self.code_re = re.compile(r"([A-Za-z])")
+        self.float_re = re.compile('[-+]?[0-9]*\.?[0-9]*')
 
-        self.comment = None
-        self.code = ""
-        self.value = ""
-        self.command_map = {}
 
     def close(self):
         pass
@@ -156,71 +155,80 @@ class GRBLEmulator(Module):
             interpreter.realtime_command(COMMAND_RESET)
 
     def write(self, data):
-        ord_a = ord('a')
-        ord_A = ord('A')
-        ord_z = ord('z')
-        ord_Z = ord('Z')
-        for b in data:
-            c = chr(b)
-            if c == '?' or c == '~' or c == '!' or c == '\x18':
-                self.realtime_write(c)  # Pick off realtime commands.
-                continue
-            is_end = c == '\n' or c == '\r'
-            if self.comment is not None:
-                if b == ord(')') or is_end:
-                    self.command_map['comment'] = self.comment
-                    self.comment = None
-                    if not is_end:
-                        continue
-                else:
-                    try:
-                        self.comment += str(c)
-                    except UnicodeDecodeError:
-                        pass  # skip utf8 fail
-                    continue
-            if b == ord('('):
-                self.comment = ""
-                continue
-            elif b == ord(';'):
-                self.comment = ""
-                continue
-            elif b == ord('\t'):
-                continue
-            elif b == ord(' '):
-                continue
-            elif b == ord('/') and len(self.code) == 0:
-                continue
-            if ord('0') <= b <= ord('9') \
-                    or b == ord('+') \
-                    or b == ord('-') \
-                    or b == ord('.'):
-                self.value += chr(b)
-                continue
+        if isinstance(data, bytes):
+            data = data.decode()
+        if '?' in data:
+            data = data.replace('?', '')
+            self.realtime_write('?')
+        if '~' in data:
+            data = data.replace('$', '')
+            self.realtime_write('~')
+        if '!' in data:
+            data = data.replace('!', '')
+            self.realtime_write('!')
+        if '\x18' in data:
+            data = data.replace('\x18', '')
+            self.realtime_write('\x18')
+        self.buffer += data
+        while '\b' in self.buffer:
+            self.buffer = re.sub('.\b', '', self.buffer, count=1)
+            if self.buffer.startswith('\b'):
+                self.buffer = re.sub('\b+', '', self.buffer)
 
-            if ord_A <= b <= ord_Z:  # make lowercase.
-                b = b - ord_A + ord_a
-                c = chr(b)
+        while '\n' in self.buffer:
+            pos = self.buffer.find('\n')
+            command = self.buffer[0:pos].strip('\r')
+            self.buffer = self.buffer[pos+1:]
+            self.commandline(command)
 
-            is_letter = ord_a <= b <= ord_z
-            if (is_letter or is_end) and len(self.code) != 0:
-                if self.code != "" and self.value != "":
-                    self.command_map[self.code] = float(self.value)
-                self.code = ""
-                self.value = ""
-            if is_letter:
-                self.code += str(c)
+    def _tokenize_code(self, code_line):
+        code = None
+        for x in self.code_re.split(code_line):
+            x = x.strip()
+            if len(x) == 0:
                 continue
-            elif is_end:
-                cmd = self.command(self.command_map)
+            if len(x) == 1 and x.isalpha():
+                if code is not None:
+                    yield code
+                code = [x.lower()]
+                continue
+            code.extend([float(v) for v in self.float_re.findall(x) if len(v) != 0])
+            yield code
+            code = None
+        if code is not None:
+            yield code
 
-                if cmd == 0:  # Execute GCode.
-                    self.read_info = "ok\r\n"
-                else:
-                    self.read_info = "error:%d\r\n" % cmd
-                self.command_map = {}
-                self.code = ""
-                self.value = ""
-                continue
+    def commandline(self, data):
+        command_map = {}
+        pos = data.find('(')
+        while pos != -1:
+            end = data.find(')')
+            command_map['comment'] = data[pos+1:end]
+            data = data[:pos] + data[end+1:]
+            pos = data.find('(')
+        pos = data.find(';')
+        if pos != -1:
+            command_map['comment'] = data[pos + 1:]
+            data = data[:pos]
+        if data.startswith('$'):
+            if data == '$':
+                self.read_info = "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\nok\r\n"
+            print(data)
+            return
+        if data.startswith('cat'):
+            pass  # EASY shell
+        for code in self._tokenize_code(data):
+            cmd = code[0]
+            if cmd not in command_map:
+                command_map[cmd] = code[1]
+            else:
+                pass # This command appears twice.
+        cmd = self.command(command_map)
+
+        if cmd == 0:  # Execute GCode.
+            self.read_info = "ok\r\n"
+        else:
+            self.read_info = "error:%d\r\n" % cmd
 
     def read(self, size=-1):
         r = self.read_info
@@ -228,7 +236,7 @@ class GRBLEmulator(Module):
         return r
 
     def command(self, gc):
-        if len(self.command_map) == 0:
+        if len(gc) == 0:
             return 0  # empty command ok
         interpreter = self.kernel.device.interpreter
         if 'comment' in gc:
