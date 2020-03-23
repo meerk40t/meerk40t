@@ -60,7 +60,11 @@ if args.grbl is not None:
     server = LaserServer(args.grbl)
 
     server.set_pipe(emulator)
-    kernel.add_module('GRBLServer', server)
+    try:
+        kernel.add_module('GRBLServer', server)
+    except OSError:
+        print('Server failed on port: %d' % args.grbl)
+        exit(1)
 
 #
 # from LaserServer import *
