@@ -383,6 +383,10 @@ class GRBLEmulator(Module):
             elif v == 5:
                 self.on_mode = False
                 interpreter.command(COMMAND_LASER_OFF)
+            elif v == 911:
+                pass  # Set TMC2130 holding currents
+            elif v == 912:
+                pass # M912: Set TMC2130 running currents
             else:
                 return 20
         if 'x' in gc or 'y' in gc:
