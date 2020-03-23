@@ -112,9 +112,45 @@ class GRBLEmulator(Module):
         self.on_mode = 1
         self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
         self.buffer = ''
-        self.code_re = re.compile(r"([A-Za-z])")
-        self.float_re = re.compile('[-+]?[0-9]*\.?[0-9]*')
-
+        self.grbl_set_re = re.compile(r'\$(\d+)=([-+]?[0-9]*\.?[0-9]*)')
+        self.code_re = re.compile(r'([A-Za-z])')
+        self.float_re = re.compile(r'[-+]?[0-9]*\.?[0-9]*')
+        self.settings = {
+            0: 10,  # step pulse microseconds
+            1: 25,  # step idle delay
+            2: 0,  # step pulse invert
+            3: 0,  # step direction invert
+            4: 0,  # invert step enable pin, boolean
+            5: 0,  # invert limit pins, boolean
+            6: 0,  # invert probe pin
+            10: 255,  # status report options
+            11: 0.010,  # Junction deviation, mm
+            12: 0.002,  # arc tolerance, mm
+            13: 0,  # Report in inches
+            20: 0,  # Soft limits enabled.
+            21: 0,  # hard limits enabled
+            22: 0,  # Homing cycle enable
+            23: 0,  # Homing direction invert
+            24: 25.000,  # Homing locate feed rate, mm/min
+            25: 500.000,  # Homing search seek rate, mm/min
+            26: 250,  # Homing switch debounce delay, ms
+            27: 1.000,  # Homing switch pull-off distance, mm
+            30: 1000,  # Maximum spindle speed, RPM
+            31: 0,  # Minimum spindle speed, RPM
+            32: 0,  # Laser mode enable, boolean
+            100: 250.000,  # X-axis steps per millimeter
+            101: 250.000,  # Y-axis steps per millimeter
+            102: 250.000,  # Z-axis steps per millimeter
+            110: 500.000,  # X-axis max rate mm/min
+            111: 500.000,  # Y-axis max rate mm/min
+            112: 500.000,  # Z-axis max rate mm/min
+            120: 10.000,  # X-axis acceleration, mm/s^2
+            121: 10.000,  # Y-axis acceleration, mm/s^2
+            122: 10.000,  # Z-axis acceleration, mm/s^2
+            130: 200.000,  # X-axis max travel mm.
+            131: 200.000,  # Y-axis max travel mm
+            132: 200.000  # Z-axis max travel mm.
+        }
 
     def close(self):
         pass
@@ -133,6 +169,7 @@ class GRBLEmulator(Module):
     def realtime_write(self, bytes_to_write):
         interpreter = self.kernel.device.interpreter
         if bytes_to_write == '?':  # Status report
+            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if interpreter.state == 0:
                 state = 'Idle'
             else:
@@ -178,8 +215,13 @@ class GRBLEmulator(Module):
         while '\n' in self.buffer:
             pos = self.buffer.find('\n')
             command = self.buffer[0:pos].strip('\r')
-            self.buffer = self.buffer[pos+1:]
-            self.commandline(command)
+            self.buffer = self.buffer[pos + 1:]
+            self.read_info = ''
+            cmd = self.commandline(command)
+            if cmd == 0:  # Execute GCode.
+                self.read_info += "ok\r\n"
+            else:
+                self.read_info += "error:%d\r\n" % cmd
 
     def _tokenize_code(self, code_line):
         code = None
@@ -192,8 +234,9 @@ class GRBLEmulator(Module):
                     yield code
                 code = [x.lower()]
                 continue
-            code.extend([float(v) for v in self.float_re.findall(x) if len(v) != 0])
-            yield code
+            if code is not None:
+                code.extend([float(v) for v in self.float_re.findall(x) if len(v) != 0])
+                yield code
             code = None
         if code is not None:
             yield code
@@ -203,8 +246,8 @@ class GRBLEmulator(Module):
         pos = data.find('(')
         while pos != -1:
             end = data.find(')')
-            command_map['comment'] = data[pos+1:end]
-            data = data[:pos] + data[end+1:]
+            command_map['comment'] = data[pos + 1:end]
+            data = data[:pos] + data[end + 1:]
             pos = data.find('(')
         pos = data.find(';')
         if pos != -1:
@@ -212,7 +255,38 @@ class GRBLEmulator(Module):
             data = data[:pos]
         if data.startswith('$'):
             if data == '$':
-                self.read_info = "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\nok\r\n"
+                self.read_info = "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                return 0
+            elif data == '$$':
+                for s in self.settings:
+                    v = self.settings[s]
+                    if isinstance(v,int):
+                        self.read_info += "$%d=%d\r\n" % (s,v)
+                    elif isinstance(v, float):
+                        self.read_info += "$%d=%.3f\r\n" % (s, v)
+                return 0
+            if self.grbl_set_re.match(data):
+                settings = list(self.grbl_set_re.findall(data))[0]
+                print(settings)
+                try:
+                    c = self.settings[int(settings[0])]
+                except KeyError:
+                    return 3
+                if isinstance(c, float):
+                    self.settings[int(settings[0])] = float(settings[1])
+                else:
+                    self.settings[int(settings[0])] = int(settings[1])
+                return 0
+            elif data == '$I':
+                pass
+            elif data == '$G':
+                pass
+            elif data == '$N':
+                pass
+            elif data == '$H':
+                return 5  # Homing cycle not enabled by settings.
+            else:
+                return 3  # GRBL '$' system command was not recognized or supported.
             print(data)
             return
         if data.startswith('cat'):
@@ -222,13 +296,8 @@ class GRBLEmulator(Module):
             if cmd not in command_map:
                 command_map[cmd] = code[1]
             else:
-                pass # This command appears twice.
-        cmd = self.command(command_map)
-
-        if cmd == 0:  # Execute GCode.
-            self.read_info = "ok\r\n"
-        else:
-            self.read_info = "error:%d\r\n" % cmd
+                pass  # This command appears twice.
+        return self.command(command_map)
 
     def read(self, size=-1):
         r = self.read_info
@@ -617,7 +686,7 @@ class DxfLoader:
                             elif type(e) == "ArcEdge":
                                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.ArcEdge
                                 circ = Circle(center=e.center,
-                                               radius=e.radius,)
+                                              radius=e.radius, )
                                 element += circ.arc_angle(Angle.degrees(e.start_angle), Angle.degrees(e.end_angle))
                             elif type(e) == "EllipseEdge":
                                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.EllipseEdge
@@ -666,7 +735,7 @@ class DxfLoader:
             elif entity.dxftype() == 'SOLID' or entity.dxftype() == 'TRACE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
                 element = Path()
-                element.move((entity[0][0],entity[0][1]))
+                element.move((entity[0][0], entity[0][1]))
                 element.line((entity[1][0], entity[1][1]))
                 element.line((entity[2][0], entity[2][1]))
                 element.line((entity[3][0], entity[3][1]))
