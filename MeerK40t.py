@@ -62,11 +62,11 @@ if args.grbl is not None:
     server.set_pipe(emulator)
     kernel.add_module('GRBLServer', server)
 
-
-from LaserServer import *
-server = LaserServer(23)
-server.set_pipe(emulator)
-kernel.add_module('GRBLServer', server)
+#
+# from LaserServer import *
+# server = LaserServer(23)
+# server.set_pipe(emulator)
+# kernel.add_module('GRBLServer', server)
 
 
 if args.list is not None:
