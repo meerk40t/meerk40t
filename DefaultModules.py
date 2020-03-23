@@ -193,6 +193,7 @@ class GRBLEmulator(Module):
             interpreter.realtime_command(COMMAND_RESET)
 
     def write(self, data):
+        self.read_info = ''
         if isinstance(data, bytes):
             data = data.decode()
         if '?' in data:
@@ -217,7 +218,6 @@ class GRBLEmulator(Module):
             pos = self.buffer.find('\n')
             command = self.buffer[0:pos].strip('\r')
             self.buffer = self.buffer[pos + 1:]
-            self.read_info = ''
             cmd = self.commandline(command)
             if cmd == 0:  # Execute GCode.
                 self.read_info += "ok\r\n"
