@@ -109,6 +109,7 @@ class GRBLEmulator(Module):
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
         self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
         self.move_mode = 0
+        self.home = None
         self.on_mode = 1
         self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
         self.buffer = ''
@@ -294,7 +295,10 @@ class GRBLEmulator(Module):
         for code in self._tokenize_code(data):
             cmd = code[0]
             if cmd not in command_map:
-                command_map[cmd] = code[1]
+                if len(code) >= 2:
+                    command_map[cmd] = code[1]
+                else:
+                    command_map[cmd] = 0
             else:
                 pass  # This command appears twice.
         return self.command(command_map)
@@ -310,7 +314,6 @@ class GRBLEmulator(Module):
         interpreter = self.kernel.device.interpreter
         if 'comment' in gc:
             comment = gc['comment']
-            pass
         if 'f' in gc:  # Feed_rate
             v = gc['f']
             feed_rate = self.feed_scale * v
@@ -341,6 +344,23 @@ class GRBLEmulator(Module):
                 interpreter.command(COMMAND_MODE_DEFAULT)
                 interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
                 interpreter.command(COMMAND_HOME)
+                if self.home is not None:
+                    interpreter.command(COMMAND_RAPID_MOVE, self.home)
+            elif gc['g'] == 28.1:
+                if 'x' in gc and 'y' in gc:
+                    self.home = (gc['x'], gc['y'])
+            elif gc['g'] == 28.2:
+                interpreter.command(COMMAND_MODE_DEFAULT)
+                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                interpreter.command(COMMAND_HOME)
+            elif gc['g'] == 28.3:
+                interpreter.command(COMMAND_MODE_DEFAULT)
+                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                interpreter.command(COMMAND_HOME)
+                if 'x' in gc:
+                    interpreter.command(COMMAND_RAPID_MOVE, (gc['x'],0))
+                if 'y' in gc:
+                    interpreter.command(COMMAND_RAPID_MOVE, (0, gc['y']))
             elif gc['g'] == 21.0 or gc['g'] == 71.0:
                 self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
             elif gc['g'] == 20.0 or gc['g'] == 70.0:
