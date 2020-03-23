@@ -137,7 +137,7 @@ class GRBLEmulator(Module):
             27: 1.000,  # Homing switch pull-off distance, mm
             30: 1000,  # Maximum spindle speed, RPM
             31: 0,  # Minimum spindle speed, RPM
-            32: 0,  # Laser mode enable, boolean
+            32: 1,  # Laser mode enable, boolean
             100: 250.000,  # X-axis steps per millimeter
             101: 250.000,  # Y-axis steps per millimeter
             102: 250.000,  # Z-axis steps per millimeter
@@ -242,6 +242,7 @@ class GRBLEmulator(Module):
             yield code
 
     def commandline(self, data):
+        interpreter = self.kernel.device.interpreter
         command_map = {}
         pos = data.find('(')
         while pos != -1:
@@ -284,13 +285,12 @@ class GRBLEmulator(Module):
             elif data == '$N':
                 pass
             elif data == '$H':
-                return 5  # Homing cycle not enabled by settings.
-            else:
-                return 3  # GRBL '$' system command was not recognized or supported.
-            print(data)
-            return
+                interpreter.command(COMMAND_HOME)
+                return 0
+                # return 5  # Homing cycle not enabled by settings.
+            return 3  # GRBL '$' system command was not recognized or supported.
         if data.startswith('cat'):
-            pass  # EASY shell
+            return 2
         for code in self._tokenize_code(data):
             cmd = code[0]
             if cmd not in command_map:
