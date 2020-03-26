@@ -14,6 +14,7 @@ from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
+from Terminal import Terminal
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
@@ -122,6 +123,7 @@ ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
 ID_MENU_CAMERA = idinc.new()
+ID_MENU_TERMINAL = idinc.new()
 ID_MENU_USB = idinc.new()
 ID_MENU_SPOOLER = idinc.new()
 ID_MENU_JOB = idinc.new()
@@ -218,7 +220,7 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
         wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
-
+        wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
         wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
@@ -262,6 +264,7 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("About"), id=ID_MENU_ABOUT)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Alignment"), id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("CameraInterface"), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Terminal"), id=ID_MENU_TERMINAL)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("DeviceManager"), id=ID_MENU_DEVICE_MANAGER)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Keymap"), id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Preferences"), id=ID_MENU_PREFERENCES)
@@ -2665,6 +2668,7 @@ class wxMeerK40t(Module, wx.App):
         kernel.add_window('Controller', Controller)
         kernel.add_window("Preferences", Preferences)
         kernel.add_window("CameraInterface", CameraInterface)
+        kernel.add_window("Terminal", Terminal)
         kernel.add_window("Settings", Settings)
         kernel.add_window("Rotary", RotarySettings)
         kernel.add_window("Alignment", Alignment)

@@ -380,6 +380,15 @@ class LhymicroInterpreter(Interpreter):
             self.to_default_mode()
         elif command == COMMAND_MODE_CONCAT:
             self.to_concat_mode()
+        elif command == COMMAND_MODE_COMPACT_SET:
+            if self.state != STATE_COMPACT:
+                self.to_compact_mode()
+        elif command == COMMAND_MODE_DEFAULT:
+            if self.state != STATE_DEFAULT:
+                self.to_default_mode()
+        elif command == COMMAND_MODE_CONCAT:
+            if self.state != STATE_CONCAT:
+                self.to_concat_mode()
         elif command == COMMAND_WAIT:
             t = values
             time.sleep(t)

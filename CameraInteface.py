@@ -336,6 +336,8 @@ class CameraInterface(wx.Frame):
             tick = 1.0 / self.kernel.camera_fps
         except ZeroDivisionError:
             tick = 5
+        except AttributeError:
+            return
         if self.kernel is not None:
             self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
 

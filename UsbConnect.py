@@ -3,9 +3,6 @@ import wx
 _ = wx.GetTranslation
 
 
-# TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
-
-
 class UsbConnect(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: UsbConnect.__init__

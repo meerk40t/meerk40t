@@ -7,7 +7,7 @@ from EgvParser import parse_egv
 from K40Controller import K40Controller
 from Kernel import Spooler, Module, Backend, Device
 from LaserCommandConstants import *
-from LhymicroInterpreter import LhymicroInterpreter, STATE_COMPACT
+from LhymicroInterpreter import LhymicroInterpreter
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -103,13 +103,14 @@ class GRBLEmulator(Module):
 
     def __init__(self):
         Module.__init__(self)
-        # Pipe.__init__(self)
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
-        self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # G94 DEFAULT, mm mode
+        self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 DEFAULT, mm mode
+        self.feed_invert = lambda s: (self.scale * 60.0) / s
         self.move_mode = 0
         self.home = None
+        self.home2 = None
         self.on_mode = 1
         self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
         self.buffer = ''
@@ -181,7 +182,7 @@ class GRBLEmulator(Module):
             parts = list()
             parts.append(state)
             parts.append('MPos:%f,%f,%f' % (x, y, z))
-            f = self.kernel.device.interpreter.speed / self.feed_scale
+            f = self.feed_invert(self.kernel.device.interpreter.speed)
             s = self.kernel.device.interpreter.power
             parts.append('FS:%f,%d' % (f, s))
             self.read_info = "<%s>\r\n" % '|'.join(parts)
@@ -191,6 +192,11 @@ class GRBLEmulator(Module):
             interpreter.realtime_command(COMMAND_PAUSE)
         elif bytes_to_write == '\x18':  # Soft reset.
             interpreter.realtime_command(COMMAND_RESET)
+
+    def read(self, size=-1):
+        r = self.read_info
+        self.read_info = None
+        return r
 
     def write(self, data):
         self.read_info = ''
@@ -244,16 +250,20 @@ class GRBLEmulator(Module):
 
     def commandline(self, data):
         interpreter = self.kernel.device.interpreter
-        command_map = {}
         pos = data.find('(')
+        commands = {}
         while pos != -1:
             end = data.find(')')
-            command_map['comment'] = data[pos + 1:end]
+            if 'comment' not in commands:
+                commands['comment'] = []
+            commands['comment'].append(data[pos + 1:end])
             data = data[:pos] + data[end + 1:]
             pos = data.find('(')
         pos = data.find(';')
         if pos != -1:
-            command_map['comment'] = data[pos + 1:]
+            if 'comment' not in commands:
+                commands['comment'] = []
+            commands['comment'].append(data[pos + 1:])
             data = data[:pos]
         if data.startswith('$'):
             if data == '$':
@@ -262,8 +272,8 @@ class GRBLEmulator(Module):
             elif data == '$$':
                 for s in self.settings:
                     v = self.settings[s]
-                    if isinstance(v,int):
-                        self.read_info += "$%d=%d\r\n" % (s,v)
+                    if isinstance(v, int):
+                        self.read_info += "$%d=%d\r\n" % (s, v)
                     elif isinstance(v, float):
                         self.read_info += "$%d=%.3f\r\n" % (s, v)
                 return 0
@@ -292,130 +302,305 @@ class GRBLEmulator(Module):
             return 3  # GRBL '$' system command was not recognized or supported.
         if data.startswith('cat'):
             return 2
-        for code in self._tokenize_code(data):
-            cmd = code[0]
-            if cmd not in command_map:
-                if len(code) >= 2:
-                    command_map[cmd] = code[1]
-                else:
-                    command_map[cmd] = 0
+        for c in self._tokenize_code(data):
+            g = c[0]
+            if g not in commands:
+                commands[g] = []
+            if len(c) >= 2:
+                commands[g].append(c[1])
             else:
-                pass  # This command appears twice.
-        return self.command(command_map)
+                commands[g].append(None)
+        return self.command(commands)
+
+    def command(self, gc):
+        interpreter = self.kernel.device.interpreter
+
+        # 20 Unsupported or invalid g-code command found in block.
+
+        laser_commands = []
+        if 'm' in gc:
+            for v in gc['m']:
+                if v == 0 or v == 1:
+                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                elif v == 2:
+                    return 0
+                elif v == 30:
+                    return 0
+                elif v == 3 or v == 4:
+                    self.on_mode = True
+                elif v == 5:
+                    self.on_mode = False
+                    laser_commands.append((COMMAND_LASER_OFF))
+                elif v == 7:
+                    #  Coolant control.
+                    pass
+                elif v == 8:
+                    self.kernel.signal("coolant", True)
+                elif v == 9:
+                    self.kernel.signal("coolant", False)
+                elif v == 56:
+                    pass  # Parking motion override control.
+                elif v == 911:
+                    pass  # Set TMC2130 holding currents
+                elif v == 912:
+                    pass  # M912: Set TMC2130 running currents
+                else:
+                    return 20
+            del gc['m']
+        if 'g' in gc:
+            for v in gc['g']:
+                if v == 0.0:
+                    self.move_mode = 0
+                elif v == 1.0:
+                    self.move_mode = 1
+                elif v == 2.0:  # CW_ARC
+                    self.move_mode = 2
+                elif v == 3.0:  # CCW_ARC
+                    self.move_mode = 3
+                elif v == 4.0:  # DWELL
+                    laser_commands.append((COMMAND_MODE_DEFAULT))
+                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    if 'p' in gc:
+                        p = float(gc['p'].pop()) / 1000.0
+                        laser_commands.append((COMMAND_WAIT, p))
+                        if len(gc['p']) == 0:
+                            del gc['p']
+                    if 's' in gc:
+                        s = float(gc['s'].pop())
+                        laser_commands.append((COMMAND_WAIT, s))
+                        if len(gc['s']) == 0:
+                            del gc['s']
+                elif v == 10.0:
+                    if 'l' in gc:
+                        l = float(gc['l'].pop(0))
+                        if len(gc['l']) == 0:
+                            del gc['l']
+                        if l == 2.0:
+                            pass
+                        elif l == 20:
+                            pass
+                elif v == 17:
+                    pass  # Set XY coords.
+                elif v == 18:
+                    return 2 # Set the XZ plane for arc.
+                elif v == 19:
+                    return 2 # Set the YZ plane for arc.
+                elif v == 20.0 or v == 70.0:
+                    self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
+                elif v == 21.0 or v == 71.0:
+                    self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
+                elif v == 28.0:
+                    laser_commands.append((COMMAND_MODE_DEFAULT))
+                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    laser_commands.append((COMMAND_HOME))
+                    if self.home is not None:
+                        laser_commands.append((COMMAND_RAPID_MOVE, self.home))
+                elif v == 28.1:
+                    if 'x' in gc and 'y' in gc:
+                        x = gc['x'].pop(0)
+                        if len(gc['x']) == 0:
+                            del gc['x']
+                        y = gc['y'].pop(0)
+                        if len(gc['y']) == 0:
+                            del gc['y']
+                        if x is None:
+                            x = 0
+                        if y is None:
+                            y = 0
+                        self.home = (x, y)
+                elif v == 28.2:
+                    # Run homing cycle.
+                    laser_commands.append((COMMAND_MODE_DEFAULT))
+                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    laser_commands.append((COMMAND_HOME))
+                elif v == 28.3:
+                    laser_commands.append((COMMAND_MODE_DEFAULT))
+                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    laser_commands.append((COMMAND_HOME))
+                    if 'x' in gc:
+                        laser_commands.append((COMMAND_RAPID_MOVE, (gc['x'].pop(0), 0)))
+                    if 'y' in gc:
+                        laser_commands.append((COMMAND_RAPID_MOVE, (0, gc['y'].pop(0))))
+                elif v == 30.0:
+                    # Goto predefined position. Return to secondary home position.
+                    if 'p' in gc:
+                        p = float(gc['p'].pop(0))
+                        if len(gc['p']) == 0:
+                            del gc['p']
+                    else:
+                        p = None
+                    laser_commands.append((COMMAND_MODE_DEFAULT))
+                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    laser_commands.append((COMMAND_HOME))
+                    if self.home2 is not None:
+                        laser_commands.append((COMMAND_RAPID_MOVE, self.home2))
+                elif v == 30.1:
+                    # Stores the current absolute position.
+                    if 'x' in gc and 'y' in gc:
+                        x = gc['x'].pop(0)
+                        if len(gc['x']) == 0:
+                            del gc['x']
+                        y = gc['y'].pop(0)
+                        if len(gc['y']) == 0:
+                            del gc['y']
+                        if x is None:
+                            x = 0
+                        if y is None:
+                            y = 0
+                        self.home2 = (x, y)
+                elif v == 38.1:
+                    # Touch Plate
+                    pass  # Probing TODO: Implement?
+                elif v == 38.2:
+                    # Straight Probe
+                    pass  # Probing TODO: Implement?
+                elif v == 38.3:
+                    # Prope towards workpiece
+                    pass  # Probing TODO: Implement?
+                elif v == 38.4:
+                    # Probe away from workpiece, signal error
+                    pass  # Probing TODO: Implement?
+                elif v == 38.5:
+                    # Probe away from workpiece.
+                    pass  # Probing TODO: Implement?
+                elif v == 40.0:
+                    pass  # Compensation Off
+                elif v == 43.1:
+                    pass  # Dynamic tool Length offsets
+                elif v == 49:
+                    # Cancel tool offset.
+                    pass  # Dynamic tool length offsets
+                elif v == 53:
+                    pass  # Move in Absolute Coordinates
+                elif 54 <= v <= 59:
+                    # Fixure offset 1-6, G10 and G92
+                    system = v - 54
+                    pass  # Work Coordinate Systems
+                elif v == 61:
+                    # Exact path control mode. GRBL required
+                    pass
+                elif v == 80:
+                    # Motion mode cancel. Canned cycle.
+                    pass
+                elif v == 90.0:
+                    laser_commands.append((COMMAND_SET_ABSOLUTE))
+                elif v == 91.0:
+                    laser_commands.append((COMMAND_SET_INCREMENTAL))
+                elif v == 91.1:
+                    # Offset mode for certain cam. Incremental distance mode for arcs.
+                    pass  # ARC IJK Distance Modes # TODO Implement
+                elif v == 92:
+                    # Change the current coords without moving.
+                    pass  # Coordinate Offset TODO: Implement
+                elif v == 92.1:
+                    # Clear Coordinate offset set by 92.
+                    pass  # Clear Coordinate offset TODO: Implement
+                elif v == 93.0:
+                    # Feed Rate in Minutes / Unit
+                    self.feed_convert = lambda s: (self.scale * 60.0) / s
+                    self.feed_invert = lambda s: s / (self.scale * 60.0)
+                elif v == 94.0:
+                    # Feed Rate in Units / Minute
+                    self.feed_convert = lambda s: s / (self.scale * 60.0)
+                    self.feed_invert = lambda s: (self.scale * 60.0) / s
+                    # units to mm, seconds to minutes.
+                else:
+                    return 20  # Unsupported or invalid g-code command found in block.
+            del gc['g']
+        if 'comment' in gc:
+            del gc['comment']
+        if 'f' in gc:  # Feed_rate
+            for v in gc['f']:
+                feed_rate = self.feed_convert(v)
+                laser_commands.append((COMMAND_SET_SPEED, feed_rate))
+        if 's' in gc:
+            for v in gc['s']:
+                laser_commands.append((COMMAND_SET_POWER, v))
+        if 'x' in gc or 'y' in gc:
+            if self.move_mode == 0:
+                laser_commands.append((COMMAND_LASER_OFF))
+                laser_commands.append((COMMAND_MODE_DEFAULT))
+            elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
+                laser_commands.append((COMMAND_MODE_COMPACT_SET))
+            if 'x' in gc:
+                x = gc['x'].pop(0) * self.scale * self.flip_x
+            else:
+                x = 0
+            if 'y' in gc:
+                y = gc['y'].pop(0) * self.scale * self.flip_y
+            else:
+                y = 0
+            if len(gc['x']) == 0:
+                del gc['x']
+            if len(gc['y']) == 0:
+                del gc['y']
+            if self.move_mode == 0:
+                laser_commands.append((COMMAND_LASER_OFF))
+                laser_commands.append((COMMAND_MOVE, (x, y)))
+            elif self.move_mode == 1:
+                if self.on_mode:
+                    laser_commands.append((COMMAND_LASER_ON))
+                laser_commands.append((COMMAND_MOVE, (x, y)))
+            elif self.move_mode == 2:
+                laser_commands.append((COMMAND_MOVE, (x, y)))  # TODO: Implement CW_ARC
+            elif self.move_mode == 3:
+                laser_commands.append((COMMAND_MOVE, (x, y)))  # TODO: Implement CCW_ARC
+        return 0
+
+
+class Console(Module):
+    def __init__(self):
+        Module.__init__(self)
+        self.delegate = None
+        self.read_info = None
+        self.buffer = ''
+
+    def initialize(self, kernel, name=None):
+        Module.initialize(kernel, name)
+        self.kernel = kernel
+        self.name = name
+
+    def shutdown(self, kernel):
+        Module.shutdown(self, kernel)
+
+    def close(self):
+        pass
+
+    def open(self):
+        pass
+
+    def realtime_write(self, bytes_to_write):
+        if self.delegate is not None:
+            self.delegate.realtime_write(bytes_to_write)
 
     def read(self, size=-1):
+        if self.delegate is not None:
+            return self.delegate.read(size)
         r = self.read_info
         self.read_info = None
         return r
 
-    def command(self, gc):
-        if len(gc) == 0:
-            return 0  # empty command ok
-        interpreter = self.kernel.device.interpreter
-        if 'comment' in gc:
-            comment = gc['comment']
-        if 'f' in gc:  # Feed_rate
-            v = gc['f']
-            feed_rate = self.feed_scale * v
-            interpreter.command(COMMAND_SET_SPEED, feed_rate)
-        if 's' in gc:
-            v = gc['s']
-            interpreter.command(COMMAND_SET_POWER, v)
-        if 'g' in gc:
-            g_value = gc['g']
-            if g_value == 0.0:
-                self.move_mode = 0
-            elif g_value == 1.0:
-                self.move_mode = 1
-            elif g_value == 2.0:  # CW_ARC
-                self.move_mode = 2
-            elif g_value == 3.0:  # CCW_ARC
-                self.move_mode = 3
-            elif gc['g'] == 4.0:  # DWELL
-                interpreter.command(COMMAND_MODE_DEFAULT)
-                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                if 'p' in gc:
-                    p = float(gc['p'])
-                    interpreter.command(COMMAND_WAIT, p)
-                if 's' in gc:
-                    s = float(gc['s'])
-                    interpreter.command(COMMAND_WAIT, s)
-            elif gc['g'] == 28.0:
-                interpreter.command(COMMAND_MODE_DEFAULT)
-                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                interpreter.command(COMMAND_HOME)
-                if self.home is not None:
-                    interpreter.command(COMMAND_RAPID_MOVE, self.home)
-            elif gc['g'] == 28.1:
-                if 'x' in gc and 'y' in gc:
-                    self.home = (gc['x'], gc['y'])
-            elif gc['g'] == 28.2:
-                interpreter.command(COMMAND_MODE_DEFAULT)
-                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                interpreter.command(COMMAND_HOME)
-            elif gc['g'] == 28.3:
-                interpreter.command(COMMAND_MODE_DEFAULT)
-                interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                interpreter.command(COMMAND_HOME)
-                if 'x' in gc:
-                    interpreter.command(COMMAND_RAPID_MOVE, (gc['x'],0))
-                if 'y' in gc:
-                    interpreter.command(COMMAND_RAPID_MOVE, (0, gc['y']))
-            elif gc['g'] == 21.0 or gc['g'] == 71.0:
-                self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
-            elif gc['g'] == 20.0 or gc['g'] == 70.0:
-                self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
-            elif gc['g'] == 90.0:
-                interpreter.command(COMMAND_SET_ABSOLUTE)
-            elif gc['g'] == 91.0:
-                interpreter.command(COMMAND_SET_INCREMENTAL)
-            elif gc['g'] == 94.0:
-                # Feed Rate in Units / Minute
-                self.feed_scale = (self.scale / MILS_PER_MM) * (1.0 / 60.0)  # units to mm, seconds to minutes.
-            else:
-                return 20  # Unsupported or invalid g-code command found in block.
-        if 'm' in gc:
-            v = gc['m']
-            if v == 30:
-                return 0
-            elif v == 3 or v == 4:
-                self.on_mode = True
-            elif v == 5:
-                self.on_mode = False
-                interpreter.command(COMMAND_LASER_OFF)
-            elif v == 911:
-                pass  # Set TMC2130 holding currents
-            elif v == 912:
-                pass # M912: Set TMC2130 running currents
-            else:
-                return 20
-        if 'x' in gc or 'y' in gc:
-            if self.move_mode == 0:
-                interpreter.command(COMMAND_LASER_OFF)
-                interpreter.command(COMMAND_MODE_DEFAULT)
-            elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
-                if interpreter.state != STATE_COMPACT:
-                    interpreter.command(COMMAND_MODE_COMPACT)
-            if 'x' in gc:
-                x = gc['x'] * self.scale * self.flip_x
-            else:
-                x = 0
-            if 'y' in gc:
-                y = gc['y'] * self.scale * self.flip_y
-            else:
-                y = 0
-            if self.move_mode == 0:
-                interpreter.command(COMMAND_LASER_OFF)
-                interpreter.command(COMMAND_MOVE, (x, y))
-            elif self.move_mode == 1:
-                if self.on_mode:
-                    interpreter.command(COMMAND_LASER_ON)
-                interpreter.command(COMMAND_MOVE, (x, y))
-            elif self.move_mode == 2:
-                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
-            elif self.move_mode == 3:
-                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
-        return 0  # Unsupported or invalid g-code command found in block.
+    def write(self, data):
+        if self.delegate is not None:
+            self.delegate.write(data)
+        self.read_info = ''
+        if isinstance(data, bytes):
+            data = data.decode()
+        self.buffer += data
+        while '\n' in self.buffer:
+            pos = self.buffer.find('\n')
+            command = self.buffer[0:pos].strip('\r')
+            self.buffer = self.buffer[pos + 1:]
+            self.commandline(command)
+
+    def commandline(self, command):
+        command = command.lower()
+        if command == "grbl":
+            self.delegate = self.kernel.modules['GrblEmulator']
+            self.read_info += "GRBL Mode.\n"
+        else:
+            self.read_info += "Error.\n"
+
 
 
 class SVGWriter:

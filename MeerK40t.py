@@ -54,6 +54,7 @@ kernel.add_module("DxfLoader", DxfLoader())
 kernel.add_module('SVGWriter', SVGWriter())
 emulator = GRBLEmulator()
 kernel.add_module('GrblEmulator', emulator)
+kernel.add_module('Console', Console())
 
 if args.grbl is not None:
     from LaserServer import *
