@@ -314,6 +314,21 @@ class SpoolerThread(Thread):
     def stop(self):
         self.abort(1)
 
+    def spool_line(self, e):
+        if isinstance(e, (tuple, list)):
+            command = e[0]
+            if len(e) >= 2:
+                values = e[1:]
+            else:
+                values = [None]
+        elif isinstance(e, int):
+            command = e
+            values = [None]
+        else:
+            return
+        self.spooler.device.hold()
+        self.spooler.execute(command, *values)
+
     def run(self):
         """
         Main loop for the Spooler Thread.
@@ -327,7 +342,6 @@ class SpoolerThread(Thread):
         The call to hold() will either instantly return, decide to hold, or throw an InterruptError.
         The error will be caught and cause the thread to terminate.
         """
-        command_index = 0
         self.set_state(THREAD_STATE_STARTED)
         try:
             self.spooler.device.hold()
@@ -336,25 +350,19 @@ class SpoolerThread(Thread):
                 if element is None:
                     break  # Nothing left in spooler.
                 self.spooler.device.hold()
-                try:
-                    gen = element.generate
-                except AttributeError:
-                    gen = element
-                for e in gen():
-                    if isinstance(e, (tuple, list)):
-                        command = e[0]
-                        if len(e) >= 2:
-                            values = e[1:]
-                        else:
-                            values = [None]
-                    else:
-                        command = e
-                        values = [None]
-                    command_index += 1
-                    if self.state == THREAD_STATE_ABORT:
-                        break
-                    self.spooler.device.hold()
-                    self.spooler.execute(command, *values)
+                if self.state == THREAD_STATE_ABORT:
+                    break
+                if isinstance(element, (tuple, list)):
+                    self.spool_line(element)
+                else:
+                    try:
+                        gen = element.generate
+                    except AttributeError:
+                        gen = element
+                    for e in gen():
+                        if self.state == THREAD_STATE_ABORT:
+                            break
+                        self.spool_line(e)
                 self.spooler.pop()
         except InterruptedError:
             pass
@@ -421,6 +429,13 @@ class Spooler:
         self.queue_lock.release()
         self.device.signal("spooler;queue", len(self.queue))
         return queue_head
+
+    def add_command(self, *element):
+        self.queue_lock.acquire(True)
+        self.queue.append(element)
+        self.queue_lock.release()
+        self.start_queue_consumer()
+        self.device.signal("spooler;queue", len(self.queue))
 
     def send_job(self, element):
         self.queue_lock.acquire(True)

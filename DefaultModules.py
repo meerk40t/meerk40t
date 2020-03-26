@@ -107,7 +107,7 @@ class GRBLEmulator(Module):
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
         self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 DEFAULT, mm mode
-        self.feed_invert = lambda s: (self.scale * 60.0) / s
+        self.feed_invert = lambda s: self.scale * 60.0 * s
         self.move_mode = 0
         self.home = None
         self.home2 = None
@@ -313,14 +313,15 @@ class GRBLEmulator(Module):
         return self.command(commands)
 
     def command(self, gc):
-        interpreter = self.kernel.device.interpreter
+        spooler = self.kernel.device.spooler
 
         # 20 Unsupported or invalid g-code command found in block.
 
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:
-                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                    spooler.add_command(COMMAND_MODE_DEFAULT_SET)
+                    spooler.add_command(COMMAND_WAIT_BUFFER_EMPTY)
                 elif v == 2:
                     return 0
                 elif v == 30:
@@ -329,14 +330,14 @@ class GRBLEmulator(Module):
                     self.on_mode = True
                 elif v == 5:
                     self.on_mode = False
-                    interpreter.command(COMMAND_LASER_OFF)
+                    spooler.add_command(COMMAND_LASER_OFF)
                 elif v == 7:
                     #  Coolant control.
                     pass
                 elif v == 8:
-                    self.kernel.signal("coolant", True)
+                    spooler.add_command(COMMAND_SIGNAL, ('coolant', True))
                 elif v == 9:
-                    self.kernel.signal("coolant", False)
+                    spooler.add_command(COMMAND_SIGNAL, ('coolant', False))
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -359,18 +360,17 @@ class GRBLEmulator(Module):
                 elif v == 3.0:  # CCW_ARC
                     self.move_mode = 3
                 elif v == 4.0:  # DWELL
-                    interpreter.command(COMMAND_MODE_DEFAULT)
-                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                    t = 0
                     if 'p' in gc:
-                        p = float(gc['p'].pop()) / 1000.0
-                        interpreter.command(COMMAND_WAIT, p)
+                        t = float(gc['p'].pop()) / 1000.0
                         if len(gc['p']) == 0:
                             del gc['p']
                     if 's' in gc:
-                        s = float(gc['s'].pop())
-                        interpreter.command(COMMAND_WAIT, s)
+                        t = float(gc['s'].pop())
                         if len(gc['s']) == 0:
                             del gc['s']
+                    spooler.add_command(COMMAND_MODE_DEFAULT_SET)
+                    spooler.add_command(COMMAND_WAIT, t)
                 elif v == 10.0:
                     if 'l' in gc:
                         l = float(gc['l'].pop(0))
@@ -383,19 +383,18 @@ class GRBLEmulator(Module):
                 elif v == 17:
                     pass  # Set XY coords.
                 elif v == 18:
-                    return 2 # Set the XZ plane for arc.
+                    return 2  # Set the XZ plane for arc.
                 elif v == 19:
-                    return 2 # Set the YZ plane for arc.
+                    return 2  # Set the YZ plane for arc.
                 elif v == 20.0 or v == 70.0:
                     self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
                 elif v == 21.0 or v == 71.0:
                     self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
-                    interpreter.command(COMMAND_MODE_DEFAULT)
-                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                    interpreter.command(COMMAND_HOME)
+                    spooler.add_command(COMMAND_MODE_DEFAULT_SET)
+                    spooler.add_command(COMMAND_HOME)
                     if self.home is not None:
-                        interpreter.command(COMMAND_RAPID_MOVE, self.home)
+                        spooler.add_command(COMMAND_RAPID_MOVE, self.home)
                 elif v == 28.1:
                     if 'x' in gc and 'y' in gc:
                         x = gc['x'].pop(0)
@@ -411,17 +410,25 @@ class GRBLEmulator(Module):
                         self.home = (x, y)
                 elif v == 28.2:
                     # Run homing cycle.
-                    interpreter.command(COMMAND_MODE_DEFAULT)
-                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                    interpreter.command(COMMAND_HOME)
+                    spooler.add_command(COMMAND_MODE_DEFAULT)
+                    spooler.add_command(COMMAND_HOME)
                 elif v == 28.3:
-                    interpreter.command(COMMAND_MODE_DEFAULT)
-                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                    interpreter.command(COMMAND_HOME)
+                    spooler.add_command(COMMAND_MODE_DEFAULT)
+                    spooler.add_command(COMMAND_HOME)
                     if 'x' in gc:
-                        interpreter.command(COMMAND_RAPID_MOVE, (gc['x'].pop(0), 0))
+                        x = gc['x'].pop(0)
+                        if len(gc['x']) == 0:
+                            del gc['x']
+                        if x is None:
+                            x = 0
+                        spooler.add_command(COMMAND_RAPID_MOVE, (x, 0))
                     if 'y' in gc:
-                        interpreter.command(COMMAND_RAPID_MOVE, (0, gc['y'].pop(0)))
+                        y = gc['y'].pop(0)
+                        if len(gc['y']) == 0:
+                            del gc['y']
+                        if y is None:
+                            y = 0
+                        spooler.add_command(COMMAND_RAPID_MOVE, (0, y))
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
                     if 'p' in gc:
@@ -430,11 +437,10 @@ class GRBLEmulator(Module):
                             del gc['p']
                     else:
                         p = None
-                    interpreter.command(COMMAND_MODE_DEFAULT)
-                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
-                    interpreter.command(COMMAND_HOME)
+                    spooler.add_command(COMMAND_MODE_DEFAULT)
+                    spooler.add_command(COMMAND_HOME)
                     if self.home2 is not None:
-                        interpreter.command(COMMAND_RAPID_MOVE, self.home2)
+                        spooler.add_command(COMMAND_RAPID_MOVE, self.home2)
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if 'x' in gc and 'y' in gc:
@@ -451,19 +457,19 @@ class GRBLEmulator(Module):
                         self.home2 = (x, y)
                 elif v == 38.1:
                     # Touch Plate
-                    pass  # Probing TODO: Implement?
+                    pass
                 elif v == 38.2:
                     # Straight Probe
-                    pass  # Probing TODO: Implement?
+                    pass
                 elif v == 38.3:
                     # Prope towards workpiece
-                    pass  # Probing TODO: Implement?
+                    pass
                 elif v == 38.4:
                     # Probe away from workpiece, signal error
-                    pass  # Probing TODO: Implement?
+                    pass
                 elif v == 38.5:
                     # Probe away from workpiece.
-                    pass  # Probing TODO: Implement?
+                    pass
                 elif v == 40.0:
                     pass  # Compensation Off
                 elif v == 43.1:
@@ -484,9 +490,9 @@ class GRBLEmulator(Module):
                     # Motion mode cancel. Canned cycle.
                     pass
                 elif v == 90.0:
-                    interpreter.command(COMMAND_SET_ABSOLUTE)
+                    spooler.add_command(COMMAND_SET_ABSOLUTE)
                 elif v == 91.0:
-                    interpreter.command(COMMAND_SET_INCREMENTAL)
+                    spooler.add_command(COMMAND_SET_INCREMENTAL)
                 elif v == 91.1:
                     # Offset mode for certain cam. Incremental distance mode for arcs.
                     pass  # ARC IJK Distance Modes # TODO Implement
@@ -499,11 +505,11 @@ class GRBLEmulator(Module):
                 elif v == 93.0:
                     # Feed Rate in Minutes / Unit
                     self.feed_convert = lambda s: (self.scale * 60.0) / s
-                    self.feed_invert = lambda s: s / (self.scale * 60.0)
+                    self.feed_invert = lambda s: (self.scale * 60.0) / s
                 elif v == 94.0:
                     # Feed Rate in Units / Minute
                     self.feed_convert = lambda s: s / (self.scale * 60.0)
-                    self.feed_invert = lambda s: (self.scale * 60.0) / s
+                    self.feed_invert = lambda s:  s * (self.scale * 60.0)
                     # units to mm, seconds to minutes.
                 else:
                     return 20  # Unsupported or invalid g-code command found in block.
@@ -515,39 +521,47 @@ class GRBLEmulator(Module):
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 feed_rate = self.feed_convert(v)
-                interpreter.command(COMMAND_SET_SPEED, feed_rate)
+                spooler.add_command(COMMAND_SET_SPEED, feed_rate)
         if 's' in gc:
             for v in gc['s']:
-                interpreter.command(COMMAND_SET_POWER, v)
+                spooler.add_command(COMMAND_SET_POWER, v)
         if 'x' in gc or 'y' in gc:
             if self.move_mode == 0:
-                interpreter.command(COMMAND_LASER_OFF)
-                interpreter.command(COMMAND_MODE_DEFAULT)
+                spooler.add_command(COMMAND_LASER_OFF)
+                spooler.add_command(COMMAND_MODE_DEFAULT)
             elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
-                interpreter.command(COMMAND_MODE_COMPACT_SET)
+                spooler.add_command(COMMAND_MODE_COMPACT_SET)
             if 'x' in gc:
-                x = gc['x'].pop(0) * self.scale * self.flip_x
+                x = gc['x'].pop(0)
+                if x is None:
+                    x = 0
+                else:
+                    x *= self.scale * self.flip_x
+                if len(gc['x']) == 0:
+                    del gc['x']
             else:
                 x = 0
             if 'y' in gc:
-                y = gc['y'].pop(0) * self.scale * self.flip_y
+                y = gc['y'].pop(0)
+                if y is None:
+                    y = 0
+                else:
+                    y *= self.scale * self.flip_y
+                if len(gc['y']) == 0:
+                    del gc['y']
             else:
                 y = 0
-            if len(gc['x']) == 0:
-                del gc['x']
-            if len(gc['y']) == 0:
-                del gc['y']
             if self.move_mode == 0:
-                interpreter.command(COMMAND_LASER_OFF)
-                interpreter.command(COMMAND_MOVE, (x, y))
+                spooler.add_command(COMMAND_LASER_OFF)
+                spooler.add_command(COMMAND_MOVE, (x, y))
             elif self.move_mode == 1:
                 if self.on_mode:
-                    interpreter.command(COMMAND_LASER_ON)
-                interpreter.command(COMMAND_MOVE, (x, y))
+                    spooler.add_command(COMMAND_LASER_ON)
+                spooler.add_command(COMMAND_MOVE, (x, y))
             elif self.move_mode == 2:
-                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
+                spooler.add_command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
-                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
+                spooler.add_command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
         return 0
 
 
