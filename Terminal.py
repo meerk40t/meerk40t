@@ -63,7 +63,8 @@ class Terminal(wx.Frame):
     def update_console(self):
         if self.pipe is not None:
             r = self.pipe.read()
-            self.text_console.AppendText(r)
+            if r is not None:
+                self.text_console.AppendText(r)
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         if self.pipe is not None:

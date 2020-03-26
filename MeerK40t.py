@@ -1,5 +1,5 @@
-import sys
 import argparse
+import sys
 
 from DefaultModules import *
 from Kernel import *
@@ -44,6 +44,7 @@ args = parser.parse_args(sys.argv[1:])
 
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
+
     meerk40tgui = wxMeerK40t()
     kernel.add_module('MeerK40t', meerk40tgui)
 kernel.add_module('K40Stock', K40StockBackend())
@@ -58,6 +59,7 @@ kernel.add_module('Console', Console())
 
 if args.grbl is not None:
     from LaserServer import *
+
     server = LaserServer(args.grbl)
 
     server.set_pipe(emulator)
@@ -84,7 +86,7 @@ if args.list is not None:
     elif list_name == 'vars':
         for attr in dir(kernel.device):
             v = getattr(kernel.device, attr)
-            if attr.startswith('_') or not isinstance(v, (int,float,str,bool)):
+            if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                 continue
             print('"%s" := %s' % (attr, str(v)))
     elif list_name == 'controls':
@@ -111,10 +113,12 @@ if args.set is not None:
 
 if args.input is not None:
     import os
+
     kernel.load(os.path.realpath(args.input.name))
 
 if args.path is not None:
     from svgelements import Path
+
     kernel.elements.append(Path(args.path))
 
 if args.verbose:
@@ -130,7 +134,7 @@ if args.mock:
     kernel.device.mock = True
 
 if args.egv is not None:
-    kernel.device.pipe.write(bytes(args.egv.replace('$', '\n') + '\n',"utf8"))
+    kernel.device.pipe.write(bytes(args.egv.replace('$', '\n') + '\n', "utf8"))
 
 if args.control is not None:
     for control in args.control:
@@ -148,6 +152,7 @@ if args.auto:
 
 if args.output is not None:
     import os
+
     kernel.save(os.path.realpath(args.output.name))
 
 kernel.boot()

@@ -317,11 +317,10 @@ class GRBLEmulator(Module):
 
         # 20 Unsupported or invalid g-code command found in block.
 
-        laser_commands = []
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:
-                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
                 elif v == 2:
                     return 0
                 elif v == 30:
@@ -330,7 +329,7 @@ class GRBLEmulator(Module):
                     self.on_mode = True
                 elif v == 5:
                     self.on_mode = False
-                    laser_commands.append((COMMAND_LASER_OFF))
+                    interpreter.command(COMMAND_LASER_OFF)
                 elif v == 7:
                     #  Coolant control.
                     pass
@@ -349,7 +348,9 @@ class GRBLEmulator(Module):
             del gc['m']
         if 'g' in gc:
             for v in gc['g']:
-                if v == 0.0:
+                if v is None:
+                    return 2
+                elif v == 0.0:
                     self.move_mode = 0
                 elif v == 1.0:
                     self.move_mode = 1
@@ -358,16 +359,16 @@ class GRBLEmulator(Module):
                 elif v == 3.0:  # CCW_ARC
                     self.move_mode = 3
                 elif v == 4.0:  # DWELL
-                    laser_commands.append((COMMAND_MODE_DEFAULT))
-                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
+                    interpreter.command(COMMAND_MODE_DEFAULT)
+                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
                     if 'p' in gc:
                         p = float(gc['p'].pop()) / 1000.0
-                        laser_commands.append((COMMAND_WAIT, p))
+                        interpreter.command(COMMAND_WAIT, p)
                         if len(gc['p']) == 0:
                             del gc['p']
                     if 's' in gc:
                         s = float(gc['s'].pop())
-                        laser_commands.append((COMMAND_WAIT, s))
+                        interpreter.command(COMMAND_WAIT, s)
                         if len(gc['s']) == 0:
                             del gc['s']
                 elif v == 10.0:
@@ -390,11 +391,11 @@ class GRBLEmulator(Module):
                 elif v == 21.0 or v == 71.0:
                     self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
-                    laser_commands.append((COMMAND_MODE_DEFAULT))
-                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
-                    laser_commands.append((COMMAND_HOME))
+                    interpreter.command(COMMAND_MODE_DEFAULT)
+                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                    interpreter.command(COMMAND_HOME)
                     if self.home is not None:
-                        laser_commands.append((COMMAND_RAPID_MOVE, self.home))
+                        interpreter.command(COMMAND_RAPID_MOVE, self.home)
                 elif v == 28.1:
                     if 'x' in gc and 'y' in gc:
                         x = gc['x'].pop(0)
@@ -410,17 +411,17 @@ class GRBLEmulator(Module):
                         self.home = (x, y)
                 elif v == 28.2:
                     # Run homing cycle.
-                    laser_commands.append((COMMAND_MODE_DEFAULT))
-                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
-                    laser_commands.append((COMMAND_HOME))
+                    interpreter.command(COMMAND_MODE_DEFAULT)
+                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                    interpreter.command(COMMAND_HOME)
                 elif v == 28.3:
-                    laser_commands.append((COMMAND_MODE_DEFAULT))
-                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
-                    laser_commands.append((COMMAND_HOME))
+                    interpreter.command(COMMAND_MODE_DEFAULT)
+                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                    interpreter.command(COMMAND_HOME)
                     if 'x' in gc:
-                        laser_commands.append((COMMAND_RAPID_MOVE, (gc['x'].pop(0), 0)))
+                        interpreter.command(COMMAND_RAPID_MOVE, (gc['x'].pop(0), 0))
                     if 'y' in gc:
-                        laser_commands.append((COMMAND_RAPID_MOVE, (0, gc['y'].pop(0))))
+                        interpreter.command(COMMAND_RAPID_MOVE, (0, gc['y'].pop(0)))
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
                     if 'p' in gc:
@@ -429,11 +430,11 @@ class GRBLEmulator(Module):
                             del gc['p']
                     else:
                         p = None
-                    laser_commands.append((COMMAND_MODE_DEFAULT))
-                    laser_commands.append((COMMAND_WAIT_BUFFER_EMPTY))
-                    laser_commands.append((COMMAND_HOME))
+                    interpreter.command(COMMAND_MODE_DEFAULT)
+                    interpreter.command(COMMAND_WAIT_BUFFER_EMPTY)
+                    interpreter.command(COMMAND_HOME)
                     if self.home2 is not None:
-                        laser_commands.append((COMMAND_RAPID_MOVE, self.home2))
+                        interpreter.command(COMMAND_RAPID_MOVE, self.home2)
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if 'x' in gc and 'y' in gc:
@@ -483,9 +484,9 @@ class GRBLEmulator(Module):
                     # Motion mode cancel. Canned cycle.
                     pass
                 elif v == 90.0:
-                    laser_commands.append((COMMAND_SET_ABSOLUTE))
+                    interpreter.command(COMMAND_SET_ABSOLUTE)
                 elif v == 91.0:
-                    laser_commands.append((COMMAND_SET_INCREMENTAL))
+                    interpreter.command(COMMAND_SET_INCREMENTAL)
                 elif v == 91.1:
                     # Offset mode for certain cam. Incremental distance mode for arcs.
                     pass  # ARC IJK Distance Modes # TODO Implement
@@ -511,17 +512,19 @@ class GRBLEmulator(Module):
             del gc['comment']
         if 'f' in gc:  # Feed_rate
             for v in gc['f']:
+                if v is None:
+                    return 2  # Numeric value format is not valid or missing an expected value.
                 feed_rate = self.feed_convert(v)
-                laser_commands.append((COMMAND_SET_SPEED, feed_rate))
+                interpreter.command(COMMAND_SET_SPEED, feed_rate)
         if 's' in gc:
             for v in gc['s']:
-                laser_commands.append((COMMAND_SET_POWER, v))
+                interpreter.command(COMMAND_SET_POWER, v)
         if 'x' in gc or 'y' in gc:
             if self.move_mode == 0:
-                laser_commands.append((COMMAND_LASER_OFF))
-                laser_commands.append((COMMAND_MODE_DEFAULT))
+                interpreter.command(COMMAND_LASER_OFF)
+                interpreter.command(COMMAND_MODE_DEFAULT)
             elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
-                laser_commands.append((COMMAND_MODE_COMPACT_SET))
+                interpreter.command(COMMAND_MODE_COMPACT_SET)
             if 'x' in gc:
                 x = gc['x'].pop(0) * self.scale * self.flip_x
             else:
@@ -535,16 +538,16 @@ class GRBLEmulator(Module):
             if len(gc['y']) == 0:
                 del gc['y']
             if self.move_mode == 0:
-                laser_commands.append((COMMAND_LASER_OFF))
-                laser_commands.append((COMMAND_MOVE, (x, y)))
+                interpreter.command(COMMAND_LASER_OFF)
+                interpreter.command(COMMAND_MOVE, (x, y))
             elif self.move_mode == 1:
                 if self.on_mode:
-                    laser_commands.append((COMMAND_LASER_ON))
-                laser_commands.append((COMMAND_MOVE, (x, y)))
+                    interpreter.command(COMMAND_LASER_ON)
+                interpreter.command(COMMAND_MOVE, (x, y))
             elif self.move_mode == 2:
-                laser_commands.append((COMMAND_MOVE, (x, y)))  # TODO: Implement CW_ARC
+                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
-                laser_commands.append((COMMAND_MOVE, (x, y)))  # TODO: Implement CCW_ARC
+                interpreter.command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
         return 0
 
 
@@ -581,6 +584,10 @@ class Console(Module):
         return r
 
     def write(self, data):
+        if data == 'exit\n':  # process first to quit a delegate.
+            self.delegate = None
+            self.read_info += "Exited Mode.\n"
+            return
         if self.delegate is not None:
             self.delegate.write(data)
         self.read_info = ''
@@ -594,13 +601,49 @@ class Console(Module):
             self.commandline(command)
 
     def commandline(self, command):
-        command = command.lower()
         if command == "grbl":
             self.delegate = self.kernel.modules['GrblEmulator']
             self.read_info += "GRBL Mode.\n"
+            return
+        elif command == "set":
+            for attr in dir(self.kernel.device):
+                v = getattr(self.kernel.device, attr)
+                if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
+                    continue
+                self.read_info += '"%s" := %s\n' % (attr, str(v))
+        elif command.startswith('set '):
+            var = list(command.split(' '))
+            if len(var) >= 3:
+                attr = var[1]
+                value = var[2]
+                if hasattr(self.kernel.device, attr):
+                    v = getattr(self.kernel.device, attr)
+                    if isinstance(v, bool):
+                        if value == 'False' or value == 'false' or value == 0:
+                            setattr(self.kernel.device, attr, False)
+                        else:
+                            setattr(self.kernel.device, attr, True)
+                    elif isinstance(v, int):
+                        setattr(self.kernel.device, attr, int(value))
+                    elif isinstance(v, float):
+                        setattr(self.kernel.device, attr, float(value))
+                    elif isinstance(v, str):
+                        setattr(self.kernel.device, attr, str(value))
+        elif command == 'control':
+            for control_name in self.kernel.controls:
+                self.read_info += '%s\n' % control_name
+        elif command.startswith('control '):
+            control_name = command[len('control '):]
+            if control_name in self.kernel.controls:
+                self.kernel.device.execute(control_name)
+                self.read_info += "Executed '%s'\n" % control_name
+            else:
+                self.read_info += "Control '%s' not found.\n" % control_name
+        elif command == 'refresh':
+            self.kernel.signal('refresh_scene')
+            self.read_info += "Refreshed.\n"
         else:
             self.read_info += "Error.\n"
-
 
 
 class SVGWriter:
