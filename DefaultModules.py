@@ -164,6 +164,9 @@ class GRBLEmulator(Module):
         Module.initialize(kernel, name)
         self.kernel = kernel
         self.name = name
+        if self.kernel.device is not None:
+            self.flip_x = self.kernel.device.setting(int, "gcode_flip_x", self.flip_x)
+            self.flip_y = self.kernel.device.setting(int, "gcode_flip_y", self.flip_y)
 
     def shutdown(self, kernel):
         Module.shutdown(self, kernel)
