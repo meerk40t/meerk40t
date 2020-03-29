@@ -31,6 +31,10 @@ parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device p
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
 parser.add_argument('-g', '--grbl', type=int, help='run grbl-emulator on given port.')
+parser.add_argument('-gyf', '--grbl_flip_y', action='store_true', help="grbl y-flip")
+parser.add_argument('-gxf', '--grbl_flip_x', action='store_true', help="grbl x-flip")
+parser.add_argument('-gxa', '--grbl_adjust_x', type=int, help='adjust grbl home_x position')
+parser.add_argument('-gya', '--grbl_adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-e', '--egv', type=str, help='writes raw egv data to the controller')
 parser.add_argument('-p', '--path', type=str, help='add SVG Path command')
 parser.add_argument('-c', '--control', nargs='+', help="execute control command")
@@ -56,6 +60,20 @@ kernel.add_module('SVGWriter', SVGWriter())
 emulator = GRBLEmulator()
 kernel.add_module('GrblEmulator', emulator)
 kernel.add_module('Console', Console())
+
+if args.grbl_flip_y:
+    emulator.flip_y = -1
+
+if args.grbl_flip_x:
+    emulator.flip_x = -1
+
+if args.grbl_adjust_y is not None and args.grbl_adjust_x is not None:
+    emulator.home_adjust = (args.grbl_adjust_x, args.grbl_adjust_y)
+elif args.grbl_adjust_y is not None:
+    emulator.home_adjust = (0, args.grbl_adjust_y)
+elif args.grbl_adjust_x is not None:
+    emulator.home_adjust = (args.grbl_adjust_x, 0)
+
 
 if args.grbl is not None:
     from LaserServer import *

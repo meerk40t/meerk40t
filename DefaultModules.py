@@ -103,6 +103,7 @@ class GRBLEmulator(Module):
 
     def __init__(self):
         Module.__init__(self)
+        self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
@@ -164,9 +165,6 @@ class GRBLEmulator(Module):
         Module.initialize(kernel, name)
         self.kernel = kernel
         self.name = name
-        if self.kernel.device is not None:
-            self.flip_x = self.kernel.device.setting(int, "gcode_flip_x", self.flip_x)
-            self.flip_y = self.kernel.device.setting(int, "gcode_flip_y", self.flip_y)
 
     def shutdown(self, kernel):
         Module.shutdown(self, kernel)
@@ -252,7 +250,7 @@ class GRBLEmulator(Module):
             yield code
 
     def commandline(self, data):
-        interpreter = self.kernel.device.interpreter
+        spooler = self.kernel.device.spooler
         pos = data.find('(')
         commands = {}
         while pos != -1:
@@ -299,7 +297,9 @@ class GRBLEmulator(Module):
             elif data == '$N':
                 pass
             elif data == '$H':
-                interpreter.command(COMMAND_HOME)
+                spooler.add_command(COMMAND_HOME)
+                if self.home_adjust is not None:
+                    spooler.add_command(COMMAND_RAPID_MOVE, (self.home_adjust[0], self.home_adjust[1]))
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             return 3  # GRBL '$' system command was not recognized or supported.
@@ -393,6 +393,8 @@ class GRBLEmulator(Module):
                 elif v == 28.0:
                     spooler.add_command(COMMAND_MODE_DEFAULT_SET)
                     spooler.add_command(COMMAND_HOME)
+                    if self.home_adjust is not None:
+                        spooler.add_command(COMMAND_RAPID_MOVE, (self.home_adjust[0], self.home_adjust[1]))
                     if self.home is not None:
                         spooler.add_command(COMMAND_RAPID_MOVE, self.home)
                 elif v == 28.1:
@@ -412,9 +414,13 @@ class GRBLEmulator(Module):
                     # Run homing cycle.
                     spooler.add_command(COMMAND_MODE_DEFAULT)
                     spooler.add_command(COMMAND_HOME)
+                    if self.home_adjust is not None:
+                        spooler.add_command(COMMAND_RAPID_MOVE, (self.home_adjust[0], self.home_adjust[1]))
                 elif v == 28.3:
                     spooler.add_command(COMMAND_MODE_DEFAULT)
                     spooler.add_command(COMMAND_HOME)
+                    if self.home_adjust is not None:
+                        spooler.add_command(COMMAND_RAPID_MOVE, (self.home_adjust[0], self.home_adjust[1]))
                     if 'x' in gc:
                         x = gc['x'].pop(0)
                         if len(gc['x']) == 0:
@@ -439,6 +445,8 @@ class GRBLEmulator(Module):
                         p = None
                     spooler.add_command(COMMAND_MODE_DEFAULT)
                     spooler.add_command(COMMAND_HOME)
+                    if self.home_adjust is not None:
+                        spooler.add_command(COMMAND_RAPID_MOVE, (self.home_adjust[0], self.home_adjust[1]))
                     if self.home2 is not None:
                         spooler.add_command(COMMAND_RAPID_MOVE, self.home2)
                 elif v == 30.1:
