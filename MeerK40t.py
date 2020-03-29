@@ -67,6 +67,7 @@ if args.grbl is not None:
         kernel.add_module('GRBLServer', server)
     except OSError:
         print('Server failed on port: %d' % args.grbl)
+        from sys import exit
         exit(1)
 
 #
