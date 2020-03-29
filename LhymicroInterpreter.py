@@ -211,8 +211,11 @@ class LhymicroInterpreter(Interpreter):
             self.up()
             self.pulse_modulation = False
             if self.state == STATE_COMPACT:
+                if self.is_relative:
+                    x += sx
+                    y += sy
                 for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
-                    self.move(x, y)
+                    self.move_absolute(x, y)
             else:
                 self.move(x, y)
         elif command == COMMAND_MOVE:
@@ -222,8 +225,11 @@ class LhymicroInterpreter(Interpreter):
             self.pulse_modulation = self.is_on
 
             if self.state == STATE_COMPACT:
+                if self.is_relative:
+                    x += sx
+                    y += sy
                 for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
-                    self.move(x, y)
+                    self.move_absolute(x, y)
             else:
                 self.move(x, y)
         elif command == COMMAND_CUT:
@@ -231,12 +237,15 @@ class LhymicroInterpreter(Interpreter):
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
+            if self.is_relative:
+                x += sx
+                y += sy
             for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
                 if on == 0:
                     self.up()
                 else:
                     self.down()
-                self.move(x, y)
+                self.move_absolute(x, y)
         elif command == COMMAND_HSTEP:
             self.v_switch()
         elif command == COMMAND_VSTEP:

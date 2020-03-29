@@ -314,9 +314,6 @@ class GRBLEmulator(Module):
 
     def command(self, gc):
         spooler = self.kernel.device.spooler
-
-        # 20 Unsupported or invalid g-code command found in block.
-
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:
@@ -522,9 +519,15 @@ class GRBLEmulator(Module):
                     return 2  # Numeric value format is not valid or missing an expected value.
                 feed_rate = self.feed_convert(v)
                 spooler.add_command(COMMAND_SET_SPEED, feed_rate)
+            del gc['f']
         if 's' in gc:
             for v in gc['s']:
+                if v is None:
+                    return 2 # Numeric value format is not valid or missing an expected value.
+                if 0.0 < v <= 1.0:
+                    v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 spooler.add_command(COMMAND_SET_POWER, v)
+            del gc['s']
         if 'x' in gc or 'y' in gc:
             if self.move_mode == 0:
                 spooler.add_command(COMMAND_LASER_OFF)
