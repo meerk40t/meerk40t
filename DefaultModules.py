@@ -5,7 +5,7 @@ from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from EgvParser import parse_egv
 from K40Controller import K40Controller
-from Kernel import Spooler, Module, Backend, Device
+from Kernel import Spooler, Module, Backend, Device, Pipe
 from LaserCommandConstants import *
 from LhymicroInterpreter import LhymicroInterpreter
 from svgelements import *
@@ -268,7 +268,7 @@ class GRBLEmulator(Module):
             data = data[:pos]
         if data.startswith('$'):
             if data == '$':
-                self.read_info = "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                self.read_info += "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
                 return 0
             elif data == '$$':
                 for s in self.settings:
@@ -579,7 +579,7 @@ class GRBLEmulator(Module):
         return 0
 
 
-class Console(Module):
+class Console(Module, Pipe):
     def __init__(self):
         Module.__init__(self)
         self.delegate = None

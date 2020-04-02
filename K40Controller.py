@@ -151,9 +151,9 @@ class ControllerQueueThread(threading.Thread):
             self.set_state(THREAD_STATE_FINISHED)
 
 
-class K40Controller(Pipe):
+class K40Controller(Module, Pipe):
     def __init__(self, device=None):
-        Pipe.__init__(self, device)
+        Pipe.__init__(self)
         self.debug_file = None
         self.driver = None
         self.state = THREAD_STATE_UNSTARTED
@@ -163,8 +163,6 @@ class K40Controller(Pipe):
         self.preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
         self.queue_lock = threading.Lock()
         self.preempt_lock = threading.Lock()
-        self.device.setting(int, 'packet_count',0)
-        self.device.setting(int, 'rejected_count', 0)
 
         self.status = [0] * 6
         self.usb_state = -1
@@ -174,6 +172,12 @@ class K40Controller(Pipe):
         self.reset()
 
         self.abort_waiting = False
+        self.device = None
+
+    def initialize(self, kernel, name=None):
+        self.device = kernel.device
+        self.device.setting(int, 'packet_count', 0)
+        self.device.setting(int, 'rejected_count', 0)
 
         self.device.add_control("Connect_USB", self.open)
         self.device.add_control("Disconnect_USB", self.close)

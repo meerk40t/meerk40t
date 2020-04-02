@@ -497,14 +497,12 @@ class Interpreter:
 
 class Pipe:
     """
-    Write location in the kernel. Provides general information about buffer size but is
-    agnostic as to where the code ends up.
-
-    Example pipes are mock, file, print, libusb-driver, and ch341-win. (these may or maynot exist).
+    Write/Monitor data flow in the kernel. Provides general information about buffer size in through len() builtin.
+    Pipes have a write and realtime_write functions. And a monitor registry which is given any output from pipe.
     """
 
-    def __init__(self, device=None):
-        self.device = device
+    def __init__(self):
+        self.monitors = None
 
     def __len__(self):
         return 0
@@ -529,9 +527,20 @@ class Pipe:
     def write(self, bytes_to_write):
         raise NotImplementedError
 
-    def read(self, size=-1):
-        """Most pipes will be outstreams but some could provide data through this method."""
-        raise NotImplementedError
+    def post(self, channel, text):
+        if self.monitors is not None:
+            for m in self.monitors:
+                m(channel, text)
+
+    def add_monitor(self, monitor_function):
+        if self.monitors is None:
+            self.monitors = [monitor_function]
+        else:
+            self.monitors.append(monitor_function)
+
+    def remove_monitor(self, monitor_function):
+        if self.monitors is not None:
+            self.monitors.remove(monitor_function)
 
     def realtime_write(self, bytes_to_write):
         """
