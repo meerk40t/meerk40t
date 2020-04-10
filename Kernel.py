@@ -129,13 +129,25 @@ class Scheduler(Thread):
 
 
 class Module:
+    """
+    Modules are a generic lifecycle object. When registered they are passed the kernel they are registered to, and when
+    the kernel is shutdown, the shutdown event is called. This permits knowing registering and unregistering of other
+    kernel objects.
+    """
     def __init__(self):
         self.kernel = None
         self.name = None
+        self.device = None
 
     def initialize(self, kernel, name=None):
         self.kernel = kernel
         self.name = name
+
+    def register(self, device):
+        self.device = device
+
+    def deregister(self, device):
+        pass
 
     def shutdown(self, kernel):
         self.kernel = None
@@ -144,11 +156,20 @@ class Module:
 
 
 class Backend:
+    """Backend is an available device type to be instanced. This isn't a device instance itself, but merely a registered
+    type of a device. For example you could have multiple Ruida, Lhystudios, Moshiboard, etc devices. But only one type
+    of registered backend for each of those types."""
     def __init__(self, kernel=None, uid=None):
         self.kernel = kernel
         self.uid = uid
 
     def create_device(self, uid):
+        """
+        Create an instance of the registered device type.
+
+        :param uid: Unique identifier.
+        :return: device created
+        """
         pass
 
 
@@ -514,10 +535,6 @@ class Pipe:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    @property
-    def name(self):
-        return NotImplementedError
-
     def open(self):
         raise NotImplementedError
 
@@ -532,13 +549,13 @@ class Pipe:
             for m in self.monitors:
                 m(channel, text)
 
-    def add_monitor(self, monitor_function):
+    def monitor(self, monitor_function):
         if self.monitors is None:
             self.monitors = [monitor_function]
         else:
             self.monitors.append(monitor_function)
 
-    def remove_monitor(self, monitor_function):
+    def unmonitor(self, monitor_function):
         if self.monitors is not None:
             self.monitors.remove(monitor_function)
 
@@ -979,11 +996,18 @@ class Kernel:
         self.devices[device_name] = device
 
     def activate_device(self, device_name):
+        original = self.device
         if device_name is None:
             self.device = None
         else:
             self.device = self.devices[device_name]
-        self.signal("device", self.device)
+        if self.device is not original:
+            for module_name in self.modules:
+                module = self.modules[module_name]
+                if original is not None:
+                    module.deregister(original)
+                module.register(self.device)
+            self.signal("device", self.device)
 
     def add_control(self, control_name, function):
         self.controls[control_name] = function

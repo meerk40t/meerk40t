@@ -16,12 +16,6 @@ STATUS_BUSY = 238
 STATUS_POWER = 239
 
 
-# 0xEF, 11101111
-
-# 255, 206, 111, 148, 19, 255
-# 255, 206, 111, 12, 18, 0
-
-
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2
         packet = [0] * 30
@@ -152,10 +146,24 @@ class ControllerQueueThread(threading.Thread):
 
 
 class K40Controller(Module, Pipe):
-    def __init__(self, device=None):
+    """
+    K40 Controller controls the primary Lhystudios boards sending any queued data to the USB when the signal is not
+    busy.
+
+    This is registered in the kernel as a module. Saving a few persistent settings like packet_count and registering
+    a couple controls like Connect_USB.
+
+    This is also a Pipe. Elements written to the Controller are sent to the USB to the matched device. Opening and
+    closing of the pipe are dealt with internally. There are two primary monitor data channels. 'status' and 'log'
+    elements monitoring this pipe will be updated on the status. Of the reading and writing of the connected information
+    and the log will provide information about the connected and error status of the USB device.
+    """
+
+    def __init__(self):
         Pipe.__init__(self)
         self.debug_file = None
         self.driver = None
+        self.device = None
         self.state = THREAD_STATE_UNSTARTED
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -169,10 +177,8 @@ class K40Controller(Module, Pipe):
 
         self.driver = None
         self.thread = None
-        self.reset()
 
         self.abort_waiting = False
-        self.device = None
 
     def initialize(self, kernel, name=None):
         self.device = kernel.device
@@ -184,6 +190,7 @@ class K40Controller(Module, Pipe):
         self.device.add_control("Start", self.start)
         self.device.add_control("Stop", self.stop)
         self.device.add_control("Status Update", self.update_status)
+        self.reset()
 
         def abort_wait():
             self.abort_waiting = True
@@ -209,11 +216,8 @@ class K40Controller(Module, Pipe):
         return len(self.buffer) + len(self.queue) + len(self.preempt)
 
     def thread_state_update(self, state):
-        self.device.signal('pipe;thread', state)
-
-    @property
-    def name(self):
-        return self.device.uid
+        if self.device is not None:
+            self.device.signal('pipe;thread', state)
 
     def open(self):
         if self.driver is None:
@@ -239,9 +243,6 @@ class K40Controller(Module, Pipe):
         self.queue_lock.release()
         self.start()
         return self
-
-    def read(self, size=-1):
-        return self.status
 
     def realtime_write(self, bytes_to_write):
         """
@@ -304,6 +305,7 @@ class K40Controller(Module, Pipe):
     def log(self, info):
         update = str(info) + '\n'
         self.device.log(update)
+        self.post('log', update)
 
     def state(self):
         return self.thread.state
@@ -441,7 +443,7 @@ class K40Controller(Module, Pipe):
                 return False
             if status == 0:
                 raise ConnectionError  # Broken pipe.
-            self.device.packet_count += 1 # Everything went off without a problem.
+            self.device.packet_count += 1  # Everything went off without a problem.
         else:
             if len(packet) != 0:  # packet isn't purely a commands len=0, or filled 30.
                 return False  # This packet cannot be sent. Toss it back.
@@ -467,6 +469,7 @@ class K40Controller(Module, Pipe):
             self.driver.write(packet)
         self.device.signal("pipe;packet", convert_to_list_bytes(packet))
         self.device.signal("pipe;packet_text", packet)
+        self.post('send', packet)
 
     def update_status(self):
         if self.device.mock:
@@ -475,6 +478,7 @@ class K40Controller(Module, Pipe):
         else:
             self.status = self.driver.get_status()
         self.device.signal("pipe;status", self.status)
+        self.post('recv', self.status)
 
     def wait_until_accepting_packets(self):
         i = 0

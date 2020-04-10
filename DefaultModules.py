@@ -14,6 +14,9 @@ MILS_PER_MM = 39.3701
 
 
 class K40StockDevice(Device):
+    """
+    K40StockDevice instance. Serves as a device instance for a lhymicro-gl based device.
+    """
     def __init__(self, uid=None):
         Device.__init__(self)
         self.uid = uid
@@ -62,7 +65,7 @@ class K40StockDevice(Device):
         self.spooler.realtime(COMMAND_RESET, 1)
 
     def open(self):
-        self.pipe = K40Controller(self)
+        self.pipe = K40Controller()
         self.interpreter = LhymicroInterpreter(self)
         self.spooler = Spooler(self)
         self.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
@@ -74,11 +77,12 @@ class K40StockDevice(Device):
 
 
 class K40StockBackend(Module, Backend):
+    """
+    Serves as the default backend registration for lhymicro-gl Stock Devices.
+    """
     def __init__(self):
         Module.__init__(self)
         Backend.__init__(self, uid='K40Stock')
-        self.autolock = True
-        self.mock = True
 
     def initialize(self, kernel, name='K40Stock'):
         self.kernel = kernel
@@ -97,6 +101,7 @@ class K40StockBackend(Module, Backend):
     def create_device(self, uid):
         device = K40StockDevice()
         device.initialize(self.kernel, uid)
+        return device
 
 
 class GRBLEmulator(Module):
@@ -579,11 +584,41 @@ class GRBLEmulator(Module):
         return 0
 
 
+class RuidaEmulator(Module, Pipe):
+
+    def __init__(self):
+        Module.__init__(self)
+
+    def initialize(self, kernel, name=None):
+        Module.initialize(kernel, name)
+        self.kernel = kernel
+
+    def shutdown(self, kernel):
+        Module.shutdown(self, kernel)
+
+    def swizzle(self, b):
+        b ^= (b >> 7) & 0xFF
+        b ^= (b << 7) & 0xFF
+        b ^= (b >> 7) & 0xFF
+        b ^= 0xB0
+        b ^= 0x38
+        b = (b + 1) & 0xFF
+        return b
+
+    def unswizzle(self, b):
+        b = (b - 1) & 0xFF
+        b ^= 0xB0
+        b ^= 0x38
+        b ^= (b >> 7) & 0xFF
+        b ^= (b << 7) & 0xFF
+        b ^= (b >> 7) & 0xFF
+        return b
+
+
 class Console(Module, Pipe):
     def __init__(self):
         Module.__init__(self)
-        self.delegate = None
-        self.read_info = None
+        self.delegate_pipe = None
         self.buffer = ''
 
     def initialize(self, kernel, name=None):
@@ -600,25 +635,25 @@ class Console(Module, Pipe):
     def open(self):
         pass
 
-    def realtime_write(self, bytes_to_write):
-        if self.delegate is not None:
-            self.delegate.realtime_write(bytes_to_write)
+    def monitor_delegate(self, channel, data):
+        self.post(channel, data)
 
-    def read(self, size=-1):
-        if self.delegate is not None:
-            return self.delegate.read(size)
-        r = self.read_info
-        self.read_info = None
-        return r
+    def set_delegate(self, pipe):
+        self.delegate_pipe = pipe
+        self.delegate_pipe.monitor(self.monitor_delegate)
+
+    def realtime_write(self, bytes_to_write):
+        if self.delegate_pipe is not None:
+            self.delegate_pipe.realtime_write(bytes_to_write)
 
     def write(self, data):
         if data == 'exit\n':  # process first to quit a delegate.
-            self.delegate = None
-            self.read_info += "Exited Mode.\n"
+            self.delegate_pipe.unmonitor(self.monitor_delegate)
+            self.delegate_pipe = None
+            self.post("log", "Exited Mode.\n")
             return
-        if self.delegate is not None:
-            self.delegate.write(data)
-        self.read_info = ''
+        if self.delegate_pipe is not None:
+            self.delegate_pipe.write(data)
         if isinstance(data, bytes):
             data = data.decode()
         self.buffer += data
@@ -630,15 +665,19 @@ class Console(Module, Pipe):
 
     def commandline(self, command):
         if command == "grbl":
-            self.delegate = self.kernel.modules['GrblEmulator']
-            self.read_info += "GRBL Mode.\n"
+            self.set_delegate(self.kernel.modules['GrblEmulator'])
+            self.post("log", "GRBL Mode.\n")
+            return
+        elif command == "lhy":
+            self.set_delegate(self.kernel.modules['K40Controller'])
+            self.post("log", "Lhymicro-gl Mode.\n")
             return
         elif command == "set":
             for attr in dir(self.kernel.device):
                 v = getattr(self.kernel.device, attr)
                 if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                     continue
-                self.read_info += '"%s" := %s\n' % (attr, str(v))
+                self.post("log", '"%s" := %s\n' % (attr, str(v)))
         elif command.startswith('set '):
             var = list(command.split(' '))
             if len(var) >= 3:
@@ -659,19 +698,19 @@ class Console(Module, Pipe):
                         setattr(self.kernel.device, attr, str(value))
         elif command == 'control':
             for control_name in self.kernel.controls:
-                self.read_info += '%s\n' % control_name
+                self.post("log", '%s\n' % control_name)
         elif command.startswith('control '):
             control_name = command[len('control '):]
             if control_name in self.kernel.controls:
                 self.kernel.device.execute(control_name)
-                self.read_info += "Executed '%s'\n" % control_name
+                self.post("log", "Executed '%s'\n" % control_name)
             else:
-                self.read_info += "Control '%s' not found.\n" % control_name
+                self.post("log", "Control '%s' not found.\n" % control_name)
         elif command == 'refresh':
             self.kernel.signal('refresh_scene')
-            self.read_info += "Refreshed.\n"
+            self.post("log", "Refreshed.\n")
         else:
-            self.read_info += "Error.\n"
+            self.post("log", "Error.\n")
 
 
 class SVGWriter:

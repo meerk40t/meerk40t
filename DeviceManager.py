@@ -93,7 +93,7 @@ class DeviceManager(wx.Frame):
         for key, value in self.kernel.devices.items():
             m = self.devices_list.InsertItem(i, str(key))
             if m != -1:
-                self.devices_list.SetItem(m, 1, "Lhystudio")
+                self.devices_list.SetItem(m, 1, "Lhystudios")
                 self.devices_list.SetItem(m, 2, str(value.state))
                 self.devices_list.SetItem(m, 3, str(value.location))
             if value is self.kernel.device:

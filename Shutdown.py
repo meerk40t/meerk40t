@@ -95,9 +95,10 @@ class Shutdown(wx.Frame):
 
     def on_button_stop(self, event):  # wxGlade: Shutdown.<event_handler>
         for name, device in self.kernel.devices.items():
-            if device.spooler.thread.is_alive() or device.pipe.thread.is_alive():
-                device.execute("Emergency Stop")
-                return
+            if device.spooler.thread is not None:
+                if device.spooler.thread.is_alive() or device.pipe.thread.is_alive():
+                    device.execute("Emergency Stop")
+                    return
         wx.CallAfter(self.Close)
 
     def on_button_reload(self, event):  # wxGlade: Shutdown.<event_handler>

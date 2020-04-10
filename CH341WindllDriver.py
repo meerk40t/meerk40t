@@ -13,7 +13,7 @@ class CH341Driver:
 
     def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, state_listener=None):
         if state_listener is None:
-            self.state_listener = lambda code: None  # Code, Name, Message
+            self.state_listener = lambda code: None
         else:
             self.state_listener = state_listener
         try:

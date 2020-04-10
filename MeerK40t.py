@@ -47,12 +47,14 @@ parser.add_argument('-t', '--transform', type=str, help="adds SVG Transform comm
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 parser.add_argument('-s', '--set', action='append', nargs='+', help='set a device variable')
 args = parser.parse_args(sys.argv[1:])
+grbl = parser_grbl.parse_args(sys.argv[1:])
 
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
 
     meerk40tgui = wxMeerK40t()
     kernel.add_module('MeerK40t', meerk40tgui)
+
 kernel.add_module('K40Stock', K40StockBackend())
 kernel.add_module('SVGLoader', SVGLoader())
 kernel.add_module('ImageLoader', ImageLoader())
@@ -63,24 +65,24 @@ emulator = GRBLEmulator()
 kernel.add_module('GrblEmulator', emulator)
 kernel.add_module('Console', Console())
 
-if args.flip_y:
+if grbl.flip_y:
     emulator.flip_y = -1
 
-if args.flip_x:
+if grbl.flip_x:
     emulator.flip_x = -1
 
-if args.adjust_y is not None and args.adjust_x is not None:
-    emulator.home_adjust = (args.adjust_x, args.adjust_y)
-elif args.adjust_y is not None:
-    emulator.home_adjust = (0, args.adjust_y)
-elif args.adjust_x is not None:
-    emulator.home_adjust = (args.adjust_x, 0)
+if grbl.adjust_y is not None and grbl.adjust_x is not None:
+    emulator.home_adjust = (grbl.adjust_x, grbl.adjust_y)
+elif grbl.adjust_y is not None:
+    emulator.home_adjust = (0, grbl.adjust_y)
+elif grbl.adjust_x is not None:
+    emulator.home_adjust = (grbl.adjust_x, 0)
 
 
-if args.server is not None:
+if grbl.server is not None:
     from LaserServer import *
 
-    server = LaserServer(args.server)
+    server = LaserServer(grbl.server)
 
     server.set_pipe(emulator)
     try:

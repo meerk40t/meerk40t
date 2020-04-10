@@ -87,7 +87,6 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("Kernel detach: Failed.")
     elif code == STATE_USB_DETACH_KERNEL_NOT_IMPLEMENTED:
         return _("Kernel detach: Not Implemented.")
-
     elif code == STATE_USB_SET_ACTIVE_CONFIG:
         return _("Setting Active Config")
     elif code == STATE_USB_SET_ACTIVE_CONFIG_SUCCESS:
