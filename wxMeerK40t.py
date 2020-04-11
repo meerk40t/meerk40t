@@ -14,7 +14,6 @@ from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
-from Terminal import Terminal
 from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
@@ -34,6 +33,7 @@ from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
 from Shutdown import Shutdown
+from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
 from ZMatrix import ZMatrix
@@ -140,7 +140,7 @@ supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('es', u'español', wx.LANGUAGE_SPANISH))
 
 
-class MeerK40t(wx.Frame):
+class MeerK40t(wx.Frame, Module):
     """
     MeerK40t main window
     """
@@ -149,6 +149,7 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.DragAcceptFiles(True)
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
@@ -261,20 +262,20 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("About"), id=ID_MENU_ABOUT)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Alignment"), id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("CameraInterface"), id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Terminal"), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("DeviceManager"), id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Keymap"), id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Preferences"), id=ID_MENU_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Settings"), id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Rotary"), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Navigation"), id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Controller"), id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("UsbConnect"), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobSpooler"), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations),
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("About", None, -1, ""), id=ID_MENU_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("DeviceManager", None, -1, ""), id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Keymap", None, -1, ""), id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Preferences", None, -1, ""), id=ID_MENU_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Settings", None, -1, "",), id=ID_MENU_SETTINGS)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Rotary", None, -1, "",), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Navigation", None, -1, "",), id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("Controller", None, -1, "",), id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("UsbConnect", None, -1, "",), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("JobSpooler", None, -1, "",), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.kernel.module_instance_open("JobInfo", None, -1, "",).set_operations(self.kernel.operations),
                   id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
@@ -282,16 +283,19 @@ class MeerK40t(wx.Frame):
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
-                     lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_JOB)
-
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("UsbConnect"), id=ID_USB)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Navigation"), id=ID_NAV)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Controller"), id=ID_CONTROLLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Preferences"),
-                     id=ID_PREFERENCES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("DeviceManager"), id=ID_DEVICES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("JobSpooler"), id=ID_SPOOLER)
-
+                     lambda v: self.kernel.module_instance_open("JobInfo", None, -1, "").set_operations(self.kernel.operations), id=ID_JOB)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.kernel.module_instance_open("UsbConnect", None, -1, ""), id=ID_USB)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.kernel.module_instance_open("Navigation", None, -1, ""), id=ID_NAV)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.kernel.module_instance_open("Controller", None, -1, ""), id=ID_CONTROLLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.kernel.module_instance_open("Preferences", None, -1, ""), id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.kernel.module_instance_open("DeviceManager", None, -1, ""), id=ID_DEVICES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.kernel.module_instance_open("JobSpooler", None, -1, ""), id=ID_SPOOLER)
         self.main_statusbar = self.CreateStatusBar(3)
 
         # end wxGlade
@@ -377,8 +381,20 @@ class MeerK40t(wx.Frame):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def set_kernel(self, kernel):
+    def on_close(self, event):
+        self.unlisten_device()
+        self.unlisten_scene()
+        self.kernel.module_instance_open('Shutdown', None, -1, "")
+        self.kernel.module_instance_remove(self.name)
+        self.kernel.stop()
+        event.Skip()  # Call destroy as regular.
+
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
         kernel.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         kernel.setting(int, "window_width", 1200)
         kernel.setting(int, "window_height", 600)
@@ -403,19 +419,18 @@ class MeerK40t(wx.Frame):
         if kernel.window_height < 300:
             kernel.window_height = 300
 
-        kernel.add_control("Transform", self.open_transform_dialog)
-        kernel.add_control("Path", self.open_path_dialog)
-        kernel.add_control("FPS", self.open_fps_dialog)
-        kernel.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
-        kernel.add_control("Home and Dot", self.run_home_and_dot_test)
+        kernel.control_instance_add("Transform", self.open_transform_dialog)
+        kernel.control_instance_add("Path", self.open_path_dialog)
+        kernel.control_instance_add("FPS", self.open_fps_dialog)
+        kernel.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        kernel.control_instance_add("Home and Dot", self.run_home_and_dot_test)
 
         self.SetSize((kernel.window_width, kernel.window_height))
         bedwidth = kernel.bed_width
         bedheight = kernel.bed_height
 
-        self.kernel.boot()
         self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
-        self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
+        self.fps_job = self.kernel.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
         self.add_language_menu()
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
@@ -453,12 +468,17 @@ class MeerK40t(wx.Frame):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
 
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
     def set_fps(self, fps):
         if fps == 0:
             fps = 1
         self.fps_job.times = 0
         self.kernel.fps = fps
-        self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(self.kernel.fps))
+        self.fps_job = self.kernel.add_job(self.refresh_scene, interval=1.0 / float(self.kernel.fps))
 
     def on_element_update(self, *args):
         """
@@ -570,14 +590,6 @@ class MeerK40t(wx.Frame):
         self.kernel.unlisten("element_property_update", self.on_element_update)
         self.kernel.unlisten("units", self.space_changed)
         self.kernel.unlisten("selected_elements", self.selection_changed)
-
-    def on_close(self, event):
-        self.unlisten_device()
-        self.unlisten_scene()
-        self.kernel.open_window('Shutdown')
-        self.kernel.mark_window_closed('MeerK40t')
-        self.kernel.cron.stop()
-        event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
@@ -702,6 +714,7 @@ class MeerK40t(wx.Frame):
             return
         self.update_buffer_ui_thread()
         self.scene.Refresh()
+        self.scene.Update()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
 
@@ -894,8 +907,8 @@ class MeerK40t(wx.Frame):
 
     def execute_open_window_action(self, *args):
         window_name = args[0]
-        if window_name in self.kernel.windows:
-            self.kernel.open_window(window_name)
+        if window_name in self.kernel.module_instances:
+            self.kernel.module_instance_open(window_name, None, -1, "")
 
     def execute_set_position_action(self, index):
         x = self.kernel.device.current_x
@@ -1898,19 +1911,19 @@ class RootNode(list):
 
     def activated_object(self, obj):
         if isinstance(obj, RasterOperation):
-            self.kernel.open_window("RasterProperty").set_operation(obj)
+            self.kernel.module_instance_open("RasterProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.kernel.open_window("EngraveProperty").set_operation(obj)
+            self.kernel.module_instance_open("EngraveProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, Path):
-            self.kernel.open_window("PathProperty").set_element(obj)
+            self.kernel.module_instance_open("PathProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGText):
-            self.kernel.open_window("TextProperty").set_element(obj)
+            self.kernel.module_instance_open("TextProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGImage):
-            self.kernel.open_window("ImageProperty").set_element(obj)
+            self.kernel.module_instance_open("ImageProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGElement):
-            self.kernel.open_window("PathProperty").set_element(obj)
+            self.kernel.module_instance_open("PathProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, LaserOperation):
-            self.kernel.open_window("EngraveProperty").set_operation(obj)
+            self.kernel.module_instance_open("EngraveProperty", None, -1, "").set_operation(obj)
 
     def on_item_changed(self, event):
         """
@@ -2559,7 +2572,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.kernel.open_window("JobInfo").set_operations(self.selected_operations)
+            self.kernel.module_instance_open("JobInfo", None, -1, "").set_operations(self.selected_operations)
 
         return open_jobinfo_window
 
@@ -2629,7 +2642,7 @@ class MappedKey:
         return self.key
 
 
-class wxMeerK40t(Module, wx.App):
+class wxMeerK40t(wx.App, Module):
     """
     wxMeerK40t is the wx.App main class and a qualified Module for the MeerK40t kernel.
     Running MeerK40t without the wxMeerK40t gui is both possible and reasonable. This should not change the way the
@@ -2647,7 +2660,6 @@ class wxMeerK40t(Module, wx.App):
 
     def initialize(self, kernel, name=None):
         kernel.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
-        kernel.add_window("MeerK40t", MeerK40t)
 
         self.kernel = kernel
         _ = wx.GetTranslation
@@ -2658,35 +2670,11 @@ class wxMeerK40t(Module, wx.App):
         kernel.translation = wx.GetTranslation
         kernel.set_config(wx.Config("MeerK40t"))
         kernel.setting(int, 'language', None)
-
-        kernel.add_window('Shutdown', Shutdown)
-        kernel.add_window('PathProperty', PathProperty)
-        kernel.add_window('TextProperty', TextProperty)
-        kernel.add_window('ImageProperty', ImageProperty)
-        kernel.add_window('RasterProperty', RasterProperty)
-        kernel.add_window('EngraveProperty', EngraveProperty)
-        kernel.add_window('Controller', Controller)
-        kernel.add_window("Preferences", Preferences)
-        kernel.add_window("CameraInterface", CameraInterface)
-        kernel.add_window("Terminal", Terminal)
-        kernel.add_window("Settings", Settings)
-        kernel.add_window("Rotary", RotarySettings)
-        kernel.add_window("Alignment", Alignment)
-        kernel.add_window("About", About)
-        kernel.add_window("DeviceManager", DeviceManager)
-        kernel.add_window("Keymap", Keymap)
-        kernel.add_window("UsbConnect", UsbConnect)
-        kernel.add_window("Navigation", Navigation)
-        kernel.add_window("Controller", Controller)
-        kernel.add_window("JobSpooler", JobSpooler)
-        kernel.add_window("JobInfo", JobInfo)
-        kernel.add_window("BufferView", BufferView)
-        kernel.add_window("Adjustments", Adjustments)
-        kernel.add_control("Delete Settings", self.clear_control)
+        kernel.control_instance_add("Delete Settings", self.clear_control)
         language = kernel.language
         if language is not None and language != 0:
             self.language_to(language)(None)
-        self.kernel.open_window("MeerK40t")
+        self.kernel.module_instance_open("MeerK40t",  None, -1, "")
 
     def clear_control(self):
         if self.kernel.config is not None:
@@ -2700,7 +2688,7 @@ class wxMeerK40t(Module, wx.App):
 
     def language_swap(self, lang):
         self.language_to(lang)(None)
-        self.kernel.open_window("MeerK40t")
+        self.kernel.module_instance_open("MeerK40t",  None, -1, "")
 
     def language_to(self, lang):
         """
@@ -2759,3 +2747,31 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
 
 sys.excepthook = handleGUIException
+
+
+def init_gui(kernel):
+    kernel.register_module('wxMeerK40t', wxMeerK40t)
+    kernel.register_module("MeerK40t", MeerK40t)
+    kernel.register_module('Shutdown', Shutdown)
+    kernel.register_module('PathProperty', PathProperty)
+    kernel.register_module('TextProperty', TextProperty)
+    kernel.register_module('ImageProperty', ImageProperty)
+    kernel.register_module('RasterProperty', RasterProperty)
+    kernel.register_module('EngraveProperty', EngraveProperty)
+    kernel.register_module('Controller', Controller)
+    kernel.register_module("Preferences", Preferences)
+    kernel.register_module("CameraInterface", CameraInterface)
+    kernel.register_module("Terminal", Terminal)
+    kernel.register_module("Settings", Settings)
+    kernel.register_module("Rotary", RotarySettings)
+    kernel.register_module("Alignment", Alignment)
+    kernel.register_module("About", About)
+    kernel.register_module("DeviceManager", DeviceManager)
+    kernel.register_module("Keymap", Keymap)
+    kernel.register_module("UsbConnect", UsbConnect)
+    kernel.register_module("Navigation", Navigation)
+    kernel.register_module("Controller", Controller)
+    kernel.register_module("JobSpooler", JobSpooler)
+    kernel.register_module("JobInfo", JobInfo)
+    kernel.register_module("BufferView", BufferView)
+    kernel.register_module("Adjustments", Adjustments)

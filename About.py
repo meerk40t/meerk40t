@@ -1,15 +1,18 @@
 import wx
+
+from Kernel import Module
 from icons import icon_meerk40t
 
 
 _ = wx.GetTranslation
 
 
-class About(wx.Frame):
+class About(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: About.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((699, 442))
         self.bitmap_button_1 = wx.BitmapButton(self, wx.ID_ANY, icon_meerk40t.GetBitmap())
 
@@ -20,9 +23,20 @@ class About(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("About")
-        self.kernel = None
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
+
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
+        self.kernel = kernel
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: About.__set_properties
@@ -46,6 +60,3 @@ class About(wx.Frame):
         self.Layout()
         self.Centre()
         # end wxGlade
-
-    def set_kernel(self, kernel):
-        self.kernel = kernel

@@ -1,16 +1,18 @@
 import wx
 
+from Kernel import Module
 from LaserCommandConstants import *
 from icons import icons8_stop_50, icons8_resize_horizontal_50, icons8_resize_vertical_50
 
 _ = wx.GetTranslation
 
 
-class Alignment(wx.Frame):
+class Alignment(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Alignment.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((631, 365))
 
         self.spin_vertical_distance = wx.SpinCtrl(self, wx.ID_ANY, "180", min=10, max=400)
@@ -59,13 +61,24 @@ class Alignment(wx.Frame):
         self.device = None
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Alignment")
+        self.kernel.module_instance_remove(self.name)
         self.kernel = None
         event.Skip()  # Call destroy as regular.
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)

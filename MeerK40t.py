@@ -3,6 +3,7 @@ import sys
 
 from DefaultModules import *
 from Kernel import *
+from LaserServer import *
 
 try:
     from math import tau
@@ -50,20 +51,22 @@ args = parser.parse_args(sys.argv[1:])
 grbl = parser_grbl.parse_args(sys.argv[1:])
 
 if not args.no_gui:
-    from wxMeerK40t import wxMeerK40t
+    from wxMeerK40t import init_gui
+    init_gui(kernel)
+    meerk40tgui = kernel.module_instance_open('wxMeerK40t')
 
-    meerk40tgui = wxMeerK40t()
-    kernel.add_module('MeerK40t', meerk40tgui)
+kernel.register_device('K40Stock', K40StockDevice)
+kernel.register_loader('SVGLoader', SVGLoader)
+kernel.register_loader('ImageLoader', ImageLoader)
+kernel.register_loader('EgvLoader', EgvLoader)
+kernel.register_loader("DxfLoader", DxfLoader)
+kernel.register_saver('SVGWriter', SVGWriter)
+kernel.register_module('GrblEmulator', GRBLEmulator)
+kernel.register_module('Console', Console)
+kernel.register_module('LaserServer', LaserServer)
+emulator = kernel.module_instance_open('GrblEmulator')
+console = kernel.module_instance_open('Console')
 
-kernel.add_module('K40Stock', K40StockBackend())
-kernel.add_module('SVGLoader', SVGLoader())
-kernel.add_module('ImageLoader', ImageLoader())
-kernel.add_module('EgvLoader', EgvLoader())
-kernel.add_module("DxfLoader", DxfLoader())
-kernel.add_module('SVGWriter', SVGWriter())
-emulator = GRBLEmulator()
-kernel.add_module('GrblEmulator', emulator)
-kernel.add_module('Console', Console())
 
 if grbl.flip_y:
     emulator.flip_y = -1
@@ -80,24 +83,13 @@ elif grbl.adjust_x is not None:
 
 
 if grbl.server is not None:
-    from LaserServer import *
-
-    server = LaserServer(grbl.server)
-
-    server.set_pipe(emulator)
     try:
-        kernel.add_module('GRBLServer', server)
+        server = kernel.module_instance_open('GRBLServer', port=grbl.server)
+        server.set_pipe(emulator)
     except OSError:
         print('Server failed on port: %d' % args.grbl)
         from sys import exit
         exit(1)
-
-#
-# from LaserServer import *
-# server = LaserServer(23)
-# server.set_pipe(emulator)
-# kernel.add_module('GRBLServer', server)
-
 
 if args.list is not None:
     list_name = 'type'
@@ -113,7 +105,7 @@ if args.list is not None:
                 continue
             print('"%s" := %s' % (attr, str(v)))
     elif list_name == 'controls':
-        for control_name in kernel.controls:
+        for control_name in kernel.control_instances:
             print('Control: %s' % control_name)
     exit(0)
 
@@ -161,7 +153,7 @@ if args.egv is not None:
 
 if args.control is not None:
     for control in args.control:
-        if control in kernel.controls:
+        if control in kernel.control_instances:
             kernel.device.execute(control)
         else:
             print("Control '%s' not found." % control)

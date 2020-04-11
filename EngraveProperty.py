@@ -1,14 +1,17 @@
 
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class EngraveProperty(wx.Frame):
+class EngraveProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: EngraveProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((305, 216))
         self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=240.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
@@ -37,7 +40,7 @@ class EngraveProperty(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("EngraveProperty")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_operation(self, operation):
@@ -68,8 +71,17 @@ class EngraveProperty(wx.Frame):
             self.checkbox_custom_accel.Enable(False)
         return self
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: EngraveProperty.__set_properties

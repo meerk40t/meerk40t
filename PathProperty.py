@@ -1,16 +1,18 @@
 import wx
 
+from Kernel import Module
 from LaserRender import swizzlecolor
 from svgelements import *
 
 _ = wx.GetTranslation
 
 
-class PathProperty(wx.Frame):
+class PathProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
@@ -74,7 +76,7 @@ class PathProperty(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("PathProperty")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -86,8 +88,17 @@ class PathProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: PathProperty.__set_properties

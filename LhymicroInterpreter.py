@@ -84,9 +84,9 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        device.add_control("Realtime Pause", self.pause)
-        device.add_control("Realtime Resume", self.resume)
-        device.add_control("Update Codes", self.update_codes)
+        device.control_instance_add("Realtime Pause", self.pause)
+        device.control_instance_add("Realtime Resume", self.resume)
+        device.control_instance_add("Update Codes", self.update_codes)
 
     def __repr__(self):
         return "LhymicroInterpreter()"

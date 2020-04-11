@@ -2,6 +2,7 @@ import threading
 
 import wx
 
+from Kernel import Module
 from ZMatrix import ZMatrix
 from icons import *
 from svgelements import SVGImage, Matrix, Point
@@ -11,11 +12,12 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
-class CameraInterface(wx.Frame):
+class CameraInterface(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: CameraInterface.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((608, 549))
         self.CameraInterface_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -133,8 +135,12 @@ class CameraInterface(wx.Frame):
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
         self.kernel.setting(int, 'camera_index', 0)
         self.kernel.setting(int, 'camera_fps', 1)
         self.kernel.setting(bool, 'mouse_zoom_invert', False)
@@ -161,9 +167,14 @@ class CameraInterface(wx.Frame):
             self.camera_3_menu.Check(True)
         elif kernel.camera_index == 4:
             self.camera_4_menu.Check(True)
-        self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
+        self.kernel.add_job(self.init_camera, times=1, interval=0.1)
         self.kernel.listen("camera_frame", self.on_camera_frame)
         self.kernel.listen("camera_frame_raw", self.on_camera_frame_raw)
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def on_close(self, event):
         self.camera_lock.acquire()
@@ -171,7 +182,7 @@ class CameraInterface(wx.Frame):
         self.kernel.unlisten("camera_frame", self.on_camera_frame)
         self.kernel.signal("camera_frame_raw", None)
         self.close_camera()
-        self.kernel.mark_window_closed("CameraInterface")
+        self.kernel.module_instance_remove(self.name)
         self.kernel = None
         event.Skip()  # Call destroy.
         self.camera_lock.release()
@@ -275,7 +286,7 @@ class CameraInterface(wx.Frame):
         self.camera_lock.acquire()
         self.kernel.camera_index = camera_index
         self.close_camera()
-        self.kernel.cron.add_job(self.init_camera, times=1, interval=0.1)
+        self.kernel.add_job(self.init_camera, times=1, interval=0.1)
         self.camera_lock.release()
 
     def close_camera(self):
@@ -339,7 +350,7 @@ class CameraInterface(wx.Frame):
         except AttributeError:
             return
         if self.kernel is not None:
-            self.job = self.kernel.cron.add_job(self.fetch_image, interval=tick)
+            self.job = self.kernel.add_job(self.fetch_image, interval=tick)
 
     def reset_perspective(self, event):
         self.perspective = None
@@ -568,4 +579,4 @@ class CameraInterface(wx.Frame):
             self.job.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        self.kernel.cron.add_job(self.fetch_image, args=True, times=1, interval=0)
+        self.kernel.add_job(self.fetch_image, args=True, times=1, interval=0)

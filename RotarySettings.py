@@ -6,6 +6,8 @@
 
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
@@ -16,11 +18,12 @@ _ = wx.GetTranslation
 # end wxGlade
 
 
-class RotarySettings(wx.Frame):
+class RotarySettings(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: RotarySettings.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((222, 347))
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Rotary"))
         self.spin_rotary_scaley = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=5.0)
@@ -55,12 +58,18 @@ class RotarySettings(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Rotary")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -78,6 +87,11 @@ class RotarySettings(wx.Frame):
             self.spin_rotary_scaley.SetValue(self.device.scale_y)
             self.checkbox_rotary.SetValue(self.device.rotary)
             self.on_check_rotary(None)
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: RotarySettings.__set_properties

@@ -80,8 +80,8 @@ class LaserServer(Module):
         self.socket.bind(('', self.port))
         self.socket.listen(1)
         self.thread = ServerThread(self)
-        self.kernel.add_control('Set_Server_Pipe' + self.name, self.set_pipe)
-        self.kernel.add_thread('ServerThread', self.thread)
+        self.kernel.control_instance_add('Set_Server_Pipe' + self.name, self.set_pipe)
+        self.kernel.thread_instance_add('ServerThread', self.thread)
         self.thread.start()
 
     def shutdown(self, kernel):

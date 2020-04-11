@@ -1,14 +1,17 @@
 
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class Terminal(wx.Frame):
+class Terminal(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Terminal.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_NO_TASKBAR | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((581, 410))
         self.text_console = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
         self.text_entry = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB)
@@ -24,10 +27,15 @@ class Terminal(wx.Frame):
         self.uid = None
         self.pipe = None
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
         try:
-            self.pipe = self.kernel.modules['Console']
+            self.pipe = self.kernel.module_instances['Console']
         except KeyError:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -40,9 +48,14 @@ class Terminal(wx.Frame):
             return
         self.kernel.listen('console', self.update_console)
 
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
     def on_close(self, event):
         self.kernel.unlisten('console', self.update_console)
-        self.kernel.mark_window_closed("Terminal")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()
 
     def __set_properties(self):

@@ -5,7 +5,7 @@ from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from EgvParser import parse_egv
 from K40Controller import K40Controller
-from Kernel import Spooler, Module, Backend, Device, Pipe
+from Kernel import Spooler, Module, Device, Pipe
 from LaserCommandConstants import *
 from LhymicroInterpreter import LhymicroInterpreter
 from svgelements import *
@@ -55,10 +55,9 @@ class K40StockDevice(Device):
 
         self.signal("bed_size", (self.bed_width, self.bed_height))
 
-        self.add_control("Emergency Stop", self.emergency_stop)
-        self.add_control("Debug Device", self._start_debugging)
+        self.control_instance_add("Emergency Stop", self.emergency_stop)
+        self.control_instance_add("Debug Device", self._start_debugging)
 
-        kernel.add_device(name, self)
         self.open()
 
     def emergency_stop(self):
@@ -76,35 +75,7 @@ class K40StockDevice(Device):
         self.pipe.close()
 
 
-class K40StockBackend(Module, Backend):
-    """
-    Serves as the default backend registration for lhymicro-gl Stock Devices.
-    """
-    def __init__(self):
-        Module.__init__(self)
-        Backend.__init__(self, uid='K40Stock')
-
-    def initialize(self, kernel, name='K40Stock'):
-        self.kernel = kernel
-        self.kernel.add_backend(name, self)
-        self.kernel.setting(str, 'device_list', '')
-        self.kernel.setting(str, 'device_primary', '')
-        for device in kernel.device_list.split(';'):
-            self.create_device(device)
-            if device == kernel.device_primary:
-                self.kernel.activate_device(device)
-
-    def shutdown(self, kernel):
-        self.kernel.remove_backend(self.uid)
-        self.kernel.remove_module(self.uid)
-
-    def create_device(self, uid):
-        device = K40StockDevice()
-        device.initialize(self.kernel, uid)
-        return device
-
-
-class GRBLEmulator(Module):
+class GRBLEmulator(Module, Pipe):
 
     def __init__(self):
         Module.__init__(self)
@@ -640,7 +611,7 @@ class Console(Module, Pipe):
 
     def set_delegate(self, pipe):
         self.delegate_pipe = pipe
-        self.delegate_pipe.monitor(self.monitor_delegate)
+        self.delegate_pipe.add_watcher(self.monitor_delegate)
 
     def realtime_write(self, bytes_to_write):
         if self.delegate_pipe is not None:
@@ -648,7 +619,7 @@ class Console(Module, Pipe):
 
     def write(self, data):
         if data == 'exit\n':  # process first to quit a delegate.
-            self.delegate_pipe.unmonitor(self.monitor_delegate)
+            self.delegate_pipe.remove_watcher(self.monitor_delegate)
             self.delegate_pipe = None
             self.post("log", "Exited Mode.\n")
             return
@@ -714,24 +685,16 @@ class Console(Module, Pipe):
 
 
 class SVGWriter:
-    def __init__(self):
-        self.kernel = None
-
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        kernel.add_saver("SVGWriter", self)
-
-    def shutdown(self, kernel):
-        self.kernel = None
-        del kernel.modules['SVGWriter']
-
-    def save_types(self):
+    @staticmethod
+    def save_types():
         yield "Scalable Vector Graphics", "svg", "image/svg+xml"
 
-    def versions(self):
+    @staticmethod
+    def versions():
         yield 'default'
 
-    def create_svg_dom(self):
+    @staticmethod
+    def save(kernel, f, version='default'):
         root = Element(SVG_NAME_TAG)
         root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
@@ -742,16 +705,16 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        if self.kernel.device is None:
-            self.kernel.setting(int, "bed_width", 320)
-            self.kernel.setting(int, "bed_height", 220)
-            mm_width = self.kernel.bed_width
-            mm_height = self.kernel.bed_height
+        if kernel.device is None:
+            kernel.setting(int, "bed_width", 320)
+            kernel.setting(int, "bed_height", 220)
+            mm_width = kernel.bed_width
+            mm_height = kernel.bed_height
         else:
-            self.kernel.device.setting(int, "bed_width", 320)
-            self.kernel.device.setting(int, "bed_height", 220)
-            mm_width = self.kernel.device.bed_width
-            mm_height = self.kernel.device.bed_height
+            kernel.device.setting(int, "bed_width", 320)
+            kernel.device.setting(int, "bed_height", 220)
+            mm_width = kernel.device.bed_width
+            mm_height = kernel.device.bed_height
         root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
         root.set(SVG_ATTR_HEIGHT, '%fmm' % mm_height)
         px_width = mm_width * mils_per_mm * px_per_mils
@@ -760,7 +723,7 @@ class SVGWriter:
         viewbox = '%d %d %d %d' % (0, 0, round(px_width), round(px_height))
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
-        elements = self.kernel.elements
+        elements = kernel.elements
         for element in elements:
             if isinstance(element, Path):
                 subelement = SubElement(root, SVG_TAG_PATH)
@@ -810,37 +773,26 @@ class SVGWriter:
                 fill = SVG_VALUE_NONE
             subelement.set(SVG_ATTR_STROKE, stroke)
             subelement.set(SVG_ATTR_FILL, fill)
-        return ElementTree(root)
-
-    def save(self, f, version='default'):
-        tree = self.create_svg_dom()
+        tree = ElementTree(root)
         tree.write(f)
 
 
 class SVGLoader:
-    def __init__(self):
-        self.kernel = None
 
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        kernel.setting(int, "bed_width", 320)
-        kernel.setting(int, "bed_height", 220)
-        kernel.add_loader("SVGLoader", self)
-
-    def shutdown(self, kernel):
-        self.kernel = None
-        del kernel.modules['SVGLoader']
-
-    def load_types(self):
+    @staticmethod
+    def load_types():
         yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
 
-    def load(self, pathname):
+    @staticmethod
+    def load(kernel, pathname):
+        kernel.setting(int, "bed_width", 320)
+        kernel.setting(int, "bed_height", 220)
         elements = []
         basename = os.path.basename(pathname)
         scale_factor = 1000.0 / 96.0
         svg = SVG.parse(source=pathname,
-                        width='%fmm' % (self.kernel.bed_width),
-                        height='%fmm' % (self.kernel.bed_height),
+                        width='%fmm' % (kernel.bed_width),
+                        height='%fmm' % (kernel.bed_height),
                         ppi=96.0,
                         transform='scale(%f)' % scale_factor)
         for element in svg.elements():
@@ -863,21 +815,13 @@ class SVGLoader:
 
 
 class EgvLoader:
-    def __init__(self):
-        self.kernel = None
 
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        kernel.add_loader("EGVLoader", self)
-
-    def shutdown(self, kernel):
-        self.kernel = None
-        del kernel.modules['EgvLoader']
-
-    def load_types(self):
+    @staticmethod
+    def load_types():
         yield "Engrave Files", ("egv",), "application/x-egv"
 
-    def load(self, pathname):
+    @staticmethod
+    def load(kernel, pathname):
         elements = []
         basename = os.path.basename(pathname)
 
@@ -898,18 +842,9 @@ class EgvLoader:
 
 
 class ImageLoader:
-    def __init__(self):
-        self.kernel = None
 
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        kernel.add_loader("ImageLoader", self)
-
-    def shutdown(self, kernel):
-        self.kernel = None
-        del kernel.modules['ImageLoader']
-
-    def load_types(self):
+    @staticmethod
+    def load_types():
         yield "Portable Network Graphics", ("png",), "image/png"
         yield "Bitmap Graphics", ("bmp",), "image/bmp"
         yield "EPS Format", ("eps",), "image/eps"
@@ -918,7 +853,8 @@ class ImageLoader:
         yield "JPEG Format", ("jpg", "jpeg", "jpe"), "image/jpeg"
         yield "Webp Format", ("webp",), "image/webp"
 
-    def load(self, pathname):
+    @staticmethod
+    def load(kernel, pathname):
         basename = os.path.basename(pathname)
 
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
@@ -927,26 +863,21 @@ class ImageLoader:
 
 
 class DxfLoader:
-    def __init__(self):
-        self.kernel = None
 
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        kernel.add_loader("DxfLoader", self)
-
-    def shutdown(self, kernel):
-        self.kernel = None
-        del kernel.modules['DxfLoader']
-
-    def load_types(self):
+    @staticmethod
+    def load_types():
         yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
 
-    def load(self, pathname):
+    @staticmethod
+    def load(kernel, pathname):
         """"
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
+        kernel.setting(int, "bed_width", 320)
+        kernel.setting(int, "bed_height", 220)
+
         import ezdxf
 
         basename = os.path.basename(pathname)
@@ -1095,7 +1026,7 @@ class DxfLoader:
             else:
                 element.stroke = Color('black')
             element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
-            element.transform.post_translate_y(self.kernel.bed_height * MILS_PER_MM)
+            element.transform.post_translate_y(kernel.bed_height * MILS_PER_MM)
             if isinstance(element, SVGText):
                 elements.append(element)
             else:

@@ -5,6 +5,7 @@
 
 import wx
 
+from Kernel import Module
 from LaserCommandConstants import *
 from icons import *
 from svgelements import Angle, Point, SVGImage, Path
@@ -16,11 +17,12 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-class Navigation(wx.Frame):
+class Navigation(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Navigation.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((598, 429))
         self.spin_jog_mils = wx.SpinCtrlDouble(self, wx.ID_ANY, "394.0", min=0.0, max=10000.0)
         self.spin_jog_mm = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=254.0)
@@ -135,7 +137,7 @@ class Navigation(wx.Frame):
         self.select_ready(False)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Navigation")
+        self.kernel.module_instance_remove(self.name)
         self.kernel.unlisten("selected_elements", self.on_selected_elements_change)
         self.kernel.unlisten("selected_bounds", self.on_selected_bounds_change)
         self.device.unlisten("interpreter;position", self.on_position_update)
@@ -333,9 +335,15 @@ class Navigation(wx.Frame):
         self.Layout()
         # end wxGlade
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -354,6 +362,11 @@ class Navigation(wx.Frame):
         self.kernel.listen("selected_bounds", self.on_selected_bounds_change)
         self.device.listen("interpreter;position", self.on_position_update)
         self.update_matrix_text()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def on_selected_elements_change(self, elements):
         self.elements = elements

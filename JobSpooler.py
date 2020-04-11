@@ -8,11 +8,12 @@ _ = wx.GetTranslation
 
 # TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
 
-class JobSpooler(wx.Frame):
+class JobSpooler(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobSpooler.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((668, 448))
         self.list_job_spool = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.panel_controller = wx.Panel(self, wx.ID_ANY, style=wx.BORDER_RAISED)
@@ -49,9 +50,20 @@ class JobSpooler(wx.Frame):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -75,11 +87,11 @@ class JobSpooler(wx.Frame):
         self.refresh_spooler_list()
 
     def on_close(self, event):
+        self.kernel.module_instance_remove(self.name)
         if self.device is not None:
             self.device.unlisten('spooler;thread', self.on_spooler_state)
             self.device.unlisten("spooler;queue", self.on_spooler_update)
             self.device.unlisten("pipe;buffer", self.on_buffer_update)
-        self.kernel.mark_window_closed("JobSpooler")
         self.kernel = None
         self.device = None
         event.Skip()  # Call destroy as regular.
@@ -222,7 +234,7 @@ class JobSpooler(wx.Frame):
             self.device.autobeep = not self.device.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
-        self.kernel.open_window("Controller")
+        self.kernel.module_instance_open("Controller", None, -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         spooler = self.device.spooler

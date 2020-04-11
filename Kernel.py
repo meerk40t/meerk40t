@@ -70,73 +70,16 @@ class KernelJob:
         self.next_run = self.last_run + self.interval
 
 
-class Scheduler(Thread):
-    def __init__(self, kernel):
-        Thread.__init__(self, name='Meerk40t-Scheduler')
-        self.daemon = True
-        self.kernel = kernel
-        self.state = THREAD_STATE_UNSTARTED
-        self.jobs = []
-
-    def add_job(self, run, args=(), interval=1.0, times=None):
-        """
-        Adds a job to the scheduler.
-
-        :param run: function to run
-        :param args: arguments to give to that function.
-        :param interval: in seconds, how often should the job be run.
-        :param times: limit on number of executions.
-        :return: Reference to the job added.
-        """
-        job = KernelJob(self, run, args, interval, times)
-        self.jobs.append(job)
-        return job
-
-    def run(self):
-        """
-        Scheduler main loop.
-        Check the Scheduler thread state, and whether it should abort or pause.
-        Check each job, and if that job is scheduled to run. Executes that job.
-        :return:
-        """
-        self.state = THREAD_STATE_STARTED
-        while self.state != THREAD_STATE_FINISHED:
-            time.sleep(0.005)  # 200 ticks a second.
-            if self.state == THREAD_STATE_ABORT:
-                break
-            while self.state == THREAD_STATE_PAUSED:
-                # The scheduler is paused.
-                time.sleep(1.0)
-            for job in self.jobs:
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job.run()
-        self.state = THREAD_STATE_FINISHED
-        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
-        self.kernel.shutdown()
-
-    def state(self):
-        return self.state
-
-    def resume(self):
-        self.state = THREAD_STATE_STARTED
-
-    def pause(self):
-        self.state = THREAD_STATE_PAUSED
-
-    def stop(self):
-        self.state = THREAD_STATE_ABORT
-
-
 class Module:
     """
     Modules are a generic lifecycle object. When registered they are passed the kernel they are registered to, and when
-    the kernel is shutdown, the shutdown event is called. This permits knowing registering and unregistering of other
-    kernel objects.
+    the kernel is shutdown, the shutdown event is called. This permits the knowing registering and unregistering of
+    other kernel objects. and the attachment of the module to a device.
     """
+
     def __init__(self):
-        self.kernel = None
         self.name = None
+        self.kernel = None
         self.device = None
 
     def initialize(self, kernel, name=None):
@@ -147,30 +90,17 @@ class Module:
         self.device = device
 
     def deregister(self, device):
-        pass
+        self.device = None
+        if self.name is not None:
+            del device.module_instances[self.name]
 
     def shutdown(self, kernel):
         self.kernel = None
-        if self.name is not None:
-            del kernel.modules[self.name]
-
-
-class Backend:
-    """Backend is an available device type to be instanced. This isn't a device instance itself, but merely a registered
-    type of a device. For example you could have multiple Ruida, Lhystudios, Moshiboard, etc devices. But only one type
-    of registered backend for each of those types."""
-    def __init__(self, kernel=None, uid=None):
-        self.kernel = kernel
-        self.uid = uid
-
-    def create_device(self, uid):
-        """
-        Create an instance of the registered device type.
-
-        :param uid: Unique identifier.
-        :return: device created
-        """
-        pass
+        try:
+            if self.name is not None:
+                del kernel.module_instances[self.name]
+        except KeyError:
+            pass
 
 
 class Device:
@@ -208,7 +138,7 @@ class Device:
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
-                finish = "    %s returned %s after %fms" % (func.__name__, value, t*1000)
+                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
                 print(finish)
                 debug_file.write(finish + '\n')
                 debug_file.flush()
@@ -289,11 +219,11 @@ class Device:
     def unlisten(self, signal, function):
         self.kernel.unlisten(self.uid + ';' + signal, function)
 
-    def add_thread(self, name, thread):
-        self.kernel.add_thread(self.uid + name, thread)
+    def thread_instance_add(self, name, thread):
+        self.kernel.thread_instance_add(self.uid + name, thread)
 
-    def add_control(self, name, control):
-        self.kernel.add_control(self.uid + name, control)
+    def control_instance_add(self, name, control):
+        self.kernel.control_instance_add(self.uid + name, control)
 
 
 class SpoolerThread(Thread):
@@ -395,6 +325,7 @@ class SpoolerThread(Thread):
 class Spooler:
     """
     Given spoolable objects it uses an interpreter to convert these to code.
+
     The code is then written to a pipe.
     These operations occur in an async manner with a registered SpoolerThread.
     """
@@ -518,12 +449,9 @@ class Interpreter:
 
 class Pipe:
     """
-    Write/Monitor data flow in the kernel. Provides general information about buffer size in through len() builtin.
-    Pipes have a write and realtime_write functions. And a monitor registry which is given any output from pipe.
+    Write dataflow in the kernel. Provides general information about buffer size in through len() builtin.
+    Pipes have a write and realtime_write functions.
     """
-
-    def __init__(self):
-        self.monitors = None
 
     def __len__(self):
         return 0
@@ -544,21 +472,6 @@ class Pipe:
     def write(self, bytes_to_write):
         raise NotImplementedError
 
-    def post(self, channel, text):
-        if self.monitors is not None:
-            for m in self.monitors:
-                m(channel, text)
-
-    def monitor(self, monitor_function):
-        if self.monitors is None:
-            self.monitors = [monitor_function]
-        else:
-            self.monitors.append(monitor_function)
-
-    def unmonitor(self, monitor_function):
-        if self.monitors is not None:
-            self.monitors.remove(monitor_function)
-
     def realtime_write(self, bytes_to_write):
         """
         This method shall be permitted to not exist.
@@ -566,6 +479,34 @@ class Pipe:
         to this method should assume pipe may not have this command.
         """
         self.write(bytes_to_write)
+
+
+class Channel:
+    """
+    Channels are a dataflow object to connect different modules together. These are often for logging of events or any
+    other optional data output pipes.
+    """
+
+    def __init__(self):
+        self.watcher = None
+        self.greet = None
+
+    def post(self, channel, text):
+        if self.watcher is not None:
+            for m in self.watcher:
+                m(channel, text)
+
+    def add_watcher(self, monitor_function):
+        if self.watcher is None:
+            self.watcher = [monitor_function]
+        else:
+            self.watcher.append(monitor_function)
+        if self.greet is not None:
+            monitor_function(None, self.greet)
+
+    def remove_watcher(self, monitor_function):
+        if self.watcher is not None:
+            self.watcher.remove(monitor_function)
 
 
 class Effect:
@@ -576,6 +517,7 @@ class Effect:
     The command is the command to call the path with.
     The load is the file expected to exist when the execution finishes.
     """
+
     def __init__(self, select, save, path, command, load):
         self.select = select
         self.save = save
@@ -590,12 +532,13 @@ class Modification:
     Type Input is the input type kind of element this is intended to act upon.
     Type Output is the output type of the element this is intended to produce.
     """
+
     def __init__(self, input_type, output_type):
         self.input_type = input_type
         self.output_type = output_type
 
 
-class Kernel:
+class Kernel(Thread):
     """
     The kernel is the software framework that is tasked with the API implementation.
 
@@ -643,27 +586,34 @@ class Kernel:
     """
 
     def __init__(self, config=None):
+        Thread.__init__(self, name='KernelThread')
+        self.daemon = True
+        self.state = THREAD_STATE_UNSTARTED
+        self.jobs = []
+
+        # Current Project.
         self.elements = []
         self.operations = []
         self.filenodes = {}
 
-        self.config = None
+        # Instanceable Kernel Objects
+        self.registered_devices = {}
+        self.registered_modules = {}
+        self.registered_pipes = {}
+        self.registered_loaders = {}
+        self.registered_savers = {}
+        self.registered_modifications = {}
+        self.registered_effects = {}
 
-        self.modules = {}
-        self.loaders = {}
-        self.savers = {}
-        self.threads = {}
-        self.controls = {}
-        self.windows = {}
-        self.open_windows = {}
+        # Active Kernel Object Instances
+        self.device_instances = {}
+        self.module_instances = {}
+        self.pipe_instances = {}
+        self.channel_instances = {}
+        self.control_instances = {}
+        self.thread_instances = {}
 
-        self.backends = {}
-
-        self.devices = {}
-        self.device = None
-
-        self.modifications = {}
-        self.effects = {}
+        # Signal processing.
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []
@@ -671,16 +621,24 @@ class Kernel:
         self.queue_lock = Lock()
         self.message_queue = {}
         self._is_queue_processing = False
-
         self.run_later = lambda listener, message: listener(message)
-        self.shutdown_watcher = lambda i, e, o: True
-        self.translation = lambda e: e  # Default for this code is do nothing.
 
-        self.keymap = {}
-
+        # Persistent storage if it exists.
+        self.config = None
         if config is not None:
             self.set_config(config)
-        self.cron = None
+
+        # Active Device
+        self.device = None
+
+        # Shutdown watcher if exists.
+        self.shutdown_watcher = lambda i, e, o: True
+
+        # Translation function if exists.
+        self.translation = lambda e: e  # Default for this code is do nothing.
+
+        # Keymap values
+        self.keymap = {}
 
     def __str__(self):
         return "Project"
@@ -688,68 +646,13 @@ class Kernel:
     def __call__(self, code, *message):
         self.signal(code, *message)
 
-    def signal(self, code, *message):
-        self.queue_lock.acquire(True)
-        self.message_queue[code] = message
-        self.queue_lock.release()
-
-    def delegate_messages(self):
-        if self._is_queue_processing:
-            return
-        self.run_later(self.process_queue, None)
-
-    def process_queue(self, *args):
-        if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
-            return
-        self._is_queue_processing = True
-        add = None
-        remove = None
-        self.queue_lock.acquire(True)
-        queue = self.message_queue
-        if len(self.adding_listeners) != 0:
-            add = self.adding_listeners
-            self.adding_listeners = []
-        if len(self.removing_listeners):
-            remove = self.removing_listeners
-            self.removing_listeners = []
-        self.message_queue = {}
-        self.queue_lock.release()
-        if add is not None:
-            for signal, funct in add:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    listeners.append(funct)
-                else:
-                    self.listeners[signal] = [funct]
-                if signal in self.last_message:
-                    last_message = self.last_message[signal]
-                    funct(*last_message)
-        if remove is not None:
-            for signal, funct in remove:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    try:
-                        listeners.remove(funct)
-                    except ValueError:
-                        print("Value error removing: %s  %s" % (str(listeners), signal))
-
-        for code, message in queue.items():
-            # if 'spooler' in code:
-            #     print("%s : %s" % (code,message))
-            if code in self.listeners:
-                listeners = self.listeners[code]
-                for listener in listeners:
-                    listener(*message)
-            self.last_message[code] = message
-        self._is_queue_processing = False
-
-    def last_signal(self, code):
-        try:
-            return self.last_message[code]
-        except KeyError:
-            return None
-
     def __setitem__(self, key, value):
+        """
+        Kernel value settings. If Config is registered this will be persistent.
+        :param key: Key to set.
+        :param value: Value to set
+        :return: None
+        """
         if isinstance(key, tuple):
             if value is None:
                 key, value = key
@@ -761,6 +664,14 @@ class Kernel:
             self.write_config(key, value)
 
     def __getitem__(self, item):
+        """
+        Kernel value get. If Config is set registered this will be persistent.
+
+        As a shorthand any float, int, string, or bool set with this will also be found at kernel.item
+
+        :param item:
+        :return:
+        """
         if isinstance(item, tuple):
             if len(item) == 2:
                 t, key = item
@@ -770,12 +681,76 @@ class Kernel:
                 return self.read_config(t, key, default)
         return self.config.Read(item)
 
+    def add_job(self, run, args=(), interval=1.0, times=None):
+        """
+        Adds a job to the scheduler.
+
+        :param run: function to run
+        :param args: arguments to give to that function.
+        :param interval: in seconds, how often should the job be run.
+        :param times: limit on number of executions.
+        :return: Reference to the job added.
+        """
+        job = KernelJob(self, run, args, interval, times)
+        self.jobs.append(job)
+        return job
+
+    def run(self):
+        """
+        Scheduler main loop.
+        Check the Scheduler thread state, and whether it should abort or pause.
+        Check each job, and if that job is scheduled to run. Executes that job.
+        :return:
+        """
+        self.state = THREAD_STATE_STARTED
+        while self.state != THREAD_STATE_FINISHED:
+            time.sleep(0.005)  # 200 ticks a second.
+            if self.state == THREAD_STATE_ABORT:
+                break
+            while self.state == THREAD_STATE_PAUSED:
+                # The scheduler is paused.
+                time.sleep(1.0)
+            for job in self.jobs:
+                # Checking if jobs should run.
+                if job.scheduled:
+                    job.run()
+        self.state = THREAD_STATE_FINISHED
+        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
+        self.shutdown()
+
+    def state(self):
+        return self.state
+
+    def resume(self):
+        self.state = THREAD_STATE_STARTED
+
+    def pause(self):
+        self.state = THREAD_STATE_PAUSED
+
+    def stop(self):
+        self.state = THREAD_STATE_ABORT
+
     def boot(self):
-        if self.cron is None or not self.cron.is_alive():
-            self.cron = Scheduler(self)
-            self.cron.add_job(self.delegate_messages, args=(), interval=0.05)
-            self.add_thread('Scheduler', self.cron)
-            self.cron.start()
+        """
+        Kernel boot sequence. This should be called after all the registered devices are established.
+        :return:
+        """
+        if not self.is_alive():
+            self.add_job(self.delegate_messages, args=(), interval=0.05)
+            self.start()
+
+        self.setting(str, 'device_list', '')
+        self.setting(str, 'device_primary', '')
+        for device in self.device_list.split(';'):
+            args = list(device.split(':'))
+            if len(args) == 1:
+                for r in self.registered_devices:
+                    self.device_instance_open(r, args[0])
+                    break
+            else:
+                self.device_instance_open(args[1], args[0])
+            if device == self.device_primary:
+                self.activate_device(device)
 
     def shutdown(self):
         """
@@ -796,46 +771,33 @@ class Kernel:
         if not kill(SHUTDOWN_BEGIN, 'shutdown', self):
             return
         self.flush()
-        for device_name in self.devices:
-            device = self.devices[device_name]
+        for device_name in self.device_instances:
+            device = self.device_instances[device_name]
             if kill(SHUTDOWN_FLUSH, device_name, device):
                 device.flush()
         if self.config is not None:
             self.config.Flush()
-        windows = list(self.open_windows)
-        for i in range(0, len(windows)):
-            window_name = windows[i]
-            window = self.open_windows[window_name]
-            if kill(SHUTDOWN_WINDOW, window_name, window):
-                try:
-                    window.Close()
-                except AttributeError:
-                    pass
 
-        for window_name in list(self.open_windows):
-            window = self.open_windows[window_name]
-            kill(SHUTDOWN_WINDOW_ERROR, window_name, window)
-
-        for module_name in list(self.modules):
-            module = self.modules[module_name]
+        for module_name in list(self.module_instances):
+            module = self.module_instances[module_name]
             if kill(SHUTDOWN_MODULE, module_name, module):
                 try:
                     module.shutdown(self)
                 except AttributeError:
                     pass
-        for module_name in self.modules:
-            module = self.modules[module_name]
+        for module_name in self.module_instances:
+            module = self.module_instances[module_name]
             kill(SHUTDOWN_MODULE_ERROR, module_name, module)
 
-        for thread_name in self.threads:
-            thread = self.threads[thread_name]
+        for thread_name in self.thread_instances:
+            thread = self.thread_instances[thread_name]
             if not thread.is_alive:
                 kill(SHUTDOWN_THREAD_ERROR, thread_name, thread)
                 continue
             if kill(SHUTDOWN_THREAD, thread_name, thread):
-                if thread is self.cron:
+                if thread is self:
                     continue
-                    # Do not sleep thread waiting for cron thread to die. This is the cron thread.
+                    # Do not sleep thread waiting for kernelthread to die. This is kernelthread.
                 try:
                     thread.stop()
                 except AttributeError:
@@ -903,7 +865,7 @@ class Kernel:
         """
         Registers a setting to be used between modules.
 
-        If the setting exists, it's value remains unchanged.
+        If the setting exists, its value remains unchanged.
         If the setting exists in the persistent storage that value is used.
         If there is no settings value, the default will be used.
 
@@ -939,29 +901,88 @@ class Kernel:
         setattr(self, setting_name, value)
         self(setting_name, (value, old_value))
 
-    def add_window(self, window_name, window):
-        self.windows[window_name] = window
+    # Signal processing.
 
-    def mark_window_closed(self, name):
-        if name in self.open_windows:
-            del self.open_windows[name]
+    def signal(self, code, *message):
+        """
+        Signals add the latest message to the message queue.
+        :param code: Signal code
+        :param message: Message to send.
+        """
+        self.queue_lock.acquire(True)
+        self.message_queue[code] = message
+        self.queue_lock.release()
 
-    def close_old_window(self, name):
-        if name in self.open_windows:
-            try:
-                self.open_windows[name].Close()
-            except RuntimeError:
-                pass  # already closed.
-        self.mark_window_closed(name)
+    def delegate_messages(self):
+        """
+        Delegate the process queue to the run_later thread.
+        run_later should be a threading instance wherein all signals are delivered.
+        """
+        if self._is_queue_processing:
+            return
+        self.run_later(self.process_queue, None)
 
-    def open_window(self, window_name):
-        self.close_old_window(window_name)
-        w = self.windows[window_name]
-        window = w(None, -1, "")
-        window.Show()
-        window.set_kernel(self)
-        self.open_windows[window_name] = window
-        return window
+    def process_queue(self, *args):
+        """
+        Performed in the run_later thread. Signal groups. Threadsafe.
+
+        Process the signals queued up. Inserting any attaching listeners, removing any removing listeners. And
+        providing the newly attached listeners the last message known from that signal.
+        :param args: None
+        :return:
+        """
+        if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
+            return
+        self._is_queue_processing = True
+        add = None
+        remove = None
+        self.queue_lock.acquire(True)
+        queue = self.message_queue
+        if len(self.adding_listeners) != 0:
+            add = self.adding_listeners
+            self.adding_listeners = []
+        if len(self.removing_listeners):
+            remove = self.removing_listeners
+            self.removing_listeners = []
+        self.message_queue = {}
+        self.queue_lock.release()
+        if add is not None:
+            for signal, funct in add:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    listeners.append(funct)
+                else:
+                    self.listeners[signal] = [funct]
+                if signal in self.last_message:
+                    last_message = self.last_message[signal]
+                    funct(*last_message)
+        if remove is not None:
+            for signal, funct in remove:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    try:
+                        listeners.remove(funct)
+                    except ValueError:
+                        print("Value error removing: %s  %s" % (str(listeners), signal))
+
+        for code, message in queue.items():
+            if code in self.listeners:
+                listeners = self.listeners[code]
+                for listener in listeners:
+                    listener(*message)
+            self.last_message[code] = message
+        self._is_queue_processing = False
+
+    def last_signal(self, code):
+        """
+        Queries the last signal for a particular code.
+        :param code: code to query.
+        :return: Last signal sent through the kernel for that code.
+        """
+        try:
+            return self.last_message[code]
+        except KeyError:
+            return None
 
     def listen(self, signal, funct):
         self.queue_lock.acquire(True)
@@ -973,56 +994,134 @@ class Kernel:
         self.removing_listeners.append((signal, funct))
         self.queue_lock.release()
 
-    def add_module(self, module_name, module):
-        self.modules[module_name] = module
-        module.initialize(self, name=module_name)
+    # Kernel object registration
+    def register_window(self, name, obj):
+        self.registered_windows[name] = obj
 
-    def remove_module(self, module_name):
-        del self.modules[module_name]
+    def register_module(self, name, obj):
+        self.registered_modules[name] = obj
 
-    def add_loader(self, loader_name, loader):
-        self.loaders[loader_name] = loader
+    def register_device(self, name, obj):
+        self.registered_devices[name] = obj
 
-    def add_saver(self, saver_name, saver):
-        self.savers[saver_name] = saver
+    def register_loader(self, name, obj):
+        self.registered_loaders[name] = obj
 
-    def remove_backend(self, backend_name):
-        del self.backends[backend_name]
+    def register_saver(self, name, obj):
+        self.registered_savers[name] = obj
 
-    def add_backend(self, backend_name, backend):
-        self.backends[backend_name] = backend
+    def register_pipe(self, name, obj):
+        self.registered_pipes[name] = obj
 
-    def add_device(self, device_name, device):
-        self.devices[device_name] = device
+    def register_modification(self, name, obj):
+        self.registered_modifications[name] = obj
+
+    def register_effect(self, name, obj):
+        self.registered_effects[name] = obj
+
+    # Device kernel object
+
+    def device_instance_open(self, device_name, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = device_name
+        device_object = self.registered_devices[device_name]
+        device_instance = device_object(**kwargs)
+        self.device_instances[instance_name] = device_instance
+        device_instance.initialize(self, name=instance_name)
+        return device_instance
+
+    def device_instance_close(self, name):
+        if name in self.device_instances:
+            try:
+                self.device_instances[name].close()
+            except AttributeError:
+                pass  # No close
+        self.device_instance_remove(name)
+
+    def device_instance_remove(self, name):
+        if name in self.device_instances:
+            del self.device_instances[name]
 
     def activate_device(self, device_name):
         original = self.device
         if device_name is None:
             self.device = None
         else:
-            self.device = self.devices[device_name]
+            self.device = self.device_instances[device_name]
         if self.device is not original:
-            for module_name in self.modules:
-                module = self.modules[module_name]
+            for module_name in self.module_instances:
+                module = self.module_instances[module_name]
                 if original is not None:
                     module.deregister(original)
                 module.register(self.device)
             self.signal("device", self.device)
 
-    def add_control(self, control_name, function):
-        self.controls[control_name] = function
+    # Module kernel objects
 
-    def remove_control(self, control_name):
-        del self.controls[control_name]
+    def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = module_name
+        module_object = self.registered_modules[module_name]
+        module_instance = module_object(*args, **kwargs)
+        module_instance.initialize(self, name=instance_name)
+        self.module_instances[instance_name] = module_instance
+        module_instance.register(self.device)
+        return module_instance
+
+    def module_instance_close(self, name):
+        if name in self.module_instances:
+            # try:
+            self.module_instances[name].shutdown(self)
+            # except AttributeError:
+            #     pass  # No shutdown.
+        self.module_instance_remove(name)
+
+    def module_instance_remove(self, name):
+        if name in self.module_instances:
+            del self.module_instances[name]
+
+    # Pipe kernel object
+
+    def pipe_instance_open(self, pipe_name, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = pipe_name
+        pipe_object = self.registered_pipes[pipe_name]
+        pipe_instance = pipe_object(**kwargs)
+        self.pipe_instances[instance_name] = pipe_instance
+        pipe_instance.initialize(self, name=instance_name)
+        return pipe_instance
+
+    # Channel kernel object.
+    def channel_instance_add(self, name, channel):
+        self.channel_instances[name] = channel
+
+    def channel_instance_remove(self, name):
+        del self.channel_instances[name]
+
+    def watch(self, name, watcher):
+        channel = self.channel_instances[name]
+        channel.add_watcher(watcher)
+
+    def unwatch(self, name, watcher):
+        channel = self.channel_instances[name]
+        channel.remove_watcher(watcher)
+
+    # Control kernel object. Registered function calls.
+    def control_instance_add(self, control_name, function):
+        self.control_instances[control_name] = function
+
+    def control_instance_remove(self, control_name):
+        del self.control_instances[control_name]
 
     def execute(self, control_name, *args):
-        self.controls[control_name](*args)
+        self.control_instances[control_name](*args)
 
-    def add_thread(self, thread_name, obj):
-        self.threads[thread_name] = obj
+    # Thread kernel object. Registered Threads.
+    def thread_instance_add(self, thread_name, obj):
+        self.thread_instances[thread_name] = obj
 
-    def remove_thread(self, thread_name):
-        del self.threads[thread_name]
+    def thread_instance_remove(self, thread_name):
+        del self.thread_instances[thread_name]
 
     def get_text_thread_state(self, state):
         _ = self.translation
@@ -1041,45 +1140,48 @@ class Kernel:
 
     def get_state(self, thread_name):
         try:
-            return self.threads[thread_name].state()
+            return self.thread_instances[thread_name].state()
         except AttributeError:
             return THREAD_STATE_UNKNOWN
 
-    def start(self, thread_name):
+    # TODO: check whether these have any actual function anymore.
+    def module_start(self, thread_name):
         try:
-            self.modules[thread_name].start()
+            self.module_instances[thread_name].start()
         except AttributeError:
             pass
 
-    def resume(self, thread_name):
+    def module_resume(self, thread_name):
         try:
-            self.modules[thread_name].resume()
+            self.module_instances[thread_name].resume()
         except AttributeError:
             pass
 
-    def pause(self, thread_name):
+    def module_pause(self, thread_name):
         try:
-            self.modules[thread_name].pause()
+            self.module_instances[thread_name].pause()
         except AttributeError:
             pass
 
-    def abort(self, thread_name):
+    def module_abort(self, thread_name):
         try:
-            self.modules[thread_name].abort()
+            self.module_instances[thread_name].abort()
         except AttributeError:
             pass
 
-    def reset(self, thread_name):
+    def module_reset(self, thread_name):
         try:
-            self.modules[thread_name].reset()
+            self.module_instances[thread_name].reset()
         except AttributeError:
             pass
 
-    def stop(self, thread_name):
+    def module_stop(self, thread_name):
         try:
-            self.modules[thread_name].stop()
+            self.module_instances[thread_name].stop()
         except AttributeError:
             pass
+
+    # Element processing and alterations.
 
     def classify(self, elements):
         """
@@ -1136,10 +1238,10 @@ class Kernel:
         return ops
 
     def load(self, pathname):
-        for loader_name, loader in self.loaders.items():
+        for loader_name, loader in self.registered_loaders.items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    results = loader.load(pathname)
+                    results = loader.load(self, pathname)
                     if results is None:
                         continue
                     elements, pathname, basename = results
@@ -1154,12 +1256,12 @@ class Kernel:
         if all:
             filetypes.append('All valid types')
             exts = []
-            for loader_name, loader in self.loaders.items():
+            for loader_name, loader in self.registered_loaders.items():
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
                         exts.append('*.%s' % ext)
             filetypes.append(';'.join(exts))
-        for loader_name, loader in self.loaders.items():
+        for loader_name, loader in self.registered_loaders.items():
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
@@ -1169,16 +1271,16 @@ class Kernel:
         return "|".join(filetypes)
 
     def save(self, pathname):
-        for save_name, saver in self.savers.items():
+        for save_name, saver in self.registered_savers.items():
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
-                    saver.save(pathname, 'default')
+                    saver.save(self, pathname, 'default')
                     return True
         return False
 
     def save_types(self):
         filetypes = []
-        for saver_name, saver in self.savers.items():
+        for saver_name, saver in self.registered_savers.items():
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % (extension))

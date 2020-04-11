@@ -6,6 +6,7 @@
 import wx
 import sys
 
+from Kernel import Module
 
 _ = wx.GetTranslation
 
@@ -13,11 +14,12 @@ _ = wx.GetTranslation
 # begin wxGlade: dependencies
 # end wxGlade
 
-class Settings(wx.Frame):
+class Settings(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Preferences.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((412, 183))
 
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
@@ -43,11 +45,16 @@ class Settings(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Settings")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
         kernel.setting(bool, "mouse_zoom_invert", False)
         kernel.setting(bool, "autoclose_shutdown", True)
         kernel.setting(int, "language", 0)
@@ -61,6 +68,11 @@ class Settings(wx.Frame):
             self.checklist_options.Check(1, True)
         self.radio_units.SetSelection(self.kernel.units_index)
         self.combo_language.SetSelection(self.kernel.language)
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: Settings.__set_properties

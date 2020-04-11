@@ -1,13 +1,16 @@
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class ImageProperty(wx.Frame):
+class ImageProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: ImageProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
         self.combo_dpi = wx.ComboBox(self, wx.ID_ANY,
@@ -38,7 +41,7 @@ class ImageProperty(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("ImageProperty")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -62,8 +65,17 @@ class ImageProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: ImageProperty.__set_properties

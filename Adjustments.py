@@ -1,15 +1,17 @@
 import wx
 
+from Kernel import Module
 from icons import *
 
 _ = wx.GetTranslation
 
 
-class Adjustments(wx.Frame):
+class Adjustments(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Adjustments.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((424, 417))
         self.check_speed_override = wx.CheckBox(self, wx.ID_ANY, "")
         self.slider_speed_override = wx.Slider(self, wx.ID_ANY, 100, 0, 500,
@@ -153,14 +155,25 @@ class Adjustments(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Adjustments")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
         if self.device is not None:
             self.device.execute("Realtime Resume")
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)

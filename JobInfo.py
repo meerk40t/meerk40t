@@ -1,5 +1,6 @@
 import wx
 
+from Kernel import Module
 from LaserOperation import *
 from icons import icons8_laser_beam_52, icons8_route_50
 from OperationPreprocessor import OperationPreprocessor
@@ -7,13 +8,13 @@ from OperationPreprocessor import OperationPreprocessor
 _ = wx.GetTranslation
 
 
-class JobInfo(wx.Frame):
+class JobInfo(wx.Frame, Module):
 
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobInfo.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-
+        Module.__init__(self)
         self.SetSize((659, 612))
         self.operations_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.commands_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
@@ -125,15 +126,24 @@ class JobInfo(wx.Frame):
             self.menu_autobeep.Check(device.autobeep)
             self.menu_autostart.Check(device.autostart)
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
         self.set_device(kernel.device)
         self.operations = []
         self.kernel.listen("element_property_update", self.on_element_property_update)
 
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
     def on_close(self, event):
         self.kernel.unlisten("element_property_update", self.on_element_property_update)
-        self.kernel.mark_window_closed("JobInfo")
+        self.kernel.module_instance_remove(self.name)
         self.kernel = None
         event.Skip()  # Call destroy as regular.
 
@@ -174,13 +184,13 @@ class JobInfo(wx.Frame):
         self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.kernel.open_window("JobSpooler")
+        self.kernel.module_instance_open("JobSpooler", None, -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
             self.device.send_job(self.operations)
             self.on_button_job_spooler()
-            self.kernel.close_old_window("JobInfo")
+            self.kernel.module_instance_close("JobInfo")
         else:
             self.preprocessor.execute()
             self.update_gui()
@@ -195,9 +205,9 @@ class JobInfo(wx.Frame):
         obj = self.operations[node_index]
 
         if isinstance(obj, RasterOperation):
-            self.kernel.open_window("RasterProperty").set_operation(obj)
+            self.kernel.module_instance_open("RasterProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.kernel.open_window("EngraveProperty").set_operation(obj)
+            self.kernel.module_instance_open("EngraveProperty", None, -1, "").set_operation(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

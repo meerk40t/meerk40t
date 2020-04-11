@@ -185,29 +185,29 @@ class K40Controller(Module, Pipe):
         self.device.setting(int, 'packet_count', 0)
         self.device.setting(int, 'rejected_count', 0)
 
-        self.device.add_control("Connect_USB", self.open)
-        self.device.add_control("Disconnect_USB", self.close)
-        self.device.add_control("Start", self.start)
-        self.device.add_control("Stop", self.stop)
-        self.device.add_control("Status Update", self.update_status)
+        self.device.control_instance_add("Connect_USB", self.open)
+        self.device.control_instance_add("Disconnect_USB", self.close)
+        self.device.control_instance_add("Start", self.start)
+        self.device.control_instance_add("Stop", self.stop)
+        self.device.control_instance_add("Status Update", self.update_status)
         self.reset()
 
         def abort_wait():
             self.abort_waiting = True
 
-        self.device.add_control("Wait Abort", abort_wait)
+        self.device.control_instance_add("Wait Abort", abort_wait)
 
         def pause_k40():
             self.state = THREAD_STATE_PAUSED
             self.start()
 
-        self.device.add_control("Pause", pause_k40)
+        self.device.control_instance_add("Pause", pause_k40)
 
         def resume_k40():
             self.state = THREAD_STATE_STARTED
             self.start()
 
-        self.device.add_control("Resume", resume_k40)
+        self.device.control_instance_add("Resume", resume_k40)
 
     def __repr__(self):
         return "K40Controller()"
@@ -338,7 +338,7 @@ class K40Controller(Module, Pipe):
 
     def reset(self):
         self.thread = ControllerQueueThread(self)
-        self.device.add_thread("controller;thread", self.thread)
+        self.device.thread_instance_add("controller;thread", self.thread)
         self.state = THREAD_STATE_UNSTARTED
 
     def stop(self):

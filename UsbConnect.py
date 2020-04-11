@@ -1,13 +1,16 @@
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class UsbConnect(wx.Frame):
+class UsbConnect(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: UsbConnect.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((915, 424))
         self.usblog_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_WORDWRAP)
 
@@ -19,9 +22,15 @@ class UsbConnect(wx.Frame):
         self.device = None
         self.uid = None
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -36,10 +45,15 @@ class UsbConnect(wx.Frame):
         self.usblog_text.SetValue(self.device._device_log)
         self.usblog_text.AppendText("\n")
 
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
     def on_close(self, event):
         if self.device is not None:
             self.device.unlisten('pipe;device_log', self.update_log)
-        self.kernel.mark_window_closed("UsbConnect")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
     def update_log(self, text):

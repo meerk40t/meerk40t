@@ -5,17 +5,20 @@
 
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
 # begin wxGlade: dependencies
 # end wxGlade
 
-class Preferences(wx.Frame):
+class Preferences(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Preferences.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((395, 424))
         self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
@@ -81,12 +84,18 @@ class Preferences(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Preferences")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -137,6 +146,11 @@ class Preferences(wx.Frame):
         self.spin_device_version.SetValue(self.device.usb_version)
         self.spin_home_x.SetValue(self.device.home_adjust_x)
         self.spin_home_y.SetValue(self.device.home_adjust_y)
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties

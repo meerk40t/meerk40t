@@ -1,13 +1,16 @@
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class Keymap(wx.Frame):
+class Keymap(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Keymap.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((400, 300))
         self.check_invert_mouse_zoom = wx.CheckBox(self, wx.ID_ANY, _("Invert Mouse Wheel Zoom"))
         self.list_keymap = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
@@ -24,14 +27,23 @@ class Keymap(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Keymap")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
         kernel.setting(bool, "mouse_zoom_invert", False)
         self.check_invert_mouse_zoom.SetValue(self.kernel.mouse_zoom_invert)
         self.reload_keymap()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: Keymap.__set_properties

@@ -15,11 +15,12 @@ _ = wx.GetTranslation
 
 # TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
 
-class Controller(wx.Frame):
+class Controller(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Controller.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((507, 507))
         self.button_controller_control = wx.ToggleButton(self, wx.ID_ANY, _("Start Controller"))
         self.text_controller_status = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -70,9 +71,15 @@ class Controller(wx.Frame):
         self.update_usb_status = False
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
-        self.device = kernel.device
+        self.name = name
+        self.Show()
+
+    def register(self, device):
+        self.device = device
         if self.device is None:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -92,7 +99,13 @@ class Controller(wx.Frame):
 
         self.set_controller_button_by_state()
 
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
+
     def on_close(self, event):
+        self.kernel.module_instance_remove(self.name)
         try:
             if self.device is not None:
                 self.device.unlisten("pipe;status", self.update_status)
@@ -103,7 +116,6 @@ class Controller(wx.Frame):
                 self.device.unlisten("pipe;thread", self.on_control_state)
         except KeyError:
             pass  # Must have not registered at start because of no device.
-        self.kernel.mark_window_closed("Controller")
         self.kernel = None
         event.Skip()  # delegate destroy to super
 
@@ -329,7 +341,7 @@ class Controller(wx.Frame):
         self.device.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        self.kernel.open_window("BufferView")
+        self.kernel.module_instance_open("BufferView", None, -1, "")
 
     def update_status(self, data):
         self.update_status_data = True

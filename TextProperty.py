@@ -1,5 +1,6 @@
 import wx
 
+from Kernel import Module
 from LaserRender import swizzlecolor
 from icons import icons8_bold_50, icons8_underline_50, icons8_italic_50
 from svgelements import *
@@ -7,11 +8,12 @@ from svgelements import *
 _ = wx.GetTranslation
 
 
-class TextProperty(wx.Frame):
+class TextProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((317, 426))
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.combo_font_size = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
@@ -85,7 +87,7 @@ class TextProperty(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("TextProperty")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -97,8 +99,17 @@ class TextProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: TextProperty.__set_properties

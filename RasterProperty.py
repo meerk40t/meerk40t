@@ -1,13 +1,16 @@
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class RasterProperty(wx.Frame):
+class RasterProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: RasterProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((359, 355))
         self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "200.0", min=0.0, max=500.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
@@ -43,7 +46,7 @@ class RasterProperty(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("RasterProperty")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_operation(self, operation):
@@ -96,8 +99,17 @@ class RasterProperty(wx.Frame):
             self.combo_second_pass.Enable(False)
         return self
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: RasterProperty.__set_properties

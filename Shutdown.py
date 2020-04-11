@@ -6,11 +6,12 @@ from Kernel import *
 _ = wx.GetTranslation
 
 
-class Shutdown(wx.Frame):
+class Shutdown(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Shutdown.__init__
         kwds["style"] = kwds.get("style", 0) | wx.CAPTION | wx.CLIP_CHILDREN | wx.FRAME_TOOL_WINDOW | wx.RESIZE_BORDER | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((413, 573))
         self.text_shutdown = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_sign_50.GetBitmap())
@@ -28,14 +29,24 @@ class Shutdown(wx.Frame):
         self.autoclose = True
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Shutdown")
+        self.kernel.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
-    def set_kernel(self, kernel):
+    def initialize(self, kernel, name=None):
+        kernel.module_instance_close(name)
+        Module.initialize(kernel, name)
         self.kernel = kernel
+        self.name = name
+        self.Show()
+
         self.kernel.setting(bool, "autoclose_shutdown", True)
         self.autoclose = self.kernel.autoclose_shutdown
         self.kernel.shutdown_watcher = self.on_shutdown
+
+    def shutdown(self, kernel):
+        self.Close()
+        Module.shutdown(self, kernel)
+        self.kernel = None
 
     def on_shutdown(self, flag, name, obj):
         if obj == self:  # Trying to shut down this window. That's a 'no'.
@@ -94,7 +105,7 @@ class Shutdown(wx.Frame):
         # end wxGlade
 
     def on_button_stop(self, event):  # wxGlade: Shutdown.<event_handler>
-        for name, device in self.kernel.devices.items():
+        for name, device in self.kernel.device_instances.items():
             if device.spooler.thread is not None:
                 if device.spooler.thread.is_alive() or device.pipe.thread.is_alive():
                     device.execute("Emergency Stop")
@@ -102,6 +113,5 @@ class Shutdown(wx.Frame):
         wx.CallAfter(self.Close)
 
     def on_button_reload(self, event):  # wxGlade: Shutdown.<event_handler>
-        pass
-        # self.kernel.open_window('MeerK40t')
-        # self.Close()
+        # self.kernel.module_instance_open('MeerK40t', None, -1, "")
+        self.Close()
