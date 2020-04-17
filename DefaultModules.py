@@ -17,9 +17,19 @@ class K40StockDevice(Device):
     """
     K40StockDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
-    def __init__(self, uid=None):
-        Device.__init__(self)
+    def __init__(self, deviceroot, uid=''):
+        Device.__init__(self, deviceroot, uid)
         self.uid = uid
+
+        # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
+        self._device_log = ''
+        self.current_x = 0
+        self.current_y = 0
+        self.hold_condition = lambda e: False
+
+        self.spooler = Spooler(self)
+        self.interpreter = LhymicroInterpreter(self)
+        self.pipe = K40Controller(self, uid)
 
     def __repr__(self):
         return "K40StockDevice(uid='%s')" % str(self.uid)
@@ -59,6 +69,21 @@ class K40StockDevice(Device):
         self.control_instance_add("Debug Device", self._start_debugging)
 
         self.open()
+
+    def hold(self):
+        if self.spooler.thread.state == THREAD_STATE_ABORT:
+            raise InterruptedError
+        while self.hold_condition(0):
+            if self.spooler.thread.state == THREAD_STATE_ABORT:
+                raise InterruptedError
+            time.sleep(0.1)
+
+    def send_job(self, job):
+        self.spooler.send_job(job)
+
+    def log(self, message):
+        self._device_log += message
+        self.signal('pipe;device_log', message)
 
     def emergency_stop(self):
         self.spooler.realtime(COMMAND_RESET, 1)

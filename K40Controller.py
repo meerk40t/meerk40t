@@ -92,7 +92,6 @@ class ControllerQueueThread(threading.Thread):
             self.controller.thread_state_update(self.state)
 
     def run(self):
-
         self.set_state(THREAD_STATE_STARTED)
         while self.controller.state == THREAD_STATE_UNSTARTED:
             time.sleep(0.1)  # Already started. Unstarted is the desired state. Wait.
@@ -159,11 +158,12 @@ class K40Controller(Module, Pipe):
     and the log will provide information about the connected and error status of the USB device.
     """
 
-    def __init__(self):
+    def __init__(self, device=None, uid=''):
         Pipe.__init__(self)
+        self.usb_log = Channel()
         self.debug_file = None
         self.driver = None
-        self.device = None
+        self.device = device
         self.state = THREAD_STATE_UNSTARTED
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -190,6 +190,7 @@ class K40Controller(Module, Pipe):
         self.device.control_instance_add("Start", self.start)
         self.device.control_instance_add("Stop", self.stop)
         self.device.control_instance_add("Status Update", self.update_status)
+        self.device.channel_instance_add("USB Log", self.usb_log)
         self.reset()
 
         def abort_wait():

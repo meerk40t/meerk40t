@@ -389,6 +389,15 @@ class MeerK40t(wx.Frame, Module):
         self.kernel.stop()
         event.Skip()  # Call destroy as regular.
 
+    def register(self, device):
+        Module.register(self, device)
+        if device is not None:
+            device.setting(int, "bed_width", 320)  # Default Value
+            device.setting(int, "bed_height", 220)  # Default Value
+            bedwidth = device.bed_width
+            bedheight = device.bed_height
+            self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
+
     def initialize(self, kernel, name=None):
         kernel.module_instance_close(name)
         Module.initialize(kernel, name)
@@ -404,8 +413,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.setting(int, "units_index", 0)
         kernel.setting(bool, "mouse_zoom_invert", False)
         kernel.setting(int, 'fps', 40)
-        kernel.setting(int, "bed_width", 320)  # Default Value
-        kernel.setting(int, "bed_height", 220)  # Default Value
+
         self.listen_scene()
         if kernel.fps <= 0:
             kernel.fps = 60
@@ -426,10 +434,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.control_instance_add("Home and Dot", self.run_home_and_dot_test)
 
         self.SetSize((kernel.window_width, kernel.window_height))
-        bedwidth = kernel.bed_width
-        bedheight = kernel.bed_height
 
-        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
         self.fps_job = self.kernel.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
         self.add_language_menu()
 
@@ -1018,13 +1023,15 @@ class MeerK40t(wx.Frame, Module):
         return point[0], point[1]
 
     def calculate_grid(self):
-        if self.kernel.device is not None:
-            v = self.kernel.device
+        if self.device is not None:
+            v = self.device
+            wmils = v.bed_width * MILS_IN_MM
+            hmils = v.bed_height * MILS_IN_MM
         else:
-            v = self.kernel
+            wmils = 320 * MILS_IN_MM
+            hmils = 220 * MILS_IN_MM
+
         p = self.kernel
-        wmils = v.bed_width * MILS_IN_MM
-        hmils = v.bed_height * MILS_IN_MM
         convert = p.units_convert
         marks = p.units_marks
         step = convert * marks
@@ -1125,12 +1132,13 @@ class MeerK40t(wx.Frame, Module):
                 pass
 
     def on_draw_bed(self, gc):
-        if self.kernel.device is not None:
-            v = self.kernel.device
+        if self.device is not None:
+            v = self.device
+            wmils = v.bed_width * MILS_IN_MM
+            hmils = v.bed_height * MILS_IN_MM
         else:
-            v = self.kernel
-        wmils = v.bed_width * MILS_IN_MM
-        hmils = v.bed_height * MILS_IN_MM
+            wmils = 320 * MILS_IN_MM
+            hmils = 220 * MILS_IN_MM
         if self.background is None:
             gc.SetBrush(wx.WHITE_BRUSH)
             gc.DrawRectangle(0, 0, wmils, hmils)

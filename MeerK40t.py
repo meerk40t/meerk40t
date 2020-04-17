@@ -84,7 +84,7 @@ elif grbl.adjust_x is not None:
 
 if grbl.server is not None:
     try:
-        server = kernel.module_instance_open('GRBLServer', port=grbl.server)
+        server = kernel.module_instance_open('LaserServer', port=grbl.server)
         server.set_pipe(emulator)
     except OSError:
         print('Server failed on port: %d' % args.grbl)

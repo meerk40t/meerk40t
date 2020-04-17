@@ -107,7 +107,7 @@ class DeviceManager(wx.Frame, Module):
             if m != -1:
                 self.devices_list.SetItem(m, 1, "Lhystudios")
                 self.devices_list.SetItem(m, 2, str(value.state))
-                self.devices_list.SetItem(m, 3, str(value.location))
+                self.devices_list.SetItem(m, 3, "USB")
             if value is self.kernel.device:
                 self.devices_list.Select(m)
             i += 1
