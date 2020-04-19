@@ -20,29 +20,16 @@ class BufferView(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
-        self.kernel = None
-        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def shutdown(self, kernel):
-        self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -51,24 +38,27 @@ class BufferView(wx.Frame, Module):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
-        else:
-            pipe = self.device.pipe
-            buffer = None
-            if pipe is not None:
-                try:
-                    buffer = pipe.buffer + pipe.queue
-                except AttributeError:
-                    buffer = None
-            if buffer is None:
-                buffer = _("Could not find buffer.\n")
-
+            return
+        pipe = self.device.pipe
+        buffer = None
+        if pipe is not None:
             try:
-                bufferstr = buffer.decode()
-            except ValueError:
-                bufferstr = buffer.decode("ascii")
+                buffer = pipe.buffer + pipe.queue
+            except AttributeError:
+                buffer = None
+        if buffer is None:
+            buffer = _("Could not find buffer.\n")
 
-            self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
-            self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
+        try:
+            bufferstr = buffer.decode()
+        except ValueError:
+            bufferstr = buffer.decode("ascii")
+
+        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
+        self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
+
+    def shutdown(self):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: BufferView.__set_properties

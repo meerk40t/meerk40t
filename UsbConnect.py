@@ -18,20 +18,11 @@ class UsbConnect(wx.Frame, Module):
         self.__do_layout()
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
-        self.uid = None
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -45,22 +36,20 @@ class UsbConnect(wx.Frame, Module):
         self.usblog_text.SetValue(self.device._device_log)
         self.usblog_text.AppendText("\n")
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def on_close(self, event):
         if self.device is not None:
             self.device.unlisten('pipe;device_log', self.update_log)
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
     def update_log(self, text):
-        if self.kernel is None:
+        if self.device is None:
             return
         try:
-            device = self.kernel.device
+            device = self.device
             try:
                 self.usblog_text.SetValue(device._device_log)
                 self.usblog_text.AppendText("\n")

@@ -2,7 +2,6 @@ import argparse
 import sys
 
 from DefaultModules import *
-from Kernel import *
 from LaserServer import *
 
 try:
@@ -56,33 +55,38 @@ if not args.no_gui:
     meerk40tgui = kernel.module_instance_open('wxMeerK40t')
 
 kernel.register_device('K40Stock', K40StockDevice)
+
+kernel.register_module('LhymicroInterpreter', LhymicroInterpreter)
+kernel.register_module('Spooler', Spooler)
+kernel.register_module('K40Controller', K40Controller)
+kernel.register_module('GrblEmulator', GRBLEmulator)
+kernel.register_module('Console', Console)
+kernel.register_module('LaserServer', LaserServer)
+
 kernel.register_loader('SVGLoader', SVGLoader)
 kernel.register_loader('ImageLoader', ImageLoader)
 kernel.register_loader('EgvLoader', EgvLoader)
 kernel.register_loader("DxfLoader", DxfLoader)
+
 kernel.register_saver('SVGWriter', SVGWriter)
-kernel.register_module('GrblEmulator', GRBLEmulator)
-kernel.register_module('Console', Console)
-kernel.register_module('LaserServer', LaserServer)
-emulator = kernel.module_instance_open('GrblEmulator')
+
 console = kernel.module_instance_open('Console')
 
-
-if grbl.flip_y:
-    emulator.flip_y = -1
-
-if grbl.flip_x:
-    emulator.flip_x = -1
-
-if grbl.adjust_y is not None and grbl.adjust_x is not None:
-    emulator.home_adjust = (grbl.adjust_x, grbl.adjust_y)
-elif grbl.adjust_y is not None:
-    emulator.home_adjust = (0, grbl.adjust_y)
-elif grbl.adjust_x is not None:
-    emulator.home_adjust = (grbl.adjust_x, 0)
-
-
 if grbl.server is not None:
+    emulator = kernel.module_instance_open('GrblEmulator')
+    if grbl.flip_y:
+        emulator.flip_y = -1
+
+    if grbl.flip_x:
+        emulator.flip_x = -1
+
+    if grbl.adjust_y is not None and grbl.adjust_x is not None:
+        emulator.home_adjust = (grbl.adjust_x, grbl.adjust_y)
+    elif grbl.adjust_y is not None:
+        emulator.home_adjust = (0, grbl.adjust_y)
+    elif grbl.adjust_x is not None:
+        emulator.home_adjust = (grbl.adjust_x, 0)
+
     try:
         server = kernel.module_instance_open('LaserServer', port=grbl.server)
         server.set_pipe(emulator)
@@ -172,4 +176,7 @@ if args.output is not None:
 
 kernel.boot()
 if not args.no_gui:
+    for device_name in kernel.device_instances:
+        device = kernel.device_instances[device_name]
+        device.module_instance_open("MeerK40t",  None, -1, "")
     meerk40tgui.MainLoop()

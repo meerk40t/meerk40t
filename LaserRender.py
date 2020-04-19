@@ -19,8 +19,8 @@ def swizzlecolor(c):
 
 
 class LaserRender:
-    def __init__(self, kernel):
-        self.kernel = kernel
+    def __init__(self, device):
+        self.device = device
         self.cache = None
         self.pen = wx.Pen()
         self.brush = wx.Brush()
@@ -34,7 +34,8 @@ class LaserRender:
         :param draw_mode:
         :return:
         """
-        elements = self.kernel.elements
+        kernel = self.device.device_root
+        elements = kernel.elements
         if draw_mode & 0x1C00 != 0:
             types = []
             if draw_mode & 0x0400 == 0:
@@ -43,7 +44,7 @@ class LaserRender:
                 types.append(SVGImage)
             if draw_mode & 0x1000 == 0:
                 types.append(SVGText)
-            elements = [e for e in self.kernel if isinstance(e, tuple(*types))]
+            elements = [e for e in self.device if isinstance(e, tuple(*types))]
         for element in elements:
             try:
                 element.draw(element, gc, draw_mode)

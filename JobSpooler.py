@@ -36,13 +36,11 @@ class JobSpooler(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_start_job, self.button_spooler_control)
         self.Bind(wx.EVT_BUTTON, self.on_button_controller, self.button_controller)
         # end wxGlade
-        self.kernel = None
         self.dirty = False
         self.update_buffer_size = False
         self.update_spooler_state = False
         self.update_spooler = False
 
-        self.device = None
         self.elements_progress = 0
         self.elements_progress_total = 0
         self.command_index = 0
@@ -50,21 +48,10 @@ class JobSpooler(wx.Frame, Module):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def shutdown(self, kernel):
-        self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -86,14 +73,15 @@ class JobSpooler(wx.Frame, Module):
         self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
         self.refresh_spooler_list()
 
+    def shutdown(self):
+        self.Close()
+
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         if self.device is not None:
             self.device.unlisten('spooler;thread', self.on_spooler_state)
             self.device.unlisten("spooler;queue", self.on_spooler_update)
             self.device.unlisten("pipe;buffer", self.on_buffer_update)
-        self.kernel = None
-        self.device = None
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -234,34 +222,35 @@ class JobSpooler(wx.Frame, Module):
             self.device.autobeep = not self.device.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
-        self.kernel.module_instance_open("Controller", None, -1, "")
+        self.device.module_instance_open("Controller", None, -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         spooler = self.device.spooler
-        state = spooler.thread.state
-        if state == THREAD_STATE_STARTED:
-            spooler.thread.pause()
-        elif state == THREAD_STATE_PAUSED:
-            spooler.thread.resume()
-        elif state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            spooler.start_queue_consumer()
-        elif state == THREAD_STATE_ABORT:
-            spooler.reset_thread()
+        job = spooler.queue_consumer
+        # TODO: work this out correctly.
+        # if state == THREAD_STATE_STARTED:
+        #     spooler.thread.pause()
+        # elif state == THREAD_STATE_PAUSED:
+        #     spooler.thread.resume()
+        # elif state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
+        #     spooler.start_queue_consumer()
+        # elif state == THREAD_STATE_ABORT:
+        #     spooler.reset_thread()
 
     def set_spooler_button_by_state(self):
-        state = self.device.spooler.thread.state
-        if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
-            self.button_spooler_control.SetBackgroundColour("#009900")
-            self.button_spooler_control.SetLabel(_("Start Job"))
-        elif state == THREAD_STATE_PAUSED:
-            self.button_spooler_control.SetBackgroundColour("#00dd00")
-            self.button_spooler_control.SetLabel(_("Resume Job"))
-        elif state == THREAD_STATE_STARTED:
-            self.button_spooler_control.SetBackgroundColour("#00ff00")
-            self.button_spooler_control.SetLabel(_("Pause Job"))
-        elif state == THREAD_STATE_ABORT:
-            self.button_spooler_control.SetBackgroundColour("#00ffff")
-            self.button_spooler_control.SetLabel(_("Manual Reset"))
+        job = self.device.spooler.queue_consumer
+        # if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
+        #     self.button_spooler_control.SetBackgroundColour("#009900")
+        #     self.button_spooler_control.SetLabel(_("Start Job"))
+        # elif state == THREAD_STATE_PAUSED:
+        #     self.button_spooler_control.SetBackgroundColour("#00dd00")
+        #     self.button_spooler_control.SetLabel(_("Resume Job"))
+        # elif state == THREAD_STATE_STARTED:
+        #     self.button_spooler_control.SetBackgroundColour("#00ff00")
+        #     self.button_spooler_control.SetLabel(_("Pause Job"))
+        # elif state == THREAD_STATE_ABORT:
+        #     self.button_spooler_control.SetBackgroundColour("#00ffff")
+        #     self.button_spooler_control.SetLabel(_("Manual Reset"))
 
     def post_update(self):
         if not self.dirty:
@@ -269,7 +258,7 @@ class JobSpooler(wx.Frame, Module):
             wx.CallAfter(self.post_update_on_gui_thread)
 
     def post_update_on_gui_thread(self):
-        if self.kernel is None:
+        if self.device is None:
             return  # left over update on closed window
 
         if self.update_buffer_size:

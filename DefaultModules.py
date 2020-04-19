@@ -1,11 +1,12 @@
 import os
+import time
 from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from EgvParser import parse_egv
 from K40Controller import K40Controller
-from Kernel import Spooler, Module, Device, Pipe
+from Kernel import Spooler, Module, Device, Pipe, THREAD_STATE_ABORT
 from LaserCommandConstants import *
 from LhymicroInterpreter import LhymicroInterpreter
 from svgelements import *
@@ -17,8 +18,8 @@ class K40StockDevice(Device):
     """
     K40StockDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
-    def __init__(self, deviceroot, uid=''):
-        Device.__init__(self, deviceroot, uid)
+    def __init__(self, root, uid=''):
+        Device.__init__(self, root, uid)
         self.uid = uid
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
@@ -26,16 +27,23 @@ class K40StockDevice(Device):
         self.current_x = 0
         self.current_y = 0
         self.hold_condition = lambda e: False
-
-        self.spooler = Spooler(self)
-        self.interpreter = LhymicroInterpreter(self)
-        self.pipe = K40Controller(self, uid)
+        self.pipe = None
+        self.interpreter = None
+        self.spooler = None
 
     def __repr__(self):
         return "K40StockDevice(uid='%s')" % str(self.uid)
 
     def initialize(self, kernel, name=''):
+        """
+        Device initialize.
+
+        :param kernel:
+        :param name:
+        :return:
+        """
         self.kernel = kernel
+
         self.uid = name
         self.setting(int, 'usb_index', -1)
         self.setting(int, 'usb_bus', -1)
@@ -67,6 +75,11 @@ class K40StockDevice(Device):
 
         self.control_instance_add("Emergency Stop", self.emergency_stop)
         self.control_instance_add("Debug Device", self._start_debugging)
+        self.add_watcher('usb', self.log)
+
+        self.pipe = self.module_instance_open("K40Controller", instance_name='pipe')
+        self.interpreter = self.module_instance_open("LhymicroInterpreter", instance_name='interpreter')
+        self.spooler = self.module_instance_open("Spooler", instance_name='spooler')
 
         self.open()
 
@@ -89,9 +102,6 @@ class K40StockDevice(Device):
         self.spooler.realtime(COMMAND_RESET, 1)
 
     def open(self):
-        self.pipe = K40Controller()
-        self.interpreter = LhymicroInterpreter(self)
-        self.spooler = Spooler(self)
         self.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
 
     def close(self):
@@ -114,7 +124,6 @@ class GRBLEmulator(Module, Pipe):
         self.home = None
         self.home2 = None
         self.on_mode = 1
-        self.read_info = b"Grbl 1.1e ['$' for help]\r\n"
         self.buffer = ''
         self.grbl_set_re = re.compile(r'\$(\d+)=([-+]?[0-9]*\.?[0-9]*)')
         self.code_re = re.compile(r'([A-Za-z])')
@@ -155,6 +164,11 @@ class GRBLEmulator(Module, Pipe):
             131: 200.000,  # Y-axis max travel mm
             132: 200.000  # Z-axis max travel mm.
         }
+        self.grbl_channel = None
+
+    def initialize(self):
+        self.device.add_greet('grbl', b"Grbl 1.1e ['$' for help]\r\n")
+        self.grbl_channel = self.device.channel_open('grbl')
 
     def close(self):
         pass
@@ -162,32 +176,24 @@ class GRBLEmulator(Module, Pipe):
     def open(self):
         pass
 
-    def initialize(self, kernel, name=None):
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
-
-    def shutdown(self, kernel):
-        Module.shutdown(self, kernel)
-
     def realtime_write(self, bytes_to_write):
-        interpreter = self.kernel.device.interpreter
+        interpreter = self.device.interpreter
         if bytes_to_write == '?':  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if interpreter.state == 0:
                 state = 'Idle'
             else:
                 state = 'Busy'
-            x = self.kernel.device.current_x / self.scale
-            y = self.kernel.device.current_y / self.scale
+            x = self.device.current_x / self.scale
+            y = self.device.current_y / self.scale
             z = 0.0
             parts = list()
             parts.append(state)
             parts.append('MPos:%f,%f,%f' % (x, y, z))
-            f = self.feed_invert(self.kernel.device.interpreter.speed)
-            s = self.kernel.device.interpreter.power
+            f = self.feed_invert(self.device.interpreter.speed)
+            s = self.device.interpreter.power
             parts.append('FS:%f,%d' % (f, s))
-            self.read_info = "<%s>\r\n" % '|'.join(parts)
+            self.grbl_channel("<%s>\r\n" % '|'.join(parts))
         elif bytes_to_write == '~':  # Resume.
             interpreter.realtime_command(COMMAND_RESUME)
         elif bytes_to_write == '!':  # Pause.
@@ -195,13 +201,7 @@ class GRBLEmulator(Module, Pipe):
         elif bytes_to_write == '\x18':  # Soft reset.
             interpreter.realtime_command(COMMAND_RESET)
 
-    def read(self, size=-1):
-        r = self.read_info
-        self.read_info = None
-        return r
-
     def write(self, data):
-        self.read_info = ''
         if isinstance(data, bytes):
             data = data.decode()
         if '?' in data:
@@ -228,9 +228,9 @@ class GRBLEmulator(Module, Pipe):
             self.buffer = self.buffer[pos + 1:]
             cmd = self.commandline(command)
             if cmd == 0:  # Execute GCode.
-                self.read_info += "ok\r\n"
+                self.grbl_channel("ok\r\n")
             else:
-                self.read_info += "error:%d\r\n" % cmd
+                self.grbl_channel("error:%d\r\n" % cmd)
 
     def _tokenize_code(self, code_line):
         code = None
@@ -251,7 +251,7 @@ class GRBLEmulator(Module, Pipe):
             yield code
 
     def commandline(self, data):
-        spooler = self.kernel.device.spooler
+        spooler = self.device.spooler
         pos = data.find('(')
         commands = {}
         while pos != -1:
@@ -269,15 +269,15 @@ class GRBLEmulator(Module, Pipe):
             data = data[:pos]
         if data.startswith('$'):
             if data == '$':
-                self.read_info += "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                self.grbl_channel("[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n")
                 return 0
             elif data == '$$':
                 for s in self.settings:
                     v = self.settings[s]
                     if isinstance(v, int):
-                        self.read_info += "$%d=%d\r\n" % (s, v)
+                        self.grbl_channel("$%d=%d\r\n" % (s, v))
                     elif isinstance(v, float):
-                        self.read_info += "$%d=%.3f\r\n" % (s, v)
+                        self.grbl_channel("$%d=%.3f\r\n" % (s, v))
                 return 0
             if self.grbl_set_re.match(data):
                 settings = list(self.grbl_set_re.findall(data))[0]
@@ -317,7 +317,7 @@ class GRBLEmulator(Module, Pipe):
         return self.command(commands)
 
     def command(self, gc):
-        spooler = self.kernel.device.spooler
+        spooler = self.device.spooler
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:
@@ -585,13 +585,6 @@ class RuidaEmulator(Module, Pipe):
     def __init__(self):
         Module.__init__(self)
 
-    def initialize(self, kernel, name=None):
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-
-    def shutdown(self, kernel):
-        Module.shutdown(self, kernel)
-
     def swizzle(self, b):
         b ^= (b >> 7) & 0xFF
         b ^= (b << 7) & 0xFF
@@ -614,42 +607,23 @@ class RuidaEmulator(Module, Pipe):
 class Console(Module, Pipe):
     def __init__(self):
         Module.__init__(self)
-        self.delegate_pipe = None
+        self.channel = None
+        self.pipe = None
         self.buffer = ''
+        self.active_device = None
 
-    def initialize(self, kernel, name=None):
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
-
-    def shutdown(self, kernel):
-        Module.shutdown(self, kernel)
-
-    def close(self):
-        pass
-
-    def open(self):
-        pass
-
-    def monitor_delegate(self, channel, data):
-        self.post(channel, data)
-
-    def set_delegate(self, pipe):
-        self.delegate_pipe = pipe
-        self.delegate_pipe.add_watcher(self.monitor_delegate)
-
-    def realtime_write(self, bytes_to_write):
-        if self.delegate_pipe is not None:
-            self.delegate_pipe.realtime_write(bytes_to_write)
+    def initialize(self):
+        self.channel = self.device.channel_open('console')
+        self.active_device = self.device
 
     def write(self, data):
         if data == 'exit\n':  # process first to quit a delegate.
-            self.delegate_pipe.remove_watcher(self.monitor_delegate)
-            self.delegate_pipe = None
-            self.post("log", "Exited Mode.\n")
+            self.pipe = None
+            self.channel("Exited Mode.\n")
             return
-        if self.delegate_pipe is not None:
-            self.delegate_pipe.write(data)
+        if self.pipe is not None:
+            self.pipe.write(data)
+            return
         if isinstance(data, bytes):
             data = data.decode()
         self.buffer += data
@@ -660,53 +634,79 @@ class Console(Module, Pipe):
             self.commandline(command)
 
     def commandline(self, command):
+        kernel = self.device.device_root
+        active_device = self.active_device
         if command == "grbl":
-            self.set_delegate(self.kernel.modules['GrblEmulator'])
-            self.post("log", "GRBL Mode.\n")
+            self.channel("GRBL Mode.\n")
+            if 'GrblEmulator' in self.device.module_instances:
+                self.pipe = active_device.module_instances['GrblEmulator']
+            else:
+                self.pipe = active_device.module_instance_open('GrblEmulator')
+            active_device.add_watcher('grbl', self.channel)
             return
         elif command == "lhy":
-            self.set_delegate(self.kernel.modules['K40Controller'])
-            self.post("log", "Lhymicro-gl Mode.\n")
+            self.channel("Lhymicro-gl Mode.\n")
+            self.pipe = self.device.module_instances['K40Controller']
+            self.device.add_watcher('lhy', self.channel)
             return
         elif command == "set":
-            for attr in dir(self.kernel.device):
-                v = getattr(self.kernel.device, attr)
+            for attr in dir(active_device):
+                v = getattr(active_device, attr)
                 if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                     continue
-                self.post("log", '"%s" := %s\n' % (attr, str(v)))
+                self.channel('"%s" := %s\n' % (attr, str(v)))
         elif command.startswith('set '):
             var = list(command.split(' '))
             if len(var) >= 3:
                 attr = var[1]
                 value = var[2]
-                if hasattr(self.kernel.device, attr):
-                    v = getattr(self.kernel.device, attr)
+                if hasattr(active_device, attr):
+                    v = getattr(active_device, attr)
                     if isinstance(v, bool):
                         if value == 'False' or value == 'false' or value == 0:
-                            setattr(self.kernel.device, attr, False)
+                            setattr(active_device, attr, False)
                         else:
-                            setattr(self.kernel.device, attr, True)
+                            setattr(active_device, attr, True)
                     elif isinstance(v, int):
-                        setattr(self.kernel.device, attr, int(value))
+                        setattr(active_device, attr, int(value))
                     elif isinstance(v, float):
-                        setattr(self.kernel.device, attr, float(value))
+                        setattr(active_device, attr, float(value))
                     elif isinstance(v, str):
-                        setattr(self.kernel.device, attr, str(value))
+                        setattr(active_device, attr, str(value))
         elif command == 'control':
-            for control_name in self.kernel.controls:
-                self.post("log", '%s\n' % control_name)
+            for control_name in active_device.control_instances:
+                self.channel('%s\n' % control_name)
         elif command.startswith('control '):
             control_name = command[len('control '):]
-            if control_name in self.kernel.controls:
-                self.kernel.device.execute(control_name)
-                self.post("log", "Executed '%s'\n" % control_name)
+            if control_name in active_device.control_instances:
+                active_device.execute(control_name)
+                self.channel("Executed '%s'\n" % control_name)
             else:
-                self.post("log", "Control '%s' not found.\n" % control_name)
+                self.channel("Control '%s' not found.\n" % control_name)
+        elif command == 'device':
+            self.channel('%d: %s\n' % (0, 'device_root'))
+            for i, name in enumerate(kernel.device_instances):
+                self.channel('%d: %s\n' % (i+1, name))
+        elif command.startswith('device '):
+            value = command[len('device '):]
+            try:
+                value = int(value)
+                if value == 0:
+                    self.active_device = kernel
+                    self.channel('Device set: device_root\n')
+                else:
+                    for i, name in enumerate(kernel.device_instances):
+                        if i + 1 == value:
+                            self.active_device = kernel.device_instances[name]
+                            self.channel('Device set: %d\n' % value)
+                            break
+            except ValueError:
+                pass
         elif command == 'refresh':
-            self.kernel.signal('refresh_scene')
-            self.post("log", "Refreshed.\n")
+            active_device.signal('refresh_scene')
+            self.channel("Refreshed.\n")
         else:
-            self.post("log", "Error.\n")
+            self.channel("Error.\n")
 
 
 class SVGWriter:

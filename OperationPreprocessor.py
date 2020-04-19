@@ -9,7 +9,6 @@ class OperationPreprocessor:
 
     def __init__(self):
         self.device = None
-        self.kernel = None
         self.commands = []
         self.operations = None
 
@@ -44,7 +43,7 @@ class OperationPreprocessor:
                 if isinstance(op, RasterOperation):
                     if len(op) == 1 and isinstance(op[0], SVGImage):
                         continue
-                    renderer = LaserRender(self.kernel)
+                    renderer = LaserRender(self.device.device_root)
                     bounds = OperationPreprocessor.bounding_box(op)
                     if bounds is None:
                         return None

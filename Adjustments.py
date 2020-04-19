@@ -70,8 +70,6 @@ class Adjustments(wx.Frame, Module):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.SetFocus()
         # end wxGlade
-        self.kernel = None
-        self.device = None
 
     def __set_properties(self):
         # begin wxGlade: Adjustments.__set_properties
@@ -155,26 +153,15 @@ class Adjustments(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
-        if self.device is not None:
-            self.device.execute("Realtime Resume")
+        self.device.execute("Realtime Resume")
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
+        device = self.device
         self.Show()
-
-    def shutdown(self, kernel):
-        self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -189,6 +176,9 @@ class Adjustments(wx.Frame, Module):
             self.checkbox_pattern_group.SetValue(self.device.interpreter.group_modulation)
         except AttributeError:
             pass
+
+    def shutdown(self):
+        self.Close()
 
     def on_slider_speed_override(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_slider_speed_override' not implemented!")

@@ -79,24 +79,16 @@ class Preferences(wx.Frame, Module):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autohome, self.checkbox_autohome)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autobeep, self.checkbox_autobeep)
         # end wxGlade
-        self.kernel = None
-        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -147,10 +139,8 @@ class Preferences(wx.Frame, Module):
         self.spin_home_x.SetValue(self.device.home_adjust_x)
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: Preferences.__set_properties
@@ -285,7 +275,7 @@ class Preferences(wx.Frame, Module):
 
     def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.flip_y = self.checkbox_flip_y.GetValue()
-        self.kernel.execute("Update Codes")
+        self.device.execute("Update Codes")
 
     def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.home_bottom = self.checkbox_home_bottom.GetValue()

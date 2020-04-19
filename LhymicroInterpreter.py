@@ -40,16 +40,10 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
-class LhymicroInterpreter(Interpreter):
-    def __init__(self, device):
-        Interpreter.__init__(self, device)
-        self.device.setting(bool, "swap_xy", False)
-        self.device.setting(bool, "flip_x", False)
-        self.device.setting(bool, "flip_y", False)
-        self.device.setting(bool, "home_right", False)
-        self.device.setting(bool, "home_bottom", False)
-        self.device.setting(int, "home_adjust_x", 0)
-        self.device.setting(int, "home_adjust_y", 0)
+class LhymicroInterpreter(Module, Interpreter):
+    def __init__(self, device=None, name=None):
+        Interpreter.__init__(self)
+        Module.__init__(self, name='interpreter', device=device)
 
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
@@ -58,8 +52,6 @@ class LhymicroInterpreter(Interpreter):
         self.CODE_ANGLE = b'M'
         self.CODE_ON = b'D'
         self.CODE_OFF = b'U'
-        self.update_codes()
-
         self.state = STATE_DEFAULT
         self.properties = 0
         self.is_relative = False
@@ -73,8 +65,12 @@ class LhymicroInterpreter(Interpreter):
         self.pulse_modulation = True
         self.group_modulation = False
 
-        current_x = device.current_x
-        current_y = device.current_y
+        if device is not None:
+            current_x = device.current_x
+            current_y = device.current_y
+        else:
+            current_x = 0
+            current_y = 0
         self.next_x = current_x
         self.next_y = current_y
         self.max_x = current_x
@@ -84,9 +80,31 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        device.control_instance_add("Realtime Pause", self.pause)
-        device.control_instance_add("Realtime Resume", self.resume)
-        device.control_instance_add("Update Codes", self.update_codes)
+    def initialize(self):
+        self.device.setting(bool, "swap_xy", False)
+        self.device.setting(bool, "flip_x", False)
+        self.device.setting(bool, "flip_y", False)
+        self.device.setting(bool, "home_right", False)
+        self.device.setting(bool, "home_bottom", False)
+        self.device.setting(int, "home_adjust_x", 0)
+        self.device.setting(int, "home_adjust_y", 0)
+
+        self.update_codes()
+
+        current_x = self.device.current_x
+        current_y = self.device.current_y
+        self.next_x = current_x
+        self.next_y = current_y
+        self.max_x = current_x
+        self.max_y = current_y
+        self.min_x = current_x
+        self.min_y = current_y
+        self.start_x = current_x
+        self.start_y = current_y
+
+        self.device.control_instance_add("Realtime Pause", self.pause)
+        self.device.control_instance_add("Realtime Resume", self.resume)
+        self.device.control_instance_add("Update Codes", self.update_codes)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -345,7 +363,8 @@ class LhymicroInterpreter(Interpreter):
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
+            for x, y, on in self.group_plots(sx, sy,
+                                             ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
                 if on == 0:
                     self.up()
                 else:
@@ -519,7 +538,8 @@ class LhymicroInterpreter(Interpreter):
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in self.group_plots(self.device.current_x, self.device.current_y,
                                                  ZinglPlotter.plot_line(self.device.current_x, self.device.current_y,
-                                                                self.device.current_x + dx, self.device.current_y + dy)
+                                                                        self.device.current_x + dx,
+                                                                        self.device.current_y + dy)
                                                  ):
                     self.move_absolute(x, y)
             elif abs(dx) == abs(dy):

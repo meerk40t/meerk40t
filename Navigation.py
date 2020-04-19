@@ -128,8 +128,6 @@ class Navigation(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
         self.elements = None
         self.bounds = None
         self.design_locked = False
@@ -137,9 +135,9 @@ class Navigation(wx.Frame, Module):
         self.select_ready(False)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
-        self.kernel.unlisten("selected_elements", self.on_selected_elements_change)
-        self.kernel.unlisten("selected_bounds", self.on_selected_bounds_change)
+        self.device.module_instance_remove(self.name)
+        self.device.device_root.unlisten("selected_elements", self.on_selected_elements_change)
+        self.device.device_root.unlisten("selected_bounds", self.on_selected_bounds_change)
         self.device.unlisten("interpreter;position", self.on_position_update)
         event.Skip()  # Call destroy.
 
@@ -335,16 +333,10 @@ class Navigation(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -353,20 +345,19 @@ class Navigation(wx.Frame, Module):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             dlg.ShowModal()
             dlg.Destroy()
-        else:
-            self.device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
-            self.device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
-            self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
-            self.set_jog_distances(self.device.navigate_jog)
-        self.kernel.listen("selected_elements", self.on_selected_elements_change)
-        self.kernel.listen("selected_bounds", self.on_selected_bounds_change)
+            return
+
+        self.device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
+        self.device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
+        self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
+        self.set_jog_distances(self.device.navigate_jog)
+        self.device.device_root.listen("selected_elements", self.on_selected_elements_change)
+        self.device.device_root.listen("selected_bounds", self.on_selected_bounds_change)
         self.device.listen("interpreter;position", self.on_position_update)
         self.update_matrix_text()
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def on_selected_elements_change(self, elements):
         self.elements = elements
@@ -524,7 +515,7 @@ class Navigation(wx.Frame, Module):
 
     def drag_relative(self, dx, dy):
         if self.elements is not None:
-            self.kernel.root.move_selected(dx, dy)
+            self.device.root.move_selected(dx, dy)
         self.device.interpreter.move_relative(dx, dy)
 
     def on_button_align_drag_down(self, event):  # wxGlade: Navigation.<event_handler>
@@ -608,8 +599,8 @@ class Navigation(wx.Frame, Module):
             return
 
     def matrix_updated(self):
-        self.kernel.signal('refresh_scene')
-        self.kernel.root.selection_bounds_updated()
+        self.device.signal('refresh_scene')
+        self.device.root.selection_bounds_updated()
         self.update_matrix_text()
         self.drag_ready(False)
 
@@ -677,8 +668,8 @@ class Navigation(wx.Frame, Module):
                 matrix.d = float(self.text_d.GetValue())
                 matrix.e = float(self.text_e.GetValue())
                 matrix.f = float(self.text_f.GetValue())
-                self.kernel.root.selection_bounds_updated()
+                self.device.root.selection_bounds_updated()
             except ValueError:
                 self.update_matrix_text()
             self.drag_ready(False)
-        self.kernel.signal('refresh_scene')
+        self.device.signal('refresh_scene')

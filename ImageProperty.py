@@ -36,12 +36,11 @@ class ImageProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
         # end wxGlade
-        self.kernel = None
         self.image_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -65,17 +64,12 @@ class ImageProperty(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: ImageProperty.__set_properties
@@ -136,14 +130,12 @@ class ImageProperty(wx.Frame, Module):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.image_element.values['raster_step'] = self.spin_step_size.GetValue()
         self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.image_element)
+        self.device.signal("element_property_update", self.image_element)
 
     def on_combo_dpi(self, event):  # wxGlade: ImageProperty.<event_handler>
         self.spin_step_size.SetValue(self.combo_dpi.GetSelection() + 1)
         self.image_element.values['raster_step'] = self.spin_step_size.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.image_element)
+        self.device.signal("element_property_update", self.image_element)
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()

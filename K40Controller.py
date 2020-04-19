@@ -159,11 +159,11 @@ class K40Controller(Module, Pipe):
     """
 
     def __init__(self, device=None, uid=''):
+        Module.__init__(self, device=device)
         Pipe.__init__(self)
-        self.usb_log = Channel()
+        self.usb_log = None
         self.debug_file = None
         self.driver = None
-        self.device = device
         self.state = THREAD_STATE_UNSTARTED
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -179,9 +179,10 @@ class K40Controller(Module, Pipe):
         self.thread = None
 
         self.abort_waiting = False
+        self.send_channel = None
+        self.recv_channel = None
 
-    def initialize(self, kernel, name=None):
-        self.device = kernel.device
+    def initialize(self):
         self.device.setting(int, 'packet_count', 0)
         self.device.setting(int, 'rejected_count', 0)
 
@@ -190,7 +191,9 @@ class K40Controller(Module, Pipe):
         self.device.control_instance_add("Start", self.start)
         self.device.control_instance_add("Stop", self.stop)
         self.device.control_instance_add("Status Update", self.update_status)
-        self.device.channel_instance_add("USB Log", self.usb_log)
+        self.usb_log = self.device.channel_open("usb")
+        self.send_channel = self.device.channel_open('send')
+        self.recv_channel = self.device.channel_open('recv')
         self.reset()
 
         def abort_wait():
@@ -305,8 +308,7 @@ class K40Controller(Module, Pipe):
 
     def log(self, info):
         update = str(info) + '\n'
-        self.device.log(update)
-        self.post('log', update)
+        self.usb_log(update)
 
     def state(self):
         return self.thread.state
@@ -470,7 +472,7 @@ class K40Controller(Module, Pipe):
             self.driver.write(packet)
         self.device.signal("pipe;packet", convert_to_list_bytes(packet))
         self.device.signal("pipe;packet_text", packet)
-        self.post('send', packet)
+        self.send_channel(packet)
 
     def update_status(self):
         if self.device.mock:
@@ -479,7 +481,7 @@ class K40Controller(Module, Pipe):
         else:
             self.status = self.driver.get_status()
         self.device.signal("pipe;status", self.status)
-        self.post('recv', self.status)
+        self.recv_channel(self.status)
 
     def wait_until_accepting_packets(self):
         i = 0

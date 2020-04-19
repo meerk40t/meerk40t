@@ -35,13 +35,8 @@ class EngraveProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT, self.on_spin_speed_dratio, self.spin_speed_dratio)
         self.Bind(wx.EVT_CHECKBOX, lambda e: self.slider_accel.Enable(self.checkbox_custom_accel.GetValue()), self.checkbox_custom_accel)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
-        self.kernel = None
         self.operation = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-    def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
-        event.Skip()  # Call destroy.
 
     def set_operation(self, operation):
         self.operation = operation
@@ -71,17 +66,16 @@ class EngraveProperty(wx.Frame, Module):
             self.checkbox_custom_accel.Enable(False)
         return self
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
+
+    def on_close(self, event):
+        self.device.module_instance_remove(self.name)
+        event.Skip()  # Call destroy.
 
     def __set_properties(self):
         # begin wxGlade: EngraveProperty.__set_properties
@@ -131,20 +125,16 @@ class EngraveProperty(wx.Frame, Module):
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.speed = self.spin_speed_set.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.signal("element_property_update", self.operation)
 
     def on_spin_power(self, event):
         self.operation.power = self.spin_power_set.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.signal("element_property_update", self.operation)
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.dratio = self.spin_speed_dratio.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.signal("element_property_update", self.operation)
 
     def on_slider_accel(self, event):  # wxGlade: EngraveProperty.<event_handler>
         self.operation.accel = self.slider_accel.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.signal("element_property_update", self.operation)

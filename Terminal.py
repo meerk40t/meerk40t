@@ -22,20 +22,15 @@ class Terminal(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
-        self.uid = None
         self.pipe = None
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
 
+        kernel = self.device.device_root
         try:
-            self.pipe = self.kernel.module_instances['Console']
+            self.pipe = kernel.module_instances['Console']
         except KeyError:
             for attr in dir(self):
                 value = getattr(self, attr)
@@ -46,16 +41,15 @@ class Terminal(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        self.kernel.listen('console', self.update_console)
+        kernel.add_watcher('console', self.text_console.AppendText)
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def on_close(self, event):
-        self.kernel.unlisten('console', self.update_console)
-        self.kernel.module_instance_remove(self.name)
+        kernel = self.device.device_root
+        kernel.remove_watcher('console', self.text_console.AppendText)
+        self.device.module_instance_remove(self.name)
         event.Skip()
 
     def __set_properties(self):
@@ -73,15 +67,8 @@ class Terminal(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def update_console(self):
-        if self.pipe is not None:
-            r = self.pipe.read()
-            if r is not None:
-                self.text_console.AppendText(r)
-
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         if self.pipe is not None:
             self.pipe.write(self.text_entry.GetValue() + "\n")
             self.text_entry.SetValue('')
-            self.update_console()
         event.Skip()

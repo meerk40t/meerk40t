@@ -23,27 +23,21 @@ class Keymap(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
         # end wxGlade
-        self.kernel = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-        kernel.setting(bool, "mouse_zoom_invert", False)
-        self.check_invert_mouse_zoom.SetValue(self.kernel.mouse_zoom_invert)
+        self.device.setting(bool, "mouse_zoom_invert", False)
+        self.check_invert_mouse_zoom.SetValue(self.device.mouse_zoom_invert)
         self.reload_keymap()
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: Keymap.__set_properties
@@ -68,15 +62,15 @@ class Keymap(wx.Frame, Module):
 
     def reload_keymap(self):
         i = 0
-        for key in self.kernel.keymap:
-            action = self.kernel.keymap[key]
+        for key in self.device.device_root.keymap:
+            action = self.device.device_root.keymap[key]
             m = self.list_keymap.InsertItem(i, str(action))
             i += 1
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(action.command))
 
     def on_check_mouse_zoom_invert(self, event):  # wxGlade: Keymap.<event_handler>
-        self.kernel.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
+        self.device.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()
 
     def on_button_add_hotkey(self, event):  # wxGlade: Keymap.<event_handler>
         pass

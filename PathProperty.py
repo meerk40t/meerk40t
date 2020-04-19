@@ -71,12 +71,11 @@ class PathProperty(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
         # end wxGlade
-        self.kernel = None
         self.path_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -88,17 +87,12 @@ class PathProperty(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: PathProperty.__set_properties
@@ -169,8 +163,7 @@ class PathProperty(wx.Frame, Module):
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.path_element.name = self.text_name.GetValue()
-            if self.kernel is not None:
-                self.kernel.signal("element_property_update", self.path_element)
+            self.device.signal("element_property_update", self.path_element)
         except AttributeError:
             pass
 
@@ -196,6 +189,5 @@ class PathProperty(wx.Frame, Module):
             else:
                 self.path_element.fill = Color('none')
                 self.path_element.values[SVG_ATTR_FILL] = 'none'
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.path_element)
-            self.kernel.signal("refresh_scene", 0)
+        self.device.signal("element_property_update", self.path_element)
+        self.device.signal("refresh_scene", 0)

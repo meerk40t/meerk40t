@@ -53,24 +53,16 @@ class RotarySettings(wx.Frame, Module):
                   self.spin_rotary_object_circumference)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotary_object_circumference, self.spin_rotary_object_circumference)
         # end wxGlade
-        self.kernel = None
-        self.device = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy.
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -79,19 +71,17 @@ class RotarySettings(wx.Frame, Module):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
-        else:
-            self.device.setting(bool, 'rotary', False)
-            self.device.setting(float, 'scale_x', 1.0)
-            self.device.setting(float, 'scale_y', 1.0)
-            self.spin_rotary_scalex.SetValue(self.device.scale_x)
-            self.spin_rotary_scaley.SetValue(self.device.scale_y)
-            self.checkbox_rotary.SetValue(self.device.rotary)
-            self.on_check_rotary(None)
+            return
+        self.device.setting(bool, 'rotary', False)
+        self.device.setting(float, 'scale_x', 1.0)
+        self.device.setting(float, 'scale_y', 1.0)
+        self.spin_rotary_scalex.SetValue(self.device.scale_x)
+        self.spin_rotary_scaley.SetValue(self.device.scale_y)
+        self.checkbox_rotary.SetValue(self.device.rotary)
+        self.on_check_rotary(None)
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def __set_properties(self):
         # begin wxGlade: RotarySettings.__set_properties

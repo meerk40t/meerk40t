@@ -57,29 +57,15 @@ class Alignment(wx.Frame, Module):
         self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_square_power_change, self.slider_square_power)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
-        self.kernel = None
+        self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
-
-    def shutdown(self, kernel):
-        self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
-
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -88,6 +74,9 @@ class Alignment(wx.Frame, Module):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
+
+    def shutdown(self, kernel):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: Alignment.__set_properties

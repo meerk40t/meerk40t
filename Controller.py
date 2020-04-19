@@ -51,8 +51,6 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_bufferview, self.button_buffer_viewer)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
         self.uid = None
         self.dirty = False
         self.status_data = None
@@ -71,16 +69,11 @@ class Controller(wx.Frame, Module):
         self.update_usb_status = False
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
-    def initialize(self, kernel, name=None):
-        kernel.module_instance_close(name)
-        Module.initialize(kernel, name)
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        self.device.module_instance_close(self.name)
         self.Show()
 
-    def register(self, device):
-        self.device = device
-        if self.device is None:
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -89,23 +82,21 @@ class Controller(wx.Frame, Module):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
-        else:
-            self.device.listen("pipe;status", self.update_status)
-            self.device.listen("pipe;packet", self.update_packet)
-            self.device.listen("pipe;packet_text", self.update_packet_text)
-            self.device.listen("pipe;buffer", self.on_buffer_update)
-            self.device.listen("pipe;usb_state", self.on_usb_state)
-            self.device.listen("pipe;thread", self.on_control_state)
+            return
 
+        self.device.listen("pipe;status", self.update_status)
+        self.device.listen("pipe;packet", self.update_packet)
+        self.device.listen("pipe;packet_text", self.update_packet_text)
+        self.device.listen("pipe;buffer", self.on_buffer_update)
+        self.device.listen("pipe;usb_state", self.on_usb_state)
+        self.device.listen("pipe;thread", self.on_control_state)
         self.set_controller_button_by_state()
 
-    def shutdown(self, kernel):
+    def shutdown(self):
         self.Close()
-        Module.shutdown(self, kernel)
-        self.kernel = None
 
     def on_close(self, event):
-        self.kernel.module_instance_remove(self.name)
+        self.device.module_instance_remove(self.name)
         try:
             if self.device is not None:
                 self.device.unlisten("pipe;status", self.update_status)
@@ -116,12 +107,11 @@ class Controller(wx.Frame, Module):
                 self.device.unlisten("pipe;thread", self.on_control_state)
         except KeyError:
             pass  # Must have not registered at start because of no device.
-        self.kernel = None
         event.Skip()  # delegate destroy to super
 
-    def kernel_execute(self, control_name):
+    def device_execute(self, control_name):
         def menu_element(event):
-            self.kernel.execute(control_name)
+            self.device.execute(control_name)
 
         return menu_element
 
@@ -129,8 +119,8 @@ class Controller(wx.Frame, Module):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
-        for control_name, control in self.kernel.controls.items():
-            gui.Bind(wx.EVT_MENU, self.kernel_execute(control_name),
+        for control_name, control in self.device.control_instances.items():
+            gui.Bind(wx.EVT_MENU, self.device_execute(control_name),
                      path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
         if menu.MenuItemCount != 0:
@@ -266,9 +256,8 @@ class Controller(wx.Frame, Module):
             wx.CallAfter(self.post_update_on_gui_thread)
 
     def post_update_on_gui_thread(self):
-        if self.kernel is None:
+        if self.device is None:
             return  # was closed this is just a leftover update.
-
         update = False
         if self.update_packet_string:
             string_data = self.packet_string
@@ -311,7 +300,7 @@ class Controller(wx.Frame, Module):
             update = True
         if self.update_control_state:
             self.update_control_state = False
-            self.text_controller_status.SetValue(self.kernel.get_text_thread_state(self.control_state))
+            self.text_controller_status.SetValue(self.device.get_text_thread_state(self.control_state))
             self.set_controller_button_by_state()
             update = True
         if self.update_usb_status:
@@ -341,7 +330,7 @@ class Controller(wx.Frame, Module):
         self.device.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        self.kernel.module_instance_open("BufferView", None, -1, "")
+        self.device.module_instance_open("BufferView", None, -1, "")
 
     def update_status(self, data):
         self.update_status_data = True

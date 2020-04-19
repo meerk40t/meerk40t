@@ -71,21 +71,17 @@ class LaserServer(Module):
 
         self.socket = None
         self.thread = None
-        self.kernel = None
 
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
         self.socket = socket.socket()
         self.socket.bind(('', self.port))
         self.socket.listen(1)
         self.thread = ServerThread(self)
-        self.kernel.control_instance_add('Set_Server_Pipe' + self.name, self.set_pipe)
-        self.kernel.thread_instance_add('ServerThread', self.thread)
+        self.device.control_instance_add('Set_Server_Pipe' + self.name, self.set_pipe)
+        self.device.thread_instance_add('ServerThread', self.thread)
         self.thread.start()
 
-    def shutdown(self, kernel):
-        Module.shutdown(self, kernel)
+    def shutdown(self):
         self.socket.close()
         self.thread.state = THREAD_STATE_FINISHED
 
