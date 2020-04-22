@@ -588,7 +588,7 @@ class Navigation(wx.Frame, Module):
         self.device.send_job(timed_fire)
 
     def on_spin_pulse_duration(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.navigate_pulse = self.spin_pulse_duration.GetValue()
+        self.device.navigate_pulse = float(self.spin_pulse_duration.GetValue())
 
     def on_button_navigate_move_to(self, event):  # wxGlade: Navigation.<event_handler>
         try:
