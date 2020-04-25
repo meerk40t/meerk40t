@@ -970,6 +970,7 @@ class Kernel(Device):
         :return:
         """
         Device.boot(self)
+        self.module_instance_open('Signaler')
 
         self.setting(str, 'device_list', '')
         self.setting(str, 'device_primary', '')

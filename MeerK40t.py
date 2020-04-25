@@ -56,6 +56,8 @@ if not args.no_gui:
     init_gui(kernel)
     meerk40tgui = kernel.module_instance_open('wxMeerK40t')
 
+kernel.register_module('Signaler', Signaler)
+
 kernel.register_device('K40Stock', K40StockDevice)
 
 kernel.register_module('LhymicroInterpreter', LhymicroInterpreter)
