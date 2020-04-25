@@ -39,7 +39,7 @@ class BufferView(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        pipe = self.device.pipe
+        pipe = self.device.interpreter.pipe
         buffer = None
         if pipe is not None:
             try:
@@ -53,6 +53,8 @@ class BufferView(wx.Frame, Module):
             bufferstr = buffer.decode()
         except ValueError:
             bufferstr = buffer.decode("ascii")
+        except AttributeError:
+            bufferstr = buffer
 
         self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
         self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)

@@ -314,17 +314,17 @@ class Controller(wx.Frame, Module):
 
     def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
         if self.device is not None:
-            state = self.device.pipe.state
+            state = self.device.interpreter.pipe.state
             if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-                self.device.pipe.start()
+                self.device.interpreter.pipe.start()
             elif state == THREAD_STATE_PAUSED:
-                self.device.pipe.resume()
+                self.device.interpreter.pipe.resume()
             elif state == THREAD_STATE_STARTED:
-                self.device.pipe.pause()
+                self.device.interpreter.pipe.pause()
             elif state == THREAD_STATE_ABORT:
-                self.device.pipe.buffer = b''
-                self.device.pipe.queue = b''
-                self.device.pipe.reset()
+                self.device.interpreter.pipe.buffer = b''
+                self.device.interpreter.pipe.queue = b''
+                self.device.interpreter.pipe.reset()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         self.device.execute("Emergency Stop")
@@ -365,7 +365,7 @@ class Controller(wx.Frame, Module):
         self.post_update()
 
     def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.device.pipe.usb_state
+        state = self.device.interpreter.pipe.usb_state
         if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK):
             try:
                 self.device.execute("Connect_USB")

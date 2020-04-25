@@ -30,6 +30,7 @@ class Module:
         self.interval = interval
         self.last_run = None
         self.next_run = time.time() + self.interval
+
         self.process = process
         self.args = args
         self.times = times
@@ -76,53 +77,28 @@ class Module:
 
 class Spooler(Module):
     """
-    The spooler converts spoolable objects into lasercode commands as needed and used by the interpreter/pipe.
+    The spooler stores spoolable lasercode events, as a synchronous queue.
 
-    It provides commands for an synchronous queue.
+    Spooler registers itself as the device.spooler and provides a standard location to send data to an unknown device.
+
     * Peek()
     * Pop()
     * Send_Job()
     * Clear_Queue()
-
-    And for a realtime channel:
-    * Realtime()
     """
 
-    def __init__(self, device=None, interpreter=None):
-        Module.__init__(self, device, "Spooler")
-
+    def __init__(self):
+        Module.__init__(self)
         self.queue_lock = Lock()
         self.queue = []
-
-        self.item = None
-
-        self.process = self.next_queue
-        self.interval = 0.01
-
-    def initialize(self):
-        self.device.spooler = self
-        self.schedule()
 
     def __repr__(self):
         return "Spooler()"
 
-    def execute(self, command, *values):
-        self.device.interpreter.command(command, *values)
-
-    def realtime(self, command, *values):
-        """Realtimes are sent directly to the interpreter without spooling."""
-        if command == COMMAND_PAUSE:
-            self.paused = True
-        elif command == COMMAND_RESUME:
-            self.paused = False
-        elif command == COMMAND_RESET:
-            self.clear_queue()
-        elif command == COMMAND_CLOSE:
-            self.times = -1
-        try:
-            return self.device.interpreter.realtime_command(command, values)
-        except NotImplementedError:
-            pass
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.spooler = self
+        self.initialize()
 
     def peek(self):
         if len(self.queue) == 0:
@@ -160,76 +136,100 @@ class Spooler(Module):
         self.queue_lock.release()
         self.device.signal("spooler;queue", len(self.queue))
 
-    def next_queue(self, *args):
-        if self.device.hold():
-            return
-        if self.item is not None:
-            self.next_item()
-            return
-        element = self.peek()
-        if element is None:
-            return  # Nothing left in spooler.
-        self.pop()
-        if isinstance(element, tuple):
-            self.item = element
-            return
-        try:
-            self.item = element.generate()
-        except AttributeError:
-            self.item = element
 
-    def next_item(self, *args):
-        if self.device.hold():
-            return
-        if self.item is None:
-            return
-        if isinstance(self.item, (tuple, list)):
-            self.spool_line(self.item)
-            self.item = None
-            return
-        try:
-            e = next(self.item)
-            self.spool_line(e)
-        except StopIteration:
-            self.item = None
-
-    def spool_line(self, e):
-        if isinstance(e, (tuple, list)):
-            command = e[0]
-            if len(e) >= 2:
-                values = e[1:]
-            else:
-                values = [None]
-        elif isinstance(e, int):
-            command = e
-            values = [None]
-        else:
-            return
-        self.execute(command, *values)
-
-
-class Interpreter:
+class Interpreter(Module):
     """
     An Interpreter takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
     """
+    def __init__(self, pipe=None):
+        Module.__init__(self)
+        self.process_item = None
+        self.spooled_item = None
+        self.process = self.process_spool
+        self.interval = 0.01
+        self.pipe = pipe
 
-    def command(self, command, values=None):
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.interpreter = self
+        self.initialize()
+        self.schedule()
+
+    def hold(self):
+        return False
+
+    def command(self, command, *values):
         """Commands are middle language LaserCommandConstants there values are given."""
         return NotImplementedError
 
-    def realtime_command(self, command, values=None):
+    def realtime_command(self, command, *values):
         """Asks for the execution of a realtime command. Unlike the spooled commands these
         return False if rejected and something else if able to be performed. These will not
         be queued. If rejected. They must be performed in realtime or cancelled.
         """
-        return self.command(command, values)
+        if command == COMMAND_PAUSE:
+            self.paused = True
+        elif command == COMMAND_RESUME:
+            self.paused = False
+        elif command == COMMAND_RESET:
+            self.device.spooler.clear_queue()
+        elif command == COMMAND_CLOSE:
+            self.times = -1
+        return self.command(command, *values)
+
+    def process_spool(self, *args):
+        """
+        Get next spooled element if needed.
+        Calls execute.
+
+        :param args:
+        :return:
+        """
+        if self.spooled_item is None:
+            self.fetch_next_item()
+        if self.spooled_item is not None:
+            self.execute()
+
+    def execute(self):
+        """
+        Default process to run entire command as a single call.
+        """
+        if self.spooled_item is None:
+            return
+        if isinstance(self.spooled_item, tuple):
+            self.command(self.spooled_item[0], *self.spooled_item[1:])
+            self.spooled_item = None
+            return
+        try:
+            e = next(self.spooled_item)
+            if isinstance(e, int):
+                self.command(e)
+            else:
+                self.command(e[0], *e[1:])
+        except StopIteration:
+            self.spooled_item = None
+
+    def fetch_next_item(self):
+        element = self.device.spooler.peek()
+        if element is None:
+            return  # Spooler is empty.
+
+        self.device.spooler.pop()
+
+        if isinstance(element, tuple):
+            self.spooled_item = element
+        else:
+            try:
+                self.spooled_item = element.generate()
+            except AttributeError:
+                self.spooled_item = element()
 
 
 class Pipe:
     """
     Write dataflow in the kernel. Provides general information about buffer size in through len() builtin.
-    Pipes have a write and realtime_write functions.
+    Pipes have write and realtime_write functions.
     """
 
     def __len__(self):
@@ -303,7 +303,8 @@ class Signaler(Module):
         self.interval = 0.05
         self.args = ()
 
-    def initialize(self):
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
         self.device.signal = self.signal
         self.device.listen = self.listen
         self.device.unlisten = self.unlisten
@@ -603,7 +604,7 @@ class Device(Thread):
             for job in jobs:
                 # Checking if jobs should run.
                 if job.scheduled:
-                    job.next_run = None
+                    job.next_run = 0  # Set to zero while running.
                     if job.times is not None:
                         job.times = job.times - 1
                         if job.times <= 0:
@@ -615,7 +616,7 @@ class Device(Thread):
                     else:
                         job.process(job.args)
                     job.last_run = time.time()
-                    job.next_run = job.last_run + job.interval
+                    job.next_run += job.last_run + job.interval
             if jobs_update:
                 self.jobs = [job for job in jobs if job.times is not None and job.times > 0]
         self.state = THREAD_STATE_FINISHED
@@ -829,7 +830,7 @@ class Device(Thread):
         else:
             module_object = self.device_root.registered_modules[module_name]
         module_instance = module_object(*args, **kwargs)
-        module_instance.attach(self, instance_name)
+        module_instance.attach(self, name=instance_name)
         self.module_instances[instance_name] = module_instance
         return module_instance
 

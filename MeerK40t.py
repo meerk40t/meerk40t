@@ -2,7 +2,9 @@ import argparse
 import sys
 
 from DefaultModules import *
+from K40Controller import K40Controller
 from LaserServer import *
+from LhymicroInterpreter import LhymicroInterpreter
 
 try:
     from math import tau

@@ -40,10 +40,9 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
-class LhymicroInterpreter(Module, Interpreter):
-    def __init__(self, device=None, name=None):
-        Interpreter.__init__(self)
-        Module.__init__(self, name='interpreter', device=device)
+class LhymicroInterpreter(Interpreter):
+    def __init__(self, pipe):
+        Interpreter.__init__(self, pipe=pipe)
 
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
@@ -52,6 +51,8 @@ class LhymicroInterpreter(Module, Interpreter):
         self.CODE_ANGLE = b'M'
         self.CODE_ON = b'D'
         self.CODE_OFF = b'U'
+
+        self.plot = None
         self.state = STATE_DEFAULT
         self.properties = 0
         self.is_relative = False
@@ -64,24 +65,18 @@ class LhymicroInterpreter(Module, Interpreter):
         self.pulse_total = 0.0
         self.pulse_modulation = True
         self.group_modulation = False
-
-        if device is not None:
-            current_x = device.current_x
-            current_y = device.current_y
-        else:
-            current_x = 0
-            current_y = 0
-        self.next_x = current_x
-        self.next_y = current_y
-        self.max_x = current_x
-        self.max_y = current_y
-        self.min_x = current_x
-        self.min_y = current_y
-        self.start_x = current_x
-        self.start_y = current_y
+        self.next_x = None
+        self.next_y = None
+        self.max_x = None
+        self.max_y = None
+        self.min_x = None
+        self.min_y = None
+        self.start_x = None
+        self.start_y = None
+        self.pipe = pipe
+        self.extra_hold = None
 
     def initialize(self):
-        self.device.interpreter = self
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -89,6 +84,8 @@ class LhymicroInterpreter(Module, Interpreter):
         self.device.setting(bool, "home_bottom", False)
         self.device.setting(int, "home_adjust_x", 0)
         self.device.setting(int, "home_adjust_y", 0)
+        self.device.setting(int, "buffer_max", 900)
+        self.device.setting(bool, "buffer_limit", True)
 
         self.update_codes()
 
@@ -130,11 +127,40 @@ class LhymicroInterpreter(Module, Interpreter):
             self.CODE_TOP = self.CODE_BOTTOM
             self.CODE_BOTTOM = q
 
+    def hold(self):
+        if self.extra_hold is not None:
+            if self.extra_hold():
+                return True
+            else:
+                self.extra_hold = None
+        return self.device.buffer_limit and len(self.pipe) > self.device.buffer_max
+
+    def execute(self):
+        if self.plot is not None:
+            try:
+                x, y, on = next(self.plot)
+                if on == 0:
+                    self.up()
+                else:
+                    self.down()
+                self.move_absolute(x, y)
+                return
+            except StopIteration:
+                self.plot = None
+
+        Interpreter.execute(self)
+
     def on_plot(self, x, y, on):
         self.device.signal('interpreter;plot', (x, y, on))
-        self.device.hold()
+        # TODO: Hold.
 
     def ungroup_plots(self, generate):
+        """
+        Converts a generated x,y,on with long orthogonal steps into a generation of single steps.
+
+        :param generate: generator creating long orthogonal steps.
+        :return:
+        """
         current_x = None
         current_y = None
         for next_x, next_y, on in generate:
@@ -165,6 +191,16 @@ class LhymicroInterpreter(Module, Interpreter):
                 yield current_x, current_y, on
 
     def group_plots(self, start_x, start_y, generate):
+        """
+        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+
+        Implements PPI power modulation
+
+        :param start_x: Start x position
+        :param start_y: Start y position
+        :param generate: generator of single stepped plots
+        :return:
+        """
         last_x = start_x
         last_y = start_y
         last_on = 0
@@ -419,11 +455,10 @@ class LhymicroInterpreter(Module, Interpreter):
             if self.state != STATE_CONCAT:
                 self.to_concat_mode()
         elif command == COMMAND_WAIT:
-            t = values
-            time.sleep(t)
+            t = values  # TODO: Also needs to be converted to the newer methodology.
+            self.next_run = t
         elif command == COMMAND_WAIT_BUFFER_EMPTY:
-            while len(self.device.pipe) > 0:
-                time.sleep(0.05)
+            self.extra_hold = lambda e: len(self.pipe) == 0
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
         elif command == COMMAND_FUNCTION:
@@ -442,7 +477,7 @@ class LhymicroInterpreter(Module, Interpreter):
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_RESET:
-            self.device.pipe.realtime_write(b'I*\n')
+            self.pipe.realtime_write(b'I*\n')
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_PAUSE:
@@ -470,7 +505,7 @@ class LhymicroInterpreter(Module, Interpreter):
             self.device.current_x = x
             self.device.current_y = y
         elif command == COMMAND_RESET:
-            self.device.pipe.realtime_write(b'I*\n')
+            self.pipe.realtime_write(b'I*\n')
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_PAUSE:
@@ -506,10 +541,10 @@ class LhymicroInterpreter(Module, Interpreter):
             self.set_prop(mask)
 
     def pause(self):
-        self.device.pipe.realtime_write(b'PN!\n')
+        self.pipe.realtime_write(b'PN!\n')
 
     def resume(self):
-        self.device.pipe.realtime_write(b'PN&\n')
+        self.pipe.realtime_write(b'PN&\n')
 
     def move(self, x, y):
         if self.is_relative:
@@ -526,14 +561,14 @@ class LhymicroInterpreter(Module, Interpreter):
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == STATE_DEFAULT:
-            self.device.pipe.write(b'I')
+            self.pipe.write(b'I')
             if dx != 0:
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.device.pipe.write(b'S1P\n')
+            self.pipe.write(b'S1P\n')
             if not self.device.autolock:
-                self.device.pipe.write(b'IS2P\n')
+                self.pipe.write(b'IS2P\n')
         elif self.state == STATE_COMPACT:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in self.group_plots(self.device.current_x, self.device.current_y,
@@ -553,7 +588,7 @@ class LhymicroInterpreter(Module, Interpreter):
                 self.move_x(dx)
             if dy != 0:
                 self.move_y(dy)
-            self.device.pipe.write(b'N')
+            self.pipe.write(b'N')
         self.check_bounds()
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
                                                     self.device.current_x - dx, self.device.current_y - dy))
@@ -654,7 +689,7 @@ class LhymicroInterpreter(Module, Interpreter):
     def down(self):
         if self.is_on:
             return False
-        controller = self.device.pipe
+        controller = self.pipe
         if self.state == STATE_DEFAULT:
             controller.write(b'I')
             controller.write(self.CODE_ON)
@@ -670,7 +705,7 @@ class LhymicroInterpreter(Module, Interpreter):
         return True
 
     def up(self):
-        controller = self.device.pipe
+        controller = self.pipe
         if not self.is_on:
             return False
         if self.state == STATE_DEFAULT:
@@ -688,7 +723,7 @@ class LhymicroInterpreter(Module, Interpreter):
         return True
 
     def to_default_mode(self):
-        controller = self.device.pipe
+        controller = self.pipe
         if self.state == STATE_CONCAT:
             controller.write(b'S1P\n')
             if not self.device.autolock:
@@ -700,7 +735,7 @@ class LhymicroInterpreter(Module, Interpreter):
         self.device.signal('interpreter;mode', self.state)
 
     def to_concat_mode(self):
-        controller = self.device.pipe
+        controller = self.pipe
         if self.state == STATE_COMPACT:
             controller.write(b'@NSE')
             self.reset_modes()
@@ -710,7 +745,7 @@ class LhymicroInterpreter(Module, Interpreter):
         self.device.signal('interpreter;mode', self.state)
 
     def to_compact_mode(self):
-        controller = self.device.pipe
+        controller = self.pipe
         self.to_concat_mode()
         speed_code = LaserSpeed(
             self.device.board,
@@ -733,7 +768,7 @@ class LhymicroInterpreter(Module, Interpreter):
         self.device.signal('interpreter;mode', self.state)
 
     def h_switch(self):
-        controller = self.device.pipe
+        controller = self.pipe
         if self.is_prop(DIRECTION_FLAG_LEFT):
             controller.write(self.CODE_RIGHT)
             self.unset_prop(DIRECTION_FLAG_LEFT)
@@ -747,7 +782,7 @@ class LhymicroInterpreter(Module, Interpreter):
         self.is_on = False
 
     def v_switch(self):
-        controller = self.device.pipe
+        controller = self.pipe
         if self.is_prop(DIRECTION_FLAG_TOP):
             controller.write(self.CODE_BOTTOM)
             self.unset_prop(DIRECTION_FLAG_TOP)
@@ -771,7 +806,7 @@ class LhymicroInterpreter(Module, Interpreter):
 
     def home(self):
         x, y = self.calc_home_position()
-        controller = self.device.pipe
+        controller = self.pipe
         self.to_default_mode()
         controller.write(b'IPP\n')
         old_x = self.device.current_x
@@ -793,17 +828,17 @@ class LhymicroInterpreter(Module, Interpreter):
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y, old_x, old_y))
 
     def lock_rail(self):
-        controller = self.device.pipe
+        controller = self.pipe
         self.to_default_mode()
         controller.write(b'IS1P\n')
 
     def unlock_rail(self, abort=False):
-        controller = self.device.pipe
+        controller = self.pipe
         self.to_default_mode()
         controller.write(b'IS2P\n')
 
     def abort(self):
-        controller = self.device.pipe
+        controller = self.pipe
         controller.write(b'I\n')
 
     def check_bounds(self):
@@ -829,7 +864,7 @@ class LhymicroInterpreter(Module, Interpreter):
             self.move_top(dy)
 
     def move_angle(self, dx, dy):
-        controller = self.device.pipe
+        controller = self.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
         self.set_prop(DIRECTION_FLAG_X)  # Set both on
@@ -858,7 +893,7 @@ class LhymicroInterpreter(Module, Interpreter):
     def declare_directions(self):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
         You cannot declare a diagonal direction."""
-        controller = self.device.pipe
+        controller = self.pipe
 
         if self.is_prop(DIRECTION_FLAG_LEFT):
             x_dir = self.CODE_LEFT
@@ -923,7 +958,7 @@ class LhymicroInterpreter(Module, Interpreter):
         self.unset_prop(DIRECTION_FLAG_TOP)
 
     def move_right(self, dx=0):
-        controller = self.device.pipe
+        controller = self.pipe
         self.device.current_x += dx
         if not self.is_right or self.state != STATE_COMPACT:
             controller.write(self.CODE_RIGHT)
@@ -933,7 +968,7 @@ class LhymicroInterpreter(Module, Interpreter):
             self.check_bounds()
 
     def move_left(self, dx=0):
-        controller = self.device.pipe
+        controller = self.pipe
         self.device.current_x -= abs(dx)
         if not self.is_left or self.state != STATE_COMPACT:
             controller.write(self.CODE_LEFT)
@@ -943,7 +978,7 @@ class LhymicroInterpreter(Module, Interpreter):
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        controller = self.device.pipe
+        controller = self.pipe
         self.device.current_y += dy
         if not self.is_bottom or self.state != STATE_COMPACT:
             controller.write(self.CODE_BOTTOM)
@@ -953,7 +988,7 @@ class LhymicroInterpreter(Module, Interpreter):
             self.check_bounds()
 
     def move_top(self, dy=0):
-        controller = self.device.pipe
+        controller = self.pipe
         self.device.current_y -= abs(dy)
         if not self.is_top or self.state != STATE_COMPACT:
             controller.write(self.CODE_TOP)

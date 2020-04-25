@@ -5,10 +5,8 @@ from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from EgvParser import parse_egv
-from K40Controller import K40Controller
-from Kernel import Spooler, Module, Device, Pipe, THREAD_STATE_ABORT
+from Kernel import Module, Device, Pipe
 from LaserCommandConstants import *
-from LhymicroInterpreter import LhymicroInterpreter
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -77,15 +75,11 @@ class K40StockDevice(Device):
         self.control_instance_add("Debug Device", self._start_debugging)
         self.add_watcher('usb', self.log)
 
-        self.pipe = self.module_instance_open("K40Controller", instance_name='pipe')
-        self.interpreter = self.module_instance_open("LhymicroInterpreter", instance_name='interpreter')
-
+        pipe = self.module_instance_open("K40Controller", instance_name='pipe')
+        self.module_instance_open("LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
         self.module_instance_open("Spooler", instance_name='spooler')
 
         self.open()
-
-    def hold(self):
-        return self.buffer_limit and len(self.pipe) > self.buffer_max
 
     def send_job(self, job):
         self.spooler.send_job(job)
@@ -95,7 +89,7 @@ class K40StockDevice(Device):
         self.signal('pipe;device_log', message)
 
     def emergency_stop(self):
-        self.spooler.realtime(COMMAND_RESET, 1)
+        self.interpreter.realtime_command(COMMAND_RESET, 1)
 
     def open(self):
         pass

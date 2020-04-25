@@ -226,7 +226,6 @@ class JobSpooler(wx.Frame, Module):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         spooler = self.device.spooler
-        job = spooler.queue_consumer
         # TODO: work this out correctly.
         # if state == THREAD_STATE_STARTED:
         #     spooler.thread.pause()
