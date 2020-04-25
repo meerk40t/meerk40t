@@ -139,7 +139,7 @@ class Preferences(wx.Frame, Module):
         self.spin_home_x.SetValue(self.device.home_adjust_x)
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def __set_properties(self):

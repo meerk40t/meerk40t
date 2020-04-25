@@ -168,7 +168,7 @@ class CameraInterface(wx.Frame, Module):
         self.device.listen("camera_frame", self.on_camera_frame)
         self.device.listen("camera_frame_raw", self.on_camera_frame_raw)
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def on_close(self, event):

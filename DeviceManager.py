@@ -47,7 +47,7 @@ class DeviceManager(wx.Frame, Module):
         self.device.setting(str, 'device_primary', '')
         self.refresh_device_list()
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
         item = self.devices_list.GetFirstSelected()
         if item != -1:

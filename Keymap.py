@@ -36,7 +36,7 @@ class Keymap(wx.Frame, Module):
         self.check_invert_mouse_zoom.SetValue(self.device.mouse_zoom_invert)
         self.reload_keymap()
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def __set_properties(self):

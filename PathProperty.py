@@ -91,7 +91,7 @@ class PathProperty(wx.Frame, Module):
         self.device.module_instance_close(self.name)
         self.Show()
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def __set_properties(self):

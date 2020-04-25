@@ -468,7 +468,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def set_fps(self, fps):
@@ -2692,7 +2692,7 @@ class wxMeerK40t(wx.App, Module):
         if device_root.config is not None:
             device_root.config.DeleteAll()
             device_root.config = None
-            device_root.shutdown()
+            device_root.shutdown(None)
 
     def language_swap(self, lang):
         device_root = self.device.device_root

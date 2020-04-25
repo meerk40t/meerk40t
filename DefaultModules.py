@@ -79,17 +79,13 @@ class K40StockDevice(Device):
 
         self.pipe = self.module_instance_open("K40Controller", instance_name='pipe')
         self.interpreter = self.module_instance_open("LhymicroInterpreter", instance_name='interpreter')
-        self.spooler = self.module_instance_open("Spooler", instance_name='spooler')
+
+        self.module_instance_open("Spooler", instance_name='spooler')
 
         self.open()
 
     def hold(self):
-        if self.spooler.thread.state == THREAD_STATE_ABORT:
-            raise InterruptedError
-        while self.hold_condition(0):
-            if self.spooler.thread.state == THREAD_STATE_ABORT:
-                raise InterruptedError
-            time.sleep(0.1)
+        return self.buffer_limit and len(self.pipe) > self.buffer_max
 
     def send_job(self, job):
         self.spooler.send_job(job)
@@ -102,7 +98,7 @@ class K40StockDevice(Device):
         self.spooler.realtime(COMMAND_RESET, 1)
 
     def open(self):
-        self.hold_condition = lambda v: self.buffer_limit and len(self.pipe) > self.buffer_max
+        pass
 
     def close(self):
         self.spooler.clear_queue()

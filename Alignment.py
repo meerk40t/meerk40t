@@ -75,7 +75,7 @@ class Alignment(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
 
-    def shutdown(self, kernel):
+    def shutdown(self, channel):
         self.Close()
 
     def __set_properties(self):

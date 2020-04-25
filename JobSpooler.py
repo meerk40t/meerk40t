@@ -73,7 +73,7 @@ class JobSpooler(wx.Frame, Module):
         self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
         self.refresh_spooler_list()
 
-    def shutdown(self):
+    def shutdown(self, channel):
         self.Close()
 
     def on_close(self, event):
@@ -238,7 +238,8 @@ class JobSpooler(wx.Frame, Module):
         #     spooler.reset_thread()
 
     def set_spooler_button_by_state(self):
-        job = self.device.spooler.queue_consumer
+        pass  # TODO: Restore something here for functionality.
+        #job = self.device.spooler.queue_consumer
         # if state == THREAD_STATE_FINISHED or state == THREAD_STATE_UNSTARTED:
         #     self.button_spooler_control.SetBackgroundColour("#009900")
         #     self.button_spooler_control.SetLabel(_("Start Job"))

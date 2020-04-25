@@ -356,7 +356,7 @@ class Navigation(wx.Frame, Module):
         self.device.listen("interpreter;position", self.on_position_update)
         self.update_matrix_text()
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def on_selected_elements_change(self, elements):

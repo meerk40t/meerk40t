@@ -36,7 +36,7 @@ class UsbConnect(wx.Frame, Module):
         self.usblog_text.SetValue(self.device._device_log)
         self.usblog_text.AppendText("\n")
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def on_close(self, event):

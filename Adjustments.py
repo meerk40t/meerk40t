@@ -177,7 +177,7 @@ class Adjustments(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def on_slider_speed_override(self, event):  # wxGlade: Adjustments.<event_handler>

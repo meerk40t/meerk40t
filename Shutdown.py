@@ -36,16 +36,16 @@ class Shutdown(wx.Frame, Module):
         self.device.setting(bool, "autoclose_shutdown", True)
         self.device.add_watcher('shutdown', self.text_shutdown.AppendText)
 
-    def detach(self, device):
+    def detach(self, device, channel=None):
         """
         Override detach to prevent detaching if autoclose shutdown is False.
         :param device:
         :return:
         """
         if self.device.autoclose_shutdown:
-            Module.detach(self, device)
+            Module.detach(self, device, channel)
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def __set_properties(self):
@@ -74,7 +74,7 @@ class Shutdown(wx.Frame, Module):
         #         if device.spooler.thread.is_alive() or device.pipe.thread.is_alive():
         #             device.execute("Emergency Stop")
         #             return
-        wx.CallAfter(self.shutdown)
+        wx.CallAfter(self.shutdown, None)
 
     def on_button_reload(self, event):  # wxGlade: Shutdown.<event_handler>
         # self.device.module_instance_open('MeerK40t', None, -1, "")

@@ -127,7 +127,7 @@ class JobInfo(wx.Frame, Module):
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
 
-    def shutdown(self):
+    def shutdown(self, channel):
         self.Close()
 
     def on_close(self, event):

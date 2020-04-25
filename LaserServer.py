@@ -81,7 +81,7 @@ class LaserServer(Module):
         self.device.thread_instance_add('ServerThread', self.thread)
         self.thread.start()
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.socket.close()
         self.thread.state = THREAD_STATE_FINISHED
 

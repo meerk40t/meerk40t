@@ -11,26 +11,25 @@ THREAD_STATE_PAUSED = 2
 THREAD_STATE_FINISHED = 3
 THREAD_STATE_ABORT = 10
 
-SHUTDOWN_BEGIN = 0
-SHUTDOWN_FLUSH = 1
-SHUTDOWN_WINDOW = 2
-SHUTDOWN_WINDOW_ERROR = -1
-SHUTDOWN_MODULE = 3
-SHUTDOWN_MODULE_ERROR = -2
-SHUTDOWN_THREAD = 4
-SHUTDOWN_THREAD_ERROR = -4
-SHUTDOWN_THREAD_ALIVE = 5
-SHUTDOWN_THREAD_FINISHED = 6
-SHUTDOWN_LISTENER_ERROR = -10
-SHUTDOWN_FINISH = 100
 
+class Module:
+    """
+    Modules are a generic lifecycle object. When attached they are initialized to that device. When that device
+    is shutdown, the shutdown() event is called. This permits the knowing registering and unregistering of
+    other kernel objects. and the attachment of the module to a device.
 
-class KernelJob:
-    def __init__(self, scheduler, process, args, interval=1.0, times=None):
-        self.scheduler = scheduler
+    Registered Modules are notified of the activation and deactivation of their device.
+
+    Modules can also be scheduled in the kernel to run at a particular time and a given number of times.
+    """
+
+    def __init__(self, name=None, device=None, process=None, args=None, interval=1.0, times=None):
+        self.name = name
+        self.device = device
+
         self.interval = interval
-        self.last_run = time.time()
-        self.next_run = self.last_run + self.interval
+        self.last_run = None
+        self.next_run = time.time() + self.interval
         self.process = process
         self.args = args
         self.times = times
@@ -43,64 +42,29 @@ class KernelJob:
 
     def cancel(self):
         self.times = -1
-        self.scheduler.jobs.remove(self)
 
-    def run(self):
-        """
-        Scheduler Job: updates the values for next_run and times. Removing if necessary.
-        Executes the process requested in the SchedulerThread.
-
-        :return:
-        """
-        if self.paused:
-            return
-        self.next_run = None
-
-        if self.times is not None:
-            self.times = self.times - 1
-            if self.times <= 0:
-                self.scheduler.jobs.remove(self)
-            if self.times < 0:
-                return
-        if isinstance(self.args, tuple):
-            self.process(*self.args)
-        else:
-            self.process(self.args)
-        self.last_run = time.time()
-        self.next_run = self.last_run + self.interval
-
-
-class Module:
-    """
-    Modules are a generic lifecycle object. When attached they are initialized for that device. When that device
-    is shutdown, the shutdown() event is called. This permits the knowing registering and unregistering of
-    other kernel objects. and the attachment of the module to a device.
-
-    Modules are also notified of the activation and deactivation of their device.
-    """
-
-    def __init__(self, name=None, device=None):
-        self.name = name
-        self.device = device
+    def schedule(self):
+        if self not in self.device.jobs:
+            self.device.jobs.append(self)
 
     def attach(self, device, name=None):
         self.device = device
         self.name = name
         self.initialize()
 
-    def detach(self, device):
+    def detach(self, device, channel=None):
         try:
             if self.name is not None and self.name in device.module_instances:
                 del device.module_instances[self.name]
         except KeyError:
             pass
-        self.shutdown()
+        self.shutdown(channel)
         self.device = None
 
     def initialize(self):
         pass
 
-    def shutdown(self):
+    def shutdown(self, channel):
         pass
 
     def activated(self, device):
@@ -112,10 +76,16 @@ class Module:
 
 class Spooler(Module):
     """
-    Given spoolable objects it uses an interpreter to convert these to code.
+    The spooler converts spoolable objects into lasercode commands as needed and used by the interpreter/pipe.
 
-    The code is then written to a pipe.
-    These operations occur in an async manner with a registered SpoolerThread.
+    It provides commands for an synchronous queue.
+    * Peek()
+    * Pop()
+    * Send_Job()
+    * Clear_Queue()
+
+    And for a realtime channel:
+    * Realtime()
     """
 
     def __init__(self, device=None, interpreter=None):
@@ -124,12 +94,14 @@ class Spooler(Module):
         self.queue_lock = Lock()
         self.queue = []
 
-        self.queue_consumer = None
         self.item = None
 
+        self.process = self.next_queue
+        self.interval = 0.01
+
     def initialize(self):
-        self.device.setting(bool, '_can_spool', True)
-        self.queue_consumer = self.device.add_job(self.next_queue, None, 0.01, -1)
+        self.device.spooler = self
+        self.schedule()
 
     def __repr__(self):
         return "Spooler()"
@@ -140,14 +112,13 @@ class Spooler(Module):
     def realtime(self, command, *values):
         """Realtimes are sent directly to the interpreter without spooling."""
         if command == COMMAND_PAUSE:
-            self.queue_consumer.pause()
+            self.paused = True
         elif command == COMMAND_RESUME:
-            self.queue_consumer.resume()
+            self.paused = False
         elif command == COMMAND_RESET:
-            self.queue_consumer.stop()
             self.clear_queue()
         elif command == COMMAND_CLOSE:
-            self.queue_consumer.stop()
+            self.times = -1
         try:
             return self.device.interpreter.realtime_command(command, values)
         except NotImplementedError:
@@ -189,6 +160,39 @@ class Spooler(Module):
         self.queue_lock.release()
         self.device.signal("spooler;queue", len(self.queue))
 
+    def next_queue(self, *args):
+        if self.device.hold():
+            return
+        if self.item is not None:
+            self.next_item()
+            return
+        element = self.peek()
+        if element is None:
+            return  # Nothing left in spooler.
+        self.pop()
+        if isinstance(element, tuple):
+            self.item = element
+            return
+        try:
+            self.item = element.generate()
+        except AttributeError:
+            self.item = element
+
+    def next_item(self, *args):
+        if self.device.hold():
+            return
+        if self.item is None:
+            return
+        if isinstance(self.item, (tuple, list)):
+            self.spool_line(self.item)
+            self.item = None
+            return
+        try:
+            e = next(self.item)
+            self.spool_line(e)
+        except StopIteration:
+            self.item = None
+
     def spool_line(self, e):
         if isinstance(e, (tuple, list)):
             command = e[0]
@@ -201,35 +205,7 @@ class Spooler(Module):
             values = [None]
         else:
             return
-        self.device.hold()
         self.execute(command, *values)
-
-    def next_queue(self, *args):
-        if self.item is not None:
-            self.next_item()
-            return
-        element = self.peek()
-        if element is None:
-            return  # Nothing left in spooler.
-        if self.device._can_spool:
-            return
-        if isinstance(element, (tuple, list)):
-            self.spool_line(element)
-            return
-        try:
-            self.item = element.generate
-        except AttributeError:
-            self.item = element
-        self.pop()
-
-    def next_item(self, *args):
-        if self.item is None:
-            return
-        try:
-            e = next(self.item)
-            self.spool_line(e)
-        except StopIteration:
-            self.item = None
 
 
 class Interpreter:
@@ -313,43 +289,9 @@ class Modification:
         self.output_type = output_type
 
 
-class Device(Thread):
-    """
-    A Device is a specific module cluster that serves a unified purpose.
-
-    * Provides job scheduler
-    * Registers devices, modules, pipes, modifications, and effects.
-    * Stores instanced devices, modules, pipes, channels, controls and threads.
-    * Processes localized signals.
-
-
-    """
-
-    def __init__(self, root=None, uid=''):
-        Thread.__init__(self, name=uid + 'KernelThread')
-        self.daemon = True
-        self.device_root = root
-        self.uid = uid
-
-        self.state = THREAD_STATE_UNKNOWN
-        self.jobs = []
-
-        # Instanceable Kernel Objects
-        self.registered_devices = {}
-        self.registered_modules = {}
-        self.registered_pipes = {}
-        self.registered_modifications = {}
-        self.registered_effects = {}
-
-        # Active Kernel Object Instances
-        self.device_instances = {}
-        self.module_instances = {}
-        self.pipe_instances = {}
-
-        self.control_instances = {}
-        self.thread_instances = {}
-
-        # Signal processing.
+class Signaler(Module):
+    def __init__(self):
+        Module.__init__(self)
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []
@@ -357,269 +299,23 @@ class Device(Thread):
         self.queue_lock = Lock()
         self.message_queue = {}
         self._is_queue_processing = False
+        self.process = self.delegate_messages
+        self.interval = 0.05
+        self.args = ()
 
-        # Channel processing.
-        self.channels = {}
-        self.watchers = {}
-        self.greet = {}
+    def initialize(self):
+        self.device.signal = self.signal
+        self.device.listen = self.listen
+        self.device.unlisten = self.unlisten
+        self.device.last_signal = self.last_signal
+        self.schedule()
 
-    def __str__(self):
-        if self.uid is None:
-            return "Project"
-        else:
-            return self.uid
-
-    def __call__(self, code, *message):
-        self.signal(code, *message)
-
-    def __setitem__(self, key, value):
-        """
-        Kernel value settings. If Config is registered this will be persistent.
-        :param key: Key to set.
-        :param value: Value to set
-        :return: None
-        """
-        if isinstance(key, tuple):
-            if value is None:
-                key, value = key
-                self.unlisten(key, value)
-            else:
-                key, value = key
-                self.listen(key, value)
-        elif isinstance(key, str):
-            self.write_persistent(key, value)
-
-    def __getitem__(self, item):
-        """
-        Kernel value get. If Config is set registered this will be persistent.
-
-        As a shorthand any float, int, string, or bool set with this will also be found at kernel.item
-
-        :param item:
-        :return:
-        """
-        if isinstance(item, tuple):
-            if len(item) == 2:
-                t, key = item
-                return self.read_persistent(t, key)
-            else:
-                t, key, default = item
-                return self.read_persistent(t, key, default)
-        return self.read_item_persistent(item)
-
-    def get(self, key):
-        key = self.uid + key
-        if hasattr(self.device_root, key):
-            return getattr(self.device_root, key)
-
-    def read_item_persistent(self, item):
-        return self.device_root.read_item_persistent(item)
-
-    def write_persistent(self, key, value):
-        self.device_root.write_persistent(key, value)
-
-    def read_persistent(self, t, key, default=None):
-        return self.device_root.read_persistent(t, key, default)
-
-    def boot(self):
-        """
-        Kernel boot sequence. This should be called after all the registered devices are established.
-        :return:
-        """
-        if not self.is_alive():
-            self.add_job(self.delegate_messages, args=(), interval=0.05)
-            self.start()
-
-    def shutdown(self):
-        """
-        Begins device shutdown procedure.
-
-        Checks if shutdown should be done.
-        Save Kernel Persistent settings.
-        Save Device Persistent settings.
-        Closes all windows.
-        Ask all modules to shutdown.
-        Wait for threads to end.
-        -- If threads do not end, threads must be aborted.
-        Notifies of listener errors.
-        """
-        self.state = THREAD_STATE_ABORT
-        _ = self.device_root.translation
-        shutdown = self.channel_open('shutdown')
-        shutdown(_("Shutting down.\n"))
-        self.flush()
-        for device_name in self.device_instances:
-            device = self.device_instances[device_name]
-            shutdown(_("Device Shutdown Started: '%s'\n") % str(device))
-            device.add_watcher('shutdown', shutdown)
-            device.shutdown()
-            shutdown(_("Device Shutdown Finished: '%s'\n") % str(device))
-            shutdown(_("Saving Device State: '%s'\n") % str(device))
-            device.flush()
-        self.flush()
-        for module_name in list(self.module_instances):
-            module = self.module_instances[module_name]
-            shutdown(_("Shutting down %s module: %s\n") % (module_name, str(module)))
-            try:
-                module.detach(self)
-            except AttributeError:
-                pass
-        for module_name in self.module_instances:
-            module = self.module_instances[module_name]
-            shutdown(_("WARNING: Module %s was not closed.\n") % (module_name))
-        for thread_name in self.thread_instances:
-            thread = self.thread_instances[thread_name]
-            if not thread.is_alive:
-                shutdown(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
-                continue
-            shutdown(_("Finishing Thread %s for %s\n") % (thread_name, str(thread)))
-            if thread is self:
-                continue
-                # Do not sleep thread waiting for devicethread to die. This is devicethread.
-            try:
-                thread.stop()
-            except AttributeError:
-                pass
-            if thread.is_alive:
-                shutdown(_("Waiting for thread %s: %s\n") % (thread_name, str(thread)))
-            while thread.is_alive():
-                time.sleep(0.1)
-            shutdown(_("Thread %s finished. %s\n") % (thread_name, str(thread)))
+    def shutdown(self,  shutdown):
         for key, listener in self.listeners.items():
             if len(listener):
                 shutdown(_("WARNING: Listener '%s' still registered to %s.\n") % (key, str(listener)))
-        shutdown(_("Shutdown.\n"))
         self.last_message = {}
         self.listeners = {}
-
-    def add_job(self, run, args=(), interval=1.0, times=None):
-        """
-        Adds a job to the scheduler.
-
-        :param run: function to run
-        :param args: arguments to give to that function.
-        :param interval: in seconds, how often should the job be run.
-        :param times: limit on number of executions.
-        :return: Reference to the job added.
-        """
-        job = KernelJob(self, run, args, interval, times)
-        self.jobs.append(job)
-        return job
-
-    def run(self):
-        """
-        Scheduler main loop.
-        Check the Scheduler thread state, and whether it should abort or pause.
-        Check each job, and if that job is scheduled to run. Executes that job.
-        :return:
-        """
-        self.state = THREAD_STATE_STARTED
-        while self.state != THREAD_STATE_FINISHED:
-            time.sleep(0.005)  # 200 ticks a second.
-            if self.state == THREAD_STATE_ABORT:
-                break
-            while self.state == THREAD_STATE_PAUSED:
-                # The scheduler is paused.
-                time.sleep(1.0)
-            for job in self.jobs:
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job.run()
-        self.state = THREAD_STATE_FINISHED
-        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
-        self.shutdown()
-
-    def _start_debugging(self):
-        import functools
-        import datetime
-        import types
-        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-        debug_file = open(filename, "a")
-        debug_file.write("\n\n\n")
-
-        def debug(func, obj):
-            @functools.wraps(func)
-            def wrapper_debug(*args, **kwargs):
-                args_repr = [repr(a) for a in args]
-
-                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
-                signature = ", ".join(args_repr + kwargs_repr)
-                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
-                debug_file.write(start + '\n')
-                print(start)
-                t = time.time()
-                value = func(*args, **kwargs)
-                t = time.time() - t
-                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
-                print(finish)
-                debug_file.write(finish + '\n')
-                debug_file.flush()
-                return value
-
-            return wrapper_debug
-
-        for obj in (self, self.spooler, self.pipe, self.interpreter):
-            for attr in dir(obj):
-                if attr.startswith('_'):
-                    continue
-                fn = getattr(obj, attr)
-                if not isinstance(fn, types.FunctionType) and \
-                        not isinstance(fn, types.MethodType):
-                    continue
-                setattr(obj, attr, debug(fn, obj))
-
-    def close(self):
-        self.flush()
-
-    def setting(self, setting_type, setting_name, default=None):
-        """
-        Registers a setting to be used between modules.
-
-        If the setting exists, its value remains unchanged.
-        If the setting exists in the persistent storage that value is used.
-        If there is no settings value, the default will be used.
-
-        :param setting_type: int, float, str, or bool value
-        :param setting_name: name of the setting
-        :param default: default value for the setting to have.
-        :return: load_value
-        """
-        if self.uid is not None:
-            setting_uid_name = self.uid + setting_name
-        else:
-            setting_uid_name = setting_name
-        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
-            return
-        if not setting_name.startswith('_'):
-            load_value = self.read_persistent(setting_type, setting_uid_name, default)
-        else:
-            load_value = default
-        setattr(self, setting_name, load_value)
-        return load_value
-
-    def flush(self):
-        for attr in dir(self):
-            if attr.startswith('_'):
-                continue
-            if attr == 'uid':
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            if self.uid is not None:
-                uid_attr = self.uid + attr
-            else:
-                uid_attr = attr
-            if isinstance(value, (int, bool, str, float)):
-                self.write_persistent(uid_attr, value)
-
-    def update(self, setting_name, value):
-        if hasattr(self, setting_name):
-            old_value = getattr(self, setting_name)
-        else:
-            old_value = None
-        setattr(self, setting_name, value)
-        self(setting_name, (value, old_value))
 
     # Signal processing.
 
@@ -634,17 +330,6 @@ class Device(Thread):
         self.message_queue[code] = message
         self.queue_lock.release()
 
-        if self.uid is not None:
-            code = self.uid + ';' + code
-        if self.device_root is not None and self.device_root is not self:
-            self.device_root.signal(code, *message)
-
-    def execute(self, control_name, *args):
-        if self.uid is not None:
-            self.control_instances[self.uid + control_name](*args)
-        else:
-            self.control_instances[control_name](*args)
-
     def delegate_messages(self):
         """
         Delegate the process queue to the run_later thread.
@@ -652,7 +337,10 @@ class Device(Thread):
         """
         if self._is_queue_processing:
             return
-        self.device_root.run_later(self.process_queue, None)
+        if self.device.run_later is not None:
+            self.device.run_later(self.process_queue, None)
+        else:
+            self.process_queue(None)
 
     def process_queue(self, *args):
         """
@@ -725,6 +413,338 @@ class Device(Thread):
         self.queue_lock.acquire(True)
         self.removing_listeners.append((signal, funct))
         self.queue_lock.release()
+
+
+class Device(Thread):
+    """
+    A Device is a specific module cluster that serves a unified purpose.
+
+    * Provides job scheduler
+    * Registers devices, modules, pipes, modifications, and effects.
+    * Stores instanced devices, modules, pipes, channels, controls and threads.
+    * Processes localized signals.
+    """
+
+    def __init__(self, root=None, uid=''):
+        Thread.__init__(self, name=uid + 'KernelThread')
+        self.daemon = True
+        self.device_root = root
+        self.uid = uid
+
+        self.state = THREAD_STATE_UNKNOWN
+        self.jobs = []
+
+        # Instanceable Kernel Objects
+        self.registered_devices = {}
+        self.registered_modules = {}
+        self.registered_pipes = {}
+        self.registered_modifications = {}
+        self.registered_effects = {}
+
+        # Active Kernel Object Instances
+        self.device_instances = {}
+        self.module_instances = {}
+        self.pipe_instances = {}
+
+        self.control_instances = {}
+        self.thread_instances = {}
+
+        # Channel processing.
+        self.channels = {}
+        self.watchers = {}
+        self.greet = {}
+
+    def __str__(self):
+        if self.uid is None:
+            return "Project"
+        else:
+            return self.uid
+
+    def __call__(self, code, *message):
+        self.signal(code, *message)
+
+    def __setitem__(self, key, value):
+        """
+        Kernel value settings. If Config is registered this will be persistent.
+
+        :param key: Key to set.
+        :param value: Value to set
+        :return: None
+        """
+        if isinstance(key, str):
+            self.write_persistent(key, value)
+
+    def __getitem__(self, item):
+        """
+        Kernel value get. If Config is set registered this will be persistent.
+
+        As a shorthand any float, int, string, or bool set with this will also be found at kernel.item
+
+        :param item:
+        :return:
+        """
+        if isinstance(item, tuple):
+            if len(item) == 2:
+                t, key = item
+                return self.read_persistent(t, key)
+            else:
+                t, key, default = item
+                return self.read_persistent(t, key, default)
+        return self.read_item_persistent(item)
+
+    def get(self, key):
+        key = self.uid + key
+        if hasattr(self.device_root, key):
+            return getattr(self.device_root, key)
+
+    def read_item_persistent(self, item):
+        return self.device_root.read_item_persistent(item)
+
+    def write_persistent(self, key, value):
+        self.device_root.write_persistent(key, value)
+
+    def read_persistent(self, t, key, default=None):
+        return self.device_root.read_persistent(t, key, default)
+
+    def boot(self):
+        """
+        Kernel boot sequence. This should be called after all the registered devices are established.
+        :return:
+        """
+        if not self.is_alive():
+            self.start()
+
+    def shutdown(self, shutdown):
+        """
+        Begins device shutdown procedure.
+
+        Checks if shutdown should be done.
+        Save Kernel Persistent settings.
+        Save Device Persistent settings.
+        Closes all windows.
+        Ask all modules to shutdown.
+        Wait for threads to end.
+        -- If threads do not end, threads must be aborted.
+        Notifies of listener errors.
+        """
+        self.state = THREAD_STATE_ABORT
+        _ = self.device_root.translation
+        shutdown(_("Shutting down.\n"))
+        self.flush()
+        for device_name in self.device_instances:
+            device = self.device_instances[device_name]
+            shutdown(_("Device Shutdown Started: '%s'\n") % str(device))
+            device.shutdown(shutdown)
+            shutdown(_("Device Shutdown Finished: '%s'\n") % str(device))
+            shutdown(_("Saving Device State: '%s'\n") % str(device))
+            device.flush()
+        self.flush()
+        for module_name in list(self.module_instances):
+            module = self.module_instances[module_name]
+            shutdown(_("Shutting down %s module: %s\n") % (module_name, str(module)))
+            try:
+                module.detach(self, channel=shutdown)
+            except AttributeError:
+                pass
+        for module_name in self.module_instances:
+            module = self.module_instances[module_name]
+            shutdown(_("WARNING: Module %s was not closed.\n") % (module_name))
+        for thread_name in self.thread_instances:
+            thread = self.thread_instances[thread_name]
+            if not thread.is_alive:
+                shutdown(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
+                continue
+            shutdown(_("Finishing Thread %s for %s\n") % (thread_name, str(thread)))
+            if thread is self:
+                continue
+                # Do not sleep thread waiting for devicethread to die. This is devicethread.
+            try:
+                thread.stop()
+            except AttributeError:
+                pass
+            if thread.is_alive:
+                shutdown(_("Waiting for thread %s: %s\n") % (thread_name, str(thread)))
+            while thread.is_alive():
+                time.sleep(0.1)
+            shutdown(_("Thread %s finished. %s\n") % (thread_name, str(thread)))
+        shutdown(_("Shutdown.\n"))
+
+    def add_job(self, run, args=(), interval=1.0, times=None):
+        """
+        Adds a job to the scheduler.
+
+        :param run: function to run
+        :param args: arguments to give to that function.
+        :param interval: in seconds, how often should the job be run.
+        :param times: limit on number of executions.
+        :return: Reference to the job added.
+        """
+        job = Module(self, process=run, args=args, interval=interval, times=times)
+        self.jobs.append(job)
+        return job
+
+    def run(self):
+        """
+        Scheduler main loop.
+        Check the Scheduler thread state, and whether it should abort or pause.
+        Check each job, and if that job is scheduled to run. Executes that job.
+        :return:
+        """
+        self.state = THREAD_STATE_STARTED
+        while self.state != THREAD_STATE_FINISHED:
+            time.sleep(0.005)  # 200 ticks a second.
+            if self.state == THREAD_STATE_ABORT:
+                break
+            while self.state == THREAD_STATE_PAUSED:
+                # The scheduler is paused.
+                time.sleep(1.0)
+            jobs = self.jobs
+            jobs_update = False
+            for job in jobs:
+                # Checking if jobs should run.
+                if job.scheduled:
+                    job.next_run = None
+                    if job.times is not None:
+                        job.times = job.times - 1
+                        if job.times <= 0:
+                            jobs_update = True
+                        if job.times < 0:
+                            continue
+                    if isinstance(job.args, tuple):
+                        job.process(*job.args)
+                    else:
+                        job.process(job.args)
+                    job.last_run = time.time()
+                    job.next_run = job.last_run + job.interval
+            if jobs_update:
+                self.jobs = [job for job in jobs if job.times is not None and job.times > 0]
+        self.state = THREAD_STATE_FINISHED
+
+        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
+        self.shutdown(self.channel_open('shutdown'))
+
+    def _start_debugging(self):
+        """
+        Debug function hooks all functions within the device with a debug call that saves the data to the disk and
+        prints that information.
+
+        :return:
+        """
+        import functools
+        import datetime
+        import types
+        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+        debug_file = open(filename, "a")
+        debug_file.write("\n\n\n")
+
+        def debug(func, obj):
+            @functools.wraps(func)
+            def wrapper_debug(*args, **kwargs):
+                args_repr = [repr(a) for a in args]
+
+                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
+                signature = ", ".join(args_repr + kwargs_repr)
+                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
+                debug_file.write(start + '\n')
+                print(start)
+                t = time.time()
+                value = func(*args, **kwargs)
+                t = time.time() - t
+                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
+                print(finish)
+                debug_file.write(finish + '\n')
+                debug_file.flush()
+                return value
+
+            return wrapper_debug
+        attach_list = [modules for modules, module_name in self.module_instances.items()]
+        attach_list.append(self)
+        for obj in attach_list:
+            for attr in dir(obj):
+                if attr.startswith('_'):
+                    continue
+                fn = getattr(obj, attr)
+                if not isinstance(fn, types.FunctionType) and \
+                        not isinstance(fn, types.MethodType):
+                    continue
+                setattr(obj, attr, debug(fn, obj))
+
+    def close(self):
+        self.flush()
+
+    def setting(self, setting_type, setting_name, default=None):
+        """
+        Registers a setting to be used between modules.
+
+        If the setting exists, its value remains unchanged.
+        If the setting exists in the persistent storage that value is used.
+        If there is no settings value, the default will be used.
+
+        :param setting_type: int, float, str, or bool value
+        :param setting_name: name of the setting
+        :param default: default value for the setting to have.
+        :return: load_value
+        """
+        if self.uid is not None:
+            setting_uid_name = self.uid + setting_name
+        else:
+            setting_uid_name = setting_name
+        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
+            return
+        if not setting_name.startswith('_'):
+            load_value = self.read_persistent(setting_type, setting_uid_name, default)
+        else:
+            load_value = default
+        setattr(self, setting_name, load_value)
+        return load_value
+
+    def flush(self):
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            if attr == 'uid':
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            if self.uid is not None:
+                uid_attr = self.uid + attr
+            else:
+                uid_attr = attr
+            if isinstance(value, (int, bool, str, float)):
+                self.write_persistent(uid_attr, value)
+
+    def update(self, setting_name, value):
+        if hasattr(self, setting_name):
+            old_value = getattr(self, setting_name)
+        else:
+            old_value = None
+        setattr(self, setting_name, value)
+        self(setting_name, (value, old_value))
+
+    def execute(self, control_name, *args):
+        if self.uid is not None:
+            self.control_instances[self.uid + control_name](*args)
+        else:
+            self.control_instances[control_name](*args)
+
+    def signal(self, code, *message):
+        if self.uid is not None:
+            code = self.uid + ';' + code
+        if self.device_root is not None and self.device_root is not self:
+            self.device_root.signal(code, *message)
+
+    def listen(self, signal, funct):
+        if self.uid is not None:
+            signal = self.uid + ';' + signal
+        if self.device_root is not None and self.device_root is not self:
+            self.device_root.listen(signal, funct)
+
+    def unlisten(self, signal, funct):
+        if self.uid is not None:
+            signal = self.uid + ';' + signal
+        if self.device_root is not None and self.device_root is not self:
+            self.device_root.listen(signal, funct)
 
     # Channel processing
 
@@ -893,10 +913,10 @@ class Kernel(Device):
     * It is itself a type of device. It has no root, and should be the DeviceRoot.
     * Shared location of loaded elements data
     * Registered loaders and savers.
-    * The keymap object
     * The persistent storage object
     * The translation function
     * The run later function
+    * The keymap object
 
     """
 
@@ -963,11 +983,11 @@ class Kernel(Device):
             if device == self.device_primary:
                 self.activate_device(device)
 
-    def shutdown(self):
+    def shutdown(self, shutdown):
         """
         Begins kernel shutdown procedure.
         """
-        Device.shutdown(self)
+        Device.shutdown(self, shutdown)
 
         if self.config is not None:
             self.config.Flush()

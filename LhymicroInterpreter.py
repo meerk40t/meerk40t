@@ -81,6 +81,7 @@ class LhymicroInterpreter(Module, Interpreter):
         self.start_y = current_y
 
     def initialize(self):
+        self.device.interpreter = self
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -517,7 +518,6 @@ class LhymicroInterpreter(Module, Interpreter):
             self.move_absolute(x, y)
 
     def move_absolute(self, x, y):
-
         self.move_relative(x - self.device.current_x, y - self.device.current_y)
 
     def move_relative(self, dx, dy):

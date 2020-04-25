@@ -43,7 +43,7 @@ class Terminal(wx.Frame, Module):
             return
         kernel.add_watcher('console', self.text_console.AppendText)
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def on_close(self, event):

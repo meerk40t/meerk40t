@@ -92,7 +92,7 @@ class Controller(wx.Frame, Module):
         self.device.listen("pipe;thread", self.on_control_state)
         self.set_controller_button_by_state()
 
-    def shutdown(self):
+    def shutdown(self,  channel):
         self.Close()
 
     def on_close(self, event):
