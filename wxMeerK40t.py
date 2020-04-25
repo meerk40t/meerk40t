@@ -356,7 +356,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
+        self.process = self.refresh_scene
         self.fps_job = None
         self.root = None  # RootNode value, must have device for init.
         self.device_listening = None
@@ -381,6 +381,7 @@ class MeerK40t(wx.Frame, Module):
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     def on_close(self, event):
+        self.times = -1
         self.unlisten_device()
         self.unlisten_scene()
         self.device.module_instance_open('Shutdown', None, -1, "")
@@ -429,8 +430,9 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
 
         self.SetSize((device.window_width, device.window_height))
-
-        self.fps_job = device.add_job(self.refresh_scene, interval=1.0 / float(device.fps))
+        self.interval = 1.0 / float(device.fps)
+        self.schedule()
+        self.process()
         self.add_language_menu()
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
@@ -474,9 +476,9 @@ class MeerK40t(wx.Frame, Module):
     def set_fps(self, fps):
         if fps == 0:
             fps = 1
-        self.fps_job.times = 0
         self.device.fps = fps
-        self.fps_job = self.device.add_job(self.refresh_scene, interval=1.0 / float(self.device.fps))
+        self.interval = 1.0 / float(self.device.fps)
+        self.schedule()
 
     def on_element_update(self, *args):
         """

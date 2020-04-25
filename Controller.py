@@ -94,6 +94,7 @@ class Controller(wx.Frame, Module):
 
     def shutdown(self,  channel):
         self.Close()
+        self.device = None
 
     def on_close(self, event):
         self.device.module_instance_remove(self.name)

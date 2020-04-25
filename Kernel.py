@@ -23,7 +23,7 @@ class Module:
     Modules can also be scheduled in the kernel to run at a particular time and a given number of times.
     """
 
-    def __init__(self, name=None, device=None, process=None, args=None, interval=1.0, times=None):
+    def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
         self.name = name
         self.device = device
 
@@ -745,7 +745,7 @@ class Device(Thread):
         if self.uid is not None:
             signal = self.uid + ';' + signal
         if self.device_root is not None and self.device_root is not self:
-            self.device_root.listen(signal, funct)
+            self.device_root.unlisten(signal, funct)
 
     # Channel processing
 
