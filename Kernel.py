@@ -77,9 +77,9 @@ class Module:
 
 class Spooler(Module):
     """
-    The spooler stores spoolable lasercode events, as a synchronous queue.
+    The spooler module stores spoolable lasercode events, as a synchronous queue.
 
-    Spooler registers itself as the device.spooler and provides a standard location to send data to an unknown device.
+    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown device.
 
     * Peek()
     * Pop()
@@ -139,9 +139,16 @@ class Spooler(Module):
 
 class Interpreter(Module):
     """
-    An Interpreter takes spoolable commands and turns those commands into states and code in a language
+    An Interpreter Module takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
+
+    Interpreters register themselves as device.interpreter objects.
+    Interpreters expect the device.spooler object exists to provide spooled commands as needed.
+
+    These modules function to interpret hardware specific backend information from the reusable spoolers and server
+    objects that may also be common within devices.
     """
+
     def __init__(self, pipe=None):
         Module.__init__(self)
         self.process_item = None
@@ -228,8 +235,12 @@ class Interpreter(Module):
 
 class Pipe:
     """
-    Write dataflow in the kernel. Provides general information about buffer size in through len() builtin.
-    Pipes have write and realtime_write functions.
+    Pipes are a generic file-like object with write commands and a realtime_write function.
+
+    The realtime_write function should exist, but code using pipes should do so in a try block. Excepting
+    the AttributeError if it doesn't exist. So that pipes are able to be exchanged for real file-like objects.
+
+    Buffer size general information is provided through len() builtin.
     """
 
     def __len__(self):
@@ -262,6 +273,9 @@ class Pipe:
 
 class Effect:
     """
+    Effects are intended to be external program modifications of the data.
+    None of these are implemented yet.
+
     The select is a selections string for the exporting element selection.
     The save is the export file to use.
     The path refers to the external program.
@@ -279,6 +293,9 @@ class Effect:
 
 class Modification:
     """
+    Modifications are intended to be lazy implemented changes to SVGElement objects and groups. The intent is to
+    provide a method for delayed modifications of data.
+
     Modifications are functions called on single SVGElement objects.
     Type Input is the input type kind of element this is intended to act upon.
     Type Output is the output type of the element this is intended to produce.
@@ -290,6 +307,11 @@ class Modification:
 
 
 class Signaler(Module):
+    """
+    Signaler provides the signals functionality for a device. It replaces the functions for .signal(), .listen(),
+    .unlisten(), .last_signal().
+    """
+
     def __init__(self):
         Module.__init__(self)
         self.listeners = {}
@@ -312,6 +334,7 @@ class Signaler(Module):
         self.schedule()
 
     def shutdown(self,  shutdown):
+        _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
             if len(listener):
                 shutdown(_("WARNING: Listener '%s' still registered to %s.\n") % (key, str(listener)))
@@ -420,10 +443,16 @@ class Device(Thread):
     """
     A Device is a specific module cluster that serves a unified purpose.
 
+    The Kernel is a type of device which provides root functionality.
+
     * Provides job scheduler
     * Registers devices, modules, pipes, modifications, and effects.
     * Stores instanced devices, modules, pipes, channels, controls and threads.
-    * Processes localized signals.
+    * Processes local channels.
+
+    Channels are a device object with specific uids that sends messages to watcher functions. These can be watched
+    even if the channels are not ever opened or used. The channels can opened and provided information without any
+    consideration of what might be watching.
     """
 
     def __init__(self, root=None, uid=''):
@@ -918,7 +947,6 @@ class Kernel(Device):
     * The translation function
     * The run later function
     * The keymap object
-
     """
 
     def __init__(self, config=None):
