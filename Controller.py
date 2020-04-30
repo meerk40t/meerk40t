@@ -6,7 +6,9 @@
 import wx
 
 from CH341DriverBase import *
-from LhystudioController import get_code_string_from_code
+from LhystudiosDevice import get_code_string_from_code
+# TODO: The device backend should provide the translated information. Rather than depend on it.
+
 from Kernel import *
 from icons import *
 

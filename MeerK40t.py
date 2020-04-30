@@ -2,9 +2,11 @@ import argparse
 import sys
 
 from DefaultModules import *
-from LhystudioController import LhystudioController
+from GrblDevice import GrblDevice
+from LhystudiosDevice import LhystudioController, LhymicroInterpreter, LhystudiosDevice
 from LaserServer import *
-from LhymicroInterpreter import LhymicroInterpreter
+from MoshiboardDevice import MoshiboardDevice
+from RuidaDevice import RuidaDevice
 
 try:
     from math import tau
@@ -64,9 +66,14 @@ kernel.register('load', 'ImageLoader', ImageLoader)
 kernel.register('load', 'EgvLoader', EgvLoader)
 kernel.register('load', "DxfLoader", DxfLoader)
 kernel.register('save', 'SVGWriter', SVGWriter)
-kernel.register('device', 'K40Stock', LhystudiosDevice)
+kernel.register('device', 'Lhystudios', LhystudiosDevice)
+kernel.register('device', 'Moshiboard', MoshiboardDevice)
+kernel.register('device', 'Ruida', RuidaDevice)
+kernel.register('device', 'GRBL', GrblDevice)
+
 kernel.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
-kernel.register('module', 'K40Controller', LhystudioController)
+kernel.register('module', 'LhystudioController', LhystudioController)
+kernel.register('module', 'RuidaEmulator', RuidaEmulator)
 kernel.register('module', 'GrblEmulator', GRBLEmulator)
 
 console = kernel.module_instance_open('Console')

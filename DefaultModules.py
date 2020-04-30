@@ -11,87 +11,6 @@ from svgelements import *
 MILS_PER_MM = 39.3701
 
 
-class LhystudiosDevice(Device):
-    """
-    K40StockDevice instance. Serves as a device instance for a lhymicro-gl based device.
-    """
-    def __init__(self, root, uid=''):
-        Device.__init__(self, root, uid)
-        self.uid = uid
-
-        # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-        self._device_log = ''
-        self.current_x = 0
-        self.current_y = 0
-        self.hold_condition = lambda e: False
-        self.pipe = None
-        self.interpreter = None
-        self.spooler = None
-
-    def __repr__(self):
-        return "K40StockDevice(uid='%s')" % str(self.uid)
-
-    def initialize(self, device, name=''):
-        """
-        Device initialize.
-
-        :param device:
-        :param name:
-        :return:
-        """
-        self.uid = name
-        self.setting(int, 'usb_index', -1)
-        self.setting(int, 'usb_bus', -1)
-        self.setting(int, 'usb_address', -1)
-        self.setting(int, 'usb_serial', -1)
-        self.setting(int, 'usb_version', -1)
-
-        self.setting(bool, 'mock', False)
-        self.setting(bool, 'quit', False)
-        self.setting(int, 'packet_count', 0)
-        self.setting(int, 'rejected_count', 0)
-        self.setting(int, "buffer_max", 900)
-        self.setting(bool, "buffer_limit", True)
-        self.setting(bool, "autolock", True)
-        self.setting(bool, "autohome", False)
-        self.setting(bool, "autobeep", True)
-        self.setting(bool, "autostart", True)
-
-        self.setting(str, "board", 'M2')
-        self.setting(bool, "rotary", False)
-        self.setting(float, "scale_x", 1.0)
-        self.setting(float, "scale_y", 1.0)
-        self.setting(int, "_stepping_force", None)
-        self.setting(float, "_acceleration_breaks", float("inf"))
-        self.setting(int, "bed_width", 320)
-        self.setting(int, "bed_height", 220)
-
-        self.signal("bed_size", (self.bed_width, self.bed_height))
-
-        self.control_instance_add("Emergency Stop", self.emergency_stop)
-        self.control_instance_add("Debug Device", self._start_debugging)
-        self.add_watcher('usb', self.log)
-
-        pipe = self.module_instance_open("K40Controller", instance_name='pipe')
-        self.module_instance_open("LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
-        self.module_instance_open("Spooler", instance_name='spooler')
-
-    def send_job(self, job):
-        self.spooler.send_job(job)
-
-    def log(self, message):
-        self._device_log += message
-        self.signal('pipe;device_log', message)
-
-    def emergency_stop(self):
-        self.interpreter.realtime_command(COMMAND_RESET, 1)
-
-    def shutdown(self, shutdown):
-        self.spooler.clear_queue()
-        self.emergency_stop()
-        self.pipe.close()
-
-
 class GRBLEmulator(Module, Pipe):
 
     def __init__(self):
@@ -628,7 +547,7 @@ class Console(Module, Pipe):
             return
         elif command == "lhy":
             self.channel("Lhymicro-gl Mode.\n")
-            self.pipe = self.device.instances['modules']['K40Controller']
+            self.pipe = self.device.instances['modules']['LhystudioController']
             self.device.add_watcher('lhy', self.channel)
             return
         elif command == "set":
