@@ -6,7 +6,7 @@
 import wx
 
 from CH341DriverBase import *
-from K40Controller import get_code_string_from_code
+from LhystudioController import get_code_string_from_code
 from Kernel import *
 from icons import *
 

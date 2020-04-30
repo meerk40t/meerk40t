@@ -11,7 +11,7 @@ from svgelements import *
 MILS_PER_MM = 39.3701
 
 
-class K40StockDevice(Device):
+class LhystudiosDevice(Device):
     """
     K40StockDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """

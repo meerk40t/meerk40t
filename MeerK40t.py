@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from DefaultModules import *
-from K40Controller import K40Controller
+from LhystudioController import LhystudioController
 from LaserServer import *
 from LhymicroInterpreter import LhymicroInterpreter
 
@@ -64,9 +64,9 @@ kernel.register('load', 'ImageLoader', ImageLoader)
 kernel.register('load', 'EgvLoader', EgvLoader)
 kernel.register('load', "DxfLoader", DxfLoader)
 kernel.register('save', 'SVGWriter', SVGWriter)
-kernel.register('device', 'K40Stock', K40StockDevice)
+kernel.register('device', 'K40Stock', LhystudiosDevice)
 kernel.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
-kernel.register('module', 'K40Controller', K40Controller)
+kernel.register('module', 'K40Controller', LhystudioController)
 kernel.register('module', 'GrblEmulator', GRBLEmulator)
 
 console = kernel.module_instance_open('Console')

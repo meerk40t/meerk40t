@@ -144,7 +144,7 @@ class ControllerQueueThread(threading.Thread):
             self.set_state(THREAD_STATE_FINISHED)
 
 
-class K40Controller(Module, Pipe):
+class LhystudioController(Module, Pipe):
     """
     K40 Controller controls the primary Lhystudios boards sending any queued data to the USB when the signal is not
     busy.
