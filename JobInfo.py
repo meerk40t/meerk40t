@@ -108,9 +108,15 @@ class JobInfo(wx.Frame, Module):
         self.update_gui()
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('module', self.name)
         self.Show()
         self.operations = []
+        self.device.setting(bool, "rotary", False)
+        self.device.setting(float, "scale_x", 1.0)
+        self.device.setting(float, "scale_y", 1.0)
+        self.device.setting(bool, "autohome", False)
+        self.device.setting(bool, "autobeep", True)
+        self.device.setting(bool, "autostart", True)
         self.device.listen("element_property_update", self.on_element_property_update)
 
         if self.device.is_root():

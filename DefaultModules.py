@@ -1,5 +1,4 @@
 import os
-import time
 from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
@@ -32,16 +31,14 @@ class K40StockDevice(Device):
     def __repr__(self):
         return "K40StockDevice(uid='%s')" % str(self.uid)
 
-    def initialize(self, kernel, name=''):
+    def initialize(self, device, name=''):
         """
         Device initialize.
 
-        :param kernel:
+        :param device:
         :param name:
         :return:
         """
-        self.kernel = kernel
-
         self.uid = name
         self.setting(int, 'usb_index', -1)
         self.setting(int, 'usb_bus', -1)
@@ -79,8 +76,6 @@ class K40StockDevice(Device):
         self.module_instance_open("LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
         self.module_instance_open("Spooler", instance_name='spooler')
 
-        self.open()
-
     def send_job(self, job):
         self.spooler.send_job(job)
 
@@ -91,10 +86,7 @@ class K40StockDevice(Device):
     def emergency_stop(self):
         self.interpreter.realtime_command(COMMAND_RESET, 1)
 
-    def open(self):
-        pass
-
-    def close(self):
+    def shutdown(self, shutdown):
         self.spooler.clear_queue()
         self.emergency_stop()
         self.pipe.close()
@@ -628,15 +620,15 @@ class Console(Module, Pipe):
         active_device = self.active_device
         if command == "grbl":
             self.channel("GRBL Mode.\n")
-            if 'GrblEmulator' in self.device.module_instances:
-                self.pipe = active_device.module_instances['GrblEmulator']
+            if 'GrblEmulator' in self.device.instances['module']:
+                self.pipe = active_device.instances['module']['GrblEmulator']
             else:
-                self.pipe = active_device.module_instance_open('GrblEmulator')
+                self.pipe = active_device.open('module', 'GrblEmulator')
             active_device.add_watcher('grbl', self.channel)
             return
         elif command == "lhy":
             self.channel("Lhymicro-gl Mode.\n")
-            self.pipe = self.device.module_instances['K40Controller']
+            self.pipe = self.device.instances['modules']['K40Controller']
             self.device.add_watcher('lhy', self.channel)
             return
         elif command == "set":
@@ -664,18 +656,18 @@ class Console(Module, Pipe):
                     elif isinstance(v, str):
                         setattr(active_device, attr, str(value))
         elif command == 'control':
-            for control_name in active_device.control_instances:
+            for control_name in active_device.instances['control']:
                 self.channel('%s\n' % control_name)
         elif command.startswith('control '):
             control_name = command[len('control '):]
-            if control_name in active_device.control_instances:
+            if control_name in active_device.instances['control']:
                 active_device.execute(control_name)
                 self.channel("Executed '%s'\n" % control_name)
             else:
                 self.channel("Control '%s' not found.\n" % control_name)
         elif command == 'device':
             self.channel('%d: %s\n' % (0, 'device_root'))
-            for i, name in enumerate(kernel.device_instances):
+            for i, name in enumerate(kernel.instances['device']):
                 self.channel('%d: %s\n' % (i+1, name))
         elif command.startswith('device '):
             value = command[len('device '):]
@@ -685,9 +677,9 @@ class Console(Module, Pipe):
                     self.active_device = kernel
                     self.channel('Device set: device_root\n')
                 else:
-                    for i, name in enumerate(kernel.device_instances):
+                    for i, name in enumerate(kernel.instances['device']):
                         if i + 1 == value:
-                            self.active_device = kernel.device_instances[name]
+                            self.active_device = kernel.instances['device'][name]
                             self.channel('Device set: %d\n' % value)
                             break
             except ValueError:

@@ -30,7 +30,7 @@ class Terminal(wx.Frame, Module):
 
         kernel = self.device.device_root
         try:
-            self.pipe = kernel.module_instances['Console']
+            self.pipe = kernel.instances['module']['Console']
         except KeyError:
             for attr in dir(self):
                 value = getattr(self, attr)

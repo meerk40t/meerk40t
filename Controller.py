@@ -120,7 +120,7 @@ class Controller(wx.Frame, Module):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
-        for control_name, control in self.device.control_instances.items():
+        for control_name, control in self.device.instances['control'].items():
             gui.Bind(wx.EVT_MENU, self.device_execute(control_name),
                      path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)

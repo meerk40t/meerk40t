@@ -23,6 +23,7 @@ for full details.
 """
 
 kernel = Kernel()
+kernel.open('module', 'Signaler')
 
 # TODO: CLI Needs an option to change default speed, etc, parameters.
 # TODO: CLI Needs home command / lock, unlock.
@@ -54,25 +55,19 @@ grbl = parser_grbl.parse_args(sys.argv[1:])
 if not args.no_gui:
     from wxMeerK40t import init_gui
     init_gui(kernel)
-    meerk40tgui = kernel.module_instance_open('wxMeerK40t')
+    meerk40tgui = kernel.open('module', 'wxMeerK40t')
 
-kernel.register_module('Signaler', Signaler)
-
-kernel.register_device('K40Stock', K40StockDevice)
-
-kernel.register_module('LhymicroInterpreter', LhymicroInterpreter)
-kernel.register_module('Spooler', Spooler)
-kernel.register_module('K40Controller', K40Controller)
-kernel.register_module('GrblEmulator', GRBLEmulator)
-kernel.register_module('Console', Console)
-kernel.register_module('LaserServer', LaserServer)
-
-kernel.register_loader('SVGLoader', SVGLoader)
-kernel.register_loader('ImageLoader', ImageLoader)
-kernel.register_loader('EgvLoader', EgvLoader)
-kernel.register_loader("DxfLoader", DxfLoader)
-
-kernel.register_saver('SVGWriter', SVGWriter)
+kernel.register('module', 'Console', Console)
+kernel.register('module', 'LaserServer', LaserServer)
+kernel.register('load', 'SVGLoader', SVGLoader)
+kernel.register('load', 'ImageLoader', ImageLoader)
+kernel.register('load', 'EgvLoader', EgvLoader)
+kernel.register('load', "DxfLoader", DxfLoader)
+kernel.register('save', 'SVGWriter', SVGWriter)
+kernel.register('device', 'K40Stock', K40StockDevice)
+kernel.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
+kernel.register('module', 'K40Controller', K40Controller)
+kernel.register('module', 'GrblEmulator', GRBLEmulator)
 
 console = kernel.module_instance_open('Console')
 
@@ -113,7 +108,7 @@ if args.list is not None:
                 continue
             print('"%s" := %s' % (attr, str(v)))
     elif list_name == 'controls':
-        for control_name in kernel.control_instances:
+        for control_name in kernel.instances['control']:
             print('Control: %s' % control_name)
     exit(0)
 
@@ -161,7 +156,7 @@ if args.egv is not None:
 
 if args.control is not None:
     for control in args.control:
-        if control in kernel.control_instances:
+        if control in kernel.instances['control']:
             kernel.device.execute(control)
         else:
             print("Control '%s' not found." % control)
@@ -180,7 +175,5 @@ if args.output is not None:
 
 kernel.boot()
 if not args.no_gui:
-    for device_name in kernel.device_instances:
-        device = kernel.device_instances[device_name]
-        device.module_instance_open("MeerK40t",  None, -1, "")
+    kernel.device.open('module', 'MeerK40t', None, -1, "")
     meerk40tgui.MainLoop()

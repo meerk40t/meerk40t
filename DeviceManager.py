@@ -53,7 +53,7 @@ class DeviceManager(wx.Frame, Module):
         if item != -1:
             uid = self.devices_list.GetItem(item).Text
             self.device.device_primary = uid
-        self.device.device_list = ";".join([d for d in self.device.device_instances])
+        self.device.device_list = ";".join([d for d in self.device.instances['device']])
 
     def on_close(self, event):
         self.device.module_instance_remove(self.name)
@@ -91,10 +91,10 @@ class DeviceManager(wx.Frame, Module):
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
-        if len(self.device.device_instances) <= 0:
+        if len(self.device.instances['device']) <= 0:
             return
         i = 0
-        for key, value in self.device.device_instances.items():
+        for key, value in self.device.instances['device'].items():
             m = self.devices_list.InsertItem(i, str(key))
             if m != -1:
                 self.devices_list.SetItem(m, 1, "Lhystudios")
@@ -118,7 +118,7 @@ class DeviceManager(wx.Frame, Module):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 name = dlg.GetValue()
-                if name not in self.device.device_root.device_instances:
+                if name not in self.device.device_root.instances['device']:
                     # TODO: Allow other device types to be chosen rather than only K40Stock.
                     self.device.device_root.device_instance_open("K40Stock", dlg.GetValue())
             dlg.Destroy()
@@ -127,8 +127,8 @@ class DeviceManager(wx.Frame, Module):
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
-        device = self.device.device_instances[uid]
-        del self.device.device_instances[uid]
+        device = self.device.instances['device'][uid]
+        del self.device.instances['device'][uid]
         if device is self.device:
             self.device.device_root.activate_device(None)
         self.refresh_device_list()
@@ -136,7 +136,7 @@ class DeviceManager(wx.Frame, Module):
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
-        data = self.device.device_root.device_instances[uid]
+        data = self.device.device_root.instances['device'][uid]
         data.module_instance_open("Preferences", None, -1, "")
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>

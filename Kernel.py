@@ -55,8 +55,8 @@ class Module:
 
     def detach(self, device, channel=None):
         try:
-            if self.name is not None and self.name in device.module_instances:
-                del device.module_instances[self.name]
+            if self.name is not None and self.name in device.instances['module']:
+                del device.instances['module'][self.name]
         except KeyError:
             pass
         self.shutdown(channel)
@@ -464,20 +464,8 @@ class Device(Thread):
         self.state = THREAD_STATE_UNKNOWN
         self.jobs = []
 
-        # Instanceable Kernel Objects
-        self.registered_devices = {}
-        self.registered_modules = {}
-        self.registered_pipes = {}
-        self.registered_modifications = {}
-        self.registered_effects = {}
-
-        # Active Kernel Object Instances
-        self.device_instances = {}
-        self.module_instances = {}
-        self.pipe_instances = {}
-
-        self.control_instances = {}
-        self.thread_instances = {}
+        self.registered = {}
+        self.instances = {}
 
         # Channel processing.
         self.channels = {}
@@ -522,6 +510,14 @@ class Device(Thread):
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
+    def attach(self, device, name=None):
+        self.device_root = device
+        self.name = name
+        self.initialize(device, name=name)
+
+    def initialize(self, device, name=''):
+        pass
+
     def get(self, key):
         key = self.uid + key
         if hasattr(self.device_root, key):
@@ -561,26 +557,27 @@ class Device(Thread):
         _ = self.device_root.translation
         shutdown(_("Shutting down.\n"))
         self.flush()
-        for device_name in self.device_instances:
-            device = self.device_instances[device_name]
-            shutdown(_("Device Shutdown Started: '%s'\n") % str(device))
-            device.shutdown(shutdown)
-            shutdown(_("Device Shutdown Finished: '%s'\n") % str(device))
-            shutdown(_("Saving Device State: '%s'\n") % str(device))
-            device.flush()
+        if 'device' in self.instances:
+            for device_name in self.instances['device']:
+                device = self.instances['device'][device_name]
+                shutdown(_("Device Shutdown Started: '%s'\n") % str(device))
+                device.shutdown(shutdown)
+                shutdown(_("Device Shutdown Finished: '%s'\n") % str(device))
+                shutdown(_("Saving Device State: '%s'\n") % str(device))
+                device.flush()
         self.flush()
-        for module_name in list(self.module_instances):
-            module = self.module_instances[module_name]
+        for module_name in list(self.instances['module']):
+            module = self.instances['module'][module_name]
             shutdown(_("Shutting down %s module: %s\n") % (module_name, str(module)))
             try:
                 module.detach(self, channel=shutdown)
             except AttributeError:
                 pass
-        for module_name in self.module_instances:
-            module = self.module_instances[module_name]
+        for module_name in self.instances['module']:
+            module = self.instances['module'][module_name]
             shutdown(_("WARNING: Module %s was not closed.\n") % (module_name))
-        for thread_name in self.thread_instances:
-            thread = self.thread_instances[thread_name]
+        for thread_name in self.instances['thread']:
+            thread = self.instances['thread'][thread_name]
             if not thread.is_alive:
                 shutdown(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
                 continue
@@ -687,7 +684,7 @@ class Device(Thread):
                 return value
 
             return wrapper_debug
-        attach_list = [modules for modules, module_name in self.module_instances.items()]
+        attach_list = [modules for modules, module_name in self.instances['module'].items()]
         attach_list.append(self)
         for obj in attach_list:
             for attr in dir(obj):
@@ -698,9 +695,6 @@ class Device(Thread):
                         not isinstance(fn, types.MethodType):
                     continue
                 setattr(obj, attr, debug(fn, obj))
-
-    def close(self):
-        self.flush()
 
     def setting(self, setting_type, setting_name, default=None):
         """
@@ -754,9 +748,9 @@ class Device(Thread):
 
     def execute(self, control_name, *args):
         if self.uid is not None:
-            self.control_instances[self.uid + control_name](*args)
+            self.instances['control'][self.uid + control_name](*args)
         else:
-            self.control_instances[control_name](*args)
+            self.instances['control'][control_name](*args)
 
     def signal(self, code, *message):
         if self.uid is not None:
@@ -775,6 +769,18 @@ class Device(Thread):
             signal = self.uid + ';' + signal
         if self.device_root is not None and self.device_root is not self:
             self.device_root.unlisten(signal, funct)
+
+    def state(self):
+        return self.state
+
+    def resume(self):
+        self.state = THREAD_STATE_STARTED
+
+    def pause(self):
+        self.state = THREAD_STATE_PAUSED
+
+    def stop(self):
+        self.state = THREAD_STATE_ABORT
 
     # Channel processing
 
@@ -807,20 +813,25 @@ class Device(Thread):
 
     # Kernel object registration
 
+    def register(self, object_type, name, obj):
+        if object_type not in self.registered:
+            self.registered[object_type] = {}
+        self.registered[object_type][name] = obj
+
     def register_module(self, name, obj):
-        self.registered_modules[name] = obj
+        self.register('module', name, obj)
 
     def register_device(self, name, obj):
-        self.registered_devices[name] = obj
+        self.register('device', name, obj)
 
     def register_pipe(self, name, obj):
-        self.registered_pipes[name] = obj
+        self.register('pipe', name, obj)
 
     def register_modification(self, name, obj):
-        self.registered_modifications[name] = obj
+        self.register('modification', name, obj)
 
     def register_effect(self, name, obj):
-        self.registered_effects[name] = obj
+        self.register('effect', name, obj)
 
     # Device kernel object
 
@@ -830,74 +841,77 @@ class Device(Thread):
     def device_instance_open(self, device_name, instance_name=None, **kwargs):
         if instance_name is None:
             instance_name = device_name
-        device_object = self.registered_devices[device_name]
-        device_instance = device_object(self, **kwargs)
-        self.device_instances[instance_name] = device_instance
-        device_instance.initialize(self, name=instance_name)
-        device_instance.boot()
-        return device_instance
+        return self.open('device', device_name, self, instance_name=instance_name, **kwargs)
 
     def device_instance_close(self, name):
-        if name in self.device_instances:
-            try:
-                self.device_instances[name].close()
-            except AttributeError:
-                pass  # No close
-        self.device_instance_remove(name)
+        self.close('device', name)
 
     def device_instance_remove(self, name):
-        if name in self.device_instances:
-            del self.device_instances[name]
+        if name in self.instances['device']:
+            del self.instances['device'][name]
 
     # Module kernel objects
+    def open(self, type_name, object_name, *args, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = object_name
+        if self.device_root is None or self.device_root is self:
+            module_object = self.registered[type_name][object_name]
+        else:
+            module_object = self.device_root.registered[type_name][object_name]
+        instance = module_object(*args, **kwargs)
+        instance.attach(self, name=instance_name)
+        self.add(type_name, instance_name, instance)
+        return instance
+
+    def close(self, type_name, name):
+        if type_name in self.instances and name in self.instances[type_name]:
+            obj = self.instances[type_name][name]
+            try:
+                obj.close()
+            except AttributeError:
+                pass
+            obj.detach(self)
+            if name in self.instances[type_name]:
+                del self.instances[type_name][name]
+
+    def add(self, type_name, name, instance):
+        if type_name not in self.instances:
+            self.instances[type_name] = {}
+        self.instances[type_name][name] = instance
+
+    def remove(self, type_name, name):
+        if name in self.instances[type_name]:
+            del self.instances[type_name][name]
 
     def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
-        if instance_name is None:
-            instance_name = module_name
-        if self.device_root is None or self.device_root is self:
-            module_object = self.registered_modules[module_name]
-        else:
-            module_object = self.device_root.registered_modules[module_name]
-        module_instance = module_object(*args, **kwargs)
-        module_instance.attach(self, name=instance_name)
-        self.module_instances[instance_name] = module_instance
-        return module_instance
+        return self.open('module', module_name, *args, instance_name=instance_name, **kwargs )
 
     def module_instance_close(self, name):
-        if name in self.module_instances:
-            self.module_instances[name].detach(self)
-        self.module_instance_remove(name)
+        self.close('module', name)
 
     def module_instance_remove(self, name):
-        if name in self.module_instances:
-            del self.module_instances[name]
+        self.remove('module', name)
 
     # Pipe kernel object
 
     def pipe_instance_open(self, pipe_name, instance_name=None, **kwargs):
-        if instance_name is None:
-            instance_name = pipe_name
-        pipe_object = self.registered_pipes[pipe_name]
-        pipe_instance = pipe_object(**kwargs)
-        self.pipe_instances[instance_name] = pipe_instance
-        pipe_instance.initialize(self, name=instance_name)
-        return pipe_instance
+        self.open('pipe', pipe_name, instance_name=instance_name, **kwargs)
 
     # Control kernel object. Registered function calls.
 
     def control_instance_add(self, control_name, function):
-        self.control_instances[control_name] = function
+        self.add('control', control_name, function)
 
     def control_instance_remove(self, control_name):
-        del self.control_instances[control_name]
+        self.remove('control', control_name)
 
     # Thread kernel object. Registered Threads.
 
     def thread_instance_add(self, thread_name, obj):
-        self.thread_instances[thread_name] = obj
+        self.add('thread', thread_name, obj)
 
     def thread_instance_remove(self, thread_name):
-        del self.thread_instances[thread_name]
+        self.remove('thread', thread_name)
 
     def get_text_thread_state(self, state):
         _ = self.device_root.translation
@@ -916,7 +930,7 @@ class Device(Thread):
 
     def get_state(self, thread_name):
         try:
-            return self.thread_instances[thread_name].state()
+            return self.instances['thread'][thread_name].state()
         except AttributeError:
             return THREAD_STATE_UNKNOWN
 
@@ -955,13 +969,12 @@ class Kernel(Device):
         self.root = self
         self.uid = None
 
-        # Active Device
-        self.device = None
-
-        # Elements
         self.elements = []
         self.operations = []
         self.filenodes = {}
+
+        # Active Device
+        self.device = None
 
         # Persistent storage if it exists.
         self.config = None
@@ -974,23 +987,10 @@ class Kernel(Device):
         # Keymap values
         self.keymap = {}
 
-        # Static Kernel Objects
-        self.registered_loaders = {}
-        self.registered_savers = {}
-
         self.run_later = lambda listener, message: listener(message)
 
-    def state(self):
-        return self.state
-
-    def resume(self):
-        self.state = THREAD_STATE_STARTED
-
-    def pause(self):
-        self.state = THREAD_STATE_PAUSED
-
-    def stop(self):
-        self.state = THREAD_STATE_ABORT
+        self.register_module('Signaler', Signaler)
+        self.register_module('Spooler', Spooler)
 
     def boot(self):
         """
@@ -998,18 +998,19 @@ class Kernel(Device):
         :return:
         """
         Device.boot(self)
-        self.module_instance_open('Signaler')
 
         self.setting(str, 'device_list', '')
         self.setting(str, 'device_primary', '')
         for device in self.device_list.split(';'):
             args = list(device.split(':'))
             if len(args) == 1:
-                for r in self.registered_devices:
-                    self.device_instance_open(r, args[0])
+                for r in self.registered['device']:
+                    dev = self.device_instance_open(r, args[0])
+                    dev.boot()
                     break
             else:
-                self.device_instance_open(args[1], args[0])
+                dev = self.device_instance_open(args[1], args[0])
+                dev.boot()
             if device == self.device_primary:
                 self.activate_device(device)
 
@@ -1075,36 +1076,11 @@ class Kernel(Device):
                     setattr(self, value, None)
             more, value, index = config.GetNextEntry(index)
 
-    def activate_device(self, device_name):
-        """
-        Switch the activated device in the kernel.
-
-        :param device_name:
-        :return:
-        """
-        original = self.device
-        if device_name is None:
-            self.device = None
-        else:
-            self.device = self.device_instances[device_name]
-        if self.device is not original:
-            if original is not None:
-                for module_name in original.module_instances:
-                    module = original.module_instances[module_name]
-                    module.deactivated(original)
-            if self.device is not None:
-                for module_name in self.device.module_instances:
-                    module = self.device.module_instances[module_name]
-                    module.activated(original)
-            self.signal("device", self.device)
-
-    # Element processing and alterations.
-
     def register_loader(self, name, obj):
-        self.registered_loaders[name] = obj
+        self.device.registered['load'][name] = obj
 
     def register_saver(self, name, obj):
-        self.registered_savers[name] = obj
+        self.device.registered['save'][name] = obj
 
     def classify(self, elements):
         """
@@ -1161,7 +1137,7 @@ class Kernel(Device):
         return ops
 
     def load(self, pathname):
-        for loader_name, loader in self.registered_loaders.items():
+        for loader_name, loader in self.registered['load'].items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
                     results = loader.load(self, pathname)
@@ -1170,7 +1146,7 @@ class Kernel(Device):
                     elements, pathname, basename = results
                     self.filenodes[pathname] = elements
                     self.elements.extend(elements)
-                    self.signal('rebuild_tree', elements)
+                    self.device.signal('rebuild_tree', elements)
                     return elements, pathname, basename
         return None
 
@@ -1179,12 +1155,12 @@ class Kernel(Device):
         if all:
             filetypes.append('All valid types')
             exts = []
-            for loader_name, loader in self.registered_loaders.items():
+            for loader_name, loader in self.registered['load'].items():
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
                         exts.append('*.%s' % ext)
             filetypes.append(';'.join(exts))
-        for loader_name, loader in self.registered_loaders.items():
+        for loader_name, loader in self.registered['load'].items():
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
@@ -1194,7 +1170,7 @@ class Kernel(Device):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        for save_name, saver in self.registered_savers.items():
+        for save_name, saver in self.registered['save'].items():
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
                     saver.save(self, pathname, 'default')
@@ -1203,8 +1179,33 @@ class Kernel(Device):
 
     def save_types(self):
         filetypes = []
-        for saver_name, saver in self.registered_savers.items():
+        for saver_name, saver in self.registered['save'].items():
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % (extension))
         return "|".join(filetypes)
+
+    def activate_device(self, device_name):
+        """
+        Switch the activated device in the kernel.
+
+        :param device_name:
+        :return:
+        """
+        original = self.device
+        if device_name is None:
+            self.device = None
+        else:
+            self.device = self.instances['device'][device_name]
+        if self.device is not original:
+            if original is not None:
+                if 'module' in original.instances:
+                    for module_name in original.instances['module']:
+                        module = original.instances['module'][module_name]
+                        module.deactivated(original)
+            if self.device is not None:
+                if 'module' in self.instances:
+                    for module_name in self.instances['module']:
+                        module = self.instances['module'][module_name]
+                        module.activated(original)
+            self.signal("device", self.device)

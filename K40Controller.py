@@ -264,7 +264,7 @@ class K40Controller(Module, Pipe):
     def state_listener(self, code):
         if isinstance(code, int):
             self.usb_state = code
-            name = get_name_for_status(code, translation=self.device.kernel.translation)
+            name = get_name_for_status(code, translation=self.device.device_root.translation)
             self.log(name)
             self.device.signal("pipe;usb_state", code)
             self.device.signal("pipe;usb_status", name)
