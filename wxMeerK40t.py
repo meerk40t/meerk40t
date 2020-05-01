@@ -407,9 +407,6 @@ class MeerK40t(wx.Frame, Module):
         if device is not None:
             device.setting(int, "bed_width", 320)  # Default Value
             device.setting(int, "bed_height", 220)  # Default Value
-            bedwidth = device.bed_width
-            bedheight = device.bed_height
-            self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
 
         self.listen_scene()
         if device.fps <= 0:
@@ -470,6 +467,11 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
+
+        if device is not None:
+            bedwidth = device.bed_width
+            bedheight = device.bed_height
+            self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
 
     def shutdown(self,  channel):
         self.Close()

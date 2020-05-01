@@ -7,6 +7,11 @@ STATE_DEFAULT = 0
 STATE_CONCAT = 1
 STATE_COMPACT = 2
 
+"""
+Ruida device is a stub-backend. It doesn't work as of yet, but should be able to be configured.
+"""
+
+
 class RuidaDevice(Device):
     """
     """
@@ -25,7 +30,7 @@ class RuidaDevice(Device):
         self.spooler = None
 
     def __repr__(self):
-        return "MoshiboardDevice(uid='%s')" % str(self.uid)
+        return "RuidaDevice(uid='%s')" % str(self.uid)
 
     def initialize(self, device, name=''):
         """
@@ -220,9 +225,8 @@ class RuidaInterpreter(Interpreter):
             elif len(values) >= 2:
                 self.device.signal(values[0], *values[1:])
         elif command == COMMAND_CLOSE:
-            self.to_default_mode()
+            self.default_mode()
         elif command == COMMAND_OPEN:
-            self.reset_modes()
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_RESET:
@@ -230,9 +234,9 @@ class RuidaInterpreter(Interpreter):
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
         elif command == COMMAND_PAUSE:
-            self.pause()
+            pass
         elif command == COMMAND_STATUS:
-            self.device.signal("interpreter;status", self.get_status())
+            pass
         elif command == COMMAND_RESUME:
             pass  # This command can't be processed since we should be paused.
 
@@ -247,24 +251,19 @@ class RuidaInterpreter(Interpreter):
             step = values
             self.set_step(step)
         elif command == COMMAND_SET_D_RATIO:
-            d_ratio = values
-            self.set_d_ratio(d_ratio)
+            pass
         elif command == COMMAND_SET_POSITION:
             x, y = values
             self.device.current_x = x
             self.device.current_y = y
         elif command == COMMAND_RESET:
-            self.pipe.realtime_write(b'I*\n')
-            self.state = STATE_DEFAULT
-            self.device.signal('interpreter;mode', self.state)
+            pass
         elif command == COMMAND_PAUSE:
-            self.pause()
+            pass
         elif command == COMMAND_STATUS:
-            status = self.get_status()
-            self.device.signal('interpreter;status', status)
-            return status
+            pass
         elif command == COMMAND_RESUME:
-            self.resume()
+            pass
 
     def swizzle(self, b):
         b ^= (b >> 7) & 0xFF

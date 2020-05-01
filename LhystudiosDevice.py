@@ -45,7 +45,7 @@ STATE_COMPACT = 2
 
 class LhystudiosDevice(Device):
     """
-    K40StockDevice instance. Serves as a device instance for a lhymicro-gl based device.
+    LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
     def __init__(self, root, uid=''):
         Device.__init__(self, root, uid)
@@ -211,9 +211,9 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.device.control_instance_add("Realtime Pause", self.pause)
-        self.device.control_instance_add("Realtime Resume", self.resume)
-        self.device.control_instance_add("Update Codes", self.update_codes)
+        self.device.add('control', "Realtime Pause", self.pause)
+        self.device.add('control', "Realtime Resume", self.resume)
+        self.device.add('control', "Update Codes", self.update_codes)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -1256,7 +1256,6 @@ class LhystudioController(Module, Pipe):
         Pipe.__init__(self)
         self.usb_log = None
         self.debug_file = None
-        self.driver = None
         self.state = THREAD_STATE_UNSTARTED
 
         self.buffer = b''  # Threadsafe buffered commands to be sent to controller.

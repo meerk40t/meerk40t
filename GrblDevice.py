@@ -1,6 +1,11 @@
 from Kernel import Device
 
 
+"""
+GRBL device is a stub device. Serving as a placeholder. 
+"""
+
+
 class GrblDevice(Device):
     """
     """
