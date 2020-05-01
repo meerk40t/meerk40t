@@ -35,6 +35,7 @@ class GrblDevice(Device):
         :return:
         """
         self.uid = name
+        self.open('module', 'Spooler')
 
     def shutdown(self, shutdown):
         self.spooler.clear_queue()

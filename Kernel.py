@@ -48,6 +48,10 @@ class Module:
         if self not in self.device.jobs:
             self.device.jobs.append(self)
 
+    def unschedule(self):
+        if self in self.device.jobs:
+            self.device.jobs.remove(self)
+
     def attach(self, device, name=None):
         self.device = device
         self.name = name

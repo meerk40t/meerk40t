@@ -566,7 +566,7 @@ class LhymicroInterpreter(Interpreter):
             if self.state != STATE_CONCAT:
                 self.to_concat_mode()
         elif command == COMMAND_WAIT:
-            t = values  # TODO: Also needs to be converted to the newer methodology.
+            t = values
             self.next_run = t
         elif command == COMMAND_WAIT_BUFFER_EMPTY:
             self.extra_hold = lambda e: len(self.pipe) == 0
@@ -1164,79 +1164,6 @@ def onewire_crc_lookup(line):
     return crc
 
 
-class ControllerQueueThread(threading.Thread):
-    """
-    The ControllerQueue thread matches the state of the controller to the state
-    of the thread and processes the queue. If you set the controller to
-    THREAD_ABORTED it will abort, if THREAD_FINISHED it will finish. THREAD_PAUSE
-    it will pause.
-    """
-
-    def __init__(self, controller):
-        threading.Thread.__init__(self, name='K40-Controller')
-        self.controller = controller
-        self.state = None
-        self.set_state(THREAD_STATE_UNSTARTED)
-        self.max_attempts = 5
-
-    def set_state(self, state):
-        if self.state != state:
-            self.state = state
-            self.controller.thread_state_update(self.state)
-
-    def run(self):
-        self.set_state(THREAD_STATE_STARTED)
-        while self.controller.state == THREAD_STATE_UNSTARTED:
-            time.sleep(0.1)  # Already started. Unstarted is the desired state. Wait.
-
-        refuse_counts = 0
-        connection_errors = 0
-        count = 0
-        while self.controller.state != THREAD_STATE_ABORT:
-            try:
-                queue_processed = self.controller.process_queue()
-                refuse_counts = 0
-            except ConnectionRefusedError:
-                refuse_counts += 1
-                time.sleep(3)  # 3 second sleep on failed connection attempt.
-                if refuse_counts >= self.max_attempts:
-                    self.controller.state = THREAD_STATE_ABORT
-                    self.controller.device.signal('pipe;error', refuse_counts)
-                continue
-            except ConnectionError:
-                connection_errors += 1
-                time.sleep(0.5)
-                self.controller.close()
-                continue
-            if queue_processed:
-                count = 0
-            else:
-                # No packet could be sent.
-                if count > 10:
-                    if self.controller.device.quit:
-                        self.controller.state = THREAD_STATE_FINISHED
-                if count > 100:
-                    count = 100
-                time.sleep(0.01 * count)  # will tick up to 1 second waits if process queue never works.
-                count += 2
-                if self.controller.state == THREAD_STATE_PAUSED:
-                    self.set_state(THREAD_STATE_PAUSED)
-                    while self.controller.state == THREAD_STATE_PAUSED:
-                        time.sleep(1)
-                        if self.controller.state == THREAD_STATE_ABORT:
-                            self.set_state(THREAD_STATE_ABORT)
-                            return
-                    self.set_state(THREAD_STATE_STARTED)
-            if len(self.controller) == 0 and self.controller.state == THREAD_STATE_FINISHED:
-                # If finished is the desired state we need to actually be finished.
-                break
-        if self.controller.state == THREAD_STATE_ABORT:
-            self.set_state(THREAD_STATE_ABORT)
-            return
-        else:
-            self.set_state(THREAD_STATE_FINISHED)
-
-
 class LhystudioController(Module, Pipe):
     """
     K40 Controller controls the primary Lhystudios boards sending any queued data to the USB when the signal is not
@@ -1268,11 +1195,16 @@ class LhystudioController(Module, Pipe):
         self.usb_state = -1
 
         self.driver = None
-        self.thread = None
+        self.max_attempts = 5
+        self.refuse_counts = 0
+        self.connection_errors = 0
+        self.count = 0
 
         self.abort_waiting = False
         self.send_channel = None
         self.recv_channel = None
+        self.process = self.write_buffer_to_usb
+        self.interval = 0.05
 
     def initialize(self):
         self.device.setting(int, 'packet_count', 0)
@@ -1311,9 +1243,44 @@ class LhystudioController(Module, Pipe):
     def __len__(self):
         return len(self.buffer) + len(self.queue) + len(self.preempt)
 
-    def thread_state_update(self, state):
-        if self.device is not None:
-            self.device.signal('pipe;thread', state)
+    def write_buffer_to_usb(self):
+        if self.state == THREAD_STATE_UNSTARTED:
+            self.device.signal('pipe;thread', THREAD_STATE_STARTED)
+            self.state = THREAD_STATE_STARTED
+        if self.state == THREAD_STATE_PAUSED:
+            self.next_run = 1
+            return
+        if self.state == THREAD_STATE_STARTED:
+            try:
+                queue_processed = self.process_queue()
+                self.refuse_counts = 0
+            except ConnectionRefusedError:
+                self.refuse_counts += 1
+                self.next_run = 3 # 3 second sleep on failed connection attempt.
+                if self.refuse_counts >= self.max_attempts:
+                    self.device.signal('pipe;thread', THREAD_STATE_ABORT)
+                    self.state = THREAD_STATE_ABORT
+                    self.device.signal('pipe;error', self.refuse_counts)
+                return
+            except ConnectionError:
+                self.connection_errors += 1
+                self.next_run = 0.5
+                self.close()
+                return
+            if queue_processed:
+                # Packet was sent.
+                self.count = 0
+            else:
+                # No packet could be sent.
+                if self.count > 5:
+                    if self.device.quit:
+                        self.device.signal('pipe;thread', THREAD_STATE_FINISHED)
+                        self.state = THREAD_STATE_FINISHED
+                        return
+                if self.count > 50:
+                    self.count = 50
+                self.next_run = 0.02 * self.count  # will tick up to 1 second waits if process queue never works.
+                self.count += 1
 
     def open(self):
         if self.driver is None:
@@ -1402,38 +1369,34 @@ class LhystudioController(Module, Pipe):
         update = str(info) + '\n'
         self.usb_log(update)
 
-    def state(self):
-        return self.thread.state
-
     def start(self):
         if self.state == THREAD_STATE_ABORT:
             # We cannot reset an aborted thread without specifically calling reset.
             return
         if self.state == THREAD_STATE_FINISHED:
+            self.device.signal('pipe;thread', THREAD_STATE_UNSTARTED)
             self.reset()
         if self.state == THREAD_STATE_UNSTARTED:
             self.state = THREAD_STATE_STARTED
-            self.thread.start()
+            self.schedule()
 
     def resume(self):
         self.state = THREAD_STATE_STARTED
-        if self.thread.state == THREAD_STATE_UNSTARTED:
-            self.thread.start()
+        self.schedule()
 
     def pause(self):
         self.state = THREAD_STATE_PAUSED
-        if self.thread.state == THREAD_STATE_UNSTARTED:
-            self.thread.start()
 
     def abort(self):
+        self.device.signal('pipe;thread', THREAD_STATE_ABORT)
         self.state = THREAD_STATE_ABORT
         self.buffer = b''
         self.queue = b''
         self.device.signal('pipe;buffer', 0)
+        self.unschedule()
 
     def reset(self):
-        self.thread = ControllerQueueThread(self)
-        self.device.thread_instance_add("controller;thread", self.thread)
+        self.device.signal('pipe;thread', THREAD_STATE_UNSTARTED)
         self.state = THREAD_STATE_UNSTARTED
 
     def stop(self):
