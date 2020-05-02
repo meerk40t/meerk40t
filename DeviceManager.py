@@ -97,9 +97,9 @@ class DeviceManager(wx.Frame, Module):
         for key, value in self.device.instances['device'].items():
             m = self.devices_list.InsertItem(i, str(key))
             if m != -1:
-                self.devices_list.SetItem(m, 1, "Lhystudios")
+                self.devices_list.SetItem(m, 1, str(value.device_name))
                 self.devices_list.SetItem(m, 2, str(value.state))
-                self.devices_list.SetItem(m, 3, "USB")
+                self.devices_list.SetItem(m, 3, str(value.location_name))
             if value is self.device.device_root.device:
                 self.devices_list.Select(m)
             i += 1
@@ -113,15 +113,23 @@ class DeviceManager(wx.Frame, Module):
         self.Close()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        for name, backend in self.device.registered_devices.items():
-            dlg = wx.TextEntryDialog(None, _('Enter name of the %s device') % name, _('Device Name'))
-            dlg.SetValue("")
-            if dlg.ShowModal() == wx.ID_OK:
-                name = dlg.GetValue()
-                if name not in self.device.device_root.instances['device']:
-                    # TODO: Allow other device types to be chosen rather than only K40Stock.
-                    self.device.device_root.device_instance_open("K40Stock", dlg.GetValue())
+        names = [name for name in self.device.registered['device']]
+        dlg = wx.SingleChoiceDialog(None, _('What type of device is being added?'), _('Device Type'), names)
+        dlg.SetSelection(0)
+        if dlg.ShowModal() == wx.ID_OK:
+            device_type = dlg.GetSelection()
+            device_type = names[device_type]
+        else:
             dlg.Destroy()
+            return
+        dlg.Destroy()
+        dlg = wx.TextEntryDialog(None, _('Enter name of the %s device') % device_type, _('Device Name'))
+        dlg.SetValue("")
+        if dlg.ShowModal() == wx.ID_OK:
+            name = dlg.GetValue()
+            if device_type in self.device.registered['device']:
+                self.device.open('device', device_type, self.device, instance_name=name)
+        dlg.Destroy()
         self.refresh_device_list()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>

@@ -47,9 +47,11 @@ class LhystudiosDevice(Device):
     """
     LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
-    def __init__(self, root, uid=''):
+    def __init__(self, root=None, uid=''):
         Device.__init__(self, root, uid)
         self.uid = uid
+        self.device_name = "Lhystudios"
+        self.location_name = "USB"
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
         self._device_log = ''
@@ -62,6 +64,11 @@ class LhystudiosDevice(Device):
 
     def __repr__(self):
         return "LhystudiosDevice(uid='%s')" % str(self.uid)
+
+    @staticmethod
+    def sub_register(device):
+        device.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
+        device.register('module', 'LhystudioController', LhystudioController)
 
     def initialize(self, device, name=''):
         """

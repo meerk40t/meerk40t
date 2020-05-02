@@ -3,7 +3,7 @@ import sys
 
 from DefaultModules import *
 from GrblDevice import GrblDevice
-from LhystudiosDevice import LhystudioController, LhymicroInterpreter, LhystudiosDevice
+from LhystudiosDevice import LhystudiosDevice
 from LaserServer import *
 from MoshiboardDevice import MoshiboardDevice
 from RuidaDevice import RuidaDevice
@@ -55,8 +55,8 @@ args = parser.parse_args(sys.argv[1:])
 grbl = parser_grbl.parse_args(sys.argv[1:])
 
 if not args.no_gui:
-    from wxMeerK40t import init_gui
-    init_gui(kernel)
+    from wxMeerK40t import wxMeerK40t
+    kernel.register_module('wxMeerK40t', wxMeerK40t)
     meerk40tgui = kernel.open('module', 'wxMeerK40t')
 
 kernel.register('module', 'Console', Console)
@@ -70,9 +70,6 @@ kernel.register('device', 'Lhystudios', LhystudiosDevice)
 kernel.register('device', 'Moshiboard', MoshiboardDevice)
 kernel.register('device', 'Ruida', RuidaDevice)
 kernel.register('device', 'GRBL', GrblDevice)
-
-kernel.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
-kernel.register('module', 'LhystudioController', LhystudioController)
 kernel.register('module', 'RuidaEmulator', RuidaEmulator)
 kernel.register('module', 'GrblEmulator', GRBLEmulator)
 

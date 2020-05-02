@@ -22,6 +22,8 @@ class MoshiboardDevice(Device):
     def __init__(self, root, uid=''):
         Device.__init__(self, root, uid)
         self.uid = uid
+        self.device_name = "Moshiboard"
+        self.location_name = "USB"
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
         self._device_log = ''
@@ -36,6 +38,11 @@ class MoshiboardDevice(Device):
     def __repr__(self):
         return "MoshiboardDevice(uid='%s')" % str(self.uid)
 
+    @staticmethod
+    def sub_register(device):
+        device.register('module', 'MoshiInterpreter', MoshiInterpreter)
+        device.register('module', 'MoshiboardController', MoshiboardController)
+
     def initialize(self, device, name=''):
         """
         Device initialize.
@@ -45,6 +52,9 @@ class MoshiboardDevice(Device):
         :return:
         """
         self.uid = name
+        pipe = self.open('module', "MoshiboardController", instance_name='pipe')
+        self.open('module', "MoshiInterpreter", instance_name='interpreter', pipe=pipe)
+        self.open('module', "Spooler", instance_name='spooler')
 
     def shutdown(self, shutdown):
         self.spooler.clear_queue()

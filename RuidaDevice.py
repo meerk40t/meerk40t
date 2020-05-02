@@ -18,6 +18,8 @@ class RuidaDevice(Device):
     def __init__(self, root, uid=''):
         Device.__init__(self, root, uid)
         self.uid = uid
+        self.device_name = "Ruida"
+        self.location_name = "STUB"
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
         self._device_log = ''
@@ -31,6 +33,11 @@ class RuidaDevice(Device):
 
     def __repr__(self):
         return "RuidaDevice(uid='%s')" % str(self.uid)
+
+
+    @staticmethod
+    def sub_register(device):
+        device.register('module', 'RuidaInterpreter', RuidaInterpreter)
 
     def initialize(self, device, name=''):
         """

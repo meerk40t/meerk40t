@@ -2677,6 +2677,33 @@ class wxMeerK40t(wx.App, Module):
     def OnInit(self):
         return True
 
+    @staticmethod
+    def sub_register(device):
+        device.register_module("MeerK40t", MeerK40t)
+        device.register_module('Shutdown', Shutdown)
+        device.register_module('PathProperty', PathProperty)
+        device.register_module('TextProperty', TextProperty)
+        device.register_module('ImageProperty', ImageProperty)
+        device.register_module('RasterProperty', RasterProperty)
+        device.register_module('EngraveProperty', EngraveProperty)
+        device.register_module('Controller', Controller)
+        device.register_module("Preferences", Preferences)
+        device.register_module("CameraInterface", CameraInterface)
+        device.register_module("Terminal", Terminal)
+        device.register_module("Settings", Settings)
+        device.register_module("Rotary", RotarySettings)
+        device.register_module("Alignment", Alignment)
+        device.register_module("About", About)
+        device.register_module("DeviceManager", DeviceManager)
+        device.register_module("Keymap", Keymap)
+        device.register_module("UsbConnect", UsbConnect)
+        device.register_module("Navigation", Navigation)
+        device.register_module("Controller", Controller)
+        device.register_module("JobSpooler", JobSpooler)
+        device.register_module("JobInfo", JobInfo)
+        device.register_module("BufferView", BufferView)
+        device.register_module("Adjustments", Adjustments)
+
     def initialize(self):
         device_root = self.device
         device_root.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
@@ -2762,31 +2789,3 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
 
 sys.excepthook = handleGUIException
-
-
-def init_gui(device_root):
-    device_root.register_module('wxMeerK40t', wxMeerK40t)
-    device_root.register_module("MeerK40t", MeerK40t)
-    device_root.register_module('Shutdown', Shutdown)
-    device_root.register_module('PathProperty', PathProperty)
-    device_root.register_module('TextProperty', TextProperty)
-    device_root.register_module('ImageProperty', ImageProperty)
-    device_root.register_module('RasterProperty', RasterProperty)
-    device_root.register_module('EngraveProperty', EngraveProperty)
-    device_root.register_module('Controller', Controller)
-    device_root.register_module("Preferences", Preferences)
-    device_root.register_module("CameraInterface", CameraInterface)
-    device_root.register_module("Terminal", Terminal)
-    device_root.register_module("Settings", Settings)
-    device_root.register_module("Rotary", RotarySettings)
-    device_root.register_module("Alignment", Alignment)
-    device_root.register_module("About", About)
-    device_root.register_module("DeviceManager", DeviceManager)
-    device_root.register_module("Keymap", Keymap)
-    device_root.register_module("UsbConnect", UsbConnect)
-    device_root.register_module("Navigation", Navigation)
-    device_root.register_module("Controller", Controller)
-    device_root.register_module("JobSpooler", JobSpooler)
-    device_root.register_module("JobInfo", JobInfo)
-    device_root.register_module("BufferView", BufferView)
-    device_root.register_module("Adjustments", Adjustments)

@@ -821,6 +821,10 @@ class Device(Thread):
         if object_type not in self.registered:
             self.registered[object_type] = {}
         self.registered[object_type][name] = obj
+        try:
+            obj.sub_register(self)
+        except AttributeError:
+            pass
 
     def register_module(self, name, obj):
         self.register('module', name, obj)
