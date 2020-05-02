@@ -266,10 +266,10 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "DeviceManager", None, -1, ""), id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Keymap", None, -1, ""), id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('module', "DeviceManager", None, -1, ""), id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('module', "Keymap", None, -1, ""), id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Preferences", None, -1, ""), id=ID_MENU_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Settings", None, -1, "",), id=ID_MENU_SETTINGS)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('module', "Settings", None, -1, "",), id=ID_MENU_SETTINGS)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Rotary", None, -1, "",), id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Navigation", None, -1, "",), id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Controller", None, -1, "",), id=ID_MENU_CONTROLLER)
@@ -294,7 +294,7 @@ class MeerK40t(wx.Frame, Module):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('module', "Preferences", None, -1, ""), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "DeviceManager", None, -1, ""), id=ID_DEVICES)
+                     lambda v: self.device.device_root.open('module', "DeviceManager", None, -1, ""), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('module', "JobSpooler", None, -1, ""), id=ID_SPOOLER)
         self.main_statusbar = self.CreateStatusBar(3)
