@@ -311,10 +311,6 @@ class LhymicroInterpreter(Interpreter):
                 return
         Interpreter.execute(self)
 
-    def on_plot(self, x, y, on):
-        self.device.signal('interpreter;plot', (x, y, on))
-        # TODO: Hold.
-
     def ungroup_plots(self, generate):
         """
         Converts a generated x,y,on with long orthogonal steps into a generation of single steps.
@@ -398,7 +394,6 @@ class LhymicroInterpreter(Interpreter):
                 last_y = y
                 continue
             yield last_x, last_y, last_on
-            self.on_plot(last_x, last_y, last_on)
             dx = x - last_x
             dy = y - last_y
             if abs(dx) > 1 or abs(dy) > 1:
@@ -409,7 +404,6 @@ class LhymicroInterpreter(Interpreter):
             last_y = y
             last_on = on
         yield last_x, last_y, last_on
-        self.on_plot(last_x, last_y, last_on)
 
     def command(self, command, values=None):
         if command == COMMAND_LASER_OFF:

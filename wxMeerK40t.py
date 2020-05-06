@@ -360,7 +360,6 @@ class MeerK40t(wx.Frame, Module):
         self.process = self.refresh_scene
         self.fps_job = None
         self.root = None  # RootNode value, must have device for init.
-        self.device_listening = None
         self.background = None
 
     def notify_change(self):
@@ -383,7 +382,6 @@ class MeerK40t(wx.Frame, Module):
 
     def on_close(self, event):
         self.times = -1
-        self.unlisten_device()
         self.unlisten_scene()
         self.device.open('module', 'Shutdown', None, -1, "")
         self.device.module_instance_remove(self.name)
@@ -542,37 +540,6 @@ class MeerK40t(wx.Frame, Module):
         self.background = background
         self.request_refresh()
 
-    def on_device_switch(self, device):
-        self.unlisten_device()
-        self.listen_device(device)
-
-    def listen_device(self, device):
-        if self.device_listening is not None:
-            self.unlisten_device()
-        self.device_listening = device
-        if device is not None:
-            device.listen('pipe;error', self.on_usb_error)
-            device.listen('pipe;usb_status', self.on_usb_status)
-            device.listen('pipe;thread', self.on_pipe_state)
-            device.listen('spooler;thread', self.on_spooler_state)
-            device.listen('interpreter;position', self.update_position)
-            device.listen('interpreter;mode', self.on_interpreter_mode)
-            device.listen('bed_size', self.bed_changed)
-
-    def unlisten_device(self):
-        if self.device_listening is None:
-            return  # Can't unlisten to nothing, ---
-        device = self.device_listening
-        if device is not None:
-            device.unlisten('pipe;error', self.on_usb_error)
-            device.unlisten('pipe;usb_status', self.on_usb_status)
-            device.unlisten('pipe;thread', self.on_pipe_state)
-            device.unlisten('spooler;thread', self.on_spooler_state)
-            device.unlisten('interpreter;position', self.update_position)
-            device.unlisten('interpreter;mode', self.on_interpreter_mode)
-            device.unlisten('bed_size', self.bed_changed)
-        self.device_listening = None
-
     def listen_scene(self):
         device = self.device
         device.listen("background", self.on_background_signal)
@@ -582,6 +549,14 @@ class MeerK40t(wx.Frame, Module):
         device.listen("units", self.space_changed)
         device.listen("selected_elements", self.selection_changed)
 
+        device.listen('pipe;error', self.on_usb_error)
+        device.listen('pipe;usb_status', self.on_usb_status)
+        device.listen('pipe;thread', self.on_pipe_state)
+        device.listen('spooler;thread', self.on_spooler_state)
+        device.listen('interpreter;position', self.update_position)
+        device.listen('interpreter;mode', self.on_interpreter_mode)
+        device.listen('bed_size', self.bed_changed)
+
     def unlisten_scene(self):
         device = self.device
         device.unlisten("background", self.on_background_signal)
@@ -590,6 +565,14 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten("element_property_update", self.on_element_update)
         device.unlisten("units", self.space_changed)
         device.unlisten("selected_elements", self.selection_changed)
+
+        device.unlisten('pipe;error', self.on_usb_error)
+        device.unlisten('pipe;usb_status', self.on_usb_status)
+        device.unlisten('pipe;thread', self.on_pipe_state)
+        device.unlisten('spooler;thread', self.on_spooler_state)
+        device.unlisten('interpreter;position', self.update_position)
+        device.unlisten('interpreter;mode', self.on_interpreter_mode)
+        device.unlisten('bed_size', self.bed_changed)
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
