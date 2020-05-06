@@ -49,9 +49,6 @@ class RuidaDevice(Device):
         """
         self.uid = name
 
-    def shutdown(self, shutdown):
-        self.spooler.clear_queue()
-
 
 class RuidaInterpreter(Interpreter):
     def __init__(self, pipe):

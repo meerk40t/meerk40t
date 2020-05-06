@@ -34,7 +34,7 @@ class Shutdown(wx.Frame, Module):
         self.device.module_instance_close(self.name)
         self.Show()
         self.device.setting(bool, "autoclose_shutdown", True)
-        self.device.add_watcher('shutdown', self.text_shutdown.AppendText)
+        self.device.device_root.add_watcher('shutdown', self.text_shutdown.AppendText)
 
     def detach(self, device, channel=None):
         """

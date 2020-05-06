@@ -58,7 +58,6 @@ class LhystudiosDevice(Device):
         self.current_x = 0
         self.current_y = 0
         self.hold_condition = lambda e: False
-        self.pipe = None
         self.interpreter = None
         self.spooler = None
 
@@ -113,6 +112,10 @@ class LhystudiosDevice(Device):
         self.open('module', "LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
         self.open('module', "Spooler", instance_name='spooler')
 
+    def halt(self, channel=None):
+        self.spooler.clear_queue()
+        self.emergency_stop()
+
     def send_job(self, job):
         self.spooler.send_job(job)
 
@@ -122,12 +125,6 @@ class LhystudiosDevice(Device):
 
     def emergency_stop(self):
         self.interpreter.realtime_command(COMMAND_RESET, 1)
-
-    def shutdown(self, shutdown):
-        self.spooler.clear_queue()
-        self.emergency_stop()
-        self.pipe.close()
-
 
 distance_lookup = [
     b'',
@@ -538,7 +535,7 @@ class LhymicroInterpreter(Interpreter):
             t = values
             self.next_run = t
         elif command == COMMAND_WAIT_BUFFER_EMPTY:
-            self.extra_hold = lambda e: len(self.pipe) == 0
+            self.extra_hold = lambda: len(self.pipe) == 0
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
         elif command == COMMAND_FUNCTION:

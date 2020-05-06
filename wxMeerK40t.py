@@ -385,7 +385,7 @@ class MeerK40t(wx.Frame, Module):
         self.unlisten_scene()
         self.device.open('module', 'Shutdown', None, -1, "")
         self.device.module_instance_remove(self.name)
-        # self.device.stop()
+        self.device.stop()
         event.Skip()  # Call destroy as regular.
 
     def initialize(self):
@@ -2688,31 +2688,30 @@ class wxMeerK40t(wx.App, Module):
         device.register_module("Adjustments", Adjustments)
 
     def initialize(self):
-        device_root = self.device
-        device_root.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
+        device = self.device
+        device.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
+        device.setting(int, 'language', None)
         _ = wx.GetTranslation
         wx.Locale.AddCatalogLookupPathPrefix('locale')
 
-        device_root.run_later = wx.CallAfter
-        device_root.translation = wx.GetTranslation
-        device_root.set_config(wx.Config("MeerK40t"))
-        device_root.setting(int, 'language', None)
-        device_root.control_instance_add("Delete Settings", self.clear_control)
-        language = device_root.language
+        device.run_later = wx.CallAfter
+        device.translation = wx.GetTranslation
+        device.set_config(wx.Config("MeerK40t"))
+        device.add('control', "Delete Settings", self.clear_control)
+        language = device.language
         if language is not None and language != 0:
             self.language_to(language)(None)
 
     def clear_control(self):
-        device_root = self.device.device_root
-        if device_root.config is not None:
-            device_root.config.DeleteAll()
-            device_root.config = None
-            device_root.shutdown(None)
+        device = self.device.device_root
+        if device.config is not None:
+            device.config.DeleteAll()
+            device.config = None
+            device.shutdown(None)
 
     def language_swap(self, lang):
-        device_root = self.device.device_root
         self.language_to(lang)(None)
-        device_root.open('module', "MeerK40t",  None, -1, "")
+        self.device.device_root.open('module', "MeerK40t",  None, -1, "")
 
     def language_to(self, lang):
         """
@@ -2725,9 +2724,9 @@ class wxMeerK40t(wx.App, Module):
             """
             Update language to the requested language.
             """
-            device_root = self.device
+            device = self.device
             language_code, language_name, language_index = supported_languages[lang]
-            device_root.language = lang
+            device.language = lang
 
             if self.locale:
                 assert sys.getrefcount(self.locale) <= 2
@@ -2737,7 +2736,7 @@ class wxMeerK40t(wx.App, Module):
                 self.locale.AddCatalog('meerk40t')
             else:
                 self.locale = None
-            device_root.signal('language', (lang, language_code, language_name, language_index))
+            device.signal('language', (lang, language_code, language_name, language_index))
 
         return update_language
 

@@ -56,9 +56,6 @@ class MoshiboardDevice(Device):
         self.open('module', "MoshiInterpreter", instance_name='interpreter', pipe=pipe)
         self.open('module', "Spooler", instance_name='spooler')
 
-    def shutdown(self, shutdown):
-        self.spooler.clear_queue()
-
 
 class MoshiInterpreter(Interpreter):
     def __init__(self, pipe):

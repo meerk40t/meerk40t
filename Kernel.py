@@ -519,6 +519,12 @@ class Device(Thread):
         self.name = name
         self.initialize(device, name=name)
 
+    def detach(self, device, channel=None):
+        if 'device' in self.device_root.instances:
+            devices = self.device_root.instances['device']
+            if self.uid in devices:
+                del devices[self.uid]
+
     def initialize(self, device, name=''):
         pass
 
@@ -544,7 +550,7 @@ class Device(Thread):
         if not self.is_alive():
             self.start()
 
-    def shutdown(self, shutdown):
+    def shutdown(self, channel=None):
         """
         Begins device shutdown procedure.
 
@@ -559,46 +565,56 @@ class Device(Thread):
         """
         self.state = THREAD_STATE_ABORT
         _ = self.device_root.translation
-        shutdown(_("Shutting down.\n"))
-        self.flush()
+        channel(_("Shutting down.\n"))
+        self.detach(self, channel=channel)
         if 'device' in self.instances:
-            for device_name in self.instances['device']:
-                device = self.instances['device'][device_name]
-                shutdown(_("Device Shutdown Started: '%s'\n") % str(device))
-                device.shutdown(shutdown)
-                shutdown(_("Device Shutdown Finished: '%s'\n") % str(device))
-                shutdown(_("Saving Device State: '%s'\n") % str(device))
-                device.flush()
+            devices = self.instances['device']
+            del self.instances['device']
+            for device_name in devices:
+                device = devices[device_name]
+                channel(_("Device Shutdown Started: '%s'\n") % str(device))
+                device.shutdown(channel=channel)
+                channel(_("Device Shutdown Finished: '%s'\n") % str(device))
+        channel(_("Saving Device State: '%s'\n") % str(self))
         self.flush()
         for module_name in list(self.instances['module']):
             module = self.instances['module'][module_name]
-            shutdown(_("Shutting down %s module: %s\n") % (module_name, str(module)))
+            channel(_("Shutting down %s module: %s\n") % (module_name, str(module)))
             try:
-                module.detach(self, channel=shutdown)
+                module.detach(self, channel=channel)
             except AttributeError:
                 pass
         for module_name in self.instances['module']:
             module = self.instances['module'][module_name]
-            shutdown(_("WARNING: Module %s was not closed.\n") % (module_name))
-        for thread_name in self.instances['thread']:
-            thread = self.instances['thread'][thread_name]
-            if not thread.is_alive:
-                shutdown(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
-                continue
-            shutdown(_("Finishing Thread %s for %s\n") % (thread_name, str(thread)))
-            if thread is self:
-                continue
-                # Do not sleep thread waiting for devicethread to die. This is devicethread.
-            try:
-                thread.stop()
-            except AttributeError:
-                pass
-            if thread.is_alive:
-                shutdown(_("Waiting for thread %s: %s\n") % (thread_name, str(thread)))
-            while thread.is_alive():
-                time.sleep(0.1)
-            shutdown(_("Thread %s finished. %s\n") % (thread_name, str(thread)))
-        shutdown(_("Shutdown.\n"))
+            channel(_("WARNING: Module %s was not closed.\n") % (module_name))
+        if 'thread' in self.instances:
+            for thread_name in self.instances['thread']:
+                thread = self.instances['thread'][thread_name]
+                if not thread.is_alive:
+                    channel(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
+                    continue
+                channel(_("Finishing Thread %s for %s\n") % (thread_name, str(thread)))
+                if thread is self:
+                    continue
+                    # Do not sleep thread waiting for devicethread to die. This is devicethread.
+                try:
+                    thread.stop()
+                except AttributeError:
+                    pass
+                if thread.is_alive:
+                    channel(_("Waiting for thread %s: %s\n") % (thread_name, str(thread)))
+                while thread.is_alive():
+                    time.sleep(0.1)
+                channel(_("Thread %s finished. %s\n") % (thread_name, str(thread)))
+        else:
+            channel(_("No threads required halting.\n"))
+        channel(_("Shutdown.\n\n"))
+        if not self.is_root():
+            if 'devices' not in self.device_root.instances or \
+                    self.device_root.instances['devices'] is None or \
+                    len(self.device_root.instances['devices']) == 0:
+                    channel(_("All Devices are shutdown. Stopping Kernel.\n"))
+                    self.device_root.stop()
 
     def add_job(self, run, args=(), interval=1.0, times=None):
         """
@@ -652,7 +668,7 @@ class Device(Thread):
         self.state = THREAD_STATE_FINISHED
 
         # If we aborted the thread, we trigger Kernel Shutdown in this thread.
-        self.shutdown(self.channel_open('shutdown'))
+        self.shutdown(self.device_root.channel_open('shutdown'))
 
     def _start_debugging(self):
         """
@@ -1022,11 +1038,11 @@ class Kernel(Device):
             if device == self.device_primary:
                 self.activate_device(device)
 
-    def shutdown(self, shutdown):
+    def shutdown(self, channel=None):
         """
         Begins kernel shutdown procedure.
         """
-        Device.shutdown(self, shutdown)
+        Device.shutdown(self, channel)
 
         if self.config is not None:
             self.config.Flush()

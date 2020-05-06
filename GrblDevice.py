@@ -28,7 +28,6 @@ class GrblDevice(Device):
     def __repr__(self):
         return "GrblDevice(uid='%s')" % str(self.uid)
 
-
     @staticmethod
     def sub_register(device):
         pass
@@ -43,6 +42,3 @@ class GrblDevice(Device):
         """
         self.uid = name
         self.open('module', 'Spooler')
-
-    def shutdown(self, shutdown):
-        self.spooler.clear_queue()
