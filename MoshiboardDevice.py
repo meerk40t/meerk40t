@@ -71,6 +71,23 @@ class MoshiInterpreter(Interpreter):
         self.step = 2
         self.extra_hold = None
 
+    def swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
+        return ((b >> 0) & 1) << p0 | ((b >> 1) & 1) << p1 | \
+               ((b >> 2) & 1) << p2 | ((b >> 3) & 1) << p3 | \
+               ((b >> 4) & 1) << p4 | ((b >> 5) & 1) << p5 | \
+               ((b >> 6) & 1) << p6 | ((b >> 7) & 1) << p7
+
+    def convert(self, q):
+        if q & 1:
+            return swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
+        else:
+            return swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
+
+    def reconvert(self, q):
+        for m in range(5):
+            q = convert(q)
+        return q
+
     def set_speed(self, new_speed):
         self.speed = new_speed
 

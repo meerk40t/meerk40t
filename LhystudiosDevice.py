@@ -89,8 +89,6 @@ class LhystudiosDevice(Device):
         self.setting(bool, 'quit', False)
         self.setting(int, 'packet_count', 0)
         self.setting(int, 'rejected_count', 0)
-        self.setting(int, "buffer_max", 900)
-        self.setting(bool, "buffer_limit", True)
         self.setting(bool, "autolock", True)
         self.setting(bool, "autohome", False)
         self.setting(bool, "autobeep", True)
@@ -254,18 +252,63 @@ class LhymicroInterpreter(Interpreter):
         return self.device.buffer_limit and len(self.pipe) > self.device.buffer_max
 
     def execute(self):
-        if self.plot is not None:
+        if self.hold():
+            return
+        while self.plot is not None:
+            if self.hold():
+                return
+            sx = self.device.current_x
+            sy = self.device.current_y
             try:
                 x, y, on = next(self.plot)
+                dx = x - sx
+                dy = y - sy
+                if self.raster_step != 0:
+                    if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
+                        if self.is_prop(DIRECTION_FLAG_TOP):
+                            if abs(dy) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(0, dy + self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
+                                self.to_compact_mode()
+                            self.h_switch()
+                        else:
+                            if abs(dy) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(0, dy - self.raster_step)
+                                self.set_prop(DIRECTION_FLAG_X)
+                                self.unset_prop(DIRECTION_FLAG_Y)
+                                self.to_compact_mode()
+                            self.h_switch()
+                    elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
+                        if self.is_prop(DIRECTION_FLAG_LEFT):
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx + self.raster_step, 0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
+                        else:
+                            if abs(dx) > self.raster_step:
+                                self.to_concat_mode()
+                                self.move_relative(dx - self.raster_step, 0)
+                                self.set_prop(DIRECTION_FLAG_Y)
+                                self.unset_prop(DIRECTION_FLAG_X)
+                                self.to_compact_mode()
+                            self.v_switch()
                 if on == 0:
                     self.up()
                 else:
                     self.down()
                 self.move_absolute(x, y)
-                return
             except StopIteration:
                 self.plot = None
-
+                return
+            except RuntimeError:
+                self.plot = None
+                return
         Interpreter.execute(self)
 
     def on_plot(self, x, y, on):
@@ -387,38 +430,31 @@ class LhymicroInterpreter(Interpreter):
                 if self.is_relative:
                     x += sx
                     y += sy
-                for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
-                    self.move_absolute(x, y)
+                self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
             else:
                 self.move(x, y)
         elif command == COMMAND_MOVE:
+            self.pulse_modulation = self.is_on
             x, y = values
             sx = self.device.current_x
             sy = self.device.current_y
-            self.pulse_modulation = self.is_on
 
             if self.state == STATE_COMPACT:
                 if self.is_relative:
                     x += sx
                     y += sy
-                for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
-                    self.move_absolute(x, y)
+                self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
             else:
                 self.move(x, y)
         elif command == COMMAND_CUT:
+            self.pulse_modulation = True
             x, y = values
             sx = self.device.current_x
             sy = self.device.current_y
-            self.pulse_modulation = True
             if self.is_relative:
                 x += sx
                 y += sy
-            for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y)):
-                if on == 0:
-                    self.up()
-                else:
-                    self.down()
-                self.move_absolute(x, y)
+            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
         elif command == COMMAND_HSTEP:
             self.v_switch()
         elif command == COMMAND_VSTEP:
@@ -438,93 +474,25 @@ class LhymicroInterpreter(Interpreter):
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            try:
-                for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_path(path)):
-                    if on == 0:
-                        self.up()
-                    else:
-                        self.down()
-                    self.move_absolute(x, y)
-            except RuntimeError:
-                return
+            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_path(path))
         elif command == COMMAND_RASTER:
             raster = values
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            try:
-                for e in self.group_plots(sx, sy, self.ungroup_plots(raster.plot())):
-                    x, y, on = e
-                    dx = x - sx
-                    dy = y - sy
-                    sx = x
-                    sy = y
-
-                    if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
-                        if self.is_prop(DIRECTION_FLAG_TOP):
-                            if abs(dy) > self.raster_step:
-                                self.to_concat_mode()
-                                self.move_relative(0, dy + self.raster_step)
-                                self.set_prop(DIRECTION_FLAG_X)
-                                self.unset_prop(DIRECTION_FLAG_Y)
-                                self.to_compact_mode()
-                            self.h_switch()
-                        else:
-                            if abs(dy) > self.raster_step:
-                                self.to_concat_mode()
-                                self.move_relative(0, dy - self.raster_step)
-                                self.set_prop(DIRECTION_FLAG_X)
-                                self.unset_prop(DIRECTION_FLAG_Y)
-                                self.to_compact_mode()
-                            self.h_switch()
-                    elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
-                        if self.is_prop(DIRECTION_FLAG_LEFT):
-                            if abs(dx) > self.raster_step:
-                                self.to_concat_mode()
-                                self.move_relative(dx + self.raster_step, 0)
-                                self.set_prop(DIRECTION_FLAG_Y)
-                                self.unset_prop(DIRECTION_FLAG_X)
-                                self.to_compact_mode()
-                            self.v_switch()
-                        else:
-                            if abs(dx) > self.raster_step:
-                                self.to_concat_mode()
-                                self.move_relative(dx - self.raster_step, 0)
-                                self.set_prop(DIRECTION_FLAG_Y)
-                                self.unset_prop(DIRECTION_FLAG_X)
-                                self.to_compact_mode()
-                            self.v_switch()
-                    else:
-                        if on == 0:
-                            self.up()
-                        else:
-                            self.down()
-                        self.move_relative(dx, dy)
-            except RuntimeError:
-                return
+            self.plot = self.group_plots(sx, sy, self.ungroup_plots(raster.plot()))
         elif command == COMMAND_CUT_QUAD:
             cx, cy, x, y, = values
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy, ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, x, y)):
-                if on == 0:
-                    self.up()
-                else:
-                    self.down()
-                self.move_absolute(x, y)
+            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, x, y))
         elif command == COMMAND_CUT_CUBIC:
             c1x, c1y, c2x, c2y, ex, ey = values
             sx = self.device.current_x
             sy = self.device.current_y
             self.pulse_modulation = True
-            for x, y, on in self.group_plots(sx, sy,
-                                             ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey)):
-                if on == 0:
-                    self.up()
-                else:
-                    self.down()
-                self.move_absolute(x, y)
+            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey))
         elif command == COMMAND_SET_SPEED:
             speed = values
             self.set_speed(speed)
