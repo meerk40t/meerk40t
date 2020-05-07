@@ -226,24 +226,26 @@ class Alignment(wx.Frame, Module):
         spooler.send_job(self.square_test)
 
     def square_test(self):
-        yield COMMAND_HOME, 0
+        yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.slider_square_power.GetValue()
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_LASER_ON, 0
+        yield COMMAND_MODE_PROGRAM
+        yield COMMAND_LASER_ON
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_CUT, (0, y)
-        yield COMMAND_CUT, (x, y)
-        yield COMMAND_CUT, (x, 0)
-        yield COMMAND_CUT, (0, 0)
-        yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_MOVE, (0, y)
+        yield COMMAND_MOVE, (x, y)
+        yield COMMAND_MOVE, (x, 0)
+        yield COMMAND_MOVE, (0, 0)
+        yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
     def dotfield_test(self):
         yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MODE_DEFAULT
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
         y_val = self.device.current_y
@@ -251,51 +253,51 @@ class Alignment(wx.Frame, Module):
         y_step = round(5 * 39.3701)
 
         while y_val < y_max:
-            yield COMMAND_LOCK  # Need something to fill the buffer.
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, 0.001
             yield COMMAND_LASER_OFF
-            yield COMMAND_RAPID_MOVE, (x_val, y_val)
+            yield COMMAND_MOVE, (x_val, y_val)
             y_val += y_step
 
     def horizontal_test(self):
         yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.spin_horizontal_power.GetValue()
-        yield COMMAND_MODE_COMPACT
+        yield COMMAND_MODE_PROGRAM
         yield COMMAND_LASER_ON
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_CUT, (x, 0)
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MOVE, (x, 0)
+        yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
     def vertical_test(self):
         yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.spin_vertical_power.GetValue()
-        yield COMMAND_MODE_COMPACT
+        yield COMMAND_MODE_PROGRAM
         yield COMMAND_LASER_ON
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
-        yield COMMAND_CUT, (0, y)
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MOVE, (0, y)
+        yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
     def vertical_near_far_test(self):
         yield COMMAND_HOME
         yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_RAPID
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
-        yield COMMAND_RAPID_MOVE, (0, y_max)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_MOVE, (0, y_max)
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
@@ -303,16 +305,15 @@ class Alignment(wx.Frame, Module):
     def horizontal_near_far_test(self):
         yield COMMAND_HOME
         yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_RAPID
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
-        yield COMMAND_RAPID_MOVE, (x_max, 0)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_MOVE, (x_max, 0)
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
@@ -320,31 +321,28 @@ class Alignment(wx.Frame, Module):
     def square4_test(self):
         yield COMMAND_HOME
         yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MODE_RAPID
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_RAPID_MOVE, (0, y_max)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MOVE, (0, y_max)
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_RAPID_MOVE, (x_max, y_max)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MOVE, (x_max, y_max)
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_RAPID_MOVE, (x_max, 0)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MOVE, (x_max, 0)
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF

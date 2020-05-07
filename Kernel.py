@@ -179,14 +179,12 @@ class Interpreter(Module):
         return False if rejected and something else if able to be performed. These will not
         be queued. If rejected. They must be performed in realtime or cancelled.
         """
-        if command == COMMAND_PAUSE:
+        if command == REALTIME_PAUSE:
             self.paused = True
-        elif command == COMMAND_RESUME:
+        elif command == REALTIME_RESUME:
             self.paused = False
-        elif command == COMMAND_RESET:
+        elif command == REALTIME_RESET:
             self.device.spooler.clear_queue()
-        elif command == COMMAND_CLOSE:
-            self.times = -1
         return self.command(command, *values)
 
     def process_spool(self, *args):

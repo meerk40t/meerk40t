@@ -81,7 +81,7 @@ class JobInfo(wx.Frame, Module):
         self.update_gui()
 
     def interrupt(self):
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_FUNCTION, self.interrupt_popup
 
     def interrupt_popup(self):

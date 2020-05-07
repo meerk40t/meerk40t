@@ -65,7 +65,10 @@ class LaserRender:
         first_point = plot.first_point
         if first_point is None:
             return
-        yield COMMAND_RAPID_MOVE, first_point
+        yield COMMAND_LASER_OFF
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MOVE, first_point
         yield COMMAND_PLOT, plot
 
     def make_path(self, gc, path):
@@ -277,14 +280,6 @@ class LaserCommandPathParser:
             self.on = False
         elif command == COMMAND_LASER_ON:
             self.on = True
-        elif command == COMMAND_RAPID_MOVE:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
         elif command == COMMAND_SET_SPEED:
             pass
         elif command == COMMAND_SET_POWER:
@@ -293,30 +288,16 @@ class LaserCommandPathParser:
             pass
         elif command == COMMAND_SET_DIRECTION:
             pass
-        elif command == COMMAND_MODE_COMPACT:
+        elif command == COMMAND_MODE_PROGRAM:
             pass
-        elif command == COMMAND_MODE_DEFAULT:
+        elif command == COMMAND_MODE_RAPID:
             pass
-        elif command == COMMAND_MODE_CONCAT:
+        elif command == COMMAND_MODE_FINISHED:
             pass
         elif command == COMMAND_SET_ABSOLUTE:
             self.relative = False
         elif command == COMMAND_SET_INCREMENTAL:
             self.relative = True
-        elif command == COMMAND_HSTEP:
-            x = values
-            y = self.y
-            x += self.x
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_VSTEP:
-            x = self.x
-            y = values
-            y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
         elif command == COMMAND_HOME:
             self.graphic_path.MoveToPoint(0, 0)
             self.x = 0
@@ -346,54 +327,14 @@ class LaserCommandPathParser:
                         self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
                                                           curve.control2[0], curve.control2[1],
                                                           curve.end[0], curve.end[1])
-
-        elif command == COMMAND_SHIFT:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.MoveToPoint(x, y)
-            self.x = x
-            self.y = y
         elif command == COMMAND_MOVE:
             x, y = values
             if self.relative:
                 x += self.x
                 y += self.y
             if self.on:
-                self.graphic_path.MoveToPoint(x, y)
-            else:
                 self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT:
-            x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-            self.graphic_path.AddLineToPoint(x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT_QUAD:
-            cx, cy, x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-                cx += self.x
-                cy += self.y
-
-            self.graphic_path.AddQuadCurveToPoint(cx, cy, x, y)
-            self.x = x
-            self.y = y
-        elif command == COMMAND_CUT_CUBIC:
-            c1x, c1y, c2x, c2y, x, y = values
-            if self.relative:
-                x += self.x
-                y += self.y
-                c1x += self.x
-                c1y += self.y
-                c2x += self.x
-                c2y += self.y
-            self.graphic_path.AddCurveToPoint(c1x, c1y, c2x, c2y, x, y)
+            else:
+                self.graphic_path.MoveToPoint(x, y)
             self.x = x
             self.y = y

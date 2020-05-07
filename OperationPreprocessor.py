@@ -95,18 +95,18 @@ class OperationPreprocessor:
 
     @staticmethod
     def home():
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_HOME
 
     @staticmethod
     def wait():
         wait_amount = 5.0
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_WAIT, wait_amount
 
     @staticmethod
     def beep():
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_BEEP
 
     @staticmethod

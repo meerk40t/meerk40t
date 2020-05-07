@@ -124,7 +124,7 @@ class LhystudiosDevice(Device):
         self.signal('pipe;device_log', message)
 
     def emergency_stop(self):
-        self.interpreter.realtime_command(COMMAND_RESET, 1)
+        self.interpreter.realtime_command(REALTIME_RESET, 1)
 
 distance_lookup = [
     b'',
@@ -407,23 +407,6 @@ class LhymicroInterpreter(Interpreter):
             self.up()
         elif command == COMMAND_LASER_ON:
             self.down()
-        elif command == COMMAND_RAPID_MOVE:
-            self.to_default_mode()
-            x, y = values
-            self.move(x, y)
-        elif command == COMMAND_SHIFT:
-            x, y = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            self.up()
-            self.pulse_modulation = False
-            if self.state == STATE_COMPACT:
-                if self.is_relative:
-                    x += sx
-                    y += sy
-                self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
-            else:
-                self.move(x, y)
         elif command == COMMAND_MOVE:
             self.pulse_modulation = self.is_on
             x, y = values
@@ -437,19 +420,6 @@ class LhymicroInterpreter(Interpreter):
                 self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
             else:
                 self.move(x, y)
-        elif command == COMMAND_CUT:
-            self.pulse_modulation = True
-            x, y = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            if self.is_relative:
-                x += sx
-                y += sy
-            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
-        elif command == COMMAND_HSTEP:
-            self.v_switch()
-        elif command == COMMAND_VSTEP:
-            self.h_switch()
         elif command == COMMAND_HOME:
             self.home()
         elif command == COMMAND_LOCK:
@@ -472,18 +442,6 @@ class LhymicroInterpreter(Interpreter):
             sy = self.device.current_y
             self.pulse_modulation = True
             self.plot = self.group_plots(sx, sy, self.ungroup_plots(raster.plot()))
-        elif command == COMMAND_CUT_QUAD:
-            cx, cy, x, y, = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            self.pulse_modulation = True
-            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, x, y))
-        elif command == COMMAND_CUT_CUBIC:
-            c1x, c1y, c2x, c2y, ex, ey = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            self.pulse_modulation = True
-            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey))
         elif command == COMMAND_SET_SPEED:
             speed = values
             self.set_speed(speed)
@@ -516,25 +474,16 @@ class LhymicroInterpreter(Interpreter):
             x, y = values
             self.device.current_x = x
             self.device.current_y = y
-        elif command == COMMAND_MODE_COMPACT:
-            self.to_compact_mode()
-        elif command == COMMAND_MODE_DEFAULT:
+        elif command == COMMAND_MODE_RAPID:
             self.to_default_mode()
-        elif command == COMMAND_MODE_CONCAT:
+        elif command == COMMAND_MODE_PROGRAM:
+            self.to_compact_mode()
+        elif command == COMMAND_MODE_FINISHED:
             self.to_concat_mode()
-        elif command == COMMAND_MODE_COMPACT_SET:
-            if self.state != STATE_COMPACT:
-                self.to_compact_mode()
-        elif command == COMMAND_MODE_DEFAULT:
-            if self.state != STATE_DEFAULT:
-                self.to_default_mode()
-        elif command == COMMAND_MODE_CONCAT:
-            if self.state != STATE_CONCAT:
-                self.to_concat_mode()
         elif command == COMMAND_WAIT:
             t = values
             self.next_run = t
-        elif command == COMMAND_WAIT_BUFFER_EMPTY:
+        elif command == COMMAND_WAIT_FINISH:
             self.extra_hold = lambda: len(self.pipe) == 0
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
@@ -547,21 +496,15 @@ class LhymicroInterpreter(Interpreter):
                 self.device.signal(values, None)
             elif len(values) >= 2:
                 self.device.signal(values[0], *values[1:])
-        elif command == COMMAND_CLOSE:
-            self.to_default_mode()
-        elif command == COMMAND_OPEN:
-            self.reset_modes()
-            self.state = STATE_DEFAULT
-            self.device.signal('interpreter;mode', self.state)
-        elif command == COMMAND_RESET:
+        elif command == REALTIME_RESET:
             self.pipe.realtime_write(b'I*\n')
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
-        elif command == COMMAND_PAUSE:
+        elif command == REALTIME_PAUSE:
             self.pause()
-        elif command == COMMAND_STATUS:
+        elif command == REALTIME_STATUS:
             self.device.signal("interpreter;status", self.get_status())
-        elif command == COMMAND_RESUME:
+        elif command == REALTIME_RESUME:
             pass  # This command can't be processed since we should be paused.
 
     def realtime_command(self, command, values=None):
@@ -581,17 +524,17 @@ class LhymicroInterpreter(Interpreter):
             x, y = values
             self.device.current_x = x
             self.device.current_y = y
-        elif command == COMMAND_RESET:
+        elif command == REALTIME_RESET:
             self.pipe.realtime_write(b'I*\n')
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
-        elif command == COMMAND_PAUSE:
+        elif command == REALTIME_PAUSE:
             self.pause()
-        elif command == COMMAND_STATUS:
+        elif command == REALTIME_STATUS:
             status = self.get_status()
             self.device.signal('interpreter;status', status)
             return status
-        elif command == COMMAND_RESUME:
+        elif command == REALTIME_RESUME:
             self.resume()
 
     def get_status(self):
@@ -800,6 +743,8 @@ class LhymicroInterpreter(Interpreter):
         return True
 
     def to_default_mode(self):
+        if self.state == STATE_DEFAULT:
+            return
         controller = self.pipe
         if self.state == STATE_CONCAT:
             controller.write(b'S1P\n')
@@ -812,6 +757,8 @@ class LhymicroInterpreter(Interpreter):
         self.device.signal('interpreter;mode', self.state)
 
     def to_concat_mode(self):
+        if self.state == STATE_CONCAT:
+            return
         controller = self.pipe
         if self.state == STATE_COMPACT:
             controller.write(b'@NSE')
@@ -822,6 +769,8 @@ class LhymicroInterpreter(Interpreter):
         self.device.signal('interpreter;mode', self.state)
 
     def to_compact_mode(self):
+        if self.state == STATE_COMPACT:
+            return
         controller = self.pipe
         self.to_concat_mode()
         speed_code = LaserSpeed(

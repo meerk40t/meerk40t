@@ -915,14 +915,17 @@ class MeerK40t(wx.Frame, Module):
 
         def move():
             yield COMMAND_SET_INCREMENTAL
-            yield COMMAND_RAPID_MOVE, (x, y)
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_MOVE, (x, y)
             yield COMMAND_SET_ABSOLUTE
 
         return move
 
     def execute_move_to_action(self, position_x, position_y):
         def move():
-            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_LASER_OFF
+            yield COMMAND_MOVE, (int(position_x), int(position_y))
 
         return move
 
@@ -1327,19 +1330,18 @@ class MeerK40t(wx.Frame, Module):
         def home_dot_test():
             for i in range(25):
                 yield COMMAND_SET_ABSOLUTE
-                yield COMMAND_MODE_DEFAULT
+                yield COMMAND_MODE_RAPID
                 yield COMMAND_HOME
-                yield COMMAND_WAIT_BUFFER_EMPTY
-                yield COMMAND_RAPID_MOVE, (3000, 3000)
-                yield COMMAND_LOCK
-                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MOVE, (3000, 3000)
+                yield COMMAND_WAIT_FINISH
                 yield COMMAND_LASER_ON
                 yield COMMAND_WAIT, 0.05
                 yield COMMAND_LASER_OFF
-                yield COMMAND_LOCK
-                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_WAIT_FINISH
             yield COMMAND_HOME
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
 
         self.device.spooler.send_job(home_dot_test)
 

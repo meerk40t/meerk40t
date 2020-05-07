@@ -131,6 +131,7 @@ class RasterOperation(LaserOperation):
         return True
 
     def generate(self):
+        yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
         direction = self.raster_direction
         step = self.raster_step
@@ -197,12 +198,13 @@ class RasterOperation(LaserOperation):
                                    m.value_trans_x(),
                                    m.value_trans_y(),
                                    step, image_filter)
-            yield COMMAND_MODE_CONCAT, 0
-            yield COMMAND_SHIFT, raster.initial_position_in_scene()
+            yield COMMAND_MODE_FINISHED
+            yield COMMAND_LASER_OFF
+            yield COMMAND_MOVE, raster.initial_position_in_scene()
             yield COMMAND_SET_DIRECTION, raster.initial_direction()
-            yield COMMAND_MODE_COMPACT, 0
+            yield COMMAND_MODE_PROGRAM
             yield COMMAND_RASTER, raster
-        yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_MODE_RAPID
 
 
 class EngraveOperation(LaserOperation):
@@ -228,6 +230,7 @@ class EngraveOperation(LaserOperation):
         return EngraveOperation(self)
 
     def generate(self):
+        yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
         yield COMMAND_SET_POWER, self.power
         if self.dratio is not None:
@@ -237,12 +240,13 @@ class EngraveOperation(LaserOperation):
             first_point = plot.first_point
             if first_point is None:
                 continue
-            yield COMMAND_MODE_CONCAT
-            yield COMMAND_SHIFT, first_point
+            yield COMMAND_MODE_FINISHED
+            yield COMMAND_LASER_OFF
+            yield COMMAND_MOVE, first_point
             yield COMMAND_SET_STEP, 0
-            yield COMMAND_MODE_COMPACT
+            yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_RAPID
 
 
 class CutOperation(LaserOperation):
@@ -267,6 +271,7 @@ class CutOperation(LaserOperation):
         return CutOperation(self)
 
     def generate(self):
+        yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
         yield COMMAND_SET_POWER, self.power
         if self.dratio is not None:
@@ -276,11 +281,12 @@ class CutOperation(LaserOperation):
             first_point = plot.first_point
             if first_point is None:
                 continue
-            yield COMMAND_MODE_CONCAT
-            yield COMMAND_SHIFT, first_point
+            yield COMMAND_MODE_FINISHED
+            yield COMMAND_LASER_OFF  # TODO: is this valid? Does this prevent plot from plotting?
+            yield COMMAND_MOVE, first_point
             yield COMMAND_SET_STEP, 0
-            yield COMMAND_MODE_COMPACT
+            yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_RAPID
 
 

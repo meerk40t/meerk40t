@@ -116,29 +116,9 @@ class RuidaInterpreter(Interpreter):
             self.laser_off()
         elif command == COMMAND_LASER_ON:
             self.laser_on()
-        elif command == COMMAND_RAPID_MOVE:
-            self.default_mode()
-            x, y = values
-            self.move(x, y)
-        elif command == COMMAND_SHIFT:
-            x, y = values
-            self.laser_off()
-            self.move(x, y)
         elif command == COMMAND_MOVE:
             x, y = values
-            sx = self.device.current_x
-            sy = self.device.current_y
             self.move(x, y)
-        elif command == COMMAND_CUT:
-            x, y = values
-            self.laser_on()
-            self.move(x, y)
-        elif command == COMMAND_HSTEP:
-            # self.v_switch()
-            pass
-        elif command == COMMAND_VSTEP:
-            # self.h_switch()
-            pass
         elif command == COMMAND_HOME:
             self.home()
         elif command == COMMAND_LOCK:
@@ -156,26 +136,6 @@ class RuidaInterpreter(Interpreter):
         elif command == COMMAND_RASTER:
             raster = values
             for x, y, on in raster.plot():
-                if on:
-                    self.laser_on()
-                else:
-                    self.laser_off()
-                self.move_absolute(x, y)
-        elif command == COMMAND_CUT_QUAD:
-            cx, cy, x, y, = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            for x, y, on in ZinglPlotter.plot_quad_bezier(sx, sy, cx, cy, x, y):
-                if on:
-                    self.laser_on()
-                else:
-                    self.laser_off()
-                self.move_absolute(x, y)
-        elif command == COMMAND_CUT_CUBIC:
-            c1x, c1y, c2x, c2y, ex, ey = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            for x, y, on in ZinglPlotter.plot_cubic_bezier(sx, sy, c1x, c1y, c2x, c2y, ex, ey):
                 if on:
                     self.laser_on()
                 else:
@@ -202,20 +162,18 @@ class RuidaInterpreter(Interpreter):
             x, y = values
             self.device.current_x = x
             self.device.current_y = y
-        elif command == COMMAND_MODE_COMPACT:
+        elif command == COMMAND_MODE_PROGRAM:
             pass
-        elif command == COMMAND_MODE_DEFAULT:
+        elif command == COMMAND_MODE_RAPID:
             self.default_mode()
-        elif command == COMMAND_MODE_COMPACT_SET:
+        elif command == COMMAND_MODE_RAPID:
             pass
-        elif command == COMMAND_MODE_DEFAULT:
-            pass
-        elif command == COMMAND_MODE_CONCAT:
+        elif command == COMMAND_MODE_FINISHED:
             pass
         elif command == COMMAND_WAIT:
             t = values
             self.next_run = t
-        elif command == COMMAND_WAIT_BUFFER_EMPTY:
+        elif command == COMMAND_WAIT_FINISH:
             self.extra_hold = lambda e: len(self.pipe) == 0
         elif command == COMMAND_BEEP:
             print('\a')  # Beep.
@@ -228,20 +186,15 @@ class RuidaInterpreter(Interpreter):
                 self.device.signal(values, None)
             elif len(values) >= 2:
                 self.device.signal(values[0], *values[1:])
-        elif command == COMMAND_CLOSE:
-            self.default_mode()
-        elif command == COMMAND_OPEN:
-            self.state = STATE_DEFAULT
-            self.device.signal('interpreter;mode', self.state)
-        elif command == COMMAND_RESET:
+        elif command == REALTIME_RESET:
             self.pipe.realtime_write(b'I*\n')
             self.state = STATE_DEFAULT
             self.device.signal('interpreter;mode', self.state)
-        elif command == COMMAND_PAUSE:
+        elif command == REALTIME_PAUSE:
             pass
-        elif command == COMMAND_STATUS:
+        elif command == REALTIME_STATUS:
             pass
-        elif command == COMMAND_RESUME:
+        elif command == REALTIME_RESUME:
             pass  # This command can't be processed since we should be paused.
 
     def realtime_command(self, command, values=None):
@@ -260,13 +213,13 @@ class RuidaInterpreter(Interpreter):
             x, y = values
             self.device.current_x = x
             self.device.current_y = y
-        elif command == COMMAND_RESET:
+        elif command == REALTIME_RESET:
             pass
-        elif command == COMMAND_PAUSE:
+        elif command == REALTIME_PAUSE:
             pass
-        elif command == COMMAND_STATUS:
+        elif command == REALTIME_STATUS:
             pass
-        elif command == COMMAND_RESUME:
+        elif command == REALTIME_RESUME:
             pass
 
     def swizzle(self, b):

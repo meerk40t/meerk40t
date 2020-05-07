@@ -551,10 +551,11 @@ class Navigation(wx.Frame, Module):
             return
 
         def trace_hull():
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_OFF
             for p in hull:
-                yield COMMAND_RAPID_MOVE, p
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, p
 
         self.device.send_job(trace_hull)
 
@@ -564,13 +565,14 @@ class Navigation(wx.Frame, Module):
             return
 
         def trace_quick():
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_OFF
-            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[1])
-            yield COMMAND_RAPID_MOVE, (bbox[2], bbox[1])
-            yield COMMAND_RAPID_MOVE, (bbox[2], bbox[3])
-            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[3])
-            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[1])
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_MOVE, (bbox[0], bbox[1])
+            yield COMMAND_MOVE, (bbox[2], bbox[1])
+            yield COMMAND_MOVE, (bbox[2], bbox[3])
+            yield COMMAND_MOVE, (bbox[0], bbox[3])
+            yield COMMAND_MOVE, (bbox[0], bbox[1])
 
         self.device.send_job(trace_quick)
         self.drag_ready(True)
@@ -580,7 +582,7 @@ class Navigation(wx.Frame, Module):
         value = value / 1000.0
 
         def timed_fire():
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, value
             yield COMMAND_LASER_OFF
