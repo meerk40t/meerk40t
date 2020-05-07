@@ -269,31 +269,26 @@ class LaserCommandPathParser:
 
     def __init__(self, graphic_path):
         self.graphic_path = graphic_path
+        self.enable = True
         self.on = False
         self.relative = False
         self.x = 0
         self.y = 0
 
     def command(self, event):
-        command, values = event
+        if isinstance(event, int):
+            command = event
+            values = None
+        else:
+            command, values = event
         if command == COMMAND_LASER_OFF:
             self.on = False
         elif command == COMMAND_LASER_ON:
             self.on = True
-        elif command == COMMAND_SET_SPEED:
-            pass
-        elif command == COMMAND_SET_POWER:
-            pass
-        elif command == COMMAND_SET_STEP:
-            pass
-        elif command == COMMAND_SET_DIRECTION:
-            pass
-        elif command == COMMAND_MODE_PROGRAM:
-            pass
-        elif command == COMMAND_MODE_RAPID:
-            pass
-        elif command == COMMAND_MODE_FINISHED:
-            pass
+        elif command == COMMAND_LASER_ENABLE:
+            self.enable = True
+        elif command == COMMAND_LASER_DISABLE:
+            self.enable = False
         elif command == COMMAND_SET_ABSOLUTE:
             self.relative = False
         elif command == COMMAND_SET_INCREMENTAL:
@@ -302,10 +297,6 @@ class LaserCommandPathParser:
             self.graphic_path.MoveToPoint(0, 0)
             self.x = 0
             self.y = 0
-        elif command == COMMAND_LOCK:
-            pass
-        elif command == COMMAND_UNLOCK:
-            pass
         elif command == COMMAND_PLOT:
             plot = values
             for e in plot:
@@ -327,12 +318,14 @@ class LaserCommandPathParser:
                         self.graphic_path.AddCurveToPoint(curve.control1[0], curve.control1[1],
                                                           curve.control2[0], curve.control2[1],
                                                           curve.end[0], curve.end[1])
+                self.x, self.y = e.end
         elif command == COMMAND_MOVE:
-            x, y = values
+            x = values[0]
+            y = values[1]
             if self.relative:
                 x += self.x
                 y += self.y
-            if self.on:
+            if self.on and self.enable:
                 self.graphic_path.AddLineToPoint(x, y)
             else:
                 self.graphic_path.MoveToPoint(x, y)

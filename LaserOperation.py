@@ -200,8 +200,10 @@ class RasterOperation(LaserOperation):
                                    step, image_filter)
             yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, raster.initial_position_in_scene()
-            yield COMMAND_SET_DIRECTION, raster.initial_direction()
+            x, y = raster.initial_position_in_scene()
+            yield COMMAND_MOVE, x, y
+            top, left, x_dir, y_dir = raster.initial_direction()
+            yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_RASTER, raster
         yield COMMAND_MODE_RAPID
@@ -242,7 +244,7 @@ class EngraveOperation(LaserOperation):
                 continue
             yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, first_point
+            yield COMMAND_MOVE, first_point.x, first_point.y
             yield COMMAND_SET_STEP, 0
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
@@ -283,7 +285,7 @@ class CutOperation(LaserOperation):
                 continue
             yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF  # TODO: is this valid? Does this prevent plot from plotting?
-            yield COMMAND_MOVE, first_point
+            yield COMMAND_MOVE, first_point.x, first_point.y
             yield COMMAND_SET_STEP, 0
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot

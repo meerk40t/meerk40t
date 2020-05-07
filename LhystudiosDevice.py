@@ -37,11 +37,6 @@ DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
 DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
 DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
 
-STATE_ABORT = -1
-STATE_DEFAULT = 0
-STATE_CONCAT = 1
-STATE_COMPACT = 2
-
 
 class LhystudiosDevice(Device):
     """
@@ -55,9 +50,6 @@ class LhystudiosDevice(Device):
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
         self._device_log = ''
-        self.current_x = 0
-        self.current_y = 0
-        self.hold_condition = lambda e: False
         self.interpreter = None
         self.spooler = None
 
@@ -156,7 +148,6 @@ class LhymicroInterpreter(Interpreter):
 
     def __init__(self, pipe):
         Interpreter.__init__(self, pipe=pipe)
-
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
         self.CODE_TOP = b'L'
@@ -166,18 +157,8 @@ class LhymicroInterpreter(Interpreter):
         self.CODE_OFF = b'U'
 
         self.plot = None
-        self.state = STATE_DEFAULT
-        self.properties = 0
-        self.is_relative = False
-        self.is_on = False
-        self.raster_step = 0
-        self.speed = 30
-        self.power = 1000.0
-        self.d_ratio = None  # None means to use speedcode default.
-        self.acceleration = None  # None means to use speedcode default
-        self.pulse_total = 0.0
-        self.pulse_modulation = True
         self.group_modulation = False
+
         self.next_x = None
         self.next_y = None
         self.max_x = None
@@ -186,8 +167,6 @@ class LhymicroInterpreter(Interpreter):
         self.min_y = None
         self.start_x = None
         self.start_y = None
-        self.pipe = pipe
-        self.extra_hold = None
 
     def initialize(self):
         self.device.setting(bool, "swap_xy", False)
@@ -199,6 +178,8 @@ class LhymicroInterpreter(Interpreter):
         self.device.setting(int, "home_adjust_y", 0)
         self.device.setting(int, "buffer_max", 900)
         self.device.setting(bool, "buffer_limit", True)
+        self.device.setting(int, "current_x", 0)
+        self.device.setting(int, "current_y", 0)
 
         self.update_codes()
 
@@ -264,41 +245,41 @@ class LhymicroInterpreter(Interpreter):
                     if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
                         if self.is_prop(DIRECTION_FLAG_TOP):
                             if abs(dy) > self.raster_step:
-                                self.to_concat_mode()
+                                self.ensure_finished_mode()
                                 self.move_relative(0, dy + self.raster_step)
                                 self.set_prop(DIRECTION_FLAG_X)
                                 self.unset_prop(DIRECTION_FLAG_Y)
-                                self.to_compact_mode()
+                                self.ensure_program_mode()
                             self.h_switch()
                         else:
                             if abs(dy) > self.raster_step:
-                                self.to_concat_mode()
+                                self.ensure_finished_mode()
                                 self.move_relative(0, dy - self.raster_step)
                                 self.set_prop(DIRECTION_FLAG_X)
                                 self.unset_prop(DIRECTION_FLAG_Y)
-                                self.to_compact_mode()
+                                self.ensure_program_mode()
                             self.h_switch()
                     elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
                         if self.is_prop(DIRECTION_FLAG_LEFT):
                             if abs(dx) > self.raster_step:
-                                self.to_concat_mode()
+                                self.ensure_finished_mode()
                                 self.move_relative(dx + self.raster_step, 0)
                                 self.set_prop(DIRECTION_FLAG_Y)
                                 self.unset_prop(DIRECTION_FLAG_X)
-                                self.to_compact_mode()
+                                self.ensure_program_mode()
                             self.v_switch()
                         else:
                             if abs(dx) > self.raster_step:
-                                self.to_concat_mode()
+                                self.ensure_finished_mode()
                                 self.move_relative(dx - self.raster_step, 0)
                                 self.set_prop(DIRECTION_FLAG_Y)
                                 self.unset_prop(DIRECTION_FLAG_X)
-                                self.to_compact_mode()
+                                self.ensure_program_mode()
                             self.v_switch()
                 if on == 0:
-                    self.up()
+                    self.laser_on()
                 else:
-                    self.down()
+                    self.laser_off()
                 self.move_absolute(x, y)
             except StopIteration:
                 self.plot = None
@@ -308,269 +289,60 @@ class LhymicroInterpreter(Interpreter):
                 return
         Interpreter.execute(self)
 
-    def ungroup_plots(self, generate):
-        """
-        Converts a generated x,y,on with long orthogonal steps into a generation of single steps.
+    def plot_path(self, path):
+        if len(path) == 0:
+            return
+        first_point = path.first_point
+        self.move_absolute(first_point[0], first_point[1])
+        sx = self.device.current_x
+        sy = self.device.current_y
+        self.pulse_modulation = True
+        self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_path(path))
 
-        :param generate: generator creating long orthogonal steps.
-        :return:
-        """
-        current_x = None
-        current_y = None
-        for next_x, next_y, on in generate:
-            if current_x is None or current_y is None:
-                current_x = next_x
-                current_y = next_y
-                yield current_x, current_y, on
-                continue
-            if next_x > current_x:
-                dx = 1
-            elif next_x < current_x:
-                dx = -1
-            else:
-                dx = 0
-            if next_y > current_y:
-                dy = 1
-            elif next_y < current_y:
-                dy = -1
-            else:
-                dy = 0
-            total_dx = next_x - current_x
-            total_dy = next_y - current_y
-            if total_dy * dx != total_dx * dy:
-                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
-            while current_x != next_x or current_y != next_y:
-                current_x += dx
-                current_y += dy
-                yield current_x, current_y, on
+    def plot_raster(self, raster):
+        sx = self.device.current_x
+        sy = self.device.current_y
+        self.pulse_modulation = True
+        self.plot = self.group_plots(sx, sy, self.ungroup_plots(raster.plot()))
 
-    def group_plots(self, start_x, start_y, generate):
-        """
-        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+    def set_directions(self, left, top, x_dir, y_dir):
+        # Left, Top, X-Momentum, Y-Momentum
+        self.properties = 0
+        if left:
+            self.set_prop(DIRECTION_FLAG_LEFT)
+        if top:
+            self.set_prop(DIRECTION_FLAG_TOP)
+        if x_dir:
+            self.set_prop(DIRECTION_FLAG_X)
+        if y_dir:
+            self.set_prop(DIRECTION_FLAG_Y)
 
-        Implements PPI power modulation
-
-        :param start_x: Start x position
-        :param start_y: Start y position
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        last_x = start_x
-        last_y = start_y
-        last_on = 0
-        dx = 0
-        dy = 0
-        x = None
-        y = None
-        for event in generate:
-            try:
-                x = event[0]
-                y = event[1]
-                plot_on = event[2]
-            except IndexError:
-                plot_on = 1
-            if self.pulse_modulation:
-                self.pulse_total += self.power * plot_on
-                if self.group_modulation and last_on == 1:
-                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
-                    if self.pulse_total > 0.0:
-                        on = 1
-                        self.pulse_total -= 1000.0
-                    else:
-                        on = 0
-                else:
-                    if self.pulse_total >= 1000.0:
-                        on = 1
-                        self.pulse_total -= 1000.0
-                    else:
-                        on = 0
-            else:
-                on = int(round(plot_on))
-            if x == last_x + dx and y == last_y + dy and on == last_on:
-                last_x = x
-                last_y = y
-                continue
-            yield last_x, last_y, last_on
-            dx = x - last_x
-            dy = y - last_y
-            if abs(dx) > 1 or abs(dy) > 1:
-                # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
-                # The bug is in the code that wrongly plotted the data, not here.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
-            last_x = x
-            last_y = y
-            last_on = on
-        yield last_x, last_y, last_on
-
-    def command(self, command, values=None):
-        if command == COMMAND_LASER_OFF:
-            self.up()
-        elif command == COMMAND_LASER_ON:
-            self.down()
-        elif command == COMMAND_MOVE:
-            self.pulse_modulation = self.is_on
-            x, y = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-
-            if self.state == STATE_COMPACT:
-                if self.is_relative:
-                    x += sx
-                    y += sy
-                self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
-            else:
-                self.move(x, y)
-        elif command == COMMAND_HOME:
-            self.home()
-        elif command == COMMAND_LOCK:
-            self.lock_rail()
-        elif command == COMMAND_UNLOCK:
-            self.unlock_rail()
-        elif command == COMMAND_PLOT:
-            path = values
-            if len(path) == 0:
-                return
-            first_point = path.first_point
-            self.move_absolute(first_point[0], first_point[1])
-            sx = self.device.current_x
-            sy = self.device.current_y
-            self.pulse_modulation = True
-            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_path(path))
-        elif command == COMMAND_RASTER:
-            raster = values
-            sx = self.device.current_x
-            sy = self.device.current_y
-            self.pulse_modulation = True
-            self.plot = self.group_plots(sx, sy, self.ungroup_plots(raster.plot()))
-        elif command == COMMAND_SET_SPEED:
-            speed = values
-            self.set_speed(speed)
-        elif command == COMMAND_SET_POWER:
-            power = values
-            self.set_power(power)
-        elif command == COMMAND_SET_STEP:
-            step = values
-            self.set_step(step)
-        elif command == COMMAND_SET_D_RATIO:
-            d_ratio = values
-            self.set_d_ratio(d_ratio)
-        elif command == COMMAND_SET_DIRECTION:
-            # Left, Top, X-Momentum, Y-Momentum
-            left, top, x_dir, y_dir = values
-            self.properties = 0
-            if left:
-                self.set_prop(DIRECTION_FLAG_LEFT)
-            if top:
-                self.set_prop(DIRECTION_FLAG_TOP)
-            if x_dir:
-                self.set_prop(DIRECTION_FLAG_X)
-            if y_dir:
-                self.set_prop(DIRECTION_FLAG_Y)
-        elif command == COMMAND_SET_INCREMENTAL:
-            self.is_relative = True
-        elif command == COMMAND_SET_ABSOLUTE:
-            self.is_relative = False
-        elif command == COMMAND_SET_POSITION:
-            x, y = values
-            self.device.current_x = x
-            self.device.current_y = y
-        elif command == COMMAND_MODE_RAPID:
-            self.to_default_mode()
-        elif command == COMMAND_MODE_PROGRAM:
-            self.to_compact_mode()
-        elif command == COMMAND_MODE_FINISHED:
-            self.to_concat_mode()
-        elif command == COMMAND_WAIT:
-            t = values
-            self.next_run = t
-        elif command == COMMAND_WAIT_FINISH:
-            self.extra_hold = lambda: len(self.pipe) == 0
-        elif command == COMMAND_BEEP:
-            print('\a')  # Beep.
-        elif command == COMMAND_FUNCTION:
-            t = values
-            if callable(t):
-                t()
-        elif command == COMMAND_SIGNAL:
-            if isinstance(values, str):
-                self.device.signal(values, None)
-            elif len(values) >= 2:
-                self.device.signal(values[0], *values[1:])
-        elif command == REALTIME_RESET:
-            self.pipe.realtime_write(b'I*\n')
-            self.state = STATE_DEFAULT
-            self.device.signal('interpreter;mode', self.state)
-        elif command == REALTIME_PAUSE:
-            self.pause()
-        elif command == REALTIME_STATUS:
-            self.device.signal("interpreter;status", self.get_status())
-        elif command == REALTIME_RESUME:
-            pass  # This command can't be processed since we should be paused.
-
-    def realtime_command(self, command, values=None):
-        if command == COMMAND_SET_SPEED:
-            speed = values
-            self.set_speed(speed)
-        elif command == COMMAND_SET_POWER:
-            power = values
-            self.set_power(power)
-        elif command == COMMAND_SET_STEP:
-            step = values
-            self.set_step(step)
-        elif command == COMMAND_SET_D_RATIO:
-            d_ratio = values
-            self.set_d_ratio(d_ratio)
-        elif command == COMMAND_SET_POSITION:
-            x, y = values
-            self.device.current_x = x
-            self.device.current_y = y
-        elif command == REALTIME_RESET:
-            self.pipe.realtime_write(b'I*\n')
-            self.state = STATE_DEFAULT
-            self.device.signal('interpreter;mode', self.state)
-        elif command == REALTIME_PAUSE:
-            self.pause()
-        elif command == REALTIME_STATUS:
-            status = self.get_status()
-            self.device.signal('interpreter;status', status)
-            return status
-        elif command == REALTIME_RESUME:
-            self.resume()
-
-    def get_status(self):
-        parts = list()
-        parts.append("x=%f" % self.device.current_x)
-        parts.append("y=%f" % self.device.current_y)
-        parts.append("speed=%f" % self.speed)
-        parts.append("power=%d" % self.power)
-        return ";".join(parts)
-
-    def set_prop(self, mask):
-        self.properties |= mask
-
-    def unset_prop(self, mask):
-        self.properties &= ~mask
-
-    def is_prop(self, mask):
-        return bool(self.properties & mask)
-
-    def toggle_prop(self, mask):
-        if self.is_prop(mask):
-            self.unset_prop(mask)
-        else:
-            self.set_prop(mask)
-
-    def pause(self):
+    def pause(self, *values):
         self.pipe.realtime_write(b'PN!\n')
 
-    def resume(self):
+    def resume(self, *values):
         self.pipe.realtime_write(b'PN&\n')
 
+    def reset(self):
+        self.pipe.realtime_write(b'I*\n')
+        self.state = INTERPRETER_STATE_RAPID
+        self.device.signal('interpreter;mode', self.state)
+
     def move(self, x, y):
-        if self.is_relative:
-            self.move_relative(x, y)
+        self.pulse_modulation = self.laser
+        sx = self.device.current_x
+        sy = self.device.current_y
+
+        if self.state == INTERPRETER_STATE_PROGRAM:
+            if self.is_relative:
+                x += sx
+                y += sy
+            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
         else:
-            self.move_absolute(x, y)
+            if self.is_relative:
+                self.move_relative(x, y)
+            else:
+                self.move_absolute(x, y)
 
     def move_absolute(self, x, y):
         self.move_relative(x - self.device.current_x, y - self.device.current_y)
@@ -580,7 +352,7 @@ class LhymicroInterpreter(Interpreter):
             return
         dx = int(round(dx))
         dy = int(round(dy))
-        if self.state == STATE_DEFAULT:
+        if self.state == INTERPRETER_STATE_RAPID:
             self.pipe.write(b'I')
             if dx != 0:
                 self.move_x(dx)
@@ -589,7 +361,7 @@ class LhymicroInterpreter(Interpreter):
             self.pipe.write(b'S1P\n')
             if not self.device.autolock:
                 self.pipe.write(b'IS2P\n')
-        elif self.state == STATE_COMPACT:
+        elif self.state == INTERPRETER_STATE_PROGRAM:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
                 for x, y, on in self.group_plots(self.device.current_x, self.device.current_y,
                                                  ZinglPlotter.plot_line(self.device.current_x, self.device.current_y,
@@ -603,7 +375,7 @@ class LhymicroInterpreter(Interpreter):
                 self.move_x(dx)
             else:
                 self.move_y(dy)
-        elif self.state == STATE_CONCAT:
+        elif self.state == INTERPRETER_STATE_FINISH:
             if dx != 0:
                 self.move_x(dx)
             if dy != 0:
@@ -662,10 +434,10 @@ class LhymicroInterpreter(Interpreter):
             self.speed = speed
         if not change:
             return
-        if self.state == STATE_COMPACT:
+        if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.to_concat_mode()
-            self.to_compact_mode()
+            self.ensure_finished_mode()
+            self.ensure_program_mode()
 
     def set_power(self, power=1000.0):
         self.power = power
@@ -677,10 +449,10 @@ class LhymicroInterpreter(Interpreter):
             self.d_ratio = d_ratio
         if not change:
             return
-        if self.state == STATE_COMPACT:
+        if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.to_concat_mode()
-            self.to_compact_mode()
+            self.ensure_finished_mode()
+            self.ensure_program_mode()
 
     def set_acceleration(self, accel=None):
         change = False
@@ -689,10 +461,10 @@ class LhymicroInterpreter(Interpreter):
             self.acceleration = accel
         if not change:
             return
-        if self.state == STATE_COMPACT:
+        if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the change have an effect, compact must be exited.
-            self.to_concat_mode()
-            self.to_compact_mode()
+            self.ensure_finished_mode()
+            self.ensure_program_mode()
 
     def set_step(self, step=None):
         change = False
@@ -701,78 +473,78 @@ class LhymicroInterpreter(Interpreter):
             self.raster_step = step
         if not change:
             return
-        if self.state == STATE_COMPACT:
+        if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.to_concat_mode()
-            self.to_compact_mode()
+            self.ensure_finished_mode()
+            self.ensure_program_mode()
 
-    def down(self):
-        if self.is_on:
+    def laser_off(self):
+        if self.laser:
             return False
         controller = self.pipe
-        if self.state == STATE_DEFAULT:
+        if self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
             controller.write(self.CODE_ON)
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
-        elif self.state == STATE_COMPACT:
+        elif self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_ON)
-        elif self.state == STATE_CONCAT:
+        elif self.state == INTERPRETER_STATE_FINISH:
             controller.write(self.CODE_ON)
             controller.write(b'N')
-        self.is_on = True
+        self.laser = True
         return True
 
-    def up(self):
+    def laser_on(self):
         controller = self.pipe
-        if not self.is_on:
+        if not self.laser:
             return False
-        if self.state == STATE_DEFAULT:
+        if self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
             controller.write(self.CODE_OFF)
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
-        elif self.state == STATE_COMPACT:
+        elif self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_OFF)
-        elif self.state == STATE_CONCAT:
+        elif self.state == INTERPRETER_STATE_FINISH:
             controller.write(self.CODE_OFF)
             controller.write(b'N')
-        self.is_on = False
+        self.laser = False
         return True
 
-    def to_default_mode(self):
-        if self.state == STATE_DEFAULT:
+    def ensure_rapid_mode(self):
+        if self.state == INTERPRETER_STATE_RAPID:
             return
         controller = self.pipe
-        if self.state == STATE_CONCAT:
+        if self.state == INTERPRETER_STATE_FINISH:
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
-        elif self.state == STATE_COMPACT:
+        elif self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(b'FNSE-\n')
             self.reset_modes()
-        self.state = STATE_DEFAULT
+        self.state = INTERPRETER_STATE_RAPID
         self.device.signal('interpreter;mode', self.state)
 
-    def to_concat_mode(self):
-        if self.state == STATE_CONCAT:
+    def ensure_finished_mode(self):
+        if self.state == INTERPRETER_STATE_FINISH:
             return
         controller = self.pipe
-        if self.state == STATE_COMPACT:
+        if self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(b'@NSE')
             self.reset_modes()
-        elif self.state == STATE_DEFAULT:
+        elif self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
-        self.state = STATE_CONCAT
+        self.state = INTERPRETER_STATE_FINISH
         self.device.signal('interpreter;mode', self.state)
 
-    def to_compact_mode(self):
-        if self.state == STATE_COMPACT:
+    def ensure_program_mode(self):
+        if self.state == INTERPRETER_STATE_PROGRAM:
             return
         controller = self.pipe
-        self.to_concat_mode()
+        self.ensure_finished_mode()
         speed_code = LaserSpeed(
             self.device.board,
             self.speed,
@@ -790,7 +562,7 @@ class LhymicroInterpreter(Interpreter):
         controller.write(b'N')
         self.declare_directions()
         controller.write(b'S1E')
-        self.state = STATE_COMPACT
+        self.state = INTERPRETER_STATE_PROGRAM
         self.device.signal('interpreter;mode', self.state)
 
     def h_switch(self):
@@ -805,7 +577,7 @@ class LhymicroInterpreter(Interpreter):
             self.device.current_y -= self.raster_step
         else:
             self.device.current_y += self.raster_step
-        self.is_on = False
+        self.laser = False
 
     def v_switch(self):
         controller = self.pipe
@@ -819,7 +591,7 @@ class LhymicroInterpreter(Interpreter):
             self.device.current_x -= self.raster_step
         else:
             self.device.current_x += self.raster_step
-        self.is_on = False
+        self.laser = False
 
     def calc_home_position(self):
         x = 0
@@ -833,14 +605,14 @@ class LhymicroInterpreter(Interpreter):
     def home(self):
         x, y = self.calc_home_position()
         controller = self.pipe
-        self.to_default_mode()
+        self.ensure_rapid_mode()
         controller.write(b'IPP\n')
         old_x = self.device.current_x
         old_y = self.device.current_y
         self.device.current_x = x
         self.device.current_y = y
         self.reset_modes()
-        self.state = STATE_DEFAULT
+        self.state = INTERPRETER_STATE_RAPID
         adjust_x = self.device.home_adjust_x
         adjust_y = self.device.home_adjust_y
         if adjust_x != 0 or adjust_y != 0:
@@ -855,12 +627,12 @@ class LhymicroInterpreter(Interpreter):
 
     def lock_rail(self):
         controller = self.pipe
-        self.to_default_mode()
+        self.ensure_rapid_mode()
         controller.write(b'IS1P\n')
 
     def unlock_rail(self, abort=False):
         controller = self.pipe
-        self.to_default_mode()
+        self.ensure_rapid_mode()
         controller.write(b'IS2P\n')
 
     def abort(self):
@@ -874,7 +646,7 @@ class LhymicroInterpreter(Interpreter):
         self.max_y = max(self.max_y, self.device.current_y)
 
     def reset_modes(self):
-        self.is_on = False
+        self.laser = False
         self.properties = 0
 
     def move_x(self, dx):
@@ -986,7 +758,7 @@ class LhymicroInterpreter(Interpreter):
     def move_right(self, dx=0):
         controller = self.pipe
         self.device.current_x += dx
-        if not self.is_right or self.state != STATE_COMPACT:
+        if not self.is_right or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
@@ -996,7 +768,7 @@ class LhymicroInterpreter(Interpreter):
     def move_left(self, dx=0):
         controller = self.pipe
         self.device.current_x -= abs(dx)
-        if not self.is_left or self.state != STATE_COMPACT:
+        if not self.is_left or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
@@ -1006,7 +778,7 @@ class LhymicroInterpreter(Interpreter):
     def move_bottom(self, dy=0):
         controller = self.pipe
         self.device.current_y += dy
-        if not self.is_bottom or self.state != STATE_COMPACT:
+        if not self.is_bottom or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
@@ -1016,13 +788,103 @@ class LhymicroInterpreter(Interpreter):
     def move_top(self, dy=0):
         controller = self.pipe
         self.device.current_y -= abs(dy)
-        if not self.is_top or self.state != STATE_COMPACT:
+        if not self.is_top or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_TOP)
             self.set_top()
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
+    def ungroup_plots(self, generate):
+        """
+        Converts a generated x,y,on with long orthogonal steps into a generation of single steps.
+        :param generate: generator creating long orthogonal steps.
+        :return:
+        """
+        current_x = None
+        current_y = None
+        for next_x, next_y, on in generate:
+            if current_x is None or current_y is None:
+                current_x = next_x
+                current_y = next_y
+                yield current_x, current_y, on
+                continue
+            if next_x > current_x:
+                dx = 1
+            elif next_x < current_x:
+                dx = -1
+            else:
+                dx = 0
+            if next_y > current_y:
+                dy = 1
+            elif next_y < current_y:
+                dy = -1
+            else:
+                dy = 0
+            total_dx = next_x - current_x
+            total_dy = next_y - current_y
+            if total_dy * dx != total_dx * dy:
+                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
+            while current_x != next_x or current_y != next_y:
+                current_x += dx
+                current_y += dy
+                yield current_x, current_y, on
+
+    def group_plots(self, start_x, start_y, generate):
+        """
+        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+        Implements PPI power modulation
+        :param start_x: Start x position
+        :param start_y: Start y position
+        :param generate: generator of single stepped plots
+        :return:
+        """
+        last_x = start_x
+        last_y = start_y
+        last_on = 0
+        dx = 0
+        dy = 0
+        x = None
+        y = None
+        for event in generate:
+            try:
+                x = event[0]
+                y = event[1]
+                plot_on = event[2]
+            except IndexError:
+                plot_on = 1
+            if self.pulse_modulation:
+                self.pulse_total += self.power * plot_on
+                if self.group_modulation and last_on == 1:
+                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
+                    if self.pulse_total > 0.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
+                else:
+                    if self.pulse_total >= 1000.0:
+                        on = 1
+                        self.pulse_total -= 1000.0
+                    else:
+                        on = 0
+            else:
+                on = int(round(plot_on))
+            if x == last_x + dx and y == last_y + dy and on == last_on:
+                last_x = x
+                last_y = y
+                continue
+            yield last_x, last_y, last_on
+            dx = x - last_x
+            dy = y - last_y
+            if abs(dx) > 1 or abs(dy) > 1:
+                # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
+                # The bug is in the code that wrongly plotted the data, not here.
+                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
+            last_x = x
+            last_y = y
+            last_on = on
+        yield last_x, last_y, last_on
 
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2

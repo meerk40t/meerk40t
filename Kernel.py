@@ -11,6 +11,10 @@ THREAD_STATE_PAUSED = 2
 THREAD_STATE_FINISHED = 3
 THREAD_STATE_ABORT = 10
 
+INTERPRETER_STATE_RAPID = 0
+INTERPRETER_STATE_FINISH = 1
+INTERPRETER_STATE_PROGRAM = 2
+
 
 class Module:
     """
@@ -160,32 +164,29 @@ class Interpreter(Module):
         self.process = self.process_spool
         self.interval = 0.01
         self.pipe = pipe
+        self.extra_hold = None
+
+        self.state = INTERPRETER_STATE_RAPID
+        self.pulse_total = 0.0
+        self.pulse_modulation = True
+        self.properties = 0
+        self.is_relative = False
+        self.laser = False
+        self.laser_enabled = True
+        self.raster_step = 0
+        self.overscan = 20
+        self.speed = 30
+        self.power = 1000.0
+        self.d_ratio = None  # None means to use speedcode default.
+        self.acceleration = None  # None means to use speedcode default
 
     def attach(self, device, name=None):
         Module.attach(self, device, name)
         self.device.interpreter = self
+        self.device.setting(int, 'current_x', 0)
+        self.device.setting(int, 'current_y', 0)
         self.initialize()
         self.schedule()
-
-    def hold(self):
-        return False
-
-    def command(self, command, *values):
-        """Commands are middle language LaserCommandConstants there values are given."""
-        return NotImplementedError
-
-    def realtime_command(self, command, *values):
-        """Asks for the execution of a realtime command. Unlike the spooled commands these
-        return False if rejected and something else if able to be performed. These will not
-        be queued. If rejected. They must be performed in realtime or cancelled.
-        """
-        if command == REALTIME_PAUSE:
-            self.paused = True
-        elif command == REALTIME_RESUME:
-            self.paused = False
-        elif command == REALTIME_RESET:
-            self.device.spooler.clear_queue()
-        return self.command(command, *values)
 
     def process_spool(self, *args):
         """
@@ -204,6 +205,8 @@ class Interpreter(Module):
         """
         Default process to run entire command as a single call.
         """
+        if self.hold():
+            return
         if self.spooled_item is None:
             return
         if isinstance(self.spooled_item, tuple):
@@ -233,6 +236,236 @@ class Interpreter(Module):
                 self.spooled_item = element.generate()
             except AttributeError:
                 self.spooled_item = element()
+
+    def command(self, command, *values):
+        """Commands are middle language LaserCommandConstants there values are given."""
+        try:
+            if command == COMMAND_LASER_OFF:
+                self.laser_on()
+            elif command == COMMAND_LASER_ON:
+                self.laser_off()
+            elif command == COMMAND_LASER_DISABLE:
+                self.laser_disable()
+            elif command == COMMAND_LASER_ENABLE:
+                self.laser_enable()
+            elif command == COMMAND_MOVE:
+                print(values)
+                x, y = values
+                self.move(x, y)
+            elif command == COMMAND_HOME:
+                self.home()
+            elif command == COMMAND_LOCK:
+                self.lock_rail()
+            elif command == COMMAND_UNLOCK:
+                self.unlock_rail()
+            elif command == COMMAND_PLOT:
+                self.plot_path(values[0])
+            elif command == COMMAND_RASTER:
+                self.plot_raster(values[0])
+            elif command == COMMAND_SET_SPEED:
+                self.set_speed(values[0])
+            elif command == COMMAND_SET_POWER:
+                self.set_power(values[0])
+            elif command == COMMAND_SET_PPI:
+                self.set_ppi(values[0])
+            elif command == COMMAND_SET_PWM:
+                self.set_pwm(values[0])
+            elif command == COMMAND_SET_STEP:
+                self.set_step(values[0])
+            elif command == COMMAND_SET_OVERSCAN:
+                self.set_overscan(values[0])
+            elif command == COMMAND_SET_ACCELERATION:
+                self.set_acceleration(values[0])
+            elif command == COMMAND_SET_D_RATIO:
+                self.set_d_ratio(values[0])
+            elif command == COMMAND_SET_DIRECTION:
+                self.set_directions(values[0], values[1], values[2], values[3])
+            elif command == COMMAND_SET_INCREMENTAL:
+                self.set_incremental()
+            elif command == COMMAND_SET_ABSOLUTE:
+                self.set_absolute()
+            elif command == COMMAND_SET_POSITION:
+                self.set_position(values[0], values[1])
+            elif command == COMMAND_MODE_RAPID:
+                self.ensure_rapid_mode()
+            elif command == COMMAND_MODE_PROGRAM:
+                self.ensure_program_mode()
+            elif command == COMMAND_MODE_FINISHED:
+                self.ensure_finished_mode()
+            elif command == COMMAND_WAIT:
+                self.wait(values[0])
+            elif command == COMMAND_WAIT_FINISH:
+                self.wait_finish()
+            elif command == COMMAND_BEEP:
+                print('\a')  # Beep.
+            elif command == COMMAND_FUNCTION:
+                if len(values) >= 1:
+                    t = values[0]
+                    if callable(t):
+                        t()
+            elif command == COMMAND_SIGNAL:
+                if isinstance(values, str):
+                    self.device.signal(values, None)
+                elif len(values) >= 2:
+                    self.device.signal(values[0], *values[1:])
+        except AttributeError:
+            pass
+
+    def realtime_command(self, command, *values):
+        """Asks for the execution of a realtime command. Unlike the spooled commands these
+        return False if rejected and something else if able to be performed. These will not
+        be queued. If rejected. They must be performed in realtime or cancelled.
+        """
+        try:
+            if command == REALTIME_PAUSE:
+                self.pause()
+            elif command == REALTIME_RESUME:
+                self.resume()
+            elif command == REALTIME_RESET:
+                self.reset()
+            elif command == REALTIME_STATUS:
+                self.status()
+            elif command == REALTIME_SAFETY_DOOR:
+                self.safety_door()
+            elif command == REALTIME_JOG_CANCEL:
+                self.jog_cancel(*values)
+            elif command == REALTIME_SPEED_PERCENT:
+                self.realtime_speed_percent(*values)
+            elif command == REALTIME_SPEED:
+                self.realtime_speed(*values)
+            elif command == REALTIME_RAPID_PERCENT:
+                self.realtime_rapid_percent(*values)
+            elif command == REALTIME_RAPID:
+                self.realtime_rapid(*values)
+            elif command == REALTIME_POWER_PERCENT:
+                self.realtime_power_percent(*values)
+            elif command == REALTIME_POWER:
+                self.realtime_power(*values)
+            elif command == REALTIME_OVERSCAN:
+                self.realtime_overscan(*values)
+            elif command == REALTIME_LASER_DISABLE:
+                self.realtime_laser_disable(*values)
+            elif command == REALTIME_LASER_ENABLE:
+                self.realtime_laser_enable(*values)
+            elif command == REALTIME_FLOOD_COOLANT:
+                self.realtime_flood_coolant(*values)
+            elif command == REALTIME_MIST_COOLANT:
+                self.realtime_mist_coolant(*values)
+        except AttributeError:
+            pass  # Method doesn't exist.
+
+    def hold(self):
+        if self.extra_hold is not None:
+            if self.extra_hold():
+                return True
+            else:
+                self.extra_hold = None
+        return False
+
+    def laser_off(self, *values):
+        self.laser = False
+
+    def laser_on(self, *values):
+        self.laser = True
+
+    def laser_disable(self, *values):
+        self.laser_enabled = False
+
+    def laser_enable(self, *values):
+        self.laser_enabled = True
+
+    def move(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
+
+    def home(self, *values):
+        self.device.current_x = 0
+        self.device.current_y = 0
+
+    def ensure_rapid_mode(self, *values):
+        if self.state == INTERPRETER_STATE_RAPID:
+            return
+        self.state = INTERPRETER_STATE_RAPID
+        self.device.signal('interpreter;mode', self.state)
+
+    def ensure_finished_mode(self, *values):
+        if self.state == INTERPRETER_STATE_FINISH:
+            return
+        self.state = INTERPRETER_STATE_FINISH
+        self.device.signal('interpreter;mode', self.state)
+
+    def ensure_program_mode(self, *values):
+        if self.state == INTERPRETER_STATE_PROGRAM:
+            return
+        self.state = INTERPRETER_STATE_PROGRAM
+        self.device.signal('interpreter;mode', self.state)
+
+    def set_speed(self, speed=None):
+        self.speed = speed
+
+    def set_power(self, power=1000.0):
+        self.power = power
+
+    def set_ppi(self, power=1000.0):
+        self.power = power
+
+    def set_pwm(self, power=1000.0):
+        self.power = power
+
+    def set_d_ratio(self, d_ratio=None):
+        self.d_ratio = d_ratio
+
+    def set_acceleration(self, accel=None):
+        self.acceleration = accel
+
+    def set_step(self, step=None):
+        self.raster_step = step
+
+    def set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def set_incremental(self, *values):
+        self.is_relative = True
+
+    def set_absolute(self, *values):
+        self.is_relative = False
+
+    def set_position(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
+
+    def wait(self, t):
+        self.next_run = t
+
+    def wait_finish(self, *values):
+        self.extra_hold = lambda: len(self.pipe) == 0
+
+    def reset(self):
+        self.device.spooler.clear_queue()
+
+    def status(self):
+        parts = list()
+        parts.append("x=%f" % self.device.current_x)
+        parts.append("y=%f" % self.device.current_y)
+        parts.append("speed=%f" % self.speed)
+        parts.append("power=%d" % self.power)
+        status = ";".join(parts)
+        self.device.signal('interpreter;status', status)
+
+    def set_prop(self, mask):
+        self.properties |= mask
+
+    def unset_prop(self, mask):
+        self.properties &= ~mask
+
+    def is_prop(self, mask):
+        return bool(self.properties & mask)
+
+    def toggle_prop(self, mask):
+        if self.is_prop(mask):
+            self.unset_prop(mask)
+        else:
+            self.set_prop(mask)
 
 
 class Pipe:

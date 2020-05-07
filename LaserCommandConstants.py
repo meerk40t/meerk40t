@@ -29,14 +29,17 @@ COMMAND_PLOT = 100  # Takes a plot object
 COMMAND_RASTER = 101  # Takes a raster plot object.
 
 COMMAND_SET_SPEED = 200  # sets the speed for the device
-COMMAND_SET_POWER = 201  # sets the PPI power. Out of 1000.
-COMMAND_SET_STEP = 202  # sets the raster step for the device
-COMMAND_SET_D_RATIO = 203  # sets the diagonal_ratio for the device
-COMMAND_SET_ACCELERATION = 204  # sets the acceleration for the device 1-4
-COMMAND_SET_DIRECTION = 205  # sets the directions for the device.
-COMMAND_SET_INCREMENTAL = 206  # sets the commands to be relative to current position
-COMMAND_SET_ABSOLUTE = 207  # sets the commands to be absolute positions.
-COMMAND_SET_POSITION = 210  # Without moving sets the current position to the given coord.
+COMMAND_SET_POWER = 201  # sets the power. Out of 1000. Unknown power method.
+COMMAND_SET_PPI = 203  # sets the PPI power. Out of 1000.
+COMMAND_SET_PWM = 203  # sets the PWM power. Out of 1000.
+COMMAND_SET_STEP = 205  # sets the raster step for the device
+COMMAND_SET_DIRECTION = 209  # sets the directions for the device.
+COMMAND_SET_OVERSCAN = 206
+COMMAND_SET_D_RATIO = 207  # sets the diagonal_ratio for the device
+COMMAND_SET_ACCELERATION = 208  # sets the acceleration for the device 1-4
+COMMAND_SET_INCREMENTAL = 210  # sets the commands to be relative to current position
+COMMAND_SET_ABSOLUTE = 211  # sets the commands to be absolute positions.
+COMMAND_SET_POSITION = 220  # Without moving sets the current position to the given coord.
 
 COMMAND_HOME = 300  # Homes the device
 COMMAND_LOCK = 301  # Locks the rail
