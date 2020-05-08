@@ -76,12 +76,6 @@ class Module:
     def shutdown(self, channel):
         pass
 
-    def activated(self, device):
-        pass
-
-    def deactivated(self, device):
-        pass
-
 
 class Spooler(Module):
     """
@@ -249,7 +243,6 @@ class Interpreter(Module):
             elif command == COMMAND_LASER_ENABLE:
                 self.laser_enable()
             elif command == COMMAND_MOVE:
-                print(values)
                 x, y = values
                 self.move(x, y)
             elif command == COMMAND_HOME:
@@ -568,11 +561,11 @@ class Signaler(Module):
         self.device.last_signal = self.last_signal
         self.schedule()
 
-    def shutdown(self,  shutdown):
+    def shutdown(self, channel):
         _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
             if len(listener):
-                shutdown(_("WARNING: Listener '%s' still registered to %s.\n") % (key, str(listener)))
+                channel(_("WARNING: Listener '%s' still registered to %s.\n") % (key, str(listener)))
         self.last_message = {}
         self.listeners = {}
 
@@ -1229,7 +1222,7 @@ class Kernel(Device):
         self.filenodes = {}
 
         # Active Device
-        self.device = None
+        self.device = self
 
         # Persistent storage if it exists.
         self.config = None
@@ -1254,20 +1247,12 @@ class Kernel(Device):
         """
         Device.boot(self)
 
-        self.setting(str, 'device_list', '')
-        self.setting(str, 'device_primary', '')
-        for device in self.device_list.split(';'):
+        self.setting(str, 'list_devices', 'Lhystudios:')
+        devices = self.list_devices
+        for device in devices.split(';'):
             args = list(device.split(':'))
-            if len(args) == 1:
-                for r in self.registered['device']:
-                    dev = self.device_instance_open(r, args[0])
-                    dev.boot()
-                    break
-            else:
-                dev = self.device_instance_open(args[1], args[0])
-                dev.boot()
-            if device == self.device_primary:
-                self.activate_device(device)
+            dev = self.device_instance_open(args[0], instance_name=args[1])
+            dev.boot()
 
     def shutdown(self, channel=None):
         """
@@ -1440,27 +1425,3 @@ class Kernel(Device):
                 filetypes.append("*.%s" % (extension))
         return "|".join(filetypes)
 
-    def activate_device(self, device_name):
-        """
-        Switch the activated device in the kernel.
-
-        :param device_name:
-        :return:
-        """
-        original = self.device
-        if device_name is None:
-            self.device = None
-        else:
-            self.device = self.instances['device'][device_name]
-        if self.device is not original:
-            if original is not None:
-                if 'module' in original.instances:
-                    for module_name in original.instances['module']:
-                        module = original.instances['module'][module_name]
-                        module.deactivated(original)
-            if self.device is not None:
-                if 'module' in self.instances:
-                    for module_name in self.instances['module']:
-                        module = self.instances['module'][module_name]
-                        module.activated(original)
-            self.signal("device", self.device)

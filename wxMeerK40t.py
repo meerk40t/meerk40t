@@ -383,7 +383,7 @@ class MeerK40t(wx.Frame, Module):
     def on_close(self, event):
         self.times = -1
         self.unlisten_scene()
-        self.device.open('module', 'Shutdown', None, -1, "")
+        self.device.device_root.open('module', 'Shutdown', None, -1, "")
         self.device.module_instance_remove(self.name)
         self.device.stop()
         event.Skip()  # Call destroy as regular.

@@ -109,7 +109,9 @@ class DeviceManager(wx.Frame, Module):
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        self.device.activate_device(uid)
+        device = self.device.instances['device'][uid]
+        device.open('module', "MeerK40t", None, -1, "")
+        device.boot()
         self.Close()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
@@ -136,9 +138,8 @@ class DeviceManager(wx.Frame, Module):
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
         device = self.device.instances['device'][uid]
+        device.shutdown()
         del self.device.instances['device'][uid]
-        if device is self.device:
-            self.device.device_root.activate_device(None)
         self.refresh_device_list()
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>

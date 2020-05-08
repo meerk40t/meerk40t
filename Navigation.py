@@ -557,7 +557,7 @@ class Navigation(wx.Frame, Module):
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_MOVE, p
 
-        self.device.send_job(trace_hull)
+        self.device.spooler.send_job(trace_hull)
 
     def on_button_align_trace_quick(self, event):  # wxGlade: Navigation.<event_handler>
         bbox = self.bounds
@@ -574,7 +574,7 @@ class Navigation(wx.Frame, Module):
             yield COMMAND_MOVE, (bbox[0], bbox[3])
             yield COMMAND_MOVE, (bbox[0], bbox[1])
 
-        self.device.send_job(trace_quick)
+        self.device.spooler.send_job(trace_quick)
         self.drag_ready(True)
 
     def on_button_navigate_pulse(self, event):  # wxGlade: Navigation.<event_handler>
@@ -587,7 +587,7 @@ class Navigation(wx.Frame, Module):
             yield COMMAND_WAIT, value
             yield COMMAND_LASER_OFF
 
-        self.device.send_job(timed_fire)
+        self.device.spooler.send_job(timed_fire)
 
     def on_spin_pulse_duration(self, event):  # wxGlade: Navigation.<event_handler>
         self.device.navigate_pulse = float(self.spin_pulse_duration.GetValue())

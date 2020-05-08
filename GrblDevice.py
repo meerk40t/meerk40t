@@ -43,18 +43,24 @@ class GrblDevice(Device):
         """
         self.uid = name
         self.open('module', 'Spooler')
-        self.open('module', 'GRBLInterpreter', pipe=print)
+        self.write = print
+        self.open('module', 'GRBLInterpreter', pipe=self)
+
+    def __len__(self):
+        return 0
 
 
 class GRBLInterpreter(Interpreter):
     def __init__(self, pipe):
         Interpreter.__init__(self, pipe=pipe)
         self.plot = None
+        self.speed = 20.0
         self.scale = 1000.0  # g21 default.
         self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 default
         self.feed_invert = lambda s: s * (self.scale * 60.0)
         self.power_updated = True
         self.speed_updated = True
+        self.group_modulation = False
 
     def g20(self):
         self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
@@ -91,11 +97,11 @@ class GRBLInterpreter(Interpreter):
 
     def ensure_program_mode(self, *values):
         self.pipe.write('M3' + self.device.line_end)
-        Interpreter.ensure_program_mode(*values)
+        Interpreter.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
         self.pipe.write('M5' + self.device.line_end)
-        Interpreter.ensure_program_mode(*values)
+        Interpreter.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
         if len(path) == 0:
@@ -119,8 +125,8 @@ class GRBLInterpreter(Interpreter):
             line.append('G1')
         else:
             line.append('G0')
-        line.append('X%d' % (self.scale * x))
-        line.append('Y%d' % (self.scale * y))
+        line.append('X%f' % (x / self.scale))
+        line.append('Y%f' % (y / self.scale))
         if self.power_updated:
             line.append('S%f' % self.power)
             self.power_updated = False
@@ -128,6 +134,7 @@ class GRBLInterpreter(Interpreter):
             line.append('F%d' % int(self.feed_convert(self.speed)))
             self.speed_updated = False
         self.pipe.write(' '.join(line) + self.device.line_end)
+        Interpreter.move(self, x, y)
 
     def execute(self):
         if self.hold():

@@ -4,9 +4,9 @@ import sys
 from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
-from LaserServer import *
 from MoshiboardDevice import MoshiboardDevice
 from RuidaDevice import RuidaDevice
+from LaserServer import *
 
 try:
     from math import tau
@@ -179,5 +179,7 @@ if args.output is not None:
 
 kernel.boot()
 if not args.no_gui:
-    kernel.device.open('module', 'MeerK40t', None, -1, "")
+    if 'device' in kernel.instances:
+        for key, device in kernel.instances['device'].items():
+            device.open('module', 'MeerK40t', None, -1, "")
     meerk40tgui.MainLoop()

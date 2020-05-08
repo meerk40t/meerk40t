@@ -108,9 +108,6 @@ class LhystudiosDevice(Device):
         self.spooler.clear_queue()
         self.emergency_stop()
 
-    def send_job(self, job):
-        self.spooler.send_job(job)
-
     def log(self, message):
         self._device_log += message
         self.signal('pipe;device_log', message)

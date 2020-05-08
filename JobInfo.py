@@ -182,7 +182,7 @@ class JobInfo(wx.Frame, Module):
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
-            self.device.send_job(self.operations)
+            self.device.spooler.send_job(self.operations)
             self.on_button_job_spooler()
             self.device.module_instance_close("JobInfo")
         else:
