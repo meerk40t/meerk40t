@@ -292,7 +292,7 @@ class GRBLEmulator(Module, Pipe):
                 elif v == 20.0 or v == 70.0:
                     self.scale = 1000.0  # g20 is inch mode. 1000 mils in an inch
                 elif v == 21.0 or v == 71.0:
-                    self.scale = 39.3701  # g20 is mm mode. 39.3701 mils in a mm
+                    self.scale = 39.3701  # g21 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
                     spooler.add_command(COMMAND_MODE_RAPID)
                     spooler.add_command(COMMAND_HOME)

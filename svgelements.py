@@ -6595,15 +6595,15 @@ class SVG(Group):
             svg_id = attributes[SVG_ATTR_ID]
             css_tag = '#%s' % svg_id
             if css_tag in styles:
-                style += styles[tag]
+                style += styles[css_tag]
         if SVG_ATTR_CLASS in attributes:  # Selector class .class
             for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
                 css_tag = '.%s' % svg_class
                 if css_tag in styles:
-                    style += styles[tag]
+                    style += styles[css_tag]
                 css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
                 if css_tag in styles:
-                    style += styles[tag]
+                    style += styles[css_tag]
 
         # Split style element into parts; priority highest
         if SVG_ATTR_STYLE in attributes:
