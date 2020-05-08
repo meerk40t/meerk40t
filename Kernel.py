@@ -1247,12 +1247,14 @@ class Kernel(Device):
         """
         Device.boot(self)
 
-        self.setting(str, 'list_devices', 'Lhystudios:')
+        # self.setting(str, 'list_devices', 'Lhystudios:')
+        self.setting(str, 'list_devices', '')
         devices = self.list_devices
         for device in devices.split(';'):
             args = list(device.split(':'))
-            dev = self.device_instance_open(args[0], instance_name=args[1])
-            dev.boot()
+            if len(args) == 2:
+                dev = self.device_instance_open(args[0], instance_name=args[1])
+                dev.boot()
 
     def shutdown(self, channel=None):
         """

@@ -182,4 +182,6 @@ if not args.no_gui:
     if 'device' in kernel.instances:
         for key, device in kernel.instances['device'].items():
             device.open('module', 'MeerK40t', None, -1, "")
+    else:
+        kernel.open('module', "DeviceManager", None, -1, "")
     meerk40tgui.MainLoop()

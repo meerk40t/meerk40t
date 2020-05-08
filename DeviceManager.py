@@ -91,7 +91,7 @@ class DeviceManager(wx.Frame, Module):
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
-        if len(self.device.instances['device']) <= 0:
+        if 'device' not in self.device.instances or len(self.device.instances['device']) <= 0:
             return
         i = 0
         for key, value in self.device.instances['device'].items():
