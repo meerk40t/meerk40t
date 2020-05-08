@@ -392,6 +392,7 @@ class MeerK40t(wx.Frame, Module):
         self.device.module_instance_close(self.name)
         device = self.device
         self.Show()
+        self.__set_titlebar()
         device.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         device.setting(int, "window_width", 1200)
         device.setting(int, "window_height", 600)
@@ -574,9 +575,15 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('interpreter;mode', self.on_interpreter_mode)
         device.unlisten('bed_size', self.bed_changed)
 
+    def __set_titlebar(self):
+        device_text = ''
+        if self.device is not None:
+            device_text = '- %s:%s' % (self.device.device_name, self.device.uid)
+        self.SetTitle(_("MeerK40t v%s %s") % (MEERK40T_VERSION, device_text))
+
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle(_("MeerK40t v%s") % MEERK40T_VERSION)
+        self.__set_titlebar()
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())

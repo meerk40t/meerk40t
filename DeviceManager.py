@@ -43,8 +43,7 @@ class DeviceManager(wx.Frame, Module):
     def initialize(self):
         self.device.module_instance_close(self.name)
         self.Show()
-        self.device.setting(str, 'device_list', '')
-        self.device.setting(str, 'device_primary', '')
+        self.device.setting(str, 'list_devices', '')
         self.refresh_device_list()
 
     def shutdown(self,  channel):
@@ -53,9 +52,9 @@ class DeviceManager(wx.Frame, Module):
         if item != -1:
             uid = self.devices_list.GetItem(item).Text
             self.device.device_primary = uid
-        self.device.device_list = ";".join([d for d in self.device.instances['device']])
 
     def on_close(self, event):
+        self.update_device_list()
         self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
@@ -88,6 +87,12 @@ class DeviceManager(wx.Frame, Module):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def update_device_list(self):
+        if 'device' in self.device.instances:
+            self.device.list_devices = ";".join(
+                ['%s:%s' % (self.device.instances['device'][d].device_name, str(d)) for d in self.device.instances['device']]
+            )
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
@@ -138,8 +143,9 @@ class DeviceManager(wx.Frame, Module):
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
         device = self.device.instances['device'][uid]
-        device.shutdown()
         del self.device.instances['device'][uid]
+        self.update_device_list()
+        device.shutdown()
         self.refresh_device_list()
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>

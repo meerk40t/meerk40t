@@ -834,9 +834,9 @@ class Device(Thread):
             channel(_("No threads required halting.\n"))
         channel(_("Shutdown.\n\n"))
         if not self.is_root():
-            if 'devices' not in self.device_root.instances or \
-                    self.device_root.instances['devices'] is None or \
-                    len(self.device_root.instances['devices']) == 0:
+            if 'device' not in self.device_root.instances or \
+                    self.device_root.instances['device'] is None or \
+                    len(self.device_root.instances['device']) == 0:
                     channel(_("All Devices are shutdown. Stopping Kernel.\n"))
                     self.device_root.stop()
 
@@ -1250,6 +1250,7 @@ class Kernel(Device):
         # self.setting(str, 'list_devices', 'Lhystudios:')
         self.setting(str, 'list_devices', '')
         devices = self.list_devices
+        print(devices)
         for device in devices.split(';'):
             args = list(device.split(':'))
             if len(args) == 2:

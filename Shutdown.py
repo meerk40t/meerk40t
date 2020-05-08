@@ -28,6 +28,7 @@ class Shutdown(wx.Frame, Module):
 
     def on_close(self, event):
         self.device.module_instance_remove(self.name)
+        self.device.remove_watcher('shutdown', self.text_shutdown.AppendText)
         event.Skip()  # Call destroy as regular.
 
     def initialize(self):
@@ -68,13 +69,7 @@ class Shutdown(wx.Frame, Module):
         # end wxGlade
 
     def on_button_stop(self, event):  # wxGlade: Shutdown.<event_handler>
-        # TODO: restore emergency stop ability
-        # for name, device in self.device.device_instances.items():
-        #     if device.spooler.thread is not None:
-        #         if device.spooler.thread.is_alive() or device.pipe.thread.is_alive():
-        #             device.execute("Emergency Stop")
-        #             return
-        wx.CallAfter(self.shutdown, None)
+        wx.CallAfter(self.Close, True)
 
     def on_button_reload(self, event):  # wxGlade: Shutdown.<event_handler>
         # self.device.module_instance_open('MeerK40t', None, -1, "")
