@@ -1240,17 +1240,15 @@ class Kernel(Device):
         """
         Device.boot(self)
 
-        self.setting(str, 'list_devices', '1')
+        self.setting(str, 'list_devices', '')
         devices = self.list_devices
         for device in devices.split(';'):
             try:
                 d = int(device)
             except ValueError:
                 return
-            name_key = '%d/device_name' % d
-            device_name = self.read_persistent(str, name_key, 'Lhystudios')
-            boot_key = '%d/autoboot' % int(device)
-            autoboot = self.read_persistent(bool, boot_key, True)
+            device_name = self.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
+            autoboot = self.read_persistent(bool, 'autoboot', True, uid=d)
             if autoboot:
                 dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
                 dev.boot()

@@ -102,12 +102,9 @@ class DeviceManager(wx.Frame, Module):
                 d = int(device)
             except ValueError:
                 return
-            name_key = '%d/device_name' % d
-            device_name = self.device.read_persistent(str, name_key, 'Lhystudios')
-            boot_key = '%d/autoboot' % int(device)
-            autoboot = self.device.read_persistent(bool, boot_key, True)
-            location_key = '%d/location_name' % int(device)
-            location_name = self.device.read_persistent(str, location_key, 'Unknown')
+            device_name = self.device.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
+            autoboot = self.device.read_persistent(bool, 'autoboot', True, uid=d)
+            location_name = self.device.read_persistent(str, 'location_name', 'Unknown', uid=d)
             try:
                 device_obj = self.device.instances['device'][device]
                 state = device_obj.state
@@ -129,6 +126,7 @@ class DeviceManager(wx.Frame, Module):
         toggled_autoboot = not self.device.read_persistent(bool, 'autoboot', True, int(uid))
         self.device.write_persistent('autoboot', toggled_autoboot, int(uid))
         try:
+            # If the device is booted, change autoboot there too.
             device_obj = self.device.instances['device'][str(uid)]
             device_obj.autoboot = toggled_autoboot
         except KeyError:
@@ -157,26 +155,27 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
             return
         dlg.Destroy()
-        from random import Random
-        device_uid = Random().randint(1, 999999)
-        name_key = '%d/device_name' % device_uid
-        boot_key = '%d/autoboot' % device_uid
-        self.device.write_persistent(name_key, device_type)
-        self.device.write_persistent(boot_key, True)
-        self.device.list_devices = '%s;%s' % (self.device.list_devices, str(device_uid))
-
-        if device_type in self.device.registered['device']:
-            self.device.open('device', device_type, self.device, uid=device_uid, instance_name=str(device_uid))
+        device_uid = 0
+        while device_uid <= 100:
+            device_uid += 1
+            device_match = self.device.read_persistent(str, 'device_name', default='', uid=device_uid)
+            if device_match == '':
+                break
+        self.device.write_persistent('device_name', device_type, uid=device_uid)
+        self.device.write_persistent('autoboot', True, uid=device_uid)
+        devices = [d for d in self.device.list_devices.split(';') if d != '']
+        devices.append(str(device_uid))
+        self.device.list_devices = ';'.join(devices)
+        self.device.write_persistent('list_devices', self.device.list_devices)
         self.refresh_device_list()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
-        device = self.device.instances['device'][uid]
-        del self.device.instances['device'][uid]
-
         self.device.list_devices = ';'.join([d for d in self.device.list_devices.split(';') if d != uid])
         try:
+            device = self.device.instances['device'][uid]
+            del self.device.instances['device'][uid]
             device.instances['module']['MeerK40t'].Close()
         except KeyError:
             pass
