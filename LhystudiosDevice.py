@@ -882,6 +882,7 @@ class LhymicroInterpreter(Interpreter):
             last_on = on
         yield last_x, last_y, last_on
 
+
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2
         packet = [0] * 30

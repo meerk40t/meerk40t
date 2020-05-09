@@ -89,7 +89,6 @@ if grbl.server is not None:
         emulator.home_adjust = (0, grbl.adjust_y)
     elif grbl.adjust_x is not None:
         emulator.home_adjust = (grbl.adjust_x, 0)
-
     try:
         server = kernel.module_instance_open('LaserServer', port=grbl.server)
         server.set_pipe(emulator)

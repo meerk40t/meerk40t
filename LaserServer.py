@@ -18,14 +18,20 @@ class ServerThread(threading.Thread):
         if self.state != state:
             self.state = state
 
-    def run(self):
-        self.set_state(THREAD_STATE_STARTED)
+    def udp_run(self):
+        while True:
+            message, address = self.server.socket.recvfrom(1024)
+            for reply in self.server.pipe.interface(message):
+                self.server.socket.sendto(reply, address)
+                print("Sending Reply: %s" % str(reply))
 
+    def tcp_run(self):
         while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
             if self.connection is None:
                 try:
                     self.connection, self.addr = self.server.socket.accept()
                 except OSError:
+                    self.server.channel("Socket was killed.")
                     break  # Socket was killed.
                 continue
             if self.state == THREAD_STATE_PAUSED:
@@ -45,7 +51,7 @@ class ServerThread(threading.Thread):
 
             data_from_socket = self.connection.recv(1024)
             if len(data_from_socket) != 0:
-                print("Processing Gcode: %s" % str(data_from_socket))
+                self.server.channel("Received: %s" % str(data_from_socket))
             self.server.pipe.write(data_from_socket)
 
             push_message = self.server.pipe.read(1024)
@@ -58,30 +64,45 @@ class ServerThread(threading.Thread):
         if self.connection is not None:
             self.connection.close()
 
+    def run(self):
+        self.set_state(THREAD_STATE_STARTED)
+        if self.server.tcp:
+            self.tcp_run()
+        else:
+            self.udp_run()
+
 
 class LaserServer(Module):
     """
     Laser Server opens up a localhost server and waits, sends whatever data received to the pipe
     """
-    def __init__(self, port=1040, pipe=None, name=''):
+    def __init__(self, tcp=True, port=1040, pipe=None, name=''):
         Module.__init__(self)
+        self.tcp = tcp
         self.pipe = pipe
         self.port = port
         self.name = name
 
         self.socket = None
         self.thread = None
+        self.channel = lambda e: e
 
     def initialize(self):
-        self.socket = socket.socket()
-        self.socket.bind(('', self.port))
-        self.socket.listen(1)
+        if self.tcp:
+            self.socket = socket.socket()
+            self.socket.bind(('', self.port))
+            self.socket.listen(1)
+        else:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.socket.bind(('', self.port))
         self.thread = ServerThread(self)
         self.device.control_instance_add('Set_Server_Pipe' + self.name, self.set_pipe)
         self.device.thread_instance_add('ServerThread', self.thread)
         self.thread.start()
+        self.channel = self.device.channel_open('server')
 
     def shutdown(self,  channel):
+        self.channel("Shutting down server.")
         self.socket.close()
         self.thread.state = THREAD_STATE_FINISHED
 

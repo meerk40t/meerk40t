@@ -482,12 +482,148 @@ class GRBLEmulator(Module, Pipe):
         return 0
 
 
-class RuidaEmulator(Module, Pipe):
+class RuidaEmulator(Module):
 
     def __init__(self):
         Module.__init__(self)
 
-    def swizzle(self, b):
+    def abscoord(self, data):
+        return (data[0] & 0xFF) << 32 | \
+               (data[1] & 0xFF) << 24 | \
+               (data[2] & 0xFF) << 16 | \
+               (data[3] & 0xFF) << 8 | \
+               (data[4] & 0xFF)
+
+    def relcoord(self, data):
+        return (data[0] & 0xFF) << 8 | \
+               (data[1] & 0xFF)
+
+    def filenumber(self, data):
+        return (data[0] & 0xFF) << 8 | \
+               (data[1] & 0xFF)
+
+    def speed(self, data):
+        return (data[0] & 0xFF) << 32 | \
+               (data[1] & 0xFF) << 24 | \
+               (data[2] & 0xFF) << 16 | \
+               (data[3] & 0xFF) << 8 | \
+               (data[4] & 0xFF)
+
+    def power(self, data):
+        return (data[0] & 0xFF) << 8 | \
+               (data[1] & 0xFF)
+
+    def sum(self, data):
+        return (data[0] & 0xFF) << 8 | \
+               (data[1] & 0xFF)
+
+    def checksum(self, data):
+        sum = 0
+        for b in data:
+            sum += b
+        return sum
+
+    def interface(self, sent_data):
+        array = list()
+        check = self.checksum(sent_data[2:])
+        sum = self.sum(sent_data[:2])
+        print(check)
+        print(sum)
+        if check == sum:
+            yield self.swizzle(b'\xCF')
+            print(self.swizzle(b'\xCF'))
+            print("checksum match")
+        else:
+            yield self.swizzle(b'\xD0')
+            print(self.swizzle(b'\xD0'))
+            print("checksum fail")
+            return
+        for b in sent_data[2:]:
+            array.append(self.unswizzle_byte(b))
+        if array[0] == 0xC6:
+            if array[1] == 0x01:
+                print("1st laser source min power: %d" % self.power(array[2:3]))
+            elif array[1] == 0x21:
+                print("2nd laser source min power: %d" % self.power(array[2:3]))
+            elif array[1] == 0x02:
+                print("1st laser source max power: %d" % self.power(array[2:3]))
+            elif array[1] == 0x22:
+                print("2nd laser source max power: %d" % self.power(array[2:3]))
+        elif array[0] == 0xD9:
+            if array[1] == 0x00:
+                if array[2] == 0x02:
+                    print("Move X: %d" % self.abscoord(array[3:8]))
+                elif array[2] == 0x03:
+                    print("Move Y: %d" % self.abscoord(array[3:8]))
+                elif array[2] == 0x04:
+                    print("Move Z: %d" % self.abscoord(array[3:8]))
+                elif array[2] == 0x05:
+                    print("Move U: %d" % self.abscoord(array[3:8]))
+        elif array[0] == 0xCC:
+            print("ACK from machine")
+        elif array[0] == 0xCD:
+            print("ERR from machine")
+        elif array[0] == 0xDA:
+            if array[1] == 0x00:
+                print("get %02x %02x from machine" % (array[2], array[3]))
+                if array[2] == 0x05 and array[3] == 0x7e:
+                    yield b'\xd4\x09\x0d\xf7\x8f\xa1\x09\xc3\x89'
+                    # Checksum 04:66
+                    print(b'\xd4\x09\x0d\xf7\x8f\xa1\x09\xc3\x89')
+                    print(self.swizzle(b'\xDA\x01' + bytearray(array[2:4]) + b'\x06\x28\x01\x4a\x00'))
+                elif array[2] == 0x00 and array[3] == 0x04:
+                    print("responding2...")
+                    yield b'\xd4\x09\x89\x8d\x89\x89\x89\x89\xab'
+                    print(self.swizzle(b'\xDA\x01' + bytearray(array[2:4]) + b'\x00\x00\x00\x00\x22'))
+                elif array[2] == 0x04 or array[3] == 0x05:
+                    print("Saved Job Count")
+                else:
+                    print("Unknown Request.")
+            elif array[1] == 0x01:
+                print("Response to DA 00 XX XX <VALUE>")
+        elif array[0] == 0xA8:
+            print("Straight cut to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
+        elif array[0] == 0xA9:
+            print("Straight cut to relative %d %d" % (self.relcoord(array[1:2]), self.relcoord(array[3:4])))
+        elif array[0] == 0xE7:
+            if array[1] == 0x50:
+                print("Bounding box top left %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
+            if array[1] == 0x50:
+                print("Bounding box bottom right %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
+        elif array[0] == 0xE8:
+            if array[1] == 0x01:
+                print("Read filename number: %d" % (self.filenumber(array[1:2])))
+            if array[1] == 0x02:
+                if array[2] == 0xE7:
+                    if array[3] == 0x01:
+                        name = ""
+                        for a in array[4:]:
+                            if a == 0x00:
+                                break
+                            name += ord(a)
+                        print("Set filname for transfer: %s" % name)
+        elif array[0] == 0x88:
+            print("Straight move to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
+        elif array[0] == 0x89:
+            print("Straight move to relative %d %d" % (self.relcoord(array[1:2]), self.relcoord(array[3:4])))
+        print("u:" + str(bytes(array).hex()))
+
+    def realtime_write(self, bytes_to_write):
+        print(bytes_to_write)
+
+    def unswizzle(self, data):
+        array = list()
+        for b in data:
+            array.append(self.unswizzle_byte(b))
+        return bytes(array)
+
+    def swizzle(self, data):
+        array = list()
+        for b in data:
+            array.append(self.swizzle_byte(b))
+        return bytes(array)
+
+    def swizzle_byte(self, b):
         b ^= (b >> 7) & 0xFF
         b ^= (b << 7) & 0xFF
         b ^= (b >> 7) & 0xFF
@@ -496,7 +632,7 @@ class RuidaEmulator(Module, Pipe):
         b = (b + 1) & 0xFF
         return b
 
-    def unswizzle(self, b):
+    def unswizzle_byte(self, b):
         b = (b - 1) & 0xFF
         b ^= 0xB0
         b ^= 0x38
@@ -551,6 +687,21 @@ class Console(Module, Pipe):
             self.pipe = self.device.instances['modules']['LhystudioController']
             self.device.add_watcher('lhy', self.channel)
             return
+        elif command == "ruidaserver":
+            port = 50200
+            tcp = False
+            try:
+                server = kernel.module_instance_open('LaserServer', port=port, tcp=tcp)
+                self.channel("Ruida Server opening on port %d.\n" % port)
+                if 'RuidaEmulator' in self.device.instances['module']:
+                    pipe = active_device.instances['module']['RuidaEmulator']
+                else:
+                    pipe = active_device.open('module', 'RuidaEmulator')
+                active_device.add_watcher('ruida', self.channel)
+                active_device.add_watcher('server', self.channel)
+                server.set_pipe(pipe)
+            except OSError:
+                self.channel('Server failed on port: %d' % port)
         elif command == "set":
             for attr in dir(active_device):
                 v = getattr(active_device, attr)
