@@ -756,11 +756,11 @@ class Device(Thread):
     def read_item_persistent(self, item):
         return self.device_root.read_item_persistent(item)
 
-    def write_persistent(self, key, value):
-        self.device_root.write_persistent(key, value)
+    def write_persistent(self, key, value, uid=0):
+        self.device_root.write_persistent(key, value, uid=uid)
 
-    def read_persistent(self, t, key, default=None):
-        return self.device_root.read_persistent(t, key, default)
+    def read_persistent(self, t, key, default=None, uid=0):
+        return self.device_root.read_persistent(t, key, default, uid=uid)
 
     def boot(self):
         """
@@ -1243,10 +1243,13 @@ class Kernel(Device):
         self.setting(str, 'list_devices', '1')
         devices = self.list_devices
         for device in devices.split(';'):
-            d = int(device)
+            try:
+                d = int(device)
+            except ValueError:
+                return
             name_key = '%d/device_name' % d
             device_name = self.read_persistent(str, name_key, 'Lhystudios')
-            boot_key = '%d/boot' % int(device)
+            boot_key = '%d/autoboot' % int(device)
             autoboot = self.read_persistent(bool, boot_key, True)
             if autoboot:
                 dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
@@ -1264,9 +1267,11 @@ class Kernel(Device):
     def read_item_persistent(self, item):
         return self.config.Read(item)
 
-    def read_persistent(self, t, key, default=None):
+    def read_persistent(self, t, key, default=None, uid=0):
         if self.config is None:
             return default
+        if uid != 0:
+            key = '%s/%s' % (str(uid), key)
         if default is not None:
             if t == str:
                 return self.config.Read(key, default)
@@ -1285,9 +1290,11 @@ class Kernel(Device):
         elif t == bool:
             return self.config.ReadBool(key)
 
-    def write_persistent(self, key, value):
+    def write_persistent(self, key, value, uid=0):
         if self.config is None:
             return
+        if uid != 0:
+            key = '%d/%s' % (uid, key)
         if isinstance(value, str):
             self.config.Write(key, value)
         elif isinstance(value, int):
@@ -1384,7 +1391,7 @@ class Kernel(Device):
                     elements, pathname, basename = results
                     self.filenodes[pathname] = elements
                     self.elements.extend(elements)
-                    self.device.signal('rebuild_tree', elements)
+                    self.signal('rebuild_tree', elements)
                     return elements, pathname, basename
         return None
 

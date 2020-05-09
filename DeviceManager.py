@@ -15,9 +15,8 @@ _ = wx.GetTranslation
 class DeviceManager(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: DeviceManager.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-        Module.__init__(self)
         self.SetSize((707, 337))
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
@@ -31,6 +30,7 @@ class DeviceManager(wx.Frame, Module):
 
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.devices_list)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_item_activated, self.devices_list)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_click, self.devices_list)
         self.Bind(wx.EVT_BUTTON, self.on_button_new, self.new_device_button)
         self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.remove_device_button)
         self.Bind(wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button)
@@ -54,64 +54,94 @@ class DeviceManager(wx.Frame, Module):
             self.device.device_primary = uid
 
     def on_close(self, event):
-        self.update_device_list()
         self.device.module_instance_remove(self.name)
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
         # begin wxGlade: DeviceManager.__set_properties
-        self.SetTitle(_("Device Manager"))
+        self.SetTitle("Device Manager")
         self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.devices_list.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=117)
-        self.devices_list.AppendColumn(_("Driver"), format=wx.LIST_FORMAT_LEFT, width=146)
-        self.devices_list.AppendColumn(_("State"), format=wx.LIST_FORMAT_LEFT, width=105)
-        self.devices_list.AppendColumn(_("Location"), format=wx.LIST_FORMAT_LEFT, width=254)
+        self.devices_list.AppendColumn(_("Id"), format=wx.LIST_FORMAT_LEFT, width=72)
+        self.devices_list.AppendColumn(_("Driver"), format=wx.LIST_FORMAT_LEFT, width=119)
+        self.devices_list.AppendColumn(_("State"), format=wx.LIST_FORMAT_LEFT, width=127)
+        self.devices_list.AppendColumn(_("Location"), format=wx.LIST_FORMAT_LEFT, width=258)
+        self.devices_list.AppendColumn(_("Boot"), format=wx.LIST_FORMAT_LEFT, width=51)
+        self.new_device_button.SetToolTip(_("Add a new device"))
         self.new_device_button.SetSize(self.new_device_button.GetBestSize())
+        self.remove_device_button.SetToolTip(_("Remove selected device"))
         self.remove_device_button.SetSize(self.remove_device_button.GetBestSize())
+        self.device_properties_button.SetToolTip(_("View Device Properties"))
         self.device_properties_button.SetSize(self.device_properties_button.GetBestSize())
+        self.move_item_up_button.SetToolTip(_("Move device up"))
         self.move_item_up_button.SetSize(self.move_item_up_button.GetBestSize())
+        self.move_item_down_button.SetToolTip(_("Move device down"))
         self.move_item_down_button.SetSize(self.move_item_down_button.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: DeviceManager.__do_layout
-        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.devices_list, 1, wx.EXPAND, 0)
-        sizer_2.Add(self.new_device_button, 0, 0, 0)
-        sizer_2.Add(self.remove_device_button, 0, 0, 0)
-        sizer_2.Add(self.device_properties_button, 0, 0, 0)
-        sizer_2.Add(self.move_item_up_button, 0, 0, 0)
-        sizer_2.Add(self.move_item_down_button, 0, 0, 0)
-        sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
-        self.SetSizer(sizer_1)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.devices_list, 1, wx.EXPAND, 0)
+        button_sizer.Add(self.new_device_button, 0, 0, 0)
+        button_sizer.Add(self.remove_device_button, 0, 0, 0)
+        button_sizer.Add(self.device_properties_button, 0, 0, 0)
+        button_sizer.Add(self.move_item_up_button, 0, 0, 0)
+        button_sizer.Add(self.move_item_down_button, 0, 0, 0)
+        main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
         self.Layout()
         # end wxGlade
 
-    def update_device_list(self):
-        if 'device' in self.device.instances:
-            self.device.list_devices = ";".join([str(v.uid) for k,v in self.device.instances['device'].items()])
-        print(self.device.list_devices)
-
     def refresh_device_list(self):
+        devices = self.device.list_devices
         self.devices_list.DeleteAllItems()
-        if 'device' not in self.device.instances or len(self.device.instances['device']) <= 0:
-            return
         i = 0
-        for key, value in self.device.instances['device'].items():
-            m = self.devices_list.InsertItem(i, str(key))
+        for device in devices.split(';'):
+            try:
+                d = int(device)
+            except ValueError:
+                return
+            name_key = '%d/device_name' % d
+            device_name = self.device.read_persistent(str, name_key, 'Lhystudios')
+            boot_key = '%d/autoboot' % int(device)
+            autoboot = self.device.read_persistent(bool, boot_key, True)
+            location_key = '%d/location_name' % int(device)
+            location_name = self.device.read_persistent(str, location_key, 'Unknown')
+            try:
+                device_obj = self.device.instances['device'][device]
+                state = device_obj.state
+            except KeyError:
+                state = -1
+            m = self.devices_list.InsertItem(i, str(d))
             if m != -1:
-                self.devices_list.SetItem(m, 1, str(value.device_name))
-                self.devices_list.SetItem(m, 2, str(value.state))
-                self.devices_list.SetItem(m, 3, str(value.location_name))
+                self.devices_list.SetItem(m, 1, str(device_name))
+                self.devices_list.SetItem(m, 2, str(state))
+                self.devices_list.SetItem(m, 3, str(location_name))
+                self.devices_list.SetItem(m, 4, str(autoboot))
             i += 1
 
     def on_list_drag(self, event):  # wxGlade: DeviceManager.<event_handler>
         pass
 
+    def on_list_right_click(self, event):  # wxGlade: DeviceManager.<event_handler>
+        uid = event.GetLabel()
+        toggled_autoboot = not self.device.read_persistent(bool, 'autoboot', True, int(uid))
+        self.device.write_persistent('autoboot', toggled_autoboot, int(uid))
+        try:
+            device_obj = self.device.instances['device'][str(uid)]
+            device_obj.autoboot = toggled_autoboot
+        except KeyError:
+            pass
+        self.refresh_device_list()
+
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        device = self.device.instances['device'][uid]
+        try:
+            device = self.device.instances['device'][uid]
+        except KeyError:
+            device_name = self.device.read_persistent(str, 'device_name', 'Lhystudios', uid)
+            device = self.device.open('device', device_name, root=self.device, uid=int(uid), instance_name=str(uid))
         device.open('module', "MeerK40t", None, -1, "")
         device.boot()
         self.Close()
@@ -128,10 +158,15 @@ class DeviceManager(wx.Frame, Module):
             return
         dlg.Destroy()
         from random import Random
-        device_uid = Random().randint(1,999999)
+        device_uid = Random().randint(1, 999999)
+        name_key = '%d/device_name' % device_uid
+        boot_key = '%d/autoboot' % device_uid
+        self.device.write_persistent(name_key, device_type)
+        self.device.write_persistent(boot_key, True)
+        self.device.list_devices = '%s;%s' % (self.device.list_devices, str(device_uid))
+
         if device_type in self.device.registered['device']:
-            self.device.open('device', device_type, self.device,
-                             uid=device_uid, instance_name=str(device_uid))
+            self.device.open('device', device_type, self.device, uid=device_uid, instance_name=str(device_uid))
         self.refresh_device_list()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
@@ -139,8 +174,15 @@ class DeviceManager(wx.Frame, Module):
         uid = self.devices_list.GetItem(item).Text
         device = self.device.instances['device'][uid]
         del self.device.instances['device'][uid]
-        self.update_device_list()
-        device.shutdown()
+
+        self.device.list_devices = ';'.join([d for d in self.device.list_devices.split(';') if d != uid])
+        try:
+            device.instances['module']['MeerK40t'].Close()
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
+        # device.shutdown()
         self.refresh_device_list()
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
