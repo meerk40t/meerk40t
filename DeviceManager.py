@@ -90,9 +90,8 @@ class DeviceManager(wx.Frame, Module):
 
     def update_device_list(self):
         if 'device' in self.device.instances:
-            self.device.list_devices = ";".join(
-                ['%s:%s' % (self.device.instances['device'][d].device_name, str(d)) for d in self.device.instances['device']]
-            )
+            self.device.list_devices = ";".join([str(v.uid) for k,v in self.device.instances['device'].items()])
+        print(self.device.list_devices)
 
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
@@ -105,8 +104,6 @@ class DeviceManager(wx.Frame, Module):
                 self.devices_list.SetItem(m, 1, str(value.device_name))
                 self.devices_list.SetItem(m, 2, str(value.state))
                 self.devices_list.SetItem(m, 3, str(value.location_name))
-            if value is self.device.device_root.device:
-                self.devices_list.Select(m)
             i += 1
 
     def on_list_drag(self, event):  # wxGlade: DeviceManager.<event_handler>
@@ -130,13 +127,11 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
             return
         dlg.Destroy()
-        dlg = wx.TextEntryDialog(None, _('Enter name of the %s device') % device_type, _('Device Name'))
-        dlg.SetValue("")
-        if dlg.ShowModal() == wx.ID_OK:
-            name = dlg.GetValue()
-            if device_type in self.device.registered['device']:
-                self.device.open('device', device_type, self.device, instance_name=name)
-        dlg.Destroy()
+        from random import Random
+        device_uid = Random().randint(1,999999)
+        if device_type in self.device.registered['device']:
+            self.device.open('device', device_type, self.device,
+                             uid=device_uid, instance_name=str(device_uid))
         self.refresh_device_list()
 
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>

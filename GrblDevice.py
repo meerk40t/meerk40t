@@ -33,7 +33,7 @@ class GrblDevice(Device):
         device.register('module', 'GRBLInterpreter', GRBLInterpreter)
         # device.register('module', 'GRBLController')
 
-    def initialize(self, device, name=''):
+    def initialize(self, device):
         """
         Device initialize.
 
@@ -41,7 +41,6 @@ class GrblDevice(Device):
         :param name:
         :return:
         """
-        self.uid = name
         self.open('module', 'Spooler')
         self.write = print
         self.open('module', 'GRBLInterpreter', pipe=self)

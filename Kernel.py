@@ -683,10 +683,11 @@ class Device(Thread):
     consideration of what might be watching.
     """
 
-    def __init__(self, root=None, uid=''):
-        Thread.__init__(self, name=uid + 'KernelThread')
+    def __init__(self, root=None, uid=0):
+        Thread.__init__(self, name='Device%d' % int(uid))
         self.daemon = True
         self.device_root = root
+        self.device_name = "Device"
         self.uid = uid
 
         self.state = THREAD_STATE_UNKNOWN
@@ -701,10 +702,10 @@ class Device(Thread):
         self.greet = {}
 
     def __str__(self):
-        if self.uid is None:
+        if self.uid == 0:
             return "Project"
         else:
-            return self.uid
+            return "%s:%d" % (self.device_name, self.uid)
 
     def __call__(self, code, *message):
         self.signal(code, *message)
@@ -741,7 +742,7 @@ class Device(Thread):
     def attach(self, device, name=None):
         self.device_root = device
         self.name = name
-        self.initialize(device, name=name)
+        self.initialize(device)
 
     def detach(self, device, channel=None):
         if 'device' in self.device_root.instances:
@@ -749,13 +750,8 @@ class Device(Thread):
             if self.uid in devices:
                 del devices[self.uid]
 
-    def initialize(self, device, name=''):
+    def initialize(self, device):
         pass
-
-    def get(self, key):
-        key = self.uid + key
-        if hasattr(self.device_root, key):
-            return getattr(self.device_root, key)
 
     def read_item_persistent(self, item):
         return self.device_root.read_item_persistent(item)
@@ -777,15 +773,6 @@ class Device(Thread):
     def shutdown(self, channel=None):
         """
         Begins device shutdown procedure.
-
-        Checks if shutdown should be done.
-        Save Kernel Persistent settings.
-        Save Device Persistent settings.
-        Closes all windows.
-        Ask all modules to shutdown.
-        Wait for threads to end.
-        -- If threads do not end, threads must be aborted.
-        Notifies of listener errors.
         """
         self.state = THREAD_STATE_ABORT
         _ = self.device_root.translation
@@ -833,12 +820,22 @@ class Device(Thread):
         else:
             channel(_("No threads required halting.\n"))
         channel(_("Shutdown.\n\n"))
+        shutdown_root = False
         if not self.is_root():
-            if 'device' not in self.device_root.instances or \
-                    self.device_root.instances['device'] is None or \
-                    len(self.device_root.instances['device']) == 0:
-                    channel(_("All Devices are shutdown. Stopping Kernel.\n"))
-                    self.device_root.stop()
+            if 'device' in self.device_root.instances:
+                root_devices = self.device_root.instances['device']
+                if root_devices is None:
+                    shutdown_root = True
+                else:
+                    if str(self.uid) in root_devices:
+                        del root_devices[str(self.uid)]
+                    if len(root_devices) == 0:
+                        shutdown_root = True
+            else:
+                shutdown_root = True
+        if shutdown_root:
+            channel(_("All Devices are shutdown. Stopping Kernel.\n"))
+            self.device_root.stop()
 
     def add_job(self, run, args=(), interval=1.0, times=None):
         """
@@ -953,10 +950,11 @@ class Device(Thread):
         :param default: default value for the setting to have.
         :return: load_value
         """
-        if self.uid is not None:
-            setting_uid_name = self.uid + setting_name
+        if self.uid != 0:
+            setting_uid_name = '%s/%s' % (self.uid, setting_name)
         else:
             setting_uid_name = setting_name
+
         if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
             return
         if not setting_name.startswith('_'):
@@ -975,8 +973,8 @@ class Device(Thread):
             value = getattr(self, attr)
             if value is None:
                 continue
-            if self.uid is not None:
-                uid_attr = self.uid + attr
+            if self.uid != 0:
+                uid_attr = '%d/%s' % (self.uid, attr)
             else:
                 uid_attr = attr
             if isinstance(value, (int, bool, str, float)):
@@ -991,26 +989,26 @@ class Device(Thread):
         self(setting_name, (value, old_value))
 
     def execute(self, control_name, *args):
-        if self.uid is not None:
+        if self.uid != 0:
             self.instances['control'][self.uid + control_name](*args)
         else:
             self.instances['control'][control_name](*args)
 
     def signal(self, code, *message):
-        if self.uid is not None:
-            code = self.uid + ';' + code
+        if self.uid != 0:
+            code = '%d;%s' % (self.uid, code)
         if self.device_root is not None and self.device_root is not self:
             self.device_root.signal(code, *message)
 
     def listen(self, signal, funct):
-        if self.uid is not None:
-            signal = self.uid + ';' + signal
+        if self.uid != 0:
+            signal = '%d;%s' % (self.uid, signal)
         if self.device_root is not None and self.device_root is not self:
             self.device_root.listen(signal, funct)
 
     def unlisten(self, signal, funct):
-        if self.uid is not None:
-            signal = self.uid + ';' + signal
+        if self.uid != 0:
+            signal = '%d;%s' % (self.uid, signal)
         if self.device_root is not None and self.device_root is not self:
             self.device_root.unlisten(signal, funct)
 
@@ -1098,7 +1096,6 @@ class Device(Thread):
         if name in self.instances['device']:
             del self.instances['device'][name]
 
-    # Module kernel objects
     def open(self, type_name, object_name, *args, instance_name=None, **kwargs):
         if instance_name is None:
             instance_name = object_name
@@ -1212,17 +1209,13 @@ class Kernel(Device):
     """
 
     def __init__(self, config=None):
-        Device.__init__(self, self, '')
+        Device.__init__(self, self, 0)
         # Current Project.
-        self.root = self
-        self.uid = None
+        self.device_root = self
 
         self.elements = []
         self.operations = []
         self.filenodes = {}
-
-        # Active Device
-        self.device = self
 
         # Persistent storage if it exists.
         self.config = None
@@ -1247,14 +1240,16 @@ class Kernel(Device):
         """
         Device.boot(self)
 
-        # self.setting(str, 'list_devices', 'Lhystudios:')
-        self.setting(str, 'list_devices', '')
+        self.setting(str, 'list_devices', '1')
         devices = self.list_devices
-        print(devices)
         for device in devices.split(';'):
-            args = list(device.split(':'))
-            if len(args) == 2:
-                dev = self.device_instance_open(args[0], instance_name=args[1])
+            d = int(device)
+            name_key = '%d/device_name' % d
+            device_name = self.read_persistent(str, name_key, 'Lhystudios')
+            boot_key = '%d/boot' % int(device)
+            autoboot = self.read_persistent(bool, boot_key, True)
+            if autoboot:
+                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
                 dev.boot()
 
     def shutdown(self, channel=None):

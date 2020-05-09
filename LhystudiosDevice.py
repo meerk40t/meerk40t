@@ -42,7 +42,7 @@ class LhystudiosDevice(Device):
     """
     LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
-    def __init__(self, root=None, uid=''):
+    def __init__(self, root=None, uid=1):
         Device.__init__(self, root, uid)
         self.uid = uid
         self.device_name = "Lhystudios"
@@ -61,7 +61,7 @@ class LhystudiosDevice(Device):
         device.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
         device.register('module', 'LhystudioController', LhystudioController)
 
-    def initialize(self, device, name=''):
+    def initialize(self, device):
         """
         Device initialize.
 
@@ -69,7 +69,6 @@ class LhystudiosDevice(Device):
         :param name:
         :return:
         """
-        self.uid = name
         self.setting(int, 'usb_index', -1)
         self.setting(int, 'usb_bus', -1)
         self.setting(int, 'usb_address', -1)

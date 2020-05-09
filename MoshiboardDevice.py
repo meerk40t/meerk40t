@@ -43,7 +43,7 @@ class MoshiboardDevice(Device):
         device.register('module', 'MoshiInterpreter', MoshiInterpreter)
         device.register('module', 'MoshiboardController', MoshiboardController)
 
-    def initialize(self, device, name=''):
+    def initialize(self, device):
         """
         Device initialize.
 
@@ -51,7 +51,6 @@ class MoshiboardDevice(Device):
         :param name:
         :return:
         """
-        self.uid = name
         pipe = self.open('module', "MoshiboardController", instance_name='pipe')
         self.open('module', "MoshiInterpreter", instance_name='interpreter', pipe=pipe)
         self.open('module', "Spooler", instance_name='spooler')

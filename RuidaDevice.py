@@ -39,7 +39,7 @@ class RuidaDevice(Device):
     def sub_register(device):
         device.register('module', 'RuidaInterpreter', RuidaInterpreter)
 
-    def initialize(self, device, name=''):
+    def initialize(self, device):
         """
         Device initialize.
 
@@ -47,7 +47,7 @@ class RuidaDevice(Device):
         :param name:
         :return:
         """
-        self.uid = name
+        pass
 
 
 class RuidaInterpreter(Interpreter):
