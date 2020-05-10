@@ -486,6 +486,10 @@ class RuidaEmulator(Module):
 
     def __init__(self):
         Module.__init__(self)
+        self.channel = lambda e: e
+
+    def initialize(self):
+        self.channel = self.device.channel_open('ruida')
 
     @staticmethod
     def signed32(v):
@@ -661,83 +665,84 @@ class RuidaEmulator(Module):
 
     def interface(self, sent_data):
         check = self.checksum(sent_data[2:])
-        sum = self.sum(sent_data[:2])
+        sum = self.sum(sent_data[:2]) & 0xFFFF
         if check == sum:
             response = b'\xCC'
             yield self.swizzle(response)
-            print("<-- " + str(response.hex()))
-            print("    checksum match")
+            self.channel("<-- " + str(response.hex()) + "\n")
+            self.channel("    checksum match\n")
         else:
             response = b'\xCF'
             yield self.swizzle(response)
-            print("<-- " + str(response.hex()))
-            print("    checksum fail")
+            self.channel("--> " + str(sent_data[2:].hex() + "\n"))
+            self.channel("<-- " + str(response.hex()) + "\n")
+            self.channel("    checksum fail\n")
             return
         for array in self.parse_commands(BytesIO(sent_data[2:])):
-            print("--> " + str(bytes(array).hex()))
+            self.channel("--> " + str(bytes(array).hex()))
             if array[0] == 0xC6:
                 if array[1] == 0x01:
-                    print("    (1st laser source min power: %d)" % self.power(array[2:4]))
+                    self.channel("    (1st laser source min power: %d)\n" % self.power(array[2:4]))
                 elif array[1] == 0x21:
-                    print("    (2nd laser source min power: %d)" % self.power(array[2:4]))
+                    self.channel("    (2nd laser source min power: %d)\n" % self.power(array[2:4]))
                 elif array[1] == 0x02:
-                    print("    (1st laser source max power: %d)" % self.power(array[2:4]))
+                    self.channel("    (1st laser source max power: %d)\n" % self.power(array[2:4]))
                 elif array[1] == 0x22:
-                    print("    (2nd laser source max power: %d)" % self.power(array[2:4]))
+                    self.channel("    (2nd laser source max power: %d)\n" % self.power(array[2:4]))
             elif array[0] == 0xC9:
                 if array[1] == 0x02:
                     # Speed in micrometers/sec
                     speed = self.speed(array[2:7]) / 1000.0
-                    print("    Speed set at %f" % speed)
+                    self.channel("    Speed set at %f\n" % speed)
                 if array[1] == 0x04:
                     if array[2] == 0x00:
                         # speed in micrometers/sec
                         speed = self.speed(array[3:8]) / 1000.0
-                        print("    Speed set at %f" % speed)
+                        self.channel("    Speed set at %f\n" % speed)
             elif array[0] == 0xD9:
                 if array[1] == 0x00:
                     if array[2] == 0x02:
-                        print("    Move X: %d" % self.abscoord(array[3:8]))
+                        self.channel("    Move X: %d\n" % self.abscoord(array[3:8]))
                     elif array[2] == 0x03:
-                        print("    Move Y: %d" % self.abscoord(array[3:8]))
+                        self.channel("    Move Y: %d\n" % self.abscoord(array[3:8]))
                     elif array[2] == 0x04:
-                        print("    Move Z: %d" % self.abscoord(array[3:8]))
+                        self.channel("    Move Z: %d\n" % self.abscoord(array[3:8]))
                     elif array[2] == 0x05:
-                        print("    Move U: %d" % self.abscoord(array[3:8]))
+                        self.channel("    Move U: %d\n" % self.abscoord(array[3:8]))
             elif array[0] == 0xCC:
-                print("    ACK from machine")
+                self.channel("    ACK from machine\n")
             elif array[0] == 0xCD:
-                print("    ERR from machine")
+                self.channel("    ERR from machine\n")
             elif array[0] == 0xDA:
                 if array[1] == 0x00:
-                    print("    get %02x %02x from machine" % (array[2], array[3]))
+                    self.channel("    get %02x %02x from machine\n" % (array[2], array[3]))
                     v = 0
                     if array[2] == 0x05 and array[3] == 0x7e:
                         v = 0x65006500
                     elif array[2] == 0x00 and array[3] == 0x04:
                         v = 0x00000022
                     elif array[2] == 0x04 or array[3] == 0x05:
-                        print("    Saved Job Count")
+                        self.channel("    Saved Job Count\n")
                     else:
-                        print("    Unknown Request.")
+                        self.channel("    Unknown Request.\n")
                     response = b'\xDA\x01' + bytes(array[2:4]) + bytes(RuidaEmulator.encode32(v))
                     yield self.swizzle(response)
-                    print("<-- " + str(response.hex()))
-                    print("     Responding %02x %02x equals %d (%08x)" % (array[2], array[3], v, v))
+                    self.channel("<-- " + str(response.hex()))
+                    self.channel("     Responding %02x %02x equals %d (%08x)\n" % (array[2], array[3], v, v))
                 elif array[1] == 0x01:
-                    print("    response to DA 00 XX XX <VALUE>")
+                    self.channel("    response to DA 00 XX XX <VALUE>\n")
             elif array[0] == 0xA8:
-                print("    Straight cut to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                self.channel("    Straight cut to absolute %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
             elif array[0] == 0xA9:
-                print("    Straight cut to relative %d %d" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
+                self.channel("    Straight cut to relative %d %d\n" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
             elif array[0] == 0xE7:
                 if array[1] == 0x50:
-                    print("    Bounding box top left %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                    self.channel("    Bounding box top left %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
                 if array[1] == 0x50:
-                    print("    Bounding box bottom right %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                    self.channel("    Bounding box bottom right %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
             elif array[0] == 0xE8:
                 if array[1] == 0x01:
-                    print("    Read filename number: %d" % (self.filenumber(array[1:3])))
+                    self.channel("    Read filename number: %d\n" % (self.filenumber(array[1:3])))
                 if array[1] == 0x02:
                     if array[2] == 0xE7:
                         if array[3] == 0x01:
@@ -746,11 +751,11 @@ class RuidaEmulator(Module):
                                 if a == 0x00:
                                     break
                                 name += ord(a)
-                            print("    Set filename for transfer: %s" % name)
+                            self.channel("    Set filename for transfer: %s\n" % name)
             elif array[0] == 0x88:
-                print("    Straight move to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                self.channel("    Straight move to absolute %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
             elif array[0] == 0x89:
-                print("    Straight move to relative %d %d" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
+                self.channel("    Straight move to relative %d %d\n" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
 
     def realtime_write(self, bytes_to_write):
         print(bytes_to_write)
