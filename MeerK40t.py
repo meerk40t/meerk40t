@@ -104,7 +104,10 @@ if args.input is not None:
 
 if args.path is not None:
     from svgelements import Path
-    kernel.elements.append(Path(args.path))
+    try:
+        kernel.elements.append(Path(args.path))
+    except Exception:
+        pass
 
 if args.verbose:
     kernel.device.execute('Debug Device')
