@@ -74,8 +74,6 @@ kernel.register('device', 'GRBL', GrblDevice)
 kernel.register('module', 'RuidaEmulator', RuidaEmulator)
 kernel.register('module', 'GrblEmulator', GRBLEmulator)
 
-console = kernel.module_instance_open('Console')
-
 if grbl.server is not None:
     emulator = kernel.module_instance_open('GrblEmulator')
     if grbl.flip_y:

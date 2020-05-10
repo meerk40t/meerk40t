@@ -28,27 +28,15 @@ class Terminal(wx.Frame, Module):
         self.device.module_instance_close(self.name)
         self.Show()
 
-        kernel = self.device.device_root
-        try:
-            self.pipe = kernel.instances['module']['Console']
-        except KeyError:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("Console module does not exist.."),
-                                   _("No Console."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
-        kernel.add_watcher('console', self.text_console.AppendText)
+        self.pipe = self.device.module_instance_open('Console')
+        self.device.add_watcher('console', self.text_console.AppendText)
 
     def shutdown(self,  channel):
         self.Close()
 
     def on_close(self, event):
-        kernel = self.device.device_root
-        kernel.remove_watcher('console', self.text_console.AppendText)
+        self.device.module_instance_remove('Console')
+        self.device.remove_watcher('console', self.text_console.AppendText)
         self.device.module_instance_remove(self.name)
         event.Skip()
 

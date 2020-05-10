@@ -677,13 +677,13 @@ class RuidaEmulator(Module):
             print("--> " + str(bytes(array).hex()))
             if array[0] == 0xC6:
                 if array[1] == 0x01:
-                    print("    (1st laser source min power: %d)" % self.power(array[2:3]))
+                    print("    (1st laser source min power: %d)" % self.power(array[2:4]))
                 elif array[1] == 0x21:
-                    print("    (2nd laser source min power: %d)" % self.power(array[2:3]))
+                    print("    (2nd laser source min power: %d)" % self.power(array[2:4]))
                 elif array[1] == 0x02:
-                    print("    (1st laser source max power: %d)" % self.power(array[2:3]))
+                    print("    (1st laser source max power: %d)" % self.power(array[2:4]))
                 elif array[1] == 0x22:
-                    print("    (2nd laser source max power: %d)" % self.power(array[2:3]))
+                    print("    (2nd laser source max power: %d)" % self.power(array[2:4]))
             elif array[0] == 0xC9:
                 if array[1] == 0x02:
                     # Speed in micrometers/sec
@@ -723,7 +723,7 @@ class RuidaEmulator(Module):
                     response = b'\xDA\x01' + bytes(array[2:4]) + bytes(RuidaEmulator.encode32(v))
                     yield self.swizzle(response)
                     print("<-- " + str(response.hex()))
-                    print("     Responding %02x %02x equals %d (%08x)" % (array[2], array[3], 0x65006500, 0x65006500))
+                    print("     Responding %02x %02x equals %d (%08x)" % (array[2], array[3], v, v))
                 elif array[1] == 0x01:
                     print("    response to DA 00 XX XX <VALUE>")
             elif array[0] == 0xA8:
@@ -875,8 +875,11 @@ class Console(Module, Pipe):
 
     def execute_open_window_action(self, *args):
         window_name = args[0]
-        if window_name in self.device.instances['module']:
-            self.device.open('module', window_name, None, -1, "")
+        try:
+            if window_name in self.device.device_root.registered['module']:
+                self.device.open('module', window_name, None, -1, "")
+        except KeyError:
+            pass
 
     def interface(self, command):
         kernel = self.device.device_root
@@ -892,6 +895,7 @@ class Console(Module, Pipe):
                 if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                     continue
                 yield '"%s" := %s' % (attr, str(v))
+            return
         if command.startswith('set '):
             var = list(command.split(' '))
             if len(var) >= 3:
