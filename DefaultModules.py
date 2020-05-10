@@ -486,9 +486,6 @@ class RuidaEmulator(Module):
 
     def __init__(self):
         Module.__init__(self)
-        self.buffer = b''
-        self.error_x = 0.0
-        self.error_y = 0.0
 
     @staticmethod
     def signed32(v):
@@ -542,7 +539,21 @@ class RuidaEmulator(Module):
             sum += b
         return sum
 
-    def parse(self, sent_data):
+    def parse_commands(self, f):
+        array = list()
+        while True:
+            byte = f.read(1)
+            if len(byte) == 0:
+                break
+            byte = self.unswizzle_byte(ord(byte))
+            if byte >= 0x80 and len(array) > 0:
+                yield array
+                array.clear()
+            array.append(byte)
+        if len(array) > 0:
+            yield array
+
+    def parse(self, f):
         x = 0.0
         y = 0.0
         um_per_mil = 25.4
@@ -553,10 +564,8 @@ class RuidaEmulator(Module):
         power1_max = 0
         power2_max = 0
         path_d = list()
-        array = list()
-        for b in sent_data:
-            array.append(self.unswizzle_byte(b))
-        while len(array) > 0:
+
+        for array in self.parse_commands(f):
             if array[0] == 0xC6:
                 if array[1] == 0x01:
                     power1_min = self.power(array[2:4])
@@ -585,7 +594,7 @@ class RuidaEmulator(Module):
                         path_d.append("M%04f,%04f" % (x, y))
             elif array[0] == 0xA8:
                 x = self.abscoord(array[1:6]) / um_per_mil
-                y = self.abscoord(array[7:12]) / um_per_mil
+                y = self.abscoord(array[6:11]) / um_per_mil
                 path_d.append("L%0.4f,%0.4f" % (x, y))
             elif array[0] == 0xA9:
                 dx = self.relcoord(array[1:3]) / um_per_mil
@@ -603,7 +612,7 @@ class RuidaEmulator(Module):
                                 name += ord(a)
             elif array[0] == 0x88:
                 x = self.abscoord(array[1:6]) / um_per_mil
-                y = self.abscoord(array[7:12]) / um_per_mil
+                y = self.abscoord(array[6:11]) / um_per_mil
                 if len(path_d) != 0:
                     path = Path(' '.join(path_d))
                     path.values['name'] = name
@@ -625,7 +634,6 @@ class RuidaEmulator(Module):
                 path_d.append("m%f,%f" % (dx, dy))
                 x += dx
                 y += dy
-            del array[0]
         if len(path_d) != 0:
             path = Path(' '.join(path_d))
             path.values['name'] = name
@@ -1050,12 +1058,7 @@ class RDLoader:
         ruidaemulator = RuidaEmulator()
         buffer = list()
         with open(pathname, 'rb') as f:
-            while True:
-                byte = f.read(1)
-                if len(byte) == 0:
-                    break
-                buffer.append(ord(byte))
-        elements = list(ruidaemulator.parse(bytes(buffer)))
+            elements = list(ruidaemulator.parse(f))
         for e in elements:
             e.stroke = Color('black')
         return elements, pathname, basename
