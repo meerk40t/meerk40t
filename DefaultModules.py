@@ -4,7 +4,7 @@ from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from EgvParser import parse_egv
-from Kernel import Module, Device, Pipe
+from Kernel import Module, Pipe
 from LaserCommandConstants import *
 from svgelements import *
 
@@ -487,6 +487,8 @@ class RuidaEmulator(Module):
     def __init__(self):
         Module.__init__(self)
         self.buffer = b''
+        self.error_x = 0.0
+        self.error_y = 0.0
 
     @staticmethod
     def signed32(v):
@@ -516,7 +518,7 @@ class RuidaEmulator(Module):
         return RuidaEmulator.signed14((data[0] & 0x7F) << 7 | (data[1] & 0x7F))
 
     def filenumber(self, data):
-        return (data[0] & 0x7F) << 8 | \
+        return (data[0] & 0x7F) << 7 | \
                (data[1] & 0x7F)
 
     def speed(self, data):
@@ -527,8 +529,8 @@ class RuidaEmulator(Module):
                (data[4] & 0x7F)
 
     def power(self, data):
-        return (data[0] & 0xFF) << 8 | \
-               (data[1] & 0xFF)
+        return (data[0] & 0x7F) << 7 | \
+               (data[1] & 0x7F)
 
     def sum(self, data):
         return (data[0] & 0xFF) << 8 | \
@@ -541,110 +543,95 @@ class RuidaEmulator(Module):
         return sum
 
     def parse(self, sent_data):
+        x = 0.0
+        y = 0.0
+        um_per_mil = 25.4
+        name = ''
         speed = 20.0
-        path_d = ''
+        power1_min = 0
+        power2_min = 0
+        power1_max = 0
+        power2_max = 0
+        path_d = list()
         array = list()
         for b in sent_data:
             array.append(self.unswizzle_byte(b))
         while len(array) > 0:
             if array[0] == 0xC6:
                 if array[1] == 0x01:
-                    print("1st laser source min power: %d" % self.power(array[2:4]))
+                    power1_min = self.power(array[2:4])
                 elif array[1] == 0x21:
-                    print("2nd laser source min power: %d" % self.power(array[2:4]))
+                    power2_min = self.power(array[2:4])
                 elif array[1] == 0x02:
-                    print("1st laser source max power: %d" % self.power(array[2:4]))
+                    power1_max = self.power(array[2:4])
                 elif array[1] == 0x22:
-                    print("2nd laser source max power: %d" % self.power(array[2:4]))
+                    power2_max = self.power(array[2:4])
             elif array[0] == 0xC9:
                 if array[1] == 0x02:
                     # Speed in micrometers/sec
                     speed = self.speed(array[2:7]) / 1000.0
-                    print("Speed set at %f" % speed)
                 if array[1] == 0x04:
                     if array[2] == 0x00:
-                        # s[eed in micrometers/sec
+                        # speed in micrometers/sec
                         speed = self.speed(array[3:8]) / 1000.0
-                        print("Speed set at %f" % speed)
             elif array[0] == 0xD9:
                 if array[1] == 0x00:
                     if array[2] == 0x02:
-                        print("Move X: %d" % self.abscoord(array[3:8]))
+                        x = self.abscoord(array[3:8]) / um_per_mil
+                        path_d.append("M%04f,%04f" % (x, y))
+                        x = x
                     elif array[2] == 0x03:
-                        print("Move Y: %d" % self.abscoord(array[3:8]))
-                    elif array[2] == 0x04:
-                        print("Move Z: %d" % self.abscoord(array[3:8]))
-                    elif array[2] == 0x05:
-                        print("Move U: %d" % self.abscoord(array[3:8]))
-            elif array[0] == 0xCC:
-                print("ACK from machine")
-            elif array[0] == 0xCD:
-                print("ERR from machine")
-            elif array[0] == 0xDA:
-                if array[1] == 0x00:
-                    print("get %02x %02x from machine" % (array[2], array[3]))
-                    if array[2] == 0x05 and array[3] == 0x7e:
-                        print(self.swizzle(b'\xDA\x01' + bytearray(array[2:4]) + b'\x06\x28\x01\x4a\x00'))
-                    elif array[2] == 0x00 and array[3] == 0x04:
-                        print(self.swizzle(b'\xDA\x01' + bytearray(array[2:4]) + b'\x00\x00\x00\x00\x22'))
-                    elif array[2] == 0x04 or array[3] == 0x05:
-                        print("Saved Job Count")
-                    else:
-                        print("Unknown Request.")
-                elif array[1] == 0x01:
-                    print("Response to DA 00 XX XX <VALUE>")
+                        y = self.abscoord(array[3:8]) / um_per_mil
+                        path_d.append("M%04f,%04f" % (x, y))
             elif array[0] == 0xA8:
-                x = self.abscoord(array[1:6])
-                y = self.abscoord(array[7:12])
-                print("Straight cut to absolute %d %d" % (x, y))
-                path_d += " L%0.4f,%0.4f" % (x / 25.4, y / 25.4)
+                x = self.abscoord(array[1:6]) / um_per_mil
+                y = self.abscoord(array[7:12]) / um_per_mil
+                path_d.append("L%0.4f,%0.4f" % (x, y))
             elif array[0] == 0xA9:
-                dx = self.relcoord(array[1:3])
-                dy = self.relcoord(array[3:5])
-                print("Straight cut to relative %d %d" % (dx, dy))
-                path_d += " l%0.4f,%0.4f" % (dx / 25.4, dy / 25.4)
-            elif array[0] == 0xE7:
-                if array[1] == 0x50:
-                    print("Bounding box top left %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
-                if array[1] == 0x50:
-                    print("Bounding box bottom right %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
+                dx = self.relcoord(array[1:3]) / um_per_mil
+                dy = self.relcoord(array[3:5]) / um_per_mil
+                path_d.append("l%0.4f,%0.4f" % (dx, dy))
+                x += dx
+                y += dy
             elif array[0] == 0xE8:
-                if array[1] == 0x01:
-                    print("Read filename number: %d" % (self.filenumber(array[1:3])))
                 if array[1] == 0x02:
                     if array[2] == 0xE7:
                         if array[3] == 0x01:
-                            name = ""
                             for a in array[4:]:
                                 if a == 0x00:
                                     break
                                 name += ord(a)
-                            print("Set filname for transfer: %s" % name)
             elif array[0] == 0x88:
-                x = self.abscoord(array[1:6])
-                y = self.abscoord(array[7:12])
-                print("Straight move to absolute %d %d" % (x, y))
+                x = self.abscoord(array[1:6]) / um_per_mil
+                y = self.abscoord(array[7:12]) / um_per_mil
                 if len(path_d) != 0:
-                    path = Path(path_d)
+                    path = Path(' '.join(path_d))
+                    path.values['name'] = name
                     path.values['speed'] = speed
+                    path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
                     yield path
-                    path_d = ""
-                path_d += "M%f,%f " % (x / 25.4, y / 25.4)
+                    path_d.clear()
+                path_d.append("M%f,%f" % (x, y))
             elif array[0] == 0x89:
-                dx = self.relcoord(array[1:3])
-                dy = self.relcoord(array[3:5])
-                print("Straight move to relative %d %d" % (dx, dy))
+                dx = self.relcoord(array[1:3]) / um_per_mil
+                dy = self.relcoord(array[3:5]) / um_per_mil
                 if len(path_d) != 0:
-                    path = Path(path_d)
+                    path = Path(' '.join(path_d))
+                    path.values['name'] = name
                     path.values['speed'] = speed
+                    path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
                     yield path
-                    path_d = ""
-                path_d += "m%f,%f " % (dx / 25.4, dy / 25.4)
-            print("u:%02X" % array[0])
+                    path_d.clear()
+                path_d.append("m%f,%f" % (dx, dy))
+                x += dx
+                y += dy
             del array[0]
-        path = Path(path_d)
-        path.values['speed'] = speed
-        yield path
+        if len(path_d) != 0:
+            path = Path(' '.join(path_d))
+            path.values['name'] = name
+            path.values['speed'] = speed
+            path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
+            yield path
 
     def interface(self, sent_data):
         array = list()
@@ -672,6 +659,16 @@ class RuidaEmulator(Module):
                 print("1st laser source max power: %d" % self.power(array[2:3]))
             elif array[1] == 0x22:
                 print("2nd laser source max power: %d" % self.power(array[2:3]))
+        elif array[0] == 0xC9:
+            if array[1] == 0x02:
+                # Speed in micrometers/sec
+                speed = self.speed(array[2:7]) / 1000.0
+                print("Speed set at %f" % speed)
+            if array[1] == 0x04:
+                if array[2] == 0x00:
+                    # speed in micrometers/sec
+                    speed = self.speed(array[3:8]) / 1000.0
+                    print("Speed set at %f" % speed)
         elif array[0] == 0xD9:
             if array[1] == 0x00:
                 if array[2] == 0x02:
