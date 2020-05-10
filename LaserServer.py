@@ -23,7 +23,6 @@ class ServerThread(threading.Thread):
             message, address = self.server.socket.recvfrom(1024)
             for reply in self.server.pipe.interface(message):
                 self.server.socket.sendto(reply, address)
-                print("Sending Reply: %s" % str(reply))
 
     def tcp_run(self):
         while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:

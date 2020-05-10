@@ -495,14 +495,6 @@ class RuidaEmulator(Module):
         else:
             return v
 
-    def abscoord(self, data):
-        return RuidaEmulator.signed32(
-            (data[0] & 0x7F) << 28 |
-            (data[1] & 0x7F) << 21 |
-            (data[2] & 0x7F) << 14 |
-            (data[3] & 0x7F) << 7 |
-            (data[4] & 0x7F))
-
     @staticmethod
     def signed14(v):
         v &= 0x7FFF
@@ -511,23 +503,49 @@ class RuidaEmulator(Module):
         else:
             return v
 
-    def relcoord(self, data):
+    @staticmethod
+    def decode14(data):
         return RuidaEmulator.signed14((data[0] & 0x7F) << 7 | (data[1] & 0x7F))
 
+    @staticmethod
+    def encode14(v):
+        return [
+            (v >> 7) & 0x7F,
+            v & 0x7F,
+        ]
+
+    @staticmethod
+    def decode32(data):
+        return RuidaEmulator.signed32((data[0] & 0x7F) << 28 |
+                                      (data[1] & 0x7F) << 21 |
+                                      (data[2] & 0x7F) << 14 |
+                                      (data[3] & 0x7F) << 7 |
+                                      (data[4] & 0x7F))
+
+    @staticmethod
+    def encode32(v):
+        return [
+            (v >> 28) & 0x7F,
+            (v >> 21) & 0x7F,
+            (v >> 14) & 0x7F,
+            (v >> 7) & 0x7F,
+            v & 0x7F,
+        ]
+
+    def abscoord(self, data):
+        return RuidaEmulator.decode32(data)
+
+    def relcoord(self, data):
+        return RuidaEmulator.decode14(data)
+
     def filenumber(self, data):
-        return (data[0] & 0x7F) << 7 | \
-               (data[1] & 0x7F)
+        return RuidaEmulator.decode14(data)
 
     def speed(self, data):
-        return (data[0] & 0x7F) << 28 | \
-               (data[1] & 0x7F) << 21 | \
-               (data[2] & 0x7F) << 14 | \
-               (data[3] & 0x7F) << 7 | \
-               (data[4] & 0x7F)
+        return RuidaEmulator.decode32(data)
 
     def power(self, data):
-        return (data[0] & 0x7F) << 7 | \
-               (data[1] & 0x7F)
+        return RuidaEmulator.decode14(data)
 
     def sum(self, data):
         return (data[0] & 0xFF) << 8 | \
@@ -642,99 +660,97 @@ class RuidaEmulator(Module):
             yield path
 
     def interface(self, sent_data):
-        array = list()
         check = self.checksum(sent_data[2:])
         sum = self.sum(sent_data[:2])
-        print(check)
-        print(sum)
         if check == sum:
-            yield self.swizzle(b'\xCF')
-            print(self.swizzle(b'\xCF'))
-            print("checksum match")
+            response = b'\xCC'
+            yield self.swizzle(response)
+            print("<-- " + str(response.hex()))
+            print("    checksum match")
         else:
-            yield self.swizzle(b'\xD0')
-            print(self.swizzle(b'\xD0'))
-            print("checksum fail")
+            response = b'\xCF'
+            yield self.swizzle(response)
+            print("<-- " + str(response.hex()))
+            print("    checksum fail")
             return
-        for b in sent_data[2:]:
-            array.append(self.unswizzle_byte(b))
-        if array[0] == 0xC6:
-            if array[1] == 0x01:
-                print("1st laser source min power: %d" % self.power(array[2:3]))
-            elif array[1] == 0x21:
-                print("2nd laser source min power: %d" % self.power(array[2:3]))
-            elif array[1] == 0x02:
-                print("1st laser source max power: %d" % self.power(array[2:3]))
-            elif array[1] == 0x22:
-                print("2nd laser source max power: %d" % self.power(array[2:3]))
-        elif array[0] == 0xC9:
-            if array[1] == 0x02:
-                # Speed in micrometers/sec
-                speed = self.speed(array[2:7]) / 1000.0
-                print("Speed set at %f" % speed)
-            if array[1] == 0x04:
-                if array[2] == 0x00:
-                    # speed in micrometers/sec
-                    speed = self.speed(array[3:8]) / 1000.0
-                    print("Speed set at %f" % speed)
-        elif array[0] == 0xD9:
-            if array[1] == 0x00:
-                if array[2] == 0x02:
-                    print("Move X: %d" % self.abscoord(array[3:8]))
-                elif array[2] == 0x03:
-                    print("Move Y: %d" % self.abscoord(array[3:8]))
-                elif array[2] == 0x04:
-                    print("Move Z: %d" % self.abscoord(array[3:8]))
-                elif array[2] == 0x05:
-                    print("Move U: %d" % self.abscoord(array[3:8]))
-        elif array[0] == 0xCC:
-            print("ACK from machine")
-        elif array[0] == 0xCD:
-            print("ERR from machine")
-        elif array[0] == 0xDA:
-            if array[1] == 0x00:
-                print("get %02x %02x from machine" % (array[2], array[3]))
-                if array[2] == 0x05 and array[3] == 0x7e:
-                    yield b'\xd4\x09\x0d\xf7\x8f\xa1\x09\xc3\x89'
-                    # Checksum 04:66
-                    print(b'\xd4\x09\x0d\xf7\x8f\xa1\x09\xc3\x89')
-                    print(self.swizzle(b'\xDA\x01' + bytearray(array[2:4]) + b'\x06\x28\x01\x4a\x00'))
-                elif array[2] == 0x00 and array[3] == 0x04:
-                    print("responding2...")
-                    yield b'\xd4\x09\x89\x8d\x89\x89\x89\x89\xab'
-                    print(self.swizzle(b'\xDA\x01' + bytearray(array[2:4]) + b'\x00\x00\x00\x00\x22'))
-                elif array[2] == 0x04 or array[3] == 0x05:
-                    print("Saved Job Count")
-                else:
-                    print("Unknown Request.")
-            elif array[1] == 0x01:
-                print("Response to DA 00 XX XX <VALUE>")
-        elif array[0] == 0xA8:
-            print("Straight cut to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
-        elif array[0] == 0xA9:
-            print("Straight cut to relative %d %d" % (self.relcoord(array[1:2]), self.relcoord(array[3:4])))
-        elif array[0] == 0xE7:
-            if array[1] == 0x50:
-                print("Bounding box top left %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
-            if array[1] == 0x50:
-                print("Bounding box bottom right %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
-        elif array[0] == 0xE8:
-            if array[1] == 0x01:
-                print("Read filename number: %d" % (self.filenumber(array[1:2])))
-            if array[1] == 0x02:
-                if array[2] == 0xE7:
-                    if array[3] == 0x01:
-                        name = ""
-                        for a in array[4:]:
-                            if a == 0x00:
-                                break
-                            name += ord(a)
-                        print("Set filname for transfer: %s" % name)
-        elif array[0] == 0x88:
-            print("Straight move to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[7:12])))
-        elif array[0] == 0x89:
-            print("Straight move to relative %d %d" % (self.relcoord(array[1:2]), self.relcoord(array[3:4])))
-        print("u:" + str(bytes(array).hex()))
+        for array in self.parse_commands(BytesIO(sent_data[2:])):
+            print("--> " + str(bytes(array).hex()))
+            if array[0] == 0xC6:
+                if array[1] == 0x01:
+                    print("    (1st laser source min power: %d)" % self.power(array[2:3]))
+                elif array[1] == 0x21:
+                    print("    (2nd laser source min power: %d)" % self.power(array[2:3]))
+                elif array[1] == 0x02:
+                    print("    (1st laser source max power: %d)" % self.power(array[2:3]))
+                elif array[1] == 0x22:
+                    print("    (2nd laser source max power: %d)" % self.power(array[2:3]))
+            elif array[0] == 0xC9:
+                if array[1] == 0x02:
+                    # Speed in micrometers/sec
+                    speed = self.speed(array[2:7]) / 1000.0
+                    print("    Speed set at %f" % speed)
+                if array[1] == 0x04:
+                    if array[2] == 0x00:
+                        # speed in micrometers/sec
+                        speed = self.speed(array[3:8]) / 1000.0
+                        print("    Speed set at %f" % speed)
+            elif array[0] == 0xD9:
+                if array[1] == 0x00:
+                    if array[2] == 0x02:
+                        print("    Move X: %d" % self.abscoord(array[3:8]))
+                    elif array[2] == 0x03:
+                        print("    Move Y: %d" % self.abscoord(array[3:8]))
+                    elif array[2] == 0x04:
+                        print("    Move Z: %d" % self.abscoord(array[3:8]))
+                    elif array[2] == 0x05:
+                        print("    Move U: %d" % self.abscoord(array[3:8]))
+            elif array[0] == 0xCC:
+                print("    ACK from machine")
+            elif array[0] == 0xCD:
+                print("    ERR from machine")
+            elif array[0] == 0xDA:
+                if array[1] == 0x00:
+                    print("    get %02x %02x from machine" % (array[2], array[3]))
+                    v = 0
+                    if array[2] == 0x05 and array[3] == 0x7e:
+                        v = 0x65006500
+                    elif array[2] == 0x00 and array[3] == 0x04:
+                        v = 0x00000022
+                    elif array[2] == 0x04 or array[3] == 0x05:
+                        print("    Saved Job Count")
+                    else:
+                        print("    Unknown Request.")
+                    response = b'\xDA\x01' + bytes(array[2:4]) + bytes(RuidaEmulator.encode32(v))
+                    yield self.swizzle(response)
+                    print("<-- " + str(response.hex()))
+                    print("     Responding %02x %02x equals %d (%08x)" % (array[2], array[3], 0x65006500, 0x65006500))
+                elif array[1] == 0x01:
+                    print("    response to DA 00 XX XX <VALUE>")
+            elif array[0] == 0xA8:
+                print("    Straight cut to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+            elif array[0] == 0xA9:
+                print("    Straight cut to relative %d %d" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
+            elif array[0] == 0xE7:
+                if array[1] == 0x50:
+                    print("    Bounding box top left %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                if array[1] == 0x50:
+                    print("    Bounding box bottom right %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+            elif array[0] == 0xE8:
+                if array[1] == 0x01:
+                    print("    Read filename number: %d" % (self.filenumber(array[1:3])))
+                if array[1] == 0x02:
+                    if array[2] == 0xE7:
+                        if array[3] == 0x01:
+                            name = ""
+                            for a in array[4:]:
+                                if a == 0x00:
+                                    break
+                                name += ord(a)
+                            print("    Set filename for transfer: %s" % name)
+            elif array[0] == 0x88:
+                print("    Straight move to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+            elif array[0] == 0x89:
+                print("    Straight move to relative %d %d" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
 
     def realtime_write(self, bytes_to_write):
         print(bytes_to_write)
@@ -777,6 +793,8 @@ class Console(Module, Pipe):
         self.pipe = None
         self.buffer = ''
         self.active_device = None
+        self.process = self.tick
+        self.commands = []
 
     def initialize(self):
         self.channel = self.device.channel_open('console')
@@ -797,46 +815,84 @@ class Console(Module, Pipe):
             pos = self.buffer.find('\n')
             command = self.buffer[0:pos].strip('\r')
             self.buffer = self.buffer[pos + 1:]
-            self.commandline(command)
+            for response in self.interface(command):
+                self.channel(response + '\n')
 
-    def commandline(self, command):
+    def tick(self):
+        for command in self.commands:
+            self.interface(command)
+
+    def tick_command(self, command):
+        self.commands.append(command)
+        self.schedule()
+
+    def untick_command(self, command):
+        self.commands = [c for c in self.commands if c != command]
+        if len(self.commands) == 0:
+            self.unschedule()
+
+    def execute_string_action(self, action, *args):
+        device = self.active_device
+        if device is None:
+            return
+        spooler = device.spooler
+        if action == 'move':
+            spooler.send_job(self.execute_move_action(*args))
+        elif action == 'move_to':
+            spooler.send_job(self.execute_move_to_action(*args))
+        elif action == 'window':
+            self.execute_open_window_action(*args)
+
+    def execute_move_to_action(self, position_x, position_y):
+        def move():
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_LASER_OFF
+            yield COMMAND_MOVE, int(position_x), int(position_y)
+
+        return move
+
+    def execute_move_action(self, direction, amount):
+        min_dim = min(self.device.window_width, self.device.window_height)
+        amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
+        x = 0
+        y = 0
+        if direction == 'right':
+            x = amount
+        elif direction == 'left':
+            x = -amount
+        elif direction == 'up':
+            y = -amount
+        elif direction == 'down':
+            y = amount
+
+        def move():
+            yield COMMAND_SET_INCREMENTAL
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_MOVE, (x, y)
+            yield COMMAND_SET_ABSOLUTE
+
+        return move
+
+    def execute_open_window_action(self, *args):
+        window_name = args[0]
+        if window_name in self.device.instances['module']:
+            self.device.open('module', window_name, None, -1, "")
+
+    def interface(self, command):
         kernel = self.device.device_root
         active_device = self.active_device
-        if command == "grbl":
-            self.channel("GRBL Mode.\n")
-            if 'GrblEmulator' in self.device.instances['module']:
-                self.pipe = active_device.instances['module']['GrblEmulator']
-            else:
-                self.pipe = active_device.open('module', 'GrblEmulator')
-            active_device.add_watcher('grbl', self.channel)
-            return
-        elif command == "lhy":
-            self.channel("Lhymicro-gl Mode.\n")
-            self.pipe = self.device.instances['modules']['LhystudioController']
-            self.device.add_watcher('lhy', self.channel)
-            return
-        elif command == "ruidaserver":
-            port = 50200
-            tcp = False
-            try:
-                server = kernel.module_instance_open('LaserServer', port=port, tcp=tcp)
-                self.channel("Ruida Server opening on port %d.\n" % port)
-                if 'RuidaEmulator' in self.device.instances['module']:
-                    pipe = active_device.instances['module']['RuidaEmulator']
-                else:
-                    pipe = active_device.open('module', 'RuidaEmulator')
-                active_device.add_watcher('ruida', self.channel)
-                active_device.add_watcher('server', self.channel)
-                server.set_pipe(pipe)
-            except OSError:
-                self.channel('Server failed on port: %d' % port)
-        elif command == "set":
+        try:
+            spooler = active_device.spooler
+        except AttributeError:
+            spooler = None
+
+        if command == "set":
             for attr in dir(active_device):
                 v = getattr(active_device, attr)
                 if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                     continue
-                self.channel('"%s" := %s\n' % (attr, str(v)))
-        elif command.startswith('set '):
+                yield '"%s" := %s' % (attr, str(v))
+        if command.startswith('set '):
             var = list(command.split(' '))
             if len(var) >= 3:
                 attr = var[1]
@@ -854,40 +910,136 @@ class Console(Module, Pipe):
                         setattr(active_device, attr, float(value))
                     elif isinstance(v, str):
                         setattr(active_device, attr, str(value))
-        elif command == 'control':
+            return
+        if command == 'control':
             for control_name in active_device.instances['control']:
-                self.channel('%s\n' % control_name)
-        elif command.startswith('control '):
+                yield control_name
+            return
+        if command.startswith('control '):
             control_name = command[len('control '):]
             if control_name in active_device.instances['control']:
                 active_device.execute(control_name)
-                self.channel("Executed '%s'\n" % control_name)
+                yield "Executed '%s'" % control_name
             else:
-                self.channel("Control '%s' not found.\n" % control_name)
-        elif command == 'device':
-            self.channel('%d: %s\n' % (0, 'device_root'))
+                yield "Control '%s' not found." % control_name
+            return
+        if command == 'device':
+            yield '%d: %s' % (0, 'device_root')
             for i, name in enumerate(kernel.instances['device']):
-                self.channel('%d: %s\n' % (i+1, name))
-        elif command.startswith('device '):
+                yield '%d: %s' % (i+1, name)
+            return
+        if command.startswith('device '):
             value = command[len('device '):]
             try:
                 value = int(value)
                 if value == 0:
                     self.active_device = kernel
-                    self.channel('Device set: device_root\n')
+                    yield 'Device set: device_root'
                 else:
                     for i, name in enumerate(kernel.instances['device']):
                         if i + 1 == value:
                             self.active_device = kernel.instances['device'][name]
-                            self.channel('Device set: %d\n' % value)
+                            yield 'Device set: %d' % value
                             break
             except ValueError:
                 pass
-        elif command == 'refresh':
+            return
+        if spooler is not None:
+            if command.startswith('move ') or command.startswith('move_to '):
+                args = str(command).split(' ')
+                self.execute_string_action(*args)
+                return
+
+        if command.startswith('bind '):
+            # bind ^1 bind 1 move_to $x $y
+            return
+        if command.startswith('alias '):
+            # alias +home home
+            return
+        if command.startswith('home '):
+            return
+        if command.startswith('+'):
+            if command == '+right':
+                self.tick_command("move right 1mm")
+                return
+            if command == '+left':
+                self.tick_command("move left 1mm")
+                return
+            if command == '+top':
+                self.tick_command("move top 1mm")
+                return
+            if command == '+bottom':
+                self.tick_command("move bottom 1mm")
+                return
+            if command == "+laser":
+                spooler.add_command(COMMAND_LASER_ON)
+            return
+        if command.startswith('-'):
+            if command == '-right':
+                self.untick_command("move right 1mm")
+                return
+            if command == '-left':
+                self.untick_command("move left 1mm")
+                return
+            if command == '-top':
+                self.untick_command("move top 1mm")
+                return
+            if command == '-bottom':
+                self.untick_command("move bottom 1mm")
+                return
+            if command == "-laser":
+                spooler.add_command(COMMAND_LASER_OFF)
+            return
+        if command.startswith('wait '):
+            return
+        if command == 'module':
+            return
+        if command.startswith('module '):
+            return
+        if command == "consoleserver":
+            return
+        if command == "grblserver":
+            if 'GrblEmulator' in self.device.instances['module']:
+                self.pipe = active_device.instances['module']['GrblEmulator']
+            else:
+                self.pipe = active_device.open('module', 'GrblEmulator')
+            yield "GRBL Mode."
+            chan = 'grbl'
+            active_device.add_watcher(chan, self.channel)
+            yield "Watching Channel: %s" % chan
+            return
+        if command == "lhyserver":
+            self.pipe = self.device.instances['modules']['LhystudioController']
+            yield "Lhymicro-gl Mode."
+            chan = 'lhy'
+            active_device.add_watcher(chan, self.channel)
+            yield "Watching Channel: %s" % chan
+            return
+        if command == "ruidaserver":
+            port = 50200
+            tcp = False
+            try:
+                server = kernel.module_instance_open('LaserServer', port=port, tcp=tcp)
+                if 'RuidaEmulator' in self.device.instances['module']:
+                    pipe = active_device.instances['module']['RuidaEmulator']
+                else:
+                    pipe = active_device.open('module', 'RuidaEmulator')
+                yield 'Ruida Server opened on port %d.' % port
+                chan = 'ruida'
+                active_device.add_watcher(chan, self.channel)
+                yield "Watching Channel: %s" % chan
+                chan = 'server'
+                active_device.add_watcher(chan, self.channel)
+                yield "Watching Channel: %s" % chan
+                server.set_pipe(pipe)
+            except OSError:
+                yield 'Server failed on port: %d' % port
+            return
+        if command == 'refresh':
             active_device.signal('refresh_scene')
-            self.channel("Refreshed.\n")
-        else:
-            self.channel("Error.\n")
+            yield "Refreshed."
+            return
+        yield "Error."
 
 
 class SVGWriter:

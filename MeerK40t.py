@@ -35,13 +35,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--list', type=str, nargs="*", help='list all device properties')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
-subparser = parser.add_subparsers()
-parser_grbl = subparser.add_parser('grbl')
-parser_grbl.add_argument('-s', '--server', type=int, help='run grbl-emulator on given port.')
-parser_grbl.add_argument('-y', '--flip_y', action='store_true', help="grbl y-flip")
-parser_grbl.add_argument('-x', '--flip_x', action='store_true', help="grbl x-flip")
-parser_grbl.add_argument('-a', '--adjust_x', type=int, help='adjust grbl home_x position')
-parser_grbl.add_argument('-b', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-e', '--egv', type=str, help='writes raw egv data to the controller')
 parser.add_argument('-p', '--path', type=str, help='add SVG Path command')
 parser.add_argument('-c', '--control', nargs='+', help="execute control command")
@@ -52,6 +45,13 @@ parser.add_argument('-t', '--transform', type=str, help="adds SVG Transform comm
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 parser.add_argument('-s', '--set', action='append', nargs='+', help='set a device variable')
 args = parser.parse_args(sys.argv[1:])
+subparser = parser.add_subparsers()
+parser_grbl = subparser.add_parser('grbl')
+parser_grbl.add_argument('-s', '--server', type=int, help='run grbl-emulator on given port.')
+parser_grbl.add_argument('-y', '--flip_y', action='store_true', help="grbl y-flip")
+parser_grbl.add_argument('-x', '--flip_x', action='store_true', help="grbl x-flip")
+parser_grbl.add_argument('-a', '--adjust_x', type=int, help='adjust grbl home_x position')
+parser_grbl.add_argument('-b', '--adjust_y', type=int, help='adjust grbl home_y position')
 grbl = parser_grbl.parse_args(sys.argv[1:])
 
 if not args.no_gui:
@@ -140,8 +140,10 @@ if args.input is not None:
 
 if args.path is not None:
     from svgelements import Path
-
-    kernel.elements.append(Path(args.path))
+    try:
+        kernel.elements.append(Path(args.path))
+    except Exception:
+        pass
 
 if args.verbose:
     kernel.device.execute('Debug Device')
