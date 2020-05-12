@@ -688,6 +688,7 @@ class Device(Thread):
         self.daemon = True
         self.device_root = root
         self.device_name = "Device"
+        self.location_name = "Kernel"
         self.uid = uid
 
         self.state = THREAD_STATE_UNKNOWN
@@ -956,7 +957,7 @@ class Device(Thread):
             setting_uid_name = setting_name
 
         if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
-            return
+            return getattr(self, setting_name)
         if not setting_name.startswith('_'):
             load_value = self.read_persistent(setting_type, setting_uid_name, default)
         else:

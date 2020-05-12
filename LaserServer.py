@@ -19,10 +19,13 @@ class ServerThread(threading.Thread):
             self.state = state
 
     def udp_run(self):
-        while True:
-            message, address = self.server.socket.recvfrom(1024)
-            for reply in self.server.pipe.interface(message):
-                self.server.socket.sendto(reply, address)
+        try:
+            while True:
+                message, address = self.server.socket.recvfrom(1024)
+                for reply in self.server.pipe.interface(message):
+                    self.server.socket.sendto(reply, address)
+        except OSError:
+            pass
 
     def tcp_run(self):
         while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:

@@ -27,7 +27,6 @@ class Terminal(wx.Frame, Module):
     def initialize(self):
         self.device.module_instance_close(self.name)
         self.Show()
-
         self.pipe = self.device.module_instance_open('Console')
         self.device.add_watcher('console', self.text_console.AppendText)
 

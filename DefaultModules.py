@@ -798,6 +798,7 @@ class Console(Module, Pipe):
         self.pipe = None
         self.buffer = ''
         self.active_device = None
+        self.interval = 0.05
         self.process = self.tick
         self.commands = []
 
@@ -825,7 +826,9 @@ class Console(Module, Pipe):
 
     def tick(self):
         for command in self.commands:
-            self.interface(command)
+            for e in self.interface(command):
+                if self.channel is not None:
+                    self.channel(e)
 
     def tick_command(self, command):
         self.commands.append(command)
@@ -835,18 +838,6 @@ class Console(Module, Pipe):
         self.commands = [c for c in self.commands if c != command]
         if len(self.commands) == 0:
             self.unschedule()
-
-    def execute_string_action(self, action, *args):
-        device = self.active_device
-        if device is None:
-            return
-        spooler = device.spooler
-        if action == 'move':
-            spooler.send_job(self.execute_move_action(*args))
-        elif action == 'move_to':
-            spooler.send_job(self.execute_move_to_action(*args))
-        elif action == 'window':
-            self.execute_open_window_action(*args)
 
     def execute_move_to_action(self, position_x, position_y):
         def move():
@@ -873,12 +864,12 @@ class Console(Module, Pipe):
         def move():
             yield COMMAND_SET_INCREMENTAL
             yield COMMAND_MODE_RAPID
-            yield COMMAND_MOVE, (x, y)
+            yield COMMAND_MOVE, x, y
             yield COMMAND_SET_ABSOLUTE
 
         return move
 
-    def execute_open_window_action(self, *args):
+    def command_window(self, *args):
         window_name = args[0]
         try:
             if window_name in self.device.device_root.registered['module']:
@@ -887,25 +878,79 @@ class Console(Module, Pipe):
             pass
 
     def interface(self, command):
+        yield command
+        args = str(command).split(' ')
+        for e in self.interface_parse_command(*args):
+            yield e
+
+    def interface_parse_command(self, command, *args):
         kernel = self.device.device_root
         active_device = self.active_device
         try:
             spooler = active_device.spooler
         except AttributeError:
             spooler = None
-
-        if command == "set":
-            for attr in dir(active_device):
-                v = getattr(active_device, attr)
-                if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
-                    continue
-                yield '"%s" := %s' % (attr, str(v))
+        if command == 'help':
+            yield 'move <right/left/top/bottom> <distance>'
+            yield 'move_to <x> <y>'
+            yield 'window open <window>'
+            yield 'window close <window>'
+            yield 'set'
+            yield 'set <key> <value>'
+            yield 'control'
+            yield 'control <executive>'
+            yield 'module'
+            yield 'module open <name>'
+            yield 'module close <name>'
+            yield 'schedule'
+            yield 'channel'
+            yield 'channel open <name>'
+            yield 'channel close <name>'
+            yield 'element'
+            yield 'element path <svg_path>'
+            yield 'element ellipse <cx> <cy> <r> [<ry>]'
+            yield 'element rect <x> <y> <width> <height>'
+            yield 'element polygon [<x> <y>]*'
+            yield 'element <index> rotate '
+            yield 'element <index> remove'
+            yield 'element <index> key=value'
+            yield 'operation add <index>'
+            yield 'operation remove <index>'
+            yield 'operation reclassify'
+            yield 'device'
+            yield 'device <new_active_device>'
+            yield 'bind'
+            yield 'bind <key> <command>'
+            yield 'alias'
+            yield 'alias <alias> <command>'
+            yield 'home'
+            yield '+right, +left, +top, +bottom, +laser, -right, -left, -top, -bottom, -laser'
+            yield 'refresh'
+            yield 'ruidaserver'
+            yield 'grblserver'
+            yield 'consoleserver'
+            yield 'lhyserver'
             return
-        if command.startswith('set '):
-            var = list(command.split(' '))
-            if len(var) >= 3:
-                attr = var[1]
-                value = var[2]
+        elif command == 'move':
+            spooler.send_job(self.execute_move_action(*args))
+            return
+        elif command == 'move_to':
+            spooler.send_job(self.execute_move_to_action(*args))
+            return
+        elif command == 'window':
+            self.command_window(*args)
+            return
+        elif command == 'set':
+            if len(args) == 0:
+                for attr in dir(active_device):
+                    v = getattr(active_device, attr)
+                    if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
+                        continue
+                    yield '"%s" := %s' % (attr, str(v))
+                return
+            if len(args) >= 2:
+                attr = args[0]
+                value = args[1]
                 if hasattr(active_device, attr):
                     v = getattr(active_device, attr)
                     if isinstance(v, bool):
@@ -920,54 +965,124 @@ class Console(Module, Pipe):
                     elif isinstance(v, str):
                         setattr(active_device, attr, str(value))
             return
-        if command == 'control':
-            for control_name in active_device.instances['control']:
-                yield control_name
-            return
-        if command.startswith('control '):
-            control_name = command[len('control '):]
-            if control_name in active_device.instances['control']:
-                active_device.execute(control_name)
-                yield "Executed '%s'" % control_name
+        elif command == 'control':
+            if len(args) == 0:
+                for control_name in active_device.instances['control']:
+                    yield control_name
             else:
-                yield "Control '%s' not found." % control_name
+                control_name = ' '.join(args)
+                if control_name in active_device.instances['control']:
+                    active_device.execute(control_name)
+                    yield "Executed '%s'" % control_name
+                else:
+                    yield "Control '%s' not found." % control_name
             return
-        if command == 'device':
-            yield '%d: %s' % (0, 'device_root')
-            for i, name in enumerate(kernel.instances['device']):
-                yield '%d: %s' % (i+1, name)
+        elif command == 'module':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Modules Registered:'
+                for i, name in enumerate(kernel.registered['module']):
+                    yield '%d: %s' % (i + 1, name)
+                yield '----------'
+                yield 'Loaded Modules in Device %s:' % str(active_device.uid)
+                for i, name in enumerate(active_device.instances['module']):
+                    module = active_device.instances['module'][name]
+                    yield '%d: %s as type of %s' % (i + 1, name, type(module))
+                yield '----------'
+            else:
+                value = args[0]
+                if value == 'open':
+                    index = args[1]
+                    name = index
+                    if len(args) >= 3:
+                        name = args[2]
+                    if index in kernel.registered['module']:
+                        active_device.open('module', index, instance_name=name)
+                    else:
+                        yield "Module '%s' not found." % index
+                elif value == 'close':
+                    index = args[1]
+                    if index in active_device.instances['module']:
+                        active_device.close('module', index)
+                    else:
+                        yield "Module '%s' not found." % index
             return
-        if command.startswith('device '):
-            value = command[len('device '):]
-            try:
-                value = int(value)
+        elif command == 'channel':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Channels Registered:'
+                for i, name in enumerate(kernel.registered['module']):
+                    yield '%d: %s' % (i + 1, name)
+                yield '----------'
+                yield 'Watching channels'
+                for i, name in enumerate(active_device.instances['module']):
+                    module = active_device.instances['module'][name]
+                    yield '%d: %s' % (i + 1, name)
+                yield '----------'
+            else:
+                value = args[0]
+                if value == 'shutdown':
+                    index = args[1]
+                    if index in active_device.instances['module']:
+                        active_device.close('module', index)
+                    else:
+                        yield "Module '%s' not found." % index
+            return
+        elif command == 'device':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Backends permitted:'
+                for i, name in enumerate(kernel.registered['device']):
+                    yield '%d: %s' % (i+1, name)
+                yield '----------'
+                yield 'Existing Device:'
+                devices = kernel.setting(str, 'list_devices', '')
+                for device in devices.split(';'):
+                    try:
+                        d = int(device)
+                        device_name = kernel.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
+                        autoboot = kernel.read_persistent(bool, 'autoboot', True, uid=d)
+                        yield 'Device %d. "%s" -- Boots: %s' % (d, device_name, autoboot)
+                    except ValueError:
+                        break
+                    except AttributeError:
+                        break
+                yield '----------'
+                yield 'Devices Instances:'
+                yield '%d: %s on %s' % (0, kernel.device_name, kernel.location_name)
+                for i, name in enumerate(kernel.instances['device']):
+                    device = kernel.instances['device'][name]
+                    yield '%d: %s on %s' % (i+1, device.device_name, device.location_name)
+                yield '----------'
+            else:
+                value = args[0]
+                try:
+                    value = int(value)
+                except ValueError:
+                    value = None
                 if value == 0:
                     self.active_device = kernel
-                    yield 'Device set: device_root'
+                    yield 'Device set: %s on %s' % \
+                          (self.active_device.device_name, self.active_device.location_name)
                 else:
                     for i, name in enumerate(kernel.instances['device']):
                         if i + 1 == value:
                             self.active_device = kernel.instances['device'][name]
-                            yield 'Device set: %d' % value
+                            yield 'Device set: %s on %s' % \
+                                  (self.active_device.device_name, self.active_device.location_name)
                             break
-            except ValueError:
-                pass
             return
-        if spooler is not None:
-            if command.startswith('move ') or command.startswith('move_to '):
-                args = str(command).split(' ')
-                self.execute_string_action(*args)
-                return
-
-        if command.startswith('bind '):
+        elif command == 'bind':
+            kernel.keymap['%s' % args[0]] = ' '.join(args[1:])
             # bind ^1 bind 1 move_to $x $y
             return
-        if command.startswith('alias '):
+        elif command == 'alias':
             # alias +home home
             return
-        if command.startswith('home '):
+        elif command == 'home':
+            spooler.add_command(COMMAND_HOME)
             return
-        if command.startswith('+'):
+        elif command.startswith('+'):
             if command == '+right':
                 self.tick_command("move right 1mm")
                 return
@@ -983,7 +1098,7 @@ class Console(Module, Pipe):
             if command == "+laser":
                 spooler.add_command(COMMAND_LASER_ON)
             return
-        if command.startswith('-'):
+        elif command.startswith('-'):
             if command == '-right':
                 self.untick_command("move right 1mm")
                 return
@@ -999,15 +1114,9 @@ class Console(Module, Pipe):
             if command == "-laser":
                 spooler.add_command(COMMAND_LASER_OFF)
             return
-        if command.startswith('wait '):
+        elif command == "consoleserver":
             return
-        if command == 'module':
-            return
-        if command.startswith('module '):
-            return
-        if command == "consoleserver":
-            return
-        if command == "grblserver":
+        elif command == "grblserver":
             if 'GrblEmulator' in self.device.instances['module']:
                 self.pipe = active_device.instances['module']['GrblEmulator']
             else:
@@ -1017,14 +1126,14 @@ class Console(Module, Pipe):
             active_device.add_watcher(chan, self.channel)
             yield "Watching Channel: %s" % chan
             return
-        if command == "lhyserver":
+        elif command == "lhyserver":
             self.pipe = self.device.instances['modules']['LhystudioController']
             yield "Lhymicro-gl Mode."
             chan = 'lhy'
             active_device.add_watcher(chan, self.channel)
             yield "Watching Channel: %s" % chan
             return
-        if command == "ruidaserver":
+        elif command == "ruidaserver":
             port = 50200
             tcp = False
             try:
@@ -1044,11 +1153,12 @@ class Console(Module, Pipe):
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
-        if command == 'refresh':
+        elif command == 'refresh':
             active_device.signal('refresh_scene')
             yield "Refreshed."
             return
-        yield "Error."
+        else:
+            yield "Error."
 
 
 class SVGWriter:
