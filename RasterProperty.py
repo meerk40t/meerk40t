@@ -154,7 +154,7 @@ class RasterProperty(wx.Frame, Module):
         label_7 = wx.StaticText(self, wx.ID_ANY, _("Raster Step"))
         sizer_3.Add(label_7, 1, 0, 0)
         sizer_3.Add(self.spin_step_size, 1, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, _(" mil"))
+        label_4 = wx.StaticText(self, wx.ID_ANY, _("mils"))
         sizer_3.Add(label_4, 1, 0, 0)
         sizer_8.Add(sizer_3, 1, wx.EXPAND, 0)
         label_5 = wx.StaticText(self, wx.ID_ANY, _("Raster Direction"))
