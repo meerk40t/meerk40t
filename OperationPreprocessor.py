@@ -1,7 +1,7 @@
 
 from svgelements import *
 from LaserCommandConstants import *
-from LaserOperation import LaserOperation, RasterOperation
+from LaserOperation import LaserOperation, RasterOperation, CutOperation
 from LaserRender import LaserRender
 
 
@@ -18,6 +18,7 @@ class OperationPreprocessor:
             self.conditional_jobadd_scale_rotary()
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
+        self.conditional_jobadd_optimize_cuts()
 
     def execute(self):
         # Using copy of commands, so commands can add ops.
@@ -56,6 +57,22 @@ class OperationPreprocessor:
                     op.append(image_element)
 
         self.commands.append(make_image)
+
+    def conditional_jobadd_optimize_cuts(self):
+        for op in self.operations:
+            if isinstance(op, CutOperation):
+                self.jobadd_optimize_cuts()
+                return
+
+    def jobadd_optimize_cuts(self):
+        def optimize_cuts():
+            for op in self.operations:
+                if isinstance(op, CutOperation):
+                    op_cuts = OperationPreprocessor.optimize_cut_inside(op)
+                    op.clear()
+                    op.append(op_cuts)
+
+        self.commands.append(optimize_cuts)
 
     def conditional_jobadd_actualize_image(self):
         for op in self.operations:
@@ -219,11 +236,11 @@ class OperationPreprocessor:
 
     @staticmethod
     def is_inside(path1, path2):
-        path2 = Polygon([path2.point(i / 100.0) for i in range(101)])
+        path2 = Polygon([path2.point(i / 100.0, error=1e4) for i in range(101)])
         vm = VectorMontonizer()
         vm.add_cluster(path2)
         for i in range(101):
-            p = path1.point(i / 100.0)
+            p = path1.point(i / 100.0, error=1e4)
             if not vm.is_point_inside(p.x, p.y):
                 return False
         return True
@@ -235,10 +252,10 @@ class OperationPreprocessor:
             paths = [paths]
         subpaths = []
         for path in paths:
-            subpaths.append([Path(s) for s in path.as_subpaths()])
+            subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
         for j in range(len(subpaths)):
             for k in range(j+1, len(subpaths)):
-                if OperationPreprocessor.is_inside(subpaths[j], subpaths[k]):
+                if OperationPreprocessor.is_inside(subpaths[k],subpaths[j]):
                     t = subpaths[j]
                     subpaths[j] = subpaths[k]
                     subpaths[k] = t

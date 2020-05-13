@@ -2621,7 +2621,7 @@ class RootNode(list):
 
     def menu_reclassify_operations(self, node):
         def specific(event):
-            device = node.root.device
+            device = node.root.device.device_root
             device.operations.clear()
             device.classify(device.elements)
             self.device.signal('rebuild_tree', 0)
