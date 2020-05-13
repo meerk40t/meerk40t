@@ -3083,6 +3083,9 @@ class Close(PathSegment):
         else:
             raise IndexError
 
+    def point(self, position):
+        return Point.towards(self.start, self.end, position)
+
     def length(self, error=None, min_depth=None):
         if self.start is not None and self.end is not None:
             return Point.distance(self.end, self.start)

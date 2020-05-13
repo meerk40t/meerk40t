@@ -217,3 +217,189 @@ class OperationPreprocessor:
         ymax = max([e[1] for e in boundary_points])
         return xmin, ymin, xmax, ymax
 
+    @staticmethod
+    def is_inside(path1, path2):
+        path2 = Polygon([path2.point(i / 100.0) for i in range(101)])
+        vm = VectorMontonizer()
+        vm.add_cluster(path2)
+        for i in range(101):
+            p = path1.point(i / 100.0)
+            if not vm.is_point_inside(p.x, p.y):
+                return False
+        return True
+
+    @staticmethod
+    def optimize_cut_inside(paths):
+        optimized = Path()
+        if isinstance(paths, Path):
+            paths = [paths]
+        subpaths = []
+        for path in paths:
+            subpaths.append([Path(s) for s in path.as_subpaths()])
+        for j in range(len(subpaths)):
+            for k in range(j+1, len(subpaths)):
+                if OperationPreprocessor.is_inside(subpaths[j], subpaths[k]):
+                    t = subpaths[j]
+                    subpaths[j] = subpaths[k]
+                    subpaths[k] = t
+        for p in subpaths:
+            optimized += p
+        return optimized
+
+
+class VectorMontonizer:
+    def __init__(self, low_value=-float('inf'), high_value=float(inf), start=-float('inf')):
+        self.clusters = []
+        self.dirty_cluster_sort = True
+
+        self.actives = []
+        self.dirty_actives_sort = True
+
+        self.current = start
+        self.dirty_cluster_position = True
+
+        self.valid_low_value = low_value
+        self.valid_high_value = high_value
+        self.cluster_range_index = 0
+        self.cluster_low_value = float('inf')
+        self.cluster_high_value = -float('inf')
+
+    def add_cluster(self, path):
+        self.dirty_cluster_position = True
+        self.dirty_cluster_sort = True
+        self.dirty_actives_sort = True
+        for i in range(len(path)-1):
+            p0 = path[i]
+            p1 = path[i+1]
+            if p0.y > p1.y:
+                high = p0
+                low = p1
+            else:
+                high = p1
+                low = p0
+            try:
+                m = (high.y - low.y) / (high.x - low.x)
+            except ZeroDivisionError:
+                m = float('inf')
+
+            b = low.y - (m * low.x)
+            if self.valid_low_value > high.y:
+                continue  # Cluster before range.
+            if self.valid_high_value < low.y:
+                continue  # Cluster after range.
+            cluster = [False, i, p0, p1, high, low, m, b, path]
+            if self.valid_low_value < low.y:
+                self.clusters.append((low.y, cluster))
+            if self.valid_high_value > high.y:
+                self.clusters.append((high.y, cluster))
+            if high.y >= self.current >= low.y:
+                cluster[0] = True
+                self.actives.append(cluster)
+
+    def valid_range(self):
+        return self.valid_high_value >= self.current >= self.valid_low_value
+
+    def next_intercept(self, delta):
+        self.scanline(self.current + delta)
+        self.sort_actives()
+        return self.valid_range()
+
+    def sort_clusters(self):
+        if not self.dirty_cluster_sort:
+            return
+        self.clusters.sort(key=lambda e: e[0])
+        self.dirty_cluster_sort = False
+
+    def sort_actives(self):
+        if not self.dirty_actives_sort:
+            return
+        self.actives.sort(key=self.intercept)
+        self.dirty_actives_sort = False
+
+    def intercept(self, e, y=None):
+        if y is None:
+            y = self.current
+        m = e[6]
+        b = e[7]
+        if m == float('nan') or m == float('inf'):
+            low = e[5]
+            return low.x
+        return (y - b) / m
+
+    def find_cluster_position(self):
+        if not self.dirty_cluster_position:
+            return
+        self.dirty_cluster_position = False
+        self.sort_clusters()
+
+        self.cluster_range_index = -1
+        self.cluster_high_value = -float('inf')
+        self.increment_cluster()
+
+        while self.is_higher_than_cluster_range(self.current):
+            self.increment_cluster()
+
+    def in_cluster_range(self, v):
+        return not self.is_lower_than_cluster_range(v) and not self.is_higher_than_cluster_range(v)
+
+    def is_lower_than_cluster_range(self, v):
+        return v < self.cluster_low_value
+
+    def is_higher_than_cluster_range(self, v):
+        return v > self.cluster_high_value
+
+    def increment_cluster(self):
+        self.cluster_range_index += 1
+        self.cluster_low_value = self.cluster_high_value
+        if self.cluster_range_index < len(self.clusters):
+            self.cluster_high_value = self.clusters[self.cluster_range_index][0]
+        else:
+            self.cluster_high_value = float('inf')
+        if self.cluster_range_index > 0:
+            return self.clusters[self.cluster_range_index-1][1]
+        else:
+            return None
+
+    def decrement_cluster(self):
+        self.cluster_range_index -= 1
+        self.cluster_high_value = self.cluster_low_value
+        if self.cluster_range_index > 0:
+            self.cluster_low_value = self.clusters[self.cluster_range_index-1][0]
+        else:
+            self.cluster_low_value = -float('inf')
+        return self.clusters[self.cluster_range_index][1]
+
+    def is_point_inside(self, x, y):
+        self.scanline(y)
+        self.sort_actives()
+        for i in range(1, len(self.actives), 2):
+            prior = self.actives[i-1]
+            after = self.actives[i]
+            if self.intercept(prior, y) <= x <= self.intercept(after, y):
+                return True
+        return False
+
+    def scanline(self, scan):
+        self.dirty_actives_sort = True
+        self.sort_clusters()
+        self.find_cluster_position()
+
+        while self.is_lower_than_cluster_range(scan):
+            c = self.decrement_cluster()
+            if c[0]:
+                c[0] = False
+                self.actives.remove(c)
+            else:
+                c[0] = True
+                self.actives.append(c)
+
+        while self.is_higher_than_cluster_range(scan):
+            c = self.increment_cluster()
+            if c[0]:
+                c[0] = False
+                self.actives.remove(c)
+            else:
+                c[0] = True
+                self.actives.append(c)
+
+        self.current = scan

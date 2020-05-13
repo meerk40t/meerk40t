@@ -14,7 +14,7 @@ A COMMAND_RESUME would have to be issued in realtime since in a paused state the
 """
 
 COMMAND_LASER_OFF = 1  # Turns laser off
-COMMAND_LASER_ON = 2  # Tuns laser on
+COMMAND_LASER_ON = 2  # Turns laser on
 COMMAND_LASER_DISABLE = 5  # Disables the laser
 COMMAND_LASER_ENABLE = 6  # Enables the laser
 COMMAND_MOVE = 10  # Performs a line move
