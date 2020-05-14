@@ -81,6 +81,7 @@ ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
 ID_PREFERENCES = idinc.new()
 ID_DEVICES = idinc.new()
+ID_CAMERA = idinc.new()
 ID_JOB = idinc.new()
 ID_SPOOLER = idinc.new()
 
@@ -178,6 +179,7 @@ class MeerK40t(wx.Frame, Module):
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
+        windows.AddButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
         self._ribbon.Realize()
 
         self.CenterOnScreen()
@@ -295,6 +297,8 @@ class MeerK40t(wx.Frame, Module):
                      lambda v: self.device.open('module', "Preferences", None, -1, ""), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.device_root.open('module', "DeviceManager", None, -1, ""), id=ID_DEVICES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('module', "CameraInterface", None, -1, ""), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('module', "JobSpooler", None, -1, ""), id=ID_SPOOLER)
         self.main_statusbar = self.CreateStatusBar(3)
