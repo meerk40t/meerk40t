@@ -22,11 +22,11 @@ class About(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
 
     def shutdown(self,  channel):

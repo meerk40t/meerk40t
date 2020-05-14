@@ -31,7 +31,6 @@ class GrblDevice(Device):
     @staticmethod
     def sub_register(device):
         device.register('module', 'GRBLInterpreter', GRBLInterpreter)
-        # device.register('module', 'GRBLController')
 
     def initialize(self, device):
         """

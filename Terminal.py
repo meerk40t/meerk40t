@@ -25,18 +25,18 @@ class Terminal(wx.Frame, Module):
         self.pipe = None
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
-        self.pipe = self.device.module_instance_open('Console')
+        self.pipe = self.device.open('module', 'Console')
         self.device.add_watcher('console', self.text_console.AppendText)
 
     def shutdown(self,  channel):
         self.Close()
 
     def on_close(self, event):
-        self.device.module_instance_remove('Console')
+        self.device.remove('module', 'Console')
         self.device.remove_watcher('console', self.text_console.AppendText)
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         event.Skip()
 
     def __set_properties(self):

@@ -264,20 +264,20 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
 
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "About", None, -1, ""), id=ID_MENU_ABOUT)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('module', "DeviceManager", None, -1, ""), id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('module', "Keymap", None, -1, ""), id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Preferences", None, -1, ""), id=ID_MENU_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('module', "Settings", None, -1, "",), id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Rotary", None, -1, "",), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Navigation", None, -1, "",), id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "Controller", None, -1, "",), id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "UsbConnect", None, -1, "",), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "JobSpooler", None, -1, "",), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('module', "JobInfo", None, -1, "",).set_operations(self.device.device_root.operations),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", None, -1, ""), id=ID_MENU_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "DeviceManager", None, -1, ""), id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", None, -1, ""), id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", None, -1, ""), id=ID_MENU_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", None, -1, "",), id=ID_MENU_SETTINGS)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", None, -1, "",), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", None, -1, "",), id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", None, -1, "",), id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", None, -1, "",), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", None, -1, "",), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "",).set_operations(self.device.device_root.operations),
                   id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
@@ -285,22 +285,22 @@ class MeerK40t(wx.Frame, Module):
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
-                     lambda v: self.device.open('module', "JobInfo", None, -1, "")
+                     lambda v: self.device.open('window', "JobInfo", None, -1, "")
                      .set_operations(self.device.device_root.operations), id=ID_JOB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "UsbConnect", None, -1, ""), id=ID_USB)
+                     lambda v: self.device.open('window', "UsbConnect", None, -1, ""), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "Navigation", None, -1, ""), id=ID_NAV)
+                     lambda v: self.device.open('window', "Navigation", None, -1, ""), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "Controller", None, -1, ""), id=ID_CONTROLLER)
+                     lambda v: self.device.open('window', "Controller", None, -1, ""), id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "Preferences", None, -1, ""), id=ID_PREFERENCES)
+                     lambda v: self.device.open('window', "Preferences", None, -1, ""), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.device_root.open('module', "DeviceManager", None, -1, ""), id=ID_DEVICES)
+                     lambda v: self.device.device_root.open('window', "DeviceManager", None, -1, ""), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "CameraInterface", None, -1, ""), id=ID_CAMERA)
+                     lambda v: self.device.open('window', "CameraInterface", None, -1, ""), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('module', "JobSpooler", None, -1, ""), id=ID_SPOOLER)
+                     lambda v: self.device.open('window', "JobSpooler", None, -1, ""), id=ID_SPOOLER)
         self.main_statusbar = self.CreateStatusBar(3)
 
         # end wxGlade
@@ -387,13 +387,13 @@ class MeerK40t(wx.Frame, Module):
     def on_close(self, event):
         self.times = -1
         self.unlisten_scene()
-        self.device.device_root.open('module', 'Shutdown', None, -1, "")
-        self.device.module_instance_remove(self.name)
+        self.device.device_root.open('window', 'Shutdown', None, -1, "")
+        self.device.remove('window', self.name)
         self.device.stop()
         event.Skip()  # Call destroy as regular.
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         device = self.device
         self.Show()
         self.__set_titlebar()
@@ -2675,30 +2675,30 @@ class wxMeerK40t(wx.App, Module):
 
     @staticmethod
     def sub_register(device):
-        device.register_module("MeerK40t", MeerK40t)
-        device.register_module('Shutdown', Shutdown)
-        device.register_module('PathProperty', PathProperty)
-        device.register_module('TextProperty', TextProperty)
-        device.register_module('ImageProperty', ImageProperty)
-        device.register_module('RasterProperty', RasterProperty)
-        device.register_module('EngraveProperty', EngraveProperty)
-        device.register_module('Controller', Controller)
-        device.register_module("Preferences", Preferences)
-        device.register_module("CameraInterface", CameraInterface)
-        device.register_module("Terminal", Terminal)
-        device.register_module("Settings", Settings)
-        device.register_module("Rotary", RotarySettings)
-        device.register_module("Alignment", Alignment)
-        device.register_module("About", About)
-        device.register_module("DeviceManager", DeviceManager)
-        device.register_module("Keymap", Keymap)
-        device.register_module("UsbConnect", UsbConnect)
-        device.register_module("Navigation", Navigation)
-        device.register_module("Controller", Controller)
-        device.register_module("JobSpooler", JobSpooler)
-        device.register_module("JobInfo", JobInfo)
-        device.register_module("BufferView", BufferView)
-        device.register_module("Adjustments", Adjustments)
+        device.register('window', "MeerK40t", MeerK40t)
+        device.register('window', 'Shutdown', Shutdown)
+        device.register('window', 'PathProperty', PathProperty)
+        device.register('window', 'TextProperty', TextProperty)
+        device.register('window', 'ImageProperty', ImageProperty)
+        device.register('window', 'RasterProperty', RasterProperty)
+        device.register('window', 'EngraveProperty', EngraveProperty)
+        device.register('window', 'Controller', Controller)
+        device.register('window', "Preferences", Preferences)
+        device.register('window', "CameraInterface", CameraInterface)
+        device.register('window', "Terminal", Terminal)
+        device.register('window', "Settings", Settings)
+        device.register('window', "Rotary", RotarySettings)
+        device.register('window', "Alignment", Alignment)
+        device.register('window', "About", About)
+        device.register('window', "DeviceManager", DeviceManager)
+        device.register('window', "Keymap", Keymap)
+        device.register('window', "UsbConnect", UsbConnect)
+        device.register('window', "Navigation", Navigation)
+        device.register('window', "Controller", Controller)
+        device.register('window', "JobSpooler", JobSpooler)
+        device.register('window', "JobInfo", JobInfo)
+        device.register('window', "BufferView", BufferView)
+        device.register('window', "Adjustments", Adjustments)
 
     def initialize(self):
         device = self.device
@@ -2724,7 +2724,7 @@ class wxMeerK40t(wx.App, Module):
 
     def language_swap(self, lang):
         self.language_to(lang)(None)
-        self.device.device_root.open('module', "MeerK40t",  None, -1, "")
+        self.device.device_root.open('window', "MeerK40t",  None, -1, "")
 
     def language_to(self, lang):
         """

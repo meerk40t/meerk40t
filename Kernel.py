@@ -789,16 +789,21 @@ class Device(Thread):
                 channel(_("Device Shutdown Finished: '%s'\n") % str(device))
         channel(_("Saving Device State: '%s'\n") % str(self))
         self.flush()
-        for module_name in list(self.instances['module']):
-            module = self.instances['module'][module_name]
-            channel(_("Shutting down %s module: %s\n") % (module_name, str(module)))
-            try:
-                module.detach(self, channel=channel)
-            except AttributeError:
-                pass
-        for module_name in self.instances['module']:
-            module = self.instances['module'][module_name]
-            channel(_("WARNING: Module %s was not closed.\n") % (module_name))
+        for type_name in list(self.instances):
+            if type_name in ('control'):
+                continue
+            for module_name in list(self.instances[type_name]):
+                module = self.instances[type_name][module_name]
+                channel(_("Shutting down %s %s: %s\n") % (module_name, type_name, str(module)))
+                try:
+                    module.detach(self, channel=channel)
+                except AttributeError:
+                    pass
+        for type_name in list(self.instances):
+            if type_name in ('control'):
+                continue
+            for module_name in self.instances[type_name]:
+                channel(_("WARNING: %s %s was not closed.\n") % (type_name, module_name))
         if 'thread' in self.instances:
             for thread_name in self.instances['thread']:
                 thread = self.instances['thread'][thread_name]

@@ -75,7 +75,7 @@ kernel.register('module', 'RuidaEmulator', RuidaEmulator)
 kernel.register('module', 'GrblEmulator', GRBLEmulator)
 
 if grbl.server is not None:
-    emulator = kernel.module_instance_open('GrblEmulator')
+    emulator = kernel.open('module', 'GrblEmulator')
     if grbl.flip_y:
         emulator.flip_y = -1
 
@@ -89,7 +89,7 @@ if grbl.server is not None:
     elif grbl.adjust_x is not None:
         emulator.home_adjust = (grbl.adjust_x, 0)
     try:
-        server = kernel.module_instance_open('LaserServer', port=grbl.server)
+        server = kernel.open('module', 'LaserServer', port=grbl.server)
         server.set_pipe(emulator)
     except OSError:
         print('Server failed on port: %d' % args.grbl)
@@ -181,8 +181,8 @@ kernel.boot()
 if not args.no_gui:
     if 'device' in kernel.instances:
         for key, device in kernel.instances['device'].items():
-            device.open('module', 'MeerK40t', None, -1, "")
+            device.open('window', 'MeerK40t', None, -1, "")
     else:
         # No devices were booted. Launch DeviceManager
-        kernel.open('module', "DeviceManager", None, -1, "")
+        kernel.open('window', "DeviceManager", None, -1, "")
     meerk40tgui.MainLoop()

@@ -874,6 +874,7 @@ class Console(Module, Pipe):
         try:
             if window_name in self.device.device_root.registered['module']:
                 self.device.open('module', window_name, None, -1, "")
+                yield 'Window %s opened.' % window_name
         except KeyError:
             pass
 
@@ -891,45 +892,59 @@ class Console(Module, Pipe):
         except AttributeError:
             spooler = None
         if command == 'help':
-            yield 'move <right/left/top/bottom> <distance>'
+            yield 'move [(right|left|top|bottom)] <distance>'
             yield 'move_to <x> <y>'
-            yield 'window open <window>'
-            yield 'window close <window>'
-            yield 'set'
-            yield 'set <key> <value>'
-            yield 'control'
-            yield 'control <executive>'
-            yield 'module'
-            yield 'module open <name>'
-            yield 'module close <name>'
+            yield 'laser [(on|off)]'
+            yield 'home'
+            yield 'unlock'
+            yield '+right, +left, +top, +bottom, +laser'
+            yield 'speed [<value>]'
+            yield 'power [<value>]'
+            yield '-------------------'
+            yield 'device [<value>]'
+            yield 'set [<key> <value>]'
+            yield 'window [(open|close) <window_name>]'
+            yield 'control [<executive>]'
+            yield 'module [(open|close) <module_name>]'
             yield 'schedule'
-            yield 'channel'
-            yield 'channel open <name>'
-            yield 'channel close <name>'
+            yield 'channel [(open|close) <channel_name>]'
+            yield '-------------------'
             yield 'element'
-            yield 'element path <svg_path>'
-            yield 'element ellipse <cx> <cy> <r> [<ry>]'
-            yield 'element rect <x> <y> <width> <height>'
-            yield 'element polygon [<x> <y>]*'
-            yield 'element <index> rotate '
-            yield 'element <index> remove'
-            yield 'element <index> key=value'
-            yield 'operation add <index>'
-            yield 'operation remove <index>'
-            yield 'operation reclassify'
-            yield 'device'
-            yield 'device <new_active_device>'
+            yield 'select [<element>]*'
+            yield 'path <svg_path>'
+            yield 'circle <cx> <cy> <r>'
+            yield 'ellipse <cx> <cy> <rx> <ry>'
+            yield 'rect <x> <y> <width> <height>'
+            yield 'polygon [<x> <y>]*'
+            yield 'polyline [<x> <y>]*'
+            yield 'rotate <angle>'
+            yield 'scale <scale> [<scale_y>]'
+            yield 'translate <translate_x> <translate_y>'
+            yield 'stroke <color>'
+            yield 'fill <color>'
+            yield 'darken'
+            yield 'lighten'
+            yield 'resample'
+            yield 'dither'
+            yield 'grayscale'
+            yield '-------------------'
+            yield 'operation [(execute|delete) <index>]'
+            yield 'reclassify'
+            yield 'cut'
+            yield 'engrave'
+            yield 'raster'
+            yield '-------------------'
             yield 'bind'
             yield 'bind <key> <command>'
             yield 'alias'
             yield 'alias <alias> <command>'
-            yield 'home'
-            yield '+right, +left, +top, +bottom, +laser, -right, -left, -top, -bottom, -laser'
-            yield 'refresh'
+            yield '-------------------'
+            yield 'consoleserver'
             yield 'ruidaserver'
             yield 'grblserver'
-            yield 'consoleserver'
             yield 'lhyserver'
+            yield '-------------------'
+            yield 'refresh'
             return
         elif command == 'move':
             spooler.send_job(self.execute_move_action(*args))
@@ -938,7 +953,8 @@ class Console(Module, Pipe):
             spooler.send_job(self.execute_move_to_action(*args))
             return
         elif command == 'window':
-            self.command_window(*args)
+            for e in self.command_window(*args):
+                yield e
             return
         elif command == 'set':
             if len(args) == 0:
@@ -1137,7 +1153,7 @@ class Console(Module, Pipe):
             port = 50200
             tcp = False
             try:
-                server = kernel.module_instance_open('LaserServer', port=port, tcp=tcp)
+                server = kernel.open('module', 'LaserServer', port=port, tcp=tcp)
                 if 'RuidaEmulator' in self.device.instances['module']:
                     pipe = active_device.instances['module']['RuidaEmulator']
                 else:

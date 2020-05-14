@@ -72,7 +72,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
 
         if self.device.is_root():
@@ -99,7 +99,7 @@ class Controller(wx.Frame, Module):
         self.device = None
 
     def on_close(self, event):
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         try:
             if self.device is not None:
                 self.device.unlisten("pipe;status", self.update_status)
@@ -333,7 +333,7 @@ class Controller(wx.Frame, Module):
         self.device.execute("Emergency Stop")
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
-        self.device.module_instance_open("BufferView", None, -1, "")
+        self.device.open('window', "BufferView", None, -1, "")
 
     def update_status(self, data):
         self.update_status_data = True

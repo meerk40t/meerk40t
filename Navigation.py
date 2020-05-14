@@ -135,7 +135,7 @@ class Navigation(wx.Frame, Module):
         self.select_ready(False)
 
     def on_close(self, event):
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         self.device.device_root.unlisten("selected_elements", self.on_selected_elements_change)
         self.device.device_root.unlisten("selected_bounds", self.on_selected_bounds_change)
         self.device.unlisten("interpreter;position", self.on_position_update)
@@ -334,7 +334,7 @@ class Navigation(wx.Frame, Module):
         # end wxGlade
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
         if self.device.is_root():
             for attr in dir(self):

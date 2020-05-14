@@ -20,7 +20,7 @@ class UsbConnect(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
         if self.device.is_root():
             for attr in dir(self):
@@ -42,7 +42,7 @@ class UsbConnect(wx.Frame, Module):
     def on_close(self, event):
         if self.device is not None:
             self.device.unlisten('pipe;device_log', self.update_log)
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def update_log(self, text):

@@ -49,7 +49,7 @@ class JobSpooler(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
         if self.device.is_root():
             for attr in dir(self):
@@ -77,7 +77,7 @@ class JobSpooler(wx.Frame, Module):
         self.Close()
 
     def on_close(self, event):
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         if self.device is not None:
             self.device.unlisten('spooler;thread', self.on_spooler_state)
             self.device.unlisten("spooler;queue", self.on_spooler_update)
@@ -222,7 +222,7 @@ class JobSpooler(wx.Frame, Module):
             self.device.autobeep = not self.device.autobeep
 
     def on_button_controller(self, event):  # wxGlade: JobSpooler.<event_handler>
-        self.device.module_instance_open("Controller", None, -1, "")
+        self.device.open('window', "Controller", None, -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         spooler = self.device.spooler

@@ -135,7 +135,7 @@ class CameraInterface(wx.Frame, Module):
         # end wxGlade
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
 
         self.device.setting(int, 'camera_index', 0)
@@ -177,7 +177,7 @@ class CameraInterface(wx.Frame, Module):
         self.device.unlisten("camera_frame", self.on_camera_frame)
         self.device.signal("camera_frame_raw", None)
         self.close_camera()
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
         self.camera_lock.release()
 

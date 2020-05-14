@@ -41,7 +41,7 @@ class DeviceManager(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
         self.device.setting(str, 'list_devices', '')
         self.refresh_device_list()
@@ -54,7 +54,7 @@ class DeviceManager(wx.Frame, Module):
             self.device.device_primary = uid
 
     def on_close(self, event):
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -140,7 +140,7 @@ class DeviceManager(wx.Frame, Module):
         except KeyError:
             device_name = self.device.read_persistent(str, 'device_name', 'Lhystudios', uid)
             device = self.device.open('device', device_name, root=self.device, uid=int(uid), instance_name=str(uid))
-        device.open('module', "MeerK40t", None, -1, "")
+        device.open('window', "MeerK40t", None, -1, "")
         device.boot()
         self.Close()
 
@@ -187,8 +187,8 @@ class DeviceManager(wx.Frame, Module):
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
-        data = self.device.device_root.instances['device'][uid]
-        data.module_instance_open("Preferences", None, -1, "")
+        dev = self.device.device_root.instances['device'][uid]
+        dev.open('window', "Preferences", None, -1, "")
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")

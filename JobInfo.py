@@ -138,7 +138,7 @@ class JobInfo(wx.Frame, Module):
 
     def on_close(self, event):
         self.device.unlisten("element_property_update", self.on_element_property_update)
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -184,7 +184,7 @@ class JobInfo(wx.Frame, Module):
         if len(self.preprocessor.commands) == 0:
             self.device.spooler.send_job(self.operations)
             self.on_button_job_spooler()
-            self.device.module_instance_close("JobInfo")
+            self.device.close('window', "JobInfo")
         else:
             self.preprocessor.execute()
             self.update_gui()
@@ -199,9 +199,9 @@ class JobInfo(wx.Frame, Module):
         obj = self.operations[node_index]
 
         if isinstance(obj, RasterOperation):
-            self.device.module_instance_open("RasterProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.device.module_instance_open("EngraveProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

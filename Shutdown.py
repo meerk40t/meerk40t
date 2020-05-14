@@ -27,12 +27,12 @@ class Shutdown(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.module_instance_remove(self.name)
+        self.device.remove('window', self.name)
         self.device.remove_watcher('shutdown', self.text_shutdown.AppendText)
         event.Skip()  # Call destroy as regular.
 
     def initialize(self):
-        self.device.module_instance_close(self.name)
+        self.device.close('window', self.name)
         self.Show()
         self.device.setting(bool, "autoclose_shutdown", True)
         self.device.device_root.add_watcher('shutdown', self.text_shutdown.AppendText)
