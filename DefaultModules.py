@@ -801,6 +801,7 @@ class Console(Module, Pipe):
         self.interval = 0.05
         self.process = self.tick
         self.commands = []
+        self.laser_on = False
 
     def initialize(self):
         self.channel = self.device.channel_open('console')
@@ -839,15 +840,18 @@ class Console(Module, Pipe):
         if len(self.commands) == 0:
             self.unschedule()
 
-    def execute_move_to_action(self, position_x, position_y):
+    def execute_set_position(self, position_x, position_y):
+        min_dim = min(self.device.window_width, self.device.window_height)
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=min_dim)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=min_dim)
+
         def move():
             yield COMMAND_MODE_RAPID
             yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, int(position_x), int(position_y)
-
+            yield COMMAND_MOVE, int(x_pos), int(y_pos)
         return move
 
-    def execute_move_action(self, direction, amount):
+    def execute_jog(self, direction, amount):
         min_dim = min(self.device.window_width, self.device.window_height)
         amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
         x = 0
@@ -860,23 +864,23 @@ class Console(Module, Pipe):
             y = -amount
         elif direction == 'down':
             y = amount
-
-        def move():
-            yield COMMAND_SET_INCREMENTAL
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_MOVE, x, y
-            yield COMMAND_SET_ABSOLUTE
-
-        return move
-
-    def command_window(self, *args):
-        window_name = args[0]
-        try:
-            if window_name in self.device.device_root.registered['module']:
-                self.device.open('module', window_name, None, -1, "")
-                yield 'Window %s opened.' % window_name
-        except KeyError:
-            pass
+        if self.laser_on:
+            def cut():
+                yield COMMAND_SET_INCREMENTAL
+                yield COMMAND_MODE_PROGRAM
+                yield COMMAND_LASER_ON
+                yield COMMAND_MOVE, x, y
+                yield COMMAND_LASER_OFF
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_SET_ABSOLUTE
+            return cut
+        else:
+            def move():
+                yield COMMAND_SET_INCREMENTAL
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, x, y
+                yield COMMAND_SET_ABSOLUTE
+            return move
 
     def interface(self, command):
         yield command
@@ -891,15 +895,19 @@ class Console(Module, Pipe):
             spooler = active_device.spooler
         except AttributeError:
             spooler = None
+        try:
+            interpreter = active_device.interpreter
+        except AttributeError:
+            interpreter = None
         if command == 'help':
-            yield 'move [(right|left|top|bottom)] <distance>'
-            yield 'move_to <x> <y>'
+            yield '(right|left|top|bottom) <distance>'
             yield 'laser [(on|off)]'
+            yield 'move <x> <y>'
             yield 'home'
             yield 'unlock'
-            yield '+right, +left, +top, +bottom, +laser'
             yield 'speed [<value>]'
             yield 'power [<value>]'
+            yield '+right, +left, +up, +down, +laser'
             yield '-------------------'
             yield 'device [<value>]'
             yield 'set [<key> <value>]'
@@ -917,9 +925,6 @@ class Console(Module, Pipe):
             yield 'rect <x> <y> <width> <height>'
             yield 'polygon [<x> <y>]*'
             yield 'polyline [<x> <y>]*'
-            yield 'rotate <angle>'
-            yield 'scale <scale> [<scale_y>]'
-            yield 'translate <translate_x> <translate_y>'
             yield 'stroke <color>'
             yield 'fill <color>'
             yield 'darken'
@@ -927,6 +932,11 @@ class Console(Module, Pipe):
             yield 'resample'
             yield 'dither'
             yield 'grayscale'
+            yield 'rotate <angle>'
+            yield 'scale <scale> [<scale_y>]'
+            yield 'translate <translate_x> <translate_y>'
+            yield '+rotate_cw, +rotate_ccw, +scale_up, +scale_down'
+            yield '+translate_right, +translate_left, +translate_top, +translate_bottom'
             yield '-------------------'
             yield 'operation [(execute|delete) <index>]'
             yield 'reclassify'
@@ -934,10 +944,8 @@ class Console(Module, Pipe):
             yield 'engrave'
             yield 'raster'
             yield '-------------------'
-            yield 'bind'
-            yield 'bind <key> <command>'
-            yield 'alias'
-            yield 'alias <alias> <command>'
+            yield 'bind [<key> <command>]'
+            yield 'alias [<alias> <command>]'
             yield '-------------------'
             yield 'consoleserver'
             yield 'ruidaserver'
@@ -946,16 +954,160 @@ class Console(Module, Pipe):
             yield '-------------------'
             yield 'refresh'
             return
+        #
+        elif command.startswith('+'):
+            if command == '+scale_up':
+                self.tick_command("scale 1.02")
+            elif command == '+scale_down':
+                self.tick_command("scale 0.98")
+            elif command == '+rotate_cw':
+                self.tick_command("rotate 2")
+            elif command == '+rotate_ccw':
+                self.tick_command("rotate -2")
+            elif command == '+translate_right':
+                self.tick_command("translate 1mm 0")
+            elif command == '+translate_left':
+                self.tick_command("translate -1mm 0")
+            elif command == '+translate_bottom':
+                self.tick_command("translate 0 1mm")
+            elif command == '+translate_top':
+                self.tick_command("translate 0 -1mm")
+            elif command == '+right':
+                self.tick_command("right 1mm")
+            elif command == '+left':
+                self.tick_command("left 1mm")
+            elif command == '+up':
+                self.tick_command("up 1mm")
+            elif command == '+down':
+                self.tick_command("down 1mm")
+            elif command == "+laser":
+                spooler.add_command(COMMAND_LASER_ON)
+            return
+        elif command.startswith('-'):
+            if command == '-scale_up':
+                self.untick_command("scale 1.02")
+            elif command == '-scale_down':
+                self.untick_command("scale 0.98")
+            elif command == '-rotate_cw':
+                self.untick_command("rotate 2")
+            elif command == '-rotate_ccw':
+                self.untick_command("rotate -2")
+            elif command == '-translate_right':
+                self.untick_command("translate 1mm 0")
+            elif command == '-translate_left':
+                self.untick_command("translate -1mm 0")
+            elif command == '-translate_bottom':
+                self.untick_command("translate 0 1mm")
+            elif command == '-translate_top':
+                self.untick_command("translate 0 -1mm")
+            elif command == '-right':
+                self.untick_command("right 1mm")
+            elif command == '-left':
+                self.untick_command("left 1mm")
+            elif command == '-up':
+                self.untick_command("up 1mm")
+            elif command == '-down':
+                self.untick_command("down 1mm")
+            elif command == "-laser":
+                spooler.add_command(COMMAND_LASER_OFF)
+            return
+        elif command == 'right' or command == 'left' or command == 'up' or command == 'down':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            if len(args) == 1:
+                spooler.send_job(self.execute_jog(command, *args))
+            else:
+                yield 'Syntax Error'
+            return
+        elif command == 'laser':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            if len(args) == 1:
+                if args[0] == 'on':
+                    self.laser_on = True
+                elif args[0] == 'off':
+                    self.laser_on = False
+            if self.laser_on:
+                yield 'Laser is on.'
+            else:
+                yield 'Laser is off.'
+            return
         elif command == 'move':
-            spooler.send_job(self.execute_move_action(*args))
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            if len(args) == 2:
+                spooler.send_job(self.execute_set_position(*args))
+            else:
+                yield 'Syntax Error'
             return
-        elif command == 'move_to':
-            spooler.send_job(self.execute_move_to_action(*args))
+        elif command == 'home':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            spooler.add_command(COMMAND_HOME)
             return
+        elif command == 'unlock':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            spooler.add_command(COMMAND_UNLOCK)
+            return
+        elif command == 'speed':
+            if interpreter is None:
+                yield 'Device has no interpreter.'
+                return
+            if len(args) == 0:
+                yield 'Speed set at: %f mm/s' % interpreter.speed
+            else:
+                try:
+                    interpreter.set_speed(float(args[0]))
+                except ValueError:
+                    pass
+        elif command == 'power':
+            if interpreter is None:
+                yield 'Device has no interpreter.'
+                return
+            if len(args) == 0:
+                yield 'Power set at: %d pulses per inch' % interpreter.power
+            else:
+                try:
+                    interpreter.set_power(int(args[0]))
+                except ValueError:
+                    pass
+        # Kernel Element commands.
         elif command == 'window':
-            for e in self.command_window(*args):
-                yield e
-            return
+            if len(args) == 0:
+                yield '----------'
+                yield 'Windows Registered:'
+                for i, name in enumerate(kernel.registered['window']):
+                    yield '%d: %s' % (i + 1, name)
+                yield '----------'
+                yield 'Loaded Windows in Device %s:' % str(active_device.uid)
+                for i, name in enumerate(active_device.instances['window']):
+                    module = active_device.instances['window'][name]
+                    yield '%d: %s as type of %s' % (i + 1, name, type(module))
+                yield '----------'
+            else:
+                value = args[0]
+                if value == 'open':
+                    index = args[1]
+                    name = index
+                    if len(args) >= 3:
+                        name = args[2]
+                    if index in kernel.registered['window']:
+                        active_device.open('window', name, None, -1, "")
+                        yield 'Window %s opened.' % name
+                    else:
+                        yield "Window '%s' not found." % index
+                elif value == 'close':
+                    index = args[1]
+                    if index in active_device.instances['window']:
+                        active_device.close('window', index)
+                    else:
+                        yield "Window '%s' not found." % index
         elif command == 'set':
             if len(args) == 0:
                 for attr in dir(active_device):
@@ -1094,41 +1246,6 @@ class Console(Module, Pipe):
             return
         elif command == 'alias':
             # alias +home home
-            return
-        elif command == 'home':
-            spooler.add_command(COMMAND_HOME)
-            return
-        elif command.startswith('+'):
-            if command == '+right':
-                self.tick_command("move right 1mm")
-                return
-            if command == '+left':
-                self.tick_command("move left 1mm")
-                return
-            if command == '+top':
-                self.tick_command("move top 1mm")
-                return
-            if command == '+bottom':
-                self.tick_command("move bottom 1mm")
-                return
-            if command == "+laser":
-                spooler.add_command(COMMAND_LASER_ON)
-            return
-        elif command.startswith('-'):
-            if command == '-right':
-                self.untick_command("move right 1mm")
-                return
-            if command == '-left':
-                self.untick_command("move left 1mm")
-                return
-            if command == '-top':
-                self.untick_command("move top 1mm")
-                return
-            if command == '-bottom':
-                self.untick_command("move bottom 1mm")
-                return
-            if command == "-laser":
-                spooler.add_command(COMMAND_LASER_OFF)
             return
         elif command == "consoleserver":
             return
