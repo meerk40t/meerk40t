@@ -1202,18 +1202,20 @@ class Console(Module, Pipe):
             return
         elif command == 'bind':
             command_line = ' '.join(args[1:])
-            if '$x' in command_line:
-                try:
-                    x = self.device.current_x
-                except AttributeError:
-                    x = 0
-                command_line.replace('$x', str(x))
-            if '$y' in command_line:
-                try:
-                    y = self.device.current_y
-                except AttributeError:
-                    y = 0
-                command_line.replace('$y', str(y))
+            f = command_line.find('bind')
+            if f == -1:  # If bind value has a bind, do not evaluate.
+                if '$x' in command_line:
+                    try:
+                        x = active_device.current_x
+                    except AttributeError:
+                        x = 0
+                    command_line = command_line.replace('$x', str(x))
+                if '$y' in command_line:
+                    try:
+                        y = active_device.current_y
+                    except AttributeError:
+                        y = 0
+                    command_line = command_line.replace('$y', str(y))
             kernel.keymap['%s' % args[0]] = command_line
             return
         elif command == 'alias':
