@@ -357,8 +357,10 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
         self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
 
-        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.process = self.refresh_scene
@@ -463,7 +465,6 @@ class MeerK40t(wx.Frame, Module):
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.space_changed(0)
-        self.default_keymap()
 
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
@@ -863,24 +864,6 @@ class MeerK40t(wx.Frame, Module):
     def on_right_mouse_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
-    def default_keymap(self):
-        kernel = self.device.device_root
-        kernel.keymap[wx.WXK_ESCAPE] = MappedKey("escape", "window Adjustments")
-        kernel.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
-        kernel.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
-        kernel.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
-        kernel.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
-        kernel.keymap[ord('1')] = MappedKey('1', "set_position 1")
-        kernel.keymap[ord('2')] = MappedKey('2', "set_position 2")
-        kernel.keymap[ord('3')] = MappedKey('3', "set_position 3")
-        kernel.keymap[ord('4')] = MappedKey('4', "set_position 4")
-        kernel.keymap[ord('5')] = MappedKey('5', "set_position 5")
-        kernel.keymap[wx.WXK_F4] = MappedKey('F4', "window CameraInterface")
-        kernel.keymap[wx.WXK_F6] = MappedKey('F6', "window JobSpooler")
-        kernel.keymap[wx.WXK_F7] = MappedKey('F7', "window Controller")
-        kernel.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
-        kernel.keymap[wx.WXK_F9] = MappedKey('F9', "control Transform")
-
     def execute_string_action(self, action, *args):
         device = self.device
         if device is None:
@@ -940,21 +923,161 @@ class MeerK40t(wx.Frame, Module):
 
         return move
 
-    def on_key_press(self, event):
-        keycode = event.GetKeyCode()
+    @staticmethod
+    def get_key_name(event):
+        keyvalue = ''
         if event.ControlDown():
-            pass
+            keyvalue += 'control+'
         if event.AltDown():
-            pass
+            keyvalue += 'alt+'
         if event.ShiftDown():
-            pass
+            keyvalue += 'shift+'
         if event.MetaDown():
-            pass
+            keyvalue += 'meta+'
+        key = event.GetKeyCode()
+        if key == wx.WXK_CONTROL:
+            return
+        if key == wx.WXK_ALT:
+            return
+        if key == wx.WXK_SHIFT:
+            return
+        if key == wx.WXK_F1:
+            keyvalue += 'f1'
+        elif key == wx.WXK_F2:
+            keyvalue += 'f2'
+        elif key == wx.WXK_F3:
+            keyvalue += 'f3'
+        elif key == wx.WXK_F4:
+            keyvalue += 'f4'
+        elif key == wx.WXK_F5:
+            keyvalue += 'f5'
+        elif key == wx.WXK_F6:
+            keyvalue += 'f6'
+        elif key == wx.WXK_F7:
+            keyvalue += 'f7'
+        elif key == wx.WXK_F8:
+            keyvalue += 'f8'
+        elif key == wx.WXK_F9:
+            keyvalue += 'f9'
+        elif key == wx.WXK_F10:
+            keyvalue += 'f10'
+        elif key == wx.WXK_F11:
+            keyvalue += 'f11'
+        elif key == wx.WXK_F12:
+            keyvalue += 'f12'
+        elif key == wx.WXK_F13:
+            keyvalue += 'f13'
+        elif key == wx.WXK_ADD:
+            keyvalue += '+'
+        elif key == wx.WXK_END:
+            keyvalue += 'end'
+        elif key == wx.WXK_NUMPAD0:
+            keyvalue += 'numpad0'
+        elif key == wx.WXK_NUMPAD1:
+            keyvalue += 'numpad1'
+        elif key == wx.WXK_NUMPAD2:
+            keyvalue += 'numpad2'
+        elif key == wx.WXK_NUMPAD3:
+            keyvalue += 'numpad3'
+        elif key == wx.WXK_NUMPAD4:
+            keyvalue += 'numpad4'
+        elif key == wx.WXK_NUMPAD5:
+            keyvalue += 'numpad5'
+        elif key == wx.WXK_NUMPAD6:
+            keyvalue += 'numpad6'
+        elif key == wx.WXK_NUMPAD7:
+            keyvalue += 'numpad7'
+        elif key == wx.WXK_NUMPAD8:
+            keyvalue += 'numpad8'
+        elif key == wx.WXK_NUMPAD9:
+            keyvalue += 'numpad9'
+        elif key == wx.WXK_NUMPAD_ADD:
+            keyvalue += 'numpad+'
+        elif key == wx.WXK_NUMPAD_SUBTRACT:
+            keyvalue += 'numpad-'
+        elif key == wx.WXK_NUMPAD_MULTIPLY:
+            keyvalue += 'numpad*'
+        elif key == wx.WXK_NUMPAD_DIVIDE:
+            keyvalue += 'numpad/'
+        elif key == wx.WXK_NUMPAD_DECIMAL:
+            keyvalue += 'numpad.'
+        elif key == wx.WXK_NUMPAD_ENTER:
+            keyvalue += 'numpad_enter'
+        elif key == wx.WXK_NUMPAD_RIGHT:
+            keyvalue += 'numpad_right'
+        elif key == wx.WXK_NUMPAD_LEFT:
+            keyvalue += 'numpad_left'
+        elif key == wx.WXK_NUMPAD_UP:
+            keyvalue += 'numpad_up'
+        elif key == wx.WXK_NUMPAD_DOWN:
+            keyvalue += 'numpad_down'
+        elif key == wx.WXK_NUMPAD_DELETE:
+            keyvalue += 'numpad_delete'
+        elif key == wx.WXK_NUMPAD_INSERT:
+            keyvalue += 'numpad_insert'
+        elif key == wx.WXK_NUMPAD_PAGEUP:
+            keyvalue += 'numpad_pgup'
+        elif key == wx.WXK_NUMPAD_PAGEDOWN:
+            keyvalue += 'numpad_pgdn'
+        elif key == wx.WXK_NUMLOCK:
+            keyvalue += 'numlock'
+        elif key == wx.WXK_SCROLL:
+            keyvalue += 'scroll'
+        elif key == wx.WXK_HOME:
+            keyvalue += 'home'
+        elif key == wx.WXK_DOWN:
+            keyvalue += 'down'
+        elif key == wx.WXK_UP:
+            keyvalue += 'up'
+        elif key == wx.WXK_RIGHT:
+            keyvalue += 'right'
+        elif key == wx.WXK_LEFT:
+            keyvalue += 'left'
+        elif key == wx.WXK_ESCAPE:
+            keyvalue += 'escape'
+        elif key == wx.WXK_BACK:
+            keyvalue += 'back'
+        elif key == wx.WXK_PAUSE:
+            keyvalue += 'pause'
+        elif key == wx.WXK_PAGEDOWN:
+            keyvalue += 'pagedown'
+        elif key == wx.WXK_PAGEUP:
+            keyvalue += 'pageup'
+        elif key == wx.WXK_PRINT:
+            keyvalue += 'print'
+        elif key == wx.WXK_RETURN:
+            keyvalue += 'return'
+        elif key == wx.WXK_SPACE:
+            keyvalue += 'space'
+        elif key == wx.WXK_TAB:
+            keyvalue += 'tab'
+        elif key == wx.WXK_DELETE:
+            keyvalue += 'delete'
+        elif key == wx.WXK_INSERT:
+            keyvalue += 'insert'
+        else:
+            keyvalue += chr(key)
+        return keyvalue.lower()
+
+    def on_key_down(self, event):
+        keyvalue = MeerK40t.get_key_name(event)
         keymap = self.device.device_root.keymap
-        if keycode in keymap:
-            action = keymap[keycode].command
-            args = str(action).split(' ')
-            self.execute_string_action(*args)
+        if keyvalue in keymap:
+            action = keymap[keyvalue]
+            pipe = self.device.using('module', 'Console')
+            pipe.write(action + "\n")
+
+    def on_key_up(self, event):
+        keyvalue = MeerK40t.get_key_name(event)
+        keymap = self.device.device_root.keymap
+        if keyvalue in keymap:
+            action = keymap[keyvalue]
+            if action.startswith('+'):
+                # Keyup commands only trigger if the down command started with +
+                action = '-' + action[1:]
+                pipe = self.device.using('module', 'Console')
+                pipe.write(action + "\n")
+
 
     def focus_on_elements(self):
         bbox = self.root.bounds
@@ -2643,19 +2766,6 @@ class RootNode(list):
             raise NotImplementedError
 
         return specific
-
-
-class MappedKey:
-    """
-    Mapped key class containing the key and the command.
-    """
-
-    def __init__(self, key, command):
-        self.key = key
-        self.command = command
-
-    def __str__(self):
-        return self.key
 
 
 class wxMeerK40t(wx.App, Module):

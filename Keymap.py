@@ -63,11 +63,11 @@ class Keymap(wx.Frame, Module):
     def reload_keymap(self):
         i = 0
         for key in self.device.device_root.keymap:
-            action = self.device.device_root.keymap[key]
-            m = self.list_keymap.InsertItem(i, str(action))
+            value = self.device.device_root.keymap[key]
+            m = self.list_keymap.InsertItem(i, str(key))
             i += 1
             if m != -1:
-                self.list_keymap.SetItem(m, 1, str(action.command))
+                self.list_keymap.SetItem(m, 1, str(value))
 
     def on_check_mouse_zoom_invert(self, event):  # wxGlade: Keymap.<event_handler>
         self.device.mouse_zoom_invert = self.check_invert_mouse_zoom.GetValue()

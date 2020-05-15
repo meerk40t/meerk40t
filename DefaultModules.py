@@ -890,6 +890,7 @@ class Console(Module, Pipe):
 
     def interface_parse_command(self, command, *args):
         kernel = self.device.device_root
+        aliases = kernel.alias
         active_device = self.active_device
         try:
             spooler = active_device.spooler
@@ -907,7 +908,9 @@ class Console(Module, Pipe):
             yield 'unlock'
             yield 'speed [<value>]'
             yield 'power [<value>]'
-            yield '+right, +left, +up, +down, +laser'
+            yield '-------------------'
+            yield 'loop <command>'
+            yield 'end <commmand>'
             yield '-------------------'
             yield 'device [<value>]'
             yield 'set [<key> <value>]'
@@ -954,7 +957,15 @@ class Console(Module, Pipe):
             yield '-------------------'
             yield 'refresh'
             return
-        #
+        # +- controls.
+        elif command == "loop":
+            self.tick_command(' '.join(args[1:]))
+        elif command == "end":
+            if len(args) == 0:
+                self.commands.clear()
+                self.unschedule()
+            else:
+                self.untick_command(' '.join(args[1:]))
         elif command.startswith('+'):
             if command == '+scale_up':
                 self.tick_command("scale 1.02")
@@ -1011,6 +1022,7 @@ class Console(Module, Pipe):
             elif command == "-laser":
                 spooler.add_command(COMMAND_LASER_OFF)
             return
+        # Laser Control Commands
         elif command == 'right' or command == 'left' or command == 'up' or command == 'down':
             if spooler is None:
                 yield 'Device has no spooler.'
@@ -1242,10 +1254,9 @@ class Console(Module, Pipe):
             return
         elif command == 'bind':
             kernel.keymap['%s' % args[0]] = ' '.join(args[1:])
-            # bind ^1 bind 1 move_to $x $y
             return
         elif command == 'alias':
-            # alias +home home
+            kernel.alias['%s' % args[0]] = ' '.join(args[1:])
             return
         elif command == "consoleserver":
             return

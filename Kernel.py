@@ -995,10 +995,7 @@ class Device(Thread):
         self(setting_name, (value, old_value))
 
     def execute(self, control_name, *args):
-        if self.uid != 0:
-            self.instances['control'][self.uid + control_name](*args)
-        else:
-            self.instances['control'][control_name](*args)
+        self.instances['control'][control_name](*args)
 
     def signal(self, code, *message):
         if self.uid != 0:
@@ -1101,6 +1098,14 @@ class Device(Thread):
     def device_instance_remove(self, name):
         if name in self.instances['device']:
             del self.instances['device'][name]
+
+    def using(self, type_name, object_name, *args, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = object_name
+        if type_name in self.instances:
+            if instance_name in self.instances[type_name]:
+                return self.instances[type_name][instance_name]
+        return self.open(type_name, object_name, *args, instance_name=instance_name, **kwargs)
 
     def open(self, type_name, object_name, *args, instance_name=None, **kwargs):
         if instance_name is None:
@@ -1231,8 +1236,9 @@ class Kernel(Device):
         # Translation function if exists.
         self.translation = lambda e: e  # Default for this code is do nothing.
 
-        # Keymap values
+        # Keymap/alias values
         self.keymap = {}
+        self.alias = {}
 
         self.run_later = lambda listener, message: listener(message)
 
@@ -1245,7 +1251,8 @@ class Kernel(Device):
         :return:
         """
         Device.boot(self)
-
+        self.default_keymap()
+        self.default_alias()
         self.setting(str, 'list_devices', '')
         devices = self.list_devices
         for device in devices.split(';'):
@@ -1267,6 +1274,26 @@ class Kernel(Device):
 
         if self.config is not None:
             self.config.Flush()
+
+    def default_keymap(self):
+        self.keymap["escape"] = "window open Adjustments"
+        self.keymap["right"] = "right 1mm"
+        self.keymap["left"] = "left 1mm"
+        self.keymap["up"] = "up 1mm"
+        self.keymap["down"] = "down 1mm"
+        self.keymap['control+1'] = "bind 1 move $x $y"
+        self.keymap['control+2'] = "bind 2 move $x $y"
+        self.keymap['control+3'] = "bind 3 move $x $y"
+        self.keymap['control+4'] = "bind 4 move $x $y"
+        self.keymap['control+5'] = "bind 5 move $x $y"
+        self.keymap['f4'] = "window open CameraInterface"
+        self.keymap['f6'] = "window open JobSpooler"
+        self.keymap['f7'] = "window open Controller"
+        self.keymap['f8'] = "control Path"
+        self.keymap['f9'] = "control Transform"
+
+    def default_alias(self):
+        pass
 
     def read_item_persistent(self, item):
         return self.config.Read(item)
@@ -1326,10 +1353,10 @@ class Kernel(Device):
             more, value, index = config.GetNextEntry(index)
 
     def register_loader(self, name, obj):
-        self.device.registered['load'][name] = obj
+        self.registered['load'][name] = obj
 
     def register_saver(self, name, obj):
-        self.device.registered['save'][name] = obj
+        self.registered['save'][name] = obj
 
     def classify(self, elements):
         """
