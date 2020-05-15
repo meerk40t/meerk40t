@@ -926,6 +926,7 @@ class Console(Module, Pipe):
             yield 'circle <cx> <cy> <r>'
             yield 'ellipse <cx> <cy> <rx> <ry>'
             yield 'rect <x> <y> <width> <height>'
+            yield 'text <text>'
             yield 'polygon [<x> <y>]*'
             yield 'polyline [<x> <y>]*'
             yield 'stroke <color>'
@@ -938,8 +939,6 @@ class Console(Module, Pipe):
             yield 'rotate <angle>'
             yield 'scale <scale> [<scale_y>]'
             yield 'translate <translate_x> <translate_y>'
-            yield '+rotate_cw, +rotate_ccw, +scale_up, +scale_down'
-            yield '+translate_right, +translate_left, +translate_top, +translate_bottom'
             yield '-------------------'
             yield 'operation [(execute|delete) <index>]'
             yield 'reclassify'
@@ -1135,26 +1134,47 @@ class Console(Module, Pipe):
                     else:
                         yield "Module '%s' not found." % index
             return
+        elif command == 'schedule':
+            yield '----------'
+            yield 'Scheduled Processes:'
+            for i, job in enumerate(active_device.jobs):
+                parts = list()
+                parts.append('%d:' % (i+1))
+                parts.append(str(job))
+                if job.times is None:
+                    parts.append('forever')
+                else:
+                    parts.append('%d times' % job.times)
+                if job.interval is None:
+                    parts.append('never')
+                else:
+                    parts.append(', each %f seconds' % job.interval)
+                yield ' '.join(parts)
+            yield '----------'
+            return
         elif command == 'channel':
+            #'channel [(open|close) <channel_name>]'
             if len(args) == 0:
                 yield '----------'
-                yield 'Channels Registered:'
-                for i, name in enumerate(kernel.registered['module']):
+                yield 'Channels Active:'
+                for i, name in enumerate(active_device.channels):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Watching channels'
-                for i, name in enumerate(active_device.instances['module']):
-                    module = active_device.instances['module'][name]
-                    yield '%d: %s' % (i + 1, name)
+                yield 'Channels Watching:'
+                for name in active_device.watchers:
+                    watchers = active_device.watchers[name]
+                    if self.channel in watchers:
+                        yield name
                 yield '----------'
             else:
                 value = args[0]
-                if value == 'shutdown':
-                    index = args[1]
-                    if index in active_device.instances['module']:
-                        active_device.close('module', index)
-                    else:
-                        yield "Module '%s' not found." % index
+                chan = args[1]
+                if value == 'open':
+                    active_device.add_watcher(chan, self.channel)
+                    yield "Watching Channel: %s" % chan
+                elif value == 'close':
+                    active_device.remove_watcher(chan, self.channel)
+                    yield "Not Watching Channel: %s" % chan
             return
         elif command == 'device':
             if len(args) == 0:
@@ -1200,6 +1220,56 @@ class Console(Module, Pipe):
                                   (self.active_device.device_name, self.active_device.location_name)
                             break
             return
+        # Element commands.
+        #TODO element commands not done.
+        elif command == 'element':
+            return
+        elif command == 'select':
+            return
+        elif command == 'path':
+            return
+        elif command == 'circle':
+            return
+        elif command == 'ellipse':
+            return
+        elif command == 'rect':
+            return
+        elif command == 'polygon':
+            return
+        elif command == 'polyline':
+            return
+        elif command == 'stroke':
+            return
+        elif command == 'fill':
+            return
+        elif command == 'darken':
+            return
+        elif command == 'lighten':
+            return
+        elif command == 'resample':
+            return
+        elif command == 'dither':
+            return
+        elif command == 'grayscale':
+            return
+        elif command == 'rotate':
+            return
+        elif command == 'scale':
+            return
+        elif command == 'translate':
+            return
+        # Operation Command Elements
+        elif command == 'operation':
+            #'operation [(execute|delete) <index>]'
+            return
+        elif command == 'reclassify':
+            return
+        elif command == 'cut':
+            return
+        elif command == 'engrave':
+            return
+        elif command == 'raster':
+            return
         elif command == 'bind':
             command_line = ' '.join(args[1:])
             f = command_line.find('bind')
@@ -1222,8 +1292,10 @@ class Console(Module, Pipe):
             kernel.alias[args[0]] = ' '.join(args[1:])
             return
         elif command == "consoleserver":
+            # TODO Not done
             return
         elif command == "grblserver":
+            # TODO Not done
             if 'GrblEmulator' in self.device.instances['module']:
                 self.pipe = active_device.instances['module']['GrblEmulator']
             else:
@@ -1234,6 +1306,7 @@ class Console(Module, Pipe):
             yield "Watching Channel: %s" % chan
             return
         elif command == "lhyserver":
+            # TODO Not done
             self.pipe = self.device.instances['modules']['LhystudioController']
             yield "Lhymicro-gl Mode."
             chan = 'lhy'

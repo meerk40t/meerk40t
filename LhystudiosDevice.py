@@ -1320,7 +1320,7 @@ class LhystudioController(Module, Pipe):
         else:
             self.status = self.driver.get_status()
         self.device.signal("pipe;status", self.status)
-        self.recv_channel(self.status)
+        self.recv_channel(str(self.status))
 
     def wait_until_accepting_packets(self):
         i = 0
