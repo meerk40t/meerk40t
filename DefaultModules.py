@@ -6,6 +6,7 @@ from xml.etree.cElementTree import Element, ElementTree, SubElement
 from EgvParser import parse_egv
 from Kernel import Module, Pipe
 from LaserCommandConstants import *
+from LaserOperation import CutOperation, EngraveOperation, RasterOperation
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -920,8 +921,7 @@ class Console(Module, Pipe):
             yield 'schedule'
             yield 'channel [(open|close) <channel_name>]'
             yield '-------------------'
-            yield 'element'
-            yield 'select [<element>]*'
+            yield 'element [<element>]*'
             yield 'path <svg_path>'
             yield 'circle <cx> <cy> <r>'
             yield 'ellipse <cx> <cy> <rx> <ry>'
@@ -931,17 +931,12 @@ class Console(Module, Pipe):
             yield 'polyline [<x> <y>]*'
             yield 'stroke <color>'
             yield 'fill <color>'
-            yield 'darken'
-            yield 'lighten'
-            yield 'resample'
-            yield 'dither'
-            yield 'grayscale'
             yield 'rotate <angle>'
             yield 'scale <scale> [<scale_y>]'
             yield 'translate <translate_x> <translate_y>'
             yield '-------------------'
             yield 'operation [(execute|delete) <index>]'
-            yield 'reclassify'
+            yield 'classify'
             yield 'cut'
             yield 'engrave'
             yield 'raster'
@@ -1221,54 +1216,141 @@ class Console(Module, Pipe):
                             break
             return
         # Element commands.
-        #TODO element commands not done.
         elif command == 'element':
-            return
-        elif command == 'select':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Graphical Elements:'
+                for i, element in enumerate(kernel.elements):
+                    selected = element in kernel.selected_elements
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if selected:
+                        yield '%d: * %s' % (i, name)
+                    else:
+                        yield '%d: %s' % (i, name)
+                yield '----------'
+            else:
+                for value in args:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        yield "Value Error: %s is not an integer" % value
+                        continue
+                    if 0 <= value <= len(kernel.elements):
+                        element = kernel.elements[value]
+                        name = str(element)
+                        if len(name) > 50:
+                            name = name[:50] + '...'
+                        if element in kernel.selected_elements:
+                            kernel.selected_elements.remove(element)
+                            yield "Deselecting item %d called %s" % (value, name)
+                        else:
+                            kernel.selected_elements.append(element)
+                            yield "Selecting item %d called %s" % (value, name)
+                    else:
+                        yield 'index %d out of range' % value
+                kernel.signal("selected_elements", kernel.selected_elements)
             return
         elif command == 'path':
+            path_d = ' '.join(args)
+            element = Path(path_d)
+            self.add_element(element)
             return
         elif command == 'circle':
+            element = Circle(cx=float(args[0]), cy=float(args[1]), r=float(args[2]))
+            element = Path(element)
+            self.add_element(element)
             return
         elif command == 'ellipse':
+            element = Ellipse(cx=float(args[0]), cy=float(args[1]), rx=float(args[2]), ry=float(args[2]))
+            element = Path(element)
+            self.add_element(element)
             return
         elif command == 'rect':
+            element = Rect(x=float(args[0]), y=float(args[1]), width=float(args[2]), height=float(args[2]))
+            element = Path(element)
+            self.add_element(element)
             return
         elif command == 'polygon':
+            element = Polygon(*args)
+            element = Path(element)
+            self.add_element(element)
             return
         elif command == 'polyline':
+            element = Polygon(*args)
+            element = Path(element)
+            self.add_element(element)
             return
         elif command == 'stroke':
+            for element in kernel.selected_elements:
+                element.stroke = Color(args[0])
+            active_device.signal('refresh_scene')
             return
         elif command == 'fill':
-            return
-        elif command == 'darken':
-            return
-        elif command == 'lighten':
-            return
-        elif command == 'resample':
-            return
-        elif command == 'dither':
-            return
-        elif command == 'grayscale':
+            for element in kernel.selected_elements:
+                element.fill = Color(args[0])
+            active_device.signal('refresh_scene')
             return
         elif command == 'rotate':
+            matrix = Matrix('rotate(%s)' % args[0])
+            for element in kernel.selected_elements:
+                element *= matrix
+            active_device.signal('refresh_scene')
             return
         elif command == 'scale':
+            sx = '1'
+            sy = '1'
+            if len(args) >= 1:
+                sx = args[0]
+                sy = args[0]
+            if len(args) >= 2:
+                sy = args[1]
+            matrix = Matrix('scale(%s,%s)' % (sx, sy))
+            for element in kernel.selected_elements:
+                element *= matrix
+            active_device.signal('refresh_scene')
             return
         elif command == 'translate':
+            tx = '0'
+            ty = '0'
+            if len(args) >= 1:
+                tx = args[0]
+            if len(args) >= 2:
+                ty = args[1]
+            matrix = Matrix('translate(%s,%s)' % (tx, ty))
+            for element in kernel.selected_elements:
+                element *= matrix
+            active_device.signal('refresh_scene')
             return
         # Operation Command Elements
         elif command == 'operation':
             #'operation [(execute|delete) <index>]'
             return
-        elif command == 'reclassify':
+        elif command == 'classify':
+            kernel.classify(kernel.selected_elements)
+            self.active_device.signal("rebuild_tree", kernel.elements)
             return
         elif command == 'cut':
+            op = CutOperation()
+            op.extend(kernel.selected_elements)
+            kernel.operations.append(op)
+            self.active_device.signal("rebuild_tree", kernel.elements)
+            active_device.signal('refresh_scene')
             return
         elif command == 'engrave':
+            op = EngraveOperation()
+            op.extend(kernel.selected_elements)
+            kernel.operations.append(op)
+            self.active_device.signal("rebuild_tree", kernel.elements)
+            active_device.signal('refresh_scene')
             return
         elif command == 'raster':
+            op = RasterOperation()
+            op.extend(kernel.selected_elements)
+            kernel.operations.append(op)
+            self.active_device.signal("rebuild_tree", kernel.elements)
+            active_device.signal('refresh_scene')
             return
         elif command == 'bind':
             command_line = ' '.join(args[1:])
@@ -1343,6 +1425,17 @@ class Console(Module, Pipe):
                     yield e
             else:
                 yield "Error. Command Unrecognized: %s" % command
+
+    def add_element(self, element):
+        kernel = self.device.device_root
+        element.stroke = Color('black')
+        kernel.elements.append(element)
+        kernel.selected_elements.clear()
+        kernel.selected_elements.append(element)
+        kernel.signal("selected_elements", kernel.selected_elements)
+        kernel.signal("elements", kernel.elements)
+        kernel.signal("rebuild_tree", kernel.elements)
+        self.active_device.signal("rebuild_tree", kernel.elements)
 
 
 class SVGWriter:

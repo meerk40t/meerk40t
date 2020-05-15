@@ -1224,6 +1224,8 @@ class Kernel(Device):
         # Current Project.
         self.device_root = self
 
+        self.selected_elements = list()
+        self.selected_operations = list()
         self.elements = []
         self.operations = []
         self.filenodes = {}

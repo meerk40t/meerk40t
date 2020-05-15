@@ -1019,7 +1019,6 @@ class MeerK40t(wx.Frame, Module):
                 pipe = self.device.using('module', 'Console')
                 pipe.write(action + "\n")
 
-
     def focus_on_elements(self):
         bbox = self.root.bounds
         if bbox is None:
@@ -1645,8 +1644,8 @@ class RootNode(list):
         self.renderer = gui.renderer
 
         self.bounds = None
-        self.selected_elements = []
-        self.selected_operations = []
+        self.selected_elements = device.device_root.selected_elements
+        self.selected_operations = device.device_root.selected_operations
 
         self.item = None
         self.dragging_node = None
@@ -1983,19 +1982,19 @@ class RootNode(list):
 
     def activated_object(self, obj):
         if isinstance(obj, RasterOperation):
-            self.device.open('module', "RasterProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.device.open('module', "EngraveProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, Path):
-            self.device.open('module', "PathProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGText):
-            self.device.open('module', "TextProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "TextProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGImage):
-            self.device.open('module', "ImageProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "ImageProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGElement):
-            self.device.open('module', "PathProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, LaserOperation):
-            self.device.open('module', "EngraveProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
 
     def on_item_changed(self, event):
         """
