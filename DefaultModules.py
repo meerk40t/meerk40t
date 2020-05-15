@@ -1263,7 +1263,7 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'ellipse':
-            element = Ellipse(cx=float(args[0]), cy=float(args[1]), rx=float(args[2]), ry=float(args[2]))
+            element = Ellipse(cx=float(args[0]), cy=float(args[1]), rx=float(args[2]), ry=float(args[3]))
             element = Path(element)
             self.add_element(element)
             return
@@ -1273,7 +1273,7 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'polygon':
-            element = Polygon(*args)
+            element = Polygon(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return
@@ -1283,22 +1283,34 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'stroke':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             for element in kernel.selected_elements:
                 element.stroke = Color(args[0])
             active_device.signal('refresh_scene')
             return
         elif command == 'fill':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             for element in kernel.selected_elements:
                 element.fill = Color(args[0])
             active_device.signal('refresh_scene')
             return
         elif command == 'rotate':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             matrix = Matrix('rotate(%s)' % args[0])
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')
             return
         elif command == 'scale':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             sx = '1'
             sy = '1'
             if len(args) >= 1:
@@ -1312,6 +1324,9 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'translate':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             tx = '0'
             ty = '0'
             if len(args) >= 1:
@@ -1325,53 +1340,111 @@ class Console(Module, Pipe):
             return
         # Operation Command Elements
         elif command == 'operation':
-            #'operation [(execute|delete) <index>]'
+            if len(args) == 0:
+                yield '----------'
+                yield 'Operations:'
+                for i, operation in enumerate(kernel.operations):
+                    selected = operation in kernel.selected_operations
+                    name = str(operation)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if selected:
+                        yield '%d: * %s' % (i, name)
+                    else:
+                        yield '%d: %s' % (i, name)
+                yield '----------'
+            else:
+                for value in args:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        yield "Value Error: %s is not an integer" % value
+                        continue
+                    if 0 <= value <= len(kernel.elements):
+                        element = kernel.elements[value]
+                        name = str(element)
+                        if len(name) > 50:
+                            name = name[:50] + '...'
+                        if element in kernel.selected_elements:
+                            kernel.selected_elements.remove(element)
+                            yield "Deselecting item %d called %s" % (value, name)
+                        else:
+                            kernel.selected_elements.append(element)
+                            yield "Selecting item %d called %s" % (value, name)
+                    else:
+                        yield 'index %d out of range' % value
+                kernel.signal("selected_operations", kernel.selected_operations)
             return
         elif command == 'classify':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             kernel.classify(kernel.selected_elements)
             self.active_device.signal("rebuild_tree", kernel.elements)
             return
         elif command == 'cut':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             op = CutOperation()
             op.extend(kernel.selected_elements)
             kernel.operations.append(op)
             self.active_device.signal("rebuild_tree", kernel.elements)
-            active_device.signal('refresh_scene')
             return
         elif command == 'engrave':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             op = EngraveOperation()
             op.extend(kernel.selected_elements)
             kernel.operations.append(op)
             self.active_device.signal("rebuild_tree", kernel.elements)
-            active_device.signal('refresh_scene')
             return
         elif command == 'raster':
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
             op = RasterOperation()
             op.extend(kernel.selected_elements)
             kernel.operations.append(op)
             self.active_device.signal("rebuild_tree", kernel.elements)
-            active_device.signal('refresh_scene')
             return
         elif command == 'bind':
-            command_line = ' '.join(args[1:])
-            f = command_line.find('bind')
-            if f == -1:  # If bind value has a bind, do not evaluate.
-                if '$x' in command_line:
-                    try:
-                        x = active_device.current_x
-                    except AttributeError:
-                        x = 0
-                    command_line = command_line.replace('$x', str(x))
-                if '$y' in command_line:
-                    try:
-                        y = active_device.current_y
-                    except AttributeError:
-                        y = 0
-                    command_line = command_line.replace('$y', str(y))
-            kernel.keymap[args[0].lower()] = command_line
+            if len(args) == 0:
+                yield '----------'
+                yield 'Binds:'
+                for i, key in enumerate(kernel.keymap):
+                    value = kernel.keymap[key]
+                    yield '%d: key %s -> %s' % (i, key, value)
+                yield '----------'
+            else:
+                command_line = ' '.join(args[1:])
+                f = command_line.find('bind')
+                if f == -1:  # If bind value has a bind, do not evaluate.
+                    if '$x' in command_line:
+                        try:
+                            x = active_device.current_x
+                        except AttributeError:
+                            x = 0
+                        command_line = command_line.replace('$x', str(x))
+                    if '$y' in command_line:
+                        try:
+                            y = active_device.current_y
+                        except AttributeError:
+                            y = 0
+                        command_line = command_line.replace('$y', str(y))
+                kernel.keymap[args[0].lower()] = command_line
             return
         elif command == 'alias':
-            kernel.alias[args[0]] = ' '.join(args[1:])
+            if len(args) == 0:
+                yield '----------'
+                yield 'Aliases:'
+                for i, key in enumerate(kernel.alias):
+                    value = kernel.alias[key]
+                    yield '%d: %s -> %s' % (i, key, value)
+                yield '----------'
+            else:
+                kernel.alias[args[0]] = ' '.join(args[1:])
             return
         elif command == "consoleserver":
             # TODO Not done
