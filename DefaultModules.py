@@ -832,6 +832,7 @@ class Console(Module, Pipe):
                     self.channel(e)
 
     def tick_command(self, command):
+        self.commands = [c for c in self.commands if c != command] # Only allow 1 copy of any command.
         self.commands.append(command)
         self.schedule()
 
@@ -890,7 +891,6 @@ class Console(Module, Pipe):
 
     def interface_parse_command(self, command, *args):
         kernel = self.device.device_root
-        aliases = kernel.alias
         active_device = self.active_device
         try:
             spooler = active_device.spooler
@@ -959,69 +959,17 @@ class Console(Module, Pipe):
             return
         # +- controls.
         elif command == "loop":
-            self.tick_command(' '.join(args[1:]))
+            self.tick_command(' '.join(args))
         elif command == "end":
             if len(args) == 0:
                 self.commands.clear()
                 self.unschedule()
             else:
-                self.untick_command(' '.join(args[1:]))
-        elif command.startswith('+'):
-            if command == '+scale_up':
-                self.tick_command("scale 1.02")
-            elif command == '+scale_down':
-                self.tick_command("scale 0.98")
-            elif command == '+rotate_cw':
-                self.tick_command("rotate 2")
-            elif command == '+rotate_ccw':
-                self.tick_command("rotate -2")
-            elif command == '+translate_right':
-                self.tick_command("translate 1mm 0")
-            elif command == '+translate_left':
-                self.tick_command("translate -1mm 0")
-            elif command == '+translate_bottom':
-                self.tick_command("translate 0 1mm")
-            elif command == '+translate_top':
-                self.tick_command("translate 0 -1mm")
-            elif command == '+right':
-                self.tick_command("right 1mm")
-            elif command == '+left':
-                self.tick_command("left 1mm")
-            elif command == '+up':
-                self.tick_command("up 1mm")
-            elif command == '+down':
-                self.tick_command("down 1mm")
-            elif command == "+laser":
-                spooler.add_command(COMMAND_LASER_ON)
-            return
-        elif command.startswith('-'):
-            if command == '-scale_up':
-                self.untick_command("scale 1.02")
-            elif command == '-scale_down':
-                self.untick_command("scale 0.98")
-            elif command == '-rotate_cw':
-                self.untick_command("rotate 2")
-            elif command == '-rotate_ccw':
-                self.untick_command("rotate -2")
-            elif command == '-translate_right':
-                self.untick_command("translate 1mm 0")
-            elif command == '-translate_left':
-                self.untick_command("translate -1mm 0")
-            elif command == '-translate_bottom':
-                self.untick_command("translate 0 1mm")
-            elif command == '-translate_top':
-                self.untick_command("translate 0 -1mm")
-            elif command == '-right':
-                self.untick_command("right 1mm")
-            elif command == '-left':
-                self.untick_command("left 1mm")
-            elif command == '-up':
-                self.untick_command("up 1mm")
-            elif command == '-down':
-                self.untick_command("down 1mm")
-            elif command == "-laser":
-                spooler.add_command(COMMAND_LASER_OFF)
-            return
+                self.untick_command(' '.join(args))
+        elif command == '+laser':
+            spooler.add_command(COMMAND_LASER_ON)
+        elif command == '-laser':
+            spooler.add_command(COMMAND_LASER_OFF)
         # Laser Control Commands
         elif command == 'right' or command == 'left' or command == 'up' or command == 'down':
             if spooler is None:
@@ -1253,7 +1201,20 @@ class Console(Module, Pipe):
                             break
             return
         elif command == 'bind':
-            kernel.keymap['%s' % args[0]] = ' '.join(args[1:])
+            command_line = ' '.join(args[1:])
+            if '$x' in command_line:
+                try:
+                    x = self.device.current_x
+                except AttributeError:
+                    x = 0
+                command_line.replace('$x', str(x))
+            if '$y' in command_line:
+                try:
+                    y = self.device.current_y
+                except AttributeError:
+                    y = 0
+                command_line.replace('$y', str(y))
+            kernel.keymap['%s' % args[0]] = command_line
             return
         elif command == 'alias':
             kernel.alias['%s' % args[0]] = ' '.join(args[1:])
@@ -1302,7 +1263,11 @@ class Console(Module, Pipe):
             yield "Refreshed."
             return
         else:
-            yield "Error."
+            if command in kernel.alias:
+                for e in self.interface(kernel.alias[command]):
+                    yield e
+            else:
+                yield "Error. Command Unrecognized: %s" % command
 
 
 class SVGWriter:

@@ -1293,7 +1293,30 @@ class Kernel(Device):
         self.keymap['f9'] = "control Transform"
 
     def default_alias(self):
-        pass
+        self.alias['+scale_up'] = "loop scale 1.02"
+        self.alias['+scale_down'] = "loop scale 0.98"
+        self.alias['+rotate_cw'] = "loop rotate 2"
+        self.alias['+rotate_ccw'] = "loop rotate -2"
+        self.alias['+translate_right'] = "loop translate 1mm 0"
+        self.alias['+translate_left'] = "loop translate -1mm 0"
+        self.alias['+translate_bottom'] = "loop translate 0 1mm"
+        self.alias['+translate_top'] = "loop translate 0 -1mm"
+        self.alias['+right'] = "loop right 1mm"
+        self.alias['+left'] = "loop left 1mm"
+        self.alias['+up'] = "loop up 1mm"
+        self.alias['+down'] = "loop down 1mm"
+        self.alias['-scale_up'] = "end scale 1.02"
+        self.alias['-scale_down'] = "end scale 0.98"
+        self.alias['-rotate_cw'] = "end rotate 2"
+        self.alias['-rotate_ccw'] = "end rotate -2"
+        self.alias['-translate_right'] = "end translate 1mm 0"
+        self.alias['-translate_left'] = "end translate -1mm 0"
+        self.alias['-translate_bottom'] = "end translate 0 1mm"
+        self.alias['-translate_top'] = "end translate 0 -1mm"
+        self.alias['-right'] = "end right 1mm"
+        self.alias['-left'] = "end left 1mm"
+        self.alias['-up'] = "end up 1mm"
+        self.alias['-down'] = "end down 1mm"
 
     def read_item_persistent(self, item):
         return self.config.Read(item)

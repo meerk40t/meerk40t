@@ -864,65 +864,6 @@ class MeerK40t(wx.Frame, Module):
     def on_right_mouse_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
-    def execute_string_action(self, action, *args):
-        device = self.device
-        if device is None:
-            return
-        spooler = device.spooler
-        if action == 'move':
-            spooler.send_job(self.execute_move_action(*args))
-        elif action == 'move_to':
-            spooler.send_job(self.execute_move_to_action(*args))
-        elif action == 'set_position':
-            self.execute_set_position_action(*args)
-        elif action == 'window':
-            self.execute_open_window_action(*args)
-        elif action == 'control':
-            self.execute_execute_control(*args)
-
-    def execute_execute_control(self, *args):
-        self.device.execute(args[0])
-
-    def execute_open_window_action(self, *args):
-        window_name = args[0]
-        if window_name in self.device.instances['module']:
-            self.device.open('module', window_name, None, -1, "")
-
-    def execute_set_position_action(self, index):
-        x = self.device.current_x
-        y = self.device.current_y
-        self.device.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
-
-    def execute_move_action(self, direction, amount):
-        min_dim = min(self.device.window_width, self.device.window_height)
-        amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
-        x = 0
-        y = 0
-        if direction == 'right':
-            x = amount
-        elif direction == 'left':
-            x = -amount
-        elif direction == 'up':
-            y = -amount
-        elif direction == 'down':
-            y = amount
-
-        def move():
-            yield COMMAND_SET_INCREMENTAL
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_MOVE, (x, y)
-            yield COMMAND_SET_ABSOLUTE
-
-        return move
-
-    def execute_move_to_action(self, position_x, position_y):
-        def move():
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, (int(position_x), int(position_y))
-
-        return move
-
     @staticmethod
     def get_key_name(event):
         keyvalue = ''
