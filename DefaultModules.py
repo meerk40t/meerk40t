@@ -944,10 +944,8 @@ class Console(Module, Pipe):
             yield 'bind [<key> <command>]'
             yield 'alias [<alias> <command>]'
             yield '-------------------'
-            yield 'consoleserver'
             yield 'ruidaserver'
             yield 'grblserver'
-            yield 'lhyserver'
             yield '-------------------'
             yield 'refresh'
             return
@@ -1278,7 +1276,7 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'polyline':
-            element = Polygon(*args)
+            element = Polygon(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return
@@ -1446,37 +1444,24 @@ class Console(Module, Pipe):
             else:
                 kernel.alias[args[0]] = ' '.join(args[1:])
             return
-        elif command == "consoleserver":
-            # TODO Not done
-            return
         elif command == "grblserver":
-            # TODO Not done
-            if 'GrblEmulator' in self.device.instances['module']:
-                self.pipe = active_device.instances['module']['GrblEmulator']
-            else:
-                self.pipe = active_device.open('module', 'GrblEmulator')
-            yield "GRBL Mode."
-            chan = 'grbl'
-            active_device.add_watcher(chan, self.channel)
-            yield "Watching Channel: %s" % chan
-            return
-        elif command == "lhyserver":
-            # TODO Not done
-            self.pipe = self.device.instances['modules']['LhystudioController']
-            yield "Lhymicro-gl Mode."
-            chan = 'lhy'
-            active_device.add_watcher(chan, self.channel)
-            yield "Watching Channel: %s" % chan
+            port = 23
+            tcp = True
+            try:
+                server = kernel.open('module', 'LaserServer', port=port, tcp=tcp)
+                yield "GRBL Mode."
+                chan = 'grbl'
+                active_device.add_watcher(chan, self.channel)
+                yield "Watching Channel: %s" % chan
+                server.set_pipe(active_device.using('module', 'GrblEmulator'))
+            except OSError:
+                yield 'Server failed on port: %d' % port
             return
         elif command == "ruidaserver":
             port = 50200
             tcp = False
             try:
                 server = kernel.open('module', 'LaserServer', port=port, tcp=tcp)
-                if 'RuidaEmulator' in self.device.instances['module']:
-                    pipe = active_device.instances['module']['RuidaEmulator']
-                else:
-                    pipe = active_device.open('module', 'RuidaEmulator')
                 yield 'Ruida Server opened on port %d.' % port
                 chan = 'ruida'
                 active_device.add_watcher(chan, self.channel)
@@ -1484,7 +1469,7 @@ class Console(Module, Pipe):
                 chan = 'server'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(pipe)
+                server.set_pipe(active_device.using('RuidaEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
