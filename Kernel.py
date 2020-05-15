@@ -1291,6 +1291,8 @@ class Kernel(Device):
         self.keymap['f7'] = "window open Controller"
         self.keymap['f8'] = "control Path"
         self.keymap['f9'] = "control Transform"
+        self.keymap['f12'] = "window open Terminal"
+        self.keymap['pause'] = "control Realtime Pause_Resume"
 
     def default_alias(self):
         self.alias['+scale_up'] = "loop scale 1.02"

@@ -163,6 +163,7 @@ class LhymicroInterpreter(Interpreter):
         self.min_y = None
         self.start_x = None
         self.start_y = None
+        self.is_paused = False
 
     def initialize(self):
         self.device.setting(bool, "swap_xy", False)
@@ -190,6 +191,7 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
+        self.device.add('control', "Realtime Pause_Resume", self.pause_resume)
         self.device.add('control', "Realtime Pause", self.pause)
         self.device.add('control', "Realtime Resume", self.resume)
         self.device.add('control', "Update Codes", self.update_codes)
@@ -313,11 +315,19 @@ class LhymicroInterpreter(Interpreter):
         if y_dir:
             self.set_prop(DIRECTION_FLAG_Y)
 
+    def pause_resume(self, *values):
+        if self.is_paused:
+            self.resume(*values)
+        else:
+            self.pause(*values)
+
     def pause(self, *values):
         self.pipe.realtime_write(b'PN!\n')
+        self.is_paused = True
 
     def resume(self, *values):
         self.pipe.realtime_write(b'PN&\n')
+        self.is_paused = False
 
     def reset(self):
         self.pipe.realtime_write(b'I*\n')

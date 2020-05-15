@@ -1216,10 +1216,10 @@ class Console(Module, Pipe):
                     except AttributeError:
                         y = 0
                     command_line = command_line.replace('$y', str(y))
-            kernel.keymap['%s' % args[0]] = command_line
+            kernel.keymap[args[0].lower()] = command_line
             return
         elif command == 'alias':
-            kernel.alias['%s' % args[0]] = ' '.join(args[1:])
+            kernel.alias[args[0]] = ' '.join(args[1:])
             return
         elif command == "consoleserver":
             return
