@@ -55,6 +55,8 @@ class LaserRender:
                     element.draw = self.draw_image
                 elif isinstance(element, SVGText):
                     element.draw = self.draw_text
+                elif isinstance(element, Group):
+                    element.draw = self.draw_group
                 else:
                     element.draw = self.draw_path
             element.draw(element, gc, draw_mode)
@@ -100,6 +102,9 @@ class LaserRender:
             gc.SetBrush(self.brush)
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+    def draw_group(self, element, gc, draw_mode):
+        pass
 
     def draw_path(self, element, gc, draw_mode):
         """Default draw routine for the laser element.

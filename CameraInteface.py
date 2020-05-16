@@ -167,6 +167,7 @@ class CameraInterface(wx.Frame, Module):
         self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.device.listen("camera_frame", self.on_camera_frame)
         self.device.listen("camera_frame_raw", self.on_camera_frame_raw)
+        self.device.add('control', 'snapshot', self.snapshot_close)
 
     def shutdown(self,  channel):
         self.Close()
@@ -180,6 +181,10 @@ class CameraInterface(wx.Frame, Module):
         self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
         self.camera_lock.release()
+
+    def snapshot_close(self):
+        self.on_button_export(None)
+        self.Close()
 
     def on_size(self, event):
         self.Layout()

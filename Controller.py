@@ -7,15 +7,14 @@ import wx
 
 from CH341DriverBase import *
 from LhystudiosDevice import get_code_string_from_code
-# TODO: The device backend should provide the translated information. Rather than depend on it.
 
 from Kernel import *
 from icons import *
 
 _ = wx.GetTranslation
 
-
 # TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
+
 
 class Controller(wx.Frame, Module):
     def __init__(self, *args, **kwds):

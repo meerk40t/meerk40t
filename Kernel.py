@@ -1,5 +1,5 @@
 import time
-from threading import *
+from threading import Thread, Lock
 
 from LaserOperation import *
 from svgelements import Path, SVGText

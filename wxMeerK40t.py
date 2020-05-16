@@ -1005,8 +1005,7 @@ class MeerK40t(wx.Frame, Module):
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
-            pipe = self.device.using('module', 'Console')
-            pipe.write(action + "\n")
+            self.device.using('module', 'Console').write(action + "\n")
 
     def on_key_up(self, event):
         keyvalue = MeerK40t.get_key_name(event)
@@ -1016,8 +1015,7 @@ class MeerK40t(wx.Frame, Module):
             if action.startswith('+'):
                 # Keyup commands only trigger if the down command started with +
                 action = '-' + action[1:]
-                pipe = self.device.using('module', 'Console')
-                pipe.write(action + "\n")
+                self.device.using('module', 'Console').write(action + "\n")
 
     def focus_on_elements(self):
         bbox = self.root.bounds

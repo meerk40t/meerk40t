@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from Console import Console
 from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
