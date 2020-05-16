@@ -1291,6 +1291,8 @@ class Kernel(Device):
         self.keymap['numpad/'] = '+scale_down'
         self.keymap['numpad+'] = '+rotate_cw'
         self.keymap['numpad-'] = '+rotate_ccw'
+        self.keymap['control+shift+h'] = 'scale -1 1'
+        self.keymap['control+shift+v'] = 'scale 1 -1'
         self.keymap['control+1'] = "bind 1 move $x $y"
         self.keymap['control+2'] = "bind 2 move $x $y"
         self.keymap['control+3'] = "bind 3 move $x $y"
