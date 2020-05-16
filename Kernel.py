@@ -1279,15 +1279,28 @@ class Kernel(Device):
 
     def default_keymap(self):
         self.keymap["escape"] = "window open Adjustments"
-        self.keymap["right"] = "right 1mm"
-        self.keymap["left"] = "left 1mm"
-        self.keymap["up"] = "up 1mm"
-        self.keymap["down"] = "down 1mm"
+        self.keymap["right"] = "+right"
+        self.keymap["left"] = "+left"
+        self.keymap["up"] = "+up"
+        self.keymap["down"] = "+down"
+        self.keymap['numpad_down'] = '+translate_down'
+        self.keymap['numpad_up'] = '+translate_up'
+        self.keymap['numpad_left'] = '+translate_left'
+        self.keymap['numpad_right'] = '+translate_right'
+        self.keymap['numpad*'] = '+scale_up'
+        self.keymap['numpad/'] = '+scale_down'
+        self.keymap['numpad+'] = '+rotate_cw'
+        self.keymap['numpad-'] = '+rotate_ccw'
         self.keymap['control+1'] = "bind 1 move $x $y"
         self.keymap['control+2'] = "bind 2 move $x $y"
         self.keymap['control+3'] = "bind 3 move $x $y"
         self.keymap['control+4'] = "bind 4 move $x $y"
         self.keymap['control+5'] = "bind 5 move $x $y"
+        self.keymap['control+r'] = 'rect 0 0 1000 1000'
+        self.keymap['control+e'] = 'circle 500 500 500'
+        self.keymap['alt+r'] = 'raster'
+        self.keymap['alt+e'] = 'engrave'
+        self.keymap['alt+c'] = 'cut'
         self.keymap['f4'] = "window open CameraInterface"
         self.keymap['f6'] = "window open JobSpooler"
         self.keymap['f7'] = "window open Controller"
@@ -1303,8 +1316,8 @@ class Kernel(Device):
         self.alias['+rotate_ccw'] = "loop rotate -2"
         self.alias['+translate_right'] = "loop translate 1mm 0"
         self.alias['+translate_left'] = "loop translate -1mm 0"
-        self.alias['+translate_bottom'] = "loop translate 0 1mm"
-        self.alias['+translate_top'] = "loop translate 0 -1mm"
+        self.alias['+translate_down'] = "loop translate 0 1mm"
+        self.alias['+translate_up'] = "loop translate 0 -1mm"
         self.alias['+right'] = "loop right 1mm"
         self.alias['+left'] = "loop left 1mm"
         self.alias['+up'] = "loop up 1mm"
@@ -1315,8 +1328,8 @@ class Kernel(Device):
         self.alias['-rotate_ccw'] = "end rotate -2"
         self.alias['-translate_right'] = "end translate 1mm 0"
         self.alias['-translate_left'] = "end translate -1mm 0"
-        self.alias['-translate_bottom'] = "end translate 0 1mm"
-        self.alias['-translate_top'] = "end translate 0 -1mm"
+        self.alias['-translate_down'] = "end translate 0 1mm"
+        self.alias['-translate_up'] = "end translate 0 -1mm"
         self.alias['-right'] = "end right 1mm"
         self.alias['-left'] = "end left 1mm"
         self.alias['-up'] = "end up 1mm"

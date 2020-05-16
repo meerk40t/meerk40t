@@ -7,6 +7,7 @@ from EgvParser import parse_egv
 from Kernel import Module, Pipe
 from LaserCommandConstants import *
 from LaserOperation import CutOperation, EngraveOperation, RasterOperation
+from OperationPreprocessor import OperationPreprocessor
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -935,7 +936,7 @@ class Console(Module, Pipe):
             yield 'scale <scale> [<scale_y>]'
             yield 'translate <translate_x> <translate_y>'
             yield '-------------------'
-            yield 'operation [(execute|delete) <index>]'
+            yield 'operation [<element>]*'
             yield 'classify'
             yield 'cut'
             yield 'engrave'
@@ -1300,7 +1301,12 @@ class Console(Module, Pipe):
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
-            matrix = Matrix('rotate(%s)' % args[0])
+            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            matrix = Matrix('rotate(%s,%f,%f)' % (args[0], center_x, center_y))
+            min_dim = min(self.device.window_width, self.device.window_height)
+            matrix.render(ppi=1000.0, relative_length=min_dim)
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')
@@ -1309,6 +1315,9 @@ class Console(Module, Pipe):
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
+            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
             sx = '1'
             sy = '1'
             if len(args) >= 1:
@@ -1316,7 +1325,9 @@ class Console(Module, Pipe):
                 sy = args[0]
             if len(args) >= 2:
                 sy = args[1]
-            matrix = Matrix('scale(%s,%s)' % (sx, sy))
+            matrix = Matrix('scale(%s,%s,%f,%f)' % (sx, sy, center_x, center_y))
+            min_dim = min(self.device.window_width, self.device.window_height)
+            matrix.render(ppi=1000.0, relative_length=min_dim)
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')
@@ -1332,6 +1343,8 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 ty = args[1]
             matrix = Matrix('translate(%s,%s)' % (tx, ty))
+            min_dim = min(self.device.window_width, self.device.window_height)
+            matrix.render(ppi=1000.0, relative_length=min_dim)
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')

@@ -2650,7 +2650,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('module', "JobInfo", None, -1, "").set_operations(self.selected_operations)
+            self.device.open('window', "JobInfo", None, -1, "").set_operations(self.selected_operations)
 
         return open_jobinfo_window
 
