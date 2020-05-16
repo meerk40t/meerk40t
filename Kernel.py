@@ -685,7 +685,6 @@ class Device(Thread):
 
     def __init__(self, root=None, uid=0):
         Thread.__init__(self, name='Device%d' % int(uid))
-        self.daemon = True
         self.device_root = root
         self.device_name = "Device"
         self.location_name = "Kernel"

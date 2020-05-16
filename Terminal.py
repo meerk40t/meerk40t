@@ -34,7 +34,7 @@ class Terminal(wx.Frame, Module):
         self.Close()
 
     def update_text(self, text):
-        wx.CallAfter(self.text_console.AppendText, text)
+        wx.CallAfter(self.text_console.AppendText, text + '\n')
 
     def on_close(self, event):
         self.device.remove('module', 'Console')

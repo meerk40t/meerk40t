@@ -36,7 +36,7 @@ class Console(Module, Pipe):
             command = self.buffer[0:pos].strip('\r')
             self.buffer = self.buffer[pos + 1:]
             for response in self.interface(command):
-                self.channel(response + '\n')
+                self.channel(response)
 
     def tick(self):
         for command in self.commands:
@@ -66,7 +66,10 @@ class Console(Module, Pipe):
         return move
 
     def execute_jog(self, direction, amount):
-        min_dim = min(self.device.window_width, self.device.window_height)
+        try:
+            min_dim = min(self.device.window_width, self.device.window_height)
+        except AttributeError:
+            min_dim = 1080.0
         amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
         x = 0
         y = 0
@@ -285,19 +288,24 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 attr = args[0]
                 value = args[1]
-                if hasattr(active_device, attr):
-                    v = getattr(active_device, attr)
-                    if isinstance(v, bool):
-                        if value == 'False' or value == 'false' or value == 0:
-                            setattr(active_device, attr, False)
-                        else:
-                            setattr(active_device, attr, True)
-                    elif isinstance(v, int):
-                        setattr(active_device, attr, int(value))
-                    elif isinstance(v, float):
-                        setattr(active_device, attr, float(value))
-                    elif isinstance(v, str):
-                        setattr(active_device, attr, str(value))
+                try:
+                    if hasattr(active_device, attr):
+                        v = getattr(active_device, attr)
+                        if isinstance(v, bool):
+                            if value == 'False' or value == 'false' or value == 0:
+                                setattr(active_device, attr, False)
+                            else:
+                                setattr(active_device, attr, True)
+                        elif isinstance(v, int):
+                            setattr(active_device, attr, int(value))
+                        elif isinstance(v, float):
+                            setattr(active_device, attr, float(value))
+                        elif isinstance(v, str):
+                            setattr(active_device, attr, str(value))
+                except RuntimeError:
+                    yield 'Attempt failed. Produced a runtime error.'
+                except ValueError:
+                    yield 'Attempt failed. Produced a value error.'
             return
         elif command == 'control':
             if len(args) == 0:
@@ -718,10 +726,12 @@ class Console(Module, Pipe):
                 if isinstance(element, SVGImage):
                     OperationPreprocessor.make_actual(element)
             active_device.signal('refresh_scene')
+            return
         elif command == 'reify':
             for element in kernel.selected_elements:
                 element.reify()
             active_device.signal('refresh_scene')
+            return
         elif command == 'duplicate':
             copies = 1
             if len(args) >= 1:
@@ -773,6 +783,11 @@ class Console(Module, Pipe):
                 kernel.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements
+        elif command == 'egv':
+            if len(args) >= 1:
+                if active_device.device_name != 'Lhystudios':
+                    yield 'Device cannot send egv data.'
+                active_device.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
         elif command == "grblserver":
             port = 23
             tcp = True
@@ -790,7 +805,7 @@ class Console(Module, Pipe):
             port = 50200
             tcp = False
             try:
-                server = kernel.open('module', 'LaserServer', port=port, tcp=tcp)
+                server = active_device.open('module', 'LaserServer', instance_name='ruidaserver', port=port, tcp=tcp)
                 yield 'Ruida Server opened on port %d.' % port
                 chan = 'ruida'
                 active_device.add_watcher(chan, self.channel)
@@ -798,7 +813,7 @@ class Console(Module, Pipe):
                 chan = 'server'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.using('RuidaEmulator'))
+                server.set_pipe(active_device.using('module', 'RuidaEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
