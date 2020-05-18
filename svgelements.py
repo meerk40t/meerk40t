@@ -24,7 +24,7 @@ The goal is to provide svg like path objects and structures. The svg standard 1.
 be used to provide much of the decisions within path objects. Such that if there is a question on
 implementation if the SVG documentation has a methodology it should be used.
 
-Though not required the SVGImage class acquires new functionality if provided with PIL as an import
+Though not required the SVGImage class acquires new functionality if provided with PIL/Pillow as an import
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
@@ -60,6 +60,7 @@ SVG_TAG_LINE = 'line'
 SVG_TAG_POLYLINE = 'polyline'
 SVG_TAG_POLYGON = 'polygon'
 SVG_TAG_TEXT = 'text'
+SVG_TAG_TSPAN = 'tspan'
 SVG_TAG_IMAGE = 'image'
 SVG_TAG_DESC = 'desc'
 SVG_TAG_STYLE = 'style'
@@ -5756,8 +5757,9 @@ class SVGText(GraphicObject, Transformable):
     SVG Text are defined in SVG 2.0 Chapter 11
 
     No methods are implemented to perform a text to path conversion.
+
     However, if such a method exists the assumption is that the results will be
-    placed in the path attribute, and functions like bbox() will check if such
+    placed in the .path attribute, and functions like bbox() will check if such
     a value exists.
     """
 
@@ -6485,9 +6487,13 @@ class SVG(Group):
                     if reify:
                         s.reify()
                     context.append(s)
-                # elif SVG_TAG_DESC == tag:
-                #     s = SVGDesc(values, desc=elem.text)
-                #     context.append(s)
+                elif SVG_TAG_TSPAN == tag:
+                    s = SVGText(values, text=elem.text)
+                    context.append(s)
+                    s.render(ppi=ppi, width=width, height=height)
+                elif SVG_TAG_DESC == tag:
+                    s = SVGDesc(values, desc=elem.text)
+                    context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     assignments = list(re.findall(REGEX_CSS_STYLE,elem.text))
                     for key, value in assignments:
