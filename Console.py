@@ -817,10 +817,13 @@ class Console(Module, Pipe):
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
-        elif command == 'snapshot':
-            camera = active_device.open('window', 'CameraInterface', None, -1, "")
-            active_device.signal("snapshot")
-            active_device.close('window', 'CameraInterface')
+        elif command == 'camera_snapshot':
+            active_device.open('window', 'CameraInterface', None, -1, "")
+            active_device.execute("camera_snapshot")
+            return
+        elif command == 'camera_update':
+            active_device.open('window', 'CameraInterface', None, -1, "")
+            active_device.execute("camera_update")
             return
         elif command == 'refresh':
             active_device.signal('refresh_scene')

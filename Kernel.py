@@ -1002,6 +1002,16 @@ class Device(Thread):
         if self.device_root is not None and self.device_root is not self:
             self.device_root.signal(code, *message)
 
+    def last_signal(self, signal):
+        if self.uid != 0:
+            signal = '%d;%s' % (self.uid, signal)
+        if self.device_root is not None and self.device_root is not self:
+            try:
+                return self.device_root.last_signal(signal)
+            except AttributeError:
+                pass
+        return None
+
     def listen(self, signal, funct):
         if self.uid != 0:
             signal = '%d;%s' % (self.uid, signal)

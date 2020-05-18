@@ -167,7 +167,8 @@ class CameraInterface(wx.Frame, Module):
         self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.device.listen("camera_frame", self.on_camera_frame)
         self.device.listen("camera_frame_raw", self.on_camera_frame_raw)
-        self.device.add('control', 'snapshot', self.snapshot_close)
+        self.device.add('control', 'camera_snapshot', self.snapshot_close)
+        self.device.add('control', 'camera_update', self.update_close)
 
     def shutdown(self,  channel):
         self.Close()
@@ -183,7 +184,13 @@ class CameraInterface(wx.Frame, Module):
         self.camera_lock.release()
 
     def snapshot_close(self):
+        self.fetch_image()
         self.on_button_export(None)
+        self.Close()
+
+    def update_close(self):
+        self.fetch_image()
+        self.on_button_update(None)
         self.Close()
 
     def on_size(self, event):
@@ -533,6 +540,7 @@ class CameraInterface(wx.Frame, Module):
         else:
             self.device.signal("camera_frame", frame)
         self.camera_lock.release()
+        return frame
 
     def update_in_gui_thread(self):
         if self.device is None:
@@ -548,14 +556,16 @@ class CameraInterface(wx.Frame, Module):
         self.device.camera_correction_fisheye = self.check_fisheye.GetValue()
 
     def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
-        frame = self.device.last_signal("camera_frame")[0]
+        frame = self.device.last_signal("camera_frame")
         if frame is not None:
+            frame = frame[0]
             buffer = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
             self.device.signal("background", buffer)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
-        frame = self.device.last_signal("camera_frame")[0]
+        frame = self.device.last_signal("camera_frame")
         if frame is not None:
+            frame = frame[0]
             from PIL import Image
             img = Image.fromarray(frame)
             obj = SVGImage()
