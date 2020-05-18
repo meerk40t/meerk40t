@@ -465,7 +465,7 @@ class Length(object):
             else:
                 raise ValueError
             return self
-        raise ValueError
+        raise ValueError('%s units were not determined.' % self.units)
 
     def __abs__(self):
         c = self.__copy__()
@@ -2483,7 +2483,8 @@ class SVGElement(object):
         if self.values is None:
             self.values = dict(kwargs)
         self.property_by_values(self.values)
-        self.property_by_args(*args)
+        if len(args) != 0:
+            self.property_by_args(*args)
 
     def property_by_args(self, *args):
         pass
@@ -2502,6 +2503,7 @@ class Group(SVGElement, list):
     SVG 2.0 <g> are defined in:
     5.2. Grouping: the g element
     """
+    #TODO: SVG group objects must actually possess transformation matrices.
 
     def __init__(self, *args, **kwargs):
         SVGElement.__init__(self, *args, **kwargs)
@@ -2518,7 +2520,7 @@ class Group(SVGElement, list):
     def select(self, conditional=None):
         """
         Finds all flattened subobjects of this group for which the conditional returns
-        true, until limit is reached.
+        true.
 
         :param conditional: function taking element and returns True or False if matching
         """
@@ -5436,6 +5438,8 @@ class _Polyshape(Shape):
         self._init_points(args)
 
     def _init_points(self, points):
+        if len(self.points) != 0:
+            return
         if points is None:
             self.points = list()
             return
@@ -6239,7 +6243,91 @@ class SVG(Group):
             yield q
 
     @staticmethod
-    def parse_full(source,
+    def _shadow_iter(elem, children):
+        yield 'start', elem
+        for e, c in children:
+            for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
+                yield shadow_event, shadow_elem
+        yield 'end', elem
+
+    @staticmethod
+    def svg_structure_parse(source):
+        """
+        SVG Structure parsing parses the svg file such that it creates the structure implied by reused objects in a more
+        generalized context. Objects ids are read, and put into a shadow tree. <defs> objects are omitted from the
+        structure of the objects. And <use> objects seamlessly replaced with their definitions.
+
+        :param source: svg file source.
+        :generates: iterparse 'start' and 'end' values restructured.
+        """
+        defs = {}
+        parent = None
+        children = list()
+        def_depth = 0
+
+        for event, elem in iterparse(source, events=('start', 'end')):
+            tag = elem.tag
+            if tag.startswith('{http://www.w3.org/2000/svg'):
+                tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                elem.tag = tag
+            attributes = elem.attrib
+            if event == 'start':
+                # New node.
+                siblings = children  # Parent's children are now my siblings.
+                parent = (parent, children)  # parent is now previous node context
+                children = list()  # new node has no children.
+                node = (elem, children)  # define this node.
+                siblings.append(node)  # siblings now includes this node.
+
+                if SVG_TAG_USE == tag:
+                    url = None
+                    if XLINK_HREF in attributes:
+                        url = attributes[XLINK_HREF]
+                    if SVG_HREF in attributes:
+                        url = attributes[SVG_HREF]
+                    if url is not None:
+                        transform = False
+                        try:
+                            transform = True
+                            x = attributes[SVG_ATTR_X]
+                            del attributes[SVG_ATTR_X]
+                        except KeyError:
+                            x = '0'
+                        try:
+                            transform = True
+                            y = attributes[SVG_ATTR_Y]
+                            del attributes[SVG_ATTR_Y]
+                        except KeyError:
+                            y = '0'
+                        if transform:
+                            try:
+                                attributes[SVG_ATTR_TRANSFORM] = '%s translate(%s, %s)' %\
+                                                                 (attributes[SVG_ATTR_TRANSFORM], x,y)
+                            except KeyError:
+                                attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
+                        yield event, elem
+                        try:
+                            s_elem, s_children = defs[url[1:]]  # Shadow node.
+                        except KeyError:
+                            continue
+                        for shadow_event, shadow_elem in SVG._shadow_iter(s_elem, s_children):
+                            yield shadow_event, shadow_elem
+                        continue
+                if SVG_ATTR_ID in attributes:  # If we have an ID, save the node.
+                    defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
+                if tag == SVG_TAG_DEFS:
+                    def_depth += 1
+            else:
+                # event is 'end', pop values.
+                parent, children = parent  # Pop off previous context.
+                if tag == SVG_TAG_DEFS:
+                    def_depth -= 1
+                    continue
+            if def_depth == 0:
+                yield event, elem
+
+    @staticmethod
+    def parse(source,
                    reify=True,
                    ppi=DEFAULT_PPI,
                    width=1,
@@ -6259,23 +6347,20 @@ class SVG(Group):
         use elements are not processed.
         """
         root = context
-        defs = {}
         styles = {}
         stack = []
         values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: color,
                   SVG_ATTR_STROKE: color}
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
-        for event, elem in iterparse(source, events=('start', 'end')):
+        for event, elem in SVG.svg_structure_parse(source):
+            # print("%d tag: %s is %s" % (len(stack), elem.tag, event))
             if event == 'start':
-                shadow_dom = None
                 stack.append((context, values))
                 current_values = values
                 values = {}
                 values.update(current_values)  # copy of dictionary
                 tag = elem.tag
-                if tag.startswith('{'):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
 
                 # Non-propagating values.
                 if SVG_ATTR_PRESERVEASPECTRATIO in values:
@@ -6288,25 +6373,6 @@ class SVG(Group):
                 attributes = elem.attrib  # priority; lowest
                 attributes[SVG_ATTR_TAG] = tag
 
-                if SVG_TAG_USE == tag:
-                    url = None
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
-                    if url is not None:
-                        try:
-                            shadow_dom = copy(defs[url[1:]])
-                            shadow_attrib = {}
-                            shadow_attrib.update(shadow_dom.values)
-                            shadow_attrib.update(attributes)
-                            shadow_dom.attributes = shadow_attrib
-                            shadow_attrib = shadow_dom.values[SVG_STRUCT_ATTRIB]
-                            tag = shadow_attrib[SVG_ATTR_TAG]
-                            shadow_dom.property_by_values(shadow_dom.values)
-                        except KeyError:
-                            continue
-
                 # Split any Style block elements into parts; priority medium
                 style = ''
                 if '*' in styles:  # Select all.
@@ -6317,15 +6383,15 @@ class SVG(Group):
                     svg_id = attributes[SVG_ATTR_ID]
                     css_tag = '#%s' % svg_id
                     if css_tag in styles:
-                        style += styles[tag]
+                        style += styles[css_tag]
                 if SVG_ATTR_CLASS in attributes:  # Selector class .class
                     for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
                         css_tag = '.%s' % svg_class
                         if css_tag in styles:
-                            style += styles[tag]
+                            style += styles[css_tag]
                         css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
                         if css_tag in styles:
-                            style += styles[tag]
+                            style += styles[css_tag]
                 # Split style element into parts; priority highest
                 if SVG_ATTR_STYLE in attributes:
                     style += attributes[SVG_ATTR_STYLE]
@@ -6358,10 +6424,6 @@ class SVG(Group):
                                                          attributes[SVG_ATTR_TRANSFORM]
                     else:
                         attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
-                if shadow_dom is not None:
-                    shadow_dom.values.update(attributes)
-                    context.append(shadow_dom)
-                    continue
                 values.update(attributes)
                 if SVG_NAME_TAG == tag:
                     # The ordering for transformations on the SVG object are:
@@ -6378,26 +6440,18 @@ class SVG(Group):
                         values[SVG_ATTR_TRANSFORM] = viewport_transform
                     width = s.viewbox.viewbox_width
                     height = s.viewbox.viewbox_height
+                    if context is None:
+                        stack[-1] = (context, values)
                     if context is not None:
                         context.append(s)
                     context = s
                     if root is None:
                         root = s
-                    if SVG_ATTR_ID in s.values:
-                        defs[s.values[SVG_ATTR_ID]] = s
                     continue
                 elif SVG_TAG_GROUP == tag:
                     s = Group(values)
                     context.append(s)
                     context = s
-                    if SVG_ATTR_ID in s.values:
-                        defs[s.values[SVG_ATTR_ID]] = s
-                    continue
-                elif SVG_TAG_DEFS == tag:
-                    s = Group(values)
-                    context = s
-                    if SVG_ATTR_ID in s.values:
-                        defs[s.values[SVG_ATTR_ID]] = s
                     continue
                 elif SVG_TAG_PATH == tag:
                     s = Path(values)
@@ -6421,235 +6475,26 @@ class SVG(Group):
                 s.render(ppi=ppi, width=width, height=height)
                 if reify:
                     s.reify()
-                if SVG_ATTR_ID in s.values:
-                    defs[s.values[SVG_ATTR_ID]] = s
                 context.append(s)
             else:  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
                 tag = elem.tag
-                if tag.startswith('{'):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
                 if SVG_TAG_TEXT == tag:
                     s = SVGText(values, text=elem.text)
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
-                    if SVG_ATTR_ID in s.values:
-                        defs[s.values[SVG_ATTR_ID]] = s
                     context.append(s)
                 # elif SVG_TAG_DESC == tag:
                 #     s = SVGDesc(values, desc=elem.text)
                 #     context.append(s)
                 elif SVG_TAG_STYLE == tag:
-                    match = REGEX_CSS_STYLE.match(elem.text)
-                    if match:
-                        assignments = list(match.groups())
-                        for i in range(0, len(assignments), 2):
-                            key = assignments[i].strip()
-                            value = assignments[i + 1].strip()
-                            for selector in key.split(','):  # Can comma select subitems.
-                                styles[selector.strip()] = value
+                    assignments = list(re.findall(REGEX_CSS_STYLE,elem.text))
+                    for key, value in assignments:
+                        key = key.strip()
+                        value = value.strip()
+                        for selector in key.split(','):  # Can comma select subitems.
+                            styles[selector.strip()] = value
                 context, values = stack.pop()
         return root
 
-    @staticmethod
-    def parse(source,
-              reify=True,
-              ppi=DEFAULT_PPI,
-              width=1,
-              height=1,
-              color="black",
-              transform=None,
-              context=None):
-        """
-        Parses the SVG file.
-        Style elements are split into their proper values.
-
-        switch elements are not processed.
-        title elements are not processed.
-        metadata elements are not processed.
-        foreignObject elements are not processed.
-
-        use elements are not processed.
-        """
-        root = context
-        defs = {}
-        styles = {}
-        stack = []
-        for event, elem in iterparse(source, events=('start', 'end')):
-            tag = elem.tag
-            if tag.startswith('{'):
-                tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-            attributes = elem.attrib
-            attributes[SVG_ATTR_TAG] = tag
-            if event == 'start':
-                stack.append(context)
-                if SVG_TAG_USE == tag:
-                    url = None
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
-                    if url is not None:
-                        try:
-                            shadow = copy(defs[url[1:]])
-                            context.append(shadow)
-                        except KeyError:
-                            continue
-                if SVG_NAME_TAG == tag:
-                    s = SVG(attributes)
-                    if context is not None:
-                        context.append(s)
-                    context = s
-                    if root is None:
-                        root = s
-                elif SVG_TAG_GROUP == tag:
-                    s = Group(attributes)
-                    context.append(s)
-                    context = s
-                elif SVG_TAG_DEFS == tag:
-                    s = Group(attributes)
-                    context = s
-                elif SVG_TAG_PATH == tag:
-                    s = Path(attributes)
-                elif SVG_TAG_CIRCLE == tag:
-                    s = Circle(attributes)
-                elif SVG_TAG_ELLIPSE == tag:
-                    s = Ellipse(attributes)
-                elif SVG_TAG_LINE == tag:
-                    s = SimpleLine(attributes)
-                elif SVG_TAG_POLYLINE == tag:
-                    s = Polyline(attributes)
-                elif SVG_TAG_POLYGON == tag:
-                    s = Polygon(attributes)
-                elif SVG_TAG_RECT == tag:
-                    s = Rect(attributes)
-                elif SVG_TAG_IMAGE == tag:
-                    s = SVGImage(attributes)
-                else:
-                    continue
-                if SVG_ATTR_ID in attributes:
-                    defs[attributes[SVG_ATTR_ID]] = s
-                if tag in (SVG_TAG_GROUP, SVG_NAME_TAG, SVG_TAG_DEFS):
-                    continue
-                s.render(ppi=ppi, width=width, height=height)
-                if reify:
-                    s.reify()
-                context.append(s)
-            else:  # End event.
-                # The iterparse spec makes it clear that internal text data is undefined except at the end.
-                if SVG_TAG_TEXT == tag:
-                    s = SVGText(attributes, text=elem.text)
-                    s.render(ppi=ppi, width=width, height=height)
-                    if reify:
-                        s.reify()
-                    if SVG_ATTR_ID in attributes:
-                        defs[attributes[SVG_ATTR_ID]] = s
-                    context.append(s)
-                elif SVG_TAG_DESC == tag:
-                    s = SVGDesc(attributes, desc=elem.text)
-                    context.append(s)
-                elif SVG_TAG_STYLE == tag:
-                    match = REGEX_CSS_STYLE.match(elem.text)
-                    if match:
-                        assignments = list(match.groups())
-                        for i in range(0, len(assignments), 2):
-                            key = assignments[i].strip()
-                            value = assignments[i + 1].strip()
-                            for selector in key.split(','):  # Can comma select subitems.
-                                styles[selector.strip()] = value
-                context = stack.pop()
-        values = {
-            SVG_ATTR_COLOR: color,
-            SVG_ATTR_FILL: color,
-            SVG_ATTR_STROKE: color
-        }
-        if transform is not None:
-            values[SVG_ATTR_TRANSFORM] = transform
-        SVG.rendering(root, values, styles)
-        return root
-
-    @staticmethod
-    def rendering(node, values, styles):
-        current_values = values
-        values = {}
-        values.update(current_values)  # copy of dictionary
-        # Non-propagating values.
-        if SVG_ATTR_STYLE in values:
-            del values[SVG_ATTR_STYLE]
-        if SVG_ATTR_PRESERVEASPECTRATIO in values:
-            del values[SVG_ATTR_PRESERVEASPECTRATIO]
-        if SVG_ATTR_VIEWBOX in values:
-            del values[SVG_ATTR_VIEWBOX]
-        if SVG_ATTR_ID in values:
-            del values[SVG_ATTR_ID]
-        try:
-            attributes = node.values
-        except AttributeError:
-            return
-        tag = attributes[SVG_ATTR_TAG]
-        # Split any Style block elements into parts; priority medium
-        style = ''
-        if '*' in styles:  # Select all.
-            style += styles['*']
-        if tag in styles:  # selector type
-            style += styles[tag]
-        if SVG_ATTR_ID in attributes:  # Selector id #id
-            svg_id = attributes[SVG_ATTR_ID]
-            css_tag = '#%s' % svg_id
-            if css_tag in styles:
-                style += styles[css_tag]
-        if SVG_ATTR_CLASS in attributes:  # Selector class .class
-            for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
-                css_tag = '.%s' % svg_class
-                if css_tag in styles:
-                    style += styles[css_tag]
-                css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
-                if css_tag in styles:
-                    style += styles[css_tag]
-
-        # Split style element into parts; priority highest
-        if SVG_ATTR_STYLE in attributes:
-            style += attributes[SVG_ATTR_STYLE]
-
-        # Process style tag left to right.
-        for equate in style.split(";"):
-            equal_item = equate.split(":")
-            if len(equal_item) == 2:
-                key = str(equal_item[0]).strip()
-                value = str(equal_item[1]).strip()
-                attributes[key] = value
-
-        if SVG_ATTR_FILL in attributes and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR:
-            if SVG_ATTR_COLOR in attributes:
-                attributes[SVG_ATTR_FILL] = attributes[SVG_ATTR_COLOR]
-            else:
-                attributes[SVG_ATTR_FILL] = values[SVG_ATTR_COLOR]
-
-        if SVG_ATTR_STROKE in attributes and attributes[SVG_ATTR_STROKE] == SVG_VALUE_CURRENT_COLOR:
-            if SVG_ATTR_COLOR in attributes:
-                attributes[SVG_ATTR_STROKE] = attributes[SVG_ATTR_COLOR]
-            else:
-                attributes[SVG_ATTR_STROKE] = values[SVG_ATTR_COLOR]
-
-        if SVG_ATTR_TRANSFORM in attributes:
-            # If transform is already in values, append the new value.
-            if SVG_ATTR_TRANSFORM in values:
-                attributes[SVG_ATTR_TRANSFORM] = values[SVG_ATTR_TRANSFORM] + \
-                                                 " " + \
-                                                 attributes[SVG_ATTR_TRANSFORM]
-            else:
-                attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
-
-            values.update(attributes)
-            node.property_by_values(values)
-            if SVG_NAME_TAG == tag:
-                viewport_transform = node.viewbox.transform()
-                if SVG_ATTR_TRANSFORM in values:
-                    # transform on SVG element applied as if svg had parent with transform.
-                    values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
-                else:
-                    values[SVG_ATTR_TRANSFORM] = viewport_transform
-        if isinstance(node,list):
-            for n in node:
-                SVG.rendering(n, values, styles)

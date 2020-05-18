@@ -47,7 +47,7 @@ class About(wx.Frame, Module):
         meerk40t_about_text_header.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(meerk40t_about_text_header, 2, wx.EXPAND, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
-        meerk40t_about_text = wx.StaticText(self, wx.ID_ANY, "Thanks.\nLi Huiyu is for their controller. \nScorch for lighting our path.\nAlois Zingl for his wonderful Bresenham plotting algorithms.\n@joerlane and all the MeerKittens, past and present, great and small.\n\nIcon8 for their great icons ( https://icons8.com/ ) used throughout the project.\nThe works of countless developers who made everything possible.\nRegebro for his svg.path module.\nThe SVG Working Group.\nHackers (in the general sense).")
+        meerk40t_about_text = wx.StaticText(self, wx.ID_ANY, "Thanks.\nLi Huiyu for their controller. \nScorch for lighting our path.\nAlois Zingl for his wonderful Bresenham plotting algorithms.\n@joerlane and all the MeerKittens, past and present, great and small.\n\nIcon8 for their great icons ( https://icons8.com/ ) used throughout the project.\nThe works of countless developers who made everything possible.\nRegebro for his svg.path module.\nThe SVG Working Group.\nHackers (in the general sense).")
         meerk40t_about_text.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_1.Add(meerk40t_about_text, 2, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
