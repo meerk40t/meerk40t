@@ -18,6 +18,7 @@ from Controller import Controller
 from DefaultModules import *
 from DeviceManager import DeviceManager
 from EngraveProperty import EngraveProperty
+from CutProperty import CutProperty
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
@@ -1984,8 +1985,10 @@ class RootNode(list):
     def activated_object(self, obj):
         if isinstance(obj, RasterOperation):
             self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
-        elif isinstance(obj, (CutOperation, EngraveOperation)):
+        elif isinstance(obj, EngraveOperation):
             self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+        elif isinstance(obj, CutOperation):
+            self.device.open('window', "CutProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, Path):
             self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
         elif isinstance(obj, SVGText):
@@ -2733,6 +2736,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', 'ImageProperty', ImageProperty)
         device.register('window', 'RasterProperty', RasterProperty)
         device.register('window', 'EngraveProperty', EngraveProperty)
+        device.register('window', 'CutProperty', CutProperty)
         device.register('window', 'Controller', Controller)
         device.register('window', "Preferences", Preferences)
         device.register('window', "CameraInterface", CameraInterface)

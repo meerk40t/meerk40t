@@ -1427,33 +1427,49 @@ class Kernel(Device):
         rasters = []
         engraves = []
         cuts = []
+        self.setting(float, 'cut_dratio', None)
+        self.setting(float, 'cut_speed', 10.0)
+        self.setting(float, 'cut_power', 1000.0)
+        self.setting(float, 'engrave_speed', 35.0)
+        self.setting(float, 'engrave_power', 1000.0)
+        self.setting(float, 'engrave_dratio', None)
+        self.setting(float, 'raster_speed', 35.0)
+        self.setting(float, 'raster_power', 1000.0)
+        self.setting(int, 'raster_step', 2)
+        self.setting(int, 'raster_direction', 0)
+        self.setting(int, 'raster_overscan', 20)
 
         if not isinstance(elements, list):
             elements = [elements]
         for element in elements:
             if isinstance(element, Path):
                 if element.stroke == "red":
-                    if cut is None or not cut.has_same_properties(element):
-                        cut = CutOperation()
+                    if cut is None or not cut.has_same_properties(element.values):
+                        cut = CutOperation(speed=self.cut_speed, power=self.cut_power, dratio=self.cut_dratio)
                         cuts.append(cut)
-                        cut.set_properties(element)
+                        cut.set_properties(element.values)
                     cut.append(element)
                 elif element.stroke == "blue":
-                    if engrave is None or not engrave.has_same_properties(element):
-                        engrave = EngraveOperation()
+                    if engrave is None or not engrave.has_same_properties(element.values):
+                        engrave = EngraveOperation(speed=self.engrave_speed, power=self.engrave_power,
+                                                   dratio=self.engrave_dratio)
                         engraves.append(engrave)
-                        engrave.set_properties(element)
+                        engrave.set_properties(element.values)
                     engrave.append(element)
                 if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
                     # not classed already, or was already classed but has a fill.
-                    if raster is None or not raster.has_same_properties(element):
-                        raster = RasterOperation()
+                    if raster is None or not raster.has_same_properties(element.values):
+                        raster = RasterOperation(speed=self.raster_speed, power=self.raster_power,
+                                                 raster_step=self.raster_step, raster_direction=self.raster_direction,
+                                                 overscan=self.raster_overscan)
                         rasters.append(raster)
-                        raster.set_properties(element)
+                        raster.set_properties(element.values)
                     raster.append(element)
             elif isinstance(element, SVGImage):
-                # TODO: Add SVGImages to overall Raster
-                rasters.append(RasterOperation(element))
+                # TODO: Add SVGImages to overall Raster, requires function to combine images.
+                rasters.append(RasterOperation(element, speed=self.raster_speed, power=self.raster_power,
+                                               raster_step=self.raster_step, raster_direction=self.raster_direction,
+                                               overscan=self.raster_overscan))
             elif isinstance(element, SVGText):
                 pass  # I can't process actual text.
         rasters = [r for r in rasters if len(r) != 0]

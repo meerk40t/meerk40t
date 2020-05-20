@@ -19,15 +19,33 @@ class LaserOperation(list):
     Laser operations are a type of list and should contain SVGElement based objects
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         list.__init__(self)
         self.speed = None
         self.power = None
         self.dratio = None
+        try:
+            self.speed = float(kwargs['speed'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
+        try:
+            self.power = float(kwargs['power'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
+        try:
+            self.dratio = float(kwargs['dratio'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.set_properties(obj)
+                self.set_properties(obj.values)
                 self.append(obj)
             elif isinstance(obj, LaserOperation):
                 self.speed = obj.speed
@@ -48,25 +66,35 @@ class LaserOperation(list):
     def __copy__(self):
         return LaserOperation(self)
 
-    def has_same_properties(self, obj):
-        if 'speed' in obj.values and obj.values['speed'] is not None:
-            if self.speed != float(obj.values['speed']):
+    def has_same_properties(self, values):
+        """
+        Checks the object to see if there are changed properties from the otherwise set values of these attributes.
+        :param values: property to check
+        :return:
+        """
+        if 'speed' in values and values['speed'] is not None:
+            if self.speed != float(values['speed']):
                 return False
-        if 'power' in obj.values and obj.values['power'] is not None:
-            if self.power != float(obj.values['power']):
+        if 'power' in values and values['power'] is not None:
+            if self.power != float(values['power']):
                 return False
-        if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
-            if self.dratio != float(obj.values['d_ratio']):
+        if 'dratio' in values and values['dratio'] is not None:
+            if self.dratio != float(values['dratio']):
                 return False
         return True
 
-    def set_properties(self, obj):
-        if 'speed' in obj.values and obj.values['speed'] is not None:
-            self.speed = float(obj.values['speed'])
-        if 'power' in obj.values and obj.values['power'] is not None:
-            self.power = float(obj.values['power'])
-        if 'd_ratio' in obj.values and obj.values['d_ratio'] is not None:
-            self.dratio = float(obj.values['d_ratio'])
+    def set_properties(self, values):
+        """
+        Sets the new value based on the given object. Assuming the object has the properties in question.
+        :param values:
+        :return:
+        """
+        if 'speed' in values and values['speed'] is not None:
+            self.speed = float(values['speed'])
+        if 'power' in values and values['power'] is not None:
+            self.power = float(values['power'])
+        if 'dratio' in values and values['dratio'] is not None:
+            self.dratio = float(values['dratio'])
 
 
 class RasterOperation(LaserOperation):
@@ -74,20 +102,38 @@ class RasterOperation(LaserOperation):
     Defines the default raster operation to be done and the properties needed.
     """
 
-    def __init__(self, *args):
-        LaserOperation.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        LaserOperation.__init__(self, *args, **kwargs)
         if self.speed is None:
             self.speed = 150.0
         if self.power is None:
             self.power = 1000.0
         self.raster_step = 1
+        try:
+            self.raster_step = int(kwargs['raster_step'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
         self.raster_direction = 0
+        try:
+            self.raster_direction = int(kwargs['raster_direction'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
         self.unidirectional = False
         self.overscan = 20
+        try:
+            self.overscan = int(kwargs['raster_overscan'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.set_properties(obj)
+                self.set_properties(obj.values)
             elif isinstance(obj, RasterOperation):
                 self.raster_step = obj.raster_step
                 self.raster_direction = obj.raster_direction
@@ -105,28 +151,28 @@ class RasterOperation(LaserOperation):
     def __copy__(self):
         return RasterOperation(self)
 
-    def set_properties(self, obj):
-        if 'raster_step' in obj.values and obj.values['raster_step'] is not None:
-            self.raster_step = int(obj.values['raster_step'])
-        if 'raster_direction' in obj.values and obj.values['raster_direction'] is not None:
-            self.raster_direction = int(obj.values['raster_direction'])
-        if 'unidirectional' in obj.values and obj.values['unidirectional'] is not None:
-            self.unidirectional = bool(obj.values['unidirectional'])
-        if 'overscan' in obj.values and obj.values['overscan'] is not None:
-            self.overscan = int(obj.values['overscan'])
+    def set_properties(self, values):
+        if 'raster_step' in values and values['raster_step'] is not None:
+            self.raster_step = int(values['raster_step'])
+        if 'raster_direction' in values and values['raster_direction'] is not None:
+            self.raster_direction = int(values['raster_direction'])
+        if 'unidirectional' in values and values['unidirectional'] is not None:
+            self.unidirectional = bool(values['unidirectional'])
+        if 'overscan' in values and values['overscan'] is not None:
+            self.overscan = int(values['overscan'])
 
-    def has_same_properties(self, obj):
-        if 'raster_step' in obj.values and obj.values['raster_step'] is not None:
-            if self.raster_step != int(obj.values['raster_step']):
+    def has_same_properties(self, values):
+        if 'raster_step' in values and values['raster_step'] is not None:
+            if self.raster_step != int(values['raster_step']):
                 return False
-        if 'raster_direction' in obj.values and obj.values['raster_direction'] is not None:
-            if self.raster_direction != int(obj.values['raster_direction']):
+        if 'raster_direction' in values and values['raster_direction'] is not None:
+            if self.raster_direction != int(values['raster_direction']):
                 return False
-        if 'unidirectional' in obj.values and obj.values['unidirectional'] is not None:
-            if self.unidirectional != bool(obj.values['unidirectional']):
+        if 'unidirectional' in values and values['unidirectional'] is not None:
+            if self.unidirectional != bool(values['unidirectional']):
                 return False
-        if 'overscan' in obj.values and obj.values['overscan'] is not None:
-            if self.overscan != int(obj.values['overscan']):
+        if 'overscan' in values and values['overscan'] is not None:
+            if self.overscan != int(values['overscan']):
                 return False
         return True
 
@@ -151,6 +197,7 @@ class RasterOperation(LaserOperation):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
+        # TODO: Add unidirectional bidirection flag, add position start flag.
 
         for svgimage in self:
             if not isinstance(svgimage, SVGImage):
@@ -215,8 +262,8 @@ class EngraveOperation(LaserOperation):
     object being engraved on.
     """
 
-    def __init__(self, *args):
-        LaserOperation.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        LaserOperation.__init__(self, *args, **kwargs)
         if self.speed is None:
             self.speed = 35.0
         if self.power is None:
@@ -256,8 +303,8 @@ class CutOperation(LaserOperation):
     Defines the default vector cut operation.
     """
 
-    def __init__(self, *args):
-        LaserOperation.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        LaserOperation.__init__(self, *args, **kwargs)
         if self.speed is None:
             self.speed = 10.0
         if self.power is None:

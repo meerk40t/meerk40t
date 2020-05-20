@@ -6,14 +6,14 @@ from Kernel import Module
 _ = wx.GetTranslation
 
 
-class EngraveProperty(wx.Frame, Module):
+class CutProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
-        # begin wxGlade: EngraveProperty.__init__
+        # begin wxGlade: CutProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((305, 216))
-        self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=240.0)
+        self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=240.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
         self.checkbox_custom_d_ratio = wx.CheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
         self.spin_speed_dratio = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.261", min=0.0, max=1.0)
@@ -79,7 +79,7 @@ class EngraveProperty(wx.Frame, Module):
 
     def __set_properties(self):
         # begin wxGlade: EngraveProperty.__set_properties
-        self.SetTitle(_("Engrave Properties"))
+        self.SetTitle(_("Cut Properties"))
         self.spin_speed_set.SetMinSize((100, 23))
         self.spin_speed_set.SetToolTip(_("Speed at which to perform the action in mm/s."))
         self.spin_power_set.SetMinSize((100, 23))
@@ -125,17 +125,17 @@ class EngraveProperty(wx.Frame, Module):
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.speed = self.spin_speed_set.GetValue()
-        self.device.device_root.engrave_speed = self.operation.speed
+        self.device.device_root.cut_speed = self.operation.speed
         self.device.signal("element_property_update", self.operation)
 
     def on_spin_power(self, event):
         self.operation.power = self.spin_power_set.GetValue()
-        self.device.device_root.engrave_power = self.operation.power
+        self.device.device_root.cut_power = self.operation.power
         self.device.signal("element_property_update", self.operation)
 
     def on_spin_speed_dratio(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.dratio = self.spin_speed_dratio.GetValue()
-        self.device.device_root.engrave_dratio = self.operation.dratio
+        self.device.device_root.cut_dratio = self.operation.dratio
         self.device.signal("element_property_update", self.operation)
 
     def on_slider_accel(self, event):  # wxGlade: EngraveProperty.<event_handler>
