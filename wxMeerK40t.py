@@ -48,12 +48,11 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
 wxMeerK40t is the primary gui addon for MeerK40t. It requires wxPython for the interface.
-The Transformations work in Windows for wxPython 4.0+ and OSX/Linux wxPython 4.1+.
+The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely before)
 
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.6.0"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -582,9 +581,13 @@ class MeerK40t(wx.Frame, Module):
 
     def __set_titlebar(self):
         device_text = ''
+        device_name = ''
+        device_version = ''
         if self.device is not None:
             device_text = '- %s:%s' % (self.device.device_name, self.device.uid)
-        self.SetTitle(_("MeerK40t v%s %s") % (MEERK40T_VERSION, device_text))
+            device_version = self.device.device_root.device_version
+            device_name = self.device.device_root.device_name
+        self.SetTitle(_("%s v%s %s") % (device_name, device_version, device_text))
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties

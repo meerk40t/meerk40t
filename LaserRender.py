@@ -145,16 +145,13 @@ class LaserRender:
 
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        try:
-            font = wx.Font(float(element.values.get('font-size', 12)), wx.SWISS, wx.NORMAL, wx.BOLD)
-            if element.values.get('fill') is None:
-                gc.SetFont(font, wx.BLACK)
-            else:
-                gc.SetFont(font, wx.Colour(swizzlecolor(Color(element.values['fill']))))
-            element.width, element.height = gc.GetTextExtent(element.text)
-        except ValueError:
-            pass
+        font = wx.Font(float(element.values.get('font-size', 16)), wx.SWISS, wx.NORMAL, wx.BOLD)
+        if element.values.get('fill') is None:
+            gc.SetFont(font, wx.BLACK)
+        else:
+            gc.SetFont(font, wx.Colour(swizzlecolor(Color(element.values['fill']))))
         if element.text is not None:
+            element.width, element.height = gc.GetTextExtent(element.text)
             gc.DrawText(element.text, element.x, element.y - element.height)
         gc.PopState()
 

@@ -27,6 +27,10 @@ class About(wx.Frame, Module):
 
     def initialize(self):
         self.device.close('window', self.name)
+        name = self.device.device_root.device_name
+        version = self.device.device_root.device_version
+        self.SetTitle(_("About %s v%s" % (name, version)))
+        self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
         self.Show()
 
     def shutdown(self,  channel):
@@ -36,13 +40,18 @@ class About(wx.Frame, Module):
         # begin wxGlade: About.__set_properties
         self.SetTitle(_("About"))
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
+        self.meerk40t_about_version_text = wx.StaticText(self, wx.ID_ANY, "MeerK40t")
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: About.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2.Add(self.bitmap_button_1, 0, 0, 0)
+        sizer_3 = wx.BoxSizer(wx.VERTICAL)
+        sizer_3.Add(self.bitmap_button_1, 1, 0, 0)
+        self.meerk40t_about_version_text.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        sizer_3.Add(self.meerk40t_about_version_text, 0, 0, 0)
+        sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
         meerk40t_about_text_header = wx.StaticText(self, wx.ID_ANY, "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing participation is graciously thanked. This program is mostly the brainchild of Tatarize, who sincerely hopes his contributions will be but the barest trickle that becomes a raging river.")
         meerk40t_about_text_header.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
         sizer_2.Add(meerk40t_about_text_header, 2, wx.EXPAND, 0)

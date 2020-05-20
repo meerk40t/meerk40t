@@ -95,6 +95,12 @@ SVG_ATTR_DX = 'dx'
 SVG_ATTR_DY = 'dy'
 SVG_ATTR_TAG = 'tag'
 SVG_ATTR_FONT = 'font'
+SVG_ATTR_FONT_FAMILY = 'font-family'  # Serif, sans-serif, cursive, fantasy, monospace
+SVG_ATTR_FONT_FACE = 'font-face'
+SVG_ATTR_FONT_SIZE = 'font-size'
+SVG_ATTR_FONT_WEIGHT = 'font-weight'  # normal, bold, bolder, lighter, 100-900
+SVG_ATTR_TEXT_ANCHOR = 'text-anchor'
+
 SVG_TRANSFORM_MATRIX = 'matrix'
 SVG_TRANSFORM_TRANSLATE = 'translate'
 SVG_TRANSFORM_SCALE = 'scale'
@@ -5771,7 +5777,12 @@ class SVGText(GraphicObject, Transformable):
         self.y = 0
         self.dx = 0
         self.dy = 0
-        self.font = 0
+        self.anchor = 'start'  # start, middle, end.
+        self.font_family = 'san-serif'
+        self.font_size = 16  # 16 point font 'normal'
+        self.font_weight = 400  # Thin=100, Normal=400, Bold=700
+        self.font_face = ''
+
         self.path = None
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
@@ -5784,13 +5795,39 @@ class SVGText(GraphicObject, Transformable):
         self.y = s.y
         self.dx = s.dx
         self.dy = s.dy
-        self.font = s.font
+        self.anchor = s.anchor
+        self.font_family = s.font_family
+        self.font_size = s.font_size
+        self.font_weight = s.font_weight
+        self.font_face = s.font_face
+
+    def parse_font(self, font):
+        pass
+
+    def parse_font_weight(self, weight):
+        if weight == 'bold':
+            return 700
+        if weight == 'normal':
+            return 400
+        try:
+            return int(weight)
+        except KeyError:
+            return 400
 
     def property_by_values(self, values):
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
+        self.anchor = values.get(SVG_ATTR_TEXT_ANCHOR, self.anchor)
+        self.font_face = values.get(SVG_ATTR_FONT_FACE)
+        self.font_family = values.get(SVG_ATTR_FONT_FAMILY, self.font_family)
+        self.font_size = Length(values.get(SVG_ATTR_FONT_SIZE, self.font_size)).value()
+        self.font_weight = values.get(SVG_ATTR_FONT_WEIGHT, self.font_family)
+        font = values.get(SVG_ATTR_FONT, None)
+        if font is not None:
+            self.parse_font(font)
+
         self.text = values.get(SVG_TAG_TEXT, self.text)
-        self.font = values.get(SVG_ATTR_FONT, self.font)
+
         self.x = Length(values.get(SVG_ATTR_X, self.x)).value()
         self.y = Length(values.get(SVG_ATTR_Y, self.y)).value()
         self.dx = Length(values.get(SVG_ATTR_DX, self.dx)).value()

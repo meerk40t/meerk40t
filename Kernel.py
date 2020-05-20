@@ -687,6 +687,7 @@ class Device(Thread):
         Thread.__init__(self, name='Device%d' % int(uid))
         self.device_root = root
         self.device_name = "Device"
+        self.device_version = "0.0.0"
         self.location_name = "Kernel"
         self.uid = uid
 
@@ -1231,6 +1232,8 @@ class Kernel(Device):
     def __init__(self, config=None):
         Device.__init__(self, self, 0)
         # Current Project.
+        self.device_name = "MeerK40t"
+        self.device_version = "0.6.0"
         self.device_root = self
 
         self.selected_elements = list()
