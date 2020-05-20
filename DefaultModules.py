@@ -904,6 +904,13 @@ class SVGLoader:
                         ppi=96.0,
                         transform='scale(%f)' % scale_factor)
         for element in svg.elements():
+            try:
+                if element.values['visibility'] == 'hidden':
+                    continue
+            except KeyError:
+                pass
+            except AttributeError:
+                pass
             if isinstance(element, SVGText):
                 elements.append(element)
             elif isinstance(element, Path):
