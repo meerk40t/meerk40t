@@ -831,8 +831,10 @@ class Console(Module, Pipe):
             return
         else:
             if command in kernel.alias:
-                for e in self.interface(kernel.alias[command]):
-                    yield e
+                aliased_command = kernel.alias[command]
+                for cmd in aliased_command.split(';'):
+                    for e in self.interface(cmd):
+                        yield e
             else:
                 yield "Error. Command Unrecognized: %s" % command
 
