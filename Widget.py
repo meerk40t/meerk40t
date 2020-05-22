@@ -48,6 +48,8 @@ class Scene(Module):
         self.matrix_root = Matrix()
         self.process = self.animate_tick
         self.interval = 1.0 / 60.0  # 60fps
+        self.last_position = None
+        self.dragging = False
 
     def initialize(self):
         pass
@@ -106,20 +108,38 @@ class Scene(Module):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, position, event_type=''):
-        if event_type in ('wheeldown', 'wheelup', 'leftdown', 'middledown', 'rightdown'):
+    def event(self, window_pos, event_type=''):
+        if self.last_position is None:
+            self.last_position = window_pos
+        dx = window_pos[0] - self.last_position[0]
+        dy = window_pos[1] - self.last_position[1]
+        window_pos = (window_pos[0], window_pos[1], self.last_position[0], self.last_position[1], dx, dy)
+        self.last_position = window_pos
+        try:
+            previous_top_element = self.hit_chain[0][0]
+        except IndexError:
+            previous_top_element = None
+        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'hover'):
             self.rebuild_hittable_chain()
-            self.find_hit_chain(position)
+            self.find_hit_chain(window_pos)
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
             current_widget, current_matrix = hit
             if current_widget is None:
                 continue
-            if current_matrix is not None:
-                response = current_widget.event(current_matrix.point_in_inverse_space(position), event_type)
-            else:
-                response = current_widget.event(position, event_type)
+            space_pos = window_pos
+            if current_matrix is not None and not current_matrix.is_identity():
+                space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
+                space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
+                sdx = space_cur[0] - space_last[0]
+                sdy = space_cur[1] - space_last[1]
+                space_pos = (space_cur[0], space_cur[1], space_last[0], space_last[1], sdx, sdy)
+            if i == 0 and event_type == 'hover' and previous_top_element is not current_widget:
+                if previous_top_element is not None:
+                    previous_top_element.event(window_pos, window_pos, 'hover_end')
+                current_widget.event(window_pos, space_pos, 'hover_start')
+            response = current_widget.event(window_pos, space_pos, event_type)
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()
                 return
@@ -197,7 +217,7 @@ class Widget(list):
         return self.left <= x <= self.right and \
                self.top <= y <= self.bottom
 
-    def event(self, position=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None):
         return RESPONSE_CHAIN
 
     def notify_added_to_parent(self, parent):
@@ -441,9 +461,9 @@ class CircleWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, position=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'move':
-            self.center_widget(position)
+            self.center_widget(space_pos)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         else:
@@ -465,7 +485,7 @@ class ElementsWidget(Widget):
     def process_draw(self, gc):
         self.renderer.render(gc, self.scene.device.draw_mode)
 
-    def event(self, position=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftdown', 'leftup'):
             return RESPONSE_CONSUME
         else:
@@ -480,12 +500,10 @@ class SelectionWidget(Widget):
         self.selection_pen.SetColour(wx.BLUE)
         self.selection_pen.SetWidth(25)
         self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
-        self.handle_brush = wx.Brush()
-        self.handle_brush.SetColour(wx.GREEN)
-        self.last_position = None
         self.save_width = None
         self.save_height = None
         self.tool = self.tool_translate
+        self.cursor = None
 
     def hit(self):
         bounds = self.root.bounds
@@ -506,63 +524,68 @@ class SelectionWidget(Widget):
             self.scene.device.signal('refresh_scene', 0)
             return HITCHAIN_DELEGATE
 
-    def event(self, position=None, event_type=None):
-        if self.last_position is None:
-            self.last_position = position
-        dx = -self.last_position[0] + position[0]
-        dy = -self.last_position[1] + position[1]
-        self.last_position = position
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == 'hover_start':
+            self.cursor = wx.CURSOR_SIZING
+            self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+            return RESPONSE_CHAIN
+        if event_type == 'hover_end':
+            self.cursor = wx.CURSOR_ARROW
+            self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+            return RESPONSE_CHAIN
+        if event_type == 'hover':
+            xin = space_pos[0] - self.left
+            yin = space_pos[1] - self.top
+            hdim = 50
+            vdim = 50
+            self.tool = self.tool_translate
+            cursor = self.cursor
+            self.cursor = wx.CURSOR_SIZING
+            if 0 <= xin <= hdim:
+                self.cursor = wx.CURSOR_SIZEWE
+                self.tool = self.tool_scalex_w
+            if 0 <= yin <= vdim:
+                self.cursor = wx.CURSOR_SIZENS
+                self.tool = self.tool_scaley_n
+            if self.width - hdim <= xin:
+                self.cursor = wx.CURSOR_SIZEWE
+                self.tool = self.tool_scalex_e
+            if self.height - vdim <= yin:
+                self.cursor = wx.CURSOR_SIZENS
+                self.tool = self.tool_scaley_s
+            if self.height - vdim <= yin and self.width - hdim <= xin:
+                self.cursor = wx.CURSOR_SIZENWSE
+                self.tool = self.tool_scalexy_se
+            if self.cursor != cursor:
+                self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+            return RESPONSE_CHAIN
+        dx = space_pos[4]
+        dy = space_pos[5]
 
         if event_type == 'rightdown':
-            self.root.set_selected_by_position(position)
+            self.root.set_selected_by_position(space_pos)
             if len(self.root.selected_elements) == 0:
                 return RESPONSE_CONSUME
             self.root.create_menu(self.scene.device.gui, self.root.selected_elements[0])
             return RESPONSE_CONSUME
         if event_type == 'doubleclick':
-            self.root.set_selected_by_position(position)
+            self.root.set_selected_by_position(space_pos)
             self.root.activate_selected_node()
             return RESPONSE_CONSUME
         if event_type == 'leftdown':
             self.save_width = self.width
             self.save_height = self.height
-            xin = position[0] - self.left
-            yin = position[1] - self.top
-            hdim = self.width / 10.0
-            vdim = self.height / 10.0
-            self.tool = self.tool_translate
-            if 0 < xin < hdim:
-                if 0 < yin < vdim:
-                    pass
-                elif 4.5 * vdim < yin < 5.5 * vdim:
-                    pass
-                elif 9.0 * vdim < yin < 10.0 * vdim:
-                    pass
-            elif 4.5 * hdim < xin < 5.5 * hdim:
-                if 0 < yin < vdim:
-                    pass
-                elif 9.0 * vdim < yin < 10.0 * vdim:
-                    self.tool = self.tool_scaley
-            elif 9.0 * hdim < xin < 10.0 * hdim:
-                if 0 < yin < vdim:
-                    pass
-                elif 4.5 * vdim < yin < 5.5 * vdim:
-                    self.tool = self.tool_scalex
-                elif 9.0 * vdim < yin < 10.0 * vdim:
-                    self.tool = self.tool_scalexy_uniform
         if event_type == 'move':
             elements = self.scene.device.device_root.selected_elements
             if elements is None:
                 return RESPONSE_CHAIN
             if len(elements) == 0:
                 return RESPONSE_CHAIN
-            self.tool(position, dx, dy)
+            self.tool(space_pos, dx, dy)
             self.scene.device.signal("selected_bounds", self.root.bounds)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        else:
-            self.last_position = position
-            return RESPONSE_CHAIN
+        return RESPONSE_CHAIN
 
     def tool_scalexy(self, position, dx, dy):
         elements = self.scene.device.device_root.selected_elements
@@ -575,7 +598,7 @@ class SelectionWidget(Widget):
         b = self.root.bounds
         self.root.bounds = [b[0], b[1], position[0], position[1]]
 
-    def tool_scalexy_uniform(self, position, dx, dy):
+    def tool_scalexy_se(self, position, dx, dy):
         elements = self.scene.device.device_root.selected_elements
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
@@ -587,7 +610,7 @@ class SelectionWidget(Widget):
         b = self.root.bounds
         self.root.bounds = [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
 
-    def tool_scalex(self, position, dx, dy):
+    def tool_scalex_e(self, position, dx, dy):
         elements = self.scene.device.device_root.selected_elements
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
@@ -596,7 +619,16 @@ class SelectionWidget(Widget):
         b = self.root.bounds
         self.root.bounds = [b[0], b[1], position[0], b[3]]
 
-    def tool_scaley(self, position, dx, dy):
+    def tool_scalex_w(self, position, dx, dy):
+        elements = self.scene.device.device_root.selected_elements
+        scalex = (self.right - position[0]) / self.save_width
+        self.save_width *= scalex
+        for obj in elements:
+            obj.transform.post_scale(scalex, 1, self.right, self.top)
+        b = self.root.bounds
+        self.root.bounds = [position[0], b[1], b[2], b[3]]
+
+    def tool_scaley_s(self, position, dx, dy):
         elements = self.scene.device.device_root.selected_elements
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
@@ -604,6 +636,15 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(1, scaley, self.left, self.top)
         b = self.root.bounds
         self.root.bounds = [b[0], b[1], b[2], position[1]]
+
+    def tool_scaley_n(self, position, dx, dy):
+        elements = self.scene.device.device_root.selected_elements
+        scaley = (self.bottom - position[1]) / self.save_height
+        self.save_height *= scaley
+        for obj in elements:
+            obj.transform.post_scale(1, scaley, self.left, self.bottom)
+        b = self.root.bounds
+        self.root.bounds = [b[0], position[1], b[2], b[3]]
 
     def tool_translate(self, position, dx, dy):
         elements = self.scene.device.device_root.selected_elements
@@ -626,10 +667,7 @@ class SelectionWidget(Widget):
             font = wx.Font(14.0 / matrix.value_scale_x(), wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
             gc.SetPen(self.selection_pen)
-            gc.SetBrush(self.handle_brush)
             x0, y0, x1, y1 = bounds
-            hdim = (x1 - x0) / 10.0
-            vdim = (y1 - y0) / 10.0
             center_x = (x0 + x1) / 2.0
             center_y = (y0 + y1) / 2.0
             gc.StrokeLine(center_x, 0, center_x, y0)
@@ -639,9 +677,6 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
             gc.SetPen(wx.TRANSPARENT_PEN)
-            gc.DrawRectangle(center_x-(hdim/2), y1-vdim, hdim, vdim)
-            gc.DrawRectangle(x1 - hdim, center_y - vdim/2, hdim, vdim)
-            gc.DrawRectangle(x1 - hdim, y1 - vdim, hdim, vdim)
             if draw_mode & 128 == 0:
                 p = self.scene.device
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
@@ -690,8 +725,11 @@ class GridWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.grid = None
 
-    def event(self, position=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == 'hover':
+            return RESPONSE_CHAIN
         self.grid = None
+        return RESPONSE_CHAIN
 
     def calculate_grid(self):
         if self.scene.device is not None:
@@ -827,31 +865,22 @@ class SceneSpaceWidget(Widget):
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
 
-    def event(self, position=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == 'hover':
+            return RESPONSE_CHAIN
         if event_type == 'wheelup':
-            self.scene_widget.matrix.post_scale(1.1, 1.1, position[0], position[1])
+            self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'wheeldown':
-            self.scene_widget.matrix.post_scale(1.0/1.1, 1.0/1.1, position[0], position[1])
+            self.scene_widget.matrix.post_scale(1.0/1.1, 1.0/1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type in ('middledown'):
-            self.last_position = position
             return RESPONSE_CONSUME
         elif event_type == ('middleup'):
-            self.last_position = None
             return RESPONSE_CONSUME
-
-        if self.last_position is None:
-            return RESPONSE_CONSUME
-        if position is None:
-            return RESPONSE_CONSUME
-
-        dx = self.last_position[0] - position[0]
-        dy = self.last_position[1] - position[1]
-        self.scene_widget.matrix.post_translate(-dx, -dy)
-        self.last_position = position
+        self.scene_widget.matrix.post_translate(-space_pos[4], -space_pos[5])
         self.scene.device.signal('refresh_scene', 0)
         return RESPONSE_CONSUME
 

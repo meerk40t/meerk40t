@@ -777,6 +777,7 @@ class MeerK40t(wx.Frame, Module):
 
     def on_mouse_move(self, event):
         if not event.Dragging():
+            self.widget_scene.event(event.GetPosition(), 'hover')
             return
         self.widget_scene.event(event.GetPosition(), 'move')
 
