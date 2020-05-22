@@ -1758,7 +1758,8 @@ class RootNode(list):
 
     def contains(self, box, x, y=None):
         if y is None:
-            x, y = x
+            y = x[1]
+            x = x[0]
         return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
     def create_menu(self, gui, node):
