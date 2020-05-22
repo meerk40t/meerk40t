@@ -37,7 +37,8 @@ from Shutdown import Shutdown
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
-from ZMatrix import ZMatrix
+from Widget import CircleWidget, Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
+    LaserPathWidget
 from icons import *
 from svgelements import *
 
@@ -323,7 +324,6 @@ class MeerK40t(wx.Frame, Module):
         self.guide_lines = None
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
-        self.mouse_move_function = self.move_pan
         self.working_file = None
 
         self.__set_properties()
@@ -365,8 +365,9 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.process = self.refresh_scene
         self.fps_job = None
-        self.root = None  # RootNode value, must have device for init.
+        self.root = None
         self.background = None
+        self.widget_scene = None
 
     def notify_change(self):
         self.device.signal('rebuild_tree', 0)
@@ -399,6 +400,7 @@ class MeerK40t(wx.Frame, Module):
         device = self.device
         self.Show()
         self.__set_titlebar()
+        device.gui = self
         device.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         device.setting(int, "window_width", 1200)
         device.setting(int, "window_height", 600)
@@ -425,6 +427,14 @@ class MeerK40t(wx.Frame, Module):
             device.window_width = 300
         if device.window_height < 300:
             device.window_height = 300
+        self.widget_scene = device.open('module', 'Scene')
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.renderer))
+        # self.widget_scene.add_scenewidget(CircleWidget(self.widget_scene, top=0, left=0, right=500, bottom=500))
+        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
 
         device.control_instance_add("Transform", self.open_transform_dialog)
         device.control_instance_add("Path", self.open_path_dialog)
@@ -475,7 +485,7 @@ class MeerK40t(wx.Frame, Module):
         if device is not None:
             bedwidth = device.bed_width
             bedheight = device.bed_height
-            self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
+            self.widget_scene.widget_root.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
 
     def shutdown(self,  channel):
         self.Close()
@@ -724,149 +734,57 @@ class MeerK40t(wx.Frame, Module):
         dc.SetBackground(self.background_brush)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        gc.Size = self.Size
+        gc.laserpath = self.laserpath
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
-
-        self.on_draw_scene(gc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix()))
-        self.on_draw_interface(gc)
+        if self.widget_scene is not None:
+            self.widget_scene.draw(gc)
         gc.Destroy()
         del dc
 
-    def on_matrix_change(self):
-        self.guide_lines = None
-
-    def scene_matrix_reset(self):
-        self.matrix.reset()
-        self.on_matrix_change()
-
-    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.post_scale(sx, sy, ax, ay)
-        self.on_matrix_change()
-
-    def scene_post_pan(self, px, py):
-        self.matrix.post_translate(px, py)
-        self.on_matrix_change()
-
-    def scene_post_rotate(self, angle, rx=0, ry=0):
-        self.matrix.post_rotate(angle, rx, ry)
-        self.on_matrix_change()
-
-    def scene_pre_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.pre_scale(sx, sy, ax, ay)
-        self.on_matrix_change()
-
-    def scene_pre_pan(self, px, py):
-        self.matrix.pre_translate(px, py)
-        self.on_matrix_change()
-
-    def scene_pre_rotate(self, angle, rx=0, ry=0):
-        self.matrix.pre_rotate(angle, rx, ry)
-        self.on_matrix_change()
-
-    def get_scale_x(self):
-        return self.matrix.value_scale_x()
-
-    def get_scale_y(self):
-        return self.matrix.value_scale_y()
-
-    def get_skew_x(self):
-        return self.matrix.value_skew_x()
-
-    def get_skew_y(self):
-        return self.matrix.value_skew_y()
-
-    def get_translate_x(self):
-        return self.matrix.value_trans_x()
-
-    def get_translate_y(self):
-        return self.matrix.value_trans_y()
+    # Mouse Events.
 
     def on_mousewheel(self, event):
         rotation = event.GetWheelRotation()
-        mouse = event.GetPosition()
         if self.device.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
-            self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
+            self.widget_scene.event(event.GetPosition(), 'wheelup')
         elif rotation < -1:
-            self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
-        self.request_refresh()
+            self.widget_scene.event(event.GetPosition(), 'wheeldown')
 
     def on_mouse_middle_down(self, event):
-        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         self.scene.CaptureMouse()
-        self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+        self.widget_scene.event(event.GetPosition(), 'middledown')
 
     def on_mouse_middle_up(self, event):
         if self.scene.HasCapture():
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.scene.ReleaseMouse()
-        self.previous_window_position = None
-        self.previous_scene_position = None
+        self.widget_scene.event(event.GetPosition(), 'middleup')
 
     def on_left_mouse_down(self, event):
-        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         self.scene.CaptureMouse()
-        self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.root.set_selected_by_position(self.previous_scene_position)
-        self.mouse_move_function = self.move_selected
-        self.request_refresh()
+        self.widget_scene.event(event.GetPosition(), 'leftdown')
 
     def on_left_mouse_up(self, event):
         if self.scene.HasCapture():
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.scene.ReleaseMouse()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-        self.mouse_move_function = self.move_pan
+        self.widget_scene.event(event.GetPosition(), 'leftup')
 
     def on_mouse_double_click(self, event):
-        position = event.GetPosition()
-        position = self.convert_window_to_scene(position)
-        self.root.set_selected_by_position(position)
-        self.root.activate_selected_node()
-
-    def move_pan(self, wdx, wdy, sdx, sdy):
-        self.scene_post_pan(wdx, wdy)
-        self.request_refresh()
-
-    def move_selected(self, wdx, wdy, sdx, sdy):
-        self.root.move_selected(sdx, sdy)
-        self.request_refresh()
+        self.widget_scene.event(event.GetPosition(), 'doubleclick')
 
     def on_mouse_move(self, event):
         if not event.Dragging():
             return
-        else:
-            self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-        if self.previous_window_position is None:
-            return
-
-        pos = event.GetPosition()
-        window_position = pos.x, pos.y
-        scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
-        sdx = (scene_position[0] - self.previous_scene_position[0])
-        sdy = (scene_position[1] - self.previous_scene_position[1])
-        wdx = (window_position[0] - self.previous_window_position[0])
-        wdy = (window_position[1] - self.previous_window_position[1])
-        self.mouse_move_function(wdx, wdy, sdx, sdy)
-        self.previous_window_position = window_position
-        self.previous_scene_position = scene_position
+        self.widget_scene.event(event.GetPosition(), 'move')
 
     def on_right_mouse_down(self, event):
-        self.popup_window_position = event.GetPosition()
-        self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-        self.root.set_selected_by_position(self.popup_scene_position)
-        if len(self.root.selected_elements) == 0:
-            return
-        self.root.create_menu(self, self.root.selected_elements[0])
+        self.widget_scene.event(event.GetPosition(), 'rightdown')
 
     def on_right_mouse_up(self, event):
-        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        self.widget_scene.event(event.GetPosition(), 'rightup')
 
     @staticmethod
     def get_key_name(event):
@@ -1020,242 +938,6 @@ class MeerK40t(wx.Frame, Module):
                 # Keyup commands only trigger if the down command started with +
                 action = '-' + action[1:]
                 self.device.using('module', 'Console').write(action + "\n")
-
-    def focus_on_elements(self):
-        bbox = self.root.bounds
-        if bbox is None:
-            return
-        self.focus_viewport_scene(bbox)
-        self.request_refresh()
-
-    def focus_position_scene(self, scene_point):
-        window_width, window_height = self.scene.ClientSize
-        scale_x = self.get_scale_x()
-        scale_y = self.get_scale_y()
-        self.scene_matrix_reset()
-        self.scene_post_pan(-scene_point[0], -scene_point[1])
-        self.scene_post_scale(scale_x, scale_y)
-        self.scene_post_pan(window_width / 2.0, window_height / 2.0)
-
-    def focus_viewport_scene(self, new_scene_viewport, buffer=0.0, lock=True):
-        window_width, window_height = self.scene.ClientSize
-        left = new_scene_viewport[0]
-        top = new_scene_viewport[1]
-        right = new_scene_viewport[2]
-        bottom = new_scene_viewport[3]
-        viewport_width = right - left
-        viewport_height = bottom - top
-
-        left -= viewport_width * buffer
-        right += viewport_width * buffer
-        top -= viewport_height * buffer
-        bottom += viewport_height * buffer
-
-        if right == left:
-            scale_x = 100
-        else:
-            scale_x = window_width / float(right - left)
-        if bottom == top:
-            scale_y = 100
-        else:
-            scale_y = window_height / float(bottom - top)
-
-        cx = ((right + left) / 2)
-        cy = ((top + bottom) / 2)
-        self.matrix.reset()
-        self.matrix.post_translate(-cx, -cy)
-        if lock:
-            scale = min(scale_x, scale_y)
-            if scale != 0:
-                self.matrix.post_scale(scale)
-        else:
-            if scale_x != 0 and scale_y != 0:
-                self.matrix.post_scale(scale_x, scale_y)
-        self.matrix.post_translate(window_width / 2.0, window_height / 2.0)
-
-    def convert_scene_to_window(self, position):
-        point = self.matrix.point_in_matrix_space(position)
-        return point[0], point[1]
-
-    def convert_window_to_scene(self, position):
-        point = self.matrix.point_in_inverse_space(position)
-        return point[0], point[1]
-
-    def calculate_grid(self):
-        if self.device is not None:
-            v = self.device
-            wmils = v.bed_width * MILS_IN_MM
-            hmils = v.bed_height * MILS_IN_MM
-        else:
-            wmils = 320 * MILS_IN_MM
-            hmils = 220 * MILS_IN_MM
-
-        p = self.device
-        convert = p.units_convert
-        marks = p.units_marks
-        step = convert * marks
-        starts = []
-        ends = []
-        if step == 0:
-            self.grid = None
-            return starts, ends
-        x = 0.0
-        while x < wmils:
-            starts.append((x, 0))
-            ends.append((x, hmils))
-            x += step
-        y = 0.0
-        while y < hmils:
-            starts.append((0, y))
-            ends.append((wmils, y))
-            y += step
-        self.grid = starts, ends
-
-    def on_draw_grid(self, gc):
-        # Convert to GC.
-        if self.grid is None:
-            self.calculate_grid()
-        starts, ends = self.grid
-        gc.StrokeLineSegments(starts, ends)
-
-    def on_draw_guides(self, gc):
-        w, h = self.Size
-        p = self.device
-        scaled_conversion = p.units_convert * self.matrix.value_scale_x()
-        if scaled_conversion == 0:
-            return
-
-        wpoints = w / 15.0
-        hpoints = h / 15.0
-        points = min(wpoints, hpoints)
-        # tweak the scaled points into being useful.
-        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        points = scaled_conversion * float('{:.1g}'.format(points / scaled_conversion))
-        sx, sy = self.convert_scene_to_window([0, 0])
-        if points == 0:
-            return
-        offset_x = sx % points
-        offset_y = sy % points
-
-        starts = []
-        ends = []
-        x = offset_x
-        length = 50
-        font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, wx.BLACK)
-        while x < w:
-            starts.append((x, 0))
-            ends.append((x, length))
-
-            starts.append((x, h))
-            ends.append((x, h - length))
-
-            mark_point = (x - sx) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
-            x += points
-
-        y = offset_y
-        while y < h:
-            starts.append((0, y))
-            ends.append((length, y))
-
-            starts.append((w, y))
-            ends.append((w - length, y))
-
-            mark_point = (y - sy) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
-            y += points
-        gc.StrokeLineSegments(starts, ends)
-
-    def on_draw_interface(self, gc):
-        pen = wx.Pen(wx.BLACK)
-        pen.SetWidth(1)
-        pen.SetCap(wx.CAP_BUTT)
-        gc.SetPen(pen)
-        if self.device.draw_mode & 2 == 0:
-            self.on_draw_guides(gc)
-        if self.device.draw_mode & 16 == 0:
-            # Draw Reticle
-            gc.SetPen(wx.RED_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            try:
-                x = self.device.current_x
-                y = self.device.current_y
-                if x is None or y is None:
-                    x = 0
-                    y = 0
-                x, y = self.convert_scene_to_window([x, y])
-                gc.DrawEllipse(x - 5, y - 5, 10, 10)
-            except AttributeError:
-                pass
-
-    def on_draw_bed(self, gc):
-        if self.device is not None:
-            v = self.device
-            wmils = v.bed_width * MILS_IN_MM
-            hmils = v.bed_height * MILS_IN_MM
-        else:
-            wmils = 320 * MILS_IN_MM
-            hmils = 220 * MILS_IN_MM
-        if self.background is None:
-            gc.SetBrush(wx.WHITE_BRUSH)
-            gc.DrawRectangle(0, 0, wmils, hmils)
-        else:
-            gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
-
-    def on_draw_selection(self, gc, draw_mode):
-        """Draw Selection Box"""
-        bounds = self.root.bounds
-        if bounds is not None:
-            linewidth = 3.0 / self.matrix.value_scale_x()
-            self.selection_pen.SetWidth(linewidth)
-            font = wx.Font(14.0 / self.matrix.value_scale_x(), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, wx.BLACK)
-
-            gc.SetPen(self.selection_pen)
-            gc.SetBrush(wx.BLACK_BRUSH)
-            x0, y0, x1, y1 = bounds
-            center_x = (x0 + x1) / 2.0
-            center_y = (y0 + y1) / 2.0
-            gc.StrokeLine(center_x, 0, center_x, y0)
-            gc.StrokeLine(0, center_y, x0, center_y)
-            gc.StrokeLine(x0, y0, x1, y0)
-            gc.StrokeLine(x1, y0, x1, y1)
-            gc.StrokeLine(x1, y1, x0, y1)
-            gc.StrokeLine(x0, y1, x0, y0)
-            if draw_mode & 128 == 0:
-                p = self.device
-                conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
-                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
-                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
-                gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
-                gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
-
-    def on_draw_laserpath(self, gc, draw_mode):
-        gc.SetPen(wx.BLUE_PEN)
-        starts, ends = self.laserpath
-        gc.StrokeLineSegments(starts, ends)
-
-    def on_draw_scene(self, gc):
-        self.on_draw_bed(gc)
-        gc.SetPen(wx.BLACK_PEN)
-        if self.device.draw_mode & 4 == 0:
-            self.on_draw_grid(gc)
-        pen = wx.Pen(wx.BLACK)
-        pen.SetWidth(1)
-        pen.SetCap(wx.CAP_BUTT)
-        gc.SetPen(pen)
-        if self.device is None:
-            return
-        self.renderer.render(gc, self.device.draw_mode)
-        if self.device.draw_mode & 32 == 0:
-            self.on_draw_selection(gc, self.device.draw_mode)
-        if self.device.draw_mode & 8 == 0:
-            self.on_draw_laserpath(gc, self.device.draw_mode)
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         kernel = self.device.device_root
@@ -2730,6 +2412,7 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(device):
         device.register('window', "MeerK40t", MeerK40t)
+        device.register('module', 'Scene', Scene)
         device.register('window', 'Shutdown', Shutdown)
         device.register('window', 'PathProperty', PathProperty)
         device.register('window', 'TextProperty', TextProperty)
@@ -2827,7 +2510,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION)
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.0')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
