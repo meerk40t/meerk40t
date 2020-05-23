@@ -37,7 +37,7 @@ from Shutdown import Shutdown
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
-from Widget import CircleWidget, Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
+from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget
 from icons import *
 from svgelements import *
@@ -485,7 +485,8 @@ class MeerK40t(wx.Frame, Module):
         if device is not None:
             bedwidth = device.bed_width
             bedheight = device.bed_height
-            self.widget_scene.widget_root.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
+            bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+            self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
 
     def shutdown(self,  channel):
         self.Close()
@@ -746,6 +747,8 @@ class MeerK40t(wx.Frame, Module):
     # Mouse Events.
 
     def on_mousewheel(self, event):
+        if self.scene.HasCapture():
+            return
         rotation = event.GetWheelRotation()
         if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
@@ -775,6 +778,8 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.event(event.GetPosition(), 'leftup')
 
     def on_mouse_double_click(self, event):
+        if self.scene.HasCapture():
+            return
         self.widget_scene.event(event.GetPosition(), 'doubleclick')
 
     def on_mouse_move(self, event):
@@ -987,7 +992,7 @@ class MeerK40t(wx.Frame, Module):
         Zoomout button press
         """
         m = self.scene.ClientSize / 2
-        self.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.widget_scene.widget_root.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
         self.request_refresh()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -995,14 +1000,19 @@ class MeerK40t(wx.Frame, Module):
         Zoomin button press
         """
         m = self.scene.ClientSize / 2
-        self.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.widget_scene.widget_root.scene_post_scale(1.5, 1.5, m[0], m[1])
         self.request_refresh()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom size button press.
         """
-        self.focus_on_elements()
+        bbox = self.root.bounds
+        if bbox is None:
+            bedwidth = self.device.bed_width
+            bedheight = self.device.bed_height
+            bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+        self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize)
 
     def toggle_draw_mode(self, bits):
         """
@@ -1699,13 +1709,13 @@ class RootNode(list):
         event.Allow()
 
     def select_in_tree_by_selected(self):
+        self.tree.UnselectAll()
         if self.selected_elements is None:
             return
         for e in self.selected_elements:
             nodes = self.tree_lookup[id(e)]
             for n in nodes:
                 if n.type == NODE_ELEMENT:
-                    self.tree.UnselectAll()
                     self.tree.SelectItem(n.item)
                     return
 
@@ -1871,8 +1881,10 @@ class RootNode(list):
                 gui.Bind(wx.EVT_MENU, self.menu_duplicate(node, i),
                          duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
+        if t in (NODE_ELEMENTS_BRANCH, NODE_ELEMENT):
             gui.Bind(wx.EVT_MENU, self.menu_reset(node),
                      menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+        if t == NODE_ELEMENT:
             path_scale_sub_menu = wx.Menu()
             for i in range(1, 25):
                 gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),

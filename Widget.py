@@ -460,27 +460,6 @@ class Widget(list):
     def get_translate_y(self):
         return self.matrix.value_trans_y()
 
-
-class CircleWidget(Widget):
-    def __init__(self, scene, **kwargs):
-        Widget.__init__(self, scene, **kwargs)
-
-    def hit(self):
-        return HITCHAIN_HIT
-
-    def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type == 'move':
-            self.center_widget(space_pos)
-            self.scene.device.signal('refresh_scene', 0)
-            return RESPONSE_CONSUME
-        else:
-            return RESPONSE_CHAIN
-
-    def process_draw(self, gc):
-        gc.SetBrush(wx.BLUE_BRUSH)
-        gc.DrawEllipse(self.left, self.top, self.width, self.height)
-
-
 class ElementsWidget(Widget):
     def __init__(self, scene, root, renderer):
         Widget.__init__(self, scene, all=True)
@@ -537,6 +516,7 @@ class SelectionWidget(Widget):
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        print(event_type)
         if event_type == 'hover_start':
             self.cursor = wx.CURSOR_SIZING
             self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
@@ -614,6 +594,9 @@ class SelectionWidget(Widget):
                 return RESPONSE_CONSUME
             if len(elements) == 0:
                 return RESPONSE_CONSUME
+            if self.save_width is None or self.save_height is None:
+                self.save_width = self.width
+                self.save_height = self.height
             self.tool(space_pos, dx, dy)
             self.scene.device.signal("selected_bounds", self.root.bounds)
             self.scene.device.signal('refresh_scene', 0)
@@ -968,14 +951,7 @@ class SceneSpaceWidget(Widget):
         self.scene.device.signal('refresh_scene', 0)
         return RESPONSE_CONSUME
 
-    def focus_on_elements(self):
-        bbox = self.root.bounds
-        if bbox is None:
-            return
-        self.focus_viewport_scene(bbox)
-        self.scene.device.signal('refresh_scene', 0)
-
-    def focus_position_scene(self, scene_point):
+    def focus_position_scene(self, scene_point, scene_size):
         window_width, window_height = self.scene.ClientSize
         scale_x = self.get_scale_x()
         scale_y = self.get_scale_y()
@@ -984,9 +960,8 @@ class SceneSpaceWidget(Widget):
         self.scene_post_scale(scale_x, scale_y)
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
-    def focus_viewport_scene(self, new_scene_viewport, buffer=0.0, lock=True):
-        window_width = self.scene.device.window_width
-        window_height = self.scene.device.window_height
+    def focus_viewport_scene(self, new_scene_viewport, scene_size, buffer=0.0, lock=True):
+        window_width, window_height = scene_size
         left = new_scene_viewport[0]
         top = new_scene_viewport[1]
         right = new_scene_viewport[2]
