@@ -747,7 +747,7 @@ class MeerK40t(wx.Frame, Module):
 
     def on_mousewheel(self, event):
         rotation = event.GetWheelRotation()
-        if self.device.mouse_zoom_invert:
+        if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
             self.widget_scene.event(event.GetPosition(), 'wheelup')
