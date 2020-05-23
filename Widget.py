@@ -494,7 +494,7 @@ class ElementsWidget(Widget):
         self.renderer.render(gc, self.scene.device.draw_mode)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type in ('leftdown', 'leftup'):
+        if event_type in ('leftclick'):
             self.root.set_selected_by_position(space_pos)
             return RESPONSE_CONSUME
         else:

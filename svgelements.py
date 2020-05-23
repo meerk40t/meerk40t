@@ -2376,6 +2376,7 @@ class Matrix:
         ny = v[0] * self.b + v[1] * self.d + 1 * self.f
         v[0] = nx
         v[1] = ny
+        return v
 
     @classmethod
     def scale(cls, sx=1.0, sy=None):
@@ -2764,7 +2765,7 @@ class Shape(GraphicObject, Transformable):
         """
         Get the bounding box for the given shape.
         """
-        bbs = [seg.bbox() for seg in self.segments(transformed=transformed) if not isinstance(Close, Move)]
+        bbs = [seg.bbox() for seg in self.segments(transformed=False) if not isinstance(Close, Move)]
         try:
             xmins, ymins, xmaxs, ymaxs = list(zip(*bbs))
         except ValueError:
@@ -2773,6 +2774,15 @@ class Shape(GraphicObject, Transformable):
         xmax = max(xmaxs)
         ymin = min(ymins)
         ymax = max(ymaxs)
+        if transformed:
+            p0 = self.transform.transform_point([xmin,ymin])
+            p1 = self.transform.transform_point([xmin,ymax])
+            p2 = self.transform.transform_point([xmax, ymin])
+            p3 = self.transform.transform_point([xmax, ymax])
+            xmin = min(p0[0], p1[0], p2[0], p3[0])
+            ymin = min(p0[1], p1[1], p2[1], p3[1])
+            xmax = max(p0[0], p1[0], p2[0], p3[0])
+            ymax = max(p0[1], p1[1], p2[1], p3[1])
         return xmin, ymin, xmax, ymax
 
     def _init_shape(self, *args):

@@ -755,7 +755,8 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.event(event.GetPosition(), 'wheeldown')
 
     def on_mouse_middle_down(self, event):
-        self.scene.CaptureMouse()
+        if not self.scene.HasCapture():
+            self.scene.CaptureMouse()
         self.widget_scene.event(event.GetPosition(), 'middledown')
 
     def on_mouse_middle_up(self, event):
@@ -764,7 +765,8 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.event(event.GetPosition(), 'middleup')
 
     def on_left_mouse_down(self, event):
-        self.scene.CaptureMouse()
+        if not self.scene.HasCapture():
+            self.scene.CaptureMouse()
         self.widget_scene.event(event.GetPosition(), 'leftdown')
 
     def on_left_mouse_up(self, event):
