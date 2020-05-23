@@ -17,6 +17,8 @@ class Console(Module, Pipe):
         self.laser_on = False
 
     def initialize(self):
+        self.device.setting(int, "bed_width", 280)
+        self.device.setting(int, "bed_height", 200)
         self.channel = self.device.channel_open('console')
         self.active_device = self.device
 
@@ -55,9 +57,8 @@ class Console(Module, Pipe):
             self.unschedule()
 
     def execute_set_position(self, position_x, position_y):
-        min_dim = min(self.device.window_width, self.device.window_height)
-        x_pos = Length(position_x).value(ppi=1000.0, relative_length=min_dim)
-        y_pos = Length(position_y).value(ppi=1000.0, relative_length=min_dim)
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
 
         def move():
             yield COMMAND_MODE_RAPID
@@ -66,20 +67,19 @@ class Console(Module, Pipe):
         return move
 
     def execute_jog(self, direction, amount):
-        try:
-            min_dim = min(self.device.window_width, self.device.window_height)
-        except AttributeError:
-            min_dim = 1080.0
-        amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
         x = 0
         y = 0
         if direction == 'right':
+            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             x = amount
         elif direction == 'left':
+            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             x = -amount
         elif direction == 'up':
+            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             y = -amount
         elif direction == 'down':
+            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             y = amount
         if self.laser_on:
             def cut():
@@ -117,7 +117,7 @@ class Console(Module, Pipe):
         except AttributeError:
             interpreter = None
         if command == 'help':
-            yield '(right|left|top|bottom) <distance>'
+            yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
             yield 'move <x> <y>'
             yield 'home'
@@ -480,17 +480,29 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'circle':
-            element = Circle(cx=float(args[0]), cy=float(args[1]), r=float(args[2]))
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            r_pos = Length(args[1]).value(ppi=1000.0,
+                                          relative_length=min(self.device.bed_height,self.device.bed_width) * 39.3701)
+            element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             element = Path(element)
             self.add_element(element)
             return
         elif command == 'ellipse':
-            element = Ellipse(cx=float(args[0]), cy=float(args[1]), rx=float(args[2]), ry=float(args[3]))
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            ry_pos = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            element = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             element = Path(element)
             self.add_element(element)
             return
         elif command == 'rect':
-            element = Rect(x=float(args[0]), y=float(args[1]), width=float(args[2]), height=float(args[2]))
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            width = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            height = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            element = Rect(x=x_pos, y=y_pos, width=width, height=height)
             element = Path(element)
             self.add_element(element)
             return
