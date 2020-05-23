@@ -385,11 +385,17 @@ class Console(Module, Pipe):
                 value = args[0]
                 chan = args[1]
                 if value == 'open':
-                    active_device.add_watcher(chan, self.channel)
-                    yield "Watching Channel: %s" % chan
+                    if chan == 'console':
+                        yield "Infinite Loop Error."
+                    else:
+                        active_device.add_watcher(chan, self.channel)
+                        yield "Watching Channel: %s" % chan
                 elif value == 'close':
-                    active_device.remove_watcher(chan, self.channel)
-                    yield "Not Watching Channel: %s" % chan
+                    try:
+                        active_device.remove_watcher(chan, self.channel)
+                        yield "Not Watching Channel: %s" % chan
+                    except KeyError:
+                        yield "Channel %s is not opened." % chan
             return
         elif command == 'device':
             if len(args) == 0:

@@ -482,13 +482,13 @@ class Pipe:
         self.close()
 
     def open(self):
-        raise NotImplementedError
+        pass
 
     def close(self):
-        raise NotImplementedError
+        pass
 
     def write(self, bytes_to_write):
-        raise NotImplementedError
+        pass
 
     def realtime_write(self, bytes_to_write):
         """
@@ -700,6 +700,7 @@ class Device(Thread):
         # Channel processing.
         self.channels = {}
         self.watchers = {}
+        self.buffer = {}
         self.greet = {}
 
     def __str__(self):
@@ -1051,16 +1052,29 @@ class Device(Thread):
             self.watchers[channel].append(monitor_function)
         if channel in self.greet:
             monitor_function(self.greet[channel])
+        if channel in self.buffer:
+            for line in self.buffer[channel]:
+                monitor_function(line)
 
     def remove_watcher(self, channel, monitor_function):
         self.watchers[channel].remove(monitor_function)
 
-    def channel_open(self, channel):
+    def channel_open(self, channel, buffer=0):
         if channel not in self.channels:
             def chan(message):
                 if channel in self.watchers:
                     for w in self.watchers[channel]:
                         w(message)
+                if buffer <= 0:
+                    return
+                try:
+                    buff = self.buffer[channel]
+                except KeyError:
+                    buff = list()
+                    self.buffer[channel] = buff
+                buff.append(message)
+                if len(buff) + 10 > buffer:
+                    self.buffer[channel] = buff[-buffer:]
             self.channels[channel] = chan
             if channel in self.greet:
                 chan(self.greet[channel])

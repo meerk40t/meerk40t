@@ -49,7 +49,6 @@ class LhystudiosDevice(Device):
         self.location_name = "USB"
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-        self._device_log = ''
         self.interpreter = None
         self.spooler = None
 
@@ -97,7 +96,6 @@ class LhystudiosDevice(Device):
 
         self.control_instance_add("Emergency Stop", self.emergency_stop)
         self.control_instance_add("Debug Device", self._start_debugging)
-        self.add_watcher('usb', self.log)
 
         pipe = self.open('module', "LhystudioController", instance_name='pipe')
         self.open('module', "LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
@@ -106,10 +104,6 @@ class LhystudiosDevice(Device):
     def halt(self, channel=None):
         self.spooler.clear_queue()
         self.emergency_stop()
-
-    def log(self, message):
-        self._device_log += message
-        self.signal('pipe;device_log', message)
 
     def emergency_stop(self):
         self.interpreter.realtime_command(REALTIME_RESET, 1)
@@ -999,7 +993,7 @@ class LhystudioController(Module, Pipe):
         self.device.control_instance_add("Start", self.start)
         self.device.control_instance_add("Stop", self.stop)
         self.device.control_instance_add("Status Update", self.update_status)
-        self.usb_log = self.device.channel_open("usb")
+        self.usb_log = self.device.channel_open("usb", buffer=20)
         self.send_channel = self.device.channel_open('send')
         self.recv_channel = self.device.channel_open('recv')
         self.reset()
@@ -1108,11 +1102,11 @@ class LhystudioController(Module, Pipe):
         if isinstance(code, int):
             self.usb_state = code
             name = get_name_for_status(code, translation=self.device.device_root.translation)
-            self.log(name)
+            self.usb_log(str(name))
             self.device.signal("pipe;usb_state", code)
             self.device.signal("pipe;usb_status", name)
         else:
-            self.log(str(code))
+            self.usb_log(str(code))
 
     def detect_driver_and_open(self):
         index = self.device.usb_index
@@ -1148,10 +1142,6 @@ class LhystudioController(Module, Pipe):
             self.state_listener(STATE_CONNECTED)
         except ConnectionRefusedError:
             self.driver = None
-
-    def log(self, info):
-        update = str(info) + '\n'
-        self.usb_log(update)
 
     def start(self):
         if self.state == THREAD_STATE_ABORT:
