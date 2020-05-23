@@ -44,7 +44,7 @@ class LaserRender:
                 types.append(SVGImage)
             if draw_mode & 0x1000 == 0:
                 types.append(SVGText)
-            elements = [e for e in self.device if isinstance(e, tuple(*types))]
+            elements = [e for e in elements if type(e) in types]
         for element in elements:
             try:
                 element.draw(element, gc, draw_mode)

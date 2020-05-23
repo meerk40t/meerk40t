@@ -1311,7 +1311,7 @@ class LhystudioController(Module, Pipe):
             self.driver.write(packet)
         self.device.signal("pipe;packet", convert_to_list_bytes(packet))
         self.device.signal("pipe;packet_text", packet)
-        self.send_channel(packet)
+        self.send_channel(str(packet))
 
     def update_status(self):
         if self.device.mock:
