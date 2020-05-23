@@ -444,7 +444,6 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
-
         device.control_instance_add("Transform", self.open_transform_dialog)
         device.control_instance_add("Path", self.open_path_dialog)
         device.control_instance_add("FPS", self.open_fps_dialog)

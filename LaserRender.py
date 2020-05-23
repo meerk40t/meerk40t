@@ -212,7 +212,7 @@ class LaserRender:
             scale = min(scale_x, scale_y)
             matrix.post_scale(scale)
             if isinstance(element, Path):
-                p = self.make_path(gc, element)
+                p = self.make_path(gc, abs(element))
                 self.set_brush(gc, element.fill)
                 try:
                     stroke_width = Length(element.values[SVG_ATTR_STROKE_WIDTH]).value()
