@@ -482,9 +482,10 @@ class CircleWidget(Widget):
 
 
 class ElementsWidget(Widget):
-    def __init__(self, scene, renderer):
+    def __init__(self, scene, root, renderer):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
+        self.root = root
 
     def hit(self):
         return HITCHAIN_HIT
@@ -494,6 +495,7 @@ class ElementsWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftdown', 'leftup'):
+            self.root.set_selected_by_position(space_pos)
             return RESPONSE_CONSUME
         else:
             return RESPONSE_CHAIN

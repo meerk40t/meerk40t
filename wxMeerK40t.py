@@ -429,7 +429,7 @@ class MeerK40t(wx.Frame, Module):
             device.window_height = 300
         self.widget_scene = device.open('module', 'Scene')
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
-        self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.renderer))
+        self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.root, self.renderer))
         # self.widget_scene.add_scenewidget(CircleWidget(self.widget_scene, top=0, left=0, right=500, bottom=500))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
