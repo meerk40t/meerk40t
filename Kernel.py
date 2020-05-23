@@ -1305,10 +1305,10 @@ class Kernel(Device):
 
     def default_keymap(self):
         self.keymap["escape"] = "window open Adjustments"
-        self.keymap["right"] = "+right"
-        self.keymap["left"] = "+left"
-        self.keymap["up"] = "+up"
-        self.keymap["down"] = "+down"
+        self.keymap["d"] = "+right"
+        self.keymap["a"] = "+left"
+        self.keymap["w"] = "+up"
+        self.keymap["s"] = "+down"
         self.keymap['numpad_down'] = '+translate_down'
         self.keymap['numpad_up'] = '+translate_up'
         self.keymap['numpad_left'] = '+translate_left'

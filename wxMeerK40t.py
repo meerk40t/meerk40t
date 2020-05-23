@@ -15,10 +15,10 @@ from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller
+from CutProperty import CutProperty
 from DefaultModules import *
 from DeviceManager import DeviceManager
 from EngraveProperty import EngraveProperty
-from CutProperty import CutProperty
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
@@ -269,16 +269,23 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "DeviceManager", None, -1, ""), id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", None, -1, ""), id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", None, -1, ""), id=ID_MENU_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", None, -1, "",), id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", None, -1, "",), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", None, -1, "",), id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", None, -1, "",), id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", None, -1, "",), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", None, -1, "",), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "",).set_operations(self.device.device_root.operations),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "DeviceManager", None, -1, ""),
+                  id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", None, -1, ""),
+                  id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", None, -1, ""),
+                  id=ID_MENU_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", None, -1, "", ),
+                  id=ID_MENU_SETTINGS)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", None, -1, "", ), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", None, -1, "", ),
+                  id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", None, -1, "", ),
+                  id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", None, -1, "", ), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", None, -1, "", ), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "", ).set_operations(
+            self.device.device_root.operations),
                   id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
@@ -359,6 +366,8 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
@@ -429,12 +438,12 @@ class MeerK40t(wx.Frame, Module):
             device.window_height = 300
         self.widget_scene = device.open('module', 'Scene')
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.root, self.renderer))
-        # self.widget_scene.add_scenewidget(CircleWidget(self.widget_scene, top=0, left=0, right=500, bottom=500))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
-        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
+
 
         device.control_instance_add("Transform", self.open_transform_dialog)
         device.control_instance_add("Path", self.open_path_dialog)
@@ -488,7 +497,7 @@ class MeerK40t(wx.Frame, Module):
             bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
 
-    def shutdown(self,  channel):
+    def shutdown(self, channel):
         self.Close()
 
     def set_fps(self, fps):
@@ -794,151 +803,17 @@ class MeerK40t(wx.Frame, Module):
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
 
-    @staticmethod
-    def get_key_name(event):
-        keyvalue = ''
-        if event.ControlDown():
-            keyvalue += 'control+'
-        if event.AltDown():
-            keyvalue += 'alt+'
-        if event.ShiftDown():
-            keyvalue += 'shift+'
-        if event.MetaDown():
-            keyvalue += 'meta+'
-        key = event.GetKeyCode()
-        if key == wx.WXK_CONTROL:
-            return
-        if key == wx.WXK_ALT:
-            return
-        if key == wx.WXK_SHIFT:
-            return
-        if key == wx.WXK_F1:
-            keyvalue += 'f1'
-        elif key == wx.WXK_F2:
-            keyvalue += 'f2'
-        elif key == wx.WXK_F3:
-            keyvalue += 'f3'
-        elif key == wx.WXK_F4:
-            keyvalue += 'f4'
-        elif key == wx.WXK_F5:
-            keyvalue += 'f5'
-        elif key == wx.WXK_F6:
-            keyvalue += 'f6'
-        elif key == wx.WXK_F7:
-            keyvalue += 'f7'
-        elif key == wx.WXK_F8:
-            keyvalue += 'f8'
-        elif key == wx.WXK_F9:
-            keyvalue += 'f9'
-        elif key == wx.WXK_F10:
-            keyvalue += 'f10'
-        elif key == wx.WXK_F11:
-            keyvalue += 'f11'
-        elif key == wx.WXK_F12:
-            keyvalue += 'f12'
-        elif key == wx.WXK_F13:
-            keyvalue += 'f13'
-        elif key == wx.WXK_ADD:
-            keyvalue += '+'
-        elif key == wx.WXK_END:
-            keyvalue += 'end'
-        elif key == wx.WXK_NUMPAD0:
-            keyvalue += 'numpad0'
-        elif key == wx.WXK_NUMPAD1:
-            keyvalue += 'numpad1'
-        elif key == wx.WXK_NUMPAD2:
-            keyvalue += 'numpad2'
-        elif key == wx.WXK_NUMPAD3:
-            keyvalue += 'numpad3'
-        elif key == wx.WXK_NUMPAD4:
-            keyvalue += 'numpad4'
-        elif key == wx.WXK_NUMPAD5:
-            keyvalue += 'numpad5'
-        elif key == wx.WXK_NUMPAD6:
-            keyvalue += 'numpad6'
-        elif key == wx.WXK_NUMPAD7:
-            keyvalue += 'numpad7'
-        elif key == wx.WXK_NUMPAD8:
-            keyvalue += 'numpad8'
-        elif key == wx.WXK_NUMPAD9:
-            keyvalue += 'numpad9'
-        elif key == wx.WXK_NUMPAD_ADD:
-            keyvalue += 'numpad+'
-        elif key == wx.WXK_NUMPAD_SUBTRACT:
-            keyvalue += 'numpad-'
-        elif key == wx.WXK_NUMPAD_MULTIPLY:
-            keyvalue += 'numpad*'
-        elif key == wx.WXK_NUMPAD_DIVIDE:
-            keyvalue += 'numpad/'
-        elif key == wx.WXK_NUMPAD_DECIMAL:
-            keyvalue += 'numpad.'
-        elif key == wx.WXK_NUMPAD_ENTER:
-            keyvalue += 'numpad_enter'
-        elif key == wx.WXK_NUMPAD_RIGHT:
-            keyvalue += 'numpad_right'
-        elif key == wx.WXK_NUMPAD_LEFT:
-            keyvalue += 'numpad_left'
-        elif key == wx.WXK_NUMPAD_UP:
-            keyvalue += 'numpad_up'
-        elif key == wx.WXK_NUMPAD_DOWN:
-            keyvalue += 'numpad_down'
-        elif key == wx.WXK_NUMPAD_DELETE:
-            keyvalue += 'numpad_delete'
-        elif key == wx.WXK_NUMPAD_INSERT:
-            keyvalue += 'numpad_insert'
-        elif key == wx.WXK_NUMPAD_PAGEUP:
-            keyvalue += 'numpad_pgup'
-        elif key == wx.WXK_NUMPAD_PAGEDOWN:
-            keyvalue += 'numpad_pgdn'
-        elif key == wx.WXK_NUMLOCK:
-            keyvalue += 'numlock'
-        elif key == wx.WXK_SCROLL:
-            keyvalue += 'scroll'
-        elif key == wx.WXK_HOME:
-            keyvalue += 'home'
-        elif key == wx.WXK_DOWN:
-            keyvalue += 'down'
-        elif key == wx.WXK_UP:
-            keyvalue += 'up'
-        elif key == wx.WXK_RIGHT:
-            keyvalue += 'right'
-        elif key == wx.WXK_LEFT:
-            keyvalue += 'left'
-        elif key == wx.WXK_ESCAPE:
-            keyvalue += 'escape'
-        elif key == wx.WXK_BACK:
-            keyvalue += 'back'
-        elif key == wx.WXK_PAUSE:
-            keyvalue += 'pause'
-        elif key == wx.WXK_PAGEDOWN:
-            keyvalue += 'pagedown'
-        elif key == wx.WXK_PAGEUP:
-            keyvalue += 'pageup'
-        elif key == wx.WXK_PRINT:
-            keyvalue += 'print'
-        elif key == wx.WXK_RETURN:
-            keyvalue += 'return'
-        elif key == wx.WXK_SPACE:
-            keyvalue += 'space'
-        elif key == wx.WXK_TAB:
-            keyvalue += 'tab'
-        elif key == wx.WXK_DELETE:
-            keyvalue += 'delete'
-        elif key == wx.WXK_INSERT:
-            keyvalue += 'insert'
-        else:
-            keyvalue += chr(key)
-        return keyvalue.lower()
-
     def on_key_down(self, event):
-        keyvalue = MeerK40t.get_key_name(event)
+        keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
             self.device.using('module', 'Console').write(action + "\n")
+        else:
+            event.Skip()
 
     def on_key_up(self, event):
-        keyvalue = MeerK40t.get_key_name(event)
+        keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
@@ -946,6 +821,8 @@ class MeerK40t(wx.Frame, Module):
                 # Keyup commands only trigger if the down command started with +
                 action = '-' + action[1:]
                 self.device.using('module', 'Console').write(action + "\n")
+        else:
+            event.Skip()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         kernel = self.device.device_root
@@ -2393,11 +2270,11 @@ class RootNode(list):
                 elements = kernel.elements
                 for i in range(len(kernel.operations)):
                     kernel.operations[i] = [e for e in kernel.operations[i]
-                                                 if e not in elements]
+                                            if e not in elements]
                     if len(kernel.operations[i]) == 0:
                         kernel.operations[i] = None
                 kernel.operations = [op for op in kernel.operations
-                                          if op is not None]
+                                     if op is not None]
             node.object.clear()
             self.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
@@ -2424,6 +2301,142 @@ class RootNode(list):
             raise NotImplementedError
 
         return specific
+
+
+def get_key_name(event):
+    keyvalue = ''
+    if event.ControlDown():
+        keyvalue += 'control+'
+    if event.AltDown():
+        keyvalue += 'alt+'
+    if event.ShiftDown():
+        keyvalue += 'shift+'
+    if event.MetaDown():
+        keyvalue += 'meta+'
+    key = event.GetKeyCode()
+    if key == wx.WXK_CONTROL:
+        return
+    if key == wx.WXK_ALT:
+        return
+    if key == wx.WXK_SHIFT:
+        return
+    if key == wx.WXK_F1:
+        keyvalue += 'f1'
+    elif key == wx.WXK_F2:
+        keyvalue += 'f2'
+    elif key == wx.WXK_F3:
+        keyvalue += 'f3'
+    elif key == wx.WXK_F4:
+        keyvalue += 'f4'
+    elif key == wx.WXK_F5:
+        keyvalue += 'f5'
+    elif key == wx.WXK_F6:
+        keyvalue += 'f6'
+    elif key == wx.WXK_F7:
+        keyvalue += 'f7'
+    elif key == wx.WXK_F8:
+        keyvalue += 'f8'
+    elif key == wx.WXK_F9:
+        keyvalue += 'f9'
+    elif key == wx.WXK_F10:
+        keyvalue += 'f10'
+    elif key == wx.WXK_F11:
+        keyvalue += 'f11'
+    elif key == wx.WXK_F12:
+        keyvalue += 'f12'
+    elif key == wx.WXK_F13:
+        keyvalue += 'f13'
+    elif key == wx.WXK_ADD:
+        keyvalue += '+'
+    elif key == wx.WXK_END:
+        keyvalue += 'end'
+    elif key == wx.WXK_NUMPAD0:
+        keyvalue += 'numpad0'
+    elif key == wx.WXK_NUMPAD1:
+        keyvalue += 'numpad1'
+    elif key == wx.WXK_NUMPAD2:
+        keyvalue += 'numpad2'
+    elif key == wx.WXK_NUMPAD3:
+        keyvalue += 'numpad3'
+    elif key == wx.WXK_NUMPAD4:
+        keyvalue += 'numpad4'
+    elif key == wx.WXK_NUMPAD5:
+        keyvalue += 'numpad5'
+    elif key == wx.WXK_NUMPAD6:
+        keyvalue += 'numpad6'
+    elif key == wx.WXK_NUMPAD7:
+        keyvalue += 'numpad7'
+    elif key == wx.WXK_NUMPAD8:
+        keyvalue += 'numpad8'
+    elif key == wx.WXK_NUMPAD9:
+        keyvalue += 'numpad9'
+    elif key == wx.WXK_NUMPAD_ADD:
+        keyvalue += 'numpad+'
+    elif key == wx.WXK_NUMPAD_SUBTRACT:
+        keyvalue += 'numpad-'
+    elif key == wx.WXK_NUMPAD_MULTIPLY:
+        keyvalue += 'numpad*'
+    elif key == wx.WXK_NUMPAD_DIVIDE:
+        keyvalue += 'numpad/'
+    elif key == wx.WXK_NUMPAD_DECIMAL:
+        keyvalue += 'numpad.'
+    elif key == wx.WXK_NUMPAD_ENTER:
+        keyvalue += 'numpad_enter'
+    elif key == wx.WXK_NUMPAD_RIGHT:
+        keyvalue += 'numpad_right'
+    elif key == wx.WXK_NUMPAD_LEFT:
+        keyvalue += 'numpad_left'
+    elif key == wx.WXK_NUMPAD_UP:
+        keyvalue += 'numpad_up'
+    elif key == wx.WXK_NUMPAD_DOWN:
+        keyvalue += 'numpad_down'
+    elif key == wx.WXK_NUMPAD_DELETE:
+        keyvalue += 'numpad_delete'
+    elif key == wx.WXK_NUMPAD_INSERT:
+        keyvalue += 'numpad_insert'
+    elif key == wx.WXK_NUMPAD_PAGEUP:
+        keyvalue += 'numpad_pgup'
+    elif key == wx.WXK_NUMPAD_PAGEDOWN:
+        keyvalue += 'numpad_pgdn'
+    elif key == wx.WXK_NUMLOCK:
+        keyvalue += 'numlock'
+    elif key == wx.WXK_SCROLL:
+        keyvalue += 'scroll'
+    elif key == wx.WXK_HOME:
+        keyvalue += 'home'
+    elif key == wx.WXK_DOWN:
+        keyvalue += 'down'
+    elif key == wx.WXK_UP:
+        keyvalue += 'up'
+    elif key == wx.WXK_RIGHT:
+        keyvalue += 'right'
+    elif key == wx.WXK_LEFT:
+        keyvalue += 'left'
+    elif key == wx.WXK_ESCAPE:
+        keyvalue += 'escape'
+    elif key == wx.WXK_BACK:
+        keyvalue += 'back'
+    elif key == wx.WXK_PAUSE:
+        keyvalue += 'pause'
+    elif key == wx.WXK_PAGEDOWN:
+        keyvalue += 'pagedown'
+    elif key == wx.WXK_PAGEUP:
+        keyvalue += 'pageup'
+    elif key == wx.WXK_PRINT:
+        keyvalue += 'print'
+    elif key == wx.WXK_RETURN:
+        keyvalue += 'return'
+    elif key == wx.WXK_SPACE:
+        keyvalue += 'space'
+    elif key == wx.WXK_TAB:
+        keyvalue += 'tab'
+    elif key == wx.WXK_DELETE:
+        keyvalue += 'delete'
+    elif key == wx.WXK_INSERT:
+        keyvalue += 'insert'
+    else:
+        keyvalue += chr(key)
+    return keyvalue.lower()
 
 
 class wxMeerK40t(wx.App, Module):
@@ -2494,7 +2507,7 @@ class wxMeerK40t(wx.App, Module):
 
     def language_swap(self, lang):
         self.language_to(lang)(None)
-        self.device.device_root.open('window', "MeerK40t",  None, -1, "")
+        self.device.device_root.open('window', "MeerK40t", None, -1, "")
 
     def language_to(self, lang):
         """

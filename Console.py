@@ -772,6 +772,7 @@ class Console(Module, Pipe):
                     yield '%d: key %s -> %s' % (i, key, value)
                 yield '----------'
             else:
+                key = args[0].lower()
                 command_line = ' '.join(args[1:])
                 f = command_line.find('bind')
                 if f == -1:  # If bind value has a bind, do not evaluate.
@@ -787,7 +788,14 @@ class Console(Module, Pipe):
                         except AttributeError:
                             y = 0
                         command_line = command_line.replace('$y', str(y))
-                kernel.keymap[args[0].lower()] = command_line
+                if len(command_line) != 0:
+                    kernel.keymap[key] = command_line
+                else:
+                    try:
+                        del kernel.keymap[key]
+                        yield "Unbound %s" % key
+                    except KeyError:
+                        pass
             return
         elif command == 'alias':
             if len(args) == 0:

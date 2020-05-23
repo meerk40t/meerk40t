@@ -23,7 +23,7 @@ class Keymap(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_keydown, self.text_key_name)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_keydown, self)
 
     def on_close(self, event):
         self.device.remove('window', self.name)
@@ -75,4 +75,6 @@ class Keymap(wx.Frame, Module):
         self.reload_keymap()
 
     def on_keydown(self, event):
+        keyvalue = get_key_name(event)
+        self.text_key_name.SetValue(keyvalue)
         print(event)
