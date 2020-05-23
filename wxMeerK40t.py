@@ -1693,8 +1693,29 @@ class RootNode(list):
         :return:
         """
         item = event.GetItem()
-        node = self.tree.GetItemData(item)
+        if item.IsOk():
+            node = self.tree.GetItemData(item)
+            self.set_selected_in_tree(node)
+        event.Allow()
 
+    def select_in_tree_by_selected(self):
+        if self.selected_elements is None:
+            return
+        for e in self.selected_elements:
+            nodes = self.tree_lookup[id(e)]
+            for n in nodes:
+                if n.type == NODE_ELEMENT:
+                    self.tree.UnselectAll()
+                    self.tree.SelectItem(n.item)
+                    return
+
+    def set_selected_in_tree(self, node):
+        """
+        Set the selected element in the tree to trickle-down the semiselection and highlight selections.
+
+        :param node:
+        :return:
+        """
         if node is None:
             return
         self.semi_unselect()
@@ -1741,7 +1762,6 @@ class RootNode(list):
             return
         self.gui.request_refresh()
         self.selection_updated()
-        event.Allow()
 
     def set_selected_by_position(self, position):
         kernel = self.device.device_root
@@ -1818,10 +1838,6 @@ class RootNode(list):
         elif t == NODE_OPERATION:
             operation_convert_submenu = wx.Menu()
             for name in ("Raster", "Engrave", "Cut"):
-                menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
-                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
-                menu_op.Enable(False)
-            for name in ("ZDepth_Raster", "Multishade_Raster", "Wait-Step_Raster"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)

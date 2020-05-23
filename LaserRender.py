@@ -62,8 +62,8 @@ class LaserRender:
             element.draw(element, gc, draw_mode)
 
     def generate_path(self, path):
-        object_path = abs(path)
-        plot = object_path
+        # object_path = abs(path)
+        plot = path
         first_point = plot.first_point
         if first_point is None:
             return
@@ -116,6 +116,9 @@ class LaserRender:
             matrix = Matrix()
         drawfills = draw_mode & 1 == 0
         drawstrokes = draw_mode & 64 == 0
+        if not hasattr(element, 'cache') or element.cache is None:
+            cache = self.make_path(gc, element)
+            element.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         try:
@@ -124,13 +127,6 @@ class LaserRender:
         except KeyError:
             self.set_pen(gc, element.stroke)
         self.set_brush(gc, element.fill)
-        cache = None
-        try:
-            cache = element.cache
-        except AttributeError:
-            pass
-        if cache is None:
-            element.cache = self.make_path(gc, element)
         if drawfills and element.fill is not None:
             gc.FillPath(element.cache)
         if drawstrokes and element.stroke is not None:

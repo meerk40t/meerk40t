@@ -496,6 +496,8 @@ class ElementsWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftclick'):
             self.root.set_selected_by_position(space_pos)
+            self.root.select_in_tree_by_selected()
+            self.scene.device.device_root.signal('selected_elements', self.root.selected_elements)
             return RESPONSE_CONSUME
         else:
             return RESPONSE_CHAIN
