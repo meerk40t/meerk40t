@@ -601,6 +601,9 @@ class SelectionWidget(Widget):
             self.save_height = self.height
             self.uniform = False
             return RESPONSE_CONSUME
+        if event_type in ('middleup', 'leftup'):
+            self.ensure_positive_bounds()
+            return RESPONSE_CONSUME
         if event_type == 'move':
             elements = self.scene.device.device_root.selected_elements
             if elements is None:
@@ -611,7 +614,7 @@ class SelectionWidget(Widget):
             self.scene.device.signal("selected_bounds", self.root.bounds)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
 
     def tool_scalexy(self, position, dx, dy):
         elements = self.scene.device.device_root.selected_elements
@@ -727,6 +730,10 @@ class SelectionWidget(Widget):
         self.translate(dx, dy)
         b = self.root.bounds
         self.root.bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
+
+    def ensure_positive_bounds(self):
+        b = self.root.bounds
+        self.root.bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
 
     def process_draw(self, gc):
         if self.scene.device.draw_mode & 32 != 0:
