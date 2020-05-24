@@ -985,7 +985,7 @@ class LhystudioController(Module, Pipe):
         self.send_channel = None
         self.recv_channel = None
         self.process = self.write_buffer_to_usb
-        self.interval = 0.05
+        self.interval = 0.1
 
     def initialize(self):
         self.device.setting(int, 'packet_count', 0)
@@ -1037,7 +1037,7 @@ class LhystudioController(Module, Pipe):
                 self.refuse_counts = 0
             except ConnectionRefusedError:
                 self.refuse_counts += 1
-                self.next_run = 3 # 3 second sleep on failed connection attempt.
+                self.next_run = 3  # 3 second sleep on failed connection attempt.
                 if self.refuse_counts >= self.max_attempts:
                     self.device.signal('pipe;thread', THREAD_STATE_ABORT)
                     self.state = THREAD_STATE_ABORT
@@ -1051,6 +1051,7 @@ class LhystudioController(Module, Pipe):
             if queue_processed:
                 # Packet was sent.
                 self.count = 0
+                self.next_run = -1  # We are sending. Send now.
             else:
                 # No packet could be sent.
                 if self.count > 5:
