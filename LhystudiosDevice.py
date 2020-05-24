@@ -47,6 +47,8 @@ class LhystudiosDevice(Device):
         self.uid = uid
         self.device_name = "Lhystudios"
         self.location_name = "USB"
+        self.current_x = 0
+        self.current_y = 0
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
         self.interpreter = None
