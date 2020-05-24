@@ -328,6 +328,8 @@ class LhymicroInterpreter(Interpreter):
         self.is_paused = False
 
     def reset(self):
+        Interpreter.reset(self)
+        self.plot = None
         self.pipe.realtime_write(b'I*\n')
         self.state = INTERPRETER_STATE_RAPID
         self.device.signal('interpreter;mode', self.state)
@@ -442,9 +444,6 @@ class LhymicroInterpreter(Interpreter):
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
             self.ensure_finished_mode()
             self.ensure_program_mode()
-
-    def set_power(self, power=1000.0):
-        self.power = power
 
     def set_d_ratio(self, d_ratio=None):
         change = False

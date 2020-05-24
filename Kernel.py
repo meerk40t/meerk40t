@@ -435,7 +435,10 @@ class Interpreter(Module):
         self.extra_hold = lambda: len(self.pipe) != 0
 
     def reset(self):
+        self.spooled_item = None
         self.device.spooler.clear_queue()
+        self.spooled_item = None
+        self.extra_hold = None
 
     def status(self):
         parts = list()
