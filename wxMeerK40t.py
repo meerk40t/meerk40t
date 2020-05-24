@@ -360,9 +360,9 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-        #
-        # self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
-        # self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
+
+        self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
+        self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -1021,7 +1021,7 @@ class MeerK40t(wx.Frame, Module):
                 yield COMMAND_HOME
                 yield COMMAND_LASER_OFF
                 yield COMMAND_WAIT_FINISH
-                yield COMMAND_MOVE, (3000, 3000)
+                yield COMMAND_MOVE, 3000, 3000
                 yield COMMAND_WAIT_FINISH
                 yield COMMAND_LASER_ON
                 yield COMMAND_WAIT, 0.05
@@ -1398,7 +1398,7 @@ class RootNode(list):
 
     def selection_bounds_updated(self):
         self.bounds = OperationPreprocessor.bounding_box(self.selected_elements)
-        self.device.signal("selected_bounds", self.bounds)
+        self.device.device_root.signal("selected_bounds", self.bounds)
 
     def activate_selected_node(self):
         if self.selected_elements is not None and len(self.selected_elements) != 0:
@@ -1413,7 +1413,7 @@ class RootNode(list):
             obj.transform.post_translate(dx, dy)
         b = self.bounds
         self.bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
-        self.device.signal("selected_bounds", self.bounds)
+        self.device.device_root.signal("selected_bounds", self.bounds)
 
     def on_drag_begin_handler(self, event):
         """

@@ -549,13 +549,15 @@ class Navigation(wx.Frame, Module):
         hull = [p for p in Point.convex_hull(pts)]
         if len(hull) == 0:
             return
+        hull.append(hull[0]) # loop
 
         def trace_hull():
             yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_OFF
+            yield COMMAND_MODE_RAPID
             for p in hull:
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, p
+                print(p)
+                yield COMMAND_MOVE, p[0], p[1]
 
         self.device.spooler.send_job(trace_hull)
 
@@ -568,11 +570,11 @@ class Navigation(wx.Frame, Module):
             yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_OFF
             yield COMMAND_MODE_RAPID
-            yield COMMAND_MOVE, (bbox[0], bbox[1])
-            yield COMMAND_MOVE, (bbox[2], bbox[1])
-            yield COMMAND_MOVE, (bbox[2], bbox[3])
-            yield COMMAND_MOVE, (bbox[0], bbox[3])
-            yield COMMAND_MOVE, (bbox[0], bbox[1])
+            yield COMMAND_MOVE, bbox[0], bbox[1]
+            yield COMMAND_MOVE, bbox[2], bbox[1]
+            yield COMMAND_MOVE, bbox[2], bbox[3]
+            yield COMMAND_MOVE, bbox[0], bbox[3]
+            yield COMMAND_MOVE, bbox[0], bbox[1]
 
         self.device.spooler.send_job(trace_quick)
         self.drag_ready(True)

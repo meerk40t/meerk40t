@@ -204,7 +204,7 @@ class GRBLEmulator(Module, Pipe):
                 spooler.add_command(COMMAND_HOME)
                 if self.home_adjust is not None:
                     spooler.add_command(COMMAND_MODE_RAPID)
-                    spooler.add_command(COMMAND_MOVE, (self.home_adjust[0], self.home_adjust[1]))
+                    spooler.add_command(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             return 3  # GRBL '$' system command was not recognized or supported.
@@ -299,7 +299,7 @@ class GRBLEmulator(Module, Pipe):
                     spooler.add_command(COMMAND_MODE_RAPID)
                     spooler.add_command(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.add_command(COMMAND_MOVE, (self.home_adjust[0], self.home_adjust[1]))
+                        spooler.add_command(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
                     if self.home is not None:
                         spooler.add_command(COMMAND_MOVE, self.home)
                 elif v == 28.1:
@@ -320,26 +320,26 @@ class GRBLEmulator(Module, Pipe):
                     spooler.add_command(COMMAND_MODE_RAPID)
                     spooler.add_command(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.add_command(COMMAND_MOVE, (self.home_adjust[0], self.home_adjust[1]))
+                        spooler.add_command(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
                 elif v == 28.3:
                     spooler.add_command(COMMAND_MODE_RAPID)
                     spooler.add_command(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.add_command(COMMAND_MOVE, (self.home_adjust[0], self.home_adjust[1]))
+                        spooler.add_command(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
                     if 'x' in gc:
                         x = gc['x'].pop(0)
                         if len(gc['x']) == 0:
                             del gc['x']
                         if x is None:
                             x = 0
-                        spooler.add_command(COMMAND_MOVE, (x, 0))
+                        spooler.add_command(COMMAND_MOVE, x, 0)
                     if 'y' in gc:
                         y = gc['y'].pop(0)
                         if len(gc['y']) == 0:
                             del gc['y']
                         if y is None:
                             y = 0
-                        spooler.add_command(COMMAND_MOVE, (0, y))
+                        spooler.add_command(COMMAND_MOVE, 0, y)
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
                     if 'p' in gc:
@@ -351,7 +351,7 @@ class GRBLEmulator(Module, Pipe):
                     spooler.add_command(COMMAND_MODE_RAPID)
                     spooler.add_command(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.add_command(COMMAND_MOVE, (self.home_adjust[0], self.home_adjust[1]))
+                        spooler.add_command(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
                     if self.home2 is not None:
                         spooler.add_command(COMMAND_MOVE, self.home2)
                 elif v == 30.1:
@@ -472,15 +472,15 @@ class GRBLEmulator(Module, Pipe):
                 y = 0
             if self.move_mode == 0:
                 spooler.add_command(COMMAND_LASER_OFF)
-                spooler.add_command(COMMAND_MOVE, (x, y))
+                spooler.add_command(COMMAND_MOVE, x, y)
             elif self.move_mode == 1:
                 if self.on_mode:
                     spooler.add_command(COMMAND_LASER_ON)
-                spooler.add_command(COMMAND_MOVE, (x, y))
+                spooler.add_command(COMMAND_MOVE, x, y)
             elif self.move_mode == 2:
-                spooler.add_command(COMMAND_MOVE, (x, y))  # TODO: Implement CW_ARC
+                spooler.add_command(COMMAND_MOVE, x, y)  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
-                spooler.add_command(COMMAND_MOVE, (x, y))  # TODO: Implement CCW_ARC
+                spooler.add_command(COMMAND_MOVE, x, y)  # TODO: Implement CCW_ARC
         return 0
 
 

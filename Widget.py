@@ -586,6 +586,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         if event_type in ('middleup', 'leftup'):
             self.ensure_positive_bounds()
+            self.scene.device.device_root.signal("selected_bounds", self.root.bounds)
             return RESPONSE_CONSUME
         if event_type == 'move':
             elements = self.scene.device.device_root.selected_elements
@@ -597,7 +598,7 @@ class SelectionWidget(Widget):
                 self.save_width = self.width
                 self.save_height = self.height
             self.tool(space_pos, dx, dy)
-            self.scene.device.signal("selected_bounds", self.root.bounds)
+            self.scene.device.device_root.signal("selected_bounds", self.root.bounds)
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         return RESPONSE_CHAIN

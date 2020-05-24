@@ -431,7 +431,8 @@ class Interpreter(Module):
         self.next_run = t
 
     def wait_finish(self, *values):
-        self.extra_hold = lambda: len(self.pipe) == 0
+        """Adds an additional holding requirement if the pipe has any data."""
+        self.extra_hold = lambda: len(self.pipe) != 0
 
     def reset(self):
         self.device.spooler.clear_queue()

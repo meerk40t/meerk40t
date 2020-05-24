@@ -216,7 +216,9 @@ class LhymicroInterpreter(Interpreter):
             self.CODE_BOTTOM = q
 
     def hold(self):
+        """Holds the data flow if needed."""
         if self.extra_hold is not None:
+            # Has an additional hold requirement.
             if self.extra_hold():
                 return True
             else:

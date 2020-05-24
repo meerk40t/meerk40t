@@ -235,10 +235,10 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_LASER_ON
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_MOVE, (0, y)
-        yield COMMAND_MOVE, (x, y)
-        yield COMMAND_MOVE, (x, 0)
-        yield COMMAND_MOVE, (0, 0)
+        yield COMMAND_MOVE, 0, y
+        yield COMMAND_MOVE, x, y
+        yield COMMAND_MOVE, x, 0
+        yield COMMAND_MOVE, 0, 0
         yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
@@ -257,7 +257,7 @@ class Alignment(wx.Frame, Module):
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, 0.001
             yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, (x_val, y_val)
+            yield COMMAND_MOVE, x_val, y_val
             y_val += y_step
 
     def horizontal_test(self):
@@ -269,7 +269,7 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_MODE_PROGRAM
         yield COMMAND_LASER_ON
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_MOVE, (x, 0)
+        yield COMMAND_MOVE, x, 0
         yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
@@ -282,7 +282,7 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_MODE_PROGRAM
         yield COMMAND_LASER_ON
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
-        yield COMMAND_MOVE, (0, y)
+        yield COMMAND_MOVE, 0, y
         yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
@@ -296,7 +296,7 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
         yield COMMAND_MODE_RAPID
-        yield COMMAND_MOVE, (0, y_max)
+        yield COMMAND_MOVE, 0, y_max
         yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
@@ -312,7 +312,7 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
         yield COMMAND_MODE_RAPID
-        yield COMMAND_MOVE, (x_max, 0)
+        yield COMMAND_MOVE, x_max, 0
         yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
@@ -329,19 +329,19 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_MOVE, (0, y_max)
+        yield COMMAND_MOVE, 0, y_max
         yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_MOVE, (x_max, y_max)
+        yield COMMAND_MOVE, x_max, y_max
         yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_MOVE, (x_max, 0)
+        yield COMMAND_MOVE, x_max, 0
         yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
