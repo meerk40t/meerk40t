@@ -360,9 +360,9 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-
-        self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
-        self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
+        #
+        # self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
+        # self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
@@ -372,6 +372,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.scene.SetFocus()
         self.process = self.refresh_scene
         self.fps_job = None
         self.root = None
@@ -446,6 +447,8 @@ class MeerK40t(wx.Frame, Module):
 
         device.control_instance_add("Transform", self.open_transform_dialog)
         device.control_instance_add("Path", self.open_path_dialog)
+        device.control_instance_add("Fill",self.open_fill_dialog)
+        device.control_instance_add("Stroke", self.open_stroke_dialog)
         device.control_instance_add("FPS", self.open_fps_dialog)
         device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
@@ -766,6 +769,7 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.event(event.GetPosition(), 'wheeldown')
 
     def on_mouse_middle_down(self, event):
+        self.scene.SetFocus()
         if not self.scene.HasCapture():
             self.scene.CaptureMouse()
         self.widget_scene.event(event.GetPosition(), 'middledown')
@@ -776,6 +780,7 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.event(event.GetPosition(), 'middleup')
 
     def on_left_mouse_down(self, event):
+        self.scene.SetFocus()
         if not self.scene.HasCapture():
             self.scene.CaptureMouse()
         self.widget_scene.event(event.GetPosition(), 'leftdown')
@@ -797,6 +802,7 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.event(event.GetPosition(), 'move')
 
     def on_right_mouse_down(self, event):
+        self.scene.SetFocus()
         self.widget_scene.event(event.GetPosition(), 'rightdown')
 
     def on_right_mouse_up(self, event):
@@ -956,6 +962,40 @@ class MeerK40t(wx.Frame, Module):
                     except AttributeError:
                         pass
                 self.device.signal('rebuild_tree', 0)
+
+    def open_fill_dialog(self):
+        kernel = self.device.device_root
+        if len(kernel.selected_elements) == 0:
+            return
+        element = kernel.selected_elements[0]
+        data = wx.ColourData()
+        data.SetColour(wx.Colour(swizzlecolor(element.fill)))
+        dlg = wx.ColourDialog(self, data)
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetColourData()
+            color = data.GetColour()
+            rgb = color.GetRGB()
+            color = swizzlecolor(rgb)
+            color = Color(color, 1.0)
+            for elem in kernel.selected_elements:
+                elem.fill = color
+
+    def open_stroke_dialog(self):
+        kernel = self.device.device_root
+        if len(kernel.selected_elements) == 0:
+            return
+        element = kernel.selected_elements[0]
+        data = wx.ColourData()
+        data.SetColour(wx.Colour(swizzlecolor(element.stroke)))
+        dlg = wx.ColourDialog(self, data)
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetColourData()
+            color = data.GetColour()
+            rgb = color.GetRGB()
+            color = swizzlecolor(rgb)
+            color = Color(color, 1.0)
+            for elem in kernel.selected_elements:
+                elem.stroke = color
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')

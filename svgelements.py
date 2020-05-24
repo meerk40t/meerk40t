@@ -1861,6 +1861,8 @@ class Angle(float):
             return Angle.radians(float(angle_string[:-3]))
         if angle_string.endswith('turn'):
             return Angle.turns(float(angle_string[:-4]))
+        if angle_string.endswith('%'):
+            return Angle.turns(float(angle_string[:-1]) / 100.0)
         return Angle.degrees(float(angle_string))
 
     @classmethod
@@ -5780,7 +5782,10 @@ class SVGText(GraphicObject, Transformable):
     """
 
     def __init__(self, *args, **kwargs):
-        self.text = ''
+        if len(args) >= 1:
+            self.text = args[0]
+        else:
+            self.text = ''
         self.width = 0
         self.height = 0
         self.x = 0
@@ -5789,13 +5794,31 @@ class SVGText(GraphicObject, Transformable):
         self.dy = 0
         self.anchor = 'start'  # start, middle, end.
         self.font_family = 'san-serif'
-        self.font_size = 16  # 16 point font 'normal'
-        self.font_weight = 400  # Thin=100, Normal=400, Bold=700
+        self.font_size = 16.0  # 16 point font 'normal'
+        self.font_weight = 400.0  # Thin=100, Normal=400, Bold=700
         self.font_face = ''
 
         self.path = None
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+
+    def __str__(self):
+        parts = list()
+        parts.append("'%s'" % self.text)
+        parts.append('font_family=%s' % self.font_family)
+        parts.append('anchor=%s' % self.anchor)
+        parts.append('font_size=%d' % self.font_size)
+        parts.append('font_weight=%s' % str(self.font_weight))
+        return 'Text(%s)' % (', '.join(parts))
+
+    def __repr__(self):
+        parts = list()
+        parts.append('%s' % self.text)
+        parts.append('font_family=%s' % self.font_family)
+        parts.append('anchor=%s' % self.anchor)
+        parts.append('font_size=%d' % self.font_size)
+        parts.append('font_weight=%s' % str(self.font_weight))
+        return 'Text(%s)' % (', '.join(parts))
 
     def property_by_object(self, s):
         Transformable.property_by_object(self, s)
@@ -5831,7 +5854,7 @@ class SVGText(GraphicObject, Transformable):
         self.font_face = values.get(SVG_ATTR_FONT_FACE)
         self.font_family = values.get(SVG_ATTR_FONT_FAMILY, self.font_family)
         self.font_size = Length(values.get(SVG_ATTR_FONT_SIZE, self.font_size)).value()
-        self.font_weight = values.get(SVG_ATTR_FONT_WEIGHT, self.font_family)
+        self.font_weight = values.get(SVG_ATTR_FONT_WEIGHT, self.font_weight)
         font = values.get(SVG_ATTR_FONT, None)
         if font is not None:
             self.parse_font(font)

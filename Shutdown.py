@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 class Shutdown(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Shutdown.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.CAPTION | wx.CLIP_CHILDREN | wx.FRAME_TOOL_WINDOW | wx.RESIZE_BORDER | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.CAPTION | wx.CLIP_CHILDREN | wx.FRAME_TOOL_WINDOW | wx.RESIZE_BORDER
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((413, 573))

@@ -2,25 +2,25 @@ import wx
 
 from Kernel import Module
 from LaserRender import swizzlecolor
-from icons import icons8_bold_50, icons8_underline_50, icons8_italic_50
+from icons import icons8_choose_font_50
 from svgelements import *
 
 _ = wx.GetTranslation
 
 
-class TextProperty(wx.Frame, Module):
+class TextProperty(wx.Frame,  Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
-        self.SetSize((317, 426))
+        self.SetSize((317, 360))
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.combo_font_size = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
-        self.combo_font = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
-        self.button_bold = wx.ToggleButton(self, wx.ID_ANY, "")
-        self.button_italic = wx.ToggleButton(self, wx.ID_ANY, "")
-        self.button_underline = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.element = None
+        self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_fonttest.SetFont(
+            wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.button_choose_font = wx.BitmapButton(self, wx.ID_ANY, icons8_choose_font_50.GetBitmap())
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, "None")
         self.button_stroke_none.name = "stroke none"
         self.button_stroke_F00 = wx.Button(self, wx.ID_ANY, "")
@@ -60,11 +60,7 @@ class TextProperty(wx.Frame, Module):
 
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_text)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_text)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_font_size, self.combo_font_size)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_font, self.combo_font)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_bold, self.button_bold)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_italic, self.button_italic)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_underline, self.button_underline)
+        self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F00)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0F0)
@@ -82,7 +78,6 @@ class TextProperty(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
         # end wxGlade
-        self.text_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
@@ -90,11 +85,16 @@ class TextProperty(wx.Frame, Module):
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
-        self.text_element = element
+        self.element = element
         try:
             if element.stroke is not None and element.stroke != "none":
-                color = wx.Colour(swizzlecolor(element.stroke))
-                self.text_text.SetBackgroundColour(color)
+                self.text_text.SetValue(element.text)
+                self.label_fonttest.SetLabelText(element.text)
+                try:
+                    self.label_fonttest.SetFont(element.wxfont)
+                except AttributeError:
+                    pass
+                self.device.signal("refresh_scene", 0)
         except AttributeError:
             pass
 
@@ -102,18 +102,13 @@ class TextProperty(wx.Frame, Module):
         self.device.close('window', self.name)
         self.Show()
 
-    def shutdown(self,  channel):
+    def shutdown(self, channel):
         self.Close()
 
     def __set_properties(self):
         # begin wxGlade: TextProperty.__set_properties
-        self.SetTitle(_("Text Properties"))
-        self.button_bold.SetMinSize((52, 52))
-        self.button_bold.SetBitmap(icons8_bold_50.GetBitmap())
-        self.button_italic.SetMinSize((52, 52))
-        self.button_italic.SetBitmap(icons8_italic_50.GetBitmap())
-        self.button_underline.SetMinSize((52, 52))
-        self.button_underline.SetBitmap(icons8_underline_50.GetBitmap())
+        self.SetTitle("Text Properties")
+        self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
         self.button_stroke_none.SetToolTip(_("\"none\" defined value"))
         self.button_stroke_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
         self.button_stroke_F00.SetToolTip(_("#FF0000 defined values."))
@@ -153,20 +148,9 @@ class TextProperty(wx.Frame, Module):
         sizer_9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL)
         sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL)
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_8.Add(self.text_text, 0, wx.EXPAND, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("Font Size:"))
-        sizer_1.Add(label_1, 1, 0, 0)
-        sizer_1.Add(self.combo_font_size, 2, 0, 0)
-        sizer_8.Add(sizer_1, 1, wx.EXPAND, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Font:"))
-        sizer_2.Add(label_2, 1, 0, 0)
-        sizer_2.Add(self.combo_font, 2, 0, 0)
-        sizer_8.Add(sizer_2, 1, wx.EXPAND, 0)
-        sizer_3.Add(self.button_bold, 0, 0, 0)
-        sizer_3.Add(self.button_italic, 0, 0, 0)
-        sizer_3.Add(self.button_underline, 0, 0, 0)
+        sizer_3.Add(self.button_choose_font, 0, 0, 0)
+        sizer_3.Add(self.label_fonttest, 1, wx.EXPAND, 0)
         sizer_8.Add(sizer_3, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
@@ -192,38 +176,51 @@ class TextProperty(wx.Frame, Module):
         self.Centre()
         # end wxGlade
 
-    def on_combo_font_size(self, event):  # wxGlade: TextProperty.<event_handler>
-        pass
+    def update_label(self):
+        element = self.element
+        try:
+            self.label_fonttest.SetFont(element.wxfont)
+        except AttributeError:
+            pass
+        self.label_fonttest.SetLabelText(element.text)
+        self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(element.fill)))
 
-    def on_combo_font(self, event):  # wxGlade: TextProperty.<event_handler>
+    def refresh(self):
+        self.device.signal("element_property_update", self.element)
+        self.device.signal("refresh_scene", 0)
+
+    def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
+        try:
+            self.element.text = self.text_text.GetValue()
+            self.update_label()
+            self.refresh()
+        except AttributeError:
+            pass
         event.Skip()
 
-    def on_button_bold(self, event):  # wxGlade: TextProperty.<event_handler>
-        dialog = wx.FontDialog(None, wx.FontData())
+    def on_button_choose_font(self, event):  # wxGlade: TextProperty.<event_handler>
+        font_data = wx.FontData()
+        try:
+            font_data.SetInitialFont(self.element.wxfont)
+            font_data.SetColour(wx.Colour(swizzlecolor(self.element.fill)))
+            dialog = wx.FontDialog(None, font_data)
+        except AttributeError:
+            dialog = wx.FontDialog(None, font_data)
         if dialog.ShowModal() == wx.ID_OK:
             data = dialog.GetFontData()
             font = data.GetChosenFont()
             color = data.GetColour()
-            print(color)
-            print('"%s", %d pt\n' % (font.GetFaceName(), font.GetPointSize()))
+            rgb = color.GetRGB()
+            color = swizzlecolor(rgb)
+            color = Color(color, 1.0)
+            self.element.wxfont = font
+            self.element.fill = color
+            self.update_label()
+            self.refresh()
         dialog.Destroy()
+        event.Skip()
 
-    def on_button_italic(self, event):  # wxGlade: TextProperty.<event_handler>
-        font_picker = wx.FontDialog()
-        font_picker.Show()
-
-    def on_button_underline(self, event):  # wxGlade: TextProperty.<event_handler>
-        font_picker = wx.FontDialog()
-        font_picker.Show()
-
-    def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
-        try:
-            self.text_element.text = self.text_text.GetValue()
-            self.device.signal("element_property_update", self.text_element)
-        except AttributeError:
-            pass
-
-    def on_button_color(self, event):  # wxGlade: ElementProperty.<event_handler>
+    def on_button_color(self, event):  # wxGlade: TextProperty.<event_handler>
         button = event.EventObject
         color = None
         if 'none' not in button.name:
@@ -233,17 +230,18 @@ class TextProperty(wx.Frame, Module):
             color = Color(color, 1.0)
         if 'stroke' in button.name:
             if color is not None:
-                self.text_element.stroke = color
-                self.text_element.values[SVG_ATTR_STROKE] = color.hex
+                self.element.stroke = color
+                self.element.values[SVG_ATTR_STROKE] = color.hex
             else:
-                self.text_element.stroke = Color('none')
-                self.text_element.values[SVG_ATTR_STROKE] = 'none'
+                self.element.stroke = Color('none')
+                self.element.values[SVG_ATTR_STROKE] = 'none'
         elif 'fill' in button.name:
             if color is not None:
-                self.text_element.fill = color
-                self.text_element.values[SVG_ATTR_FILL] = color.hex
+                self.element.fill = color
+                self.element.values[SVG_ATTR_FILL] = color.hex
             else:
-                self.text_element.fill = Color('none')
-                self.text_element.values[SVG_ATTR_FILL] = 'none'
-        self.device.signal("element_property_update", self.text_element)
-        self.device.signal("refresh_scene", 0)
+                self.element.fill = Color('none')
+                self.element.values[SVG_ATTR_FILL] = 'none'
+        self.update_label()
+        self.refresh()
+        event.Skip()

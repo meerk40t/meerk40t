@@ -141,11 +141,21 @@ class LaserRender:
 
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        font = wx.Font(float(element.values.get('font-size', 16)), wx.SWISS, wx.NORMAL, wx.BOLD)
-        if element.values.get('fill') is None:
+        if hasattr(element, 'wxfont'):
+            font = element.wxfont
+        else:
+            font = wx.Font(float(element.values.get('font-size', 16)), wx.SWISS, wx.NORMAL, wx.BOLD)
+            element.wxfont = font
+        try:
+            sw = element.values['stroke_width']
+            self.set_pen(gc, element.stroke, width=sw)
+        except KeyError:
+            self.set_pen(gc, element.stroke)
+        self.set_brush(gc, element.fill)
+        if element.fill is None or element.fill == 'none':
             gc.SetFont(font, wx.BLACK)
         else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(Color(element.values['fill']))))
+            gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
         if element.text is not None:
             element.width, element.height = gc.GetTextExtent(element.text)
             gc.DrawText(element.text, element.x, element.y - element.height)

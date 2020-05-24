@@ -1329,7 +1329,10 @@ class Kernel(Device):
         self.keymap['alt+r'] = 'raster'
         self.keymap['alt+e'] = 'engrave'
         self.keymap['alt+c'] = 'cut'
+        self.keymap['control+f'] = 'control Fill'
+        self.keymap['control+s'] = 'control Stroke'
         self.keymap['f4'] = "window open CameraInterface"
+        self.keymap['f5'] = "refresh"
         self.keymap['f6'] = "window open JobSpooler"
         self.keymap['f7'] = "window open Controller"
         self.keymap['f8'] = "control Path"

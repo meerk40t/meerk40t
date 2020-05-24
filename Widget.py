@@ -516,7 +516,6 @@ class SelectionWidget(Widget):
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        print(event_type)
         if event_type == 'hover_start':
             self.cursor = wx.CURSOR_SIZING
             self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))

@@ -512,6 +512,11 @@ class Console(Module, Pipe):
             element = Path(element)
             self.add_element(element)
             return
+        elif command == 'text':
+            text = ' '.join(args)
+            element = SVGText(text)
+            self.add_element(element)
+            return
         elif command == 'polygon':
             element = Polygon(list(map(float, args)))
             element = Path(element)
@@ -556,22 +561,77 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'stroke':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Stroke Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if element.stroke is None:
+                        yield '%d: stroke = none - %s' % \
+                              (i, name)
+                    else:
+                        yield '%d: stroke = %s - %s' % \
+                              (i, element.stroke.hex, name)
+                    i += 1
+                yield '----------'
+                return
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
-            for element in kernel.selected_elements:
-                element.stroke = Color(args[0])
+            if args[0] == 'none':
+                for element in kernel.selected_elements:
+                    element.stroke = None
+            else:
+                for element in kernel.selected_elements:
+                    element.stroke = Color(args[0])
             active_device.signal('refresh_scene')
             return
         elif command == 'fill':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Fill Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if element.fill is None:
+                        yield '%d: fill = none - %s' % \
+                              (i, name)
+                    else:
+                        yield '%d: fill = %s - %s' % \
+                              (i, element.fill.hex, name)
+                    i += 1
+                yield '----------'
+                return
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
-            for element in kernel.selected_elements:
-                element.fill = Color(args[0])
+            if args[0] == 'none':
+                for element in kernel.selected_elements:
+                    element.fill = None
+            else:
+                for element in kernel.selected_elements:
+                    element.fill = Color(args[0])
             active_device.signal('refresh_scene')
             return
         elif command == 'rotate':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Rotate Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: rotate(%fturn) - %s' % \
+                          (i, element.rotation.as_turns, name)
+                    i += 1
+                yield '----------'
+                return
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
@@ -586,6 +646,19 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'scale':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Scale Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: scale(%f, %f) - %s' % \
+                          (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name)
+                    i += 1
+                yield '----------'
+                return
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
@@ -607,6 +680,19 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'translate':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Translate Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: translate(%f, %f) - %s' % \
+                          (i, element.transform.value_trans_x(), element.transform.value_trans_x(), name)
+                    i += 1
+                yield '----------'
+                return
             if len(kernel.selected_elements) == 0:
                 yield "No selected elements."
                 return
@@ -624,10 +710,25 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'reset':
-            for e in kernel.selected_elements:
-                e.transform.reset()
+            for element in kernel.selected_elements:
+                name = str(element)
+                if len(name) > 50:
+                    name = name[:50] + '...'
+                yield 'reset - %s' % (name)
+                element.transform.reset()
             self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
+            return
+        elif command == 'reify':
+            for element in kernel.selected_elements:
+                name = str(element)
+                if len(name) > 50:
+                    name = name[:50] + '...'
+                yield 'reified - %s' % (name)
+                element.reify()
+            self.device.signal('rebuild_tree', 0)
+            active_device.signal('refresh_scene')
+            return
         # Operation Command Elements
         elif command == 'operation':
             if len(args) == 0:
