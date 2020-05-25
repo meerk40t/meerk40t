@@ -54,8 +54,8 @@ class RasterProperty(wx.Frame, Module):
         except AttributeError:
             self.spin_speed_set.Enable(False)
         try:
-            if operation.power is not None:
-                self.spin_power_set.SetValue(operation.power)
+            if operation.parse_power is not None:
+                self.spin_power_set.SetValue(operation.parse_power)
         except AttributeError:
             self.spin_power_set.Enable(False)
 
@@ -171,8 +171,8 @@ class RasterProperty(wx.Frame, Module):
         self.device.signal("element_property_update", self.operation)
 
     def on_spin_power(self, event):
-        self.operation.power = self.spin_power_set.GetValue()
-        self.device.device_root.raster_power = self.operation.power
+        self.operation.parse_power = self.spin_power_set.GetValue()
+        self.device.device_root.raster_power = self.operation.parse_power
         self.device.signal("element_property_update", self.operation)
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>

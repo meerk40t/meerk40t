@@ -151,7 +151,7 @@ class JobSpooler(wx.Frame, Module):
                     settings = []
                     if t == 'path':
                         self.list_job_spool.SetItem(m, 4, _("Path"))
-                        settings.append(_("power=%.0f") % (e.power))
+                        settings.append(_("power=%.0f") % (e.parse_power))
                     elif t == 'image':
                         self.list_job_spool.SetItem(m, 4, _("Raster"))
                         settings.append(_("step=%d") % (e.raster_step))
