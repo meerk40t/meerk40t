@@ -1629,7 +1629,11 @@ class RootNode(list):
         if self.selected_elements is None:
             return
         for e in self.selected_elements:
-            nodes = self.tree_lookup[id(e)]
+            try:
+                nodes = self.tree_lookup[id(e)]
+            except KeyError:
+                self.device.signal('rebuild_tree', 0)
+                return
             for n in nodes:
                 if n.type == NODE_ELEMENT:
                     self.tree.SelectItem(n.item)

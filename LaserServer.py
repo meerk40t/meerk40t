@@ -20,10 +20,11 @@ class ServerThread(threading.Thread):
 
     def udp_run(self):
         try:
+            reply = lambda e: self.server.socket.sendto(e, address)
+            elements = lambda e: self.server.device.device_root.elements.append(e)
             while True:
                 message, address = self.server.socket.recvfrom(1024)
-                for reply in self.server.pipe.interface(message):
-                    self.server.socket.sendto(reply, address)
+                self.server.pipe.checksum_parse(message, reply=reply, elements=elements)
         except OSError:
             pass
 

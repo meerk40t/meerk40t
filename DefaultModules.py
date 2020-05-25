@@ -6,8 +6,6 @@ from xml.etree.cElementTree import Element, ElementTree, SubElement
 from EgvParser import parse_egv
 from Kernel import Module, Pipe
 from LaserCommandConstants import *
-from LaserOperation import CutOperation, EngraveOperation, RasterOperation
-from OperationPreprocessor import OperationPreprocessor
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -514,6 +512,10 @@ class RuidaEmulator(Module):
         return RuidaEmulator.signed14((data[0] & 0x7F) << 7 | (data[1] & 0x7F))
 
     @staticmethod
+    def udecode14(data):
+        return (data[0] & 0x7F) << 7 | (data[1] & 0x7F)
+
+    @staticmethod
     def encode14(v):
         return [
             (v >> 7) & 0x7F,
@@ -551,17 +553,18 @@ class RuidaEmulator(Module):
         return RuidaEmulator.decode32(data)
 
     def power(self, data):
-        return RuidaEmulator.decode14(data)
+        return RuidaEmulator.udecode14(data)
 
     def sum(self, data):
         return (data[0] & 0xFF) << 8 | \
                (data[1] & 0xFF)
 
     def checksum(self, data):
-        sum = 0
-        for b in data:
-            sum += b
-        return sum
+        return sum(data)
+        # sum = 0
+        # for b in data:
+        #     sum += b
+        # return sum
 
     def parse_commands(self, f):
         array = list()
@@ -577,9 +580,42 @@ class RuidaEmulator(Module):
         if len(array) > 0:
             yield array
 
-    def parse(self, f):
+    def checksum_parse(self, sent_data, reply=None, channel=None, elements=None):
+        if channel is None:
+            channel = self.channel
+        if reply is None:
+            reply = lambda e: e
+        if elements is None:
+            elements = lambda e: e
+        data = sent_data[2:1472]
+        sum = self.sum(sent_data[:2]) & 0xFFFF
+        check = self.checksum(data) & 0xFFFF
+        if check == sum:
+            response = b'\xCC'
+            reply(self.swizzle(response))
+            channel("<-- " + str(response.hex()))
+            channel("    checksum match")
+        else:
+            response = b'\xCF'
+            reply(self.swizzle(response))
+            channel("--> " + str(data.hex()))
+            channel("<-- " + str(response.hex()))
+            channel("    checksum fail (%d != %d)" % (check, sum))
+            return
+        self.parse(data, reply=reply, channel=channel, elements=elements)
+
+    def parse(self, data, reply=None, channel=None, elements=None):
+        if channel is None:
+            channel = self.channel
+        if reply is None:
+            reply = lambda e: e
+        if elements is None:
+            elements = lambda e: e
         x = 0.0
         y = 0.0
+        z = 0.0
+        u = 0.0
+
         um_per_mil = 25.4
         name = ''
         speed = 20.0
@@ -589,162 +625,162 @@ class RuidaEmulator(Module):
         power2_max = 0
         path_d = list()
 
-        for array in self.parse_commands(f):
+        for array in self.parse_commands(BytesIO(data)):
+            channel("--> " + str(bytes(array).hex()))
             if array[0] == 0xC6:
                 if array[1] == 0x01:
                     power1_min = self.power(array[2:4])
+                    channel("    (1st laser source min power: %d)" % self.power(array[2:4]))
                 elif array[1] == 0x21:
                     power2_min = self.power(array[2:4])
+                    channel("    (2nd laser source min power: %d)" % self.power(array[2:4]))
                 elif array[1] == 0x02:
                     power1_max = self.power(array[2:4])
+                    channel("    (1st laser source max power: %d)" % self.power(array[2:4]))
                 elif array[1] == 0x22:
                     power2_max = self.power(array[2:4])
+                    channel("    (2nd laser source max power: %d)" % self.power(array[2:4]))
             elif array[0] == 0xC9:
                 if array[1] == 0x02:
                     # Speed in micrometers/sec
                     speed = self.speed(array[2:7]) / 1000.0
+                    channel("    Speed set at %f" % speed)
                 if array[1] == 0x04:
                     if array[2] == 0x00:
                         # speed in micrometers/sec
                         speed = self.speed(array[3:8]) / 1000.0
+                        channel("    Speed set at %f" % speed)
             elif array[0] == 0xD9:
                 if array[1] == 0x00:
-                    if array[2] == 0x02:
-                        x = self.abscoord(array[3:8]) / um_per_mil
+                    x = self.abscoord(array[3:8]) / um_per_mil
+                    path_d.append("M%04f,%04f" % (x, y))
+                    if array[2] == 0x03:
+                        channel("    Move X: %d" % self.abscoord(array[3:8]))
+                if array[1] == 0x01:
+                    y = self.abscoord(array[3:8]) / um_per_mil
+                    path_d.append("M%04f,%04f" % (x, y))
+                    if array[2] == 0x03:
+                        channel("    Move Y: %d" % self.abscoord(array[3:8]))
+                if array[1] == 0x02:
+                    z = self.abscoord(array[3:8]) / um_per_mil
+                    if array[2] == 0x03:
+                        channel("    Move Z: %d" % self.abscoord(array[3:8]))
+                if array[1] == 0x03:
+                    u = self.abscoord(array[3:8]) / um_per_mil
+                    if array[2] == 0x03:
+                        channel("    Move U: %d" % self.abscoord(array[3:8]))
+                if array[1] == 0x10:
+                    if array[2] == 0x01:
+                        channel("    Home XY")
+                        x = 0
+                        y = 0
                         path_d.append("M%04f,%04f" % (x, y))
-                        x = x
-                    elif array[2] == 0x03:
-                        y = self.abscoord(array[3:8]) / um_per_mil
-                        path_d.append("M%04f,%04f" % (x, y))
+            elif array[0] == 0xD8:
+                if array[1] == 0x2C:
+                    channel("    Home Z")
+                if array[1] == 0x2D:
+                    channel("    Home U")
+                if array[1] == 0x2E:
+                    channel("    Focus")
+            elif array[0] == 0xCC:
+                channel("    ACK from machine")
+            elif array[0] == 0xCD:
+                channel("    ERR from machine")
+            elif array[0] == 0xDA:
+                if array[1] == 0x00:
+                    channel("    get %02x %02x from machine" % (array[2], array[3]))
+                    v = 0
+                    name = "UNMAPPED"
+                    if array[2] == 0x00:
+                        if array[3] == 0x04:
+                            name = "Items 1 & 6"
+                            v = 0x00000000
+                        if array[3] == 0x05:
+                            name = "00 05 UNKNOWN"
+                            v = 0x00000000
+                        if array[3] == 0x20:
+                            name = "X Position Request"
+                            v = 0x00000000
+                        if array[3] == 0x21:
+                            name = "Item 4"
+                            v = 0x00000000
+                        if array[3] == 0x26:
+                            name = "Item 2"
+                            v = 0x00000000
+                        if array[3] == 0x30:
+                            name = "Y Position Request"
+                            v = 0x00000000
+                        if array[3] == 0x31:
+                            name = "Item 5"
+                            v = 0x00000000
+                        if array[3] == 0x36:
+                            name = "Item 3"
+                            v = 0x00000000
+                        if array[3] == 0x40:
+                            name = "Z Position Request"
+                            v = 0x00000000
+                        if array[3] == 0x50:
+                            name = "U Position Request"
+                            v = 0x00000000
+                    if array[2] == 0x04:
+                        if array[3] == 0x00:
+                            name = "Reply 22"
+                            v = 0x00000022
+                        if array[3] == 0x05:
+                            name = "Previous Work Time"
+                            v = 0x00000000  # work time in seconds
+                        if array[3] == 0x08:
+                            name = "Previous Work Time2"
+                            v = 0x00000000  # work time in seconds
+                        if array[3] == 0x21:
+                            name = "Position X"
+                            v = 0x00000000
+                        if array[3] == 0x31:
+                            name = "Position Y"
+                            v = 0x00000000
+                        if array[3] == 0x41:
+                            name = "Position Z"
+                            v = 0x00000000
+                        if array[3] == 0x51:
+                            name = "Position U"
+                            v = 0x00000000
+                    if array[2] == 0x05:
+                        if array[3] == 0x7e:
+                            name = "0x65006500"
+                            v = 0x65006500  # Other answers force fail.
+                    if array[2] == 0x0B:
+                        if array[3] == 0x12:
+                            name = "Item 0B-5B"
+                    response = b'\xDA\x01' + bytes(array[2:4]) + bytes(RuidaEmulator.encode32(v))
+                    channel("<-- " + str(response.hex()))
+                    reply(self.swizzle(response))
+                    channel("     Responding %02x %02x(%s) equals %d (%08x)" % (array[2], array[3], name, v, v))
+                elif array[1] == 0x01:
+                    channel("    response to DA 00 XX XX <VALUE")
             elif array[0] == 0xA8:
                 x = self.abscoord(array[1:6]) / um_per_mil
                 y = self.abscoord(array[6:11]) / um_per_mil
                 path_d.append("L%0.4f,%0.4f" % (x, y))
+                channel("    Straight cut to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
             elif array[0] == 0xA9:
                 dx = self.relcoord(array[1:3]) / um_per_mil
                 dy = self.relcoord(array[3:5]) / um_per_mil
                 path_d.append("l%0.4f,%0.4f" % (dx, dy))
                 x += dx
                 y += dy
-            elif array[0] == 0xE8:
-                if array[1] == 0x02:
-                    if array[2] == 0xE7:
-                        if array[3] == 0x01:
-                            for a in array[4:]:
-                                if a == 0x00:
-                                    break
-                                name += ord(a)
-            elif array[0] == 0x88:
-                x = self.abscoord(array[1:6]) / um_per_mil
-                y = self.abscoord(array[6:11]) / um_per_mil
-                if len(path_d) != 0:
-                    path = Path(' '.join(path_d))
-                    path.values['name'] = name
-                    path.values['speed'] = speed
-                    path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
-                    yield path
-                    path_d.clear()
-                path_d.append("M%f,%f" % (x, y))
-            elif array[0] == 0x89:
-                dx = self.relcoord(array[1:3]) / um_per_mil
-                dy = self.relcoord(array[3:5]) / um_per_mil
-                if len(path_d) != 0:
-                    path = Path(' '.join(path_d))
-                    path.values['name'] = name
-                    path.values['speed'] = speed
-                    path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
-                    yield path
-                    path_d.clear()
-                path_d.append("m%f,%f" % (dx, dy))
-                x += dx
-                y += dy
-        if len(path_d) != 0:
-            path = Path(' '.join(path_d))
-            path.values['name'] = name
-            path.values['speed'] = speed
-            path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
-            yield path
-
-    def interface(self, sent_data):
-        check = self.checksum(sent_data[2:])
-        sum = self.sum(sent_data[:2]) & 0xFFFF
-        if check == sum:
-            response = b'\xCC'
-            yield self.swizzle(response)
-            self.channel("<-- " + str(response.hex()) + "\n")
-            self.channel("    checksum match\n")
-        else:
-            response = b'\xCF'
-            yield self.swizzle(response)
-            self.channel("--> " + str(sent_data[2:].hex() + "\n"))
-            self.channel("<-- " + str(response.hex()) + "\n")
-            self.channel("    checksum fail\n")
-            return
-        for array in self.parse_commands(BytesIO(sent_data[2:])):
-            self.channel("--> " + str(bytes(array).hex()))
-            if array[0] == 0xC6:
-                if array[1] == 0x01:
-                    self.channel("    (1st laser source min power: %d)\n" % self.power(array[2:4]))
-                elif array[1] == 0x21:
-                    self.channel("    (2nd laser source min power: %d)\n" % self.power(array[2:4]))
-                elif array[1] == 0x02:
-                    self.channel("    (1st laser source max power: %d)\n" % self.power(array[2:4]))
-                elif array[1] == 0x22:
-                    self.channel("    (2nd laser source max power: %d)\n" % self.power(array[2:4]))
-            elif array[0] == 0xC9:
-                if array[1] == 0x02:
-                    # Speed in micrometers/sec
-                    speed = self.speed(array[2:7]) / 1000.0
-                    self.channel("    Speed set at %f\n" % speed)
-                if array[1] == 0x04:
-                    if array[2] == 0x00:
-                        # speed in micrometers/sec
-                        speed = self.speed(array[3:8]) / 1000.0
-                        self.channel("    Speed set at %f\n" % speed)
-            elif array[0] == 0xD9:
-                if array[1] == 0x00:
-                    if array[2] == 0x02:
-                        self.channel("    Move X: %d\n" % self.abscoord(array[3:8]))
-                    elif array[2] == 0x03:
-                        self.channel("    Move Y: %d\n" % self.abscoord(array[3:8]))
-                    elif array[2] == 0x04:
-                        self.channel("    Move Z: %d\n" % self.abscoord(array[3:8]))
-                    elif array[2] == 0x05:
-                        self.channel("    Move U: %d\n" % self.abscoord(array[3:8]))
-            elif array[0] == 0xCC:
-                self.channel("    ACK from machine\n")
-            elif array[0] == 0xCD:
-                self.channel("    ERR from machine\n")
-            elif array[0] == 0xDA:
-                if array[1] == 0x00:
-                    self.channel("    get %02x %02x from machine\n" % (array[2], array[3]))
-                    v = 0
-                    if array[2] == 0x05 and array[3] == 0x7e:
-                        v = 0x65006500
-                    elif array[2] == 0x00 and array[3] == 0x04:
-                        v = 0x00000022
-                    elif array[2] == 0x04 or array[3] == 0x05:
-                        self.channel("    Saved Job Count\n")
-                    else:
-                        self.channel("    Unknown Request.\n")
-                    response = b'\xDA\x01' + bytes(array[2:4]) + bytes(RuidaEmulator.encode32(v))
-                    yield self.swizzle(response)
-                    self.channel("<-- " + str(response.hex()))
-                    self.channel("     Responding %02x %02x equals %d (%08x)\n" % (array[2], array[3], v, v))
-                elif array[1] == 0x01:
-                    self.channel("    response to DA 00 XX XX <VALUE>\n")
-            elif array[0] == 0xA8:
-                self.channel("    Straight cut to absolute %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
-            elif array[0] == 0xA9:
-                self.channel("    Straight cut to relative %d %d\n" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
+                channel("    Straight cut to relative %d %d" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
             elif array[0] == 0xE7:
                 if array[1] == 0x50:
-                    self.channel("    Bounding box top left %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                    channel("    Bounding box top left %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
                 if array[1] == 0x50:
-                    self.channel("    Bounding box bottom right %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                    channel("    Bounding box bottom right %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
             elif array[0] == 0xE8:
                 if array[1] == 0x01:
-                    self.channel("    Read filename number: %d\n" % (self.filenumber(array[1:3])))
+                    for a in array[4:]:
+                        if a == 0x00:
+                            break
+                        name += ord(a)
+                    channel("    Read filename number: %d" % (self.filenumber(array[1:3])))
                 if array[1] == 0x02:
                     if array[2] == 0xE7:
                         if array[3] == 0x01:
@@ -753,11 +789,42 @@ class RuidaEmulator(Module):
                                 if a == 0x00:
                                     break
                                 name += ord(a)
-                            self.channel("    Set filename for transfer: %s\n" % name)
+                            channel("    Set filename for transfer: %s" % name)
             elif array[0] == 0x88:
-                self.channel("    Straight move to absolute %d %d\n" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
+                x = self.abscoord(array[1:6]) / um_per_mil
+                y = self.abscoord(array[6:11]) / um_per_mil
+                if len(path_d) != 0:
+                    path = Path(' '.join(path_d))
+                    path.values['name'] = name
+                    path.values['speed'] = speed
+                    path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
+                    path.stroke = Color('black')
+                    elements(path)
+                    path_d.clear()
+                path_d.append("M%f,%f" % (x, y))
+                channel("    Straight move to absolute %d %d" % (self.abscoord(array[1:6]), self.abscoord(array[6:11])))
             elif array[0] == 0x89:
-                self.channel("    Straight move to relative %d %d\n" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
+                dx = self.relcoord(array[1:3]) / um_per_mil
+                dy = self.relcoord(array[3:5]) / um_per_mil
+                if len(path_d) != 0:
+                    path = Path(' '.join(path_d))
+                    path.values['name'] = name
+                    path.values['speed'] = speed
+                    path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
+                    path.stroke = Color('black')
+                    elements(path)
+                    path_d.clear()
+                path_d.append("m%f,%f" % (dx, dy))
+                x += dx
+                y += dy
+                channel("    Straight move to relative %d %d" % (self.relcoord(array[1:3]), self.relcoord(array[3:5])))
+        if len(path_d) != 0:
+            path = Path(' '.join(path_d))
+            path.values['name'] = name
+            path.values['speed'] = speed
+            path.values['power'] = (power1_min, power2_min, power1_max, power2_max)
+            path.stroke = Color('black')
+            elements(path)
 
     def realtime_write(self, bytes_to_write):
         print(bytes_to_write)
@@ -791,6 +858,7 @@ class RuidaEmulator(Module):
         b ^= (b << 7) & 0xFF
         b ^= (b >> 7) & 0xFF
         return b
+
 
 class SVGWriter:
     @staticmethod
@@ -965,11 +1033,9 @@ class RDLoader:
     def load(kernel, pathname):
         basename = os.path.basename(pathname)
         ruidaemulator = RuidaEmulator()
-        buffer = list()
+        elements = list()
         with open(pathname, 'rb') as f:
-            elements = list(ruidaemulator.parse(f))
-        for e in elements:
-            e.stroke = Color('black')
+            ruidaemulator.parse(f, elements=elements.append)
         return elements, pathname, basename
 
 

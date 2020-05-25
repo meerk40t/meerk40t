@@ -1343,6 +1343,7 @@ class Kernel(Device):
         self.keymap['f9'] = "control Transform"
         self.keymap['f12'] = "window open Terminal"
         self.keymap['pause'] = "control Realtime Pause_Resume"
+        self.keymap['alt+f12'] = "terminal_ruida"
 
     def default_alias(self):
         self.alias['+scale_up'] = "loop scale 1.02"
@@ -1369,6 +1370,7 @@ class Kernel(Device):
         self.alias['-left'] = "end left 1mm"
         self.alias['-up'] = "end up 1mm"
         self.alias['-down'] = "end down 1mm"
+        self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
 
     def read_item_persistent(self, item):
         return self.config.Read(item)
