@@ -23,7 +23,8 @@ class Keymap(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_keydown, self)
+        self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.SetFocus()
 
     def on_close(self, event):
         self.device.remove('window', self.name)
@@ -69,12 +70,36 @@ class Keymap(wx.Frame, Module):
                 self.list_keymap.SetItem(m, 1, str(value))
 
     def on_button_add_hotkey(self, event):  # wxGlade: Keymap.<event_handler>
+        keystroke = self.text_key_name.GetValue()
+        if len(keystroke) == 0:
+            dlg = wx.MessageDialog(None, _("Missing Keystroke"),
+                               _("No Keystroke for binding."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+            return
+        if len(self.text_key_name.GetValue()) == 0:
+            dlg = wx.MessageDialog(None, _("Missing Command"),
+                               _("No Command for binding."), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+            return
         self.device.device_root.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
         self.text_key_name.SetValue('')
         self.text_command_name.SetValue('')
         self.reload_keymap()
 
-    def on_keydown(self, event):
+    def on_key_press(self, event):
+        from wxMeerK40t import get_key_name
         keyvalue = get_key_name(event)
-        self.text_key_name.SetValue(keyvalue)
-        print(event)
+        self.text_command_name.SetValue('')
+        if keyvalue is None:
+            self.text_key_name.SetValue('')
+        else:
+            self.text_key_name.SetValue(keyvalue)
+            for i, key in enumerate(self.device.device_root.keymap):
+                if key == keyvalue:
+                    self.list_keymap.Select(i, True)
+                    self.list_keymap.Focus(i)
+                    self.text_command_name.SetValue(self.device.device_root.keymap[key])
+                else:
+                    self.list_keymap.Select(i, False)

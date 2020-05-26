@@ -2391,6 +2391,12 @@ def get_key_name(event):
         keyvalue += 'f12'
     elif key == wx.WXK_F13:
         keyvalue += 'f13'
+    elif key == wx.WXK_F14:
+        keyvalue += 'f14'
+    elif key == wx.WXK_F15:
+        keyvalue += 'f15'
+    elif key == wx.WXK_F16:
+        keyvalue += 'f16'
     elif key == wx.WXK_ADD:
         keyvalue += '+'
     elif key == wx.WXK_END:
