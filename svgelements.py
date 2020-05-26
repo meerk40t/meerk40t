@@ -5892,10 +5892,10 @@ class SVGText(GraphicObject, Transformable):
         if self.path is not None:
             return (self.path * self.transform).bbox(transformed=True)
         if not transformed:
-            return self.x, self.y - self.height, self.x + self.width, self.y
-        p = Point(self.x, self.y - self.height)
+            return self.x, self.y, self.x + self.width, self.y + self.height
+        p = Point(self.x, self.y)
         p *= self.transform
-        q = Point(self.x + self.width, self.y)
+        q = Point(self.x + self.width, self.y + self.height)
         q *= self.transform
         return p[0], p[1], q[0], q[1]
 

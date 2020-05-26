@@ -693,7 +693,7 @@ class Console(Module, Pipe):
                     if len(name) > 50:
                         name = name[:50] + '...'
                     yield '%d: translate(%f, %f) - %s' % \
-                          (i, element.transform.value_trans_x(), element.transform.value_trans_x(), name)
+                          (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
                     i += 1
                 yield '----------'
                 return
@@ -755,7 +755,7 @@ class Console(Module, Pipe):
                     if len(name) > 50:
                         name = name[:50] + '...'
                     yield '%d: scale(%f, %f) - %s' % \
-                          (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name)
+                          (i, element.transform.value_scale_x(), element.transform.value_scale_y(), name)
                     i += 1
                 yield '----------'
                 return

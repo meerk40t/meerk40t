@@ -158,7 +158,7 @@ class LaserRender:
             gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
         if element.text is not None:
             element.width, element.height = gc.GetTextExtent(element.text)
-            gc.DrawText(element.text, element.x, element.y - element.height)
+            gc.DrawText(element.text, element.x, element.y)
         gc.PopState()
 
     def draw_image(self, node, gc, draw_mode):
