@@ -391,7 +391,10 @@ class MeerK40t(wx.Frame, Module):
                 m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
                 if i == self.device.device_root.language:
                     m.Check(True)
-                self.Bind(wx.EVT_MENU, self.device.device_root.app.language_to(i), id=m.GetId())
+                def language_update(q):
+                    return lambda e: self.device.device_root.app.update_language(q)
+
+                self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
                 if not os.path.exists('./locale/%s' % language_code) and i != 0:
                     m.Enable(False)
                 i += 1
@@ -2131,7 +2134,7 @@ class RootNode(list):
         """
         Menu to remove an element from the scene.
 
-        :param node:
+        :param remove_node:
         :return:
         """
 
@@ -2181,7 +2184,7 @@ class RootNode(list):
         """
         Menu to remove an element from the scene.
 
-        :param node:
+        :param remove_node:
         :return:
         """
 
@@ -2538,7 +2541,7 @@ class wxMeerK40t(wx.App, Module):
         device.add('control', "Delete Settings", self.clear_control)
         language = device.language
         if language is not None and language != 0:
-            self.language_to(language)(None)
+            self.update_language(language)
 
     def clear_control(self):
         device = self.device.device_root
@@ -2547,36 +2550,23 @@ class wxMeerK40t(wx.App, Module):
             device.config = None
             device.shutdown(None)
 
-    def language_swap(self, lang):
-        self.language_to(lang)(None)
-        self.device.open('window', "DeviceManager", None, -1, "")
-
-    def language_to(self, lang):
+    def update_language(self, lang):
         """
-        Returns a function to change the language to the language specified.
-        :param lang: language to switch to
-        :return:
+        Update language to the requested language.
         """
+        device = self.device
+        language_code, language_name, language_index = supported_languages[lang]
+        device.language = lang
 
-        def update_language(event):
-            """
-            Update language to the requested language.
-            """
-            device = self.device
-            language_code, language_name, language_index = supported_languages[lang]
-            device.language = lang
-
-            if self.locale:
-                assert sys.getrefcount(self.locale) <= 2
-                del self.locale
-            self.locale = wx.Locale(language_index)
-            if self.locale.IsOk():
-                self.locale.AddCatalog('meerk40t')
-            else:
-                self.locale = None
-            device.signal('language', (lang, language_code, language_name, language_index))
-
-        return update_language
+        if self.locale:
+            assert sys.getrefcount(self.locale) <= 2
+            del self.locale
+        self.locale = wx.Locale(language_index)
+        if self.locale.IsOk():
+            self.locale.AddCatalog('meerk40t')
+        else:
+            self.locale = None
+        device.signal('language', (lang, language_code, language_name, language_index))
 
 
 # end of class MeerK40tGui

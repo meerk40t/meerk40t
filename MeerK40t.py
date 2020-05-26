@@ -28,10 +28,6 @@ for full details.
 kernel = Kernel()
 kernel.open('module', 'Signaler')
 
-# TODO: CLI Needs an option to change default speed, etc, parameters.
-# TODO: CLI Needs home command / lock, unlock.
-# TODO: CLI Needs command for load special module.
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-c', '--console', action='store_true', help='start as console')

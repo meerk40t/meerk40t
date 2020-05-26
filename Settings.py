@@ -99,7 +99,7 @@ class Settings(wx.Frame, Module):
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
         if lang != -1 and self.device.app is not None:
-            self.device.app.language_swap(lang)
+            self.device.app.update_language(lang)
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
         if event.Int == 0:

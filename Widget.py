@@ -56,6 +56,14 @@ class Scene(Module):
     def initialize(self):
         pass
 
+    def shutdown(self, channel):
+        for element in self.device.device_root.elements:
+            try:
+                # The cached path objects must be killed to prevent a memory error after shutdown.
+                del element.cache
+            except AttributeError:
+                pass
+
     def animate_tick(self):
         pass
 
@@ -895,9 +903,9 @@ class GuideWidget(Widget):
         while x < w:
             starts.append((x, 0))
             ends.append((x, length))
-
-            starts.append((x, h))
-            ends.append((x, h-length))
+            #
+            # starts.append((x, h))
+            # ends.append((x, h-length))
 
             mark_point = (x - sx) / scaled_conversion
             if round(mark_point * 1000) == 0:
@@ -909,9 +917,9 @@ class GuideWidget(Widget):
         while y < h:
             starts.append((0, y))
             ends.append((length, y))
-
-            starts.append((w, y))
-            ends.append((w-length, y))
+            #
+            # starts.append((w, y))
+            # ends.append((w-length, y))
 
             mark_point = (y - sy) / scaled_conversion
             if round(mark_point * 1000) == 0:

@@ -38,7 +38,13 @@ class UsbConnect(wx.Frame, Module):
         self.Close()
 
     def update_text(self, text):
-        wx.CallAfter(self.text_main.AppendText, text + '\n')
+        wx.CallAfter(self.update_text_gui, text + '\n')
+
+    def update_text_gui(self, text):
+        try:
+            self.text_main.AppendText(text)
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: Terminal.__set_properties
