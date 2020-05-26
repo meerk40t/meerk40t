@@ -525,10 +525,11 @@ class SelectionWidget(Widget):
             self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == 'hover':
+            matrix = self.parent.matrix
             xin = space_pos[0] - self.left
             yin = space_pos[1] - self.top
-            xmin = 100
-            ymin = 100
+            xmin = 5 / matrix.value_scale_x()
+            ymin = 5 / matrix.value_scale_x()
             xmax = self.width - xmin
             ymax = self.height - ymin
             self.tool = self.tool_translate

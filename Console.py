@@ -643,8 +643,7 @@ class Console(Module, Pipe):
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix('rotate(%s,%f,%f)' % (args[0], center_x, center_y))
-            min_dim = min(self.device.window_width, self.device.window_height)
-            matrix.render(ppi=1000.0, relative_length=min_dim)
+            matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')
@@ -677,8 +676,7 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 sy = args[1]
             matrix = Matrix('scale(%s,%s,%f,%f)' % (sx, sy, center_x, center_y))
-            min_dim = min(self.device.window_width, self.device.window_height)
-            matrix.render(ppi=1000.0, relative_length=min_dim)
+            matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')
@@ -707,8 +705,7 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 ty = args[1]
             matrix = Matrix('translate(%s,%s)' % (tx, ty))
-            min_dim = min(self.device.window_width, self.device.window_height)
-            matrix.render(ppi=1000.0, relative_length=min_dim)
+            matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             for element in kernel.selected_elements:
                 element *= matrix
             active_device.signal('refresh_scene')
@@ -800,18 +797,16 @@ class Console(Module, Pipe):
                 return
             tx = 0
             ty = 0
-            min_dim = min(self.device.window_width, self.device.window_height)
             if len(args) >= 1:
-                tx = Length(args[0]).value(ppi=1000.0, relative_length=min_dim)
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             if len(args) >= 2:
-                ty = Length(args[1]).value(ppi=1000.0, relative_length=min_dim)
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             for element in kernel.selected_elements:
                 otx = element.transform.value_trans_x()
                 oty = element.transform.value_trans_y()
                 ntx = tx - otx
                 nty = ty - oty
                 matrix = Matrix('translate(%f,%f)' % (ntx, nty))
-                matrix.render(ppi=1000.0, relative_length=min_dim)
                 element *= matrix
             active_device.signal('refresh_scene')
             return
