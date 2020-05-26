@@ -391,7 +391,7 @@ class MeerK40t(wx.Frame, Module):
                 m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
                 if i == self.device.device_root.language:
                     m.Check(True)
-                self.Bind(wx.EVT_MENU, self.device.device_root.gui.language_to(i), id=m.GetId())
+                self.Bind(wx.EVT_MENU, self.device.device_root.app.language_to(i), id=m.GetId())
                 if not os.path.exists('./locale/%s' % language_code) and i != 0:
                     m.Enable(False)
                 i += 1
@@ -430,7 +430,6 @@ class MeerK40t(wx.Frame, Module):
             device.fps = 60
         self.renderer = LaserRender(device)
         self.root = RootNode(device, self)
-        device.setting(wx.App, 'root', self.root)
         device.root = self.root
 
         if device.window_width < 300:
@@ -874,7 +873,7 @@ class MeerK40t(wx.Frame, Module):
         Zoomout button press
         """
         m = self.scene.ClientSize / 2
-        self.widget_scene.widget_root.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.widget_scene.widget_root.scene_widget.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
         self.request_refresh()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -882,7 +881,7 @@ class MeerK40t(wx.Frame, Module):
         Zoomin button press
         """
         m = self.scene.ClientSize / 2
-        self.widget_scene.widget_root.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.widget_scene.widget_root.scene_widget.scene_post_scale(1.5, 1.5, m[0], m[1])
         self.request_refresh()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -2528,14 +2527,14 @@ class wxMeerK40t(wx.App, Module):
 
     def initialize(self):
         device = self.device
-        device.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
-        device.setting(int, 'language', None)
         _ = wx.GetTranslation
         wx.Locale.AddCatalogLookupPathPrefix('locale')
 
         device.run_later = wx.CallAfter
         device.translation = wx.GetTranslation
         device.set_config(wx.Config("MeerK40t"))
+        device.app = self # Registers self as kernel.app
+        device.setting(int, 'language', None)
         device.add('control', "Delete Settings", self.clear_control)
         language = device.language
         if language is not None and language != 0:
@@ -2550,7 +2549,7 @@ class wxMeerK40t(wx.App, Module):
 
     def language_swap(self, lang):
         self.language_to(lang)(None)
-        self.device.device_root.open('window', "MeerK40t", None, -1, "")
+        self.device.open('window', "DeviceManager", None, -1, "")
 
     def language_to(self, lang):
         """

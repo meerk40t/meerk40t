@@ -155,6 +155,8 @@ class Console(Module, Pipe):
             yield 'rotate_to <angle>'
             yield 'scale_to <scale> [<scale_y>]'
             yield 'translate_to <translate_x> <translate_y>'
+            yield 'reset'
+            yield 'reify'
             yield '-------------------'
             yield 'operation [<element>]*'
             yield 'classify'

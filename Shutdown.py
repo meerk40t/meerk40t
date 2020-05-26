@@ -26,16 +26,16 @@ class Shutdown(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        self.device.remove_watcher('shutdown', self.text_shutdown.AppendText)
-        event.Skip()  # Call destroy as regular.
-
     def initialize(self):
         self.device.close('window', self.name)
         self.Show()
         self.device.setting(bool, "autoclose_shutdown", True)
-        self.device.device_root.add_watcher('shutdown', self.text_shutdown.AppendText)
+        self.device.device_root.add_watcher('shutdown', self.update_text)
+
+    def on_close(self, event):
+        self.device.remove('window', self.name)
+        self.device.remove_watcher('shutdown', self.update_text)
+        event.Skip()  # Call destroy as regular.
 
     def detach(self, device, channel=None):
         """
@@ -48,6 +48,9 @@ class Shutdown(wx.Frame, Module):
 
     def shutdown(self,  channel):
         self.Close()
+
+    def update_text(self, text):
+        wx.CallAfter(self.text_shutdown.AppendText, text + '\n')
 
     def __set_properties(self):
         # begin wxGlade: Shutdown.__set_properties
