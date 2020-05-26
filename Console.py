@@ -116,6 +116,7 @@ class Console(Module, Pipe):
             interpreter = active_device.interpreter
         except AttributeError:
             interpreter = None
+        command = command.lower()
         if command == 'help':
             yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
@@ -151,6 +152,9 @@ class Console(Module, Pipe):
             yield 'rotate <angle>'
             yield 'scale <scale> [<scale_y>]'
             yield 'translate <translate_x> <translate_y>'
+            yield 'rotate_to <angle>'
+            yield 'scale_to <scale> [<scale_y>]'
+            yield 'translate_to <translate_x> <translate_y>'
             yield '-------------------'
             yield 'operation [<element>]*'
             yield 'classify'
@@ -706,6 +710,108 @@ class Console(Module, Pipe):
             min_dim = min(self.device.window_width, self.device.window_height)
             matrix.render(ppi=1000.0, relative_length=min_dim)
             for element in kernel.selected_elements:
+                element *= matrix
+            active_device.signal('refresh_scene')
+            return
+        elif command == 'rotate_to':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Rotate Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: rotate(%fturn) - %s' % \
+                          (i, element.rotation.as_turns, name)
+                    i += 1
+                yield '----------'
+                return
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
+            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            try:
+                end_angle = Angle.parse(args[0])
+            except ValueError:
+                yield "Invalid Value."
+                return
+            for element in kernel.selected_elements:
+                start_angle = element.rotation
+                amount = end_angle - start_angle
+                matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
+                element *= matrix
+            active_device.signal('refresh_scene')
+            return
+        elif command == 'scale_to':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Scale Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: scale(%f, %f) - %s' % \
+                          (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name)
+                    i += 1
+                yield '----------'
+                return
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
+            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            sx = 1
+            sy = 1
+            if len(args) >= 1:
+                sx = float(args[0])
+                sy = sx
+            if len(args) >= 2:
+                sy = float(args[1])
+            for element in kernel.selected_elements:
+                osx = element.transform.value_scale_x()
+                osy = element.transform.value_scale_y()
+                nsx = sx / osx
+                nsy = sy / osy
+                matrix = Matrix('scale(%f,%f,%f,%f)' % (nsx, nsy, center_x, center_y))
+                element *= matrix
+            active_device.signal('refresh_scene')
+            return
+        elif command == 'translate_to':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Translate Values:'
+                i = 0
+                for element in kernel.elements:
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: translate(%f, %f) - %s' % \
+                          (i, element.transform.value_trans_x(), element.transform.value_trans_x(), name)
+                    i += 1
+                yield '----------'
+                return
+            if len(kernel.selected_elements) == 0:
+                yield "No selected elements."
+                return
+            tx = 0
+            ty = 0
+            min_dim = min(self.device.window_width, self.device.window_height)
+            if len(args) >= 1:
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=min_dim)
+            if len(args) >= 2:
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=min_dim)
+            for element in kernel.selected_elements:
+                otx = element.transform.value_trans_x()
+                oty = element.transform.value_trans_y()
+                ntx = tx - otx
+                nty = ty - oty
+                matrix = Matrix('translate(%f,%f)' % (ntx, nty))
+                matrix.render(ppi=1000.0, relative_length=min_dim)
                 element *= matrix
             active_device.signal('refresh_scene')
             return

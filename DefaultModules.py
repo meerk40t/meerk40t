@@ -623,7 +623,6 @@ class RuidaEmulator(Module):
                 self.x = self.abscoord(array[1:6]) / um_per_mil
                 self.y = self.abscoord(array[6:11]) / um_per_mil
                 if len(path_d) != 0:
-                    path_d.append('z')
                     path = Path(' '.join(path_d))
                     path.values['name'] = self.name
                     path.values['speed'] = self.speed
@@ -638,7 +637,6 @@ class RuidaEmulator(Module):
                 dx = self.relcoord(array[1:3]) / um_per_mil
                 dy = self.relcoord(array[3:5]) / um_per_mil
                 if len(path_d) != 0:
-                    path_d.append('z')
                     path = Path(' '.join(path_d))
                     path.values['name'] = self.name
                     path.values['speed'] = self.speed
@@ -758,7 +756,6 @@ class RuidaEmulator(Module):
                 channel("    ERR from machine")
             elif array[0] == 0xD7:  # D7 or EB Finished?
                 if len(path_d) != 0:
-                    path_d.append('z')
                     path = Path(' '.join(path_d))
                     path.values['name'] = self.name
                     path.values['speed'] = self.speed
