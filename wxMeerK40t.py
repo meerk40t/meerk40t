@@ -638,7 +638,7 @@ class MeerK40t(wx.Frame, Module):
         self.Layout()
 
     def load(self, pathname):
-        results = self.device.load(pathname)
+        results = self.device.load(pathname, channel=self.device.channel_open('load'))
         if results is not None:
             elements, pathname, basename = results
             self.device.classify(elements)

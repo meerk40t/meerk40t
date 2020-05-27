@@ -1221,8 +1221,8 @@ class Device(Thread):
     def classify(self, elements):
         return self.device_root.classify(elements)
 
-    def load(self, pathname):
-        return self.device_root.load(pathname)
+    def load(self, pathname, **kwargs):
+        return self.device_root.load(pathname, **kwargs)
 
     def load_types(self, all=True):
         return self.device_root.load_types(all)
@@ -1505,11 +1505,11 @@ class Kernel(Device):
         self.operations.extend(ops)
         return ops
 
-    def load(self, pathname):
+    def load(self, pathname, **kwargs):
         for loader_name, loader in self.registered['load'].items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    results = loader.load(self, pathname)
+                    results = loader.load(self, pathname, **kwargs)
                     if results is None:
                         continue
                     elements, pathname, basename = results

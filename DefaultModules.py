@@ -492,6 +492,9 @@ class RuidaEmulator(Module):
         self.y = 0.0
         self.z = 0.0
         self.u = 0.0
+        self.magic = 0x88  # 0x11 for the 634XG
+        # Should automatically shift encoding if wrong.
+        # self.magic = 0x38
 
         self.name = ''
         self.speed = 20.0
@@ -573,11 +576,14 @@ class RuidaEmulator(Module):
             byte = f.read(1)
             if len(byte) == 0:
                 break
-            byte = self.unswizzle_byte(ord(byte))
-            if byte >= 0x80 and len(array) > 0:
+            b = self.unswizzle_byte(ord(byte))
+            if (b == 0x41 or b == 0x65) and len(array) == 0:
+                self.magic ^= 0x99
+                b = self.unswizzle_byte(ord(byte))
+            if b >= 0x80 and len(array) > 0:
                 yield array
                 array.clear()
-            array.append(byte)
+            array.append(b)
         if len(array) > 0:
             yield array
 
@@ -591,6 +597,13 @@ class RuidaEmulator(Module):
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
+        if len(sent_data) > 3:
+            if self.magic != 0x88 and sent_data[2] == 0xD4:
+                self.magic = 0x88
+                channel("Setting magic to 0x88")
+            if self.magic != 0x11 and sent_data[2] == 0x4B:
+                self.magic = 0x11
+                channel("Setting magic to 0x11")
         if checksum_check == checksum_sum:
             response = b'\xCC'
             reply(self.swizzle(response))
@@ -618,7 +631,8 @@ class RuidaEmulator(Module):
         for array in self.parse_commands(data):
             channel("--> " + str(bytes(array).hex()))
             if array[0] < 0x80:
-                raise ValueError("Not a command.")
+                channel("NOT A COMMAND: %d" % array[0])
+                return
             elif array[0] == 0x88:  # 0b10001000 11 characters.
                 self.x = self.abscoord(array[1:6]) / um_per_mil
                 self.y = self.abscoord(array[6:11]) / um_per_mil
@@ -777,54 +791,32 @@ class RuidaEmulator(Module):
                 if array[1] == 0x2E:
                     channel("    Focus")
             elif array[0] == 0xD9:
+                param = 'UNSET'
+                if array[2] == 0x03:
+                    param = "Light"
+                elif array[2] == 0x02:
+                    param = ""
+                elif array[2] == 0x01:
+                    param = "Light/Origin"
+                elif array[2] == 0x00:
+                    param = "Origin"
                 if array[1] == 0x00:
                     self.x = self.abscoord(array[3:8]) / um_per_mil
-                    path_d.append("M%04f,%04f" % (self.x, self.y))
-                    if array[2] == 0x03:
-                        channel("    Move Light X: %d" % self.x)
-                    elif array[2] == 0x02:
-                        channel("    Move X: %f" % self.x)
-                    elif array[2] == 0x01:
-                        channel("    Move Light/Origin X: %f" % self.y)
-                    elif array[2] == 0x00:
-                        channel("    Move Origin X: %f" % self.x)
+                    channel("    Move %s X: %f" % (param, self.x))
                 if array[1] == 0x01:
                     self.y = self.abscoord(array[3:8]) / um_per_mil
-                    path_d.append("M%04f,%04f" % (self.x, self.y))
-                    if array[2] == 0x03:
-                        channel("    Move Light Y: %f" % self.y)
-                    elif array[2] == 0x02:
-                        channel("    Move Y: %f" % self.y)
-                    elif array[2] == 0x01:
-                        channel("    Move Light/Origin Y: %f" % self.y)
-                    elif array[2] == 0x00:
-                        channel("    Move Origin Y: %f" % self.y)
+                    channel("    Move %s Y: %f" % (param, self.y))
                 if array[1] == 0x02:
                     self.z = self.abscoord(array[3:8]) / um_per_mil
-                    if array[2] == 0x03:
-                        channel("    Move Light Z: %f" % self.z)
-                    elif array[2] == 0x02:
-                        channel("    Move Z: %f" % self.z)
-                    elif array[2] == 0x01:
-                        channel("    Move Light/Origin Z: %f" % self.z)
-                    elif array[2] == 0x00:
-                        channel("    Move Origin Z: %f" % self.z)
+                    channel("    Move %s Z: %f" % (param, self.y))
                 if array[1] == 0x03:
                     self.u = self.abscoord(array[3:8]) / um_per_mil
-                    if array[2] == 0x03:
-                        channel("    Move Light U: %f" % self.u)
-                    elif array[2] == 0x02:
-                        channel("    Move U: %f" % self.u)
-                    elif array[2] == 0x01:
-                        channel("    Move Light/Origin U: %f" % self.u)
-                    elif array[2] == 0x00:
-                        channel("    Move Origin U: %f" % self.u)
+                    channel("    Move %s U: %f" % (param, self.y))
                 if array[1] == 0x10:
-                    if array[2] == 0x01:
-                        channel("    Home XY")
-                        self.x = 0
-                        self.y = 0
-                        path_d.append("M%04f,%04f" % (self.x, self.y))
+                    channel("    Home %s XY" % param)
+                    self.x = 0
+                    self.y = 0
+                path_d.append("M%04f,%04f" % (self.x, self.y))
             elif array[0] == 0xDA:
                 if array[1] == 0x00:
                     channel("    get %02x %02x from machine" % (array[2], array[3]))
@@ -836,6 +828,12 @@ class RuidaEmulator(Module):
                             v = 0x00000000
                         if array[3] == 0x05:
                             name = "00 05 UNKNOWN"
+                            v = 0x00000000
+                        if array[3] == 0x10:
+                            name = "00 10 STARTUP 1"
+                            v = 0x00000000
+                        if array[3] == 0x1e:
+                            name = "00 1e STARTUP 2"
                             v = 0x00000000
                         if array[3] == 0x20:
                             name = "X Position Request"
@@ -899,6 +897,13 @@ class RuidaEmulator(Module):
             elif array[0] == 0xE7:
                 if array[1] == 0x00:
                     channel("    E7 00 Finishing.")
+                if array[1] == 0x01:
+                    self.name = ""
+                    for a in array[2:]:
+                        if a == 0x00:
+                            break
+                        self.name += ord(a)
+                    channel("    Set filename for transfer: %s" % self.name)
                 elif array[1] == 0x03:
                     c_x = self.abscoord(array[1:6]) / um_per_mil
                     c_y = self.abscoord(array[6:11]) / um_per_mil
@@ -984,14 +989,7 @@ class RuidaEmulator(Module):
                         self.name += ord(a)
                     channel("    Read filename number: %d" % (self.parse_filenumber(array[1:3])))
                 if array[1] == 0x02:
-                    if array[2] == 0xE7:
-                        if array[3] == 0x01:
-                            self.name = ""
-                            for a in array[4:]:
-                                if a == 0x00:
-                                    break
-                                self.name += ord(a)
-                            channel("    Set filename for transfer: %s" % self.name)
+                    channel("    Setting file name for transfer.")
             elif array[0] == 0xEA:
                 channel("    EA (%d)" % (array[1]))
             elif array[0] == 0xEB:
@@ -1060,15 +1058,13 @@ class RuidaEmulator(Module):
         b ^= (b >> 7) & 0xFF
         b ^= (b << 7) & 0xFF
         b ^= (b >> 7) & 0xFF
-        b ^= 0xB0
-        b ^= 0x38
+        b ^= self.magic
         b = (b + 1) & 0xFF
         return b
 
     def unswizzle_byte(self, b):
         b = (b - 1) & 0xFF
-        b ^= 0xB0
-        b ^= 0x38
+        b ^= self.magic
         b ^= (b >> 7) & 0xFF
         b ^= (b << 7) & 0xFF
         b ^= (b >> 7) & 0xFF
@@ -1175,7 +1171,7 @@ class SVGLoader:
         yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
 
     @staticmethod
-    def load(kernel, pathname):
+    def load(kernel, pathname, **kwargs):
         kernel.setting(int, "bed_width", 320)
         kernel.setting(int, "bed_height", 220)
         elements = []
@@ -1219,7 +1215,7 @@ class EgvLoader:
         yield "Engrave Files", ("egv",), "application/x-egv"
 
     @staticmethod
-    def load(kernel, pathname):
+    def load(kernel, pathname, **kwargs):
         elements = []
         basename = os.path.basename(pathname)
 
@@ -1245,12 +1241,12 @@ class RDLoader:
         yield "RDWorks File", ("rd",), "application/x-rd"
 
     @staticmethod
-    def load(kernel, pathname):
+    def load(kernel, pathname, channel=None, **kwargs):
         basename = os.path.basename(pathname)
         ruidaemulator = RuidaEmulator()
         elements = list()
         with open(pathname, 'rb') as f:
-            ruidaemulator.parse(f, elements=elements.append)
+            ruidaemulator.parse(f, elements=elements.append, channel=channel)
         return elements, pathname, basename
 
 
@@ -1267,7 +1263,7 @@ class ImageLoader:
         yield "Webp Format", ("webp",), "image/webp"
 
     @staticmethod
-    def load(kernel, pathname):
+    def load(kernel, pathname, **kwargs):
         basename = os.path.basename(pathname)
 
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
@@ -1282,7 +1278,7 @@ class DxfLoader:
         yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
 
     @staticmethod
-    def load(kernel, pathname):
+    def load(kernel, pathname, **kwargs):
         """"
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 

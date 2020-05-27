@@ -646,8 +646,11 @@ class Console(Module, Pipe):
             center_y = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix('rotate(%s,%f,%f)' % (args[0], center_x, center_y))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
-            for element in kernel.selected_elements:
-                element *= matrix
+            try:
+                for element in kernel.selected_elements:
+                    element *= matrix
+            except ValueError:
+                yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'scale':
@@ -679,8 +682,11 @@ class Console(Module, Pipe):
                 sy = args[1]
             matrix = Matrix('scale(%s,%s,%f,%f)' % (sx, sy, center_x, center_y))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
-            for element in kernel.selected_elements:
-                element *= matrix
+            try:
+                for element in kernel.selected_elements:
+                    element *= matrix
+            except ValueError:
+                yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'translate':
@@ -708,8 +714,11 @@ class Console(Module, Pipe):
                 ty = args[1]
             matrix = Matrix('translate(%s,%s)' % (tx, ty))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
-            for element in kernel.selected_elements:
-                element *= matrix
+            try:
+                for element in kernel.selected_elements:
+                    element *= matrix
+            except ValueError:
+                yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'rotate_to':
@@ -737,11 +746,14 @@ class Console(Module, Pipe):
             except ValueError:
                 yield "Invalid Value."
                 return
-            for element in kernel.selected_elements:
-                start_angle = element.rotation
-                amount = end_angle - start_angle
-                matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
-                element *= matrix
+            try:
+                for element in kernel.selected_elements:
+                    start_angle = element.rotation
+                    amount = end_angle - start_angle
+                    matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
+                    element *= matrix
+            except ValueError:
+                yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'scale_to':
@@ -771,13 +783,16 @@ class Console(Module, Pipe):
                 sy = sx
             if len(args) >= 2:
                 sy = float(args[1])
-            for element in kernel.selected_elements:
-                osx = element.transform.value_scale_x()
-                osy = element.transform.value_scale_y()
-                nsx = sx / osx
-                nsy = sy / osy
-                matrix = Matrix('scale(%f,%f,%f,%f)' % (nsx, nsy, center_x, center_y))
-                element *= matrix
+            try:
+                for element in kernel.selected_elements:
+                    osx = element.transform.value_scale_x()
+                    osy = element.transform.value_scale_y()
+                    nsx = sx / osx
+                    nsy = sy / osy
+                    matrix = Matrix('scale(%f,%f,%f,%f)' % (nsx, nsy, center_x, center_y))
+                    element *= matrix
+            except ValueError:
+                yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'translate_to':
@@ -803,13 +818,16 @@ class Console(Module, Pipe):
                 tx = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             if len(args) >= 2:
                 ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            for element in kernel.selected_elements:
-                otx = element.transform.value_trans_x()
-                oty = element.transform.value_trans_y()
-                ntx = tx - otx
-                nty = ty - oty
-                matrix = Matrix('translate(%f,%f)' % (ntx, nty))
-                element *= matrix
+            try:
+                for element in kernel.selected_elements:
+                    otx = element.transform.value_trans_x()
+                    oty = element.transform.value_trans_y()
+                    ntx = tx - otx
+                    nty = ty - oty
+                    matrix = Matrix('translate(%f,%f)' % (ntx, nty))
+                    element *= matrix
+            except ValueError:
+                yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'reset':
@@ -829,6 +847,7 @@ class Console(Module, Pipe):
                     name = name[:50] + '...'
                 yield 'reified - %s' % (name)
                 element.reify()
+                element.cache = None
             self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
             return
