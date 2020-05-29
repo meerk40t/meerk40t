@@ -496,7 +496,7 @@ class RuidaEmulator(Module):
         # Should automatically shift encoding if wrong.
         # self.magic = 0x38
 
-        self.name = ''
+        self.filename = ''
         self.speed = 20.0
         self.color = 'black'
         self.power1_min = 0
@@ -640,7 +640,7 @@ class RuidaEmulator(Module):
 
         def new_path():
             path = Path(' '.join(path_d))
-            path.values['name'] = self.name
+            path.values['name'] = self.filename
             path.values['speed'] = self.speed
             path.values['power'] = self.power1_min
             path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
@@ -997,12 +997,16 @@ class RuidaEmulator(Module):
                         name = "IOEnable"
                     elif array[3] == 0x05:
                         name = "G0 Velocity"
+                        v = 200000  # 200 mm/s
                     elif array[3] == 0x0B:
                         name = "Eng Facula"
+                        v = 800  # 80%
                     elif array[3] == 0x0C:
                         name = "Home Velocity"
+                        v = 20000  # 20mm/s
                     elif array[3] == 0x0E:
                         name = "Eng Vert Velocity"
+                        v = 100000  # 100 mm/s
                     elif array[3] == 0x10:
                         name = "System Control Mode"
                     elif array[3] == 0x11:
@@ -1029,9 +1033,9 @@ class RuidaEmulator(Module):
                         name = "Laser Standby Pulse 2"
                     elif array[3] == 0x1e:
                         name = "Auto Type Space"
-
                     elif array[3] == 0x20:
                         name = "Axis Control Para 1, X Pos"
+                        v = 0x4000  # True
                     elif array[3] == 0x21:
                         name = "Axis Precision 1"
                     elif array[3] == 0x23:
@@ -1053,9 +1057,11 @@ class RuidaEmulator(Module):
                         name = "Axis Home Offset 1"
                     elif array[3] == 0x2B:
                         name = "Axis Backlash 1"
+                        v = 0  # 0mm
 
                     elif array[3] == 0x30:
                         name = "Axis Control Para 2, Y Pos"
+                        v = 0x4000  # True
                     elif array[3] == 0x31:
                         name = "Axis Precision 2"
                     elif array[3] == 0x33:
@@ -1077,9 +1083,11 @@ class RuidaEmulator(Module):
                         name = "Axis Home Offset 2"
                     elif array[3] == 0x3B:
                         name = "Axis Backlash 2"
+                        v = 0  # 0 mm
 
                     elif array[3] == 0x40:
                         name = "Axis Control Para 3, Z Pos"
+                        v = 0  # False
                     elif array[3] == 0x41:
                         name = "Axis Precision 3"
                     elif array[3] == 0x43:
@@ -1103,6 +1111,7 @@ class RuidaEmulator(Module):
 
                     elif array[3] == 0x50:
                         name = "Axis Control Para 4, U Pos"
+                        v = 0  # False
                     elif array[3] == 0x51:
                         name = "Axis Precision 4"
                     elif array[3] == 0x53:
@@ -1153,42 +1162,59 @@ class RuidaEmulator(Module):
                         name = "System Settings"
                     elif array[3] == 0x01:
                         name = "Turn Velocity"
+                        v = 20000  # 20 m/s
                     elif array[3] == 0x02:
                         name = "Syn Acc"
+                        v = 3000000  # 3000 mm/s2
                     elif array[3] == 0x03:
                         name = "G0 Delay"
+                        v = 0  # 0 ms
                     elif array[3] == 0x07:
                         name = "Feed Delay After"
+                        v = 0  # 0 s
                     elif array[3] == 0x09:
                         name = "Turn Acc"
+                        v = 400000  # 400 mm/s
                     elif array[3] == 0x0A:
                         name = "G0 Acc"
+                        v = 3000000  # 3000 mm/s2
                     elif array[3] == 0x0B:
                         name = "Feed Delay Prior"
+                        v = 0  # 0 ms
                     elif array[3] == 0x0C:
                         name = "Manual Distance"
                     elif array[3] == 0x0D:
                         name = "Shut Down Delay"
                     elif array[3] == 0x0E:
                         name = "Focus Depth"
+                        v = 5000  # 5mm
                     elif array[3] == 0x0F:
                         name = "Go Scale Blank"
+                        v = 0  # 0 mm
                     elif array[3] == 0x17:
                         name = "Array Feed Repay"
+                        v = 0  # 0mm
                     elif array[3] == 0x1A:
                         name = "Acc Ratio"
+                        v = 100  # 100%
                     elif array[3] == 0x1B:
                         name = "Turn Ratio"
+                        v = 100  # 100% (speed factor)
                     elif array[3] == 0x1C:
                         name = "Acc G0 Ratio"
+                        v = 100  # 100%
                     elif array[3] == 0x1F:
                         name = "Rotate Pulse"
+                        v = 4334  # unknown
                     elif array[3] == 0x21:
                         name = "Rotate D"
+                        v = 8888  # Unknown
                     elif array[3] == 0x24:
                         name = "X Min Eng Velocity"
+                        v = 10000  # 10mm/s
                     elif array[3] == 0x25:
                         name = "X Eng Acc"
+                        v = 10000000  # 10000 m/s
                     elif array[3] == 0x26:
                         name = "User Para 1"
                     elif array[3] == 0x28:
@@ -1205,14 +1231,19 @@ class RuidaEmulator(Module):
                         name = "U Work Velocity"
                     elif array[3] == 0x31:
                         name = "Manual Fast Speed"
+                        v = 100000  # 100 mm/s
                     elif array[3] == 0x32:
                         name = "Manual Slow Speed"
+                        v = 10000  # 10 mm/s
                     elif array[3] == 0x34:
                         name = "Y Minimum Eng Velocity"
+                        v = 10000  # 10mm/s
                     elif array[3] == 0x35:
                         name = "Y Eng Acc"
+                        v = 3000000  # 3000 mm/s
                     elif array[3] == 0x37:
                         name = "Eng Acc Ratio"
+                        v = 100  # Engraving factor 100%
                 elif array[2] == 0x03:
                     if array[3] == 0x00:
                         name = "Card Language"
@@ -1230,6 +1261,7 @@ class RuidaEmulator(Module):
                         name = "Total Work Number"
                     elif array[3] == 0x05:
                         name = "Total Doc Number"
+                        v = 1
                     elif array[3] == 0x08:
                         name = "Previous Work Time"
                     elif array[3] == 0x11:
@@ -1258,17 +1290,25 @@ class RuidaEmulator(Module):
                         v = b'MEERK40T\x00'
                         name = "Mainboard Version"
                 if array[1] == 0x00:
-                    desc = "Get Param %02x %02x" % (array[2], array[3])
-                    if isinstance(v, int):
-                        v = RuidaEmulator.encode32(v)
-                    respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(v)
                     if name is None:
                         name = "Unmapped"
-                    respond_desc = "Set Param %02x %02x (%s) = %s" % (array[2], array[3], name, str(v))
+                    desc = "Get %02x %02x (%s)" % (array[2], array[3], name)
+                    if isinstance(v, int):
+                        vencode = RuidaEmulator.encode32(v)
+                        respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(vencode)
+                        respond_desc = "Respond %02x %02x (%s) = %d (0x%08x)" % (array[2], array[3], name, v, v)
+                    else:
+                        vencode = v
+                        respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(vencode)
+                        respond_desc = "Respond %02x %02x (%s) = %s" % (array[2], array[3], name, str(vencode))
                     reply(self.swizzle(respond))
                 elif array[1] == 0x01:
-                    value = array[4:]
-                    desc = "Set Param %02x %02x (%s) = %s" % (array[2], array[3], name, str(value))
+                    value0 = array[4:9]
+                    value1 = array[9:14]
+                    v0 = self.decodeu32(value0)
+                    v1 = self.decodeu32(value1)
+
+                    desc = "Set %02x %02x (%s) = %d (0x%08x) %d (0x%08x)" % (array[2], array[3], name, v0, v0, v1, v1)
             elif array[0] == 0xE6:
                 if array[1] == 0x01:
                     desc = "Set Absolute"
@@ -1276,12 +1316,12 @@ class RuidaEmulator(Module):
                 if array[1] == 0x00:
                     desc = "Block End"
                 elif array[1] == 0x01:
-                    self.name = ""
+                    self.filename = ""
                     for a in array[2:]:
                         if a == 0x00:
                             break
-                        self.name += chr(a)
-                    desc = "Filename: %s" % self.name
+                        self.filename += chr(a)
+                    desc = "Filename: %s" % self.filename
                 elif array[1] == 0x03:
                     c_x = self.abscoord(array[2:7]) / um_per_mil
                     c_y = self.abscoord(array[7:12]) / um_per_mil
@@ -1384,11 +1424,7 @@ class RuidaEmulator(Module):
                     desc = "Delete Document %d %d" % (v1, v2)
                 elif array[1] == 0x01:
                     filenumber = self.parse_filenumber(array[2:4])
-                    for a in array[4:]:
-                        if a == 0x00:
-                            break
-                        self.name += ord(a)
-                    desc = "Document Name %d %s" % (filenumber, self.name)
+                    desc = "Document Name %d" % (filenumber)
                 elif array[1] == 0x02:
                     desc = "File transfer"
                 elif array[1] == 0x03:
