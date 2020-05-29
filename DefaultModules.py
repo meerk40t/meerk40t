@@ -824,16 +824,16 @@ class RuidaEmulator(Module):
                     desc = "%d, Power 2 Max (%f)" % (part, power)
                 elif array[1] == 0x50:
                     power = self.parse_power(array[2:4])
-                    desc = "Through Power 1 (%d)" % (power)
+                    desc = "Through Power 1 (%f)" % (power)
                 elif array[1] == 0x51:
                     power = self.parse_power(array[2:4])
-                    desc = "Through Power 2 (%d)" % (power)
+                    desc = "Through Power 2 (%f)" % (power)
                 elif array[1] == 0x55:
                     power = self.parse_power(array[2:4])
-                    desc = "Through Power 3 (%d)" % (power)
+                    desc = "Through Power 3 (%f)" % (power)
                 elif array[1] == 0x56:
                     power = self.parse_power(array[2:4])
-                    desc = "Through Power 4 (%d)" % (power)
+                    desc = "Through Power 4 (%f)" % (power)
                 elif array[1] == 0x60:
                     laser = array[2]
                     part = array[3]
@@ -1402,7 +1402,7 @@ class RuidaEmulator(Module):
             elif array[0] == 0xEB:
                 desc = "Array End"
             elif array[0] == 0xF0:
-                desc = "Unknown Common"
+                desc = "Ref Point Set"
             elif array[0] == 0xF1:
                 if array[1] == 0x00:
                     index = array[2]
@@ -1459,6 +1459,7 @@ class RuidaEmulator(Module):
             else:
                 desc = "Unknown Command!"
             channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
+            # channel("| %s || %s ||\n|-" % (str(bytes(array).hex()), desc))
             if respond is not None:
                 channel("<-- %s     (%s)" % (respond, respond_desc))
 
