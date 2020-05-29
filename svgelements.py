@@ -765,7 +765,25 @@ class Color(object):
     Including keyword: https://www.w3.org/TR/SVG11/types.html#ColorKeywords
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
+        self.value = 0
+        if len(args) == 0:
+            r = 0
+            g = 0
+            b = 0
+            if 'red' in kwargs:
+                r = kwargs['red']
+            if 'green' in kwargs:
+                g = kwargs['green']
+            if 'blue' in kwargs:
+                b = kwargs['blue']
+            if 'r' in kwargs:
+                r = kwargs['r']
+            if 'g' in kwargs:
+                g = kwargs['g']
+            if 'b' in kwargs:
+                b = kwargs['b']
+            self.value = Color.rgb_to_int(r, g, b)
         if 1 <= len(args) <= 2:
             v = args[0]
             if isinstance(v, Color):
@@ -787,8 +805,6 @@ class Color(object):
             b = args[2]
             opacity = args[3] / 255.0
             self.value = Color.rgb_to_int(r, g, b, opacity)
-        else:
-            self.value = 0
 
     def __int__(self):
         return self.value

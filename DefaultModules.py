@@ -498,9 +498,10 @@ class RuidaEmulator(Module):
 
         self.name = ''
         self.speed = 20.0
+        self.color = 'black'
         self.power1_min = 0
-        self.power2_min = 0
         self.power1_max = 0
+        self.power2_min = 0
         self.power2_max = 0
 
     def initialize(self):
@@ -524,10 +525,10 @@ class RuidaEmulator(Module):
 
     @staticmethod
     def decode14(data):
-        return RuidaEmulator.signed14((data[0] & 0x7F) << 7 | (data[1] & 0x7F))
+        return RuidaEmulator.signed14(RuidaEmulator.decodeu14(data))
 
     @staticmethod
-    def udecode14(data):
+    def decodeu14(data):
         return (data[0] & 0x7F) << 7 | (data[1] & 0x7F)
 
     @staticmethod
@@ -539,11 +540,15 @@ class RuidaEmulator(Module):
 
     @staticmethod
     def decode32(data):
-        return RuidaEmulator.signed32((data[0] & 0x7F) << 28 |
-                                      (data[1] & 0x7F) << 21 |
-                                      (data[2] & 0x7F) << 14 |
-                                      (data[3] & 0x7F) << 7 |
-                                      (data[4] & 0x7F))
+        return RuidaEmulator.signed32(RuidaEmulator.decodeu32(data))
+
+    @staticmethod
+    def decodeu32(data):
+        return (data[0] & 0x7F) << 28 | \
+               (data[1] & 0x7F) << 21 | \
+               (data[2] & 0x7F) << 14 | \
+               (data[3] & 0x7F) << 7 | \
+               (data[4] & 0x7F)
 
     @staticmethod
     def encode32(v):
@@ -565,10 +570,16 @@ class RuidaEmulator(Module):
         return RuidaEmulator.decode14(data)
 
     def parse_speed(self, data):
-        return RuidaEmulator.decode32(data)
+        return RuidaEmulator.decode32(data) / 1000.0
+
+    def parse_frequency(self, data):
+        return RuidaEmulator.decodeu32(data)
 
     def parse_power(self, data):
-        return RuidaEmulator.udecode14(data)
+        return RuidaEmulator.decodeu14(data) / 163.84  # 16384 / 100%
+
+    def parse_time(self, data):
+        return RuidaEmulator.decodeu32(data) / 1000.0
 
     def parse_commands(self, f):
         array = list()
@@ -607,19 +618,18 @@ class RuidaEmulator(Module):
         if checksum_check == checksum_sum:
             response = b'\xCC'
             reply(self.swizzle(response))
-            channel("<-- " + str(response.hex()))
-            channel("    checksum match")
+            channel("<-- %s     (checksum match)" % str(response.hex()))
         else:
             response = b'\xCF'
             reply(self.swizzle(response))
             channel("--> " + str(data.hex()))
-            channel("<-- " + str(response.hex()))
-            channel("    checksum fail (%d != %d)" % (checksum_sum, checksum_check))
+            channel("<--     (Checksum Fail (%d != %d))" % (str(response.hex()), checksum_sum, checksum_check))
             return
         self.parse(BytesIO(data), reply=reply, channel=channel, elements=elements)
 
     def parse(self, data, reply=None, channel=None, elements=None):
         um_per_mil = 25.4
+
         if channel is None:
             channel = self.channel
         if reply is None:
@@ -628,416 +638,829 @@ class RuidaEmulator(Module):
             elements = lambda e: e
         path_d = self.path_d
 
+        def new_path():
+            path = Path(' '.join(path_d))
+            path.values['name'] = self.name
+            path.values['speed'] = self.speed
+            path.values['power'] = self.power1_min
+            path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
+            path.stroke = Color(self.color)
+            elements(path)
+            path_d.clear()
+
         for array in self.parse_commands(data):
-            channel("--> " + str(bytes(array).hex()))
+            desc = ""
+            respond = None
+            respond_desc = None
             if array[0] < 0x80:
                 channel("NOT A COMMAND: %d" % array[0])
-                return
+                break
+            elif array[0] == 0x80:
+                value = self.abscoord(array[2:7])
+                if array[1] == 0x00:
+                    desc = "Axis X Move %f" % (value)
+                elif array[1] == 0x08:
+                    desc = "Axis Z Move %f" % (value)
             elif array[0] == 0x88:  # 0b10001000 11 characters.
                 self.x = self.abscoord(array[1:6]) / um_per_mil
                 self.y = self.abscoord(array[6:11]) / um_per_mil
                 if len(path_d) != 0:
-                    path = Path(' '.join(path_d))
-                    path.values['name'] = self.name
-                    path.values['speed'] = self.speed
-                    path.values['power'] = self.power1_min
-                    path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
-                    path.stroke = Color('black')
-                    elements(path)
-                    path_d.clear()
+                    new_path()
                 path_d.append("M%f,%f" % (self.x, self.y))
-                channel("    Move Absolute %d %d" % (self.x, self.y))
+                desc = "Move Absolute (%f, %f)" % (self.x, self.y)
             elif array[0] == 0x89:  # 0b10001001 5 characters
                 dx = self.relcoord(array[1:3]) / um_per_mil
                 dy = self.relcoord(array[3:5]) / um_per_mil
                 if len(path_d) != 0:
-                    path = Path(' '.join(path_d))
-                    path.values['name'] = self.name
-                    path.values['speed'] = self.speed
-                    path.values['power'] = self.power1_min
-                    path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
-                    path.stroke = Color('black')
-                    elements(path)
-                    path_d.clear()
+                    new_path()
                 self.x += dx
                 self.y += dy
                 path_d.append("M%f,%f" % (self.x, self.y))
-                channel("    Move Relative %f %f" % (dx, dy))
+                desc = "Move Relative (%f, %f)" % (dx, dy)
+            elif array[0] == 0x8A:  # 0b10101010 3 characters
+                dx = self.relcoord(array[1:3]) / um_per_mil
+                if len(path_d) != 0:
+                    new_path()
+                self.x += dx
+                path_d.append("M%f,%f" % (self.x, self.y))
+                desc = "Move Horizontal Relative (%f)" % (dx)
+            elif array[0] == 0x8B:  # 0b10101011 3 characters
+                dy = self.relcoord(array[1:3]) / um_per_mil
+                if len(path_d) != 0:
+                    new_path()
+                self.y += dy
+                path_d.append("M%f,%f" % (self.x, self.y))
+                desc = "Move Vertical Relative (%f)" % (dy)
+            elif array[0] == 0xA0:
+                value = self.abscoord(array[2:7])
+                if array[1] == 0x00:
+                    desc = "Axis Y Move %f" % (value)
+                elif array[1] == 0x08:
+                    desc = "Axis U Move %f" % (value)
             elif array[0] == 0xA8:  # 0b10101000 11 characters.
                 self.x = self.abscoord(array[1:6]) / um_per_mil
                 self.y = self.abscoord(array[6:11]) / um_per_mil
                 path_d.append("L%0.4f,%0.4f" % (self.x, self.y))
-                channel("    Cut Absolute %g %g" % (self.x, self.y))
+                desc = "Cut Absolute (%f, %f)" % (self.x, self.y)
             elif array[0] == 0xA9:  # 0b10101001 5 characters
                 dx = self.relcoord(array[1:3]) / um_per_mil
                 dy = self.relcoord(array[3:5]) / um_per_mil
                 path_d.append("l%0.4f,%0.4f" % (dx, dy))
                 self.x += dx
                 self.y += dy
-                channel("    Cut Relative %g %g" % (dx, dy))
+                desc = "Cut Relative (%f, %f)" % (dx, dy)
             elif array[0] == 0xAA:  # 0b10101010 3 characters
                 dx = self.relcoord(array[1:3]) / um_per_mil
                 path_d.append("h%0.4f" % (dx))
                 self.x += dx
-                channel("    Horizontal cut to relative %g" % (dx))
+                desc = "Cut Horizontal Relative (%f)" % (dx)
             elif array[0] == 0xAB:  # 0b10101011 3 characters
                 dy = self.relcoord(array[1:3]) / um_per_mil
                 path_d.append("v%0.4f" % (dy))
                 self.y += dy
-                channel("    Vertical cut to relative %g" % (dy))
-            elif array[0] == 0xC6:  # 0b11000110 4 characters
+                desc = "Cut Vertical Relative (%f)" % (dy)
+            elif array[0] == 0xC7:
+                v0 = self.parse_power(array[1:3])
+                desc = "Imd Power 1 (%f)" % v0
+            elif array[0] == 0xC2:
+                v0 = self.parse_power(array[1:3])
+                desc = "Imd Power 3 (%f)" % v0
+            elif array[0] == 0xC0:
+                v0 = self.parse_power(array[1:3])
+                desc = "Imd Power 2 (%f)" % v0
+            elif array[0] == 0xC3:
+                v0 = self.parse_power(array[1:3])
+                desc = "Imd Power 4 (%f)" % v0
+            elif array[0] == 0xC8:
+                v0 = self.parse_power(array[1:3])
+                desc = "End Power 1 (%f)" % v0
+            elif array[0] == 0xC4:
+                v0 = self.parse_power(array[1:3])
+                desc = "End Power 3 (%f)" % v0
+            elif array[0] == 0xC1:
+                v0 = self.parse_power(array[1:3])
+                desc = "End Power 2 (%f)" % v0
+            elif array[0] == 0xC5:
+                v0 = self.parse_power(array[1:3])
+                desc = "End Power 4 (%f)" % v0
+            elif array[0] == 0xC6:
                 if array[1] == 0x01:
-                    self.power1_min = self.parse_power(array[2:4])
-                    channel("    (1st laser source min power: %d)" % self.power1_min)
+                    power = self.parse_power(array[2:4])
+                    desc = "Power 1 min=%f" % (power)
+                    self.power1_min = power
                 elif array[1] == 0x02:
-                    self.power1_max = self.parse_power(array[2:4])
-                    channel("    (1st laser source max power: %d)" % self.power1_max)
+                    power = self.parse_power(array[2:4])
+                    desc = "Power 1 max=%f" % (power)
+                    self.power1_max = power
                 elif array[1] == 0x05:
                     power = self.parse_power(array[2:4])
-                    channel("    (c6 05 power: %f)" % power)
+                    desc = "Power 3 min=%f" % (power)
                 elif array[1] == 0x06:
                     power = self.parse_power(array[2:4])
-                    channel("    (c6 06 power: %f)" % power)
+                    desc = "Power 3 max=%f" % (power)
                 elif array[1] == 0x07:
                     power = self.parse_power(array[2:4])
-                    channel("    (c6 07 power: %f)" % power)
+                    desc = "Power 4 min=%f" % (power)
                 elif array[1] == 0x08:
                     power = self.parse_power(array[2:4])
-                    channel("    (c6 08 power: %f)" % power)
+                    desc = "Power 4 max=%f" % (power)
+                elif array[1] == 0x10:
+                    interval = self.parse_time(array[2:7])
+                    desc = "Laser Interval %fms" % (interval)
+                elif array[1] == 0x11:
+                    interval = self.parse_time(array[2:7])
+                    desc = "Add Delay %fms" % (interval)
+                elif array[1] == 0x12:
+                    interval = self.parse_time(array[2:7])
+                    desc = "Laser On Delay %fms" % (interval)
+                elif array[1] == 0x13:
+                    interval = self.parse_time(array[2:7])
+                    desc = "Laser Off Delay %fms" % (interval)
                 elif array[1] == 0x15:
-                    channel("    C6 15")
+                    interval = self.parse_time(array[2:7])
+                    desc = "Laser On2 %fms" % interval
                 elif array[1] == 0x16:
-                    channel("    C6 16")
+                    interval = self.parse_time(array[2:7])
+                    desc = "Laser Off2 %fms" % interval
                 elif array[1] == 0x21:
-                    self.power2_min = self.parse_power(array[2:4])
-                    channel("    (2nd laser source min power: %d)" % self.power2_min)
+                    power = self.parse_power(array[2:4])
+                    desc = "Power 2 min=%f" % power
+                    self.power2_min = power
                 elif array[1] == 0x22:
-                    self.power2_max = self.parse_power(array[2:4])
-                    channel("    (2nd laser source max power: %d)" % self.power2_max)
+                    power = self.parse_power(array[2:4])
+                    desc = "Power 2 max=%f" % power
+                    self.power2_max = power
                 elif array[1] == 0x31:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    1 C6 31 (%f)" % (c_x))
+                    part = array[2]
+                    self.power1_min = self.parse_power(array[3:5])
+                    desc = "%d, Power 1 Min=(%f)" % (part, self.power1_min)
                 elif array[1] == 0x32:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    2 C6 32 (%f)" % (c_x))
-                elif array[1] == 0x41:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    3 C6 41 (%f)" % (c_x))
-                elif array[1] == 0x42:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    4 C6 42 (%f)" % (c_x))
+                    part = array[2]
+                    self.power1_max = self.parse_power(array[3:5])
+                    desc = "%d, Power 1 Max=(%f)" % (part, self.power1_min)
                 elif array[1] == 0x35:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    5 C6 35 (%f)" % (c_x))
+                    part = array[2]
+                    power = self.parse_power(array[3:5])
+                    desc = "%d, Power 3 Min (%f)" % (part, power)
                 elif array[1] == 0x36:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    6 C6 36 (%f)" % (c_x))
+                    part = array[2]
+                    power = self.parse_power(array[3:5])
+                    desc = "%d, Power 3 Max (%f)" % (part, power)
                 elif array[1] == 0x37:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    7 C6 37 (%f)" % (c_x))
+                    part = array[2]
+                    power = self.parse_power(array[3:5])
+                    desc = "%d, Power 4 Min (%f)" % (part, power)
                 elif array[1] == 0x38:
-                    c_x = self.relcoord(array[2:5]) / um_per_mil
-                    channel("    8 C6 38 (%f)" % (c_x))
-            elif array[0] == 0xC9:  # 0b11001001 - 7 or 8 characters
+                    part = array[2]
+                    power = self.parse_power(array[3:5])
+                    desc = "%d, Power 4 Max (%f)" % (part, power)
+                elif array[1] == 0x41:
+                    part = array[2]
+                    power = self.parse_power(array[3:5])
+                    desc = "%d, Power 2 Min (%f)" % (part, power)
+                elif array[1] == 0x42:
+                    part = array[2]
+                    power = self.parse_power(array[3:5])
+                    desc = "%d, Power 2 Max (%f)" % (part, power)
+                elif array[1] == 0x50:
+                    power = self.parse_power(array[2:4])
+                    desc = "Through Power 1 (%d)" % (power)
+                elif array[1] == 0x51:
+                    power = self.parse_power(array[2:4])
+                    desc = "Through Power 2 (%d)" % (power)
+                elif array[1] == 0x55:
+                    power = self.parse_power(array[2:4])
+                    desc = "Through Power 3 (%d)" % (power)
+                elif array[1] == 0x56:
+                    power = self.parse_power(array[2:4])
+                    desc = "Through Power 4 (%d)" % (power)
+                elif array[1] == 0x60:
+                    laser = array[2]
+                    part = array[3]
+                    frequency = self.parse_frequency(array[4:9])
+                    desc = "%d, Laser %d, Frequency (%f)" % (part, laser, frequency)
+            elif array[0] == 0xC9:
                 if array[1] == 0x02:
-                    # Speed in micrometers/sec
+                    speed = self.parse_speed(array[2:7])
+                    desc = "Speed Laser 1 %fmm/s" % (speed)
+                elif array[1] == 0x03:
+                    speed = self.parse_speed(array[2:7])
+                    desc = "Axis Speed %fmm/s" % (speed)
+                elif array[1] == 0x04:
+                    part = array[2]
+                    speed = self.parse_speed(array[3:8])
+                    desc = "%d, Speed %fmm/s" % (part, speed)
+                elif array[1] == 0x05:
                     speed = self.parse_speed(array[2:7]) / 1000.0
-                    channel("    Speed set at %f" % speed)
-                if array[1] == 0x04:
-                    if array[2] == 0x00:
-                        # speed in micrometers/sec
-                        speed = self.parse_speed(array[3:8]) / 1000.0
-                        channel("    Speed set at %f" % speed)
+                    desc = "Force Eng Speed %fmm/s" % (speed)
+                elif array[1] == 0x06:
+                    speed = self.parse_speed(array[2:7]) / 1000.0
+                    desc = "Axis Move Speed %fmm/s" % (speed)
             elif array[0] == 0xCA:
                 if array[1] == 0x01:
-                    channel("    CA 01 coords (%d)" % (array[2]))
+                    if array[2] == 0x00:
+                        desc = "End Layer"
+                    elif array[2] == 0x01:
+                        desc = "Work Mode 1"
+                    elif array[2] == 0x02:
+                        desc = "Work Mode 2"
+                    elif array[2] == 0x03:
+                        desc = "Work Mode 3"
+                    elif array[2] == 0x04:
+                        desc = "Work Mode 4"
+                    elif array[2] == 0x55:
+                        desc = "Work Mode 5"
+                    elif array[2] == 0x05:
+                        desc = "Work Mode 6"
+                    elif array[2] == 0x10:
+                        desc = "Layer Device 0"
+                    elif array[2] == 0x11:
+                        desc = "Layer Device 1"
+                    elif array[2] == 0x12:
+                        desc = "Air Assist Off"
+                    elif array[2] == 0x13:
+                        desc = "Air Assist On"
+                    elif array[2] == 0x14:
+                        desc = "DbHead"
+                    elif array[2] == 0x30:
+                        desc = "EnLaser2Offset 0"
+                    elif array[2] == 0x31:
+                        desc = "EnLaser2Offset 1"
                 elif array[1] == 0x02:
-                    channel("    CA 02 coords (%d)" % (array[2]))
+                    part = array[2]
+                    desc = "%d, Layer Number" % (part)
                 elif array[1] == 0x03:
-                    channel("    CA 03 coords (%d)" % (array[2]))
+                    desc = "EnLaserTube Start"
+                elif array[1] == 0x04:
+                    value = array[2]
+                    desc = "X Sign Map %d" % (value)
+                elif array[1] == 0x05:
+                    c = RuidaEmulator.decodeu32(array[2:7])
+                    r = c & 0xFF
+                    g = (c >> 8) & 0xFF
+                    b = (c >> 16) & 0xFF
+                    c = Color(red=r, blue=b, green=g)
+                    self.color = c.hex
+                    desc = "Layer Color %s" % (self.color)
                 elif array[1] == 0x06:
-                    c_x = self.abscoord(array[2:7]) / um_per_mil
-                    channel("    CA 06 coords (%f)" % (c_x))
+                    part = array[2]
+                    c = RuidaEmulator.decodeu32(array[3:8])
+                    r = c & 0xFF
+                    g = (c >> 8) & 0xFF
+                    b = (c >> 16) & 0xFF
+                    c = Color(red=r, blue=b, green=g)
+                    self.color = c.hex
+                    desc = "%d, Color %s" % (part, self.color)
                 elif array[1] == 0x10:
-                    channel("    CA 10 coords (%d)" % (array[2]))
+                    value = array[2]
+                    desc = "EnExIO Start %d" % value
                 elif array[1] == 0x22:
-                    channel("    CA 22 coords (%d)" % (array[2]))
+                    part = array[2]
+                    desc = "%d, Max Layer" % (part)
+                elif array[1] == 0x30:
+                    filenumber = self.parse_filenumber(array[2:4])
+                    desc = "U File ID %d"
+                elif array[1] == 0x40:
+                    value = array[2]
+                    desc = "ZU Map %d" % value
                 elif array[1] == 0x41:
-                    channel("    CA 41 coords (%d,%d)" % (array[2], array[3]))
-            elif array[0] == 0xCC:  # 0b11001100
-                channel("    ACK from machine")
-            elif array[0] == 0xCD:  # 0b11001101
-                channel("    ERR from machine")
-            elif array[0] == 0xD7:  # D7 or EB Finished?
+                    part = array[2]
+                    mode = array[3]
+                    desc = "%d, Work Mode %d" % (part, mode)
+            elif array[0] == 0xCC:
+                desc = "ACK from machine"
+            elif array[0] == 0xCD:
+                desc = "ERR from machine"
+            elif array[0] == 0xD7:
                 if len(path_d) != 0:
-                    path = Path(' '.join(path_d))
-                    path.values['name'] = self.name
-                    path.values['speed'] = self.speed
-                    path.values['power'] = self.power1_min
-                    path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
-                    path.stroke = Color('black')
-                    elements(path)
-                    path_d.clear()
-                channel("    Final Command")
+                    new_path()
+                desc = "End Of File"
             elif array[0] == 0xD8:
                 if array[1] == 0x00:
-                    channel("    Program Item 5")
+                    desc = "Start Process"
+                if array[1] == 0x01:
+                    desc = "Stop Process"
+                if array[1] == 0x02:
+                    desc = "Pause Process"
+                if array[1] == 0x03:
+                    desc = "Restore Process"
+                if array[1] == 0x10:
+                    desc = "Ref Point Mode 2"
+                if array[1] == 0x11:
+                    desc = "Ref Point Mode 1"
                 if array[1] == 0x12:
-                    channel("    Program Item 1")
+                    desc = "Ref Point Mode 0"
                 if array[1] == 0x2C:
-                    channel("    Home Z")
+                    self.z = 0.0
+                    desc = "Home Z"
                 if array[1] == 0x2D:
-                    channel("    Home U")
+                    self.u = 0.0
+                    desc = "Home U"
                 if array[1] == 0x2E:
-                    channel("    Focus")
+                    desc = "FocusZ"
             elif array[0] == 0xD9:
-                param = 'UNSET'
-                if array[2] == 0x03:
+                options = array[2]
+                if options == 0x03:
                     param = "Light"
-                elif array[2] == 0x02:
+                elif options == 0x02:
                     param = ""
-                elif array[2] == 0x01:
+                elif options == 0x01:
                     param = "Light/Origin"
-                elif array[2] == 0x00:
+                else:  # options == 0x00:
                     param = "Origin"
                 if array[1] == 0x00:
-                    self.x = self.abscoord(array[3:8]) / um_per_mil
-                    channel("    Move %s X: %f" % (param, self.x))
-                if array[1] == 0x01:
-                    self.y = self.abscoord(array[3:8]) / um_per_mil
-                    channel("    Move %s Y: %f" % (param, self.y))
-                if array[1] == 0x02:
-                    self.z = self.abscoord(array[3:8]) / um_per_mil
-                    channel("    Move %s Z: %f" % (param, self.y))
-                if array[1] == 0x03:
-                    self.u = self.abscoord(array[3:8]) / um_per_mil
-                    channel("    Move %s U: %f" % (param, self.y))
-                if array[1] == 0x10:
-                    channel("    Home %s XY" % param)
+                    coord = self.abscoord(array[3:8])
+                    self.x = coord / um_per_mil
+                    desc = "Move %s X: %f mils" % (param, coord)
+                elif array[1] == 0x01:
+                    coord = self.abscoord(array[3:8])
+                    self.y = coord / um_per_mil
+                    desc = "Move %s Y: %f mils" % (param, coord)
+                elif array[1] == 0x02:
+                    coord = self.abscoord(array[3:8])
+                    self.z = coord / um_per_mil
+                    desc = "Move %s Z: %f" % (param, coord)
+                elif array[1] == 0x03:
+                    coord = self.abscoord(array[3:8])
+                    self.u = coord / um_per_mil
+                    desc = "Move %s U: %f" % (param, coord)
+                elif array[1] == 0x10:
+                    desc = "Home %s XY" % param
                     self.x = 0
                     self.y = 0
                 path_d.append("M%04f,%04f" % (self.x, self.y))
             elif array[0] == 0xDA:
+                v = 0
+                name = None
+                if array[2] == 0x00:
+                    if array[3] == 0x04:
+                        name = "IOEnable"
+                    elif array[3] == 0x05:
+                        name = "G0 Velocity"
+                    elif array[3] == 0x0B:
+                        name = "Eng Facula"
+                    elif array[3] == 0x0C:
+                        name = "Home Velocity"
+                    elif array[3] == 0x0E:
+                        name = "Eng Vert Velocity"
+                    elif array[3] == 0x10:
+                        name = "System Control Mode"
+                    elif array[3] == 0x11:
+                        name = "Laser PWM Frequency 1"
+                    elif array[3] == 0x12:
+                        name = "Laser Min Power 1"
+                    elif array[3] == 0x13:
+                        name = "Laser Max Power 1"
+                    elif array[3] == 0x16:
+                        name = "Laser Attenuation"
+                    elif array[3] == 0x17:
+                        name = "Laser PWM Frequency 2"
+                    elif array[3] == 0x18:
+                        name = "Laser Min Power 2"
+                    elif array[3] == 0x19:
+                        name = "Laser Max Power 2"
+                    elif array[3] == 0x1A:
+                        name = "Laser Standby Frequency 1"
+                    elif array[3] == 0x1B:
+                        name = "Laser Standby Pulse 1"
+                    elif array[3] == 0x1C:
+                        name = "Laser Standby Frequency 2"
+                    elif array[3] == 0x1D:
+                        name = "Laser Standby Pulse 2"
+                    elif array[3] == 0x1e:
+                        name = "Auto Type Space"
+
+                    elif array[3] == 0x20:
+                        name = "Axis Control Para 1, X Pos"
+                    elif array[3] == 0x21:
+                        name = "Axis Precision 1"
+                    elif array[3] == 0x23:
+                        name = "Axis Max Velocity 1"
+                    elif array[3] == 0x24:
+                        name = "Axis Start Velocity 1"
+                    elif array[3] == 0x25:
+                        name = "Axis Max Acc 1"
+                    elif array[3] == 0x26:
+                        name = "Axis Range 1, Get Frame X"
+                        v = 320000
+                    elif array[3] == 0x27:
+                        name = "Axis Btn Start Velocity 1"
+                    elif array[3] == 0x28:
+                        name = "Axis Btn Acc 1"
+                    elif array[3] == 0x29:
+                        name = "Axis Estp Acc 1"
+                    elif array[3] == 0x2A:
+                        name = "Axis Home Offset 1"
+                    elif array[3] == 0x2B:
+                        name = "Axis Backlash 1"
+
+                    elif array[3] == 0x30:
+                        name = "Axis Control Para 2, Y Pos"
+                    elif array[3] == 0x31:
+                        name = "Axis Precision 2"
+                    elif array[3] == 0x33:
+                        name = "Axis Max Velocity 2"
+                    elif array[3] == 0x34:
+                        name = "Axis Start Velocity 2"
+                    elif array[3] == 0x35:
+                        name = "Axis Max Acc 2"
+                    elif array[3] == 0x36:
+                        name = "Axis Range 2, Get Frame Y"
+                        v = 220000
+                    elif array[3] == 0x37:
+                        name = "Axis Btn Start Velocity 2"
+                    elif array[3] == 0x38:
+                        name = "Axis Btn Acc 2"
+                    elif array[3] == 0x39:
+                        name = "Axis Estp Acc 2"
+                    elif array[3] == 0x3A:
+                        name = "Axis Home Offset 2"
+                    elif array[3] == 0x3B:
+                        name = "Axis Backlash 2"
+
+                    elif array[3] == 0x40:
+                        name = "Axis Control Para 3, Z Pos"
+                    elif array[3] == 0x41:
+                        name = "Axis Precision 3"
+                    elif array[3] == 0x43:
+                        name = "Axis Max Velocity 3"
+                    elif array[3] == 0x44:
+                        name = "Axis Start Velocity 3"
+                    elif array[3] == 0x45:
+                        name = "Axis Max Acc 3"
+                    elif array[3] == 0x46:
+                        name = "Axis Range 3, Get Frame Z"
+                    elif array[3] == 0x47:
+                        name = "Axis Btn Start Velocity 3"
+                    elif array[3] == 0x48:
+                        name = "Axis Btn Acc 3"
+                    elif array[3] == 0x49:
+                        name = "Axis Estp Acc 3"
+                    elif array[3] == 0x4A:
+                        name = "Axis Home Offset 3"
+                    elif array[3] == 0x4B:
+                        name = "Axis Backlash 3"
+
+                    elif array[3] == 0x50:
+                        name = "Axis Control Para 4, U Pos"
+                    elif array[3] == 0x51:
+                        name = "Axis Precision 4"
+                    elif array[3] == 0x53:
+                        name = "Axis Max Velocity 4"
+                    elif array[3] == 0x54:
+                        name = "Axis Start Velocity 4"
+                    elif array[3] == 0x55:
+                        name = "Axis Max Acc 4"
+                    elif array[3] == 0x56:
+                        name = "Axis Range 4, Get Frame U"
+                    elif array[3] == 0x57:
+                        name = "Axis Btn Start Velocity 4"
+                    elif array[3] == 0x58:
+                        name = "Axis Btn Acc 4"
+                    elif array[3] == 0x59:
+                        name = "Axis Estp Acc 4"
+                    elif array[3] == 0x5A:
+                        name = "Axis Home Offset 4"
+                    elif array[3] == 0x5B:
+                        name = "Axis Backlash 4"
+
+                    elif array[3] == 0x60:
+                        name = "Machine Type"
+
+                    elif array[3] == 0x63:
+                        name = "Laser Min Power 3"
+                    elif array[3] == 0x64:
+                        name = "Laser Max Power 3"
+                    elif array[3] == 0x65:
+                        name = "Laser PWM Frequency 3"
+                    elif array[3] == 0x66:
+                        name = "Laser Standby Frequency 3"
+                    elif array[3] == 0x67:
+                        name = "Laser Standby Pulse 3"
+
+                    elif array[3] == 0x68:
+                        name = "Laser Min Power 4"
+                    elif array[3] == 0x69:
+                        name = "Laser Max Power 4"
+                    elif array[3] == 0x6A:
+                        name = "Laser PWM Frequency 4"
+                    elif array[3] == 0x6B:
+                        name = "Laser Standby Frequency 4"
+                    elif array[3] == 0x6C:
+                        name = "Laser Standby Pulse 4"
+                elif array[2] == 0x02:
+                    if array[3] == 0x00:
+                        name = "System Settings"
+                    elif array[3] == 0x01:
+                        name = "Turn Velocity"
+                    elif array[3] == 0x02:
+                        name = "Syn Acc"
+                    elif array[3] == 0x03:
+                        name = "G0 Delay"
+                    elif array[3] == 0x07:
+                        name = "Feed Delay After"
+                    elif array[3] == 0x09:
+                        name = "Turn Acc"
+                    elif array[3] == 0x0A:
+                        name = "G0 Acc"
+                    elif array[3] == 0x0B:
+                        name = "Feed Delay Prior"
+                    elif array[3] == 0x0C:
+                        name = "Manual Distance"
+                    elif array[3] == 0x0D:
+                        name = "Shut Down Delay"
+                    elif array[3] == 0x0E:
+                        name = "Focus Depth"
+                    elif array[3] == 0x0F:
+                        name = "Go Scale Blank"
+                    elif array[3] == 0x17:
+                        name = "Array Feed Repay"
+                    elif array[3] == 0x1A:
+                        name = "Acc Ratio"
+                    elif array[3] == 0x1B:
+                        name = "Turn Ratio"
+                    elif array[3] == 0x1C:
+                        name = "Acc G0 Ratio"
+                    elif array[3] == 0x1F:
+                        name = "Rotate Pulse"
+                    elif array[3] == 0x21:
+                        name = "Rotate D"
+                    elif array[3] == 0x24:
+                        name = "X Min Eng Velocity"
+                    elif array[3] == 0x25:
+                        name = "X Eng Acc"
+                    elif array[3] == 0x26:
+                        name = "User Para 1"
+                    elif array[3] == 0x28:
+                        name = "Z Home Velocity"
+                    elif array[3] == 0x29:
+                        name = "Z Work Velocity"
+                    elif array[3] == 0x2A:
+                        name = "Z G0 Velocity"
+                    elif array[3] == 0x2B:
+                        name = "Z Pen Up Position"
+                    elif array[3] == 0x2C:
+                        name = "U Home Velocity"
+                    elif array[3] == 0x2D:
+                        name = "U Work Velocity"
+                    elif array[3] == 0x31:
+                        name = "Manual Fast Speed"
+                    elif array[3] == 0x32:
+                        name = "Manual Slow Speed"
+                    elif array[3] == 0x34:
+                        name = "Y Minimum Eng Velocity"
+                    elif array[3] == 0x35:
+                        name = "Y Eng Acc"
+                    elif array[3] == 0x37:
+                        name = "Eng Acc Ratio"
+                elif array[2] == 0x03:
+                    if array[3] == 0x00:
+                        name = "Card Language"
+                    elif 0x01 <= array[3] <= 0x07:
+                        name = "PC Lock %d" % array[3]
+                elif array[2] == 0x04:
+                    if array[3] == 0x00:
+                        name = "Machine Status"
+                        v = 22
+                    elif array[3] == 0x01:
+                        name = "Total Open Time (s)"
+                    elif array[3] == 0x02:
+                        name = "Total Work Time (s)"
+                    elif array[3] == 0x03:
+                        name = "Total Work Number"
+                    elif array[3] == 0x05:
+                        name = "Total Doc Number"
+                    elif array[3] == 0x08:
+                        name = "Previous Work Time"
+                    elif array[3] == 0x11:
+                        name = "Total Laser Work Time"
+                    elif array[3] == 0x21:
+                        name = "Axis Preferred Position 1, Pos X"
+                    elif array[3] == 0x23:
+                        name = "X Total Travel (m)"
+                    elif array[3] == 0x31:
+                        name = "Axis Preferred Position 2, Pos Y"
+                    elif array[3] == 0x33:
+                        name = "Y Total Travel (m)"
+                    elif array[3] == 0x41:
+                        name = "Axis Preferred Position 3, Pos Z"
+                    elif array[3] == 0x43:
+                        name = "Z Total Travel (m)"
+                    elif array[3] == 0x51:
+                        name = "Position U"
+                    elif array[3] == 0x53:
+                        name = "U Total Travel (m)"
+                elif array[2] == 0x05:
+                    if array[3] == 0x7e:
+                        v = 0x65006500
+                        name = "Card ID"
+                    if array[3] == 0x7f:
+                        v = b'MEERK40T\x00'
+                        name = "Mainboard Version"
                 if array[1] == 0x00:
-                    channel("    get %02x %02x from machine" % (array[2], array[3]))
-                    v = 0
-                    name = "UNMAPPED"
-                    if array[2] == 0x00:
-                        if array[3] == 0x04:
-                            name = "Items 1 & 6"
-                            v = 0x00000000
-                        if array[3] == 0x05:
-                            name = "00 05 UNKNOWN"
-                            v = 0x00000000
-                        if array[3] == 0x10:
-                            name = "00 10 STARTUP 1"
-                            v = 0x00000000
-                        if array[3] == 0x1e:
-                            name = "00 1e STARTUP 2"
-                            v = 0x00000000
-                        if array[3] == 0x20:
-                            name = "X Position Request"
-                            v = 0x00000000
-                        if array[3] == 0x21:
-                            name = "Item 4"
-                            v = 0x00000000
-                        if array[3] == 0x26:
-                            name = "Item 2"
-                            v = 0x00000000
-                        if array[3] == 0x30:
-                            name = "Y Position Request"
-                            v = 0x00000000
-                        if array[3] == 0x31:
-                            name = "Item 5"
-                            v = 0x00000000
-                        if array[3] == 0x36:
-                            name = "Item 3"
-                            v = 0x00000000
-                        if array[3] == 0x40:
-                            name = "Z Position Request"
-                            v = 0x00000000
-                        if array[3] == 0x50:
-                            name = "U Position Request"
-                            v = 0x00000000
-                    if array[2] == 0x04:
-                        if array[3] == 0x00:
-                            name = "Reply 22"
-                            v = 0x00000022
-                        if array[3] == 0x05:
-                            name = "Previous Work Time"
-                            v = 0x00000000  # work time in seconds
-                        if array[3] == 0x08:
-                            name = "Previous Work Time2"
-                            v = 0x00000000  # work time in seconds
-                        if array[3] == 0x21:
-                            name = "Position X"
-                            v = 0x00000000
-                        if array[3] == 0x31:
-                            name = "Position Y"
-                            v = 0x00000000
-                        if array[3] == 0x41:
-                            name = "Position Z"
-                            v = 0x00000000
-                        if array[3] == 0x51:
-                            name = "Position U"
-                            v = 0x00000000
-                    if array[2] == 0x05:
-                        if array[3] == 0x7e:
-                            name = "0x65006500"
-                            v = 0x65006500  # Other answers force fail.
-                    if array[2] == 0x0B:
-                        if array[3] == 0x12:
-                            name = "Item 0B12-5B"
-                    response = b'\xDA\x01' + bytes(array[2:4]) + bytes(RuidaEmulator.encode32(v))
-                    channel("<-- " + str(response.hex()))
-                    reply(self.swizzle(response))
-                    channel("     Responding %02x %02x(%s) equals %d (%08x)" % (array[2], array[3], name, v, v))
+                    desc = "Get Param %02x %02x" % (array[2], array[3])
+                    if isinstance(v, int):
+                        v = RuidaEmulator.encode32(v)
+                    respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(v)
+                    if name is None:
+                        name = "Unmapped"
+                    respond_desc = "Set Param %02x %02x (%s) = %s" % (array[2], array[3], name, str(v))
+                    reply(self.swizzle(respond))
                 elif array[1] == 0x01:
-                    channel("    response to DA 00 XX XX <VALUE")
+                    value = array[4:]
+                    desc = "Set Param %02x %02x (%s) = %s" % (array[2], array[3], name, str(value))
+            elif array[0] == 0xE6:
+                if array[1] == 0x01:
+                    desc = "Set Absolute"
             elif array[0] == 0xE7:
                 if array[1] == 0x00:
-                    channel("    E7 00 Finishing.")
-                if array[1] == 0x01:
+                    desc = "Block End"
+                elif array[1] == 0x01:
                     self.name = ""
                     for a in array[2:]:
                         if a == 0x00:
                             break
-                        self.name += ord(a)
-                    channel("    Set filename for transfer: %s" % self.name)
+                        self.name += chr(a)
+                    desc = "Filename: %s" % self.name
                 elif array[1] == 0x03:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Program Item 7 (%f,%f)" % (c_x, c_y))
+                    c_x = self.abscoord(array[2:7]) / um_per_mil
+                    c_y = self.abscoord(array[7:12]) / um_per_mil
+                    desc = "Process TopLeft (%f, %f)" % (c_x, c_y)
                 elif array[1] == 0x04:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    c_z = self.abscoord(array[11:16]) / um_per_mil
-                    channel("    Program Item 11 (%f,%f,%f)" % (c_x, c_y, c_z))
+                    v0 = self.decode14(array[2:4])
+                    v1 = self.decode14(array[4:6])
+                    v2 = self.decode14(array[6:8])
+                    v3 = self.decode14(array[8:10])
+                    v4 = self.decode14(array[10:12])
+                    v5 = self.decode14(array[12:14])
+                    v6 = self.decode14(array[14:16])
+                    desc = "Process Repeat (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
                 elif array[1] == 0x05:
-                    channel("    Program Item 12 (%d)" % (array[2]))
+                    direction = array[2]
+                    desc = "Array Direction (%d)" % (direction)
                 elif array[1] == 0x06:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Program Item 6 (%f,%f)" % (c_x, c_y))
+                    v1 = self.decodeu32(array[2:7])
+                    v2 = self.decodeu32(array[7:12])
+                    desc = "Feed Repeat (%d, %d)" % (v1, v2)
                 elif array[1] == 0x07:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Program Item 8 (%f,%f)" % (c_x, c_y))
+                    c_x = self.abscoord(array[2:7]) / um_per_mil
+                    c_y = self.abscoord(array[7:12]) / um_per_mil
+                    desc = "Process BottomRight(%f, %f)" % (c_x, c_y)
                 elif array[1] == 0x08:  # Same value given to F2 05
-                    channel("    E7 08 (14 characters)")
+                    v0 = self.decode14(array[2:4])
+                    v1 = self.decode14(array[4:6])
+                    v2 = self.decode14(array[6:8])
+                    v3 = self.decode14(array[8:10])
+                    v4 = self.decode14(array[10:12])
+                    v5 = self.decode14(array[12:14])
+                    v6 = self.decode14(array[14:16])
+                    desc = "Array Repeat (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
+                elif array[1] == 0x09:
+                    v1 = self.decodeu32(array[2:7])
+                    desc = "Feed Length %d" %v1
                 elif array[1] == 0x13:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    E7 13 (%f,%f)" % (c_x, c_y))
+                    c_x = self.abscoord(array[2:7]) / um_per_mil
+                    c_y = self.abscoord(array[7:12]) / um_per_mil
+                    desc = "Array Min Point (%f,%f)" % (c_x, c_y)
                 elif array[1] == 0x17:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    E7 17 (%f,%f)" % (c_x, c_y))
+                    c_x = self.abscoord(array[2:7]) / um_per_mil
+                    c_y = self.abscoord(array[7:12]) / um_per_mil
+                    desc = "Array Max Point (%f,%f)" % (c_x, c_y)
                 elif array[1] == 0x23:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    E7 23 (%f,%f)" % (c_x, c_y))
+                    c_x = self.abscoord(array[2:7]) / um_per_mil
+                    c_y = self.abscoord(array[7:12]) / um_per_mil
+                    desc = "Array Add (%f,%f)" % (c_x, c_y)
                 elif array[1] == 0x24:
-                    channel("    E7 24 (%d)" % (array[2]))
+                    v1 = array[2]
+                    desc = "Array Mirror %d" % (v1)
+                elif array[1] == 0x35:
+                    v1 = self.decodeu32(array[2:7])
+                    v2 = self.decodeu32(array[7:12])
+                    desc = "Block X Size %d %d" % (v1, v2)
+                elif array[1] == 0x46:
+                    desc = "BY Test 0x11227766"
                 elif array[1] == 0x50:
                     c_x = self.abscoord(array[1:6]) / um_per_mil
                     c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Program Item 9 (%f,%f)" % (c_x, c_y))
+                    desc = "Document Min Point(%f, %f)" % (c_x, c_y)
                 elif array[1] == 0x51:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Program Item 10 (%f,%f)" % (c_x, c_y))
+                    c_x = self.abscoord(array[2:7]) / um_per_mil
+                    c_y = self.abscoord(array[7:12]) / um_per_mil
+                    desc = "Document Max Point(%f, %f)" % (c_x, c_y)
                 elif array[1] == 0x52:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Coord 52: %f %f" % (c_x, c_y))
+                    part = array[2]
+                    c_x = self.abscoord(array[3:8]) / um_per_mil
+                    c_y = self.abscoord(array[8:13]) / um_per_mil
+                    desc = "%d, Min Point(%f, %f)" % (part, c_x, c_y)
                 elif array[1] == 0x53:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Coord 53: %f %f" % (c_x, c_y))
+                    part = array[2]
+                    c_x = self.abscoord(array[3:8]) / um_per_mil
+                    c_y = self.abscoord(array[8:13]) / um_per_mil
+                    desc = "%d, MaxPoint(%f, %f)" % (part, c_x, c_y)
                 elif array[1] == 0x54:
-                    if array[2] == 0x00:
-                        c_x = self.abscoord(array[3:8]) / um_per_mil
-                        channel("    Coord 54 00: %f" % (c_x))
-                    if array[2] == 0x01:
-                        c_x = self.abscoord(array[3:8]) / um_per_mil
-                        channel("    Coord 54 01: %f" % (c_x))
+                    axis = array[2]
+                    c_x = self.abscoord(array[3:8]) / um_per_mil
+                    desc = "Pen Offset %d: %f" % (axis, c_x)
                 elif array[1] == 0x55:
-                    if array[2] == 0x00:
-                        c_x = self.abscoord(array[3:8]) / um_per_mil
-                        channel("    Coord 55 00: %f" % (c_x))
-                    if array[2] == 0x01:
-                        c_x = self.abscoord(array[3:8]) / um_per_mil
-                        channel("    Coord 55 01: %f" % (c_x))
+                    axis = array[2]
+                    c_x = self.abscoord(array[3:8]) / um_per_mil
+                    desc = "Layer Offset %d: %f" % (axis, c_x)
                 elif array[1] == 0x60:
-                    channel("    E7 60 (%d)" % (array[2]))
+                    desc = "Set Current Element Index (%d)" % (array[2])
                 elif array[1] == 0x61:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Coord 61: %f %f" % (c_x, c_y))
+                    part = array[2]
+                    c_x = self.abscoord(array[3:8]) / um_per_mil
+                    c_y = self.abscoord(array[8:13]) / um_per_mil
+                    desc = "%d, MinPointEx(%f, %f)" % (part, c_x, c_y)
                 elif array[1] == 0x62:
-                    c_x = self.abscoord(array[1:6]) / um_per_mil
-                    c_y = self.abscoord(array[6:11]) / um_per_mil
-                    channel("    Coord 62: %f %f" % (c_x, c_y))
-                else:
-                    channel("    Unknown E7 Command!")
+                    part = array[2]
+                    c_x = self.abscoord(array[3:8]) / um_per_mil
+                    c_y = self.abscoord(array[8:13]) / um_per_mil
+                    desc = "%d, MaxPointEx(%f, %f)" % (part, c_x, c_y)
             elif array[0] == 0xE8:
-                if array[1] == 0x01:
+                if array[1] == 0x00:
+                    v1 = self.decodeu32(array[2:7])
+                    v2 = self.decodeu32(array[7:12])
+                    desc = "Delete Document %d %d" % (v1, v2)
+                elif array[1] == 0x01:
+                    filenumber = self.parse_filenumber(array[2:4])
                     for a in array[4:]:
                         if a == 0x00:
                             break
                         self.name += ord(a)
-                    channel("    Read filename number: %d" % (self.parse_filenumber(array[1:3])))
-                if array[1] == 0x02:
-                    channel("    Setting file name for transfer.")
+                    desc = "Document Name %d %s" % (filenumber, self.name)
+                elif array[1] == 0x02:
+                    desc = "File transfer"
+                elif array[1] == 0x03:
+                    document = array[2]
+                    desc = "Select Document %d" % (document)
+                elif array[1] == 0x04:
+                    desc = "Calculate Document Time"
             elif array[0] == 0xEA:
-                channel("    EA (%d)" % (array[1]))
+                index = array[1]
+                desc = "Array Start (%d)" % (index)
             elif array[0] == 0xEB:
-                channel("    EB Stop cutting commands.")
+                desc = "Array End"
             elif array[0] == 0xF0:
-                channel("    Program Item 2")
+                desc = "Unknown Common"
             elif array[0] == 0xF1:
                 if array[1] == 0x00:
-                    channel("    F1 00 (%d)" % (array[2]))
-                if array[1] == 0x01:
-                    channel("    F1 01 (%d)" % (array[2]))
-                if array[1] == 0x02:
-                    channel("    Program Item 3 (%d)" % array[2])
-                if array[1] == 0x03:
+                    index = array[2]
+                    desc = "Element Max Index (%d)" % (index)
+                elif array[1] == 0x01:
+                    index = array[2]
+                    desc = "Element Name Max Index(%d)" % (index)
+                elif array[1] == 0x02:
+                    enable = array[2]
+                    desc = "Enable Block Cutting (%d)" % (enable)
+                elif array[1] == 0x03:
                     c_x = self.abscoord(array[2:7]) / um_per_mil
                     c_y = self.abscoord(array[7:12]) / um_per_mil
-                    channel("    F1 03 (%f,%f)" % (c_x, c_y))
-                if array[1] == 0x04:
-                    channel("    Program Item 4 (%d)" % array[2])
-                if array[1] == 0x20:
-                    channel("    F1 10 (%d,%d)" % (array[2],  array[3]))
+                    desc = "Display Offset (%f,%f)" % (c_x, c_y)
+                elif array[1] == 0x04:
+                    enable = array[2]
+                    desc = "Feed Auto Calc (%d)" % enable
+                elif array[1] == 0x20:
+                    desc = "Unknown (%d,%d)" % (array[2], array[3])
             elif array[0] == 0xF2:
                 if array[1] == 0x00:
-                    channel("    F2 00 (%d)" % (array[2]))
+                    index = array[2]
+                    desc = "Element Index (%d)" % (index)
                 if array[1] == 0x01:
-                    channel("    F2 01 (%d)" % (array[2]))
+                    index = array[2]
+                    desc = "Element Name Index (%d)" % (index)
                 if array[1] == 0x02:
-                    c_x = self.abscoord(array[2:7]) / um_per_mil
-                    c_y = self.abscoord(array[7:12]) / um_per_mil
-                    channel("    F2 02 (%f,%f)" % (c_x, c_y))
+                    name = bytes(array[2:12])
+                    desc = "Element Name (%s)" % (str(name))
                 if array[1] == 0x03:
                     c_x = self.abscoord(array[2:7]) / um_per_mil
                     c_y = self.abscoord(array[7:12]) / um_per_mil
-                    channel("    F2 03 (%f,%f)" % (c_x, c_y))
+                    desc = "Element Array Min Point (%f,%f)" % (c_x, c_y)
                 if array[1] == 0x04:
                     c_x = self.abscoord(array[2:7]) / um_per_mil
                     c_y = self.abscoord(array[7:12]) / um_per_mil
-                    channel("    F2 04 (%f,%f)" % (c_x, c_y))
+                    desc = "Element Array Max Point (%f,%f)" % (c_x, c_y)
                 if array[1] == 0x05:
-                    channel("    F2 05 (14 characters)")
+                    v0 = self.decode14(array[2:4])
+                    v1 = self.decode14(array[4:6])
+                    v2 = self.decode14(array[6:8])
+                    v3 = self.decode14(array[8:10])
+                    v4 = self.decode14(array[10:12])
+                    v5 = self.decode14(array[12:14])
+                    v6 = self.decode14(array[14:16])
+                    desc = "Element Array (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
                 if array[1] == 0x06:
                     c_x = self.abscoord(array[2:7]) / um_per_mil
                     c_y = self.abscoord(array[7:12]) / um_per_mil
-                    channel("    F2 06 (%f,%f)" % (c_x, c_y))
+                    desc = "Element Array Add (%f,%f)" % (c_x, c_y)
                 if array[1] == 0x07:
-                    channel("    F2 07 (%d)" % (array[2]))
+                    index = array[2]
+                    desc = "Element Array Mirror (%d)" % (index)
             else:
-                channel("    Unknown Command!")
+                desc = "Unknown Command!"
+            channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
+            if respond is not None:
+                channel("<-- %s     (%s)" % (respond, respond_desc))
 
     def realtime_write(self, bytes_to_write):
         print(bytes_to_write)
