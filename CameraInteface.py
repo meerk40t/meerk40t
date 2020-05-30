@@ -449,11 +449,12 @@ class CameraInterface(wx.Frame, Module):
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
         self.corner_drag = None
-        for i, p in enumerate(self.perspective):
-            half = CORNER_SIZE / 2
-            if Point.distance(self.previous_scene_position, p) < half:
-                self.corner_drag = i
-                break
+        if self.perspective is not None:
+            for i, p in enumerate(self.perspective):
+                half = CORNER_SIZE / 2
+                if Point.distance(self.previous_scene_position, p) < half:
+                    self.corner_drag = i
+                    break
 
     def on_mouse_left_up(self, event):
         self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
