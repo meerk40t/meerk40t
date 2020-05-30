@@ -3547,14 +3547,34 @@ class Arc(PathSegment):
             self.pry = Point(kwargs['pry'])
         if 'sweep' in kwargs:
             self.sweep = kwargs['sweep']
+        cw = True  # Clockwise default. (sometimes needed)
         if self.start is not None and self.end is not None and self.center is None:
-            # Start and end, but no center. Solutions require either a radius or a control point.
+            # Start and end, but no center.
+            # Solutions require a radius, a control point, or a bulge
+            control = None
+            sagitta = None
+            if 'bulge' in kwargs:
+                bulge = float(kwargs['bulge'])
+                sagitta = bulge * self.start.distance_to(self.end) / 2.0
+            elif 'sagitta' in kwargs:
+                sagitta = float(kwargs['bulge'])
+            if sagitta is not None:
+                control = Point.towards(self.start, self.end, 0.5)
+                angle = self.start.angle_to(self.end)
+                control = control.polar_to(angle - tau/4, sagitta)
             if 'control' in kwargs:  # Control is any additional point on the arc.
                 control = Point(kwargs['control'])
+            if control is not None:
                 delta_a = control - self.start
                 delta_b = self.end - control
-                slope_a = delta_a[1] / delta_a[0]
-                slope_b = delta_b[1] / delta_b[0]
+                try:
+                    slope_a = delta_a[1] / delta_a[0]
+                except ZeroDivisionError:
+                    slope_a = float('inf')
+                try:
+                    slope_b = delta_b[1] / delta_b[0]
+                except ZeroDivisionError:
+                    slope_b = float('inf')
                 ab_mid = Point.towards(self.start, control, 0.5)
                 bc_mid = Point.towards(control, self.end, 0.5)
                 if delta_a[1] == 0:  # slope_a == 0
@@ -3584,6 +3604,7 @@ class Arc(PathSegment):
                           + slope_b * ab_mid[0]) / (slope_b - slope_a)
                     cy = ab_mid[1] - (cx - ab_mid[0]) / slope_a
                 self.center = Point(cx, cy)
+                cw = bool(Point.orientation(self.start, control, self.end) == 2)
             elif 'r' in kwargs:
                 r = kwargs['r']
                 mid = Point((self.start[0] + self.end[0]) / 2.0, (self.start[1] + self.end[1]) / 2.0)
@@ -3650,12 +3671,8 @@ class Arc(PathSegment):
             start_t = self.get_start_t()
             end_t = self.get_end_t()
             self.sweep = end_t - start_t
-            cw = True  # Clockwise default.
             if 'ccw' in kwargs:
                 cw = not bool(kwargs['ccw'])
-            elif 'control' in kwargs:
-                control = Point(kwargs['control'])
-                cw = bool(Point.orientation(self.start, control, self.end) == 2)
             if cw and self.sweep < 0:
                 self.sweep += tau
             if not cw and self.sweep > 0:
@@ -4356,7 +4373,7 @@ class Path(Shape, MutableSequence):
     @property
     def z_point(self):
         """
-        Z doesn't necessarily mean the first_point, it's the destination of the last Move.
+        Z is the destination of the last Move. It can mean, but doesn't necessarily mean the first_point in the path.
         This behavior of Z is defined in svg spec:
         http://www.w3.org/TR/SVG/paths.html#PathDataClosePathCommand
         """

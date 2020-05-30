@@ -6,7 +6,7 @@ from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
 from MoshiboardDevice import MoshiboardDevice
-from RuidaDevice import RuidaDevice
+from RuidaDevice import RuidaDevice, RDLoader, RuidaEmulator
 from LaserServer import *
 
 try:
@@ -59,14 +59,12 @@ kernel.register('module', 'LaserServer', LaserServer)
 kernel.register('load', 'SVGLoader', SVGLoader)
 kernel.register('load', 'ImageLoader', ImageLoader)
 kernel.register('load', 'EgvLoader', EgvLoader)
-kernel.register('load', 'RDLoader', RDLoader)
 kernel.register('load', "DxfLoader", DxfLoader)
 kernel.register('save', 'SVGWriter', SVGWriter)
 kernel.register('device', 'Lhystudios', LhystudiosDevice)
 kernel.register('device', 'Moshiboard', MoshiboardDevice)
 kernel.register('device', 'Ruida', RuidaDevice)
 kernel.register('device', 'GRBL', GrblDevice)
-kernel.register('module', 'RuidaEmulator', RuidaEmulator)
 kernel.register('module', 'GrblEmulator', GRBLEmulator)
 
 kernel.boot()
