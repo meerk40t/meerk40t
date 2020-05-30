@@ -714,7 +714,7 @@ class DxfLoader:
                 #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
                 element = SimpleLine(x1=entity.dxf.start[0], y1=entity.dxf.start[1],
                                      x2=entity.dxf.end[0], y2=entity.dxf.end[1])
-            elif entity.dxftype() in ('POLYLINE', 'LWPOLYLINE'):
+            elif entity.dxftype() == 'POLYLINE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
                 if entity.is_2d_polyline:
                     if not entity.has_arc:
@@ -742,6 +742,32 @@ class DxfLoader:
                                                 end=element.z_point,
                                                 bulge=bulge)
                                 element.closed()
+            elif entity.dxftype() == 'LWPOLYLINE':
+                # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
+                if not entity.has_arc:
+                    if entity.closed:
+                        element = Polygon(*[(p[0], p[1]) for p in entity])
+                    else:
+                        element = Polyline(*[(p[0], p[1]) for p in entity])
+                else:
+                    element = Path()
+                    bulge = 0
+                    for e in entity:
+                        if bulge == 0:
+                            element.line((e[0], e[1]))
+                        else:
+                            element += Arc(start=element.current_point,
+                                            end=(e[0], e[1]),
+                                            bulge=bulge)
+                        bulge = e[4]
+                    if entity.closed:
+                        if bulge == 0:
+                            element.closed()
+                        else:
+                            element += Arc(start=element.current_point,
+                                            end=element.z_point,
+                                            bulge=bulge)
+                            element.closed()
             elif entity.dxftype() == 'HATCH':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
                 element = Path()
