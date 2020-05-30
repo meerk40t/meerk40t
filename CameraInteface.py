@@ -441,7 +441,7 @@ class CameraInterface(wx.Frame, Module):
     def on_mousewheel(self, event):
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
-        if self.device.mouse_zoom_invert:
+        if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])

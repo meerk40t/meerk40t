@@ -327,8 +327,6 @@ class MeerK40t(wx.Frame, Module):
         self.screen_refresh_is_running = False
         self.background_brush = wx.Brush("Grey")
         self.renderer = None
-        self.grid = None
-        self.guide_lines = None
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.working_file = None
@@ -417,11 +415,11 @@ class MeerK40t(wx.Frame, Module):
         device.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         device.setting(int, "window_width", 1200)
         device.setting(int, "window_height", 600)
-        device.setting(float, "units_convert", MILS_IN_MM)
-        device.setting(str, "units_name", 'mm')
-        device.setting(int, "units_marks", 10)
-        device.setting(int, "units_index", 0)
-        device.setting(bool, "mouse_zoom_invert", False)
+        device.device_root.setting(float, "units_convert", MILS_IN_MM)
+        device.device_root.setting(str, "units_name", 'mm')
+        device.device_root.setting(int, "units_marks", 10)
+        device.device_root.setting(int, "units_index", 0)
+        device.device_root.setting(bool, "mouse_zoom_invert", False)
         device.setting(int, 'fps', 40)
 
         if device is not None:
@@ -487,7 +485,7 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & 0x1000 != 0)
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
-        self.space_changed(0)
+        self.space_changed()
 
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
@@ -576,7 +574,7 @@ class MeerK40t(wx.Frame, Module):
         device.listen('rebuild_tree', self.on_rebuild_tree_request)
         device.listen('refresh_scene', self.on_refresh_scene)
         device.listen("element_property_update", self.on_element_update)
-        device.listen("units", self.space_changed)
+        device.device_root.listen("units", self.space_changed)
         device.listen("selected_elements", self.selection_changed)
 
         device.listen('pipe;error', self.on_usb_error)
@@ -593,7 +591,7 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
         device.unlisten('refresh_scene', self.on_refresh_scene)
         device.unlisten("element_property_update", self.on_element_update)
-        device.unlisten("units", self.space_changed)
+        device.device_root.unlisten("units", self.space_changed)
         device.unlisten("selected_elements", self.selection_changed)
 
         device.unlisten('pipe;error', self.on_usb_error)
@@ -689,7 +687,7 @@ class MeerK40t(wx.Frame, Module):
         self.Layout()
         self.set_buffer()
         self.device.window_width, self.device.window_height = self.Size
-        self.guide_lines = None
+        self.widget_scene.signal("guide")
         self.request_refresh()
 
     def update_position(self, pos):
@@ -701,15 +699,15 @@ class MeerK40t(wx.Frame, Module):
         self.laserpath_index %= len(self.laserpath[0])
         self.request_refresh_for_animation()
 
-    def space_changed(self, units):
-        self.grid = None
+    def space_changed(self, *args):
+        self.widget_scene.signal("grid")
         self.on_size(None)
 
-    def bed_changed(self, size):
-        self.grid = None
+    def bed_changed(self, *args):
+        self.widget_scene.signal("grid")
         self.on_size(None)
 
-    def selection_changed(self, selection):
+    def selection_changed(self, *args):
         self.request_refresh()
 
     def on_erase(self, event):

@@ -64,6 +64,20 @@ class Scene(Module):
             except AttributeError:
                 pass
 
+    def signal(self, signal, widget=None):
+        if widget is None:
+            widget = self.widget_root
+        try:
+            widget.signal(signal)
+        except AttributeError:
+            pass
+        for w in widget:
+            if w is None:
+                continue
+            self.signal(signal, w)
+
+
+
     def animate_tick(self):
         pass
 
@@ -468,6 +482,7 @@ class Widget(list):
     def get_translate_y(self):
         return self.matrix.value_trans_y()
 
+
 class ElementsWidget(Widget):
     def __init__(self, scene, root, renderer):
         Widget.__init__(self, scene, all=True)
@@ -754,7 +769,7 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
             if draw_mode & 128 == 0:
-                p = self.scene.device
+                p = self.scene.device.device_root
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
                 gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
                 gc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
@@ -816,7 +831,7 @@ class GridWidget(Widget):
             wmils = 320 * MILS_IN_MM
             hmils = 220 * MILS_IN_MM
 
-        p = self.scene.device
+        p = self.scene.device.device_root
         convert = p.units_convert
         marks = p.units_marks
         step = convert * marks
@@ -867,6 +882,10 @@ class GridWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         gc.StrokeLineSegments(starts, ends)
 
+    def signal(self, signal):
+        if signal == "grid":
+            self.grid = None
+
 
 class GuideWidget(Widget):
     def __init__(self, scene):
@@ -877,7 +896,7 @@ class GuideWidget(Widget):
             return
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
-        p = self.scene.device
+        p = self.scene.device.device_root
         scaled_conversion = p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         if scaled_conversion == 0:
             return
@@ -927,6 +946,10 @@ class GuideWidget(Widget):
             gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
             y += points
         gc.StrokeLineSegments(starts, ends)
+
+    def signal(self, signal):
+        if signal == "guide":
+            pass
 
 
 class SceneSpaceWidget(Widget):

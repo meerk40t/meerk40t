@@ -112,21 +112,21 @@ class Settings(wx.Frame, Module):
             self.set_mil()
 
     def set_inch(self):
-        p = self.device
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1000.0, "inch", 1, 2)
-        p("units", 0)
+        p.signal("units")
 
     def set_mil(self):
-        p = self.device
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1.0, "mil", 1000, 3)
-        p("units", 0)
+        p.signal("units")
 
     def set_cm(self):
-        p = self.device
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (393.7, "cm", 1, 1)
-        p("units", 0)
+        p.signal("units")
 
     def set_mm(self):
-        p = self.device
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (39.37, "mm", 10, 0)
-        p("units", 0)
+        p.signal("units")

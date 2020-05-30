@@ -1167,7 +1167,7 @@ class LhystudioController(Module, Pipe):
         self.device.signal('pipe;buffer', 0)
         self.unschedule()
 
-    def reset(self): # TODO: This code will still work. Little rethink.
+    def reset(self):  # TODO: This code will still work. Little rethink.
         self.device.signal('pipe;thread', THREAD_STATE_UNSTARTED)
         self.state = THREAD_STATE_UNSTARTED
 
