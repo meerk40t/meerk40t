@@ -98,19 +98,11 @@ class LhystudiosDevice(Device):
 
         self.signal("bed_size", (self.bed_width, self.bed_height))
 
-        self.control_instance_add("Emergency Stop", self.emergency_stop)
         self.control_instance_add("Debug Device", self._start_debugging)
 
         pipe = self.open('module', "LhystudioController", instance_name='pipe')
         self.open('module', "LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
         self.open('module', "Spooler", instance_name='spooler')
-
-    def halt(self, channel=None):
-        self.spooler.clear_queue()
-        self.emergency_stop()
-
-    def emergency_stop(self):
-        self.interpreter.realtime_command(REALTIME_RESET, 1)
 
 distance_lookup = [
     b'',
@@ -1175,7 +1167,7 @@ class LhystudioController(Module, Pipe):
         self.device.signal('pipe;buffer', 0)
         self.unschedule()
 
-    def reset(self):
+    def reset(self): # TODO: This code will still work. Little rethink.
         self.device.signal('pipe;thread', THREAD_STATE_UNSTARTED)
         self.state = THREAD_STATE_UNSTARTED
 

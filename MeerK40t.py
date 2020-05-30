@@ -61,9 +61,9 @@ kernel.register('load', 'ImageLoader', ImageLoader)
 kernel.register('load', "DxfLoader", DxfLoader)
 kernel.register('save', 'SVGWriter', SVGWriter)
 kernel.register('device', 'Lhystudios', LhystudiosDevice)
-kernel.register('device', 'Moshiboard', MoshiboardDevice)
-kernel.register('device', 'Ruida', RuidaDevice)
-kernel.register('device', 'GRBL', GrblDevice)
+kernel.register('disabled-device', 'Moshiboard', MoshiboardDevice)
+kernel.register('disabled-device', 'Ruida', RuidaDevice)
+kernel.register('disabled-device', 'GRBL', GrblDevice)
 
 kernel.boot()
 device = None

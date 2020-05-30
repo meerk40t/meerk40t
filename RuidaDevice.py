@@ -191,16 +191,6 @@ class RuidaInterpreter(Interpreter):
                 self.device.signal(values, None)
             elif len(values) >= 2:
                 self.device.signal(values[0], *values[1:])
-        elif command == REALTIME_RESET:
-            self.pipe.realtime_write(b'I*\n')
-            self.state = STATE_DEFAULT
-            self.device.signal('interpreter;mode', self.state)
-        elif command == REALTIME_PAUSE:
-            pass
-        elif command == REALTIME_STATUS:
-            pass
-        elif command == REALTIME_RESUME:
-            pass  # This command can't be processed since we should be paused.
 
     def realtime_command(self, command, values=None):
         if command == COMMAND_SET_SPEED:

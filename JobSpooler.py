@@ -122,7 +122,7 @@ class JobSpooler(wx.Frame, Module):
         sizer_11.Add(sizer_12, 1, wx.EXPAND, 0)
         self.panel_controller.SetSizer(sizer_11)
         sizer_2.Add(self.panel_controller, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.button_spooler_control, 1, 0, 0)
+        # sizer_3.Add(self.button_spooler_control, 1, 0, 0)
         sizer_3.Add(self.button_controller, 0, 0, 0)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)

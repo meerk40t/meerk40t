@@ -329,7 +329,10 @@ class Controller(wx.Frame, Module):
                 self.device.interpreter.pipe.reset()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
-        self.device.execute("Emergency Stop")
+        try:
+            self.device.interpreter.realtime_command(REALTIME_RESET)
+        except AttributeError:
+            pass
 
     def on_button_bufferview(self, event):  # wxGlade: Controller.<event_handler>
         self.device.open('window', "BufferView", None, -1, "")
