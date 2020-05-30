@@ -896,7 +896,7 @@ class Device(Thread):
                     job.last_run = time.time()
                     job.next_run += job.last_run + job.interval
             if jobs_update:
-                self.jobs = [job for job in jobs if job.times is not None and job.times > 0]
+                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
         self.state = THREAD_STATE_FINISHED
 
         # If we aborted the thread, we trigger Kernel Shutdown in this thread.

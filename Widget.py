@@ -64,19 +64,18 @@ class Scene(Module):
             except AttributeError:
                 pass
 
-    def signal(self, signal, widget=None):
-        if widget is None:
-            widget = self.widget_root
+    def signal(self, *args, **kwargs):
+        self._signal_widget(self.widget_root, *args, **kwargs)
+
+    def _signal_widget(self, widget, *args, **kwargs):
         try:
-            widget.signal(signal)
+            widget.signal(*args)
         except AttributeError:
             pass
         for w in widget:
             if w is None:
                 continue
-            self.signal(signal, w)
-
-
+            self._signal_widget(w, *args, **kwargs)
 
     def animate_tick(self):
         pass
@@ -815,6 +814,7 @@ class GridWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.grid = None
+        self.background = None
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
@@ -862,11 +862,7 @@ class GridWidget(Widget):
         else:
             wmils = 320 * MILS_IN_MM
             hmils = 220 * MILS_IN_MM
-        # TODO: Properly treat background image by setting device.background
-        try:
-            background = device.background
-        except AttributeError:
-            background = None
+        background = self.background
         if background is None:
             gc.SetBrush(wx.WHITE_BRUSH)
             gc.DrawRectangle(0, 0, wmils, hmils)
@@ -882,9 +878,11 @@ class GridWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         gc.StrokeLineSegments(starts, ends)
 
-    def signal(self, signal):
+    def signal(self, signal, *args, **kwargs):
         if signal == "grid":
             self.grid = None
+        elif signal == "background":
+            self.background = args[0]
 
 
 class GuideWidget(Widget):
@@ -947,7 +945,7 @@ class GuideWidget(Widget):
             y += points
         gc.StrokeLineSegments(starts, ends)
 
-    def signal(self, signal):
+    def signal(self, signal, *args, **kwargs):
         if signal == "guide":
             pass
 

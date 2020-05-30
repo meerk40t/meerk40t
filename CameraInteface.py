@@ -63,7 +63,6 @@ class CameraInterface(wx.Frame, Module):
 
         self.frame_bitmap = None
 
-        self.job = None
         self.fisheye_k = None
         self.fisheye_d = None
 
@@ -106,6 +105,7 @@ class CameraInterface(wx.Frame, Module):
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.camera_lock = threading.Lock()
+        self.process = self.fetch_image
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -296,9 +296,7 @@ class CameraInterface(wx.Frame, Module):
         self.camera_lock.release()
 
     def close_camera(self):
-        if self.job is not None:
-            self.job.cancel()
-            self.job = None
+        self.unschedule()
         if self.capture is not None:
             self.capture.release()
             self.capture = None
@@ -350,13 +348,12 @@ class CameraInterface(wx.Frame, Module):
         self.capture = cv2.VideoCapture(self.device.camera_index)
         wx.CallAfter(self.camera_success)
         try:
-            tick = 1.0 / self.device.camera_fps
+            self.interval = 1.0 / self.device.camera_fps
         except ZeroDivisionError:
-            tick = 5
+            self.interval = 5
         except AttributeError:
             return
-        if self.device is not None:
-            self.job = self.device.add_job(self.fetch_image, interval=tick)
+        self.schedule()
 
     def reset_perspective(self, event):
         self.perspective = None
@@ -572,7 +569,7 @@ class CameraInterface(wx.Frame, Module):
             obj.image = img
             obj.image_width = self.image_width
             obj.image_height = self.image_height
-            self.device.elements.append(obj)
+            self.device.device_root.elements.append(obj)
             self.device.signal('refresh_elements', 0)
             self.device.signal('rebuild_tree', 0)
 
@@ -583,8 +580,7 @@ class CameraInterface(wx.Frame, Module):
         else:
             tick = 1.0 / fps
         self.device.camera_fps = fps
-        if self.job is not None:
-            self.job.interval = tick
+        self.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
         self.device.add_job(self.fetch_image, args=True, times=1, interval=0)

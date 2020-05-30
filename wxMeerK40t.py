@@ -374,7 +374,6 @@ class MeerK40t(wx.Frame, Module):
         self.process = self.refresh_scene
         self.fps_job = None
         self.root = None
-        self.background = None
         self.widget_scene = None
 
     def notify_change(self):
@@ -561,11 +560,7 @@ class MeerK40t(wx.Frame, Module):
         self.request_refresh_for_animation()
 
     def on_background_signal(self, background):
-        if isinstance(background, str):
-            return  # Assumed color.
-        if isinstance(background, int):
-            return  # Assumed color.
-        self.background = background
+        self.widget_scene.signal("background", background)
         self.request_refresh()
 
     def listen_scene(self):
