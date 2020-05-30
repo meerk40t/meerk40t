@@ -640,6 +640,7 @@ class MeerK40t(wx.Frame, Module):
         if results is not None:
             elements, pathname, basename = results
             self.device.classify(elements)
+            self.device.signal("rebuild_tree")
             return True
         return False
 
@@ -2124,6 +2125,8 @@ class RootNode(list):
 
         def specific(event):
             filepath = node.filepath
+            self.device.device_root.elements.clear()
+            self.device.device_root.operations.clear()
             self.gui.load(filepath)
 
         return specific
