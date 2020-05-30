@@ -3557,7 +3557,7 @@ class Arc(PathSegment):
                 bulge = float(kwargs['bulge'])
                 sagitta = bulge * self.start.distance_to(self.end) / 2.0
             elif 'sagitta' in kwargs:
-                sagitta = float(kwargs['bulge'])
+                sagitta = float(kwargs['sagitta'])
             if sagitta is not None:
                 control = Point.towards(self.start, self.end, 0.5)
                 angle = self.start.angle_to(self.end)
