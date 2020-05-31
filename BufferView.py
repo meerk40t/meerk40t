@@ -4,8 +4,6 @@ from Kernel import Module
 
 _ = wx.GetTranslation
 
-#TODO: Issue #53 ( https://github.com/meerk40t/meerk40t/issues/53 ) Lacks mouseover hints.
-
 
 class BufferView(wx.Frame, Module):
     def __init__(self, *args, **kwds):
