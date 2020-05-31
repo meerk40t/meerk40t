@@ -671,7 +671,7 @@ class Signaler(Module):
         self.queue_lock.release()
 
 
-class Device(Thread):
+class Device:
     """
     A Device is a specific module cluster that serves a unified purpose.
 
@@ -688,11 +688,12 @@ class Device(Thread):
     """
 
     def __init__(self, root=None, uid=0):
-        Thread.__init__(self, name='Device%d' % int(uid))
+        self.thread = None
+        self.name = None
         self.device_root = root
         self.device_name = "Device"
         self.device_version = "0.0.0"
-        self.location_name = "Kernel"
+        self.device_location = "Kernel"
         self.uid = uid
 
         self.state = THREAD_STATE_UNKNOWN
@@ -768,13 +769,27 @@ class Device(Thread):
     def read_persistent(self, t, key, default=None, uid=0):
         return self.device_root.read_persistent(t, key, default, uid=uid)
 
+    def threaded(self, func, thread_name=None):
+        if thread_name is None:
+            thread_name = func.__name__
+        thread = Thread(name=thread_name)
+
+        def run():
+            self.thread_instance_add(thread_name, thread)
+            func()
+            self.thread_instance_remove(thread_name)
+
+        thread.run = run
+        thread.start()
+        return thread
+
     def boot(self):
         """
         Kernel boot sequence. This should be called after all the registered devices are established.
         :return:
         """
-        if not self.is_alive():
-            self.start()
+        if self.thread is None or not self.thread.is_alive():
+            self.thread = self.threaded(self.run, 'Device%d' % int(self.uid))
 
     def shutdown(self, channel=None):
         """
@@ -816,9 +831,9 @@ class Device(Thread):
                     channel(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
                     continue
                 channel(_("Finishing Thread %s for %s\n") % (thread_name, str(thread)))
-                if thread is self:
+                if thread is self.thread:
                     continue
-                    # Do not sleep thread waiting for devicethread to die. This is devicethread.
+                    # Do not sleep thread waiting for that thread to die. This is that thread.
                 try:
                     thread.stop()
                 except AttributeError:

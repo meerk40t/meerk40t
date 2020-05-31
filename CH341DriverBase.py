@@ -55,7 +55,9 @@ STATE_USB_DISCONNECTED = 1500
 
 def get_name_for_status(code, obj=None, translation=lambda e: e):
     _ = translation
-    if code == STATE_CONNECTING:
+    if code == STATE_UNINITIALIZED:
+        return _("Uninitialized.")
+    elif code == STATE_CONNECTING:
         return _("Attempting connection to USB.")
     elif code == STATE_CONNECTION_FAILED:
         return _("Connection to USB failed.\n")

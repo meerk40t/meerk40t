@@ -205,11 +205,11 @@ class JobInfo(wx.Frame, Module):
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_listbox_commands_click' not implemented!")
+        # print("Event handler 'on_listbox_commands_click' not implemented!")
         event.Skip()
 
     def on_listbox_commands_dclick(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_listbox_commands_dclick' not implemented!")
+        # print("Event handler 'on_listbox_commands_dclick' not implemented!")
         event.Skip()
 
     def on_element_property_update(self, *args):

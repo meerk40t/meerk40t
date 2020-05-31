@@ -2,7 +2,7 @@ from copy import copy
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT
-from svgelements import Length, SVGImage, SVGElement
+from svgelements import Length, SVGImage, SVGElement, Shape
 
 VARIABLE_NAME_NAME = 'name'
 VARIABLE_NAME_SPEED = 'speed'
@@ -21,6 +21,7 @@ class LaserOperation(list):
 
     def __init__(self, *args, **kwargs):
         list.__init__(self)
+        self.status_value = "Queued"
         self.speed = None
         self.power = None
         self.dratio = None
@@ -65,6 +66,14 @@ class LaserOperation(list):
 
     def __copy__(self):
         return LaserOperation(self)
+
+    @property
+    def time_estimate(self):
+        return "Unknown"
+
+    @property
+    def status(self):
+        return self.status_value
 
     def has_same_properties(self, values):
         """
@@ -150,6 +159,24 @@ class RasterOperation(LaserOperation):
 
     def __copy__(self):
         return RasterOperation(self)
+
+    @property
+    def time_estimate(self):
+        estimate = 0
+        for e in self:
+            if isinstance(e, SVGImage):
+                try:
+                    step = e.raster_step
+                except AttributeError:
+                    step = 1
+                estimate += (e.image_width * e.image_height * step) / (39.3701 * self.speed)
+        hours, remainder = divmod(estimate, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
+
+    @property
+    def status(self):
+        return self.status_value
 
     def set_properties(self, values):
         if 'raster_step' in values and values['raster_step'] is not None:
@@ -278,6 +305,23 @@ class EngraveOperation(LaserOperation):
     def __copy__(self):
         return EngraveOperation(self)
 
+    @property
+    def time_estimate(self):
+        estimate = 0
+        for e in self:
+            if isinstance(e, SVGElement):
+                try:
+                    length = e.length(error=1e-2, min_depth=2)
+                except AttributeError:
+                    length = 0
+                try:
+                    estimate += length / (39.3701 * self.speed)
+                except ZeroDivisionError:
+                    estimate = float('inf')
+        hours, remainder = divmod(estimate, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
+
     def generate(self):
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
@@ -319,6 +363,23 @@ class CutOperation(LaserOperation):
     def __copy__(self):
         return CutOperation(self)
 
+    @property
+    def time_estimate(self):
+        estimate = 0
+        for e in self:
+            if isinstance(e, Shape):
+                try:
+                    length = e.length(error=1e-2, min_depth=2)
+                except AttributeError:
+                    length = 0
+                try:
+                    estimate += length / (39.3701 * self.speed)
+                except ZeroDivisionError:
+                    estimate = float('inf')
+        hours, remainder = divmod(estimate, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
+
     def generate(self):
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
@@ -331,7 +392,7 @@ class CutOperation(LaserOperation):
             if first_point is None:
                 continue
             yield COMMAND_MODE_FINISHED
-            yield COMMAND_LASER_OFF  # TODO: is this valid? Does this prevent plot from plotting?
+            yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, first_point.x, first_point.y
             yield COMMAND_SET_STEP, 0
             yield COMMAND_MODE_PROGRAM

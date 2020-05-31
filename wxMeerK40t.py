@@ -187,6 +187,7 @@ class MeerK40t(wx.Frame, Module):
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
+        # NOTE: New Project
         wxglade_tmp_menu.Append(ID_MENU_NEW, _("New"), "")
         wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, _("Open Project"), "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")

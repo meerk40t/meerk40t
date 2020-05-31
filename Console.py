@@ -424,10 +424,10 @@ class Console(Module, Pipe):
                         break
                 yield '----------'
                 yield 'Devices Instances:'
-                yield '%d: %s on %s' % (0, kernel.device_name, kernel.location_name)
+                yield '%d: %s on %s' % (0, kernel.device_name, kernel.device_location)
                 for i, name in enumerate(kernel.instances['device']):
                     device = kernel.instances['device'][name]
-                    yield '%d: %s on %s' % (i+1, device.device_name, device.location_name)
+                    yield '%d: %s on %s' % (i+1, device.device_name, device.device_location)
                 yield '----------'
             else:
                 value = args[0]
@@ -438,13 +438,13 @@ class Console(Module, Pipe):
                 if value == 0:
                     self.active_device = kernel
                     yield 'Device set: %s on %s' % \
-                          (self.active_device.device_name, self.active_device.location_name)
+                          (self.active_device.device_name, self.active_device.device_location)
                 else:
                     for i, name in enumerate(kernel.instances['device']):
                         if i + 1 == value:
                             self.active_device = kernel.instances['device'][name]
                             yield 'Device set: %s on %s' % \
-                                  (self.active_device.device_name, self.active_device.location_name)
+                                  (self.active_device.device_name, self.active_device.device_location)
                             break
             return
         # Element commands.

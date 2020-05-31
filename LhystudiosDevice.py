@@ -47,7 +47,7 @@ class LhystudiosDevice(Device):
         Device.__init__(self, root, uid)
         self.uid = uid
         self.device_name = "Lhystudios"
-        self.location_name = "USB"
+        self.device_location = "USB"
         self.current_x = 0
         self.current_y = 0
 

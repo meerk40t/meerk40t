@@ -335,7 +335,7 @@ class GRBLEmulator(Module, Pipe):
             parts.append(state)
             parts.append('MPos:%f,%f,%f' % (x, y, z))
             f = self.feed_invert(self.device.interpreter.speed)
-            s = self.device.interpreter.parse_power
+            s = self.device.interpreter.power
             parts.append('FS:%f,%d' % (f, s))
             self.grbl_channel("<%s>\r\n" % '|'.join(parts))
         elif bytes_to_write == '~':  # Resume.
