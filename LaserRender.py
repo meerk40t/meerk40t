@@ -146,7 +146,7 @@ class LaserRender:
         if hasattr(element, 'wxfont'):
             font = element.wxfont
         else:
-            font = wx.Font(float(element.values.get('font-size', 16)), wx.SWISS, wx.NORMAL, wx.BOLD)
+            font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             element.wxfont = font
         try:
             sw = element.values['stroke_width']

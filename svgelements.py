@@ -3925,6 +3925,7 @@ class Arc(PathSegment):
     #         current_t = end_t
 
     def as_cubic_curves(self):
+        # TODO: Fix the curve directionality here.
         sweep_limit = tau / 12
         arc_required = int(ceil(abs(self.sweep) / sweep_limit))
         if arc_required == 0:
