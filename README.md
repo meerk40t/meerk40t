@@ -18,6 +18,8 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-so
 
 ## Easy Windows
 
+Everything is prebundled. You can just run the file.
+
 Download MeerK40t.exe
 https://github.com/meerk40t/meerk40t/releases
 
@@ -27,6 +29,9 @@ MeerK40t is compiled as a portable application. It doesn't need to install or do
 
 
 ## Run Batch File to Python.
+
+You will need python:
+* Download and install from: https://www.python.org/
 
 Download the source and run `MeerK40t.py` with python. 
 
@@ -46,15 +51,16 @@ pause
 
 The batch file avoids the command prompt.
 
+* Right click and "Run as Administrator" if you have permissions errors.
 
 ## Command Prompt Fallback
+
+You will need python:
+* Download and install from: https://www.python.org/
 
 You need to use `python` and the requirements of `wxPython` `pyusb` and `Pillow` to run `MeerK40t.py`.
 
 Windows Instructions:
-
-You will need python:
-* Download and install from: https://www.python.org/
 
 You will need Meerk40t:
 * Download click: "Clone or Download".
@@ -79,13 +85,15 @@ You will need Meerk40t:
   * Type: `pip install Pillow`
 
 ### Linux:
+* `PermissionError: [Errno 13] Permission denied:...`
+  * Type: `sudo <previous command>`
 * `ImportError: libpng12.so.0: cannot open shared object file: No such file or directory .` libpng is not installed.
   * Type: `sudo apt-get install libpng`
 
 
 # GUI
 
-The wxMeerK40t is the GUI and is written in wxPython. It's pretty easy to hack on and quite easy to improve. Linux and OSX need transformations to run the scene effectively and that requires wxPython 4.1+. ( https://wxpython.org/Phoenix/snapshot-builds/ )
+The wxMeerK40t is the GUI and is written in wxPython.
 
 # Features
 
@@ -137,20 +145,13 @@ These are never subdivided into good-enough small line segments, and the curves 
 
 # Parsers
 
-The ability to drag and drop and display and modify job elements is critical to any good laser cutting application. Currently MeerK40t uses Pillow to load images. `svgelements` to load the SVG files. There an `EgvParser` from K40Tools to load EGV files. These loaders are registered in the kernel api and can be augmented with other formats quite easily. Requests for dealing with additional file formats can be easily addressed and integrated.
+The ability to drag and drop and display and modify job elements is critical to any good laser cutting application. Currently MeerK40t uses Pillow to load images. `svgelements` to load the SVG files. `RuidaDevice` to load .rd files. The `LhystudiosDevice` loads EGV files. These loaders are registered in the kernel api and can be augmented with other formats quite easily. Requests for dealing with additional file formats can be easily addressed and integrated.
 
 # Rasterization
 
-The project includes a RasterBuilder. It uses a highly debuggable methodology to build rasters. This gives MeerK40t the ability to overscan, perform bottom-to-top rasters, start from any corner, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend.
+The project includes a RasterBuilder. It uses a highly debuggable methodology to build rasters. This gives MeerK40t the ability to overscan, perform bottom-to-top right-to-left rasters, start from any corner, skip blank edge pixels, skip blank edge lines and makes the entire process extremely easy to troubleshoot or extend.
 
 See notes on Rastering (https://github.com/meerk40t/meerk40t/wiki/Notes-on-Rastering) in the wiki.
-
-
-# Lhymicro-GL Interpreter
-
-The Lhymicro-GL interpreter writes Lhymicro-GL code to be used in the stock firmware. This is done with the LhymicroInterpreter. It uses middle-level to low level on the fly writer, which tracks the local state of the device.
-
-We can also adapt for edge conditions and alterations on the fly without any trouble. The interpreter tracks its current state and can perform the needed actions for state changes behind the scenes.
 
 
 ## LaserCommands
@@ -159,3 +160,6 @@ The core language internally used in MeerK40t is a backend-agnostic coding, whic
 
 See notes on LaserCommands: https://github.com/meerk40t/meerk40t/wiki/LaserCommands
 
+# Translations
+
+MeerK40t is built with translations in mind. Providing a translation into your native language is fast and easy. https://github.com/meerk40t/meerk40t/wiki/Providing-a-Translation. 
