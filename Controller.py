@@ -334,7 +334,9 @@ class Controller(wx.Frame, Module):
 
     def on_button_connect(self, event):  # wxGlade: Controller.<event_handler>
         state = self.device.last_signal('pipe;usb_state')
-        if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK):
+        if state is not None and isinstance(state, tuple):
+            state = state[0]
+        if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK, None):
             try:
                 self.device.execute("Connect_USB")
             except ConnectionRefusedError:
