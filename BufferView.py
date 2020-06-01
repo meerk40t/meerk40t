@@ -41,7 +41,7 @@ class BufferView(wx.Frame, Module):
         buffer = None
         if pipe is not None:
             try:
-                buffer = pipe.buffer + pipe.queue
+                buffer = pipe._buffer + pipe._queue
             except AttributeError:
                 buffer = None
         if buffer is None:

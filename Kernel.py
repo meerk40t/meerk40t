@@ -4,12 +4,14 @@ from threading import Thread, Lock
 from LaserOperation import *
 from svgelements import Path, SVGText
 
-THREAD_STATE_UNKNOWN = -1
-THREAD_STATE_UNSTARTED = 0
-THREAD_STATE_STARTED = 1
-THREAD_STATE_PAUSED = 2
-THREAD_STATE_FINISHED = 3
-THREAD_STATE_ABORT = 10
+STATE_UNKNOWN = -1
+STATE_INITIALIZE = 0
+STATE_IDLE = 1
+STATE_ACTIVE = 2
+STATE_BUSY = 3
+STATE_PAUSE = 4
+STATE_END = 5
+STATE_TERMINATE = 10
 
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
@@ -569,7 +571,7 @@ class Signaler(Module):
         _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
             if len(listener):
-                channel(_("WARNING: Listener '%s' still registered to %s.\n") % (key, str(listener)))
+                channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
         self.last_message = {}
         self.listeners = {}
 
@@ -696,7 +698,7 @@ class Device:
         self.device_location = "Kernel"
         self.uid = uid
 
-        self.state = THREAD_STATE_UNKNOWN
+        self.state = STATE_UNKNOWN
         self.jobs = []
 
         self.registered = {}
@@ -795,42 +797,37 @@ class Device:
         """
         Begins device shutdown procedure.
         """
-        self.state = THREAD_STATE_ABORT
+        self.state = STATE_TERMINATE
         _ = self.device_root.translation
-        channel(_("Shutting down.\n"))
+        channel(_("Shutting down."))
         self.detach(self, channel=channel)
         if 'device' in self.instances:
             devices = self.instances['device']
             del self.instances['device']
             for device_name in devices:
                 device = devices[device_name]
-                channel(_("Device Shutdown Started: '%s'\n") % str(device))
+                channel(_("Device Shutdown Started: '%s'") % str(device))
                 device.shutdown(channel=channel)
-                channel(_("Device Shutdown Finished: '%s'\n") % str(device))
-        channel(_("Saving Device State: '%s'\n") % str(self))
+                channel(_("Device Shutdown Finished: '%s'") % str(device))
+        channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
         for type_name in list(self.instances):
             if type_name in ('control'):
                 continue
             for module_name in list(self.instances[type_name]):
-                module = self.instances[type_name][module_name]
-                channel(_("Shutting down %s %s: %s\n") % (module_name, type_name, str(module)))
+                obj = self.instances[type_name][module_name]
                 try:
-                    module.detach(self, channel=channel)
+                    obj.stop()
+                    channel(_("Stopping %s %s: %s") % (module_name, type_name, str(obj)))
                 except AttributeError:
                     pass
-        for type_name in list(self.instances):
-            if type_name in ('control'):
-                continue
-            for module_name in self.instances[type_name]:
-                channel(_("WARNING: %s %s was not closed.\n") % (type_name, module_name))
         if 'thread' in self.instances:
-            for thread_name in self.instances['thread']:
+            for thread_name in list(self.instances['thread']):
                 thread = self.instances['thread'][thread_name]
                 if not thread.is_alive:
-                    channel(_("WARNING: Dead thread %s still registered to %s.\n") % (thread_name, str(thread)))
+                    channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
                     continue
-                channel(_("Finishing Thread %s for %s\n") % (thread_name, str(thread)))
+                channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
                 if thread is self.thread:
                     continue
                     # Do not sleep thread waiting for that thread to die. This is that thread.
@@ -839,13 +836,32 @@ class Device:
                 except AttributeError:
                     pass
                 if thread.is_alive:
-                    channel(_("Waiting for thread %s: %s\n") % (thread_name, str(thread)))
+                    channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
                 while thread.is_alive():
                     time.sleep(0.1)
-                channel(_("Thread %s finished. %s\n") % (thread_name, str(thread)))
+                channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
         else:
-            channel(_("No threads required halting.\n"))
-        channel(_("Shutdown.\n\n"))
+            channel(_("No threads required halting."))
+        for type_name in list(self.instances):
+            if type_name in ('control'):
+                continue
+            for module_name in list(self.instances[type_name]):
+                obj = self.instances[type_name][module_name]
+                try:
+                    obj.detach(self, channel=channel)
+                    channel(_("Shutting down %s %s: %s") % (module_name, type_name, str(obj)))
+                except AttributeError:
+                    pass
+        for type_name in list(self.instances):
+            if type_name in ('control'):
+                continue
+            for module_name in self.instances[type_name]:
+                obj = self.instances[type_name][module_name]
+                if obj is self.thread:
+                    continue  # Don't warn about failure to close current thread.
+                channel(_("WARNING: %s %s was not closed.") % (type_name, module_name))
+
+        channel(_("Shutdown."))
         shutdown_root = False
         if not self.is_root():
             if 'device' in self.device_root.instances:
@@ -860,7 +876,7 @@ class Device:
             else:
                 shutdown_root = True
         if shutdown_root:
-            channel(_("All Devices are shutdown. Stopping Kernel.\n"))
+            channel(_("All Devices are shutdown. Stopping Kernel."))
             self.device_root.stop()
 
     def add_job(self, run, args=(), interval=1.0, times=None):
@@ -884,12 +900,12 @@ class Device:
         Check each job, and if that job is scheduled to run. Executes that job.
         :return:
         """
-        self.state = THREAD_STATE_STARTED
-        while self.state != THREAD_STATE_FINISHED:
+        self.state = STATE_ACTIVE
+        while self.state != STATE_END:
             time.sleep(0.005)  # 200 ticks a second.
-            if self.state == THREAD_STATE_ABORT:
+            if self.state == STATE_TERMINATE:
                 break
-            while self.state == THREAD_STATE_PAUSED:
+            while self.state == STATE_PAUSE:
                 # The scheduler is paused.
                 time.sleep(1.0)
             jobs = self.jobs
@@ -912,7 +928,7 @@ class Device:
                     job.next_run += job.last_run + job.interval
             if jobs_update:
                 self.jobs = [job for job in jobs if job.times is None or job.times > 0]
-        self.state = THREAD_STATE_FINISHED
+        self.state = STATE_END
 
         # If we aborted the thread, we trigger Kernel Shutdown in this thread.
         self.shutdown(self.device_root.channel_open('shutdown'))
@@ -1049,13 +1065,13 @@ class Device:
         return self.state
 
     def resume(self):
-        self.state = THREAD_STATE_STARTED
+        self.state = STATE_ACTIVE
 
     def pause(self):
-        self.state = THREAD_STATE_PAUSED
+        self.state = STATE_PAUSE
 
     def stop(self):
-        self.state = THREAD_STATE_ABORT
+        self.state = STATE_TERMINATE
 
     # Channel processing
 
@@ -1214,24 +1230,28 @@ class Device:
 
     def get_text_thread_state(self, state):
         _ = self.device_root.translation
-        if state == THREAD_STATE_UNSTARTED:
+        if state == STATE_INITIALIZE:
             return _("Unstarted")
-        elif state == THREAD_STATE_ABORT:
-            return _("Aborted")
-        elif state == THREAD_STATE_FINISHED:
+        elif state == STATE_TERMINATE:
+            return _("Abort")
+        elif state == STATE_END:
             return _("Finished")
-        elif state == THREAD_STATE_PAUSED:
-            return _("Paused")
-        elif state == THREAD_STATE_STARTED:
-            return _("Started")
-        elif state == THREAD_STATE_UNKNOWN:
+        elif state == STATE_PAUSE:
+            return _("Pause")
+        elif state == STATE_BUSY:
+            return _("Busy")
+        elif state == STATE_ACTIVE:
+            return _("Active")
+        elif state == STATE_IDLE:
+            return _("Idle")
+        elif state == STATE_UNKNOWN:
             return _("Unknown")
 
     def get_state(self, thread_name):
         try:
             return self.instances['thread'][thread_name].state()
         except AttributeError:
-            return THREAD_STATE_UNKNOWN
+            return STATE_UNKNOWN
 
     def classify(self, elements):
         return self.device_root.classify(elements)

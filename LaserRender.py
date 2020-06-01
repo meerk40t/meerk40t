@@ -26,7 +26,7 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
-    def render(self, gc, draw_mode):
+    def render(self, gc, draw_mode=None):
         """
         Render scene information.
 
@@ -34,6 +34,8 @@ class LaserRender:
         :param draw_mode:
         :return:
         """
+        if draw_mode is None:
+            draw_mode = self.device.draw_mode
         kernel = self.device.device_root
         elements = kernel.elements
         if draw_mode & 0x1C00 != 0:

@@ -11,7 +11,7 @@ class ServerThread(threading.Thread):
         self.state = None
         self.connection = None
         self.addr = None
-        self.set_state(THREAD_STATE_UNSTARTED)
+        self.set_state(STATE_INITIALIZE)
         self.buffer = None
 
     def set_state(self, state):
@@ -29,7 +29,7 @@ class ServerThread(threading.Thread):
             pass
 
     def tcp_run(self):
-        while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
+        while self.state != STATE_TERMINATE and self.state != STATE_END:
             if self.connection is None:
                 try:
                     self.connection, self.addr = self.server.socket.accept()
@@ -37,12 +37,12 @@ class ServerThread(threading.Thread):
                     self.server.channel("Socket was killed.")
                     break  # Socket was killed.
                 continue
-            if self.state == THREAD_STATE_PAUSED:
-                while self.state == THREAD_STATE_PAUSED:
+            if self.state == STATE_PAUSE:
+                while self.state == STATE_PAUSE:
                     time.sleep(1)
-                    if self.state == THREAD_STATE_ABORT:
+                    if self.state == STATE_TERMINATE:
                         return
-                self.set_state(THREAD_STATE_STARTED)
+                self.set_state(STATE_ACTIVE)
 
             push_message = self.server.pipe.read(1024)
             if push_message is not None:
@@ -68,7 +68,7 @@ class ServerThread(threading.Thread):
             self.connection.close()
 
     def run(self):
-        self.set_state(THREAD_STATE_STARTED)
+        self.set_state(STATE_ACTIVE)
         if self.server.tcp:
             self.tcp_run()
         else:
@@ -107,7 +107,7 @@ class LaserServer(Module):
     def shutdown(self,  channel):
         self.channel("Shutting down server.")
         self.socket.close()
-        self.thread.state = THREAD_STATE_FINISHED
+        self.thread.state = STATE_END
 
     def set_pipe(self, pipe):
         self.pipe = pipe

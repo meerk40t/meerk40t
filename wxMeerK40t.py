@@ -544,7 +544,7 @@ class MeerK40t(wx.Frame, Module):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_status(self, value):
+    def on_usb_state_text(self, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
     def on_pipe_state(self, value):
@@ -574,7 +574,7 @@ class MeerK40t(wx.Frame, Module):
         device.listen("selected_elements", self.selection_changed)
 
         device.listen('pipe;error', self.on_usb_error)
-        device.listen('pipe;usb_status', self.on_usb_status)
+        device.listen('pipe;usb_state_text', self.on_usb_state_text)
         device.listen('pipe;thread', self.on_pipe_state)
         device.listen('spooler;thread', self.on_spooler_state)
         device.listen('interpreter;position', self.update_position)
@@ -591,7 +591,7 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten("selected_elements", self.selection_changed)
 
         device.unlisten('pipe;error', self.on_usb_error)
-        device.unlisten('pipe;usb_status', self.on_usb_status)
+        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
         device.unlisten('pipe;thread', self.on_pipe_state)
         device.unlisten('spooler;thread', self.on_spooler_state)
         device.unlisten('interpreter;position', self.update_position)

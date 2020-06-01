@@ -492,7 +492,7 @@ class ElementsWidget(Widget):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
-        self.renderer.render(gc, self.scene.device.draw_mode)
+        self.renderer.render(gc, self.renderer.device.draw_mode)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftclick'):

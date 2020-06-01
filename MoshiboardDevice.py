@@ -283,8 +283,8 @@ class MoshiboardController(Module, Pipe):
             self.usb_state = code
             name = get_name_for_status(code, translation=self.device.device_root.translation)
             self.log(name)
-            self.device.signal("pipe;usb_state", code)
-            self.device.signal("pipe;usb_status", name)
+            self.device.signal('pipe;usb_state', code)
+            self.device.signal('pipe;usb_state_text', name)
         else:
             self.log(str(code))
 

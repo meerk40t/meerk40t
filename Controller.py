@@ -47,8 +47,7 @@ class Controller(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_start_controller, self.button_controller_control)
-        self.Bind(wx.EVT_BUTTON, self.on_button_start_usb, self.button_device_connect)
+        self.Bind(wx.EVT_BUTTON, self.on_button_connect, self.button_device_connect)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_limit_packet_buffer, self.checkbox_limit_buffer)
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
@@ -60,6 +59,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.buffer_max = 1
+        self.last_control_state = None
 
     def initialize(self):
         self.device.close('window', self.name)
@@ -81,10 +81,12 @@ class Controller(wx.Frame, Module):
         self.device.listen("pipe;status", self.update_status)
         self.device.listen("pipe;packet_text", self.update_packet_text)
         self.device.listen("pipe;buffer", self.on_buffer_update)
-        self.device.listen("pipe;usb_state", self.on_usb_state)
+        self.device.listen("pipe;usb_state", self.on_connection_state_change)
         self.device.listen("pipe;thread", self.on_control_state)
         self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
+        self.text_device = wx.TextCtrl(self, wx.ID_ANY, self.device.device_name)
+        self.text_location = wx.TextCtrl(self, wx.ID_ANY, self.device.device_location)
 
     def shutdown(self, channel):
         self.Close()
@@ -95,7 +97,7 @@ class Controller(wx.Frame, Module):
         self.device.unlisten("pipe;status", self.update_status)
         self.device.unlisten("pipe;packet_text", self.update_packet_text)
         self.device.unlisten("pipe;buffer", self.on_buffer_update)
-        self.device.unlisten("pipe;usb_state", self.on_usb_state)
+        self.device.unlisten("pipe;usb_state", self.on_connection_state_change)
         self.device.unlisten("pipe;thread", self.on_control_state)
         event.Skip()  # delegate destroy to super
 
@@ -267,19 +269,6 @@ class Controller(wx.Frame, Module):
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.buffer_max = self.spin_packet_buffer_max.GetValue()
 
-    def on_button_start_controller(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.device.interpreter.pipe.state
-        if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.device.interpreter.pipe.start()
-        elif state == THREAD_STATE_PAUSED:
-            self.device.interpreter.pipe.resume()
-        elif state == THREAD_STATE_STARTED:
-            self.device.interpreter.pipe.pause()
-        elif state == THREAD_STATE_ABORT:
-            self.device.interpreter.pipe.buffer = b''
-            self.device.interpreter.pipe.queue = b''
-            self.device.interpreter.pipe.reset()
-
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>
         try:
             self.device.interpreter.realtime_command(REALTIME_RESET)
@@ -288,7 +277,7 @@ class Controller(wx.Frame, Module):
 
     def on_button_pause_resume(self, event):  # wxGlade: Controller.<event_handler>
         try:
-            self.device.interpreter.realtime_command(REALTIME_PAUSE)
+            self.device.execute("Realtime Pause_Resume")
         except AttributeError:
             pass
 
@@ -314,7 +303,7 @@ class Controller(wx.Frame, Module):
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
 
-    def on_usb_state(self, state):
+    def on_connection_state_change(self, state):
         status = get_name_for_status(state, translation=_)
         self.text_connection_status.SetValue(status)
         if state == STATE_CONNECTION_FAILED or state == STATE_DRIVER_NO_BACKEND:
@@ -343,34 +332,8 @@ class Controller(wx.Frame, Module):
             self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
             self.button_device_connect.Disable()
 
-    def on_buffer_update(self, value, *args):
-        if value > self.buffer_max:
-            self.buffer_max = value
-        self.text_buffer_length.SetValue(str(value))
-        self.gauge_buffer.SetRange(self.buffer_max)
-        self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
-
-    def on_control_state(self, state):
-        self.text_controller_status.SetValue(self.device.get_text_thread_state(state))
-        if state == THREAD_STATE_UNSTARTED or state == THREAD_STATE_FINISHED:
-            self.button_controller_control.SetBackgroundColour("#009900")
-            self.button_controller_control.SetLabel(_("Start Controller"))
-            self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
-        elif state == THREAD_STATE_PAUSED:
-            self.button_controller_control.SetBackgroundColour("#00dd00")
-            self.button_controller_control.SetLabel(_("Resume Controller"))
-            self.button_controller_control.SetBitmap(icons8_play_50.GetBitmap())
-        elif state == THREAD_STATE_STARTED:
-            self.button_controller_control.SetBackgroundColour("#00ff00")
-            self.button_controller_control.SetLabel(_("Pause Controller"))
-            self.button_controller_control.SetBitmap(icons8_pause_50.GetBitmap())
-        elif state == THREAD_STATE_ABORT:
-            self.button_controller_control.SetBackgroundColour("#00ffff")
-            self.button_controller_control.SetLabel(_("Manual Reset"))
-            self.button_controller_control.SetBitmap(icons8_stop_50.GetBitmap())
-
-    def on_button_start_usb(self, event):  # wxGlade: Controller.<event_handler>
-        state = self.device.interpreter.pipe.usb_state
+    def on_button_connect(self, event):  # wxGlade: Controller.<event_handler>
+        state = self.device.last_signal('pipe;usb_state')
         if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK):
             try:
                 self.device.execute("Connect_USB")
@@ -381,5 +344,55 @@ class Controller(wx.Frame, Module):
                 dlg.Destroy()
         elif state in (STATE_CONNECTED, STATE_USB_CONNECTED):
             self.device.execute("Disconnect_USB")
+
+    def on_buffer_update(self, value, *args):
+        if value > self.buffer_max:
+            self.buffer_max = value
+        self.text_buffer_length.SetValue(str(value))
+        self.gauge_buffer.SetRange(self.buffer_max)
+        self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
+
+    def on_control_state(self, state):
+        if self.last_control_state == state:
+            return
+        self.last_control_state = state
+        button = self.button_controller_control
+        if self.text_controller_status is None:
+            return
+        value = self.device.get_text_thread_state(state)
+        self.text_controller_status.SetValue(str(value))
+        if state == STATE_INITIALIZE or state == STATE_END:
+            def f(event):
+                self.device.interpreter.pipe.start()
+                self.device.interpreter.pipe.pause()
+
+            self.Bind(wx.EVT_BUTTON, f, button)
+            button.SetBackgroundColour("#009900")
+            button.SetLabel(_("Hold Controller"))
+            button.SetBitmap(icons8_play_50.GetBitmap())
+        elif state == STATE_PAUSE:
+            def f(event):
+                self.device.interpreter.pipe.resume()
+
+            self.Bind(wx.EVT_BUTTON, f, button)
+            button.SetBackgroundColour("#00dd00")
+            button.SetLabel(_("Resume Controller"))
+            button.SetBitmap(icons8_play_50.GetBitmap())
+        elif state == STATE_ACTIVE:
+            def f(event):
+                self.device.interpreter.pipe.pause()
+
+            self.Bind(wx.EVT_BUTTON, f, button)
+            button.SetBackgroundColour("#00ff00")
+            button.SetLabel(_("Pause Controller"))
+            button.SetBitmap(icons8_pause_50.GetBitmap())
+        elif state == STATE_TERMINATE:
+            def f(event):
+                self.device.interpreter.pipe.reset()
+
+            self.Bind(wx.EVT_BUTTON, f, button)
+            button.SetBackgroundColour("#00ffff")
+            button.SetLabel(_("Manual Reset"))
+            button.SetBitmap(icons8_stop_50.GetBitmap())
 
 # end of class Controller

@@ -181,7 +181,7 @@ class DeviceManager(wx.Frame, Module):
             pass
         except AttributeError:
             pass
-        # device.shutdown()
+
         self.refresh_device_list()
 
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
