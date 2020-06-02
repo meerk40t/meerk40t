@@ -137,7 +137,7 @@ class CameraInterface(wx.Frame, Module):
     def initialize(self):
         self.device.close('window', self.name)
         self.Show()
-
+        self.device.setting(int, "draw_mode", 0)
         self.device.setting(int, 'camera_index', 0)
         self.device.setting(int, 'camera_fps', 1)
         self.device.setting(bool, 'mouse_zoom_invert', False)
@@ -376,9 +376,14 @@ class CameraInterface(wx.Frame, Module):
     def on_update_buffer(self, event=None):
         if self.frame_bitmap is None:
             return  # Need the bitmap to refresh.
+        dm = self.device.draw_mode
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.Clear()
+        w, h = dc.Size
+        if dm & 0x800000 != 0:
+            dc.SetUserScale(-1, -1)
+            dc.SetLogicalOrigin(w, h)
         dc.SetBackground(wx.WHITE_BRUSH)
         gc = wx.GraphicsContext.Create(dc)
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
@@ -401,6 +406,8 @@ class CameraInterface(wx.Frame, Module):
                 gc.StrokeLine(p[0], p[1] - half, p[0], p[1] + half)
                 gc.DrawEllipse(p[0] - half, p[1] - half, CORNER_SIZE, CORNER_SIZE)
         gc.PopState()
+        if dm & 0x400000 != 0:
+            dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         del dc
 
