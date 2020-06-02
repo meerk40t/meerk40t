@@ -111,9 +111,12 @@ ID_MENU_HIDE_RETICLE = idinc.new()
 ID_MENU_HIDE_SELECTION = idinc.new()
 ID_MENU_SCREEN_REFRESH = idinc.new()
 ID_MENU_SCREEN_ANIMATE = idinc.new()
+ID_MENU_SCREEN_INVERT = idinc.new()
+ID_MENU_SCREEN_FLIPXY = idinc.new()
 ID_MENU_HIDE_IMAGE = idinc.new()
 ID_MENU_HIDE_PATH = idinc.new()
 ID_MENU_HIDE_TEXT = idinc.new()
+
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_ABOUT = idinc.new()
@@ -215,6 +218,8 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
         self.main_menubar.Append(wxglade_tmp_menu, _("View"))
         wxglade_tmp_menu = wx.Menu()
 
@@ -253,18 +258,20 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
 
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0004), id=ID_MENU_HIDE_GRID)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0002), id=ID_MENU_HIDE_GUIDES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0400), id=ID_MENU_HIDE_PATH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0800), id=ID_MENU_HIDE_IMAGE)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x1000), id=ID_MENU_HIDE_TEXT)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0001), id=ID_MENU_HIDE_FILLS)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0008), id=ID_MENU_HIDE_LASERPATH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0010), id=ID_MENU_HIDE_RETICLE)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0020), id=ID_MENU_HIDE_SELECTION)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0040), id=ID_MENU_HIDE_STROKES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000004), id=ID_MENU_HIDE_GRID)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000002), id=ID_MENU_HIDE_GUIDES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000400), id=ID_MENU_HIDE_PATH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000800), id=ID_MENU_HIDE_IMAGE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x001000), id=ID_MENU_HIDE_TEXT)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000001), id=ID_MENU_HIDE_FILLS)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000008), id=ID_MENU_HIDE_LASERPATH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000010), id=ID_MENU_HIDE_RETICLE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000020), id=ID_MENU_HIDE_SELECTION)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000040), id=ID_MENU_HIDE_STROKES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000100), id=ID_MENU_SCREEN_REFRESH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x000200), id=ID_MENU_SCREEN_ANIMATE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x400000), id=ID_MENU_SCREEN_INVERT)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x800000), id=ID_MENU_SCREEN_FLIPXY)
 
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", None, -1, ""), id=ID_MENU_ABOUT)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
@@ -483,6 +490,10 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & 0x0800 != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TEXT)
         m.Check(self.device.draw_mode & 0x1000 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_FLIPXY)
+        m.Check(self.device.draw_mode & 0x800000 != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
+        m.Check(self.device.draw_mode & 0x400000 != 0)
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.space_changed()
@@ -738,19 +749,28 @@ class MeerK40t(wx.Frame, Module):
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
+        dm = self.device.draw_mode
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(self.background_brush)
         dc.Clear()
+        w, h = dc.Size
+        if dm & 0x800000 != 0:
+            dc.SetUserScale(-1, -1)
+            dc.SetLogicalOrigin(w, h)
         gc = wx.GraphicsContext.Create(dc)
-        gc.Size = self.Size
+        gc.Size = dc.Size
+
         gc.laserpath = self.laserpath
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
         if self.widget_scene is not None:
             self.widget_scene.draw(gc)
+        if dm & 0x400000 != 0:
+            dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         del dc
+
 
     # Mouse Events.
 
@@ -902,7 +922,9 @@ class MeerK40t(wx.Frame, Module):
 
         def toggle(event):
             self.device.draw_mode ^= bits
+            self.device.signal("draw_mode", self.device.draw_mode)
             self.request_refresh()
+
 
         return toggle
 
