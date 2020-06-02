@@ -3906,26 +3906,48 @@ class Arc(PathSegment):
         self.pry.matrix_transform(rotate_matrix)
         self.sweep = Angle.degrees(delta).as_radians
 
-    # def as_quad_curves(self):
-    #     sweep_limit = tau / 12
-    #     arc_required = int(ceil(abs(self.sweep) / sweep_limit))
-    #     if arc_required == 0:
-    #         return
-    #     slice = self.sweep / float(arc_required)
-    #
-    #     current_t = 0
-    #
-    #     p_start = self.start
-    #     for i in range(0, arc_required):
-    #         end_t = current_t + slice
-    #         p_end = self.point_at_t(end_t)
-    #         q = Point(p_start[0] + tan((p_end[0] - p_start[0]) / 2.0))
-    #         yield QuadraticBezier(p_start, q, p_end)
-    #         p_start = p_end
-    #         current_t = end_t
+    def as_quad_curves(self):
+        sweep_limit = tau / 12
+        arc_required = int(ceil(abs(self.sweep) / sweep_limit))
+        if arc_required == 0:
+            return
+        slice = self.sweep / float(arc_required)
+
+        current_t = self.get_start_t()
+        p_start = self.start
+
+        theta = self.get_rotation()
+        cos_theta = cos(theta)
+        sin_theta = sin(theta)
+
+        rx = self.rx
+        ry = self.ry
+        x0 = self.center[0]
+        y0 = self.center[1]
+
+        rotation = self.get_rotation()
+        a = self.rx
+        b = self.ry
+        cx = self.center[0]
+        cy = self.center[1]
+
+        for i in range(0, arc_required):
+            next_t = current_t + slice
+            mid_t = (next_t + current_t) / 2
+            p_end = self.point_at_t(next_t)
+            if i == arc_required - 1:
+                p_end = self.end
+            # p_mid = self.point_at_t(mid_t)
+            cos_mid_t = cos(mid_t)
+            sin_mid_t = sin(mid_t)
+            alpha = (4.0 - cos(slice)) / 3.0
+            px = cx + alpha * (a * cos_mid_t * cos_theta - b * sin_mid_t * sin_theta)
+            py = cy + alpha * (a * cos_mid_t * sin_theta + b * sin_mid_t * cos_theta)
+            yield QuadraticBezier(p_start, (px, py), p_end)
+            p_start = p_end
+            current_t = next_t
 
     def as_cubic_curves(self):
-        # TODO: Fix the curve directionality here.
         sweep_limit = tau / 12
         arc_required = int(ceil(abs(self.sweep) / sweep_limit))
         if arc_required == 0:
@@ -3936,41 +3958,41 @@ class Arc(PathSegment):
         rx = self.rx
         ry = self.ry
         p_start = self.start
-        current_angle = self.get_start_t()
+        current_t = self.get_start_t()
         x0 = self.center[0]
         y0 = self.center[1]
         cos_theta = cos(theta)
         sin_theta = sin(theta)
 
         for i in range(0, arc_required):
-            next_angle = current_angle + slice
+            next_t = current_t + slice
 
             alpha = sin(slice) * (sqrt(4 + 3 * pow(tan((slice) / 2.0), 2)) - 1) / 3.0
 
-            cos_start_angle = cos(current_angle)
-            sin_start_angle = sin(current_angle)
+            cos_start_t = cos(current_t)
+            sin_start_t = sin(current_t)
 
-            ePrimen1x = -rx * cos_theta * sin_start_angle - ry * sin_theta * cos_start_angle
-            ePrimen1y = -rx * sin_theta * sin_start_angle + ry * cos_theta * cos_start_angle
+            ePrimen1x = -rx * cos_theta * sin_start_t - ry * sin_theta * cos_start_t
+            ePrimen1y = -rx * sin_theta * sin_start_t + ry * cos_theta * cos_start_t
 
-            cos_end_angle = cos(next_angle)
-            sin_end_angle = sin(next_angle)
+            cos_end_t = cos(next_t)
+            sin_end_t = sin(next_t)
 
-            p2En2x = x0 + rx * cos_end_angle * cos_theta - ry * sin_end_angle * sin_theta
-            p2En2y = y0 + rx * cos_end_angle * sin_theta + ry * sin_end_angle * cos_theta
+            p2En2x = x0 + rx * cos_end_t * cos_theta - ry * sin_end_t * sin_theta
+            p2En2y = y0 + rx * cos_end_t * sin_theta + ry * sin_end_t * cos_theta
             p_end = (p2En2x, p2En2y)
             if i == arc_required - 1:
                 p_end = self.end
 
-            ePrimen2x = -rx * cos_theta * sin_end_angle - ry * sin_theta * cos_end_angle
-            ePrimen2y = -rx * sin_theta * sin_end_angle + ry * cos_theta * cos_end_angle
+            ePrimen2x = -rx * cos_theta * sin_end_t - ry * sin_theta * cos_end_t
+            ePrimen2y = -rx * sin_theta * sin_end_t + ry * cos_theta * cos_end_t
 
             p_c1 = (p_start[0] + alpha * ePrimen1x, p_start[1] + alpha * ePrimen1y)
             p_c2 = (p_end[0] - alpha * ePrimen2x, p_end[1] - alpha * ePrimen2y)
 
             yield CubicBezier(p_start, p_c1, p_c2, p_end)
             p_start = Point(p_end)
-            current_angle = next_angle
+            current_t = next_t
 
     def is_circular(self):
         a = self.rx
@@ -4037,10 +4059,12 @@ class Arc(PathSegment):
         b = self.ry
         if a == b:
             return self.point_at_t(angle)
-        if abs(angle) > tau / 4:
-            return self.point_at_t(atan2(a * tan(angle), b) + tau / 2)
-        else:
-            return self.point_at_t(atan2(a * tan(angle), b))
+        t = atan2(a * tan(angle), b)
+        tau_1_4 = tau / 4.0
+        tau_3_4 = 3 * tau_1_4
+        if tau_3_4 > abs(angle) > tau_1_4:
+            t += tau/2
+        return self.point_at_t(t)
 
     def angle_at_point(self, p):
         """
@@ -4062,10 +4086,12 @@ class Arc(PathSegment):
         angle -= self.get_rotation()
         a = self.rx
         b = self.ry
-        if abs(angle) > tau / 4:
-            return atan2(a * tan(angle), b) + tau / 2
-        else:
-            return atan2(a * tan(angle), b)
+        t = atan2(a * tan(angle), b)
+        tau_1_4 = tau/4.0
+        tau_3_4 = 3 * tau_1_4
+        if tau_3_4 > abs(angle) > tau_1_4:
+            t += tau / 2
+        return t
 
     def point_at_t(self, t):
         """
@@ -5228,10 +5254,11 @@ class _RoundShape(Shape):
         if a == b:
             return self.point_at_t(angle)
         angle -= self.rotation
-        if abs(angle) > tau / 4:
-            t = atan2(a * tan(angle), b) + tau / 2
-        else:
-            t = atan2(a * tan(angle), b)
+        t = atan2(a * tan(angle), b)
+        tau_1_4 = tau / 4.0
+        tau_3_4 = 3 * tau_1_4
+        if tau_3_4 > abs(angle) > tau_1_4:
+            t += tau / 2
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -5258,10 +5285,13 @@ class _RoundShape(Shape):
         angle -= self.rotation
         a = self.implicit_rx
         b = self.implicit_ry
-        if abs(angle) > tau / 4:
-            return atan2(a * tan(angle), b) + tau / 2
-        else:
-            return atan2(a * tan(angle), b)
+        t = atan2(a * tan(angle), b)
+
+        tau_1_4 = tau / 4.0
+        tau_3_4 = 3 * tau_1_4
+        if tau_3_4 > abs(angle) > tau_1_4:
+            t += tau / 2
+        return t
 
     def point_at_t(self, t):
         """

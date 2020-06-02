@@ -18,7 +18,7 @@ class SVGWriter:
         yield 'default'
 
     @staticmethod
-    def save(kernel, f, version='default'):
+    def save(device, f, version='default'):
         root = Element(SVG_NAME_TAG)
         root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
@@ -29,16 +29,10 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        if kernel.device is None:
-            kernel.setting(int, "bed_width", 320)
-            kernel.setting(int, "bed_height", 220)
-            mm_width = kernel.bed_width
-            mm_height = kernel.bed_height
-        else:
-            kernel.device.setting(int, "bed_width", 320)
-            kernel.device.setting(int, "bed_height", 220)
-            mm_width = kernel.device.bed_width
-            mm_height = kernel.device.bed_height
+        device.setting(int, "bed_width", 320)
+        device.setting(int, "bed_height", 220)
+        mm_width = device.bed_width
+        mm_height = device.bed_height
         root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
         root.set(SVG_ATTR_HEIGHT, '%fmm' % mm_height)
         px_width = mm_width * mils_per_mm * px_per_mils
@@ -47,7 +41,7 @@ class SVGWriter:
         viewbox = '%d %d %d %d' % (0, 0, round(px_width), round(px_height))
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
-        elements = kernel.elements
+        elements = device.elements
         for element in elements:
             if isinstance(element, Path):
                 subelement = SubElement(root, SVG_TAG_PATH)
