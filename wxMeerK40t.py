@@ -849,6 +849,12 @@ class MeerK40t(wx.Frame, Module):
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         kernel = self.device.device_root
         self.working_file = None
+        for e in kernel.element:
+            try:
+                del e.cache
+                e.cache = None
+            except AttributeError:
+                pass
         kernel.elements = []
         kernel.operations = []
         kernel.filenodes = {}
@@ -2143,6 +2149,12 @@ class RootNode(list):
 
         def specific(event):
             filepath = node.filepath
+            for e in self.device.device_root.elements:
+                try:
+                    del e.cache
+                    e.cache = None
+                except AttributeError:
+                    pass
             self.device.device_root.elements.clear()
             self.device.device_root.operations.clear()
             self.gui.load(filepath)
@@ -2168,6 +2180,10 @@ class RootNode(list):
                 # Removing element can only have 1 copy.
                 removed_objects = self.selected_elements
                 for e in removed_objects:
+                    try:
+                        del e.cache
+                    except AttributeError:
+                        pass
                     kernel.elements.remove(e)
 
                 for i in range(len(kernel.operations)):
@@ -2215,6 +2231,10 @@ class RootNode(list):
                 # All selected elements are removed.
                 removed_objects = self.selected_elements
                 for e in removed_objects:
+                    try:
+                        del e.cache
+                    except AttributeError:
+                        pass
                     kernel.elements.remove(e)
                 for i in range(len(kernel.operations)):
                     elems = [e for e in kernel.operations[i] if e not in removed_objects]
