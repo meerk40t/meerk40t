@@ -673,6 +673,508 @@ class Signaler(Module):
         self.queue_lock.release()
 
 
+class Elemental(Module):
+    """
+    All elements get a .selected property dictating whether they are selected or not.
+    selected = element in kernel.selected_elements
+    kernel.selected_elements.remove(element)  # unselect
+    kernel.selected_elements.append(element)  # select
+
+    selecting and unselecting changes send signals
+    kernel.signal("selected_elements", kernel.selected_elements)
+
+    if len(kernel.elements.selected_elements) == 0:
+
+    "selected_bounds" changes.
+    "selected_elements" changes.
+    "rebuild_tree" elements.
+
+    clearing operations must unregister those operations.
+
+    Operations also have select(), unselect(), and .selected
+
+    Strongly consider. highlight and semi-selection being added as properties here.
+
+    self.elements.clear(), remove all selected elements.
+    """
+    def __init__(self):
+        Module.__init__(self)
+
+        self._operations = list()
+        self._selected_operations = list()
+        self._highlight_operations = list()
+        self._semi_operations = list()
+
+        self._elements = list()
+        self._selected_elements = list()
+        self._highlight_elements = list()
+        self._semi_elements = list()
+
+        self._filenodes = {}
+        self._bounds = None
+
+    def register(self, obj):
+        if isinstance(obj, SVGElement):
+            self.register_element(obj)
+        elif isinstance(obj, LaserOperation):
+            self.register_operation(obj)
+
+    def register_element(self, element):
+        element.cache = None
+        element.selected = False
+        element.emphasized = False
+        element.highlighted = False
+
+        def select_element():
+            element.selected = True
+            self._selected_elements.append(element)
+
+        def unselect_element():
+            element.selected = False
+            try:
+                self._selected_elements.remove(element)
+            except ValueError:
+                pass
+
+        def highlight_element():
+            element.highlighted = True
+            self._highlight_elements.append(element)
+
+        def unhighlight_element():
+            element.highlighted = False
+            try:
+                self._highlight_elements.remove(element)
+            except ValueError:
+                pass
+
+        def emphasize_element():
+            element.emphasized = True
+            self._semi_elements.append(element)
+
+        def unemphasize_element():
+            element.emphasized = False
+            try:
+                self._semi_elements.remove(element)
+            except ValueError:
+                pass
+
+        element.select = select_element
+        element.unselect = unselect_element
+        element.highlight = highlight_element
+        element.unhighlight = unhighlight_element
+        element.emphasize = emphasize_element
+        element.unemphasize = unemphasize_element
+
+    def register_operation(self, op):
+        op.selected = False
+        op.emphasized = False
+        op.highlighted = False
+
+        def select_operation():
+            op.selected = True
+            self._selected_operations.append(op)
+
+        def unselect_operation():
+            op.selected = False
+            try:
+                self._selected_operations.remove(op)
+            except ValueError:
+                pass
+
+        def highlight_operation():
+            op.highlighted = True
+            self._highlight_operations.append(op)
+
+        def unhighlight_operation():
+            op.highlighted = False
+            try:
+                self._highlight_operations.remove(op)
+            except ValueError:
+                pass
+
+        def emphasize_operation():
+            op.emphasized = True
+            self._semi_operations.append(op)
+
+        def unemphasize_operation():
+            op.emphasized = False
+            try:
+                self._semi_operations.remove(op)
+            except ValueError:
+                pass
+
+        op.select = select_operation
+        op.unselect = unselect_operation
+        op.highlight = highlight_operation
+        op.unhighlight = unhighlight_operation
+        op.emphasize = emphasize_operation
+        op.unemphasize = unemphasize_operation
+
+    def unregister(self, e):
+        try:
+            del e.cache
+        except AttributeError:
+            pass
+        try:
+            e.unselect()
+            e.unhighlight()
+            e.unemphasize()
+        except AttributeError:
+            pass
+
+    def ops(self):
+        return self._operations
+
+    def elems(self):
+        return self._elements
+
+    def files(self):
+        return self._filenodes
+
+    def bounds(self):
+        return self._bounds
+
+    def selected_elems(self):
+        return self._selected_elements
+
+    def selected_ops(self):
+        return self._selected_operations
+
+    def count_selected_elems(self):
+        return len(self._selected_elements)
+
+    def count_elems(self):
+        return len(self._elements)
+
+    def remove_operations(self, operations_list):
+        for op in operations_list:
+            self._operations.remove(op)
+
+    def clear_elements_and_operations(self):
+        for e in self._elements:
+            self.unregister(e)
+        self._elements.clear()
+        for e in self._operations:
+            self.unregister(e)
+        self._operations.clear()
+
+    def remove_elements(self, elements_list):
+        for e in elements_list:
+            try:
+                del e.cache
+            except AttributeError:
+                pass
+            self._elements.remove(e)
+        self.remove_elements_from_operations(elements_list)
+
+    def remove_files(self, file_list):
+        for f in file_list:
+            del self._filenodes[f]
+
+    def remove_elements_from_operations(self, elements_list):
+        for i in range(len(self._operations)):
+            elems = [e for e in self._operations[i] if e not in elements_list]
+            self._operations[i].clear()
+            self._operations[i].extend(elems)
+            if len(self._operations[i]) == 0:
+                self._operations[i] = None
+        self.remove_none_operations()
+
+    def remove_none_operations(self):
+        ops = [op for op in self._operations if op is not None]
+        self._operations.clear()
+        self._operations.extend(ops)
+
+    def op_count(self):
+        return len(self._operations)
+
+    def get_op(self, value):
+        return self._operations[value]
+
+    def get_elem(self, value):
+        return self._elements[value]
+
+    def add_op(self, op):
+        self._operations.append(op)
+        self.register_operation(op)
+
+    def add_elem(self, element):
+        self._elements.append(element)
+        self.register_element(element)
+
+    def add(self, element):
+        # TODO: merge into add_elem
+        self._elements.append(element)
+        self.register(element)
+
+    def add_all_elem(self, adding_elements):
+        for element in adding_elements:
+            self.register_element(element)
+        self._elements.extend(adding_elements)
+
+    def add_all_op(self, adding_ops):
+        for op in adding_ops:
+            self.register_operation(op)
+        self._operations.extend(adding_ops)
+
+    def unselect_elements(self):
+        for s in self._selected_elements:
+            s.selected = False
+        self._selected_elements.clear()
+
+    def first_selected_element(self):
+        return self._selected_elements[0]
+
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.elements = self
+        self.device.classify = self.classify
+        self.device.save = self.save
+        self.device.save_types = self.save_types
+        self.device.load = self.load
+        self.device.load_types = self.load_types
+
+    def classify(self, elements):
+        """
+        Classify does the initial placement of elements as operations.
+        RasterOperation is the default for images.
+        If element strokes are red they get classed as cut operations
+        If they are otherwise they get classed as engrave.
+        """
+        if elements is None:
+            return
+        raster = None
+        engrave = None
+        cut = None
+        rasters = []
+        engraves = []
+        cuts = []
+        self.device.setting(float, 'cut_dratio', None)
+        self.device.setting(float, 'cut_speed', 10.0)
+        self.device.setting(float, 'cut_power', 1000.0)
+        self.device.setting(float, 'engrave_speed', 35.0)
+        self.device.setting(float, 'engrave_power', 1000.0)
+        self.device.setting(float, 'engrave_dratio', None)
+        self.device.setting(float, 'raster_speed', 35.0)
+        self.device.setting(float, 'raster_power', 1000.0)
+        self.device.setting(int, 'raster_step', 2)
+        self.device.setting(int, 'raster_direction', 0)
+        self.device.setting(int, 'raster_overscan', 20)
+
+        if not isinstance(elements, list):
+            elements = [elements]
+        for element in elements:
+            if isinstance(element, Path):
+                if element.stroke == "red":
+                    if cut is None or not cut.has_same_properties(element.values):
+                        cut = CutOperation(speed=self.device.cut_speed,
+                                           power=self.device.cut_power,
+                                           dratio=self.device.cut_dratio)
+                        cuts.append(cut)
+                        cut.set_properties(element.values)
+                    cut.append(element)
+                elif element.stroke == "blue":
+                    if engrave is None or not engrave.has_same_properties(element.values):
+                        engrave = EngraveOperation(speed=self.device.engrave_speed,
+                                                   power=self.device.engrave_power,
+                                                   dratio=self.device.engrave_dratio)
+                        engraves.append(engrave)
+                        engrave.set_properties(element.values)
+                    engrave.append(element)
+                if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
+                    # not classed already, or was already classed but has a fill.
+                    if raster is None or not raster.has_same_properties(element.values):
+                        raster = RasterOperation(speed=self.device.raster_speed,
+                                                 power=self.device.raster_power,
+                                                 raster_step=self.device.raster_step,
+                                                 raster_direction=self.device.raster_direction,
+                                                 overscan=self.device.raster_overscan)
+                        rasters.append(raster)
+                        raster.set_properties(element.values)
+                    raster.append(element)
+            elif isinstance(element, SVGImage):
+                # TODO: Add SVGImages to overall Raster, requires function to combine images.
+                rasters.append(RasterOperation(element,
+                                               speed=self.device.raster_speed,
+                                               power=self.device.raster_power,
+                                               raster_step=self.device.raster_step,
+                                               raster_direction=self.device.raster_direction,
+                                               overscan=self.device.raster_overscan))
+            elif isinstance(element, SVGText):
+                pass  # I can't process actual text.
+        rasters = [r for r in rasters if len(r) != 0]
+        engraves = [r for r in engraves if len(r) != 0]
+        cuts = [r for r in cuts if len(r) != 0]
+        ops = []
+        self.add_all_op(rasters)
+        self.add_all_op(engraves)
+        self.add_all_op(cuts)
+        return ops
+
+    def clear_all(self):
+        self._elements.clear()
+        self._operations.clear()
+        self._filenodes.clear()
+
+    def clear_operations(self):
+        self._operations.clear()
+
+    def set_selected_elements(self, selected):
+        # TODO: Check against selected_operations
+        self._selected_operations.clear()
+        self._selected_elements.clear()
+        if selected is not None:
+            if not isinstance(selected, list):
+                self._selected_elements.append(selected)
+            else:
+                self._selected_elements.extend(selected)
+        self.selection_updated()
+
+    def set_selected_operations(self, selected):
+        # TODO: Check against selected_elements
+        self._selected_elements.clear()
+        self._selected_operations.clear()
+        if selected is not None:
+            if not isinstance(selected, list):
+                self._selected_operations.append(selected)
+            else:
+                self._selected_operations.extend(selected)
+        self.selection_updated()
+
+    def selection_updated(self):
+        self.device.signal("selected_ops", self._selected_operations)
+        self.device.signal("selected_elements", self._selected_elements)
+        self.selection_bounds_updated()
+
+    def center(self):
+        bounds = self._bounds
+        return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
+
+    def selection_bounds_updated(self):
+        # Todo: make work selection_bounds_updated
+        self._bounds = Elemental.bounding_box(self._selected_elements)
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    def ensure_positive_bounds(self):
+        b = self._bounds
+        self._bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    def update_bounds(self, b):
+        self._bounds = [b[0], b[1], b[0], b[1]]
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    @staticmethod
+    def bounding_box(elements):
+        if isinstance(elements, SVGElement):
+            elements = [elements]
+        elif isinstance(elements, list):
+            try:
+                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+            except AttributeError:
+                pass
+        boundary_points = []
+        for e in elements:
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
+
+    def move_selected(self, dx, dy):
+        if self._selected_elements is None:
+            return
+        if len(self._selected_elements) == 0:
+            return
+        for obj in self._selected_elements:
+            obj.transform.post_translate(dx, dy)
+        b = self._bounds
+        self._bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    def set_selected_by_position(self, position):
+        def contains(box, x, y=None):
+            if y is None:
+                y = x[1]
+                x = x[0]
+            return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+        if self._selected_elements is not None:
+            if self._bounds is not None and contains(self._bounds, position):
+                return  # Select by position aborted since selection position within current select bounds.
+        self._selected_elements.clear()
+        for e in reversed(self._elements):
+            bounds = e.bbox()
+            if bounds is None:
+                continue
+            if contains(bounds, position):
+                self.set_selected_elements(e)
+                return
+        self.selection_updated()
+
+    def load(self, pathname, **kwargs):
+        for loader_name, loader in self.device.registered['load'].items():
+            for description, extensions, mimetype in loader.load_types():
+                if pathname.lower().endswith(extensions):
+                    results = loader.load(self.device, pathname, **kwargs)
+                    if results is None:
+                        continue
+                    elements, pathname, basename = results
+                    self._filenodes[pathname] = elements
+                    self.add_all_elem(elements)
+                    self.device.signal('rebuild_tree', elements)
+                    return elements, pathname, basename
+        return None
+
+    def load_types(self, all=True):
+        filetypes = []
+        if all:
+            filetypes.append('All valid types')
+            exts = []
+            for loader_name, loader in self.device.registered['load'].items():
+                for description, extensions, mimetype in loader.load_types():
+                    for ext in extensions:
+                        exts.append('*.%s' % ext)
+            filetypes.append(';'.join(exts))
+        for loader_name, loader in self.device.registered['load'].items():
+            for description, extensions, mimetype in loader.load_types():
+                exts = []
+                for ext in extensions:
+                    exts.append('*.%s' % ext)
+                filetypes.append("%s (%s)" % (description, extensions[0]))
+                filetypes.append(';'.join(exts))
+        return "|".join(filetypes)
+
+    def save(self, pathname):
+        for save_name, saver in self.device.registered['save'].items():
+            for description, extension, mimetype in saver.save_types():
+                if pathname.lower().endswith(extension):
+                    saver.save(self.device, pathname, 'default')
+                    return True
+        return False
+
+    def save_types(self):
+        filetypes = []
+        for saver_name, saver in self.device.registered['save'].items():
+            for description, extension, mimetype in saver.save_types():
+                filetypes.append("%s (%s)" % (description, extension))
+                filetypes.append("*.%s" % (extension))
+        return "|".join(filetypes)
+
+
 class Device:
     """
     A Device is a specific module cluster that serves a unified purpose.
@@ -709,6 +1211,7 @@ class Device:
         self.watchers = {}
         self.buffer = {}
         self.greet = {}
+        self.element = None
 
     def __str__(self):
         if self.uid == 0:
@@ -1254,19 +1757,24 @@ class Device:
             return STATE_UNKNOWN
 
     def classify(self, elements):
-        return self.device_root.classify(elements)
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.classify(elements)
 
     def load(self, pathname, **kwargs):
-        return self.device_root.load(pathname, **kwargs)
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.load(pathname, **kwargs)
 
     def load_types(self, all=True):
-        return self.device_root.load_types(all)
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.load_types(all)
 
     def save(self, pathname):
-        return self.device_root.save(pathname)
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.save(pathname)
 
     def save_types(self):
-        return self.device_root.save_types()
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.save_types()
 
 
 class Kernel(Device):
@@ -1289,12 +1797,6 @@ class Kernel(Device):
         self.device_version = "0.6.0"
         self.device_root = self
 
-        self.selected_elements = list()
-        self.selected_operations = list()
-        self.elements = []
-        self.operations = []
-        self.filenodes = {}
-
         # Persistent storage if it exists.
         self.config = None
         if config is not None:
@@ -1310,6 +1812,7 @@ class Kernel(Device):
         self.run_later = lambda listener, message: listener(message)
 
         self.register_module('Signaler', Signaler)
+        self.register_module('Elemental', Elemental)
         self.register_module('Spooler', Spooler)
 
     def boot(self):
@@ -1469,123 +1972,4 @@ class Kernel(Device):
 
     def register_saver(self, name, obj):
         self.registered['save'][name] = obj
-
-    def classify(self, elements):
-        """
-        Classify does the initial placement of elements as operations.
-        RasterOperation is the default for images.
-        If element strokes are red they get classed as cut operations
-        If they are otherwise they get classed as engrave.
-        """
-        if elements is None:
-            return
-        raster = None
-        engrave = None
-        cut = None
-        rasters = []
-        engraves = []
-        cuts = []
-        self.setting(float, 'cut_dratio', None)
-        self.setting(float, 'cut_speed', 10.0)
-        self.setting(float, 'cut_power', 1000.0)
-        self.setting(float, 'engrave_speed', 35.0)
-        self.setting(float, 'engrave_power', 1000.0)
-        self.setting(float, 'engrave_dratio', None)
-        self.setting(float, 'raster_speed', 35.0)
-        self.setting(float, 'raster_power', 1000.0)
-        self.setting(int, 'raster_step', 2)
-        self.setting(int, 'raster_direction', 0)
-        self.setting(int, 'raster_overscan', 20)
-
-        if not isinstance(elements, list):
-            elements = [elements]
-        for element in elements:
-            if isinstance(element, Path):
-                if element.stroke == "red":
-                    if cut is None or not cut.has_same_properties(element.values):
-                        cut = CutOperation(speed=self.cut_speed, power=self.cut_power, dratio=self.cut_dratio)
-                        cuts.append(cut)
-                        cut.set_properties(element.values)
-                    cut.append(element)
-                elif element.stroke == "blue":
-                    if engrave is None or not engrave.has_same_properties(element.values):
-                        engrave = EngraveOperation(speed=self.engrave_speed, power=self.engrave_power,
-                                                   dratio=self.engrave_dratio)
-                        engraves.append(engrave)
-                        engrave.set_properties(element.values)
-                    engrave.append(element)
-                if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
-                    # not classed already, or was already classed but has a fill.
-                    if raster is None or not raster.has_same_properties(element.values):
-                        raster = RasterOperation(speed=self.raster_speed, power=self.raster_power,
-                                                 raster_step=self.raster_step, raster_direction=self.raster_direction,
-                                                 overscan=self.raster_overscan)
-                        rasters.append(raster)
-                        raster.set_properties(element.values)
-                    raster.append(element)
-            elif isinstance(element, SVGImage):
-                # TODO: Add SVGImages to overall Raster, requires function to combine images.
-                rasters.append(RasterOperation(element, speed=self.raster_speed, power=self.raster_power,
-                                               raster_step=self.raster_step, raster_direction=self.raster_direction,
-                                               overscan=self.raster_overscan))
-            elif isinstance(element, SVGText):
-                pass  # I can't process actual text.
-        rasters = [r for r in rasters if len(r) != 0]
-        engraves = [r for r in engraves if len(r) != 0]
-        cuts = [r for r in cuts if len(r) != 0]
-        ops = []
-        ops.extend(rasters)
-        ops.extend(engraves)
-        ops.extend(cuts)
-        self.operations.extend(ops)
-        return ops
-
-    def load(self, pathname, **kwargs):
-        for loader_name, loader in self.registered['load'].items():
-            for description, extensions, mimetype in loader.load_types():
-                if pathname.lower().endswith(extensions):
-                    results = loader.load(self, pathname, **kwargs)
-                    if results is None:
-                        continue
-                    elements, pathname, basename = results
-                    self.filenodes[pathname] = elements
-                    self.elements.extend(elements)
-                    self.signal('rebuild_tree', elements)
-                    return elements, pathname, basename
-        return None
-
-    def load_types(self, all=True):
-        filetypes = []
-        if all:
-            filetypes.append('All valid types')
-            exts = []
-            for loader_name, loader in self.registered['load'].items():
-                for description, extensions, mimetype in loader.load_types():
-                    for ext in extensions:
-                        exts.append('*.%s' % ext)
-            filetypes.append(';'.join(exts))
-        for loader_name, loader in self.registered['load'].items():
-            for description, extensions, mimetype in loader.load_types():
-                exts = []
-                for ext in extensions:
-                    exts.append('*.%s' % ext)
-                filetypes.append("%s (%s)" % (description, extensions[0]))
-                filetypes.append(';'.join(exts))
-        return "|".join(filetypes)
-
-    def save(self, pathname):
-        for save_name, saver in self.registered['save'].items():
-            for description, extension, mimetype in saver.save_types():
-                if pathname.lower().endswith(extension):
-                    saver.save(self, pathname, 'default')
-                    return True
-        return False
-
-    def save_types(self):
-        filetypes = []
-        for saver_name, saver in self.registered['save'].items():
-            for description, extension, mimetype in saver.save_types():
-                filetypes.append("%s (%s)" % (description, extension))
-                filetypes.append("*.%s" % (extension))
-        return "|".join(filetypes)
 

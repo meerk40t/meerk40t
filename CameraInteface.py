@@ -570,6 +570,7 @@ class CameraInterface(wx.Frame, Module):
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
         frame = self.device.last_signal("camera_frame")
         if frame is not None:
+            elements = self.device.device_root.elements
             frame = frame[0]
             from PIL import Image
             img = Image.fromarray(frame)
@@ -577,7 +578,7 @@ class CameraInterface(wx.Frame, Module):
             obj.image = img
             obj.image_width = self.image_width
             obj.image_height = self.image_height
-            self.device.device_root.elements.append(obj)
+            elements.add_elem(obj)
             self.device.signal('refresh_elements', 0)
             self.device.signal('rebuild_tree', 0)
 

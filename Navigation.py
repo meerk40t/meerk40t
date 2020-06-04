@@ -334,9 +334,11 @@ class Navigation(wx.Frame, Module):
         # end wxGlade
 
     def initialize(self):
-        self.device.close('window', self.name)
+        device = self.device
+        kernel = self.device.device_root
+        device.close('window', self.name)
         self.Show()
-        if self.device.is_root():
+        if device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -347,13 +349,13 @@ class Navigation(wx.Frame, Module):
             dlg.Destroy()
             return
 
-        self.device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
-        self.device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
+        device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
+        device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
         self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
         self.set_jog_distances(self.device.navigate_jog)
-        self.device.device_root.listen("selected_elements", self.on_selected_elements_change)
-        self.device.device_root.listen("selected_bounds", self.on_selected_bounds_change)
-        self.device.listen("interpreter;position", self.on_position_update)
+        kernel.listen("selected_elements", self.on_selected_elements_change)
+        kernel.listen("selected_bounds", self.on_selected_bounds_change)
+        device.listen("interpreter;position", self.on_position_update)
         self.update_matrix_text()
 
     def shutdown(self,  channel):

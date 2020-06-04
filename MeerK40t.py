@@ -27,6 +27,7 @@ for full details.
 
 kernel = Kernel()
 kernel.open('module', 'Signaler')
+kernel.open('module', 'Elemental')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
@@ -135,8 +136,10 @@ if device is not kernel:  # We can process this stuff since only with a real dev
         console = device.using('module', 'Console').write('ruidaserver\n')
     if args.auto:
         # Automatically classify and start the job.
-        kernel.classify(kernel.elements)
-        device.spooler.send_job(kernel.operations)
+        elements = kernel.elements
+        elements.classify()
+
+        device.spooler.send_job(elements.ops())
         device.setting(bool, 'quit', True)
         device.quit = True
 

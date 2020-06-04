@@ -292,9 +292,8 @@ class MeerK40t(wx.Frame, Module):
                   id=ID_MENU_CONTROLLER)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", None, -1, "", ), id=ID_MENU_USB)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", None, -1, "", ), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "", ).set_operations(
-            self.device.device_root.operations),
-                  id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "", )
+                  .set_operations(self.device.device_root.elements.ops()), id=ID_MENU_JOB)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
 
@@ -302,7 +301,7 @@ class MeerK40t(wx.Frame, Module):
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
                      lambda v: self.device.open('window', "JobInfo", None, -1, "")
-                     .set_operations(self.device.device_root.operations), id=ID_JOB)
+                     .set_operations(self.device.device_root.elements.ops()), id=ID_JOB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('window', "UsbConnect", None, -1, ""), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -416,17 +415,18 @@ class MeerK40t(wx.Frame, Module):
     def initialize(self):
         self.device.close('window', self.name)
         device = self.device
+        kernel = self.device.device_root
         self.Show()
         self.__set_titlebar()
         device.gui = self
         device.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
         device.setting(int, "window_width", 1200)
         device.setting(int, "window_height", 600)
-        device.device_root.setting(float, "units_convert", MILS_IN_MM)
-        device.device_root.setting(str, "units_name", 'mm')
-        device.device_root.setting(int, "units_marks", 10)
-        device.device_root.setting(int, "units_index", 0)
-        device.device_root.setting(bool, "mouse_zoom_invert", False)
+        kernel.setting(float, "units_convert", MILS_IN_MM)
+        kernel.setting(str, "units_name", 'mm')
+        kernel.setting(int, "units_marks", 10)
+        kernel.setting(int, "units_index", 0)
+        kernel.setting(bool, "mouse_zoom_invert", False)
         device.setting(int, 'fps', 40)
 
         if device is not None:
@@ -437,7 +437,7 @@ class MeerK40t(wx.Frame, Module):
         if device.fps <= 0:
             device.fps = 60
         self.renderer = LaserRender(device)
-        self.root = RootNode(device, self)
+        self.root = RootNode(device, self, kernel.elements)
         device.root = self.root
 
         if device.window_width < 300:
@@ -501,7 +501,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_selection_changed, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
 
         if device is not None:
@@ -577,11 +577,12 @@ class MeerK40t(wx.Frame, Module):
 
     def listen_scene(self):
         device = self.device
+        kernel = device.device_root
         device.listen("background", self.on_background_signal)
         device.listen('rebuild_tree', self.on_rebuild_tree_request)
         device.listen('refresh_scene', self.on_refresh_scene)
         device.listen("element_property_update", self.on_element_update)
-        device.device_root.listen("units", self.space_changed)
+        kernel.listen("units", self.space_changed)
         device.listen("selected_elements", self.selection_changed)
 
         device.listen('pipe;error', self.on_usb_error)
@@ -594,11 +595,12 @@ class MeerK40t(wx.Frame, Module):
 
     def unlisten_scene(self):
         device = self.device
+        kernel = device.device_root
         device.unlisten("background", self.on_background_signal)
         device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
         device.unlisten('refresh_scene', self.on_refresh_scene)
         device.unlisten("element_property_update", self.on_element_update)
-        device.device_root.unlisten("units", self.space_changed)
+        kernel.unlisten("units", self.space_changed)
         device.unlisten("selected_elements", self.selection_changed)
 
         device.unlisten('pipe;error', self.on_usb_error)
@@ -855,9 +857,7 @@ class MeerK40t(wx.Frame, Module):
                 e.cache = None
             except AttributeError:
                 pass
-        kernel.elements = []
-        kernel.operations = []
-        kernel.filenodes = {}
+        kernel.elements.clear_all()
         self.request_refresh()
         self.device.signal('rebuild_tree', 0)
 
@@ -912,7 +912,8 @@ class MeerK40t(wx.Frame, Module):
         """
         Zoom size button press.
         """
-        bbox = self.root.bounds
+        elements = self.device.device_root.elements
+        bbox = elements.bounds()
         if bbox is None:
             bedwidth = self.device.bed_width
             bedheight = self.device.bed_height
@@ -981,7 +982,7 @@ class MeerK40t(wx.Frame, Module):
                 result = dlg.ShowModal()
                 dlg.Destroy()
             else:
-                for element in kernel.elements:
+                for element in kernel.elements.elems():
                     try:
                         element *= mx
                     except AttributeError:
@@ -990,9 +991,10 @@ class MeerK40t(wx.Frame, Module):
 
     def open_fill_dialog(self):
         kernel = self.device.device_root
-        if len(kernel.selected_elements) == 0:
+        elements = kernel.elements
+        if elements.count_selected_elems() == 0:
             return
-        element = kernel.selected_elements[0]
+        element = kernel.element.first_selected_element()
         data = wx.ColourData()
         data.SetColour(wx.Colour(swizzlecolor(element.fill)))
         dlg = wx.ColourDialog(self, data)
@@ -1002,16 +1004,17 @@ class MeerK40t(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            for elem in kernel.selected_elements:
+            for elem in element.selected_elems():
                 elem.fill = color
 
     def open_stroke_dialog(self):
         kernel = self.device.device_root
-        if len(kernel.selected_elements) == 0:
+        elements = kernel.elements
+        if kernel.elements.count_selected_elems() == 0:
             return
-        element = kernel.selected_elements[0]
+        first_selected = elements.first_selected_element()
         data = wx.ColourData()
-        data.SetColour(wx.Colour(swizzlecolor(element.stroke)))
+        data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
         dlg = wx.ColourDialog(self, data)
         if dlg.ShowModal() == wx.ID_OK:
             data = dlg.GetColourData()
@@ -1019,7 +1022,7 @@ class MeerK40t(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            for elem in kernel.selected_elements:
+            for elem in elements.selected_elems():
                 elem.stroke = color
 
     def open_path_dialog(self):
@@ -1204,13 +1207,6 @@ class Node(list):
             image_id = self.root.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def center(self):
-        try:
-            bounds = self.bounds
-            return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
-        except Exception:
-            return None
-
     def bbox(self):
         return OperationPreprocessor.bounding_box(self.object)
 
@@ -1248,25 +1244,26 @@ class Node(list):
 
 class RootNode(list):
     """"Nodes are the presentation layer used to wrap the LaserOperations and the SVGElement classes. Stored in the
-    device. This is to allow nested structures beyond the flat structure of the actual data. It serves to help with
-    menu creation, name, drag and drop, bounding box cache, tree element updates.
+    elements. This serves to help with menu creation, naming, drag and drop.
 
     The tree is structured with three main sub-elements of the RootNode, these are the Operations, the Elements, and
-    the files.
+    the files. The primary distinction between the items within elements is that an item appears twice in the tree with
+    different highlighting, selection, and interactions.
 
-    The Operations each contain a list of elements which they run in order and are stored within actual operations.
+    The Operations each contain a list of elements which they run in order and are stored within each operation.
 
-    Elements store the graphics elements stored within the scene. The Elements are a list of elements stored in their
-    desired ordered. This structure should reflect those changes back to structure in the device.
+    Elements store the scene's graphics elements. The Elements are stored in their order. Changes in this structure
+    should reflect those changes back to structure of elements.
 
     Deleting an element from the tree should remove that element from any operation using it.
-    Deleting an operation should make no change to the elements structure.
+
+    Deleting an operation should make no change to the graphical elements structure.
 
     All the nodes store a reference to their given tree item. So that a determination can be made when those items have
-    changed and provide piecemeal updates to the tree rather than recreating the entire thing.
+    changed and provide piecemeal updates to the tree.
     """
 
-    def __init__(self, device, gui):
+    def __init__(self, device, gui, elements):
         list.__init__(self)
         self.root = self
         self.parent = self
@@ -1280,10 +1277,7 @@ class RootNode(list):
         self.gui = gui
         self.tree = gui.tree
         self.renderer = gui.renderer
-
-        self.bounds = None
-        self.selected_elements = device.device_root.selected_elements
-        self.selected_operations = device.device_root.selected_operations
+        self.elements = elements
 
         self.item = None
         self.dragging_node = None
@@ -1301,8 +1295,9 @@ class RootNode(list):
             self.tree.SetItemBackgroundColour(item, wx.YELLOW)
 
     def highlight_unselect(self):
-        self.set_selected_elements(None)
-        self.set_selected_operations(None)
+        elements = self.device.device_root.elements
+        elements.set_selected_elements(None)
+        elements.set_selected_operations(None)
         for item in self.highlighted:
             self.tree.SetItemBackgroundColour(item, wx.WHITE)
         self.highlighted.clear()
@@ -1317,13 +1312,13 @@ class RootNode(list):
             self.tree.SetItemBackgroundColour(item, wx.CYAN)
             node = self.tree.GetItemData(item)
             if node.type == NODE_ELEMENT:
-                self.selected_elements.append(node.object)
+                node.object.select()
             elif node.type == NODE_OPERATION:
-                self.selected_operations.append(node.object)
+                node.object.select()
 
     def semi_unselect(self):
-        self.set_selected_elements(None)
-        self.set_selected_operations(None)
+        self.elements.set_selected_elements(None)
+        self.elements.set_selected_operations(None)
         for item in self.semi_selected:
             self.tree.SetItemBackgroundColour(item, wx.WHITE)
         self.semi_selected.clear()
@@ -1334,6 +1329,7 @@ class RootNode(list):
 
     def rebuild_tree(self):
         kernel = self.device.device_root
+        elements = kernel.elements
         self.semi_selected.clear()
         self.highlighted.clear()
         self.tree.DeleteAllItems()
@@ -1342,22 +1338,22 @@ class RootNode(list):
         self.tree_lookup = {}
         self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
-        self.node_operations = Node(NODE_OPERATION_BRANCH, kernel.operations, self, self, name=_("Operations"))
+        self.node_operations = Node(NODE_OPERATION_BRANCH, elements.ops(), self, self, name=_("Operations"))
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
-        self.build_tree(self.node_operations, kernel.operations)
+        self.build_tree(self.node_operations, elements.ops())
         for n in self.node_operations:
             if isinstance(n.object, RasterOperation):
                 n.set_icon(icons8_direction_20.GetBitmap())
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
 
-        self.node_elements = Node(NODE_ELEMENTS_BRANCH, kernel.elements, self, self, name=_("Elements"))
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, elements.elems(), self, self, name=_("Elements"))
         self.node_elements.set_icon(icons8_vector_20.GetBitmap())
-        self.build_tree(self.node_elements, kernel.elements)
+        self.build_tree(self.node_elements, elements.elems())
 
-        self.node_files = Node(NODE_FILES_BRANCH, kernel.filenodes, self, self, name=_("Files"))
+        self.node_files = Node(NODE_FILES_BRANCH, elements.files(), self, self, name=_("Files"))
         self.node_files.set_icon(icons8_file_20.GetBitmap())
-        self.build_tree(self.node_files, kernel.filenodes)
+        self.build_tree(self.node_files, elements.files())
         for n in self.node_files:
             n.set_icon(icons8_file_20.GetBitmap())
         self.tree.ExpandAll()
@@ -1395,50 +1391,6 @@ class RootNode(list):
                 node.update_name()
         except KeyError:
             pass
-
-    def set_selected_elements(self, selected):
-        self.selected_operations.clear()
-        self.selected_elements.clear()
-        if selected is not None:
-            if not isinstance(selected, list):
-                self.selected_elements.append(selected)
-            else:
-                self.selected_elements.extend(selected)
-        self.selection_updated()
-
-    def set_selected_operations(self, selected):
-        self.selected_operations.clear()
-        self.selected_elements.clear()
-        if selected is not None:
-            if not isinstance(selected, list):
-                self.selected_operations.append(selected)
-            else:
-                self.selected_operations.extend(selected)
-        self.selection_updated()
-
-    def selection_updated(self):
-        self.device.signal("selected_ops", self.selected_operations)
-        self.device.signal("selected_elements", self.selected_elements)
-        self.selection_bounds_updated()
-
-    def selection_bounds_updated(self):
-        self.bounds = OperationPreprocessor.bounding_box(self.selected_elements)
-        self.device.device_root.signal("selected_bounds", self.bounds)
-
-    def activate_selected_node(self):
-        if self.selected_elements is not None and len(self.selected_elements) != 0:
-            self.activated_object(self.selected_elements[0])
-
-    def move_selected(self, dx, dy):
-        if self.selected_elements is None:
-            return
-        if len(self.selected_elements) == 0:
-            return
-        for obj in self.selected_elements:
-            obj.transform.post_translate(dx, dy)
-        b = self.bounds
-        self.bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
-        self.device.device_root.signal("selected_bounds", self.bounds)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1618,7 +1570,12 @@ class RootNode(list):
         if node is not None:
             self.activated_object(node.object)
 
+    def activate_selected_node(self):
+        self.activated_object(self.elements.first_selected_elements())
+
     def activated_object(self, obj):
+        if obj is None:
+            return
         if isinstance(obj, RasterOperation):
             self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, EngraveOperation):
@@ -1636,7 +1593,7 @@ class RootNode(list):
         elif isinstance(obj, LaserOperation):
             self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
 
-    def on_item_changed(self, event):
+    def on_item_selection_changed(self, event):
         """
         Tree menu item is changed. Modify the selection.
 
@@ -1651,9 +1608,7 @@ class RootNode(list):
 
     def select_in_tree_by_selected(self):
         self.tree.UnselectAll()
-        if self.selected_elements is None:
-            return
-        for e in self.selected_elements:
+        for e in self.elements.selected_elems():
             try:
                 nodes = self.tree_lookup[id(e)]
             except KeyError:
@@ -1680,13 +1635,13 @@ class RootNode(list):
             for n in self.node_elements:
                 self.semi_select(n.item)
             self.gui.request_refresh()
-            self.selection_updated()
+            self.elements.selection_updated()
             return
         elif node.type == NODE_OPERATION:
             for n in node:
                 self.highlight_select(n.item)
             self.gui.request_refresh()
-            self.selection_updated()
+            self.elements.selection_updated()
             return
         elif node.type == NODE_FILE_FILE:
             for n in node:
@@ -1695,7 +1650,7 @@ class RootNode(list):
                 for link in links:
                     self.semi_select(link.item)
             self.gui.request_refresh()
-            self.selection_updated()
+            self.elements.selection_updated()
             return
         elif node.type == NODE_OPERATION_ELEMENT:
             obj = node.object
@@ -1704,7 +1659,7 @@ class RootNode(list):
             links = self.tree_lookup[id(obj)]
             for link in links:
                 self.semi_select(link.item)
-            self.selection_updated()
+            self.elements.selection_updated()
             return
         elif node.type == NODE_ELEMENT:
             for item in self.tree.GetSelections():
@@ -1713,25 +1668,10 @@ class RootNode(list):
                 links = self.tree_lookup[id(obj)]
                 for link in links:
                     self.semi_select(link.item)
-            self.selection_updated()
+            self.elements.selection_updated()
             return
         self.gui.request_refresh()
-        self.selection_updated()
-
-    def set_selected_by_position(self, position):
-        kernel = self.device.device_root
-        if self.selected_elements is not None:
-            if self.bounds is not None and self.contains(self.bounds, position):
-                return  # Select by position aborted since selection position within current select bounds.
-        self.selected_elements.clear()
-        for e in reversed(kernel.elements):
-            bounds = e.bbox()
-            if bounds is None:
-                continue
-            if self.contains(bounds, position):
-                self.set_selected_elements(e)
-                return
-        self.selection_updated()
+        self.elements.selection_updated()
 
     def contains(self, box, x, y=None):
         if y is None:
@@ -1943,7 +1883,7 @@ class RootNode(list):
                 OperationPreprocessor.make_actual(element)
                 node.bounds = None
                 node.set_icon()
-            self.selection_bounds_updated()
+            self.elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -1983,6 +1923,7 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
+            elements = kernel.elements
             element = node.object
             if not isinstance(element, SVGImage):
                 return
@@ -2019,9 +1960,9 @@ class RootNode(list):
                             new_data[x, y] = (v, v, v, 255)
                 image_element.image = image_element.image.convert('1')
                 adding_elements.append(image_element)
-            kernel.elements.extend(adding_elements)
-            self.device.classify(adding_elements)
-            self.set_selected_elements(None)
+            elements.add_all_elem(adding_elements)
+            elements.classify(adding_elements)
+            elements.set_selected_elements(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2036,6 +1977,7 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
+            elements = kernel.elements
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
             bounds = OperationPreprocessor.bounding_box(child_objects)
@@ -2050,11 +1992,11 @@ class RootNode(list):
             image_element.transform.post_translate(xmin, ymin)
             image_element.values['raster_step'] = step
 
-            kernel.elements.append(image_element)
+            elements.add_elem(image_element)
             node.object.clear()
             self.build_tree(self.node_elements, image_element)
             node.object.append(image_element)
-            self.selection_bounds_updated()
+            elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2068,7 +2010,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for element in self.selected_elements:
+            for element in self.elements.selected_elems():
                 element.reify()
                 element.cache = None
             self.device.signal('rebuild_tree', 0)
@@ -2084,9 +2026,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.selected_elements:
+            for e in self.elements.selected_elems():
                 e.transform.reset()
-            self.selection_bounds_updated()
+            self.elements.selection_bounds_updated()
             self.gui.request_refresh()
 
         return specific
@@ -2107,11 +2049,10 @@ class RootNode(list):
 
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            # center = node.parent.center()
 
-            for obj in self.selected_elements:
+            for obj in self.elements.selected_elems():
                 obj.transform.post_rotate(value, center_x, center_y)
-            self.selection_bounds_updated()
+            self.elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2132,9 +2073,9 @@ class RootNode(list):
             center_y = (bounds[3] + bounds[1]) / 2.0
             # center = node.parent.center()
 
-            for obj in self.selected_elements:
+            for obj in self.elements.selected_elems():
                 obj.transform.post_scale(value, value, center_x, center_y)
-            self.selection_bounds_updated()
+            self.elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2149,14 +2090,7 @@ class RootNode(list):
 
         def specific(event):
             filepath = node.filepath
-            for e in self.device.device_root.elements:
-                try:
-                    del e.cache
-                    e.cache = None
-                except AttributeError:
-                    pass
-            self.device.device_root.elements.clear()
-            self.device.device_root.operations.clear()
+            self.elements.clear_elements_and_operations()
             self.gui.load(filepath)
 
         return specific
@@ -2171,6 +2105,7 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
+            elements = self.elements
             node = remove_node
 
             selections = [self.tree.GetItemData(e) for e in self.semi_selected]
@@ -2178,23 +2113,8 @@ class RootNode(list):
 
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
-                removed_objects = self.selected_elements
-                for e in removed_objects:
-                    try:
-                        del e.cache
-                    except AttributeError:
-                        pass
-                    kernel.elements.remove(e)
-
-                for i in range(len(kernel.operations)):
-                    elems = [e for e in kernel.operations[i] if e not in removed_objects]
-                    kernel.operations[i].clear()
-                    kernel.operations[i].extend(elems)
-                    if len(kernel.operations[i]) == 0:
-                        kernel.operations[i] = None
-                ops = [op for op in kernel.operations if op is not None]
-                kernel.operations.clear()
-                kernel.operations.extend(ops)
+                removed_objects = self.elements.selected_elems()
+                elements.remove_elements(removed_objects)
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 modified = []
@@ -2210,7 +2130,7 @@ class RootNode(list):
                     op_elems = [op_elem for op_elem in s if op_elem is not None]
                     s.clear()
                     s.extend(op_elems)
-            self.set_selected_elements(None)
+            self.elements.set_selected_elements(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2225,32 +2145,19 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
+            elements = kernel.elements
             node = remove_node
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
                 # All selected elements are removed.
-                removed_objects = self.selected_elements
-                for e in removed_objects:
-                    try:
-                        del e.cache
-                    except AttributeError:
-                        pass
-                    kernel.elements.remove(e)
-                for i in range(len(kernel.operations)):
-                    elems = [e for e in kernel.operations[i] if e not in removed_objects]
-                    kernel.operations[i].clear()
-                    kernel.operations[i].extend(elems)
-                    if len(kernel.operations[i]) == 0:
-                        kernel.operations[i] = None
-                ops = [op for op in kernel.operations if op is not None]
-                kernel.operations.clear()
-                kernel.operations.extend(ops)
+                removed_objects = self.elements.selected_elems()
+                elements.remove_elements([removed_objects])
             elif node.type == NODE_OPERATION:
                 # Removing operation can only have 1 copy.
-                kernel.operations.remove(node.object)
+                elements.remove_operation([node.object])
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
-                del kernel.filenodes[node.filepath]
+                elements.remove_file([node.filepath])
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 index = node.parent.index(node)
@@ -2259,7 +2166,7 @@ class RootNode(list):
                     op.remove(node.object)
                 else:
                     del op[index]
-            self.set_selected_elements(None)
+            self.elements.set_selected_elements(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2274,10 +2181,11 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
-            adding_elements = [copy(e) for e in list(self.selected_elements) * copies]
-            kernel.elements.extend(adding_elements)
-            self.device.classify(adding_elements)
-            self.set_selected_elements(None)
+            elements = kernel.elements
+            adding_elements = [copy(e) for e in list(self.elements.selected_elems()) * copies]
+            elements.extend(adding_elements)
+            elements.classify(adding_elements)
+            elements.set_selected_elements(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2307,16 +2215,14 @@ class RootNode(list):
         """
 
         def specific(event):
-            kernel = self.device.device_root
-            for e in self.selected_elements:
+            for e in self.elements.selected_elems():
                 p = abs(e)
                 add = []
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
                     add.append(subelement)
-                kernel.elements.extend(add)
-            self.device.signal('rebuild_tree', 0)
-            self.set_selected_elements(None)
+                self.elements.extend(add)
+            self.elements.set_selected_elements(None)
 
         return specific
 
@@ -2329,7 +2235,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window', "JobInfo", None, -1, "").set_operations(self.selected_operations)
+            self.device.open('window', "JobInfo", None, -1, "").set_operations(self.elements.selected_ops())
 
         return open_jobinfo_window
 
@@ -2350,27 +2256,20 @@ class RootNode(list):
     def menu_clear_all(self, node):
         def specific(event):
             kernel = self.device.device_root
+            elements = kernel.elements
             if node.type == NODE_ELEMENTS_BRANCH:
-                elements = kernel.elements
-                for i in range(len(kernel.operations)):
-                    kernel.operations[i] = [e for e in kernel.operations[i]
-                                            if e not in elements]
-                    if len(kernel.operations[i]) == 0:
-                        kernel.operations[i] = None
-                kernel.operations = [op for op in kernel.operations
-                                     if op is not None]
+                self.elements.remove_elements_from_operations(elements.elems())
             node.object.clear()
-            self.selection_bounds_updated()
-            self.device.signal('rebuild_tree', 0)
+            elements.selection_bounds_updated()
 
         return specific
 
     def menu_reclassify_operations(self, node):
         def specific(event):
-            device = node.root.device.device_root
-            device.operations.clear()
-            device.classify(device.elements)
-            self.device.signal('rebuild_tree', 0)
+            kernel = node.root.device.device_root
+            elements = kernel.elements
+            elements.clear_operations()
+            elements.classify(elements.elems())
 
         return specific
 

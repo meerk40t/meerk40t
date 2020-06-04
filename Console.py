@@ -107,6 +107,7 @@ class Console(Module, Pipe):
 
     def interface_parse_command(self, command, *args):
         kernel = self.device.device_root
+        elements = kernel.elements
         active_device = self.active_device
         try:
             spooler = active_device.spooler
@@ -453,12 +454,11 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Graphical Elements:'
                 i = 0
-                for element in kernel.elements:
-                    selected = element in kernel.selected_elements
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    if selected:
+                    if element.selected:
                         yield '%d: * %s' % (i, name)
                     else:
                         yield '%d: %s' % (i, name)
@@ -471,20 +471,19 @@ class Console(Module, Pipe):
                     except ValueError:
                         yield "Value Error: %s is not an integer" % value
                         continue
-                    if 0 <= value <= len(kernel.elements):
-                        element = kernel.elements[value]
+                    if 0 <= value <= elements.count_elems():
+                        element = elements.get_elem(value)
                         name = str(element)
                         if len(name) > 50:
                             name = name[:50] + '...'
-                        if element in kernel.selected_elements:
-                            kernel.selected_elements.remove(element)
+                        if element.selected:
+                            element.unselect()
                             yield "Deselecting item %d called %s" % (value, name)
                         else:
-                            kernel.selected_elements.append(element)
+                            element.select()
                             yield "Selecting item %d called %s" % (value, name)
                     else:
                         yield 'index %d out of range' % value
-                kernel.signal("selected_elements", kernel.selected_elements)
             return
         elif command == 'path':
             path_d = ' '.join(args)
@@ -571,7 +570,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Stroke Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -584,14 +583,14 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             if args[0] == 'none':
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element.stroke = None
             else:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element.stroke = Color(args[0])
             active_device.signal('refresh_scene')
             return
@@ -600,7 +599,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Fill Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -613,14 +612,14 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             if args[0] == 'none':
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element.fill = None
             else:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element.fill = Color(args[0])
             active_device.signal('refresh_scene')
             return
@@ -629,7 +628,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Rotate Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -638,16 +637,16 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            bounds = OperationPreprocessor.bounding_box(elements.selected_elems())
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix('rotate(%s,%f,%f)' % (args[0], center_x, center_y))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             try:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element *= matrix
             except ValueError:
                 yield "Invalid value"
@@ -658,7 +657,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Scale Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -667,10 +666,10 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            bounds = OperationPreprocessor.bounding_box(elements.selected_elems())
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             sx = '1'
@@ -683,7 +682,7 @@ class Console(Module, Pipe):
             matrix = Matrix('scale(%s,%s,%f,%f)' % (sx, sy, center_x, center_y))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             try:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element *= matrix
             except ValueError:
                 yield "Invalid value"
@@ -694,7 +693,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Translate Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -703,7 +702,7 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             tx = '0'
@@ -715,7 +714,7 @@ class Console(Module, Pipe):
             matrix = Matrix('translate(%s,%s)' % (tx, ty))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             try:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     element *= matrix
             except ValueError:
                 yield "Invalid value"
@@ -726,7 +725,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Rotate Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -735,10 +734,10 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            bounds = OperationPreprocessor.bounding_box(elements.selected_elems())
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             try:
@@ -747,7 +746,7 @@ class Console(Module, Pipe):
                 yield "Invalid Value."
                 return
             try:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     start_angle = element.rotation
                     amount = end_angle - start_angle
                     matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
@@ -761,7 +760,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Scale Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -770,10 +769,10 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(kernel.selected_elements)
+            bounds = OperationPreprocessor.bounding_box(elements.selected_elems())
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             sx = 1
@@ -784,7 +783,7 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 sy = float(args[1])
             try:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
                     nsx = sx / osx
@@ -800,7 +799,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Translate Values:'
                 i = 0
-                for element in kernel.elements:
+                for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -809,7 +808,7 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             tx = 0
@@ -819,7 +818,7 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             try:
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     otx = element.transform.value_trans_x()
                     oty = element.transform.value_trans_y()
                     ntx = tx - otx
@@ -831,7 +830,7 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'reset':
-            for element in kernel.selected_elements:
+            for element in elements.selected_elems():
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
@@ -841,7 +840,7 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             return
         elif command == 'reify':
-            for element in kernel.selected_elements:
+            for element in elements.selected_elems():
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
@@ -857,8 +856,9 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Operations:'
                 i = 0
-                for operation in kernel.operations:
-                    selected = operation in kernel.selected_operations
+
+                for operation in elements.ops():
+                    selected = operation.selected
                     name = str(operation)
                     if len(name) > 50:
                         name = name[:50] + '...'
@@ -875,64 +875,59 @@ class Console(Module, Pipe):
                     except ValueError:
                         yield "Value Error: %s is not an integer" % value
                         continue
-                    if 0 <= value <= len(kernel.operations):
-                        operation = kernel.operations[value]
+                    if 0 <= value <= len(elements.op_count()):
+                        operation = elements.get_op(value)
                         name = str(operation)
                         if len(name) > 50:
                             name = name[:50] + '...'
-                        if operation in kernel.selected_operations:
-                            kernel.selected_operations.remove(operation)
+                        if operation.selected:
+                            operation.unselect()
                             yield "Deselecting item %d called %s" % (value, name)
                         else:
-                            kernel.selected_operations.append(operation)
+                            operation.select()
                             yield "Selecting item %d called %s" % (value, name)
                     else:
                         yield 'index %d out of range' % value
-                kernel.signal("selected_operations", kernel.selected_operations)
             return
         elif command == 'classify':
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
-            kernel.classify(kernel.selected_elements)
-            self.active_device.signal("rebuild_tree", kernel.elements)
+            kernel.classify(elements.selected_elems())
             return
         elif command == 'cut':
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             op = CutOperation()
-            op.extend(kernel.selected_elements)
-            kernel.operations.append(op)
-            self.active_device.signal("rebuild_tree", kernel.elements)
+            op.extend(elements.selected_elems())
+            elements.add_op(op)
             return
         elif command == 'engrave':
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             op = EngraveOperation()
-            op.extend(kernel.selected_elements)
-            kernel.operations.append(op)
-            self.active_device.signal("rebuild_tree", kernel.elements)
+            op.extend(elements.selected_elems())
+            elements.add_op(op)
             return
         elif command == 'raster':
-            if len(kernel.selected_elements) == 0:
+            if elements.count_selected_elems() == 0:
                 yield "No selected elements."
                 return
             op = RasterOperation()
-            op.extend(kernel.selected_elements)
-            kernel.operations.append(op)
-            self.active_device.signal("rebuild_tree", kernel.elements)
+            op.extend(elements.selected_elems())
+            elements.add_op(op)
             return
         elif command == 'step':
             if len(args) == 0:
                 found = False
-                for op in kernel.selected_operations:
+                for op in elements.selected_elems():
                     if isinstance(op, RasterOperation):
                         step = op.raster_step
                         yield 'Step for %s is currently: %d' % (str(op), step)
                         found = True
-                for element in kernel.selected_elements:
+                for element in elements.selected_elems():
                     if isinstance(element, SVGImage):
                         try:
                             step = element.values[VARIABLE_NAME_RASTER_STEP]
@@ -948,11 +943,11 @@ class Console(Module, Pipe):
             except ValueError:
                 yield 'Not integer value for raster step.'
                 return
-            for op in kernel.selected_operations:
+            for op in elements.selected_elems():
                 if isinstance(op, RasterOperation):
                     op.raster_step = step
                     self.device.signal("element_property_update", op)
-            for element in kernel.selected_elements:
+            for element in elements.selected_elems():
                 element.values[VARIABLE_NAME_RASTER_STEP] = str(step)
                 m = element.transform
                 tx = m.e
@@ -963,13 +958,13 @@ class Console(Module, Pipe):
                 active_device.signal('refresh_scene')
             return
         elif command == 'resample':
-            for element in kernel.selected_elements:
+            for element in elements.selected_elems():
                 if isinstance(element, SVGImage):
                     OperationPreprocessor.make_actual(element)
             active_device.signal('refresh_scene')
             return
         elif command == 'reify':
-            for element in kernel.selected_elements:
+            for element in elements.selected_elems():
                 element.reify()
             active_device.signal('refresh_scene')
             return
@@ -980,9 +975,7 @@ class Console(Module, Pipe):
                     copies = int(args[0])
                 except ValueError:
                     pass
-            adding_elements = [copy(e) for e in list(kernel.selected_elements) * copies]
-            kernel.elements.extend(adding_elements)
-            kernel.selected_elements.clear()
+            elements.add_all_elem([copy(e) for e in list(elements.selected_elems()) * copies])
             self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
         # Alias / Bind Command Elements.
@@ -1090,10 +1083,6 @@ class Console(Module, Pipe):
     def add_element(self, element):
         kernel = self.device.device_root
         element.stroke = Color('black')
-        kernel.elements.append(element)
-        kernel.selected_elements.clear()
-        kernel.selected_elements.append(element)
-        kernel.signal("selected_elements", kernel.selected_elements)
-        kernel.signal("elements", kernel.elements)
-        kernel.signal("rebuild_tree", kernel.elements)
-        self.active_device.signal("rebuild_tree", kernel.elements)
+        kernel.elements.add_elem(element)
+        kernel.elements.unselect_elements()
+        element.select()

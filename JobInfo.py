@@ -61,6 +61,7 @@ class JobInfo(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        # TODO: Move this to Elements
         self.preprocessor = OperationPreprocessor()
         self.operations = []
 

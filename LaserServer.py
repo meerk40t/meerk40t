@@ -21,7 +21,7 @@ class ServerThread(threading.Thread):
     def udp_run(self):
         try:
             reply = lambda e: self.server.socket.sendto(e, address)
-            elements = lambda e: self.server.device.device_root.elements.append(e)
+            elements = lambda e: self.server.device.device_root.elements.add_elem(e)
             while True:
                 message, address = self.server.socket.recvfrom(1024)
                 self.server.pipe.checksum_parse(message, reply=reply, elements=elements)

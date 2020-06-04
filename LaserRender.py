@@ -37,7 +37,7 @@ class LaserRender:
         if draw_mode is None:
             draw_mode = self.device.draw_mode
         kernel = self.device.device_root
-        elements = kernel.elements
+        elements = kernel.elements.elems()
         if draw_mode & 0x1C00 != 0:
             types = []
             if draw_mode & 0x0400 == 0:

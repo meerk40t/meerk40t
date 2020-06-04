@@ -57,12 +57,9 @@ class Scene(Module):
         self.device.setting(int, "draw_mode", 0)
 
     def shutdown(self, channel):
-        for element in self.device.device_root.elements:
-            try:
-                # The cached path objects must be killed to prevent a memory error after shutdown.
-                del element.cache
-            except AttributeError:
-                pass
+        elements = self.device.device_root.elements
+        for e in elements.elems():
+            elements.unregister(e)
 
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)
@@ -496,9 +493,9 @@ class ElementsWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftclick'):
-            self.root.set_selected_by_position(space_pos)
+            elements = self.scene.device.device_root.elements
+            elements.set_selected_by_position(space_pos)
             self.root.select_in_tree_by_selected()
-            self.scene.device.device_root.signal('selected_elements', self.root.selected_elements)
             return RESPONSE_CONSUME
         else:
             return RESPONSE_CHAIN
@@ -508,6 +505,7 @@ class SelectionWidget(Widget):
     def __init__(self, scene, root):
         Widget.__init__(self, scene, all=False)
         self.root = root
+        self.elements = scene.device.device_root.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.BLUE)
         self.selection_pen.SetWidth(25)
@@ -519,7 +517,8 @@ class SelectionWidget(Widget):
         self.uniform = True
 
     def hit(self):
-        bounds = self.root.bounds
+        elements = self.elements
+        bounds = elements.bounds()
         if bounds is not None:
             self.left = bounds[0]
             self.top = bounds[1]
@@ -538,6 +537,7 @@ class SelectionWidget(Widget):
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        elements = self.elements
         if event_type == 'hover_start':
             self.cursor = wx.CURSOR_SIZING
             self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
@@ -588,13 +588,13 @@ class SelectionWidget(Widget):
         dy = space_pos[5]
 
         if event_type == 'rightdown':
-            self.root.set_selected_by_position(space_pos)
-            if len(self.root.selected_elements) == 0:
+            elements.set_selected_by_position(space_pos)
+            if elements.count_selected_elems() == 0:
                 return RESPONSE_CONSUME
-            self.root.create_menu(self.scene.device.gui, self.root.selected_elements[0])
+            self.root.create_menu(self.scene.device.gui, elements.first_selected_element())
             return RESPONSE_CONSUME
         if event_type == 'doubleclick':
-            self.root.set_selected_by_position(space_pos)
+            elements.set_selected_by_position(space_pos)
             self.root.activate_selected_node()
             return RESPONSE_CONSUME
         if event_type == 'leftdown':
@@ -608,37 +608,32 @@ class SelectionWidget(Widget):
             self.uniform = False
             return RESPONSE_CONSUME
         if event_type in ('middleup', 'leftup'):
-            self.ensure_positive_bounds()
-            self.scene.device.device_root.signal("selected_bounds", self.root.bounds)
+            self.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
         if event_type == 'move':
-            elements = self.scene.device.device_root.selected_elements
-            if elements is None:
-                return RESPONSE_CONSUME
-            if len(elements) == 0:
+            if elements.count_selected_elems() == 0:
                 return RESPONSE_CONSUME
             if self.save_width is None or self.save_height is None:
                 self.save_width = self.width
                 self.save_height = self.height
             self.tool(space_pos, dx, dy)
-            self.scene.device.device_root.signal("selected_bounds", self.root.bounds)
-            self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         return RESPONSE_CHAIN
 
     def tool_scalexy(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
-        b = self.root.bounds
-        self.root.bounds = [b[0], b[1], position[0], position[1]]
+        b = elements.bounds()
+        elements.update_bounds([b[0], b[1], position[0], position[1]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_se(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         if self.uniform:
@@ -647,13 +642,14 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
-        b = self.root.bounds
-        self.root.bounds = [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
+        b = elements.bounds()
+        elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_nw(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (self.right - position[0]) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
         if self.uniform:
@@ -662,13 +658,14 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
-        b = self.root.bounds
-        self.root.bounds = [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
+        b = elements.bounds()
+        elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_ne(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (position[0] - self.left) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
         if self.uniform:
@@ -677,13 +674,14 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
-        b = self.root.bounds
-        self.root.bounds = [b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]]
+        b = elements.bounds()
+        elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_sw(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (self.right - position[0]) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         if self.uniform:
@@ -692,65 +690,68 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
-        b = self.root.bounds
-        self.root.bounds = [b[2] - self.save_width, b[1], b[2], b[1] + self.save_height]
+        b = elements.bounds()
+        elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalex_e(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, 1, self.left, self.top)
-        b = self.root.bounds
-        self.root.bounds = [b[0], b[1], position[0], b[3]]
+        b = elements.bounds()
+        elements.update_bounds([b[0], b[1], position[0], b[3]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalex_w(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(scalex, 1, self.right, self.top)
-        b = self.root.bounds
-        self.root.bounds = [position[0], b[1], b[2], b[3]]
+        b = elements.bounds()
+        elements.update_bounds([position[0], b[1], b[2], b[3]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scaley_s(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(1, scaley, self.left, self.top)
-        b = self.root.bounds
-        self.root.bounds = [b[0], b[1], b[2], position[1]]
+        b = elements.bounds()
+        elements.update_bounds([b[0], b[1], b[2], position[1]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_scaley_n(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
+        elements = self.scene.device.device_root.elements
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
-        for obj in elements:
+        for obj in elements.selected_elems():
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
-        b = self.root.bounds
-        self.root.bounds = [b[0], position[1], b[2], b[3]]
+        b = elements.bounds()
+        elements.update_bounds([b[0], position[1], b[2], b[3]])
+        self.scene.device.signal('refresh_scene', 0)
 
     def tool_translate(self, position, dx, dy):
-        elements = self.scene.device.device_root.selected_elements
-        for obj in elements:
+        elements = self.scene.device.device_root.elements
+        for obj in elements.selected_elems():
             obj.transform.post_translate(dx, dy)
         self.translate(dx, dy)
-        b = self.root.bounds
-        self.root.bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
-
-    def ensure_positive_bounds(self):
-        b = self.root.bounds
-        self.root.bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
+        b = elements.bounds()
+        elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        self.scene.device.signal('refresh_scene', 0)
 
     def process_draw(self, gc):
         if self.scene.device.draw_mode & 32 != 0:
             return
         device = self.scene.device
         draw_mode = device.draw_mode
-        bounds = self.root.bounds
+        elements = self.scene.device.device_root.elements
+        bounds = elements.bounds()
         matrix = self.parent.matrix
         if bounds is not None:
             linewidth = 3.0 / matrix.value_scale_x()
