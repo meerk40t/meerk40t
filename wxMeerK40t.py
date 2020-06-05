@@ -773,7 +773,6 @@ class MeerK40t(wx.Frame, Module):
         gc.Destroy()
         del dc
 
-
     # Mouse Events.
 
     def on_mousewheel(self, event):
@@ -992,11 +991,11 @@ class MeerK40t(wx.Frame, Module):
     def open_fill_dialog(self):
         kernel = self.device.device_root
         elements = kernel.elements
-        if elements.count_selected_elems() == 0:
+        first_selected = elements.first_element(selected=True)
+        if first_selected is None:
             return
-        element = kernel.element.first_selected_element()
         data = wx.ColourData()
-        data.SetColour(wx.Colour(swizzlecolor(element.fill)))
+        data.SetColour(wx.Colour(swizzlecolor(first_selected.fill)))
         dlg = wx.ColourDialog(self, data)
         if dlg.ShowModal() == wx.ID_OK:
             data = dlg.GetColourData()
@@ -1004,15 +1003,15 @@ class MeerK40t(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            for elem in element.selected_elems():
+            for elem in elements.elems(selected=True):
                 elem.fill = color
 
     def open_stroke_dialog(self):
         kernel = self.device.device_root
         elements = kernel.elements
-        if kernel.elements.count_selected_elems() == 0:
+        first_selected = elements.first_element(selected=True)
+        if first_selected is None:
             return
-        first_selected = elements.first_selected_element()
         data = wx.ColourData()
         data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
         dlg = wx.ColourDialog(self, data)
@@ -1022,7 +1021,7 @@ class MeerK40t(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            for elem in elements.selected_elems():
+            for elem in elements.elems(selected=True):
                 elem.stroke = color
 
     def open_path_dialog(self):
@@ -1250,7 +1249,7 @@ class RootNode(list):
     the files. The primary distinction between the items within elements is that an item appears twice in the tree with
     different highlighting, selection, and interactions.
 
-    The Operations each contain a list of elements which they run in order and are stored within each operation.
+    The Operations each contain a list of elements they run in order and are stored within each operation.
 
     Elements store the scene's graphics elements. The Elements are stored in their order. Changes in this structure
     should reflect those changes back to structure of elements.
@@ -1269,8 +1268,6 @@ class RootNode(list):
         self.parent = self
         self.object = "Project"
         self.name = "Project"
-        self.semi_selected = []
-        self.highlighted = []
         self.type = NODE_ROOT
 
         self.device = device
@@ -1289,73 +1286,60 @@ class RootNode(list):
         self.node_files = None
         self.rebuild_tree()
 
-    def highlight_select(self, item):
-        if item not in self.highlighted:
-            self.highlighted.append(item)
-            self.tree.SetItemBackgroundColour(item, wx.YELLOW)
+    def refresh_tree(self, node=None):
+        """Any tree elements currently displaying wrong data as per elements should be updated to display
+        the proper values and contexts and icons. This will not happen for any elements currently within
+        a closed branch."""
+        if node is None:
+            node = self.root.item
+        tree = self.tree
 
-    def highlight_unselect(self):
-        elements = self.device.device_root.elements
-        elements.set_selected_elements(None)
-        elements.set_selected_operations(None)
-        for item in self.highlighted:
-            self.tree.SetItemBackgroundColour(item, wx.WHITE)
-        self.highlighted.clear()
-
-    def highlight_select_all(self, objects):
-        for e in objects:
-            self.highlight_select(e)
-
-    def semi_select(self, item):
-        if item not in self.semi_selected:
-            self.semi_selected.append(item)
-            self.tree.SetItemBackgroundColour(item, wx.CYAN)
-            node = self.tree.GetItemData(item)
-            if node.type == NODE_ELEMENT:
-                node.object.select()
-            elif node.type == NODE_OPERATION:
-                node.object.select()
-
-    def semi_unselect(self):
-        self.elements.set_selected_elements(None)
-        self.elements.set_selected_operations(None)
-        for item in self.semi_selected:
-            self.tree.SetItemBackgroundColour(item, wx.WHITE)
-        self.semi_selected.clear()
-
-    def semi_select_all(self, objects):
-        for e in objects:
-            self.semi_select(e)
+        child, cookie = tree.GetFirstChild(node)
+        while child.IsOk():
+            child_node = self.tree.GetItemData(child)
+            element = child_node.object
+            tree.SetItemBackgroundColour(child, wx.WHITE)
+            try:
+                if element.highlighted:
+                    tree.SetItemBackgroundColour(child, wx.YELLOW)
+                elif element.emphasized:
+                    tree.SetItemBackgroundColour(child, wx.CYAN)
+                elif element.selected:
+                    tree.SetItemBackgroundColour(child, wx.RED)
+            except AttributeError:
+                pass
+            self.refresh_tree(child)
+            child, cookie = tree.GetNextChild(node, cookie)
 
     def rebuild_tree(self):
         kernel = self.device.device_root
         elements = kernel.elements
-        self.semi_selected.clear()
-        self.highlighted.clear()
         self.tree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
         self.tree_lookup = {}
         self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
-        self.node_operations = Node(NODE_OPERATION_BRANCH, elements.ops(), self, self, name=_("Operations"))
+        self.node_operations = Node(NODE_OPERATION_BRANCH, list(elements.ops()), self, self, name=_("Operations"))
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
-        self.build_tree(self.node_operations, elements.ops())
+        self.build_tree(self.node_operations, list(elements.ops()))
         for n in self.node_operations:
             if isinstance(n.object, RasterOperation):
                 n.set_icon(icons8_direction_20.GetBitmap())
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
 
-        self.node_elements = Node(NODE_ELEMENTS_BRANCH, elements.elems(), self, self, name=_("Elements"))
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, list(elements.elems()), self, self, name=_("Elements"))
         self.node_elements.set_icon(icons8_vector_20.GetBitmap())
-        self.build_tree(self.node_elements, elements.elems())
+        self.build_tree(self.node_elements, list(elements.elems()))
 
         self.node_files = Node(NODE_FILES_BRANCH, elements.files(), self, self, name=_("Files"))
         self.node_files.set_icon(icons8_file_20.GetBitmap())
         self.build_tree(self.node_files, elements.files())
+
         for n in self.node_files:
             n.set_icon(icons8_file_20.GetBitmap())
+
         self.tree.ExpandAll()
 
     def build_tree(self, parent_node, objects):
@@ -1600,15 +1584,17 @@ class RootNode(list):
         :param event:
         :return:
         """
-        item = event.GetItem()
-        if item.IsOk():
-            node = self.tree.GetItemData(item)
-            self.set_selected_in_tree(node)
+        selected = [self.tree.GetItemData(item).object for item in self.tree.GetSelections()]
+        self.elements.set_selected(selected)
+        self.refresh_tree()
+        self.gui.request_refresh()
         event.Allow()
 
     def select_in_tree_by_selected(self):
         self.tree.UnselectAll()
-        for e in self.elements.selected_elems():
+        self.refresh_tree()
+        # TODO: Set the selections on the tree without triggering set.
+        for e in self.elements.elems(selected=True):
             try:
                 nodes = self.tree_lookup[id(e)]
             except KeyError:
@@ -1618,60 +1604,6 @@ class RootNode(list):
                 if n.type == NODE_ELEMENT:
                     self.tree.SelectItem(n.item)
                     return
-
-    def set_selected_in_tree(self, node):
-        """
-        Set the selected element in the tree to trickle-down the semiselection and highlight selections.
-
-        :param node:
-        :return:
-        """
-        if node is None:
-            return
-        self.semi_unselect()
-        self.highlight_unselect()
-        self.semi_select_all(self.tree.GetSelections())
-        if node.type == NODE_ELEMENTS_BRANCH:
-            for n in self.node_elements:
-                self.semi_select(n.item)
-            self.gui.request_refresh()
-            self.elements.selection_updated()
-            return
-        elif node.type == NODE_OPERATION:
-            for n in node:
-                self.highlight_select(n.item)
-            self.gui.request_refresh()
-            self.elements.selection_updated()
-            return
-        elif node.type == NODE_FILE_FILE:
-            for n in node:
-                obj = n.object
-                links = self.tree_lookup[id(obj)]
-                for link in links:
-                    self.semi_select(link.item)
-            self.gui.request_refresh()
-            self.elements.selection_updated()
-            return
-        elif node.type == NODE_OPERATION_ELEMENT:
-            obj = node.object
-            if len(self.semi_selected) != 1:
-                return  # If this is a multi-selection event, do not select other nodeop_elements
-            links = self.tree_lookup[id(obj)]
-            for link in links:
-                self.semi_select(link.item)
-            self.elements.selection_updated()
-            return
-        elif node.type == NODE_ELEMENT:
-            for item in self.tree.GetSelections():
-                node = self.tree.GetItemData(item)
-                obj = node.object
-                links = self.tree_lookup[id(obj)]
-                for link in links:
-                    self.semi_select(link.item)
-            self.elements.selection_updated()
-            return
-        self.gui.request_refresh()
-        self.elements.selection_updated()
 
     def contains(self, box, x, y=None):
         if y is None:
@@ -1702,10 +1634,17 @@ class RootNode(list):
         menu = wx.Menu()
         if isinstance(node, RootNode):
             return
+        elements = self.elements
 
         t = node.type
-        selections = [self.tree.GetItemData(e) for e in self.semi_selected]
-        selections = [s for s in selections if s.type == t]
+        selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
+
+        def combined(*args):
+            for listv in args:
+                for itemv in listv:
+                    yield itemv
+
+        selections = [s for s in combined(*selections) if s.type == t]
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                      menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
@@ -1883,7 +1822,6 @@ class RootNode(list):
                 OperationPreprocessor.make_actual(element)
                 node.bounds = None
                 node.set_icon()
-            self.elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -1960,9 +1898,9 @@ class RootNode(list):
                             new_data[x, y] = (v, v, v, 255)
                 image_element.image = image_element.image.convert('1')
                 adding_elements.append(image_element)
-            elements.add_all_elem(adding_elements)
+            elements.add_elems(adding_elements)
             elements.classify(adding_elements)
-            elements.set_selected_elements(None)
+            elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -1996,7 +1934,6 @@ class RootNode(list):
             node.object.clear()
             self.build_tree(self.node_elements, image_element)
             node.object.append(image_element)
-            elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2010,7 +1947,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for element in self.elements.selected_elems():
+            for element in self.elements.elems(selected=True):
                 element.reify()
                 element.cache = None
             self.device.signal('rebuild_tree', 0)
@@ -2026,9 +1963,8 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.elements.selected_elems():
+            for e in self.elements.elems(selected=True):
                 e.transform.reset()
-            self.elements.selection_bounds_updated()
             self.gui.request_refresh()
 
         return specific
@@ -2050,9 +1986,8 @@ class RootNode(list):
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
 
-            for obj in self.elements.selected_elems():
+            for obj in self.elements.elems(selected=True):
                 obj.transform.post_rotate(value, center_x, center_y)
-            self.elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2067,15 +2002,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = self.bounds
-
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            # center = node.parent.center()
-
-            for obj in self.elements.selected_elems():
+            center_x, center_y = self.elements.center()
+            for obj in self.elements.elems(selected=True):
                 obj.transform.post_scale(value, value, center_x, center_y)
-            self.elements.selection_bounds_updated()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2105,16 +2034,19 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
-            elements = self.elements
+            elements = kernel.elements
             node = remove_node
+            selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
 
-            selections = [self.tree.GetItemData(e) for e in self.semi_selected]
-            selections = [s for s in selections if s.type == node.type]
+            def combined(*args):
+                for listv in args:
+                    for itemv in listv:
+                        yield itemv
 
+            selections = [s for s in combined(*selections) if s.type == node.type]
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
-                removed_objects = self.elements.selected_elems()
-                elements.remove_elements(removed_objects)
+                elements.remove_elements(self.elements.elems(selected=True))
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 modified = []
@@ -2130,7 +2062,7 @@ class RootNode(list):
                     op_elems = [op_elem for op_elem in s if op_elem is not None]
                     s.clear()
                     s.extend(op_elems)
-            self.elements.set_selected_elements(None)
+            self.elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2150,14 +2082,15 @@ class RootNode(list):
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
                 # All selected elements are removed.
-                removed_objects = self.elements.selected_elems()
-                elements.remove_elements([removed_objects])
+                removed_objects = list(self.elements.elems(selected=True))
+                elements.remove_elements(removed_objects)
             elif node.type == NODE_OPERATION:
                 # Removing operation can only have 1 copy.
-                elements.remove_operation([node.object])
+                removed_objects = list(self.elements.ops(selected=True))
+                elements.remove_operations([node.object])
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
-                elements.remove_file([node.filepath])
+                elements.remove_files([node.filepath])
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 index = node.parent.index(node)
@@ -2166,7 +2099,7 @@ class RootNode(list):
                     op.remove(node.object)
                 else:
                     del op[index]
-            self.elements.set_selected_elements(None)
+            self.elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2182,10 +2115,10 @@ class RootNode(list):
         def specific(event):
             kernel = self.device.device_root
             elements = kernel.elements
-            adding_elements = [copy(e) for e in list(self.elements.selected_elems()) * copies]
+            adding_elements = [copy(e) for e in list(self.elements.elems(selected=True)) * copies]
             elements.extend(adding_elements)
             elements.classify(adding_elements)
-            elements.set_selected_elements(None)
+            elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2215,14 +2148,14 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.elements.selected_elems():
+            for e in self.elements.elems(selected=True):
                 p = abs(e)
                 add = []
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
                     add.append(subelement)
-                self.elements.extend(add)
-            self.elements.set_selected_elements(None)
+                self.elements.add_elems(add)
+            self.elements.set_selected(None)
 
         return specific
 
@@ -2235,7 +2168,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window', "JobInfo", None, -1, "").set_operations(self.elements.selected_ops())
+            self.device.open('window', "JobInfo", None, -1, "").set_operations(self.elements.ops(selected=True))
 
         return open_jobinfo_window
 
@@ -2260,7 +2193,6 @@ class RootNode(list):
             if node.type == NODE_ELEMENTS_BRANCH:
                 self.elements.remove_elements_from_operations(elements.elems())
             node.object.clear()
-            elements.selection_bounds_updated()
 
         return specific
 

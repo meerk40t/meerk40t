@@ -3920,12 +3920,6 @@ class Arc(PathSegment):
         cos_theta = cos(theta)
         sin_theta = sin(theta)
 
-        rx = self.rx
-        ry = self.ry
-        x0 = self.center[0]
-        y0 = self.center[1]
-
-        rotation = self.get_rotation()
         a = self.rx
         b = self.ry
         cx = self.center[0]
@@ -3937,7 +3931,6 @@ class Arc(PathSegment):
             p_end = self.point_at_t(next_t)
             if i == arc_required - 1:
                 p_end = self.end
-            # p_mid = self.point_at_t(mid_t)
             cos_mid_t = cos(mid_t)
             sin_mid_t = sin(mid_t)
             alpha = (4.0 - cos(slice)) / 3.0
@@ -4353,7 +4346,10 @@ class Path(Shape, MutableSequence):
     def parse(self, pathdef):
         """Parses the SVG path."""
         tokens = SVGPathTokens()
-        tokens.svg_parse(self, pathdef)
+        try:
+            tokens.svg_parse(self, pathdef)
+        except ValueError:
+            pass  # Pathdef must not have been valid.
 
     def validate_connections(self):
         """

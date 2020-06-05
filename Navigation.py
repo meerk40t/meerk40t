@@ -336,6 +336,7 @@ class Navigation(wx.Frame, Module):
     def initialize(self):
         device = self.device
         kernel = self.device.device_root
+        self.elements = kernel.elements
         device.close('window', self.name)
         self.Show()
         if device.is_root():
@@ -362,12 +363,11 @@ class Navigation(wx.Frame, Module):
         self.Close()
 
     def on_selected_elements_change(self, elements):
-        self.elements = elements
-        self.select_ready(self.elements is not None and len(self.elements) != 0)
+        self.select_ready(not self.elements.has_selection())
         self.update_matrix_text()
 
     def update_matrix_text(self):
-        v = self.elements is not None and len(self.elements) == 1
+        v = self.elements.has_selection()
         self.text_a.Enable(v)
         self.text_b.Enable(v)
         self.text_c.Enable(v)
@@ -399,6 +399,11 @@ class Navigation(wx.Frame, Module):
         self.button_align_drag_left.Enable(v)
 
     def select_ready(self, v):
+        """
+        Enables the relevant buttons when there is a selection in the elements.
+        :param v: whether selection is currently drag ready.
+        :return:
+        """
         if not v:
             self.button_align_drag_down.Enable(False)
             self.button_align_drag_up.Enable(False)
@@ -606,7 +611,7 @@ class Navigation(wx.Frame, Module):
 
     def matrix_updated(self):
         self.device.signal('refresh_scene')
-        self.device.root.selection_bounds_updated()
+        self.device.device_root.elements.validate_bounds()
         self.update_matrix_text()
         self.drag_ready(False)
 
@@ -674,7 +679,7 @@ class Navigation(wx.Frame, Module):
                 matrix.d = float(self.text_d.GetValue())
                 matrix.e = float(self.text_e.GetValue())
                 matrix.f = float(self.text_f.GetValue())
-                self.device.root.selection_bounds_updated()
+                self.device.device_root.elements.validate_bounds()
             except ValueError:
                 self.update_matrix_text()
             self.drag_ready(False)

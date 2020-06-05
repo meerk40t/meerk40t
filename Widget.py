@@ -589,9 +589,9 @@ class SelectionWidget(Widget):
 
         if event_type == 'rightdown':
             elements.set_selected_by_position(space_pos)
-            if elements.count_selected_elems() == 0:
+            if not elements.has_selection():
                 return RESPONSE_CONSUME
-            self.root.create_menu(self.scene.device.gui, elements.first_selected_element())
+            self.root.create_menu(self.scene.device.gui, elements.first_element(selected=True))
             return RESPONSE_CONSUME
         if event_type == 'doubleclick':
             elements.set_selected_by_position(space_pos)
@@ -611,7 +611,7 @@ class SelectionWidget(Widget):
             self.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
         if event_type == 'move':
-            if elements.count_selected_elems() == 0:
+            if not elements.has_selection():
                 return RESPONSE_CONSUME
             if self.save_width is None or self.save_height is None:
                 self.save_width = self.width
@@ -626,7 +626,7 @@ class SelectionWidget(Widget):
         scaley = (position[1] - self.top) / self.save_height
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
         b = elements.bounds()
         elements.update_bounds([b[0], b[1], position[0], position[1]])
@@ -642,7 +642,7 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
         b = elements.bounds()
         elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
@@ -658,7 +658,7 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
         b = elements.bounds()
         elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
@@ -674,7 +674,7 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
         b = elements.bounds()
         elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
@@ -690,7 +690,7 @@ class SelectionWidget(Widget):
             scaley = scale
         self.save_width *= scalex
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
         b = elements.bounds()
         elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
@@ -700,7 +700,7 @@ class SelectionWidget(Widget):
         elements = self.scene.device.device_root.elements
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, 1, self.left, self.top)
         b = elements.bounds()
         elements.update_bounds([b[0], b[1], position[0], b[3]])
@@ -710,7 +710,7 @@ class SelectionWidget(Widget):
         elements = self.scene.device.device_root.elements
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(scalex, 1, self.right, self.top)
         b = elements.bounds()
         elements.update_bounds([position[0], b[1], b[2], b[3]])
@@ -720,7 +720,7 @@ class SelectionWidget(Widget):
         elements = self.scene.device.device_root.elements
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(1, scaley, self.left, self.top)
         b = elements.bounds()
         elements.update_bounds([b[0], b[1], b[2], position[1]])
@@ -730,7 +730,7 @@ class SelectionWidget(Widget):
         elements = self.scene.device.device_root.elements
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
         b = elements.bounds()
         elements.update_bounds([b[0], position[1], b[2], b[3]])
@@ -738,7 +738,7 @@ class SelectionWidget(Widget):
 
     def tool_translate(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
-        for obj in elements.selected_elems():
+        for obj in elements.elems(selected=True):
             obj.transform.post_translate(dx, dy)
         self.translate(dx, dy)
         b = elements.bounds()

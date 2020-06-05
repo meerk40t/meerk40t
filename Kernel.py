@@ -675,25 +675,12 @@ class Signaler(Module):
 
 class Elemental(Module):
     """
-    All elements get a .selected property dictating whether they are selected or not.
-    selected = element in kernel.selected_elements
-    kernel.selected_elements.remove(element)  # unselect
-    kernel.selected_elements.append(element)  # select
-
     selecting and unselecting changes send signals
     kernel.signal("selected_elements", kernel.selected_elements)
-
-    if len(kernel.elements.selected_elements) == 0:
-
     "selected_bounds" changes.
     "selected_elements" changes.
     "rebuild_tree" elements.
-
     clearing operations must unregister those operations.
-
-    Operations also have select(), unselect(), and .selected
-
-    Strongly consider. highlight and semi-selection being added as properties here.
 
     self.elements.clear(), remove all selected elements.
     """
@@ -701,229 +688,10 @@ class Elemental(Module):
         Module.__init__(self)
 
         self._operations = list()
-        self._selected_operations = list()
-        self._highlight_operations = list()
-        self._semi_operations = list()
-
         self._elements = list()
-        self._selected_elements = list()
-        self._highlight_elements = list()
-        self._semi_elements = list()
-
         self._filenodes = {}
+
         self._bounds = None
-
-    def register(self, obj):
-        if isinstance(obj, SVGElement):
-            self.register_element(obj)
-        elif isinstance(obj, LaserOperation):
-            self.register_operation(obj)
-
-    def register_element(self, element):
-        element.cache = None
-        element.selected = False
-        element.emphasized = False
-        element.highlighted = False
-
-        def select_element():
-            element.selected = True
-            self._selected_elements.append(element)
-
-        def unselect_element():
-            element.selected = False
-            try:
-                self._selected_elements.remove(element)
-            except ValueError:
-                pass
-
-        def highlight_element():
-            element.highlighted = True
-            self._highlight_elements.append(element)
-
-        def unhighlight_element():
-            element.highlighted = False
-            try:
-                self._highlight_elements.remove(element)
-            except ValueError:
-                pass
-
-        def emphasize_element():
-            element.emphasized = True
-            self._semi_elements.append(element)
-
-        def unemphasize_element():
-            element.emphasized = False
-            try:
-                self._semi_elements.remove(element)
-            except ValueError:
-                pass
-
-        element.select = select_element
-        element.unselect = unselect_element
-        element.highlight = highlight_element
-        element.unhighlight = unhighlight_element
-        element.emphasize = emphasize_element
-        element.unemphasize = unemphasize_element
-
-    def register_operation(self, op):
-        op.selected = False
-        op.emphasized = False
-        op.highlighted = False
-
-        def select_operation():
-            op.selected = True
-            self._selected_operations.append(op)
-
-        def unselect_operation():
-            op.selected = False
-            try:
-                self._selected_operations.remove(op)
-            except ValueError:
-                pass
-
-        def highlight_operation():
-            op.highlighted = True
-            self._highlight_operations.append(op)
-
-        def unhighlight_operation():
-            op.highlighted = False
-            try:
-                self._highlight_operations.remove(op)
-            except ValueError:
-                pass
-
-        def emphasize_operation():
-            op.emphasized = True
-            self._semi_operations.append(op)
-
-        def unemphasize_operation():
-            op.emphasized = False
-            try:
-                self._semi_operations.remove(op)
-            except ValueError:
-                pass
-
-        op.select = select_operation
-        op.unselect = unselect_operation
-        op.highlight = highlight_operation
-        op.unhighlight = unhighlight_operation
-        op.emphasize = emphasize_operation
-        op.unemphasize = unemphasize_operation
-
-    def unregister(self, e):
-        try:
-            del e.cache
-        except AttributeError:
-            pass
-        try:
-            e.unselect()
-            e.unhighlight()
-            e.unemphasize()
-        except AttributeError:
-            pass
-
-    def ops(self):
-        return self._operations
-
-    def elems(self):
-        return self._elements
-
-    def files(self):
-        return self._filenodes
-
-    def bounds(self):
-        return self._bounds
-
-    def selected_elems(self):
-        return self._selected_elements
-
-    def selected_ops(self):
-        return self._selected_operations
-
-    def count_selected_elems(self):
-        return len(self._selected_elements)
-
-    def count_elems(self):
-        return len(self._elements)
-
-    def remove_operations(self, operations_list):
-        for op in operations_list:
-            self._operations.remove(op)
-
-    def clear_elements_and_operations(self):
-        for e in self._elements:
-            self.unregister(e)
-        self._elements.clear()
-        for e in self._operations:
-            self.unregister(e)
-        self._operations.clear()
-
-    def remove_elements(self, elements_list):
-        for e in elements_list:
-            try:
-                del e.cache
-            except AttributeError:
-                pass
-            self._elements.remove(e)
-        self.remove_elements_from_operations(elements_list)
-
-    def remove_files(self, file_list):
-        for f in file_list:
-            del self._filenodes[f]
-
-    def remove_elements_from_operations(self, elements_list):
-        for i in range(len(self._operations)):
-            elems = [e for e in self._operations[i] if e not in elements_list]
-            self._operations[i].clear()
-            self._operations[i].extend(elems)
-            if len(self._operations[i]) == 0:
-                self._operations[i] = None
-        self.remove_none_operations()
-
-    def remove_none_operations(self):
-        ops = [op for op in self._operations if op is not None]
-        self._operations.clear()
-        self._operations.extend(ops)
-
-    def op_count(self):
-        return len(self._operations)
-
-    def get_op(self, value):
-        return self._operations[value]
-
-    def get_elem(self, value):
-        return self._elements[value]
-
-    def add_op(self, op):
-        self._operations.append(op)
-        self.register_operation(op)
-
-    def add_elem(self, element):
-        self._elements.append(element)
-        self.register_element(element)
-
-    def add(self, element):
-        # TODO: merge into add_elem
-        self._elements.append(element)
-        self.register(element)
-
-    def add_all_elem(self, adding_elements):
-        for element in adding_elements:
-            self.register_element(element)
-        self._elements.extend(adding_elements)
-
-    def add_all_op(self, adding_ops):
-        for op in adding_ops:
-            self.register_operation(op)
-        self._operations.extend(adding_ops)
-
-    def unselect_elements(self):
-        for s in self._selected_elements:
-            s.selected = False
-        self._selected_elements.clear()
-
-    def first_selected_element(self):
-        return self._selected_elements[0]
 
     def attach(self, device, name=None):
         Module.attach(self, device, name)
@@ -933,6 +701,379 @@ class Elemental(Module):
         self.device.save_types = self.save_types
         self.device.load = self.load
         self.device.load_types = self.load_types
+
+    def register(self, obj):
+        obj.cache = None
+        obj.icon = None
+        obj.bounds = None
+        obj.last_transform = None
+        obj.selected = False
+        obj.emphasized = False
+        obj.highlighted = False
+
+        def select():
+            obj.selected = True
+            self.device.signal("selected", obj)
+
+        def unselect():
+            obj.selected = False
+            self.device.signal("selected", obj)
+
+        def highlight():
+            obj.highlighted = True
+            self.device.signal("highlighted", obj)
+
+        def unhighlight():
+            obj.highlighted = False
+            self.device.signal("highlighted", obj)
+
+        def emphasize():
+            obj.emphasized = True
+            self.device.signal("emphasized", obj)
+
+        def unemphasize():
+            obj.emphasized = False
+            self.device.signal("emphasized", obj)
+
+        def modified():
+            obj.bounds = None
+
+        obj.select = select
+        obj.unselect = unselect
+        obj.highlight = highlight
+        obj.unhighlight = unhighlight
+        obj.emphasize = emphasize
+        obj.unemphasize = unemphasize
+        obj.modified = modified
+
+    def unregister(self, e):
+        try:
+            del e.cache
+            del e.icon
+        except AttributeError:
+            pass
+        try:
+            e.unselect()
+            e.unhighlight()
+            e.unemphasize()
+        except AttributeError:
+            pass
+
+    def items(self, **kwargs):
+        def combined(*args):
+            for listv in args:
+                for itemv in listv:
+                    yield itemv
+
+        for j in combined(self.ops(**kwargs), self.elems(**kwargs)):
+            yield j
+
+    def ops(self, **kwargs):
+        selected = 'selected' in kwargs and kwargs['selected']
+        emphasized = 'emphasized' in kwargs and kwargs['emphasized']
+        highlighted = 'highlighted' in kwargs and kwargs['highlighted']
+        for op in self._operations:
+            if op is None:
+                continue
+            if selected and not op.selected:
+                continue
+            if emphasized and not op.emphasized:
+                continue
+            if highlighted and not op.highlighted:
+                continue
+            yield op
+
+    def elems(self, **kwargs):
+        selected = 'selected' in kwargs and kwargs['selected']
+        emphasized = 'emphasized' in kwargs and kwargs['emphasized']
+        highlighted = 'highlighted' in kwargs and kwargs['highlighted']
+        for op in self._elements:
+            if op is None:
+                continue
+            if selected and not op.selected:
+                continue
+            if emphasized and not op.emphasized:
+                continue
+            if highlighted and not op.highlighted:
+                continue
+            yield op
+
+    def first_element(self, **kwargs):
+        for e in self.elems(**kwargs):
+            return e
+        return None
+
+    def has_selection(self):
+        return self.first_element(selected=True) is not None
+
+    def count_elems(self, **kwargs):
+        return len(list(self.elems(**kwargs)))
+
+    def count_op(self, **kwargs):
+        return len(list(self.ops(**kwargs)))
+
+    def get_op(self, index, **kwargs):
+        for i, op in enumerate(self.ops(**kwargs)):
+            if i == index:
+                return op
+        raise IndexError
+
+    def get_elem(self, index, **kwargs):
+        for i, elem in enumerate(self.elems(**kwargs)):
+            if i == index:
+                return elem
+        raise IndexError
+
+    def add_op(self, op):
+        self._operations.append(op)
+        self.register(op)
+        self.device.signal("operation_added", op)
+
+    def add_ops(self, adding_ops):
+        self._operations.extend(adding_ops)
+        for op in adding_ops:
+            self.register(op)
+            self.device.signal("operation_added", op)
+
+    def add_elem(self, element):
+        self._elements.append(element)
+        self.register(element)
+        self.device.signal("element_added", element)
+
+    def add_elems(self, adding_elements):
+        self._elements.extend(adding_elements)
+        for element in adding_elements:
+            self.register(element)
+            self.device.signal("element_added", element)
+
+    def files(self):
+        return self._filenodes
+
+    def bounds(self):
+        return self._bounds
+
+    def validate_bounds(self):
+        boundary_points = []
+        for e in self._elements:
+            if e.last_transform is None or e.last_transform != e.transform or e.bounds is None:
+                e.bounds = e.bbox(False)
+                e.last_transform = copy(e.transform)
+            if e.bounds is None:
+                continue
+            if not e.selected:
+                continue
+            box = e.bounds
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+
+        if len(boundary_points) == 0:
+            new_bounds = None
+        else:
+            xmin = min([e[0] for e in boundary_points])
+            ymin = min([e[1] for e in boundary_points])
+            xmax = max([e[0] for e in boundary_points])
+            ymax = max([e[1] for e in boundary_points])
+            new_bounds = [xmin, ymin, xmax, ymax]
+        if self._bounds != new_bounds:
+            self._bounds = new_bounds
+            self.device.device_root.signal("selected_bounds", self._bounds)
+
+    def set_selected(self, selected):
+        """
+        Sets selected and other properties of a given element.
+
+        All selected elements are also semi-selected.
+
+        If elements itself is selected, all subelements are semiselected.
+
+        If any operation is selected, all sub-operations are highlighted.
+
+        """
+        selection_changed = False
+        if selected is None:
+            selected = []
+        for s in self._elements:
+            is_selected = s in selected
+            if s.selected:
+                if not is_selected:
+                    selection_changed = True
+                    s.unselect()
+            else:
+                if is_selected:
+                    selection_changed = True
+                    s.select()
+            if s.selected:
+                if not s.emphasized:
+                    s.emphasize()
+            if s.emphasized:
+                if not s.selected:
+                    s.unemphasize()
+            s.unhighlight()
+        for s in self._operations:
+            is_selected = s in selected
+            if s.selected:
+                if not is_selected:
+                    selection_changed = True
+                    s.unselect()
+            else:
+                if is_selected:
+                    selection_changed = True
+                    s.select()
+            if s.selected:
+                if not s.emphasized:
+                    s.emphasize()
+                    for q in s:
+                        q.highlight()
+            if s.emphasized:
+                if not s.selected:
+                    s.unemphasize()
+        if selection_changed:
+            self.selection_items_updated()
+
+    def selection_items_updated(self):
+        self.device.signal("selected_ops", 0)
+        self.device.signal("selected_elements", 0)
+        self.validate_bounds()
+
+    def clear_operations(self):
+        for op in self._operations:
+            self.unregister(op)
+            self.device.signal("operation_removed", op)
+        self._operations.clear()
+
+    def clear_elements(self):
+        for e in self._elements:
+            self.unregister(e)
+            self.device.signal("element_removed", e)
+        self._elements.clear()
+
+    def clear_files(self):
+        self._filenodes.clear()
+
+    def clear_elements_and_operations(self):
+        self.clear_elements()
+        self.clear_operations()
+
+    def clear_all(self):
+        self.clear_elements()
+        self.clear_operations()
+        self.clear_files()
+
+    def remove_files(self, file_list):
+        for f in file_list:
+            del self._filenodes[f]
+
+    def remove_elements(self, elements_list):
+        for e in elements_list:
+            try:
+                self._elements.remove(e)
+            except ValueError:
+                continue
+            self.unregister(e)
+            self.device.signal("element_removed", e)
+        self.remove_elements_from_operations(elements_list)
+
+    def remove_operations(self, operations_list):
+        for op in operations_list:
+            self._operations.remove(op)
+            self.unregister(op)
+            self.device.signal("operation_removed", op)
+
+    def remove_elements_from_operations(self, elements_list):
+        for i in range(len(self._operations)):
+            elems = [e for e in self._operations[i] if e not in elements_list]
+            self._operations[i].clear()
+            self._operations[i].extend(elems)
+            if len(self._operations[i]) == 0:
+                self._operations[i] = None
+        self.purge_unset()
+
+    def purge_unset(self):
+        if None in self._operations:
+            ops = [op for op in self._operations if op is not None]
+            self._operations.clear()
+            self._operations.extend(ops)
+        if None in self._elements:
+            elems = [elem for elem in self._elements if elem is not None]
+            self._elements.clear()
+            self._elements.extend(elems)
+
+    def center(self):
+        bounds = self._bounds
+        return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
+
+    def ensure_positive_bounds(self):
+        b = self._bounds
+        self._bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    def update_bounds(self, b):
+        self._bounds = [b[0], b[1], b[0], b[1]]
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    @staticmethod
+    def bounding_box(elements):
+        if isinstance(elements, SVGElement):
+            elements = [elements]
+        elif isinstance(elements, list):
+            try:
+                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+            except AttributeError:
+                pass
+        boundary_points = []
+        for e in elements:
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
+
+    def move_selected(self, dx, dy):
+        if not self.has_selection():
+            return
+        for obj in self.elems(selected=True):
+            obj.transform.post_translate(dx, dy)
+        b = self._bounds
+        self._bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
+        self.device.device_root.signal("selected_bounds", self._bounds)
+
+    def set_selected_by_position(self, position):
+        def contains(box, x, y=None):
+            if y is None:
+                y = x[1]
+                x = x[0]
+            return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+        if not self.has_selection():
+            if self._bounds is not None and contains(self._bounds, position):
+                return  # Select by position aborted since selection position within current select bounds.
+        self.set_selected(None)
+        for e in reversed(list(self.elems(selected=True))):
+            bounds = e.bbox()
+            if bounds is None:
+                continue
+            if contains(bounds, position):
+                self.set_selected([e])
+                return
 
     def classify(self, elements):
         """
@@ -1006,124 +1147,10 @@ class Elemental(Module):
         engraves = [r for r in engraves if len(r) != 0]
         cuts = [r for r in cuts if len(r) != 0]
         ops = []
-        self.add_all_op(rasters)
-        self.add_all_op(engraves)
-        self.add_all_op(cuts)
+        self.add_ops(rasters)
+        self.add_ops(engraves)
+        self.add_ops(cuts)
         return ops
-
-    def clear_all(self):
-        self._elements.clear()
-        self._operations.clear()
-        self._filenodes.clear()
-
-    def clear_operations(self):
-        self._operations.clear()
-
-    def set_selected_elements(self, selected):
-        # TODO: Check against selected_operations
-        self._selected_operations.clear()
-        self._selected_elements.clear()
-        if selected is not None:
-            if not isinstance(selected, list):
-                self._selected_elements.append(selected)
-            else:
-                self._selected_elements.extend(selected)
-        self.selection_updated()
-
-    def set_selected_operations(self, selected):
-        # TODO: Check against selected_elements
-        self._selected_elements.clear()
-        self._selected_operations.clear()
-        if selected is not None:
-            if not isinstance(selected, list):
-                self._selected_operations.append(selected)
-            else:
-                self._selected_operations.extend(selected)
-        self.selection_updated()
-
-    def selection_updated(self):
-        self.device.signal("selected_ops", self._selected_operations)
-        self.device.signal("selected_elements", self._selected_elements)
-        self.selection_bounds_updated()
-
-    def center(self):
-        bounds = self._bounds
-        return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
-
-    def selection_bounds_updated(self):
-        # Todo: make work selection_bounds_updated
-        self._bounds = Elemental.bounding_box(self._selected_elements)
-        self.device.device_root.signal("selected_bounds", self._bounds)
-
-    def ensure_positive_bounds(self):
-        b = self._bounds
-        self._bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
-        self.device.device_root.signal("selected_bounds", self._bounds)
-
-    def update_bounds(self, b):
-        self._bounds = [b[0], b[1], b[0], b[1]]
-        self.device.device_root.signal("selected_bounds", self._bounds)
-
-    @staticmethod
-    def bounding_box(elements):
-        if isinstance(elements, SVGElement):
-            elements = [elements]
-        elif isinstance(elements, list):
-            try:
-                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
-            except AttributeError:
-                pass
-        boundary_points = []
-        for e in elements:
-            box = e.bbox(False)
-            if box is None:
-                continue
-            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
-            return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
-
-    def move_selected(self, dx, dy):
-        if self._selected_elements is None:
-            return
-        if len(self._selected_elements) == 0:
-            return
-        for obj in self._selected_elements:
-            obj.transform.post_translate(dx, dy)
-        b = self._bounds
-        self._bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
-        self.device.device_root.signal("selected_bounds", self._bounds)
-
-    def set_selected_by_position(self, position):
-        def contains(box, x, y=None):
-            if y is None:
-                y = x[1]
-                x = x[0]
-            return box[0] <= x <= box[2] and box[1] <= y <= box[3]
-
-        if self._selected_elements is not None:
-            if self._bounds is not None and contains(self._bounds, position):
-                return  # Select by position aborted since selection position within current select bounds.
-        self._selected_elements.clear()
-        for e in reversed(self._elements):
-            bounds = e.bbox()
-            if bounds is None:
-                continue
-            if contains(bounds, position):
-                self.set_selected_elements(e)
-                return
-        self.selection_updated()
 
     def load(self, pathname, **kwargs):
         for loader_name, loader in self.device.registered['load'].items():
@@ -1134,7 +1161,7 @@ class Elemental(Module):
                         continue
                     elements, pathname, basename = results
                     self._filenodes[pathname] = elements
-                    self.add_all_elem(elements)
+                    self.add_elems(elements)
                     self.device.signal('rebuild_tree', elements)
                     return elements, pathname, basename
         return None
