@@ -622,6 +622,7 @@ class SelectionWidget(Widget):
 
     def tool_scalexy(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         self.save_width *= scalex
@@ -629,12 +630,12 @@ class SelectionWidget(Widget):
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[0], b[1], position[0], position[1]])
+        # elements.update_bounds([b[0], b[1], position[0], position[1]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_se(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         if self.uniform:
@@ -646,12 +647,12 @@ class SelectionWidget(Widget):
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
+        # elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_nw(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (self.right - position[0]) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
         if self.uniform:
@@ -663,12 +664,12 @@ class SelectionWidget(Widget):
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
+        # elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_ne(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
         if self.uniform:
@@ -680,12 +681,12 @@ class SelectionWidget(Widget):
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
+        # elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalexy_sw(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (self.right - position[0]) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
         if self.uniform:
@@ -697,62 +698,62 @@ class SelectionWidget(Widget):
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
+        # elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalex_e(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, 1, self.left, self.top)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[0], b[1], position[0], b[3]])
+        # elements.update_bounds([b[0], b[1], position[0], b[3]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scalex_w(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(scalex, 1, self.right, self.top)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([position[0], b[1], b[2], b[3]])
+        # elements.update_bounds([position[0], b[1], b[2], b[3]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scaley_s(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(1, scaley, self.left, self.top)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[0], b[1], b[2], position[1]])
+
+        # elements.update_bounds([b[0], b[1], b[2], position[1]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_scaley_n(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
             obj.modified()
-        b = elements.bounds()
-        elements.update_bounds([b[0], position[1], b[2], b[3]])
+        # elements.update_bounds([b[0], position[1], b[2], b[3]])
         self.scene.device.signal('refresh_scene', 0)
 
     def tool_translate(self, position, dx, dy):
         elements = self.scene.device.device_root.elements
+        b = elements.bounds()
         for obj in elements.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
             obj.modified()
         self.translate(dx, dy)
-        b = elements.bounds()
-        elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.device.signal('refresh_scene', 0)
 
     def process_draw(self, gc):

@@ -29,7 +29,6 @@ class Terminal(wx.Frame, Module):
 
     def on_middle_click(self, event):
         self.text_main.SetValue('')
-        print("hello")
 
     def initialize(self):
         self.device.close('window', 'Terminal')

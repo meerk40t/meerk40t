@@ -563,7 +563,6 @@ class Navigation(wx.Frame, Module):
             yield COMMAND_LASER_OFF
             yield COMMAND_MODE_RAPID
             for p in hull:
-                print(p)
                 yield COMMAND_MOVE, p[0], p[1]
 
         self.device.spooler.send_job(trace_hull)
@@ -611,7 +610,6 @@ class Navigation(wx.Frame, Module):
 
     def matrix_updated(self):
         self.device.signal('refresh_scene')
-        self.device.device_root.elements.validate_bounds()
         self.update_matrix_text()
         self.drag_ready(False)
 
@@ -690,7 +688,6 @@ class Navigation(wx.Frame, Module):
                 matrix.e = float(self.text_e.GetValue())
                 matrix.f = float(self.text_f.GetValue())
                 element.modified()
-                self.device.device_root.elements.validate_bounds()
             except ValueError:
                 self.update_matrix_text()
             self.drag_ready(False)

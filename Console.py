@@ -648,6 +648,7 @@ class Console(Module, Pipe):
             try:
                 for element in elements.elems(emphasized=True):
                     element *= matrix
+                    element.modified()
             except ValueError:
                 yield "Invalid value"
             active_device.signal('refresh_scene')
@@ -684,6 +685,7 @@ class Console(Module, Pipe):
             try:
                 for element in elements.elems(emphasized=True):
                     element *= matrix
+                    element.modified()
             except ValueError:
                 yield "Invalid value"
             active_device.signal('refresh_scene')
@@ -716,6 +718,7 @@ class Console(Module, Pipe):
             try:
                 for element in elements.elems(emphasized=True):
                     element *= matrix
+                    element.modified()
             except ValueError:
                 yield "Invalid value"
             active_device.signal('refresh_scene')
@@ -751,6 +754,7 @@ class Console(Module, Pipe):
                     amount = end_angle - start_angle
                     matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
                     element *= matrix
+                    element.modified()
             except ValueError:
                 yield "Invalid value"
             active_device.signal('refresh_scene')

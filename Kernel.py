@@ -737,6 +737,8 @@ class Elemental(Module):
 
         def modified():
             obj.bounds = None
+            self._bounds = None
+            self.validate_bounds()
 
         obj.select = select
         obj.unselect = unselect

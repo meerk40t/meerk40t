@@ -301,7 +301,7 @@ class MeerK40t(wx.Frame, Module):
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
                      lambda v: self.device.open('window', "JobInfo", None, -1, "")
-                     .set_operations(self.device.device_root.elements.ops()), id=ID_JOB)
+                     .set_operations(list(self.device.device_root.elements.ops())), id=ID_JOB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('window', "UsbConnect", None, -1, ""), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -2171,7 +2171,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window', "JobInfo", None, -1, "").set_operations(self.elements.ops(selected=True))
+            self.device.open('window', "JobInfo", None, -1, "").set_operations(list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 
