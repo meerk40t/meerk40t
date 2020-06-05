@@ -1003,13 +1003,14 @@ class MeerK40t(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            for elem in elements.elems(selected=True):
+            for elem in elements.elems(emphasized=True):
                 elem.fill = color
+                elem.modified()
 
     def open_stroke_dialog(self):
         kernel = self.device.device_root
         elements = kernel.elements
-        first_selected = elements.first_element(selected=True)
+        first_selected = elements.first_element(emphasized=True)
         if first_selected is None:
             return
         data = wx.ColourData()
@@ -1021,8 +1022,9 @@ class MeerK40t(wx.Frame, Module):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             color = Color(color, 1.0)
-            for elem in elements.elems(selected=True):
+            for elem in elements.elems(emphasized=True):
                 elem.stroke = color
+                elem.modified()
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
@@ -1591,19 +1593,17 @@ class RootNode(list):
         event.Allow()
 
     def select_in_tree_by_selected(self):
-        self.tree.UnselectAll()
+        """
+        :return:
+        """
+        # TODO: Ensure this works.
         self.refresh_tree()
-        # TODO: Set the selections on the tree without triggering set.
-        for e in self.elements.elems(selected=True):
+        for e in self.elements.elems(emphasized=True):
             try:
                 nodes = self.tree_lookup[id(e)]
             except KeyError:
                 self.device.signal('rebuild_tree', 0)
                 return
-            for n in nodes:
-                if n.type == NODE_ELEMENT:
-                    self.tree.SelectItem(n.item)
-                    return
 
     def contains(self, box, x, y=None):
         if y is None:
@@ -1803,6 +1803,7 @@ class RootNode(list):
             ty = m.f
             element.transform = Matrix.scale(float(step_value), float(step_value))
             element.transform.post_translate(tx, ty)
+            element.modified()
             self.device.signal("element_property_update", node.object)
             self.root.gui.request_refresh()
 
@@ -1947,9 +1948,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for element in self.elements.elems(selected=True):
+            for element in self.elements.elems(emphasized=True):
                 element.reify()
-                element.cache = None
+                element.modified()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -1963,8 +1964,9 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.elements.elems(selected=True):
+            for e in self.elements.elems(emphasized=True):
                 e.transform.reset()
+                e.modified()
             self.gui.request_refresh()
 
         return specific
@@ -1986,8 +1988,9 @@ class RootNode(list):
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
 
-            for obj in self.elements.elems(selected=True):
+            for obj in self.elements.elems(emphasized=True):
                 obj.transform.post_rotate(value, center_x, center_y)
+                obj.modified()
             self.device.signal('rebuild_tree', 0)
 
         return specific
@@ -2003,7 +2006,7 @@ class RootNode(list):
 
         def specific(event):
             center_x, center_y = self.elements.center()
-            for obj in self.elements.elems(selected=True):
+            for obj in self.elements.elems(emphasized=True):
                 obj.transform.post_scale(value, value, center_x, center_y)
             self.device.signal('rebuild_tree', 0)
 
@@ -2046,7 +2049,7 @@ class RootNode(list):
             selections = [s for s in combined(*selections) if s.type == node.type]
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
-                elements.remove_elements(self.elements.elems(selected=True))
+                elements.remove_elements(self.elements.elems(emphasized=True))
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 modified = []
@@ -2082,11 +2085,11 @@ class RootNode(list):
             if node.type == NODE_ELEMENT:
                 # Removing element can only have 1 copy.
                 # All selected elements are removed.
-                removed_objects = list(self.elements.elems(selected=True))
+                removed_objects = list(self.elements.elems(emphasized=True))
                 elements.remove_elements(removed_objects)
             elif node.type == NODE_OPERATION:
                 # Removing operation can only have 1 copy.
-                removed_objects = list(self.elements.ops(selected=True))
+                removed_objects = list(self.elements.ops(emphasized=True))
                 elements.remove_operations([node.object])
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
@@ -2115,7 +2118,7 @@ class RootNode(list):
         def specific(event):
             kernel = self.device.device_root
             elements = kernel.elements
-            adding_elements = [copy(e) for e in list(self.elements.elems(selected=True)) * copies]
+            adding_elements = [copy(e) for e in list(self.elements.elems(emphasized=True)) * copies]
             elements.extend(adding_elements)
             elements.classify(adding_elements)
             elements.set_selected(None)
@@ -2148,7 +2151,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.elements.elems(selected=True):
+            for e in self.elements.elems(emphasized=True):
                 p = abs(e)
                 add = []
                 for subpath in p.as_subpaths():
@@ -2193,6 +2196,7 @@ class RootNode(list):
             if node.type == NODE_ELEMENTS_BRANCH:
                 self.elements.remove_elements_from_operations(elements.elems())
             node.object.clear()
+            # TODO: Clear like this isn't always an action anymore. Should correct.
 
         return specific
 

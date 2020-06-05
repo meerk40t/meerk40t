@@ -803,8 +803,8 @@ class Elemental(Module):
             return e
         return None
 
-    def has_selection(self):
-        return self.first_element(selected=True) is not None
+    def has_emphasis(self):
+        return self.first_element(emphasized=True) is not None
 
     def count_elems(self, **kwargs):
         return len(list(self.elems(**kwargs)))
@@ -860,7 +860,7 @@ class Elemental(Module):
                 e.last_transform = copy(e.transform)
             if e.bounds is None:
                 continue
-            if not e.selected:
+            if not e.emphasized:
                 continue
             box = e.bounds
             top_left = e.transform.point_in_matrix_space([box[0], box[1]])
@@ -929,7 +929,7 @@ class Elemental(Module):
                 if not s.emphasized:
                     s.emphasize()
                     for q in s:
-                        q.highlight()
+                        q.emphasize()
             if s.emphasized:
                 if not s.selected:
                     s.unemphasize()
@@ -1048,10 +1048,9 @@ class Elemental(Module):
         return xmin, ymin, xmax, ymax
 
     def move_selected(self, dx, dy):
-        if not self.has_selection():
-            return
-        for obj in self.elems(selected=True):
+        for obj in self.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
+            obj.modified()
         b = self._bounds
         self._bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
         self.device.device_root.signal("selected_bounds", self._bounds)
@@ -1063,11 +1062,11 @@ class Elemental(Module):
                 x = x[0]
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
-        if not self.has_selection():
+        if self.has_emphasis():
             if self._bounds is not None and contains(self._bounds, position):
                 return  # Select by position aborted since selection position within current select bounds.
         self.set_selected(None)
-        for e in reversed(list(self.elems(selected=True))):
+        for e in reversed(list(self.elems(emphasized=True))):
             bounds = e.bbox()
             if bounds is None:
                 continue

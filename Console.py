@@ -583,14 +583,14 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             if args[0] == 'none':
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element.stroke = None
             else:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element.stroke = Color(args[0])
             active_device.signal('refresh_scene')
             return
@@ -612,14 +612,14 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             if args[0] == 'none':
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element.fill = None
             else:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element.fill = Color(args[0])
             active_device.signal('refresh_scene')
             return
@@ -637,16 +637,16 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(selected=True))
+            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix('rotate(%s,%f,%f)' % (args[0], center_x, center_y))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             try:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element *= matrix
             except ValueError:
                 yield "Invalid value"
@@ -666,10 +666,10 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(selected=True))
+            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             sx = '1'
@@ -682,7 +682,7 @@ class Console(Module, Pipe):
             matrix = Matrix('scale(%s,%s,%f,%f)' % (sx, sy, center_x, center_y))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             try:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element *= matrix
             except ValueError:
                 yield "Invalid value"
@@ -702,7 +702,7 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             tx = '0'
@@ -714,7 +714,7 @@ class Console(Module, Pipe):
             matrix = Matrix('translate(%s,%s)' % (tx, ty))
             matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
             try:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     element *= matrix
             except ValueError:
                 yield "Invalid value"
@@ -734,10 +734,10 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(selected=True))
+            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             try:
@@ -746,7 +746,7 @@ class Console(Module, Pipe):
                 yield "Invalid Value."
                 return
             try:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     start_angle = element.rotation
                     amount = end_angle - start_angle
                     matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
@@ -769,10 +769,10 @@ class Console(Module, Pipe):
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(selected=True))
+            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             sx = 1
@@ -783,13 +783,14 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 sy = float(args[1])
             try:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
                     nsx = sx / osx
                     nsy = sy / osy
                     matrix = Matrix('scale(%f,%f,%f,%f)' % (nsx, nsy, center_x, center_y))
                     element *= matrix
+                    element.modified()
             except ValueError:
                 yield "Invalid value"
             active_device.signal('refresh_scene')
@@ -804,11 +805,11 @@ class Console(Module, Pipe):
                     if len(name) > 50:
                         name = name[:50] + '...'
                     yield '%d: translate(%f, %f) - %s' % \
-                          (i, element.transform.value_trans_x(), element.transform.value_trans_x(), name)
+                          (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
                     i += 1
                 yield '----------'
                 return
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             tx = 0
@@ -818,29 +819,31 @@ class Console(Module, Pipe):
             if len(args) >= 2:
                 ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             try:
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     otx = element.transform.value_trans_x()
                     oty = element.transform.value_trans_y()
                     ntx = tx - otx
                     nty = ty - oty
                     matrix = Matrix('translate(%f,%f)' % (ntx, nty))
                     element *= matrix
+                    element.modified()
             except ValueError:
                 yield "Invalid value"
             active_device.signal('refresh_scene')
             return
         elif command == 'reset':
-            for element in elements.elems(selected=True):
+            for element in elements.elems(emphasized=True):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
                 yield 'reset - %s' % (name)
                 element.transform.reset()
+                element.modified()
             self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
             return
         elif command == 'reify':
-            for element in elements.elems(selected=True):
+            for element in elements.elems(emphasized=True):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
@@ -890,44 +893,44 @@ class Console(Module, Pipe):
                         yield 'index %d out of range' % value
             return
         elif command == 'classify':
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            elements.classify(elements.elems(selected=True))
+            elements.classify(elements.elems(emphasized=True))
             return
         elif command == 'cut':
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             op = CutOperation()
-            op.extend(elements.elems(selected=True))
+            op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
         elif command == 'engrave':
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             op = EngraveOperation()
-            op.extend(elements.elems(selected=True))
+            op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
         elif command == 'raster':
-            if not elements.has_selection():
+            if not elements.has_emphasis():
                 yield "No selected elements."
                 return
             op = RasterOperation()
-            op.extend(elements.elems(selected=True))
+            op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
         elif command == 'step':
             if len(args) == 0:
                 found = False
-                for op in elements.elems(selected=True):
+                for op in elements.elems(emphasized=True):
                     if isinstance(op, RasterOperation):
                         step = op.raster_step
                         yield 'Step for %s is currently: %d' % (str(op), step)
                         found = True
-                for element in elements.elems(selected=True):
+                for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         try:
                             step = element.values[VARIABLE_NAME_RASTER_STEP]
@@ -943,28 +946,29 @@ class Console(Module, Pipe):
             except ValueError:
                 yield 'Not integer value for raster step.'
                 return
-            for op in elements.elems(selected=True):
+            for op in elements.elems(emphasized=True):
                 if isinstance(op, RasterOperation):
                     op.raster_step = step
                     self.device.signal("element_property_update", op)
-            for element in elements.elems(selected=True):
+            for element in elements.elems(emphasized=True):
                 element.values[VARIABLE_NAME_RASTER_STEP] = str(step)
                 m = element.transform
                 tx = m.e
                 ty = m.f
                 element.transform = Matrix.scale(float(step), float(step))
                 element.transform.post_translate(tx, ty)
+                element.modified()
                 self.device.signal("element_property_update", element)
                 active_device.signal('refresh_scene')
             return
         elif command == 'resample':
-            for element in elements.elems(selected=True):
+            for element in elements.elems(emphasized=True):
                 if isinstance(element, SVGImage):
                     OperationPreprocessor.make_actual(element)
             active_device.signal('refresh_scene')
             return
         elif command == 'reify':
-            for element in elements.elems(selected=True):
+            for element in elements.elems(emphasized=True):
                 element.reify()
             active_device.signal('refresh_scene')
             return
@@ -975,7 +979,7 @@ class Console(Module, Pipe):
                     copies = int(args[0])
                 except ValueError:
                     pass
-            elements.add_elems([copy(e) for e in list(elements.elems(selected=True)) * copies])
+            elements.add_elems([copy(e) for e in list(elements.elems(emphasized=True)) * copies])
             self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
         # Alias / Bind Command Elements.

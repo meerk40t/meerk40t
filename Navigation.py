@@ -363,11 +363,11 @@ class Navigation(wx.Frame, Module):
         self.Close()
 
     def on_selected_elements_change(self, elements):
-        self.select_ready(not self.elements.has_selection())
+        self.select_ready(not self.elements.has_emphasis())
         self.update_matrix_text()
 
     def update_matrix_text(self):
-        v = self.elements.has_selection()
+        v = self.elements.has_emphasis()
         self.text_a.Enable(v)
         self.text_b.Enable(v)
         self.text_c.Enable(v)
@@ -375,7 +375,7 @@ class Navigation(wx.Frame, Module):
         self.text_e.Enable(v)
         self.text_f.Enable(v)
         if v:
-            matrix = self.elements[0].transform
+            matrix = self.elements.first_element(emphasized=True).transform
             self.text_a.SetValue(str(matrix.a))
             self.text_b.SetValue(str(matrix.b))
             self.text_c.SetValue(str(matrix.c))
@@ -619,59 +619,69 @@ class Navigation(wx.Frame, Module):
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_scale(0.95, 0.95, self.device.current_x, self.device.current_y)
+                e.modified()
             self.matrix_updated()
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_scale(1.05, 1.05, self.device.current_x, self.device.current_y)
+                e.modified()
             self.matrix_updated()
 
     def on_translate_up(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_translate(0, -self.device.navigate_jog)
+                e.modified()
             self.matrix_updated()
 
     def on_translate_left(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_translate(-self.device.navigate_jog, 0)
+                e.modified()
             self.matrix_updated()
 
     def on_translate_right(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_translate(self.device.navigate_jog, 0)
+                e.modified()
             self.matrix_updated()
 
     def on_reset(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.reset()
+                e.modified()
             self.matrix_updated()
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_rotate(Angle.degrees(-5), self.device.current_x, self.device.current_y)
+                e.modified()
             self.matrix_updated()
 
     def on_translate_down(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_translate(0, self.device.navigate_jog)
+                e.modified()
             self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
         if self.elements is not None:
             for e in self.elements:
                 e.transform.post_rotate(Angle.degrees(5), self.device.current_x, self.device.current_y)
+                e.modified()
             self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            matrix = self.elements[0].transform
+        if self.elements.has_emphasis():
+            element = self.elements.first_element(emphasized=True)
+            matrix = element.transform
             try:
                 matrix.a = float(self.text_a.GetValue())
                 matrix.b = float(self.text_b.GetValue())
@@ -679,6 +689,7 @@ class Navigation(wx.Frame, Module):
                 matrix.d = float(self.text_d.GetValue())
                 matrix.e = float(self.text_e.GetValue())
                 matrix.f = float(self.text_f.GetValue())
+                element.modified()
                 self.device.device_root.elements.validate_bounds()
             except ValueError:
                 self.update_matrix_text()
