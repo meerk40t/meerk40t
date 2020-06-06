@@ -850,13 +850,9 @@ class MeerK40t(wx.Frame, Module):
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         kernel = self.device.device_root
         self.working_file = None
-        for e in kernel.element:
-            try:
-                del e.cache
-                e.cache = None
-            except AttributeError:
-                pass
         kernel.elements.clear_all()
+        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
+        self.laserpath_index = 0
         self.request_refresh()
         self.device.signal('rebuild_tree', 0)
 

@@ -966,6 +966,7 @@ class Elemental(Module):
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
+        self.validate_bounds()
 
     def remove_files(self, file_list):
         for f in file_list:
