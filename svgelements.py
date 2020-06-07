@@ -5895,6 +5895,7 @@ class SVGText(GraphicObject, Transformable):
         self.font_face = s.font_face
 
     def parse_font(self, font):
+        # TODO: Parse font into proper elements.
         pass
 
     def parse_font_weight(self, weight):
