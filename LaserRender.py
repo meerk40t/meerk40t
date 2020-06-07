@@ -147,10 +147,17 @@ class LaserRender:
             font = element.wxfont
         else:
             if element.font_size < 1:
+                font = wx.Font(1, wx.SWISS, wx.NORMAL, wx.BOLD)
+                gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
+                width, height = gc.GetTextExtent(element.text)
                 if element.font_size > 0:
-                    element.transform.pre_scale(element.font_size, element.font_size, element.x, element.y)
+                    element.transform.pre_scale(element.font_size,
+                                                element.font_size,
+                                                element.x,
+                                                element.y + height)
                 element.font_size = 1  # No zero sized fonts.
-            font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            else:
+                font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             element.wxfont = font
         try:
             sw = element.values['stroke_width']
