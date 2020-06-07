@@ -169,8 +169,15 @@ class LaserRender:
         else:
             gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
         if element.text is not None:
-            element.width, element.height = gc.GetTextExtent(element.text)
-            gc.DrawText(element.text, element.x, element.y)
+            if not hasattr(element, 'anchor') or element.anchor == 'start':
+                element.width, element.height = gc.GetTextExtent(element.text)
+                gc.DrawText(element.text, element.x, element.y-element.height)
+            elif element.anchor == 'middle':
+                element.width, element.height = gc.GetTextExtent(element.text)
+                gc.DrawText(element.text, element.x-(element.width/2, element.y-element.height))
+            elif element.anchor == 'end':
+                element.width, element.height = gc.GetTextExtent(element.text)
+                gc.DrawText(element.text, element.x-element.width, element.y-element.height)
         gc.PopState()
 
     def draw_image(self, node, gc, draw_mode):
