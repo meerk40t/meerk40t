@@ -29,6 +29,8 @@ class JobInfo(wx.Frame, Module):
         wxglade_tmp_menu = wx.Menu()
         self.menu_autostart = wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_auto_start_controller, id=self.menu_autostart.GetId())
+        self.menu_prehome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home Before"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_home_before, id=self.menu_prehome.GetId())
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_home_after, id=self.menu_autohome.GetId())
         self.menu_autobeep = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep After"), "", wx.ITEM_CHECK)
@@ -97,6 +99,8 @@ class JobInfo(wx.Frame, Module):
         if not isinstance(operations, list):
             operations = [operations]
         self.operations.clear()
+        if self.device.prehome:
+            self.jobadd_home(None)
         for op in operations:
             self.operations.append(copy(op))
         if self.device.autobeep:
@@ -115,6 +119,7 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(bool, "rotary", False)
         self.device.setting(float, "scale_x", 1.0)
         self.device.setting(float, "scale_y", 1.0)
+        self.device.setting(bool, "prehome", False)
         self.device.setting(bool, "autohome", False)
         self.device.setting(bool, "autobeep", True)
         self.device.setting(bool, "autostart", True)
@@ -130,6 +135,7 @@ class JobInfo(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
+        self.menu_prehome.Check(self.device.prehome)
         self.menu_autohome.Check(self.device.autohome)
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
@@ -171,6 +177,9 @@ class JobInfo(wx.Frame, Module):
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autostart = self.menu_autostart.IsChecked()
+
+    def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.device.prehome = self.menu_prehome.IsChecked()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autohome = self.menu_autohome.IsChecked()
