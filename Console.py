@@ -47,7 +47,7 @@ class Console(Module, Pipe):
                     self.channel(e)
 
     def tick_command(self, command):
-        self.commands = [c for c in self.commands if c != command] # Only allow 1 copy of any command.
+        self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
         self.commands.append(command)
         self.schedule()
 
@@ -56,14 +56,27 @@ class Console(Module, Pipe):
         if len(self.commands) == 0:
             self.unschedule()
 
-    def execute_set_position(self, position_x, position_y):
+    def execute_absolute_position(self, position_x, position_y):
         x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
         y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
 
         def move():
+            yield COMMAND_SET_ABSOLUTE
             yield COMMAND_MODE_RAPID
             yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, int(x_pos), int(y_pos)
+        return move
+
+    def execute_relative_position(self, position_x, position_y):
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+
+        def move():
+            yield COMMAND_SET_INCREMENTAL
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_LASER_OFF
+            yield COMMAND_MOVE, int(x_pos), int(y_pos)
+            yield COMMAND_SET_ABSOLUTE
         return move
 
     def execute_jog(self, direction, amount):
@@ -122,6 +135,7 @@ class Console(Module, Pipe):
             yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
             yield 'move <x> <y>'
+            yield 'move_relative <dx> <dy>'
             yield 'home'
             yield 'unlock'
             yield 'speed [<value>]'
@@ -168,6 +182,10 @@ class Console(Module, Pipe):
             yield 'bind [<key> <command>]'
             yield 'alias [<alias> <command>]'
             yield '-------------------'
+            yield 'trace_hull'
+            yield 'trace_quick'
+            yield 'pulse <time_ms>'
+            yield '-------------------'
             yield 'ruidaserver'
             yield 'grblserver'
             yield '-------------------'
@@ -192,7 +210,8 @@ class Console(Module, Pipe):
                 yield 'Device has no spooler.'
                 return
             if len(args) == 1:
-                spooler.send_job(self.execute_jog(command, *args))
+                if not spooler.job_if_idle(self.execute_jog(command, *args)):
+                    yield 'Busy Error'
             else:
                 yield 'Syntax Error'
             return
@@ -210,12 +229,23 @@ class Console(Module, Pipe):
             else:
                 yield 'Laser is off.'
             return
-        elif command == 'move':
+        elif command == 'move' or command == 'move_absolute':
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
             if len(args) == 2:
-                spooler.send_job(self.execute_set_position(*args))
+                if not spooler.job_if_idle(self.execute_absolute_position(*args)):
+                    yield 'Busy Error'
+            else:
+                yield 'Syntax Error'
+            return
+        elif command == 'move_relative':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            if len(args) == 2:
+                if not spooler.job_if_idle(self.execute_relative_position(*args)):
+                    yield 'Busy Error'
             else:
                 yield 'Syntax Error'
             return
@@ -223,13 +253,19 @@ class Console(Module, Pipe):
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
-            spooler.add_command(COMMAND_HOME)
+            spooler.job(COMMAND_HOME)
             return
         elif command == 'unlock':
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
-            spooler.add_command(COMMAND_UNLOCK)
+            spooler.job(COMMAND_UNLOCK)
+            return
+        elif command == 'lock':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            spooler.job(COMMAND_LOCK)
             return
         elif command == 'speed':
             if interpreter is None:
@@ -611,11 +647,20 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            matrix = Matrix('rotate(%s,%f,%f)' % (args[0], center_x, center_y))
-            matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
+            bounds = elements.bounds()
+            if len(args) >= 1:
+                rot = Angle.parse(args[0]).as_degrees
+            else:
+                rot = 0
+            if len(args) >= 2:
+                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 3:
+                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+            matrix = Matrix('rotate(%f,%f,%f)' % (rot, center_x, center_y))
             try:
                 for element in elements.elems(emphasized=True):
                     element *= matrix
@@ -641,18 +686,28 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            sx = '1'
-            sy = '1'
+            bounds = elements.bounds()
+
             if len(args) >= 1:
-                sx = args[0]
-                sy = args[0]
+                sx = Length(args[0]).value(relative_length=1.0)
+            else:
+                sx = 1
             if len(args) >= 2:
-                sy = args[1]
-            matrix = Matrix('scale(%s,%s,%f,%f)' % (sx, sy, center_x, center_y))
-            matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
+                sy = Length(args[1]).value(relative_length=1.0)
+            else:
+                sy = sx
+            if len(args) >= 3:
+                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 4:
+                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+            if sx == 0 or sy == 0:
+                yield 'Scaling by Zero Error'
+                return
+            matrix = Matrix('scale(%f,%f,%f,%f)' % (sx, sy, center_x, center_y))
             try:
                 for element in elements.elems(emphasized=True):
                     element *= matrix
@@ -678,14 +733,15 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            tx = '0'
-            ty = '0'
             if len(args) >= 1:
-                tx = args[0]
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                tx = 0
             if len(args) >= 2:
-                ty = args[1]
-            matrix = Matrix('translate(%s,%s)' % (tx, ty))
-            matrix.render(ppi=1000.0, width=self.device.bed_width * 39.3701, height=self.device.bed_height * 39.3701)
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                ty = 0
+            matrix = Matrix('translate(%f,%f)' % (tx, ty))
             try:
                 for element in elements.elems(emphasized=True):
                     element *= matrix
@@ -711,14 +767,21 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
+            bounds = elements.bounds()
             try:
                 end_angle = Angle.parse(args[0])
             except ValueError:
                 yield "Invalid Value."
                 return
+            if len(args) >= 2:
+                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 3:
+                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+
             try:
                 for element in elements.elems(emphasized=True):
                     start_angle = element.rotation
@@ -747,20 +810,30 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            bounds = OperationPreprocessor.bounding_box(elements.elems(emphasized=True))
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            sx = 1
-            sy = 1
+            bounds = elements.bounds()
             if len(args) >= 1:
-                sx = float(args[0])
-                sy = sx
+                sx = Length(args[0]).value(relative_length=1.0)
+            else:
+                sx = 1
             if len(args) >= 2:
-                sy = float(args[1])
+                sy = Length(args[1]).value(relative_length=1.0)
+            else:
+                sy = sx
+            if len(args) >= 3:
+                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 4:
+                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
             try:
                 for element in elements.elems(emphasized=True):
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
+                    if sx == 0 or sy == 0:
+                        yield 'Scaling by Zero Error'
+                        return
                     nsx = sx / osx
                     nsy = sy / osy
                     matrix = Matrix('scale(%f,%f,%f,%f)' % (nsx, nsy, center_x, center_y))
@@ -787,12 +860,15 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            tx = 0
-            ty = 0
+
             if len(args) >= 1:
                 tx = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+            else:
+                tx = 0
             if len(args) >= 2:
                 ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            else:
+                ty = 0
             try:
                 for element in elements.elems(emphasized=True):
                     otx = element.transform.value_trans_x()
@@ -806,6 +882,37 @@ class Console(Module, Pipe):
                 yield "Invalid value"
             active_device.signal('refresh_scene')
             return
+        elif command == 'matrix':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Matrix Values:'
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: %s - %s' % \
+                          (i, str(element.transform), name)
+                    i += 1
+                yield '----------'
+                return
+            if not elements.has_emphasis():
+                yield "No selected elements."
+                return
+            if len(args) != 6:
+                yield "Requires six matrix parameters"
+                return
+            try:
+                matrix = Matrix(float(args[0]), float(args[1]), float(args[2]), float(args[3]),
+                                Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701),
+                                Length(args[5]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                for element in elements.elems(emphasized=True):
+                    element.transform = Matrix(matrix)
+                    element.modified()
+            except ValueError:
+                yield "Invalid value"
+            active_device.signal('refresh_scene')
+            return
         elif command == 'reset':
             for element in elements.elems(emphasized=True):
                 name = str(element)
@@ -814,7 +921,6 @@ class Console(Module, Pipe):
                 yield 'reset - %s' % (name)
                 element.transform.reset()
                 element.modified()
-            self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
             return
         elif command == 'reify':
@@ -1037,6 +1143,79 @@ class Console(Module, Pipe):
                 server.set_pipe(active_device.using('module', 'RuidaEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
+            return
+        elif command == 'trace_hull':
+            pts = []
+            for obj in elements.elems(emphasized=True):
+                if isinstance(obj, Path):
+                    epath = abs(obj)
+                    pts += [q for q in epath.as_points()]
+                elif isinstance(obj, SVGImage):
+                    bounds = obj.bbox()
+                    pts += [(bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3])]
+            hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) == 0:
+                yield 'No elements bounds to trace.'
+                return
+            hull.append(hull[0])  # loop
+
+            def trace_hull():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_OFF
+                yield COMMAND_MODE_RAPID
+                for p in hull:
+                    yield COMMAND_MOVE, p[0], p[1]
+
+            spooler.job(trace_hull)
+            return
+        elif command == 'trace_quick':
+            bbox = elements.bounds()
+            if bbox is None:
+                yield 'No elements bounds to trace.'
+                return
+
+            def trace_quick():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_OFF
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, bbox[0], bbox[1]
+                yield COMMAND_MOVE, bbox[2], bbox[1]
+                yield COMMAND_MOVE, bbox[2], bbox[3]
+                yield COMMAND_MOVE, bbox[0], bbox[3]
+                yield COMMAND_MOVE, bbox[0], bbox[1]
+
+            spooler.job(trace_quick)
+            return
+        elif command == 'pulse':
+            if len(args) == 0:
+                yield 'Must specify a pulse time in milliseconds.'
+                return
+            try:
+                value = float(args[0]) / 1000.0
+            except ValueError:
+                yield '"%s" not a valid pulse time in milliseconds' % (args[0])
+                return
+            if value > 1.0:
+                yield 'Exceeds 1 second limit to fire a standing laser.' % (args[0])
+                try:
+                    if args[1] != "idonotlovemyhouse":
+                        return
+                except IndexError:
+                    return
+
+            def timed_fire():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, value
+                yield COMMAND_LASER_OFF
+
+            if self.device.spooler.job_if_idle(timed_fire):
+                yield 'Pulse laser for %f milliseconds' % (value * 1000.0)
+            else:
+                yield 'Pulse laser failed: Busy'
             return
         elif command == 'camera_snapshot':
             active_device.open('window', 'CameraInterface', None, -1, "")

@@ -138,8 +138,7 @@ if device is not kernel:  # We can process this stuff since only with a real dev
         # Automatically classify and start the job.
         elements = kernel.elements
         elements.classify()
-
-        device.spooler.send_job(elements.ops())
+        device.spooler.jobs(elements.ops())
         device.setting(bool, 'quit', True)
         device.quit = True
 

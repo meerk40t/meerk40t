@@ -176,11 +176,11 @@ class Alignment(wx.Frame, Module):
 
     def on_button_vertical_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.vertical_near_far_test)
+        spooler.job(self.vertical_near_far_test)
 
     def on_button_vertical_align(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.vertical_test)
+        spooler.job(self.vertical_test)
 
     def on_spin_vertical_distance(self, event):  # wxGlade: Alignment.<event_handler>
         pass
@@ -197,11 +197,11 @@ class Alignment(wx.Frame, Module):
 
     def on_button_horizontal_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.horizontal_near_far_test)
+        spooler.job(self.horizontal_near_far_test)
 
     def on_button_horizontal_align(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.horizontal_test)
+        spooler.job(self.horizontal_test)
 
     def on_spin_horizontal_distance(self, event):  # wxGlade: Alignment.<event_handler>
         pass
@@ -219,11 +219,11 @@ class Alignment(wx.Frame, Module):
 
     def on_button_square_align_4_corners(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.square4_test)
+        spooler.job(self.square4_test)
 
     def on_button_square_align(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.square_test)
+        spooler.job(self.square_test)
 
     def square_test(self):
         yield COMMAND_HOME

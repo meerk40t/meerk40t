@@ -94,7 +94,7 @@ class Spooler(Module):
     def __init__(self):
         Module.__init__(self)
         self.queue_lock = Lock()
-        self.queue = []
+        self._queue = []
 
     def __repr__(self):
         return "Spooler()"
@@ -105,40 +105,73 @@ class Spooler(Module):
         self.initialize()
 
     def peek(self):
-        if len(self.queue) == 0:
+        if len(self._queue) == 0:
             return None
-        return self.queue[0]
+        return self._queue[0]
 
     def pop(self):
-        if len(self.queue) == 0:
+        if len(self._queue) == 0:
             return None
         self.queue_lock.acquire(True)
-        queue_head = self.queue[0]
-        del self.queue[0]
+        queue_head = self._queue[0]
+        del self._queue[0]
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self.queue))
+        self.device.signal("spooler;queue", len(self._queue))
         return queue_head
 
-    def add_command(self, *element):
-        self.queue_lock.acquire(True)
-        self.queue.append(element)
-        self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self.queue))
+    def job(self, *job):
+        """
+        Send a single job event with parameters as needed.
 
-    def send_job(self, element):
+        The job can be a single command with (COMMAND_MOVE 20 20) or without parameters (COMMAND_HOME), or a generator
+        which can yield many lasercode commands.
+
+        :param job: job to send to the spooler.
+        :return:
+        """
         self.queue_lock.acquire(True)
-        if isinstance(element, (list, tuple)):
-            self.queue += element
+
+        if len(job) == 1:
+            self._queue.extend(job)
         else:
-            self.queue.append(element)
+            self._queue.append(job)
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self.queue))
+        self.device.signal("spooler;queue", len(self._queue))
+
+    def jobs(self, jobs):
+        """
+        Send several jobs generators to be appended to the end of the queue.
+
+        The jobs parameter must be suitable to be .extended to the end of the queue list.
+        :param jobs: jobs to extend
+        :return:
+        """
+        self.queue_lock.acquire(True)
+        if isinstance(jobs, (list, tuple)):
+            self._queue.extend(jobs)
+        else:
+            self._queue.append(jobs)
+        self.queue_lock.release()
+        self.device.signal("spooler;queue", len(self._queue))
+
+    def job_if_idle(self, element):
+        if len(self._queue) == 0:
+            self.job(element)
+            return True
+        else:
+            return False
 
     def clear_queue(self):
         self.queue_lock.acquire(True)
-        self.queue = []
+        self._queue = []
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self.queue))
+        self.device.signal("spooler;queue", len(self._queue))
+
+    def remove(self, element):
+        self.queue_lock.acquire(True)
+        self._queue.remove(element)
+        self.queue_lock.release()
+        self.device.signal("spooler;queue", len(self._queue))
 
 
 class Interpreter(Module):
@@ -737,6 +770,7 @@ class Elemental(Module):
             obj.bounds = None
             self._bounds = None
             self.validate_bounds()
+            self.device.signal("modified", obj)
 
         obj.select = select
         obj.unselect = unselect
@@ -1921,6 +1955,10 @@ class Kernel(Device):
         self.alias['+left'] = "loop left 1mm"
         self.alias['+up'] = "loop up 1mm"
         self.alias['+down'] = "loop down 1mm"
+        self.alias['+upright'] = "loop move_relative 1mm -1mm"
+        self.alias['+downright'] = "loop move_relative 1mm 1mm"
+        self.alias['+upleft'] = "loop move_relative -1mm -1mm"
+        self.alias['+downleft'] = "loop move_relative -1mm 1mm"
         self.alias['-scale_up'] = "end scale 1.02"
         self.alias['-scale_down'] = "end scale 0.98"
         self.alias['-rotate_cw'] = "end rotate 2"
@@ -1933,6 +1971,10 @@ class Kernel(Device):
         self.alias['-left'] = "end left 1mm"
         self.alias['-up'] = "end up 1mm"
         self.alias['-down'] = "end down 1mm"
+        self.alias['-upright'] = "end move_relative 1mm -1mm"
+        self.alias['-downright'] = "end move_relative 1mm 1mm"
+        self.alias['-upleft'] = "end move_relative -1mm -1mm"
+        self.alias['-downleft'] = "end move_relative -1mm 1mm"
         self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
 
     def read_item_persistent(self, item):

@@ -92,10 +92,10 @@ class JobSpooler(wx.Frame, Module):
                 return str(e)
 
         self.list_job_spool.DeleteAllItems()
-        if len(self.device.spooler.queue) > 0:
+        if len(self.device.spooler._queue) > 0:
             # This should actually process and update the queue items.
             i = 0
-            for e in self.device.spooler.queue:
+            for e in self.device.spooler._queue:
                 m = self.list_job_spool.InsertItem(i, "#%d" % i)
                 if m != -1:
                     self.list_job_spool.SetItem(m, 1, name_str(e))
@@ -138,14 +138,14 @@ class JobSpooler(wx.Frame, Module):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            self.device.spooler.queue = []
+            self.device.spooler.clear_queue()
             self.refresh_spooler_list()
 
         return delete
 
     def on_tree_popup_delete(self, element):
         def delete(event):
-            self.device.spooler.queue.remove(element)
+            self.device.spooler.remove(element)
             self.refresh_spooler_list()
 
         return delete

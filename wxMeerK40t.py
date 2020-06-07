@@ -1055,7 +1055,7 @@ class MeerK40t(wx.Frame, Module):
             yield COMMAND_HOME
             yield COMMAND_WAIT_FINISH
 
-        self.device.spooler.send_job(home_dot_test)
+        self.device.spooler.job(home_dot_test)
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
