@@ -147,9 +147,6 @@ class LaserRender:
             font = element.wxfont
         else:
             if element.font_size < 1:
-                font = wx.Font(1, wx.SWISS, wx.NORMAL, wx.BOLD)
-                gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
-                width, height = gc.GetTextExtent(element.text)
                 if element.font_size > 0:
                     element.transform.pre_scale(element.font_size,
                                                 element.font_size,

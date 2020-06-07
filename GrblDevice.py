@@ -309,9 +309,10 @@ class GRBLEmulator(Module, Pipe):
             132: 200.000  # Z-axis max travel mm.
         }
         self.grbl_channel = None
+        self.reply = None
 
     def initialize(self):
-        self.device.add_greet('grbl', b"Grbl 1.1e ['$' for help]\r\n")
+        self.device.add_greet('grbl', "Grbl 1.1e ['$' for help]\r\n")
         self.grbl_channel = self.device.channel_open('grbl')
 
     def close(self):
@@ -319,6 +320,12 @@ class GRBLEmulator(Module, Pipe):
 
     def open(self):
         pass
+
+    def grbl_write(self, data):
+        if self.grbl_channel is not None:
+            self.grbl_channel(data)
+        if self.grbl_channel is not None:
+            self.reply(data)
 
     def realtime_write(self, bytes_to_write):
         interpreter = self.device.interpreter
@@ -337,7 +344,7 @@ class GRBLEmulator(Module, Pipe):
             f = self.feed_invert(self.device.interpreter.speed)
             s = self.device.interpreter.power
             parts.append('FS:%f,%d' % (f, s))
-            self.grbl_channel("<%s>\r\n" % '|'.join(parts))
+            self.grbl_write("<%s>\r\n" % '|'.join(parts))
         elif bytes_to_write == '~':  # Resume.
             interpreter.realtime_command(REALTIME_RESUME)
         elif bytes_to_write == '!':  # Pause.
@@ -345,7 +352,7 @@ class GRBLEmulator(Module, Pipe):
         elif bytes_to_write == '\x18':  # Soft reset.
             interpreter.realtime_command(REALTIME_RESET)
 
-    def write(self, data):
+    def write(self, data, reply=None, channel=None, elements=None):
         if isinstance(data, bytes):
             data = data.decode()
         if '?' in data:
@@ -372,9 +379,9 @@ class GRBLEmulator(Module, Pipe):
             self.buffer = self.buffer[pos + 1:]
             cmd = self.commandline(command)
             if cmd == 0:  # Execute GCode.
-                self.grbl_channel("ok\r\n")
+                self.grbl_write("ok\r\n")
             else:
-                self.grbl_channel("error:%d\r\n" % cmd)
+                self.grbl_write("error:%d\r\n" % cmd)
 
     def _tokenize_code(self, code_line):
         code = None
@@ -413,15 +420,15 @@ class GRBLEmulator(Module, Pipe):
             data = data[:pos]
         if data.startswith('$'):
             if data == '$':
-                self.grbl_channel("[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n")
+                self.grbl_write("[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n")
                 return 0
             elif data == '$$':
                 for s in self.settings:
                     v = self.settings[s]
                     if isinstance(v, int):
-                        self.grbl_channel("$%d=%d\r\n" % (s, v))
+                        self.grbl_write("$%d=%d\r\n" % (s, v))
                     elif isinstance(v, float):
-                        self.grbl_channel("$%d=%.3f\r\n" % (s, v))
+                        self.grbl_write("$%d=%.3f\r\n" % (s, v))
                 return 0
             if self.grbl_set_re.match(data):
                 settings = list(self.grbl_set_re.findall(data))[0]

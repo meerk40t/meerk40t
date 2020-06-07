@@ -1124,7 +1124,10 @@ class Console(Module, Pipe):
                 chan = 'grbl'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.using('module', 'GrblEmulator'))
+                chan = 'server'
+                active_device.add_watcher(chan, self.channel)
+                yield "Watching Channel: %s" % chan
+                server.set_pipe(active_device.using('module', 'GRBLEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
