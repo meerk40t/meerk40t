@@ -85,8 +85,8 @@ class Controller(wx.Frame, Module):
         self.device.listen("pipe;thread", self.on_control_state)
         self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
-        self.text_device = wx.TextCtrl(self, wx.ID_ANY, self.device.device_name)
-        self.text_location = wx.TextCtrl(self, wx.ID_ANY, self.device.device_location)
+        self.text_device.SetValue(self.device.device_name)
+        self.text_location.SetValue(self.device.device_location)
 
     def shutdown(self, channel):
         self.Close()
