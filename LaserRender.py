@@ -154,7 +154,7 @@ class LaserRender:
                     element.transform.pre_scale(element.font_size,
                                                 element.font_size,
                                                 element.x,
-                                                element.y + height)
+                                                element.y - height)
                 element.font_size = 1  # No zero sized fonts.
             else:
                 font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
