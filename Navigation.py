@@ -650,23 +650,16 @@ class Navigation(wx.Frame, Module):
         self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.elements
-
-        if elements.has_emphasis():
-            element = elements.first_element(emphasized=True)
-            matrix = element.transform
-
-            try:
-                self.console.write("matrix %f %f %f %f %f %f" % (
-                    float(self.text_a.GetValue()),
-                    float(self.text_b.GetValue()),
-                    float(self.text_c.GetValue()),
-                    float(self.text_d.GetValue()),
-                    float(self.text_e.GetValue()),
-                    float(self.text_f.GetValue())
-                ))
-                element.modified()
-            except ValueError:
-                self.update_matrix_text()
+        try:
+            self.console.write("matrix %f %f %f %f %s %s" % (
+                float(self.text_a.GetValue()),
+                float(self.text_b.GetValue()),
+                float(self.text_c.GetValue()),
+                float(self.text_d.GetValue()),
+                self.text_e.GetValue(),
+                self.text_f.GetValue()
+            ))
+        except ValueError:
+            self.update_matrix_text()
             self.drag_ready(False)
         self.device.signal('refresh_scene')

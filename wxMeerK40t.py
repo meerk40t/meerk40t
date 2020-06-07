@@ -459,6 +459,11 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("FPS", self.open_fps_dialog)
         device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
+        def test_crash_in_thread():
+            def foo():
+                a = 1 / 0
+            device.threaded(foo)
+        device.control_instance_add("Crash Thread", test_crash_in_thread)
 
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
@@ -2412,7 +2417,7 @@ class wxMeerK40t(wx.App, Module):
         device.run_later = wx.CallAfter
         device.translation = wx.GetTranslation
         device.set_config(wx.Config("MeerK40t"))
-        device.app = self # Registers self as kernel.app
+        device.app = self  # Registers self as kernel.app
         device.setting(int, 'language', None)
         device.add('control', "Delete Settings", self.clear_control)
         language = device.language
@@ -2472,6 +2477,5 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
     dlg.ShowModal()
     dlg.Destroy()
-
 
 sys.excepthook = handleGUIException

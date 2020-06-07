@@ -1340,7 +1340,11 @@ class Device:
 
         def run():
             self.thread_instance_add(thread_name, thread)
-            func()
+            try:
+                func()
+            except:
+                import sys
+                sys.excepthook(*sys.exc_info())
             self.thread_instance_remove(thread_name)
 
         thread.run = run
@@ -1482,10 +1486,14 @@ class Device:
                             jobs_update = True
                         if job.times < 0:
                             continue
-                    if isinstance(job.args, tuple):
-                        job.process(*job.args)
-                    else:
-                        job.process(job.args)
+                    try:
+                        if isinstance(job.args, tuple):
+                            job.process(*job.args)
+                        else:
+                            job.process(job.args)
+                    except:
+                        import sys
+                        sys.excepthook(*sys.exc_info())
                     job.last_run = time.time()
                     job.next_run += job.last_run + job.interval
             if jobs_update:
