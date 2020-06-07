@@ -147,6 +147,8 @@ class LaserRender:
             font = element.wxfont
         else:
             if element.font_size < 1:
+                if element.font_size > 0:
+                    element.transform.pre_scale(element.font_size, element.font_size, element.x, element.y)
                 element.font_size = 1  # No zero sized fonts.
             font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             element.wxfont = font
