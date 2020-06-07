@@ -2115,7 +2115,7 @@ class RootNode(list):
             kernel = self.device.device_root
             elements = kernel.elements
             adding_elements = [copy(e) for e in list(self.elements.elems(emphasized=True)) * copies]
-            elements.extend(adding_elements)
+            elements.add_all(adding_elements)
             elements.classify(adding_elements)
             elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)

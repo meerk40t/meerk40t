@@ -533,37 +533,8 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         # elif command == 'group':
-        #     # if len(kernel.selected_elements) == 0:
-        #     #     yield "No selected elements."
-        #     #     return
-        #     element = Group()
-        #     kernel = self.device.device_root
-        #     kernel.elements.append(element)
-        #     kernel.selected_elements.clear()
-        #     kernel.selected_elements.append(element)
-        #     kernel.signal("selected_elements", kernel.selected_elements)
-        #     kernel.signal("elements", kernel.elements)
-        #     kernel.signal("rebuild_tree", kernel.elements)
-        #     self.active_device.signal("rebuild_tree", kernel.elements)
         #     return
         # elif command == 'ungroup':
-        #     # TODO: Correct this after figuring out groups.
-        #     if len(kernel.selected_elements) == 0:
-        #         yield "No selected elements."
-        #         return
-        #     for element in kernel.selected_elements:
-        #         if isinstance(element, Group):
-        #             pos = element.parent.find(element)
-        #             if pos == -1:
-        #                 continue
-        #             for e in element:
-        #                 element.parent.insert(pos, e)
-        #             element.parent.remove(element)
-        #     kernel.selected_elements.clear()
-        #     kernel.signal("selected_elements", kernel.selected_elements)
-        #     kernel.signal("elements", kernel.elements)
-        #     kernel.signal("rebuild_tree", kernel.elements)
-        #     active_device.signal('refresh_scene')
         #     return
         elif command == 'stroke':
             if len(args) == 0:

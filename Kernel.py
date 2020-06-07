@@ -676,8 +676,6 @@ class Signaler(Module):
 class Elemental(Module):
     """
     selecting and unselecting changes send signals
-    kernel.signal("selected_elements", kernel.selected_elements)
-    "selected_bounds" changes.
     "selected_elements" changes.
     "rebuild_tree" elements.
     clearing operations must unregister those operations.
@@ -756,8 +754,9 @@ class Elemental(Module):
             pass
         try:
             e.unselect()
-            e.unhighlight()
             e.unemphasize()
+            e.unhighlight()
+            e.modified()
         except AttributeError:
             pass
 
@@ -1054,9 +1053,6 @@ class Elemental(Module):
         for obj in self.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
             obj.modified()
-        b = self._bounds
-        self._bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
-        self.device.device_root.signal("selected_bounds", self._bounds)
 
     def set_selected_by_position(self, position):
         def contains(box, x, y=None):
