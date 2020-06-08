@@ -436,7 +436,7 @@ class Console(Module, Pipe):
                 elif value == 'close':
                     try:
                         active_device.remove_watcher(chan, self.channel)
-                        yield "Not Watching Channel: %s" % chan
+                        yield "No Longer Watching Channel: %s" % chan
                     except KeyError:
                         yield "Channel %s is not opened." % chan
             return
@@ -1119,7 +1119,10 @@ class Console(Module, Pipe):
             port = 23
             tcp = True
             try:
-                server = kernel.open('module', 'LaserServer', port=port, tcp=tcp)
+                server = active_device.open('module', 'LaserServer',
+                                            port=port,
+                                            tcp=tcp,
+                                            greet="Grbl 1.1e ['$' for help]\r\n")
                 yield "GRBL Mode."
                 chan = 'grbl'
                 active_device.add_watcher(chan, self.channel)

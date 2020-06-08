@@ -310,9 +310,10 @@ class GRBLEmulator(Module, Pipe):
         }
         self.grbl_channel = None
         self.reply = None
+        self.channel = None
+        self.elements = None
 
     def initialize(self):
-        self.device.add_greet('grbl', "Grbl 1.1e ['$' for help]\r\n")
         self.grbl_channel = self.device.channel_open('grbl')
 
     def close(self):
@@ -324,7 +325,7 @@ class GRBLEmulator(Module, Pipe):
     def grbl_write(self, data):
         if self.grbl_channel is not None:
             self.grbl_channel(data)
-        if self.grbl_channel is not None:
+        if self.reply is not None:
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
@@ -353,6 +354,9 @@ class GRBLEmulator(Module, Pipe):
             interpreter.realtime_command(REALTIME_RESET)
 
     def write(self, data, reply=None, channel=None, elements=None):
+        self.reply = reply
+        self.channel = channel
+        self.elements = elements
         if isinstance(data, bytes):
             data = data.decode()
         if '?' in data:

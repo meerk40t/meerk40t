@@ -257,8 +257,9 @@ class Interpreter(Module):
             return  # Spooler is empty.
 
         self.device.spooler.pop()
-
-        if isinstance(element, tuple):
+        if isinstance(element, int):
+            self.spooled_item = (element,)
+        elif isinstance(element, tuple):
             self.spooled_item = element
         else:
             try:
@@ -1340,11 +1341,11 @@ class Device:
 
         def run():
             self.thread_instance_add(thread_name, thread)
-            # try:
-            func()
-            # except:
-            #     import sys
-            #     sys.excepthook(*sys.exc_info())
+            try:
+                func()
+            except:
+                import sys
+                sys.excepthook(*sys.exc_info())
             self.thread_instance_remove(thread_name)
 
         thread.run = run
