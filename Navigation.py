@@ -131,8 +131,9 @@ class Navigation(wx.Frame, Module):
         self.select_ready(False)
 
     def on_close(self, event):
+        kernel = self.device.device_root
         self.device.remove('window', self.name)
-        self.device.device_root.unlisten("selected", self.on_selected_elements_change)
+        kernel.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.device.unlisten("interpreter;position", self.on_position_update)
 
         event.Skip()  # Call destroy.
@@ -362,7 +363,7 @@ class Navigation(wx.Frame, Module):
         self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
         self.set_jog_distances(self.device.navigate_jog)
 
-        kernel.listen("selected", self.on_selected_elements_change)
+        kernel.listen("emphasized", self.on_emphasized_elements_changed)
         device.listen("interpreter;position", self.on_position_update)
         self.console = self.device.using('module', 'Console')
         self.update_matrix_text()
@@ -370,7 +371,7 @@ class Navigation(wx.Frame, Module):
     def shutdown(self,  channel):
         self.Close()
 
-    def on_selected_elements_change(self, elements):
+    def on_emphasized_elements_changed(self, elements):
         self.select_ready(self.elements.has_emphasis())
         self.update_matrix_text()
 

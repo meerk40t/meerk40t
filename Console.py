@@ -173,7 +173,7 @@ class Console(Module, Pipe):
             yield 'reset'
             yield 'reify'
             yield '-------------------'
-            yield 'operation [<element>]*'
+            yield 'operation [<op>]*'
             yield 'classify'
             yield 'cut'
             yield 'engrave'
@@ -411,7 +411,6 @@ class Console(Module, Pipe):
             yield '----------'
             return
         elif command == 'channel':
-            #'channel [(open|close) <channel_name>]'
             if len(args) == 0:
                 yield '----------'
                 yield 'Channels Active:'
@@ -494,7 +493,7 @@ class Console(Module, Pipe):
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    if element.selected:
+                    if element.emphasized:
                         yield '%d: * %s' % (i, name)
                     else:
                         yield '%d: %s' % (i, name)
@@ -505,6 +504,16 @@ class Console(Module, Pipe):
                     try:
                         value = int(value)
                     except ValueError:
+                        if value == "*":
+                            yield "Selecting all elements."
+                            elements.set_selected(list(elements.elems()))
+                            return
+                        elif value == "~":
+                            elements.set_selected(list(elements.elems(selected=False)))
+                            return
+                        elif value == "!":
+                            elements.set_selected(None)
+                            return
                         yield "Value Error: %s is not an integer" % value
                         continue
                     try:
@@ -931,7 +940,7 @@ class Console(Module, Pipe):
                 yield 'reified - %s' % (name)
                 element.reify()
                 element.cache = None
-            self.device.signal('rebuild_tree', 0)
+                element.modified()
             active_device.signal('refresh_scene')
             return
         # Operation Command Elements
@@ -957,20 +966,30 @@ class Console(Module, Pipe):
                     try:
                         value = int(value)
                     except ValueError:
+                        if value == "*":
+                            yield "Selecting all operations."
+                            elements.set_selected(list(elements.ops()))
+                            return
+                        elif value == "~":
+                            elements.set_selected(list(elements.ops(selected=False)))
+                            return
+                        elif value == "!":
+                            elements.set_selected(None)
+                            return
                         yield "Value Error: %s is not an integer" % value
                         continue
-                    if 0 <= value <= len(elements.count_op()):
+                    try:
                         operation = elements.get_op(value)
                         name = str(operation)
                         if len(name) > 50:
                             name = name[:50] + '...'
                         if operation.selected:
                             operation.unselect()
-                            yield "Deselecting item %d called %s" % (value, name)
+                            yield "Deselecting operation %d called %s" % (value, name)
                         else:
                             operation.select()
-                            yield "Selecting item %d called %s" % (value, name)
-                    else:
+                            yield "Selecting operation %d called %s" % (value, name)
+                    except IndexError:
                         yield 'index %d out of range' % value
             return
         elif command == 'classify':
@@ -1061,7 +1080,6 @@ class Console(Module, Pipe):
                 except ValueError:
                     pass
             elements.add_elems([copy(e) for e in list(elements.elems(emphasized=True)) * copies])
-            self.device.signal('rebuild_tree', 0)
             active_device.signal('refresh_scene')
         # Alias / Bind Command Elements.
         elif command == 'bind':
@@ -1235,6 +1253,9 @@ class Console(Module, Pipe):
             active_device.signal('refresh_scene')
             active_device.signal('rebuild_tree')
             yield "Refreshed."
+            return
+        elif command == 'shutdown':
+            active_device.stop()
             return
         else:
             if command in kernel.alias:

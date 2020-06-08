@@ -709,12 +709,12 @@ class Signaler(Module):
 
 class Elemental(Module):
     """
-    selecting and unselecting changes send signals
-    "selected_elements" changes.
-    "rebuild_tree" elements.
-    clearing operations must unregister those operations.
-
-    self.elements.clear(), remove all selected elements.
+    The elemental module is governs all the interactions with the various elements,
+    operations, and filenodes. Handling structure change and selection, emphasis, and
+    highlighting changes. The goal of this module is to make sure that the life cycle
+    of the elements is strictly enforced. For example, every element that is removed
+    must have had the .cache deleted. And anything selecting an element must propagate
+    that information out to inform other interested modules.
     """
     def __init__(self):
         Module.__init__(self)
@@ -745,10 +745,12 @@ class Elemental(Module):
 
         def select():
             obj.selected = True
+            self.propagate_subproperties()
             self.device.signal("selected", obj)
 
         def unselect():
             obj.selected = False
+            self.propagate_subproperties()
             self.device.signal("selected", obj)
 
         def highlight():
@@ -762,10 +764,12 @@ class Elemental(Module):
         def emphasize():
             obj.emphasized = True
             self.device.signal("emphasized", obj)
+            self.validate_bounds()
 
         def unemphasize():
             obj.emphasized = False
             self.device.signal("emphasized", obj)
+            self.validate_bounds()
 
         def modified():
             obj.bounds = None
@@ -804,35 +808,52 @@ class Elemental(Module):
         for j in combined(self.ops(**kwargs), self.elems(**kwargs)):
             yield j
 
+    def _filtered_list(self, item_list, **kwargs):
+        """
+        Filters a list of items with selected, emphasized, and highlighted.
+        False values means find where that parameter is false.
+        True values means find where that parameter is true.
+        If the filter does not exist then it isn't used to filter that data.
+
+        Items which are set to None are skipped.
+
+        :param item_list:
+        :param kwargs:
+        :return:
+        """
+        s = 'selected' in kwargs
+        if s:
+            s = kwargs['selected']
+        else:
+            s = None
+        e = 'emphasized' in kwargs
+        if e:
+            e = kwargs['emphasized']
+        else:
+            e = None
+        h = 'highlighted' in kwargs
+        if h:
+            h = kwargs['highlighted']
+        else:
+            h = None
+        for obj in item_list:
+            if obj is None:
+                continue
+            if s is not None and s != obj.selected:
+                continue
+            if e is not None and e != obj.emphasized:
+                continue
+            if h is not None and s != obj.highlighted:
+                continue
+            yield obj
+
     def ops(self, **kwargs):
-        selected = 'selected' in kwargs and kwargs['selected']
-        emphasized = 'emphasized' in kwargs and kwargs['emphasized']
-        highlighted = 'highlighted' in kwargs and kwargs['highlighted']
-        for op in self._operations:
-            if op is None:
-                continue
-            if selected and not op.selected:
-                continue
-            if emphasized and not op.emphasized:
-                continue
-            if highlighted and not op.highlighted:
-                continue
-            yield op
+        for item in self._filtered_list(self._operations, **kwargs):
+            yield item
 
     def elems(self, **kwargs):
-        selected = 'selected' in kwargs and kwargs['selected']
-        emphasized = 'emphasized' in kwargs and kwargs['emphasized']
-        highlighted = 'highlighted' in kwargs and kwargs['highlighted']
-        for op in self._elements:
-            if op is None:
-                continue
-            if selected and not op.selected:
-                continue
-            if emphasized and not op.emphasized:
-                continue
-            if highlighted and not op.highlighted:
-                continue
-            yield op
+        for item in self._filtered_list(self._elements, **kwargs):
+            yield item
 
     def first_element(self, **kwargs):
         for e in self.elems(**kwargs):
@@ -869,7 +890,7 @@ class Elemental(Module):
         self._operations.extend(adding_ops)
         for op in adding_ops:
             self.register(op)
-            self.device.signal("operation_added", op)
+        self.device.signal("operation_added", adding_ops)
 
     def add_elem(self, element):
         self._elements.append(element)
@@ -880,7 +901,7 @@ class Elemental(Module):
         self._elements.extend(adding_elements)
         for element in adding_elements:
             self.register(element)
-            self.device.signal("element_added", element)
+        self.device.signal("element_added", adding_elements)
 
     def files(self):
         return self._filenodes
@@ -931,36 +952,44 @@ class Elemental(Module):
         If any operation is selected, all sub-operations are highlighted.
 
         """
-        selection_changed = False
         if selected is None:
             selected = []
         for s in self._elements:
             is_selected = s in selected
             if s.selected:
                 if not is_selected:
-                    selection_changed = True
                     s.unselect()
             else:
                 if is_selected:
-                    selection_changed = True
                     s.select()
+        for s in self._operations:
+            is_selected = s in selected
+            if s.selected:
+                if not is_selected:
+                    s.unselect()
+            else:
+                if is_selected:
+                    s.select()
+
+    def propagate_subproperties(self):
+        """
+        Sets selected and other properties of a given element.
+
+        All selected elements are also semi-selected.
+
+        If elements itself is selected, all subelements are semiselected.
+
+        If any operation is selected, all sub-operations are highlighted.
+
+        """
+        for s in self._elements:
             if s.selected:
                 if not s.emphasized:
                     s.emphasize()
             if s.emphasized:
                 if not s.selected:
                     s.unemphasize()
-            s.unhighlight()
         for s in self._operations:
-            is_selected = s in selected
-            if s.selected:
-                if not is_selected:
-                    selection_changed = True
-                    s.unselect()
-            else:
-                if is_selected:
-                    selection_changed = True
-                    s.select()
             if s.selected:
                 if not s.emphasized:
                     s.emphasize()
@@ -969,13 +998,6 @@ class Elemental(Module):
             if s.emphasized:
                 if not s.selected:
                     s.unemphasize()
-        if selection_changed:
-            self.selection_items_updated()
-
-    def selection_items_updated(self):
-        self.device.signal("selected_ops", 0)
-        self.device.signal("selected_elements", 0)
-        self.validate_bounds()
 
     def clear_operations(self):
         for op in self._operations:
@@ -1100,7 +1122,7 @@ class Elemental(Module):
             if self._bounds is not None and contains(self._bounds, position):
                 return  # Select by position aborted since selection position within current select bounds.
         self.set_selected(None)
-        for e in reversed(list(self.elems(emphasized=True))):
+        for e in reversed(list(self.elems())):
             bounds = e.bbox()
             if bounds is None:
                 continue
@@ -1195,7 +1217,6 @@ class Elemental(Module):
                     elements, pathname, basename = results
                     self._filenodes[pathname] = elements
                     self.add_elems(elements)
-                    self.device.signal('rebuild_tree', elements)
                     return elements, pathname, basename
         return None
 
@@ -1390,7 +1411,11 @@ class Device:
                     pass
         if 'thread' in self.instances:
             for thread_name in list(self.instances['thread']):
-                thread = self.instances['thread'][thread_name]
+                try:
+                    thread = self.instances['thread'][thread_name]
+                except KeyError:
+                    channel(_("Thread %s exited safely %s") % (thread_name, str(thread)))
+                    continue
                 if not thread.is_alive:
                     channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
                     continue

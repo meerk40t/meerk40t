@@ -579,8 +579,6 @@ class CameraInterface(wx.Frame, Module):
             obj.image_width = self.image_width
             obj.image_height = self.image_height
             elements.add_elem(obj)
-            self.device.signal('refresh_elements', 0)
-            self.device.signal('rebuild_tree', 0)
 
     def on_slider_fps(self, event):  # wxGlade: CameraInterface.<event_handler>
         fps = self.slider_fps.GetValue()

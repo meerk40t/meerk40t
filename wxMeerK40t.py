@@ -383,9 +383,6 @@ class MeerK40t(wx.Frame, Module):
         self.root = None
         self.widget_scene = None
 
-    def notify_change(self):
-        self.device.signal('rebuild_tree', 0)
-
     def add_language_menu(self):
         if os.path.exists('./locale'):
             wxglade_tmp_menu = wx.Menu()
@@ -406,7 +403,24 @@ class MeerK40t(wx.Frame, Module):
 
     def on_close(self, event):
         self.times = -1
-        self.unlisten_scene()
+        device = self.device
+        kernel = device.device_root
+        device.unlisten("background", self.on_background_signal)
+        device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
+        device.unlisten('element_added', self.on_rebuild_tree_request)
+        device.unlisten('operation_added', self.on_rebuild_tree_request)
+        device.unlisten('refresh_scene', self.on_refresh_scene)
+        device.unlisten("element_property_update", self.on_element_update)
+        kernel.unlisten("units", self.space_changed)
+        kernel.unlisten("emphasized", self.on_emphasized_elements_changed)
+        kernel.unlisten("selected", self.on_selected_elements_changed)
+        device.unlisten('pipe;error', self.on_usb_error)
+        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
+        device.unlisten('pipe;thread', self.on_pipe_state)
+        device.unlisten('spooler;thread', self.on_spooler_state)
+        device.unlisten('interpreter;position', self.update_position)
+        device.unlisten('interpreter;mode', self.on_interpreter_mode)
+        device.unlisten('bed_size', self.bed_changed)
         self.device.device_root.open('window', 'Shutdown', None, -1, "")
         self.device.remove('window', self.name)
         self.device.stop()
@@ -433,7 +447,22 @@ class MeerK40t(wx.Frame, Module):
             device.setting(int, "bed_width", 320)  # Default Value
             device.setting(int, "bed_height", 220)  # Default Value
 
-        self.listen_scene()
+        device.listen("background", self.on_background_signal)
+        device.listen('rebuild_tree', self.on_rebuild_tree_request)
+        device.listen('element_added', self.on_rebuild_tree_request)
+        device.listen('operation_added', self.on_rebuild_tree_request)
+        device.listen('refresh_scene', self.on_refresh_scene)
+        device.listen("element_property_update", self.on_element_update)
+        kernel.listen("units", self.space_changed)
+        kernel.listen("emphasized", self.on_emphasized_elements_changed)
+        kernel.listen("selected", self.on_selected_elements_changed)
+        device.listen('pipe;error', self.on_usb_error)
+        device.listen('pipe;usb_state_text', self.on_usb_state_text)
+        device.listen('pipe;thread', self.on_pipe_state)
+        device.listen('spooler;thread', self.on_spooler_state)
+        device.listen('interpreter;position', self.update_position)
+        device.listen('interpreter;mode', self.on_interpreter_mode)
+        device.listen('bed_size', self.bed_changed)
         if device.fps <= 0:
             device.fps = 60
         self.renderer = LaserRender(device)
@@ -580,42 +609,6 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.signal("background", background)
         self.request_refresh()
 
-    def listen_scene(self):
-        device = self.device
-        kernel = device.device_root
-        device.listen("background", self.on_background_signal)
-        device.listen('rebuild_tree', self.on_rebuild_tree_request)
-        device.listen('refresh_scene', self.on_refresh_scene)
-        device.listen("element_property_update", self.on_element_update)
-        kernel.listen("units", self.space_changed)
-        device.listen("selected_elements", self.selection_changed)
-
-        device.listen('pipe;error', self.on_usb_error)
-        device.listen('pipe;usb_state_text', self.on_usb_state_text)
-        device.listen('pipe;thread', self.on_pipe_state)
-        device.listen('spooler;thread', self.on_spooler_state)
-        device.listen('interpreter;position', self.update_position)
-        device.listen('interpreter;mode', self.on_interpreter_mode)
-        device.listen('bed_size', self.bed_changed)
-
-    def unlisten_scene(self):
-        device = self.device
-        kernel = device.device_root
-        device.unlisten("background", self.on_background_signal)
-        device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
-        device.unlisten('refresh_scene', self.on_refresh_scene)
-        device.unlisten("element_property_update", self.on_element_update)
-        kernel.unlisten("units", self.space_changed)
-        device.unlisten("selected_elements", self.selection_changed)
-
-        device.unlisten('pipe;error', self.on_usb_error)
-        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
-        device.unlisten('pipe;thread', self.on_pipe_state)
-        device.unlisten('spooler;thread', self.on_spooler_state)
-        device.unlisten('interpreter;position', self.update_position)
-        device.unlisten('interpreter;mode', self.on_interpreter_mode)
-        device.unlisten('bed_size', self.bed_changed)
-
     def __set_titlebar(self):
         device_text = ''
         device_name = ''
@@ -654,7 +647,6 @@ class MeerK40t(wx.Frame, Module):
         if results is not None:
             elements, pathname, basename = results
             self.device.classify(elements)
-            self.device.signal("rebuild_tree")
             return True
         return False
 
@@ -722,7 +714,11 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.signal("grid")
         self.on_size(None)
 
-    def selection_changed(self, *args):
+    def on_emphasized_elements_changed(self, *args):
+        self.request_refresh()
+
+    def on_selected_elements_changed(self, *args):
+        self.root.select_in_tree_by_selected()
         self.request_refresh()
 
     def on_erase(self, event):
@@ -987,7 +983,6 @@ class MeerK40t(wx.Frame, Module):
                         element *= mx
                     except AttributeError:
                         pass
-                self.device.signal('rebuild_tree', 0)
 
     def open_fill_dialog(self):
         kernel = self.device.device_root
@@ -1036,13 +1031,11 @@ class MeerK40t(wx.Frame, Module):
             path = Path(dlg.GetValue())
             path.stroke = 'blue'
             p = abs(path)
-            kernel.elements.append(p)
+            kernel.elements.add_elem(p)
             self.device.classify(p)
-            self.device.signal("rebuild_tree", 0)
         dlg.Destroy()
 
     def run_home_and_dot_test(self):
-        self.device.signal("rebuild_tree", 0)
 
         def home_dot_test():
             for i in range(25):
@@ -1288,6 +1281,7 @@ class RootNode(list):
         self.node_operations = None
         self.node_files = None
         self.rebuild_tree()
+        self.do_not_select = False
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -1558,7 +1552,7 @@ class RootNode(list):
             self.activated_object(node.object)
 
     def activate_selected_node(self):
-        self.activated_object(self.elements.first_selected_elements())
+        self.activated_object(self.elements.first_element(selected=True))
 
     def activated_object(self, obj):
         if obj is None:
@@ -1587,6 +1581,8 @@ class RootNode(list):
         :param event:
         :return:
         """
+        if self.do_not_select:
+            return
         selected = [self.tree.GetItemData(item).object for item in self.tree.GetSelections()]
         self.elements.set_selected(selected)
         self.refresh_tree()
@@ -1597,14 +1593,19 @@ class RootNode(list):
         """
         :return:
         """
-        # TODO: Ensure this works.
-        self.refresh_tree()
-        for e in self.elements.elems(emphasized=True):
+        self.do_not_select = True
+        for e in self.elements.elems():
             try:
                 nodes = self.tree_lookup[id(e)]
+                for n in nodes:
+                    if n.type == NODE_ELEMENT:
+                        self.tree.SelectItem(n.item, e.selected)
             except KeyError:
                 self.device.signal('rebuild_tree', 0)
-                return
+                break
+        self.refresh_tree()
+        self.gui.request_refresh()
+        self.do_not_select = False
 
     def contains(self, box, x, y=None):
         if y is None:
@@ -1902,8 +1903,6 @@ class RootNode(list):
                 adding_elements.append(image_element)
             elements.add_elems(adding_elements)
             elements.classify(adding_elements)
-            elements.set_selected(None)
-            self.device.signal('rebuild_tree', 0)
 
         return specific
 
@@ -1992,7 +1991,6 @@ class RootNode(list):
             for obj in self.elements.elems(emphasized=True):
                 obj.transform.post_rotate(value, center_x, center_y)
                 obj.modified()
-            self.device.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2009,7 +2007,6 @@ class RootNode(list):
             center_x, center_y = self.elements.center()
             for obj in self.elements.elems(emphasized=True):
                 obj.transform.post_scale(value, value, center_x, center_y)
-            self.device.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2120,10 +2117,9 @@ class RootNode(list):
             kernel = self.device.device_root
             elements = kernel.elements
             adding_elements = [copy(e) for e in list(self.elements.elems(emphasized=True)) * copies]
-            elements.add_all(adding_elements)
+            elements.add_elems(adding_elements)
             elements.classify(adding_elements)
             elements.set_selected(None)
-            self.device.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2472,10 +2468,11 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
+        dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+        dlg.Destroy()
     except:  # I already crashed once, if there's another here just ignore it.
         pass
-    dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
-    dlg.ShowModal()
-    dlg.Destroy()
+
 
 sys.excepthook = handleGUIException

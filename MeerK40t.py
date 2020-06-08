@@ -6,7 +6,7 @@ from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
 from MoshiboardDevice import MoshiboardDevice
-from RuidaDevice import RuidaDevice, RDLoader, RuidaEmulator
+from RuidaDevice import RuidaDevice
 from LaserServer import *
 
 try:
@@ -101,39 +101,40 @@ if args.path is not None:
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
-        kernel.elements.append(path)
+        kernel.elements.add(path)
     except Exception:
         print("SVG Path Exception to: %s" % ' '.join(sys.argv))
 if args.transform:
     # Transform any data loaded data
     from svgelements import Matrix
     m = Matrix(args.transform)
-    for e in kernel.elements:
+    for e in kernel.elements.elems():
         e *= m
+        try:
+            e.modified()
+        except AttributeError:
+            pass
 
-if device is not kernel:  # We can process this stuff since only with a real device.
+if device is not kernel:  # We can process this stuff only with a real device.
     if args.grbl is not None:
         # Start the GRBL server on the device.
-        emulator = device.open('module', 'GrblEmulator')
+        device.setting(int, 'grbl_flip_x', 1)
+        device.setting(int, 'grbl_flip_y', 1)
+        device.setting(int, 'grbl_home_x', 0)
+        device.setting(int, 'grbl_home_y', 0)
         if args.flip_y:
-            emulator.flip_y = -1
+            device.grbl_flip_x = -1
         if args.flip_x:
-            emulator.flip_x = -1
-        if args.adjust_y is not None and args.adjust_x is not None:
-            emulator.home_adjust = (args.adjust_x, args.adjust_y)
-        elif args.adjust_y is not None:
-            emulator.home_adjust = (0, args.adjust_y)
-        elif args.adjust_x is not None:
-            emulator.home_adjust = (args.adjust_x, 0)
-        try:
-            server = kernel.open('module', 'LaserServer', port=args.server, tcp=True)
-            server.set_pipe(emulator)
-        except OSError:
-            print('Grblserver failed on port: %d' % args.grbl)
-            from sys import exit
-            exit(1)
+            device.grbl_flip_y = -1
+        if args.adjust_y is not None:
+            device.grbl_home_y = args.adjust_y
+        if args.adjust_x is not None:
+            device.grbl_home_x = args.adjust_x
+        console = device.using('module', 'Console').write('grblserver\n')
+
     if args.ruida:
         console = device.using('module', 'Console').write('ruidaserver\n')
+
     if args.auto:
         # Automatically classify and start the job.
         elements = kernel.elements
@@ -180,7 +181,11 @@ if args.console:
         q = input('>')
         if q == 'quit':
             break
+        if q == 'shutdown':
+            device.shutdown(channel=print)
+            break
         console.write(q + '\n')
+
     device.remove_watcher('console', print)
 if not args.no_gui:
     if 'device' in kernel.instances:
