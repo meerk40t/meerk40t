@@ -22,10 +22,6 @@ class LaserServer(Module):
 
     def initialize(self):
         if self.tcp:
-            self.socket = socket.socket()
-            self.socket.settimeout(2)
-            self.socket.bind(('', self.port))
-            self.socket.listen(5)
             self.device.threaded(self.tcp_run)
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -37,7 +33,6 @@ class LaserServer(Module):
     def udp_run(self):
         def reply(e):
             self.socket.sendto(e, address)
-            # self.server_channel(str(e))
 
         def elems(e):
             self.device.device_root.elements.add_elem(e)
@@ -61,7 +56,17 @@ class LaserServer(Module):
         TCP Run is a connection thread delegate. Any connections are given a different threaded
         handle to interact with that connection. This thread here waits for sockets and delegates.
         """
-        while True:
+        self.socket = socket.socket()
+        self.socket.settimeout(2)
+        try:
+            self.socket.bind(('', self.port))
+            self.socket.listen(5)
+        except OSError:
+            self.server_channel("Could not start listening.")
+            return
+
+        while self.device.state != STATE_TERMINATE:
+            self.server_channel("Listening %s on port %d..." % (self.name, self.port))
             connection = None
             addr = None
             try:
@@ -69,15 +74,13 @@ class LaserServer(Module):
                 self.server_channel("Socket Connected: %s" % str(addr))
                 self.device.threaded(self.tcp_connection_handle(connection, addr))
             except socket.timeout:
-                if self.device.state == STATE_TERMINATE:
-                    return
-                continue
+                pass
             except OSError:
                 self.server_channel("Socket was killed: %s" % str(addr))
                 if connection is not None:
                     connection.close()
-                if self.device.state == STATE_TERMINATE:
-                    return
+                break
+        self.socket.close()
 
     def tcp_connection_handle(self, connection, addr):
         """
@@ -95,12 +98,15 @@ class LaserServer(Module):
         def handle():
             if self.greet is not None:
                 reply(self.greet)
-            while True:
+            while self.device.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
                     if len(data_from_socket) != 0:
                         self.server_channel("--> %s" % str(data_from_socket))
                     self.pipe.write(data_from_socket, reply=reply, elements=elems)
+                except socket.timeout:
+                    self.server_channel("Connection to %s timed out." % str(addr))
+                    break
                 except socket.error:
                     if connection is not None:
                         connection.close()

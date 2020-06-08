@@ -72,34 +72,34 @@ class ZinglPlotter:
         rx = arc.rx
         ry = arc.ry
         p_start = arc.start
-        current_angle = arc.get_start_t()
+        current_t = arc.get_start_t()
         x0 = arc.center[0]
         y0 = arc.center[1]
         cos_theta = cos(theta)
         sin_theta = sin(theta)
 
         for i in range(0, arc_required):
-            next_angle = current_angle + slice
+            next_t = current_t + slice
 
             alpha = sin(slice) * (sqrt(4 + 3 * pow(tan((slice) / 2.0), 2)) - 1) / 3.0
 
-            cos_start_angle = cos(current_angle)
-            sin_start_angle = sin(current_angle)
+            cos_start_t = cos(current_t)
+            sin_start_t = sin(current_t)
 
-            ePrimen1x = -rx * cos_theta * sin_start_angle - ry * sin_theta * cos_start_angle
-            ePrimen1y = -rx * sin_theta * sin_start_angle + ry * cos_theta * cos_start_angle
+            ePrimen1x = -rx * cos_theta * sin_start_t - ry * sin_theta * cos_start_t
+            ePrimen1y = -rx * sin_theta * sin_start_t + ry * cos_theta * cos_start_t
 
-            cos_end_angle = cos(next_angle)
-            sin_end_angle = sin(next_angle)
+            cos_end_t = cos(next_t)
+            sin_end_t = sin(next_t)
 
-            p2En2x = x0 + rx * cos_end_angle * cos_theta - ry * sin_end_angle * sin_theta
-            p2En2y = y0 + rx * cos_end_angle * sin_theta + ry * sin_end_angle * cos_theta
+            p2En2x = x0 + rx * cos_end_t * cos_theta - ry * sin_end_t * sin_theta
+            p2En2y = y0 + rx * cos_end_t * sin_theta + ry * sin_end_t * cos_theta
             p_end = (p2En2x, p2En2y)
             if i == arc_required - 1:
                 p_end = arc.end
 
-            ePrimen2x = -rx * cos_theta * sin_end_angle - ry * sin_theta * cos_end_angle
-            ePrimen2y = -rx * sin_theta * sin_end_angle + ry * cos_theta * cos_end_angle
+            ePrimen2x = -rx * cos_theta * sin_end_t - ry * sin_theta * cos_end_t
+            ePrimen2y = -rx * sin_theta * sin_end_t + ry * cos_theta * cos_end_t
 
             p_c1 = (p_start[0] + alpha * ePrimen1x, p_start[1] + alpha * ePrimen1y)
             p_c2 = (p_end[0] - alpha * ePrimen2x, p_end[1] - alpha * ePrimen2y)
@@ -109,8 +109,9 @@ class ZinglPlotter:
                                                         p_c2[0], p_c2[1],
                                                         p_end[0], p_end[1]):
                 yield value
-            p_start = p_end
-            current_angle = next_angle
+            p_start = Point(p_end)
+            current_t = next_t
+
 
     @staticmethod
     def plot_line(x0, y0, x1, y1):
