@@ -6,7 +6,7 @@
 
 import wx
 
-from Kernel import Module
+from Kernel import Module, STATE_UNKNOWN
 from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50
 
 _ = wx.GetTranslation
@@ -140,9 +140,16 @@ class DeviceManager(wx.Frame, Module):
         except KeyError:
             device_name = self.device.read_persistent(str, 'device_name', 'Lhystudios', uid)
             device = self.device.open('device', device_name, root=self.device, uid=int(uid), instance_name=str(uid))
-        device.open('window', "MeerK40t", None, -1, "")
-        device.boot()
-        self.Close()
+        if device.state == STATE_UNKNOWN:
+            device.open('window', "MeerK40t", None, -1, "")
+            device.boot()
+            self.Close()
+        else:
+            dlg = wx.MessageDialog(None, _("That device already booted."),
+                                   _("Cannot Boot Selected Device"), wx.OK | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
         names = [name for name in self.device.registered['device']]
