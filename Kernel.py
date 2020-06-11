@@ -906,6 +906,70 @@ class Elemental(Module):
     def files(self):
         return self._filenodes
 
+    def clear_operations(self):
+        for op in self._operations:
+            self.unregister(op)
+            self.device.signal("operation_removed", op)
+        self._operations.clear()
+
+    def clear_elements(self):
+        for e in self._elements:
+            self.unregister(e)
+            self.device.signal("element_removed", e)
+        self._elements.clear()
+
+    def clear_files(self):
+        self._filenodes.clear()
+
+    def clear_elements_and_operations(self):
+        self.clear_elements()
+        self.clear_operations()
+
+    def clear_all(self):
+        self.clear_elements()
+        self.clear_operations()
+        self.clear_files()
+        self.validate_bounds()
+
+    def remove_files(self, file_list):
+        for f in file_list:
+            del self._filenodes[f]
+
+    def remove_elements(self, elements_list):
+        for e in elements_list:
+            try:
+                self._elements.remove(e)
+            except ValueError:
+                continue
+            self.unregister(e)
+            self.device.signal("element_removed", e)
+        self.remove_elements_from_operations(elements_list)
+
+    def remove_operations(self, operations_list):
+        for op in operations_list:
+            self._operations.remove(op)
+            self.unregister(op)
+            self.device.signal("operation_removed", op)
+
+    def remove_elements_from_operations(self, elements_list):
+        for i in range(len(self._operations)):
+            elems = [e for e in self._operations[i] if e not in elements_list]
+            self._operations[i].clear()
+            self._operations[i].extend(elems)
+            if len(self._operations[i]) == 0:
+                self._operations[i] = None
+        self.purge_unset()
+
+    def purge_unset(self):
+        if None in self._operations:
+            ops = [op for op in self._operations if op is not None]
+            self._operations.clear()
+            self._operations.extend(ops)
+        if None in self._elements:
+            elems = [elem for elem in self._elements if elem is not None]
+            self._elements.clear()
+            self._elements.extend(elems)
+
     def bounds(self):
         return self._bounds
 
@@ -998,70 +1062,6 @@ class Elemental(Module):
             if s.emphasized:
                 if not s.selected:
                     s.unemphasize()
-
-    def clear_operations(self):
-        for op in self._operations:
-            self.unregister(op)
-            self.device.signal("operation_removed", op)
-        self._operations.clear()
-
-    def clear_elements(self):
-        for e in self._elements:
-            self.unregister(e)
-            self.device.signal("element_removed", e)
-        self._elements.clear()
-
-    def clear_files(self):
-        self._filenodes.clear()
-
-    def clear_elements_and_operations(self):
-        self.clear_elements()
-        self.clear_operations()
-
-    def clear_all(self):
-        self.clear_elements()
-        self.clear_operations()
-        self.clear_files()
-        self.validate_bounds()
-
-    def remove_files(self, file_list):
-        for f in file_list:
-            del self._filenodes[f]
-
-    def remove_elements(self, elements_list):
-        for e in elements_list:
-            try:
-                self._elements.remove(e)
-            except ValueError:
-                continue
-            self.unregister(e)
-            self.device.signal("element_removed", e)
-        self.remove_elements_from_operations(elements_list)
-
-    def remove_operations(self, operations_list):
-        for op in operations_list:
-            self._operations.remove(op)
-            self.unregister(op)
-            self.device.signal("operation_removed", op)
-
-    def remove_elements_from_operations(self, elements_list):
-        for i in range(len(self._operations)):
-            elems = [e for e in self._operations[i] if e not in elements_list]
-            self._operations[i].clear()
-            self._operations[i].extend(elems)
-            if len(self._operations[i]) == 0:
-                self._operations[i] = None
-        self.purge_unset()
-
-    def purge_unset(self):
-        if None in self._operations:
-            ops = [op for op in self._operations if op is not None]
-            self._operations.clear()
-            self._operations.extend(ops)
-        if None in self._elements:
-            elems = [elem for elem in self._elements if elem is not None]
-            self._elements.clear()
-            self._elements.extend(elems)
 
     def center(self):
         bounds = self._bounds

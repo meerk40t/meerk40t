@@ -306,9 +306,9 @@ class DxfLoader:
                                         knot = e.knot_values[i]
                                         element.line(knot)
             elif entity.dxftype() == 'IMAGE':
-                bottom_left_position = entity.insert
-                size = entity.image_size
-                imagedef = entity.image_def_handle
+                bottom_left_position = entity.dfx.insert
+                size = entity.dxf.image_size
+                imagedef = entity.dxf.image_def_handle
                 element = SVGImage(href=imagedef.filename,
                                    x=bottom_left_position[0],
                                    y=bottom_left_position[1] - size[1],
