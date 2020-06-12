@@ -150,7 +150,6 @@ class DeviceManager(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
 
-
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
         names = [name for name in self.device.registered['device']]
         dlg = wx.SingleChoiceDialog(None, _('What type of device is being added?'), _('Device Type'), names)

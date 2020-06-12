@@ -171,7 +171,7 @@ class LaserRender:
                 gc.DrawText(element.text, element.x, element.y-element.height)
             elif element.anchor == 'middle':
                 element.width, element.height = gc.GetTextExtent(element.text)
-                gc.DrawText(element.text, element.x-(element.width/2, element.y-element.height))
+                gc.DrawText(element.text, element.x-(element.width/2), element.y-element.height)
             elif element.anchor == 'end':
                 element.width, element.height = gc.GetTextExtent(element.text)
                 gc.DrawText(element.text, element.x-element.width, element.y-element.height)

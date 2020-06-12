@@ -2614,7 +2614,17 @@ class Transformable(SVGElement):
         simplifies towards the identity matrix. In many cases it will become the identity matrix. In other cases the
         transformed shape cannot be represented through the properties alone. And shall keep those parts of the
         transform required preserve equivalency.
+
+        The default method will be called by submethods but will only scale properties like stroke_width which should
+        scale with the transform.
         """
+        if self.transform is not None:
+            try:
+                sw = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value(ppi=DEFAULT_PPI)
+                sw *= max(self.transform.value_scale_x(), self.transform.value_scale_y())
+                self.values[SVG_ATTR_STROKE_WIDTH] = str(sw)
+            except KeyError:
+                pass
         return self
 
     def render(self, **kwargs):
@@ -4697,6 +4707,7 @@ class Path(Shape, MutableSequence):
 
         Path objects reify perfectly.
         """
+        Transformable.reify(self)
         if isinstance(self.transform, Matrix):
             for e in self._segments:
                 e *= self.transform
@@ -4986,6 +4997,7 @@ class Rect(Shape):
 
         Skewed and Rotated rectangles cannot be reified.
         """
+        Transformable.reify(self)
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         translate_x = self.transform.value_trans_x()
@@ -5162,6 +5174,7 @@ class _RoundShape(Shape):
 
         Skewed and Rotated roundshapes cannot be reified.
         """
+        Transformable.reify(self)
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
         translate_x = self.transform.value_trans_x()
@@ -5467,6 +5480,7 @@ class SimpleLine(Shape):
 
         SimpleLines are perfectly reified.
         """
+        Transformable.reify(self)
         matrix = self.transform
         p = Point(self.x1, self.y1)
         p *= matrix
@@ -5597,6 +5611,7 @@ class _Polyshape(Shape):
 
         Polyshapes are perfectly reified.
         """
+        Transformable.reify(self)
         matrix = self.transform
         for p in self:
             p *= matrix
@@ -5895,6 +5910,7 @@ class SVGText(GraphicObject, Transformable):
         self.font_face = s.font_face
 
     def parse_font(self, font):
+        # https://www.w3.org/TR/css-fonts-3/#font-prop
         # TODO: Parse font into proper elements.
         pass
 
