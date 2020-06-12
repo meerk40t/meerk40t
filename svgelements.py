@@ -5944,7 +5944,10 @@ class SVGText(GraphicObject, Transformable):
         if len(font_size) > 0:
             self.font_size = Length(font_size).value()
         if len(font_face) > 0:
+            if font_face.endswith(','):
+                font_face = font_face[:-1]
             self.font_face = font_face
+
         if len(font_family) > 0:
             self.font_family = font_family
 
@@ -6001,10 +6004,10 @@ class SVGText(GraphicObject, Transformable):
         if self.path is not None:
             return (self.path * self.transform).bbox(transformed=True)
         if not transformed:
-            return self.x, self.y, self.x + self.width, self.y + self.height
-        p = Point(self.x, self.y)
+            return self.x, self.y - self.height, self.x + self.width, self.y
+        p = Point(self.x, self.y- self.height)
         p *= self.transform
-        q = Point(self.x + self.width, self.y + self.height)
+        q = Point(self.x + self.width, self.y)
         q *= self.transform
         return p[0], p[1], q[0], q[1]
 
