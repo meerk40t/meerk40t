@@ -155,6 +155,8 @@ REGEX_COLOR_HSL = re.compile(
         PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT))
 REGEX_LENGTH = re.compile('(%s)([A-Za-z%%]*)' % PATTERN_FLOAT)
 REGEX_CSS_STYLE = re.compile(r'([^{]+)\s*\{\s*([^}]+)\s*\}')
+REGEX_CSS_FONT = re.compile(
+    r'(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?')
 
 
 # PathTokens class.
@@ -2529,7 +2531,8 @@ class Group(SVGElement, list):
     SVG 2.0 <g> are defined in:
     5.2. Grouping: the g element
     """
-    #TODO: SVG group objects must actually possess transformation matrices.
+
+    # TODO: SVG group objects must actually possess transformation matrices.
 
     def __init__(self, *args, **kwargs):
         SVGElement.__init__(self, *args, **kwargs)
@@ -2803,8 +2806,8 @@ class Shape(GraphicObject, Transformable):
         ymin = min(ymins)
         ymax = max(ymaxs)
         if transformed:
-            p0 = self.transform.transform_point([xmin,ymin])
-            p1 = self.transform.transform_point([xmin,ymax])
+            p0 = self.transform.transform_point([xmin, ymin])
+            p1 = self.transform.transform_point([xmin, ymax])
             p2 = self.transform.transform_point([xmax, ymin])
             p3 = self.transform.transform_point([xmax, ymax])
             xmin = min(p0[0], p1[0], p2[0], p3[0])
@@ -3571,7 +3574,7 @@ class Arc(PathSegment):
             if sagitta is not None:
                 control = Point.towards(self.start, self.end, 0.5)
                 angle = self.start.angle_to(self.end)
-                control = control.polar_to(angle - tau/4, sagitta)
+                control = control.polar_to(angle - tau / 4, sagitta)
             if 'control' in kwargs:  # Control is any additional point on the arc.
                 control = Point(kwargs['control'])
             if control is not None:
@@ -3825,12 +3828,14 @@ class Arc(PathSegment):
 
     def _svg_complex_parameterize(self, start, radius, rotation, arc, sweep, end):
         """Parameterization with complex radius and having rotation factors."""
-        self._svg_parameterize(Point(start), radius.real, radius.imag, rotation, bool(arc), bool(sweep), Point(end))
+        self._svg_parameterize(Point(start), radius.real, radius.imag, rotation, arc, sweep, Point(end))
 
     def _svg_parameterize(self, start, rx, ry, rotation, large_arc_flag, sweep_flag, end):
         """Conversion from svg parameterization, our chosen native native form.
         http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes """
 
+        large_arc_flag = bool(large_arc_flag)
+        sweep_flag = bool(sweep_flag)
         start = Point(start)
         self.start = start
         end = Point(end)
@@ -4066,7 +4071,7 @@ class Arc(PathSegment):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 > abs(angle) > tau_1_4:
-            t += tau/2
+            t += tau / 2
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -4090,7 +4095,7 @@ class Arc(PathSegment):
         a = self.rx
         b = self.ry
         t = atan2(a * tan(angle), b)
-        tau_1_4 = tau/4.0
+        tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 > abs(angle) > tau_1_4:
             t += tau / 2
@@ -5910,9 +5915,38 @@ class SVGText(GraphicObject, Transformable):
         self.font_face = s.font_face
 
     def parse_font(self, font):
+        """
+        CSS Fonts 3 has a shorthand font property which serves to provide a single location to define:
+        ‘font-style’, ‘font-variant’, ‘font-weight’, ‘font-stretch’, ‘font-size’, ‘line-height’, and ‘font-family’
+
+        font-style: normal | italic | oblique
+        font-variant: normal | small-caps
+        font-weight: normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+        font-stretch: normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded
+        font-size: <absolute-size> | <relative-size> | <length-percentage>
+        line-height: '/' <‘line-height’>
+        font-family: [ <family-name> | <generic-family> ] #
+        generic-family:  ‘serif’, ‘sans-serif’, ‘cursive’, ‘fantasy’, and ‘monospace’
+         """
         # https://www.w3.org/TR/css-fonts-3/#font-prop
-        # TODO: Parse font into proper elements.
-        pass
+        font_elements = list(*re.findall(REGEX_CSS_FONT, font))
+
+        font_style = font_elements[0]
+        font_variant = font_elements[1]
+        font_weight = font_elements[2]
+        font_stretch = font_elements[3]
+        font_size = font_elements[4]
+        line_height = font_elements[5]
+        font_face = font_elements[6]
+        font_family = font_elements[7]
+        if len(font_weight) > 0:
+            self.font_weight = self.parse_font_weight(font_weight)
+        if len(font_size) > 0:
+            self.font_size = Length(font_size).value()
+        if len(font_face) > 0:
+            self.font_face = font_face
+        if len(font_family) > 0:
+            self.font_family = font_family
 
     def parse_font_weight(self, weight):
         if weight == 'bold':
@@ -5935,9 +5969,7 @@ class SVGText(GraphicObject, Transformable):
         font = values.get(SVG_ATTR_FONT, None)
         if font is not None:
             self.parse_font(font)
-
         self.text = values.get(SVG_TAG_TEXT, self.text)
-
         self.x = Length(values.get(SVG_ATTR_X, self.x)).value()
         self.y = Length(values.get(SVG_ATTR_Y, self.y)).value()
         self.dx = Length(values.get(SVG_ATTR_DX, self.dx)).value()
@@ -6365,7 +6397,6 @@ class SVG(Group):
     and parsing methods which can be used if given a stream, path, or svg string.
     """
 
-    #  TODO: CSS class .value object.
     def __init__(self, *args, **kwargs):
         Group.__init__(self, *args, **kwargs)
         self.viewbox = None
@@ -6450,8 +6481,8 @@ class SVG(Group):
                             y = '0'
                         if transform:
                             try:
-                                attributes[SVG_ATTR_TRANSFORM] = '%s translate(%s, %s)' %\
-                                                                 (attributes[SVG_ATTR_TRANSFORM], x,y)
+                                attributes[SVG_ATTR_TRANSFORM] = '%s translate(%s, %s)' % \
+                                                                 (attributes[SVG_ATTR_TRANSFORM], x, y)
                             except KeyError:
                                 attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
                         yield event, elem
@@ -6477,13 +6508,13 @@ class SVG(Group):
 
     @staticmethod
     def parse(source,
-                   reify=True,
-                   ppi=DEFAULT_PPI,
-                   width=1,
-                   height=1,
-                   color="black",
-                   transform=None,
-                   context=None):
+              reify=True,
+              ppi=DEFAULT_PPI,
+              width=1,
+              height=1,
+              color="black",
+              transform=None,
+              context=None):
         """
         Parses the SVG file.
         Style elements are split into their proper values.
@@ -6642,7 +6673,7 @@ class SVG(Group):
                     s = SVGDesc(values, desc=elem.text)
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
-                    assignments = list(re.findall(REGEX_CSS_STYLE,elem.text))
+                    assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()
@@ -6650,4 +6681,3 @@ class SVG(Group):
                             styles[selector.strip()] = value
                 context, values = stack.pop()
         return root
-
