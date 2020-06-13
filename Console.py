@@ -7,6 +7,7 @@ class Console(Module, Pipe):
     def __init__(self):
         Module.__init__(self)
         Pipe.__init__(self)
+        self.channel_file = None
         self.channel = None
         self.pipe = None
         self.buffer = ''
@@ -111,6 +112,11 @@ class Console(Module, Pipe):
                 yield COMMAND_MOVE, x, y
                 yield COMMAND_SET_ABSOLUTE
             return move
+
+    def channel_file_write(self, v):
+        if self.channel_file is not None:
+            self.channel_file.write('%s\n' % v)
+            self.channel_file.flush()
 
     def interface(self, command):
         yield command
@@ -438,6 +444,14 @@ class Console(Module, Pipe):
                         yield "No Longer Watching Channel: %s" % chan
                     except KeyError:
                         yield "Channel %s is not opened." % chan
+                elif value == 'save':
+                    from datetime import datetime
+                    if self.channel_file is None:
+                        filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
+                        yield "Opening file: %s" % filename
+                        self.channel_file = open(filename, "a")
+                    yield "Recording Channel: %s" % chan
+                    active_device.add_watcher(chan, self.channel_file_write)
             return
         elif command == 'device':
             if len(args) == 0:
