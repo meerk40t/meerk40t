@@ -125,8 +125,8 @@ class LaserRender:
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         try:
             sw = Length(element.values['stroke-width']).value(ppi=96.0)
-            if sw < 1:
-                sw = 1
+            if sw < 2:
+                sw = 2
             self.set_pen(gc, element.stroke, width=sw)
         except KeyError:
             self.set_pen(gc, element.stroke)
@@ -159,8 +159,8 @@ class LaserRender:
             element.wxfont = font
         try:
             sw = Length(element.values['stroke-width']).value(ppi=96.0)
-            if sw < 1:
-                sw = 1
+            if sw < 2:
+                sw = 2
             self.set_pen(gc, element.stroke, width=sw)
         except KeyError:
             self.set_pen(gc, element.stroke)
