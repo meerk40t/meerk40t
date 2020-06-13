@@ -407,8 +407,8 @@ class MeerK40t(wx.Frame, Module):
         kernel = device.device_root
         device.unlisten("background", self.on_background_signal)
         device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
-        device.unlisten('element_added', self.on_rebuild_tree_request)
-        device.unlisten('operation_added', self.on_rebuild_tree_request)
+        kernel.unlisten('element_added', self.on_rebuild_tree_request)
+        kernel.unlisten('operation_added', self.on_rebuild_tree_request)
         device.unlisten('refresh_scene', self.on_refresh_scene)
         device.unlisten("element_property_update", self.on_element_update)
         kernel.unlisten("units", self.space_changed)
@@ -449,8 +449,8 @@ class MeerK40t(wx.Frame, Module):
 
         device.listen("background", self.on_background_signal)
         device.listen('rebuild_tree', self.on_rebuild_tree_request)
-        device.listen('element_added', self.on_rebuild_tree_request)
-        device.listen('operation_added', self.on_rebuild_tree_request)
+        kernel.listen('element_added', self.on_rebuild_tree_request)
+        kernel.listen('operation_added', self.on_rebuild_tree_request)
         device.listen('refresh_scene', self.on_refresh_scene)
         device.listen("element_property_update", self.on_element_update)
         kernel.listen("units", self.space_changed)
