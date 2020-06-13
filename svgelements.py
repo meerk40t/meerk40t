@@ -2400,6 +2400,16 @@ class Matrix:
         v[1] = ny
         return v
 
+    def transform_vector(self, v):
+        """
+        Applies the transformation without the translation.
+        """
+        nx = v[0] * self.a + v[1] * self.c
+        ny = v[0] * self.b + v[1] * self.d
+        v[0] = nx
+        v[1] = ny
+        return v
+
     @classmethod
     def scale(cls, sx=1.0, sy=None):
         if sy is None:
@@ -2623,13 +2633,6 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
-        if self.transform is not None:
-            try:
-                sw = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value(ppi=DEFAULT_PPI)
-                sw *= max(self.transform.value_scale_x(), self.transform.value_scale_y())
-                self.values[SVG_ATTR_STROKE_WIDTH] = str(sw)
-            except KeyError:
-                pass
         return self
 
     def render(self, **kwargs):
@@ -6637,7 +6640,10 @@ class SVG(Group):
                     context = s
                     continue
                 elif SVG_TAG_PATH == tag:
-                    s = Path(values)
+                    try:
+                        s = Path(values)
+                    except ValueError:
+                        continue
                 elif SVG_TAG_CIRCLE == tag:
                     s = Circle(values)
                 elif SVG_TAG_ELLIPSE == tag:
