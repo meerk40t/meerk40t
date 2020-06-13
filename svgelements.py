@@ -1,3 +1,5 @@
+# -*- coding: ISO-8859-1 -*-
+
 from __future__ import division
 
 import re
@@ -2506,7 +2508,7 @@ class SVGElement(object):
             elif isinstance(s, SVGElement):
                 args = args[1:]
                 self.property_by_object(s)
-                self.property_by_args(args)
+                self.property_by_args(*args)
                 return
         if self.values is None:
             self.values = dict(kwargs)
@@ -3826,9 +3828,9 @@ class Arc(PathSegment):
         except ImportError:
             return self._line_length(error=error, min_depth=min_depth)
 
-    def _svg_complex_parameterize(self, start, radius, rotation, arc, sweep, end):
+    def _svg_complex_parameterize(self, start, radius, rotation, arc_flag, sweep_flag, end):
         """Parameterization with complex radius and having rotation factors."""
-        self._svg_parameterize(Point(start), radius.real, radius.imag, rotation, arc, sweep, Point(end))
+        self._svg_parameterize(Point(start), radius.real, radius.imag, rotation, arc_flag, sweep_flag, Point(end))
 
     def _svg_parameterize(self, start, rx, ry, rotation, large_arc_flag, sweep_flag, end):
         """Conversion from svg parameterization, our chosen native native form.
@@ -4070,7 +4072,7 @@ class Arc(PathSegment):
         t = atan2(a * tan(angle), b)
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
-        if tau_3_4 > abs(angle) > tau_1_4:
+        if tau_3_4 >= abs(angle) % tau > tau_1_4:
             t += tau / 2
         return self.point_at_t(t)
 
@@ -4097,7 +4099,7 @@ class Arc(PathSegment):
         t = atan2(a * tan(angle), b)
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
-        if tau_3_4 > abs(angle) > tau_1_4:
+        if tau_3_4 >= abs(angle) % tau > tau_1_4:
             t += tau / 2
         return t
 
@@ -4116,12 +4118,12 @@ class Arc(PathSegment):
         b = self.ry
         cx = self.center[0]
         cy = self.center[1]
-        cosTheta = cos(rotation)
-        sinTheta = sin(rotation)
-        cosT = cos(t)
-        sinT = sin(t)
-        px = cx + a * cosT * cosTheta - b * sinT * sinTheta
-        py = cy + a * cosT * sinTheta + b * sinT * cosTheta
+        cos_rot = cos(rotation)
+        sin_rot = sin(rotation)
+        cos_t = cos(t)
+        sin_t = sin(t)
+        px = cx + a * cos_t * cos_rot - b * sin_t * sin_rot
+        py = cy + a * cos_t * sin_rot + b * sin_t * cos_rot
         return Point(px, py)
 
     def get_ellipse(self):
@@ -4361,10 +4363,7 @@ class Path(Shape, MutableSequence):
     def parse(self, pathdef):
         """Parses the SVG path."""
         tokens = SVGPathTokens()
-        try:
-            tokens.svg_parse(self, pathdef)
-        except ValueError:
-            pass  # Pathdef must not have been valid.
+        tokens.svg_parse(self, pathdef)
 
     def validate_connections(self):
         """
@@ -5090,8 +5089,10 @@ class _RoundShape(Shape):
             self.cy = Length(args[1]).value()
         if arg_length >= 3:
             self.rx = Length(args[2]).value()
-        if arg_length >= 4:
-            self.ry = Length(args[3]).value()
+            if arg_length >= 4:
+                self.ry = Length(args[3]).value()
+            else:
+                self.ry = self.rx
         if arg_length >= 5:
             self._init_shape(*args[4:])
 
@@ -5271,7 +5272,7 @@ class _RoundShape(Shape):
         t = atan2(a * tan(angle), b)
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
-        if tau_3_4 > abs(angle) > tau_1_4:
+        if tau_3_4 >= abs(angle) % tau > tau_1_4:
             t += tau / 2
         return self.point_at_t(t)
 
@@ -5300,10 +5301,9 @@ class _RoundShape(Shape):
         a = self.implicit_rx
         b = self.implicit_ry
         t = atan2(a * tan(angle), b)
-
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
-        if tau_3_4 > abs(angle) > tau_1_4:
+        if tau_3_4 >= abs(angle) % tau > tau_1_4:
             t += tau / 2
         return t
 
