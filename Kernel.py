@@ -1177,7 +1177,8 @@ class Elemental(Module):
                         engraves.append(engrave)
                         engrave.set_properties(element.values)
                     engrave.append(element)
-                if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
+                if (element.stroke != "red" and element.stroke != "blue") or\
+                        (element.fill is not None and element.fill != "none"):
                     # not classed already, or was already classed but has a fill.
                     if raster is None or not raster.has_same_properties(element.values):
                         raster = RasterOperation(speed=self.device.raster_speed,
