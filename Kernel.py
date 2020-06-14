@@ -1005,6 +1005,15 @@ class Elemental(Module):
             self._bounds = new_bounds
             self.device.device_root.signal("selected_bounds", self._bounds)
 
+    def is_child(self, v, selected):
+        for q in selected:
+            if isinstance(q, (list,tuple)):
+                if self.is_child(v, q):
+                    return True
+            if q is v:
+                return True
+        return False
+
     def set_selected(self, selected):
         """
         Sets selected and other properties of a given element.
@@ -1019,7 +1028,7 @@ class Elemental(Module):
         if selected is None:
             selected = []
         for s in self._elements:
-            is_selected = s in selected
+            is_selected = self.is_child(s, selected)
             if s.selected:
                 if not is_selected:
                     s.unselect()
@@ -1027,7 +1036,7 @@ class Elemental(Module):
                 if is_selected:
                     s.select()
         for s in self._operations:
-            is_selected = s in selected
+            is_selected = self.is_child(s, selected)
             if s.selected:
                 if not is_selected:
                     s.unselect()
@@ -1160,8 +1169,8 @@ class Elemental(Module):
         if not isinstance(elements, list):
             elements = [elements]
         for element in elements:
-            if isinstance(element, Path):
-                if element.stroke == "red":
+            if isinstance(element, (Path, SVGText)):
+                if element.stroke == "red" and not isinstance(Path, SVGText):
                     if cut is None or not cut.has_same_properties(element.values):
                         cut = CutOperation(speed=self.device.cut_speed,
                                            power=self.device.cut_power,
@@ -1169,7 +1178,7 @@ class Elemental(Module):
                         cuts.append(cut)
                         cut.set_properties(element.values)
                     cut.append(element)
-                elif element.stroke == "blue":
+                elif element.stroke == "blue" and not isinstance(Path, SVGText):
                     if engrave is None or not engrave.has_same_properties(element.values):
                         engrave = EngraveOperation(speed=self.device.engrave_speed,
                                                    power=self.device.engrave_power,
@@ -1197,8 +1206,6 @@ class Elemental(Module):
                                                raster_step=self.device.raster_step,
                                                raster_direction=self.device.raster_direction,
                                                overscan=self.device.raster_overscan))
-            elif isinstance(element, SVGText):
-                pass  # I can't process actual text.
         rasters = [r for r in rasters if len(r) != 0]
         engraves = [r for r in engraves if len(r) != 0]
         cuts = [r for r in cuts if len(r) != 0]

@@ -199,7 +199,7 @@ class LaserRender:
             except AttributeError:
                 max_allowed = 2048
             node.c_width, node.c_height = node.image.size
-            node.cache = self.make_thumbnail(node, maximum=max_allowed)
+            node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
         gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
 
@@ -254,6 +254,8 @@ class LaserRender:
                 gc.FillPath(p)
                 gc.StrokePath(p)
                 del p
+            elif isinstance(element, SVGText):
+                pass
             element.transform = old_matrix
 
         img = bmp.ConvertToImage()
@@ -265,8 +267,8 @@ class LaserRender:
             return bmp
         return image
 
-    def make_thumbnail(self, node, maximum=None, width=None, height=None):
-        pil_data = node.image
+    def make_thumbnail(self, pil_data, maximum=None, width=None, height=None):
+        """Resizes the given pil image into wx.Bitmap object that fits the constraints."""
         image_width, image_height = pil_data.size
         if width is not None and height is None:
             height = width * image_height / float(image_width)

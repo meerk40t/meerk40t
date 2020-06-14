@@ -4346,7 +4346,11 @@ class Path(Shape, MutableSequence):
 
     def __eq__(self, other):
         if isinstance(other, str):
-            return self.__eq__(Path(other))
+            try:
+                return self.__eq__(Path(other))
+            except ValueError:
+                # All invalid paths are unequal.
+                return False
         if not isinstance(other, Path):
             return NotImplemented
         if len(self) != len(other):

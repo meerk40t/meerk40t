@@ -1,7 +1,7 @@
 from copy import copy
 
 from LaserCommandConstants import *
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT
+from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
 from svgelements import Length, SVGImage, SVGElement, Shape
 
 VARIABLE_NAME_NAME = 'name'
@@ -224,7 +224,8 @@ class RasterOperation(LaserOperation):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        # TODO: Add unidirectional bidirection flag, add position start flag.
+        if self.unidirectional:
+            traverse |= UNIDIRECTIONAL
 
         for svgimage in self:
             if not isinstance(svgimage, SVGImage):
@@ -325,6 +326,7 @@ class EngraveOperation(LaserOperation):
     def generate(self):
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
+        yield COMMAND_SET_STEP, 0
         yield COMMAND_SET_POWER, self.power
         if self.dratio is not None:
             yield COMMAND_SET_D_RATIO, self.dratio
@@ -336,7 +338,6 @@ class EngraveOperation(LaserOperation):
             yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, first_point.x, first_point.y
-            yield COMMAND_SET_STEP, 0
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
         yield COMMAND_MODE_RAPID
@@ -383,6 +384,7 @@ class CutOperation(LaserOperation):
     def generate(self):
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
+        yield COMMAND_SET_STEP, 0
         yield COMMAND_SET_POWER, self.power
         if self.dratio is not None:
             yield COMMAND_SET_D_RATIO, self.dratio
@@ -394,7 +396,6 @@ class CutOperation(LaserOperation):
             yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, first_point.x, first_point.y
-            yield COMMAND_SET_STEP, 0
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
         yield COMMAND_MODE_RAPID

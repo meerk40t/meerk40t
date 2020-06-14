@@ -1188,7 +1188,7 @@ class Node(list):
         tree = root.tree
         if icon is None:
             if isinstance(data_object, SVGImage):
-                image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
+                image = self.root.renderer.make_thumbnail(data_object.image, width=20, height=20)
                 image_id = self.root.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             if isinstance(data_object, Path):
