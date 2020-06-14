@@ -363,7 +363,7 @@ class Controller(wx.Frame, Module):
             return
         value = self.device.get_text_thread_state(state)
         self.text_controller_status.SetValue(str(value))
-        if state == STATE_INITIALIZE or state == STATE_END:
+        if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
             def f(event):
                 self.device.interpreter.pipe.start()
                 self.device.interpreter.pipe.pause()
