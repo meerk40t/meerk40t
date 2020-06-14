@@ -1927,7 +1927,7 @@ class RootNode(list):
             step = float(node.object.raster_step)
             xmin, ymin, xmax, ymax = bounds
 
-            image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin) / step, height=(ymax - ymin) / step)
+            image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin), height=(ymax - ymin), step=step)
             image_element = SVGImage(image=image)
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
