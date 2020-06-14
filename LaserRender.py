@@ -8,6 +8,22 @@ from svgelements import *
 Laser Render provides GUI relevant methods of displaying the given project.
 """
 
+DRAW_MODE_FILLS = 0x000001
+DRAW_MODE_GUIDES = 0x000002
+DRAW_MODE_GRID = 0x000004
+DRAW_MODE_LASERPATH = 0x000008
+DRAW_MODE_RETICLE = 0x000010
+DRAW_MODE_SELECTION = 0x000020
+DRAW_MODE_STROKES = 0x000040
+DRAW_MODE_CACHE = 0x000080  # Set means do not cache.
+DRAW_MODE_REFRESH = 0x000100
+DRAW_MODE_ANIMATE = 0x000200
+DRAW_MODE_PATH = 0x000400
+DRAW_MODE_IMAGE = 0x000800
+DRAW_MODE_TEXT = 0x001000
+DRAW_MODE_INVERT = 0x400000
+DRAW_MODE_FLIPXY = 0x800000
+
 
 def swizzlecolor(c):
     if c is None:
@@ -36,13 +52,13 @@ class LaserRender:
         if draw_mode is None:
             draw_mode = self.device.draw_mode
 
-        if draw_mode & 0x1C00 != 0:
+        if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
             types = []
-            if draw_mode & 0x0400 == 0:
+            if draw_mode & DRAW_MODE_PATH == 0:
                 types.append(Path)
-            if draw_mode & 0x0800 == 0:
+            if draw_mode & DRAW_MODE_IMAGE == 0:
                 types.append(SVGImage)
-            if draw_mode & 0x1000 == 0:
+            if draw_mode & DRAW_MODE_TEXT == 0:
                 types.append(SVGText)
             elements = [e for e in elements if type(e) in types]
 
@@ -137,9 +153,9 @@ class LaserRender:
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, element)
         self.set_element_brush(gc, element)
-        if draw_mode & 0x01 == 0 and element.fill is not None:
+        if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
             gc.FillPath(element.cache)
-        if draw_mode & 0x40 == 0 and element.stroke is not None:
+        if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
             gc.StrokePath(element.cache)
         gc.PopState()
 
@@ -174,7 +190,7 @@ class LaserRender:
         text = element.text
         x = element.x
         y = element.y
-        if element.text is not None:
+        if text is not None:
             element.width, element.height = gc.GetTextExtent(element.text)
             if not hasattr(element, 'anchor') or element.anchor == 'start':
                 y -= element.height
@@ -184,7 +200,7 @@ class LaserRender:
             elif element.anchor == 'end':
                 x -= element.width
                 y -= element.height
-        gc.DrawText(text, x, y)
+            gc.DrawText(text, x, y)
         gc.PopState()
 
     def draw_image(self, node, gc, draw_mode):
@@ -194,19 +210,24 @@ class LaserRender:
             matrix = Matrix()
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        cache = None
-        try:
-            cache = node.cache
-        except AttributeError:
-            pass
-        if cache is None:
+        if draw_mode & DRAW_MODE_CACHE == 0:
+            cache = None
             try:
-                max_allowed = node.max_allowed
+                cache = node.cache
             except AttributeError:
-                max_allowed = 2048
+                pass
+            if cache is None:
+                try:
+                    max_allowed = node.max_allowed
+                except AttributeError:
+                    max_allowed = 2048
+                node.c_width, node.c_height = node.image.size
+                node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
+            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+        else:
             node.c_width, node.c_height = node.image.size
-            node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
-        gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+            cache = self.make_thumbnail(node.image)
+            gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
 
     def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
@@ -246,7 +267,7 @@ class LaserRender:
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if not isinstance(elements, (list,tuple)):
             elements = [elements]
-        self.render(elements, gc, draw_mode=0)
+        self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer("RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1)

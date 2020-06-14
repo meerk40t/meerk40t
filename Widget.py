@@ -4,6 +4,7 @@ from math import tau
 import wx
 
 from Kernel import Module
+from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID
 from ZMatrix import ZMatrix
 from svgelements import Matrix, Point, Color
 
@@ -758,7 +759,7 @@ class SelectionWidget(Widget):
         self.scene.device.signal('refresh_scene', 0)
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & 32 != 0:
+        if self.scene.device.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         device = self.scene.device
         draw_mode = device.draw_mode
@@ -780,7 +781,7 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x1, y0, x1, y1)
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
-            if draw_mode & 128 == 0:
+            if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.device.device_root
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
                 gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
@@ -795,7 +796,7 @@ class ReticleWidget(Widget):
 
     def process_draw(self, gc):
         device = self.scene.device
-        if device.draw_mode & 16 == 0:
+        if device.draw_mode & DRAW_MODE_RETICLE == 0:
             # Draw Reticle
             gc.SetPen(wx.RED_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -817,7 +818,7 @@ class LaserPathWidget(Widget):
 
     def process_draw(self, gc):
         device = self.scene.device
-        if device.draw_mode & 8 == 0:
+        if device.draw_mode & DRAW_MODE_LASERPATH == 0:
             gc.SetPen(wx.BLUE_PEN)
             starts, ends = gc.laserpath
             gc.StrokeLineSegments(starts, ends)
@@ -866,7 +867,7 @@ class GridWidget(Widget):
         self.grid = starts, ends
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & 4 != 0:
+        if self.scene.device.draw_mode & DRAW_MODE_GRID != 0:
             return
         device = self.scene.device
         if device is not None:
@@ -903,7 +904,7 @@ class GuideWidget(Widget):
         Widget.__init__(self, scene, all=False)
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & 2 != 0:
+        if self.scene.device.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
