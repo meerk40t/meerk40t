@@ -1170,7 +1170,7 @@ class Elemental(Module):
             elements = [elements]
         for element in elements:
             if isinstance(element, (Path, SVGText)):
-                if element.stroke == "red" and not isinstance(Path, SVGText):
+                if element.stroke == "red" and not isinstance(element, SVGText):
                     if cut is None or not cut.has_same_properties(element.values):
                         cut = CutOperation(speed=self.device.cut_speed,
                                            power=self.device.cut_power,
@@ -1178,7 +1178,7 @@ class Elemental(Module):
                         cuts.append(cut)
                         cut.set_properties(element.values)
                     cut.append(element)
-                elif element.stroke == "blue" and not isinstance(Path, SVGText):
+                elif element.stroke == "blue" and not isinstance(element, SVGText):
                     if engrave is None or not engrave.has_same_properties(element.values):
                         engrave = EngraveOperation(speed=self.device.engrave_speed,
                                                    power=self.device.engrave_power,
@@ -1187,7 +1187,8 @@ class Elemental(Module):
                         engrave.set_properties(element.values)
                     engrave.append(element)
                 if (element.stroke != "red" and element.stroke != "blue") or\
-                        (element.fill is not None and element.fill != "none"):
+                        (element.fill is not None and element.fill != "none") or\
+                        isinstance(element, SVGText):
                     # not classed already, or was already classed but has a fill.
                     if raster is None or not raster.has_same_properties(element.values):
                         raster = RasterOperation(speed=self.device.raster_speed,

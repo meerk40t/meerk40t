@@ -3308,17 +3308,7 @@ class QuadraticBezier(PathSegment):
         """Calculate the length of the path up to a certain position"""
         a = self.start - 2 * self.control + self.end
         b = 2 * (self.control - self.start)
-        a_dot_b = a.real * b.real + a.imag * b.imag
-
-        if abs(a) < 1e-12:
-            s = abs(b)
-        elif abs(a_dot_b + abs(a) * abs(b)) < 1e-12:
-            k = abs(b) / abs(a)
-            if k >= 2:
-                s = abs(b) - abs(a)
-            else:
-                s = abs(a) * (k ** 2 / 2 - k + 1)
-        else:
+        try:
             # For an explanation of this case, see
             # http://www.malczak.info/blog/quadratic-bezier-curve-length/
             A = 4 * (a.real ** 2 + a.imag ** 2)
@@ -3333,6 +3323,16 @@ class QuadraticBezier(PathSegment):
 
             s = (A32 * Sabc + A2 * B * (Sabc - C2) + (4 * C * A - B ** 2) *
                  log((2 * A2 + BA + Sabc) / (BA + C2))) / (4 * A32)
+        except (ZeroDivisionError, ValueError):
+            # a_dot_b = a.real * b.real + a.imag * b.imag
+            if abs(a) < 1e-10:
+                s = abs(b)
+            else:
+                k = abs(b) / abs(a)
+                if k >= 2:
+                    s = abs(b) - abs(a)
+                else:
+                    s = abs(a) * (k ** 2 / 2 - k + 1)
         return s
 
     def is_smooth_from(self, previous):
@@ -4346,11 +4346,7 @@ class Path(Shape, MutableSequence):
 
     def __eq__(self, other):
         if isinstance(other, str):
-            try:
-                return self.__eq__(Path(other))
-            except ValueError:
-                # All invalid paths are unequal.
-                return False
+            return self.__eq__(Path(other))
         if not isinstance(other, Path):
             return NotImplemented
         if len(self) != len(other):
@@ -4603,7 +4599,10 @@ class Path(Shape, MutableSequence):
             return
         lengths = [each.length(error=error, min_depth=min_depth) for each in self._segments]
         self._length = sum(lengths)
-        self._lengths = [each / self._length for each in lengths]
+        if self._length == 0:
+            self._lengths = lengths
+        else:
+            self._lengths = [each / self._length for each in lengths]
 
     def point(self, position, error=ERROR):
         if len(self._segments) == 0:
@@ -4615,6 +4614,10 @@ class Path(Shape, MutableSequence):
             return self._segments[-1].point(position)
 
         self._calc_lengths(error=error)
+
+        if self._length == 0:
+            i = int(round(position * (len(self._segments) - 1)))
+            return self._segments[i].point(0.0)
         # Find which segment the point we search for is located on:
         segment_start = 0
         segment_pos = 0
