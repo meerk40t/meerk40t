@@ -405,14 +405,16 @@ class MeerK40t(wx.Frame, Module):
         self.times = -1
         device = self.device
         kernel = device.device_root
-        device.unlisten('background', self.on_background_signal)
-        device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
         kernel.unlisten('element_added', self.on_rebuild_tree_request)
         kernel.unlisten('operation_added', self.on_rebuild_tree_request)
-        device.unlisten('refresh_scene', self.on_refresh_scene)
-        device.unlisten('element_property_update', self.on_element_update)
         kernel.unlisten('units', self.space_changed)
         kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
+        kernel.unlisten('altered', self.on_element_alteration)
+
+        device.unlisten('background', self.on_background_signal)
+        device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
+        device.unlisten('refresh_scene', self.on_refresh_scene)
+        device.unlisten('element_property_update', self.on_element_update)
         device.unlisten('pipe;error', self.on_usb_error)
         device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
         device.unlisten('pipe;thread', self.on_pipe_state)
@@ -446,14 +448,16 @@ class MeerK40t(wx.Frame, Module):
             device.setting(int, "bed_width", 320)  # Default Value
             device.setting(int, "bed_height", 220)  # Default Value
 
-        device.listen('background', self.on_background_signal)
-        device.listen('rebuild_tree', self.on_rebuild_tree_request)
         kernel.listen('element_added', self.on_rebuild_tree_request)
         kernel.listen('operation_added', self.on_rebuild_tree_request)
-        device.listen('refresh_scene', self.on_refresh_scene)
-        device.listen('element_property_update', self.on_element_update)
         kernel.listen('units', self.space_changed)
         kernel.listen('emphasized', self.on_emphasized_elements_changed)
+        kernel.listen('altered', self.on_element_alteration)
+
+        device.listen('background', self.on_background_signal)
+        device.listen('rebuild_tree', self.on_rebuild_tree_request)
+        device.listen('refresh_scene', self.on_refresh_scene)
+        device.listen('element_property_update', self.on_element_update)
         device.listen('pipe;error', self.on_usb_error)
         device.listen('pipe;usb_state_text', self.on_usb_state_text)
         device.listen('pipe;thread', self.on_pipe_state)
@@ -713,6 +717,10 @@ class MeerK40t(wx.Frame, Module):
         self.on_size(None)
 
     def on_emphasized_elements_changed(self, *args):
+        self.request_refresh()
+
+    def on_element_alteration(self, *args):
+        self.root.rebuild_tree()
         self.request_refresh()
 
     def on_erase(self, event):
