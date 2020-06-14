@@ -94,7 +94,7 @@ class TextProperty(wx.Frame,  Module):
                     self.label_fonttest.SetFont(element.wxfont)
                 except AttributeError:
                     pass
-                self.device.signal("refresh_scene", 0)
+                self.device.signal('refresh_scene', 0)
         except AttributeError:
             pass
 
@@ -186,8 +186,8 @@ class TextProperty(wx.Frame,  Module):
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(element.fill)))
 
     def refresh(self):
-        self.device.signal("element_property_update", self.element)
-        self.device.signal("refresh_scene", 0)
+        self.device.signal('element_property_update', self.element)
+        self.device.signal('refresh_scene', 0)
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
@@ -232,16 +232,20 @@ class TextProperty(wx.Frame,  Module):
             if color is not None:
                 self.element.stroke = color
                 self.element.values[SVG_ATTR_STROKE] = color.hex
+                self.element.altered()
             else:
                 self.element.stroke = Color('none')
                 self.element.values[SVG_ATTR_STROKE] = 'none'
+                self.element.altered()
         elif 'fill' in button.name:
             if color is not None:
                 self.element.fill = color
                 self.element.values[SVG_ATTR_FILL] = color.hex
+                self.element.altered()
             else:
                 self.element.fill = Color('none')
                 self.element.values[SVG_ATTR_FILL] = 'none'
+                self.element.altered()
         self.update_label()
         self.refresh()
         event.Skip()

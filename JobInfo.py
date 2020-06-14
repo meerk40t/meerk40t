@@ -123,7 +123,7 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(bool, "autohome", False)
         self.device.setting(bool, "autobeep", True)
         self.device.setting(bool, "autostart", True)
-        self.device.listen("element_property_update", self.on_element_property_update)
+        self.device.listen('element_property_update', self.on_element_property_update)
 
         if self.device.is_root():
             for attr in dir(self):
@@ -144,7 +144,7 @@ class JobInfo(wx.Frame, Module):
         self.Close()
 
     def on_close(self, event):
-        self.device.unlisten("element_property_update", self.on_element_property_update)
+        self.device.unlisten('element_property_update', self.on_element_property_update)
         self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 

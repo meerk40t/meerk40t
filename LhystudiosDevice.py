@@ -95,7 +95,7 @@ class LhystudiosDevice(Device):
         self.setting(int, "bed_width", 320)
         self.setting(int, "bed_height", 220)
 
-        self.signal("bed_size", (self.bed_width, self.bed_height))
+        self.signal('bed_size', (self.bed_width, self.bed_height))
 
         self.control_instance_add("Debug Device", self._start_debugging)
 
@@ -1145,7 +1145,7 @@ class LhystudioController(Module, Pipe):
             driver.open()
             chip_version = driver.get_chip_version()
             self.update_usb_state(INFO_USB_CHIP_VERSION | chip_version)
-            self.device.signal("pipe;chipv", chip_version)
+            self.device.signal('pipe;chipv', chip_version)
             self.update_usb_state(INFO_USB_DRIVER | STATE_DRIVER_LIBUSB)
             self.update_usb_state(STATE_CONNECTED)
             return
@@ -1161,7 +1161,7 @@ class LhystudioController(Module, Pipe):
             driver.open()
             chip_version = driver.get_chip_version()
             self.update_usb_state(INFO_USB_CHIP_VERSION | chip_version)
-            self.device.signal("pipe;chipv", chip_version)
+            self.device.signal('pipe;chipv', chip_version)
             self.update_usb_state(INFO_USB_DRIVER | STATE_DRIVER_CH341)
             self.update_usb_state(STATE_CONNECTED)
         except ConnectionRefusedError:
@@ -1178,8 +1178,8 @@ class LhystudioController(Module, Pipe):
 
     def update_packet(self, packet):
         if self.device is not None:
-            self.device.signal("pipe;packet", convert_to_list_bytes(packet))
-            self.device.signal("pipe;packet_text", packet)
+            self.device.signal('pipe;packet', convert_to_list_bytes(packet))
+            self.device.signal('pipe;packet_text', packet)
             self.send_channel(str(packet))
 
     def _thread_data_send(self):
@@ -1368,7 +1368,7 @@ class LhystudioController(Module, Pipe):
         else:
             self._status = self.driver.get_status()
         if self.device is not None:
-            self.device.signal("pipe;status", self._status)
+            self.device.signal('pipe;status', self._status)
             self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):
@@ -1383,7 +1383,7 @@ class LhystudioController(Module, Pipe):
                 break
             time.sleep(0.05)
             if self.device is not None:
-                self.device.signal("pipe;wait", STATUS_OK, i)
+                self.device.signal('pipe;wait', STATUS_OK, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
@@ -1405,7 +1405,7 @@ class LhystudioController(Module, Pipe):
                 break
             time.sleep(0.05)
             if self.device is not None:
-                self.device.signal("pipe;wait", status, i)
+                self.device.signal('pipe;wait', status, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False

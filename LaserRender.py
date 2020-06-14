@@ -255,6 +255,7 @@ class LaserRender:
                 gc.StrokePath(p)
                 del p
             elif isinstance(element, SVGText):
+                #TODO: FINISH THIS
                 pass
             element.transform = old_matrix
 

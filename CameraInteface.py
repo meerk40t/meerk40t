@@ -165,8 +165,8 @@ class CameraInterface(wx.Frame, Module):
         elif self.device.camera_index == 4:
             self.camera_4_menu.Check(True)
         self.device.add_job(self.init_camera, times=1, interval=0.1)
-        self.device.listen("camera_frame", self.on_camera_frame)
-        self.device.listen("camera_frame_raw", self.on_camera_frame_raw)
+        self.device.listen('camera_frame', self.on_camera_frame)
+        self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
         self.device.add('control', 'camera_snapshot', self.snapshot_close)
         self.device.add('control', 'camera_update', self.update_close)
 
@@ -175,9 +175,9 @@ class CameraInterface(wx.Frame, Module):
 
     def on_close(self, event):
         self.camera_lock.acquire()
-        self.device.unlisten("camera_frame_raw", self.on_camera_frame_raw)
-        self.device.unlisten("camera_frame", self.on_camera_frame)
-        self.device.signal("camera_frame_raw", None)
+        self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
+        self.device.unlisten('camera_frame', self.on_camera_frame)
+        self.device.signal('camera_frame_raw', None)
         self.close_camera()
         self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
@@ -541,9 +541,9 @@ class CameraInterface(wx.Frame, Module):
             frame = cv2.warpPerspective(frame, M, (bed_width, bed_height))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if raw:
-            self.device.signal("camera_frame_raw", frame)
+            self.device.signal('camera_frame_raw', frame)
         else:
-            self.device.signal("camera_frame", frame)
+            self.device.signal('camera_frame', frame)
         self.camera_lock.release()
         return frame
 
@@ -561,14 +561,14 @@ class CameraInterface(wx.Frame, Module):
         self.device.camera_correction_fisheye = self.check_fisheye.GetValue()
 
     def on_button_update(self, event):  # wxGlade: CameraInterface.<event_handler>
-        frame = self.device.last_signal("camera_frame")
+        frame = self.device.last_signal('camera_frame')
         if frame is not None:
             frame = frame[0]
             buffer = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
-            self.device.signal("background", buffer)
+            self.device.signal('background', buffer)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
-        frame = self.device.last_signal("camera_frame")
+        frame = self.device.last_signal('camera_frame')
         if frame is not None:
             elements = self.device.device_root.elements
             frame = frame[0]

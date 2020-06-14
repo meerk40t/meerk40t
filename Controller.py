@@ -78,11 +78,11 @@ class Controller(wx.Frame, Module):
 
         self.device.setting(int, "buffer_max", 1500)
         self.device.setting(bool, "buffer_limit", True)
-        self.device.listen("pipe;status", self.update_status)
-        self.device.listen("pipe;packet_text", self.update_packet_text)
-        self.device.listen("pipe;buffer", self.on_buffer_update)
-        self.device.listen("pipe;usb_state", self.on_connection_state_change)
-        self.device.listen("pipe;thread", self.on_control_state)
+        self.device.listen('pipe;status', self.update_status)
+        self.device.listen('pipe;packet_text', self.update_packet_text)
+        self.device.listen('pipe;buffer', self.on_buffer_update)
+        self.device.listen('pipe;usb_state', self.on_connection_state_change)
+        self.device.listen('pipe;thread', self.on_control_state)
         self.checkbox_limit_buffer.SetValue(self.device.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.device.buffer_max)
         self.text_device.SetValue(self.device.device_name)
@@ -94,11 +94,11 @@ class Controller(wx.Frame, Module):
 
     def on_close(self, event):
         self.device.remove('window', self.name)
-        self.device.unlisten("pipe;status", self.update_status)
-        self.device.unlisten("pipe;packet_text", self.update_packet_text)
-        self.device.unlisten("pipe;buffer", self.on_buffer_update)
-        self.device.unlisten("pipe;usb_state", self.on_connection_state_change)
-        self.device.unlisten("pipe;thread", self.on_control_state)
+        self.device.unlisten('pipe;status', self.update_status)
+        self.device.unlisten('pipe;packet_text', self.update_packet_text)
+        self.device.unlisten('pipe;buffer', self.on_buffer_update)
+        self.device.unlisten('pipe;usb_state', self.on_connection_state_change)
+        self.device.unlisten('pipe;thread', self.on_control_state)
         event.Skip()  # delegate destroy to super
 
     def device_execute(self, control_name):

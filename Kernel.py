@@ -116,7 +116,7 @@ class Spooler(Module):
         queue_head = self._queue[0]
         del self._queue[0]
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self._queue))
+        self.device.signal('spooler;queue', len(self._queue))
         return queue_head
 
     def job(self, *job):
@@ -136,7 +136,7 @@ class Spooler(Module):
         else:
             self._queue.append(job)
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self._queue))
+        self.device.signal('spooler;queue', len(self._queue))
 
     def jobs(self, jobs):
         """
@@ -152,7 +152,7 @@ class Spooler(Module):
         else:
             self._queue.append(jobs)
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self._queue))
+        self.device.signal('spooler;queue', len(self._queue))
 
     def job_if_idle(self, element):
         if len(self._queue) == 0:
@@ -165,13 +165,13 @@ class Spooler(Module):
         self.queue_lock.acquire(True)
         self._queue = []
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self._queue))
+        self.device.signal('spooler;queue', len(self._queue))
 
     def remove(self, element):
         self.queue_lock.acquire(True)
         self._queue.remove(element)
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self._queue))
+        self.device.signal('spooler;queue', len(self._queue))
 
 
 class Interpreter(Module):
@@ -745,37 +745,51 @@ class Elemental(Module):
 
         def select():
             obj.selected = True
-            self.propagate_subproperties()
-            self.device.signal("selected", obj)
+            self.device.signal('selected', obj)
 
         def unselect():
             obj.selected = False
-            self.propagate_subproperties()
-            self.device.signal("selected", obj)
+            self.device.signal('selected', obj)
 
         def highlight():
             obj.highlighted = True
-            self.device.signal("highlighted", obj)
+            self.device.signal('highlighted', obj)
 
         def unhighlight():
             obj.highlighted = False
-            self.device.signal("highlighted", obj)
+            self.device.signal('highlighted', obj)
 
         def emphasize():
             obj.emphasized = True
-            self.device.signal("emphasized", obj)
+            self.device.signal('emphasized', obj)
             self.validate_bounds()
 
         def unemphasize():
             obj.emphasized = False
-            self.device.signal("emphasized", obj)
+            self.device.signal('emphasized', obj)
             self.validate_bounds()
 
         def modified():
+            """
+            The matrix transformation was changed.
+            """
             obj.bounds = None
             self._bounds = None
             self.validate_bounds()
-            self.device.signal("modified", obj)
+            self.device.signal('modified', obj)
+
+        def altered():
+            """
+            The data structure was changed.
+            """
+            del obj.cache
+            obj.cache = None
+            del obj.icon
+            obj.icon = None
+            obj.bounds = None
+            self._bounds = None
+            self.validate_bounds()
+            self.device.signal('altered', obj)
 
         obj.select = select
         obj.unselect = unselect
@@ -784,6 +798,7 @@ class Elemental(Module):
         obj.emphasize = emphasize
         obj.unemphasize = unemphasize
         obj.modified = modified
+        obj.altered = altered
 
     def unregister(self, e):
         try:
@@ -884,24 +899,24 @@ class Elemental(Module):
     def add_op(self, op):
         self._operations.append(op)
         self.register(op)
-        self.device.signal("operation_added", op)
+        self.device.signal('operation_added', op)
 
     def add_ops(self, adding_ops):
         self._operations.extend(adding_ops)
         for op in adding_ops:
             self.register(op)
-        self.device.signal("operation_added", adding_ops)
+        self.device.signal('operation_added', adding_ops)
 
     def add_elem(self, element):
         self._elements.append(element)
         self.register(element)
-        self.device.signal("element_added", element)
+        self.device.signal('element_added', element)
 
     def add_elems(self, adding_elements):
         self._elements.extend(adding_elements)
         for element in adding_elements:
             self.register(element)
-        self.device.signal("element_added", adding_elements)
+        self.device.signal('element_added', adding_elements)
 
     def files(self):
         return self._filenodes
@@ -909,13 +924,13 @@ class Elemental(Module):
     def clear_operations(self):
         for op in self._operations:
             self.unregister(op)
-            self.device.signal("operation_removed", op)
+            self.device.signal('operation_removed', op)
         self._operations.clear()
 
     def clear_elements(self):
         for e in self._elements:
             self.unregister(e)
-            self.device.signal("element_removed", e)
+            self.device.signal('element_removed', e)
         self._elements.clear()
 
     def clear_files(self):
@@ -942,14 +957,14 @@ class Elemental(Module):
             except ValueError:
                 continue
             self.unregister(e)
-            self.device.signal("element_removed", e)
+            self.device.signal('element_removed', e)
         self.remove_elements_from_operations(elements_list)
 
     def remove_operations(self, operations_list):
         for op in operations_list:
             self._operations.remove(op)
             self.unregister(op)
-            self.device.signal("operation_removed", op)
+            self.device.signal('operation_removed', op)
 
     def remove_elements_from_operations(self, elements_list):
         for i in range(len(self._operations)):
@@ -1003,13 +1018,12 @@ class Elemental(Module):
             new_bounds = [xmin, ymin, xmax, ymax]
         if self._bounds != new_bounds:
             self._bounds = new_bounds
-            self.device.device_root.signal("selected_bounds", self._bounds)
+            self.device.device_root.signal('selected_bounds', self._bounds)
 
-    def is_child(self, v, selected):
+    def is_in_set(self, v, selected, flat=True):
         for q in selected:
-            if isinstance(q, (list,tuple)):
-                if self.is_child(v, q):
-                    return True
+            if flat and isinstance(q, (list, tuple)) and self.is_in_set(v, q, flat):
+                return True
             if q is v:
                 return True
         return False
@@ -1028,49 +1042,35 @@ class Elemental(Module):
         if selected is None:
             selected = []
         for s in self._elements:
-            is_selected = self.is_child(s, selected)
+            should_select = self.is_in_set(s, selected, False)
+            should_emphasize = self.is_in_set(s, selected)
+            if s.emphasized:
+                if not should_emphasize:
+                    s.unemphasize()
+            else:
+                if should_emphasize:
+                    s.emphasize()
             if s.selected:
-                if not is_selected:
+                if not should_select:
                     s.unselect()
             else:
-                if is_selected:
+                if should_select:
                     s.select()
         for s in self._operations:
-            is_selected = self.is_child(s, selected)
+            should_select = self.is_in_set(s, selected, False)
+            should_emphasize = self.is_in_set(s, selected)
+            if s.emphasized:
+                if not should_emphasize:
+                    s.unemphasize()
+            else:
+                if should_emphasize:
+                    s.emphasize()
             if s.selected:
-                if not is_selected:
+                if not should_select:
                     s.unselect()
             else:
-                if is_selected:
+                if should_select:
                     s.select()
-
-    def propagate_subproperties(self):
-        """
-        Sets selected and other properties of a given element.
-
-        All selected elements are also semi-selected.
-
-        If elements itself is selected, all subelements are semiselected.
-
-        If any operation is selected, all sub-operations are highlighted.
-
-        """
-        for s in self._elements:
-            if s.selected:
-                if not s.emphasized:
-                    s.emphasize()
-            if s.emphasized:
-                if not s.selected:
-                    s.unemphasize()
-        for s in self._operations:
-            if s.selected:
-                if not s.emphasized:
-                    s.emphasize()
-                    for q in s:
-                        q.emphasize()
-            if s.emphasized:
-                if not s.selected:
-                    s.unemphasize()
 
     def center(self):
         bounds = self._bounds
@@ -1079,11 +1079,11 @@ class Elemental(Module):
     def ensure_positive_bounds(self):
         b = self._bounds
         self._bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
-        self.device.device_root.signal("selected_bounds", self._bounds)
+        self.device.device_root.signal('selected_bounds', self._bounds)
 
     def update_bounds(self, b):
         self._bounds = [b[0], b[1], b[0], b[1]]
-        self.device.device_root.signal("selected_bounds", self._bounds)
+        self.device.device_root.signal('selected_bounds', self._bounds)
 
     @staticmethod
     def bounding_box(elements):
@@ -1130,7 +1130,6 @@ class Elemental(Module):
         if self.has_emphasis():
             if self._bounds is not None and contains(self._bounds, position):
                 return  # Select by position aborted since selection position within current select bounds.
-        self.set_selected(None)
         for e in reversed(list(self.elems())):
             bounds = e.bbox()
             if bounds is None:
@@ -1138,6 +1137,7 @@ class Elemental(Module):
             if contains(bounds, position):
                 self.set_selected([e])
                 return
+        self.set_selected(None)
 
     def classify(self, elements):
         """

@@ -302,7 +302,7 @@ class MoshiboardController(Module, Pipe):
             driver.open()
             chip_version = driver.get_chip_version()
             self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
-            self.device.signal("pipe;chipv", chip_version)
+            self.device.signal('pipe;chipv', chip_version)
             self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_LIBUSB)
             self.state_listener(STATE_CONNECTED)
             return
@@ -317,7 +317,7 @@ class MoshiboardController(Module, Pipe):
             driver.open()
             chip_version = driver.get_chip_version()
             self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
-            self.device.signal("pipe;chipv", chip_version)
+            self.device.signal('pipe;chipv', chip_version)
             self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_CH341)
             self.state_listener(STATE_CONNECTED)
         except ConnectionRefusedError:

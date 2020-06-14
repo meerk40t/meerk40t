@@ -619,9 +619,11 @@ class Console(Module, Pipe):
             if args[0] == 'none':
                 for element in elements.elems(emphasized=True):
                     element.stroke = None
+                    element.altered()
             else:
                 for element in elements.elems(emphasized=True):
                     element.stroke = Color(args[0])
+                    element.altered()
             active_device.signal('refresh_scene')
             return
         elif command == 'fill':
@@ -648,9 +650,11 @@ class Console(Module, Pipe):
             if args[0] == 'none':
                 for element in elements.elems(emphasized=True):
                     element.fill = None
+                    element.altered()
             else:
                 for element in elements.elems(emphasized=True):
                     element.fill = Color(args[0])
+                    element.altered()
             active_device.signal('refresh_scene')
             return
         elif command == 'rotate':
@@ -953,8 +957,7 @@ class Console(Module, Pipe):
                     name = name[:50] + '...'
                 yield 'reified - %s' % (name)
                 element.reify()
-                element.cache = None
-                element.modified()
+                element.altered()
             active_device.signal('refresh_scene')
             return
         # Operation Command Elements
@@ -1063,7 +1066,7 @@ class Console(Module, Pipe):
             for op in elements.elems(emphasized=True):
                 if isinstance(op, RasterOperation):
                     op.raster_step = step
-                    self.device.signal("element_property_update", op)
+                    self.device.signal('element_property_update', op)
             for element in elements.elems(emphasized=True):
                 element.values[VARIABLE_NAME_RASTER_STEP] = str(step)
                 m = element.transform
@@ -1072,7 +1075,7 @@ class Console(Module, Pipe):
                 element.transform = Matrix.scale(float(step), float(step))
                 element.transform.post_translate(tx, ty)
                 element.modified()
-                self.device.signal("element_property_update", element)
+                self.device.signal('element_property_update', element)
                 active_device.signal('refresh_scene')
             return
         elif command == 'resample':

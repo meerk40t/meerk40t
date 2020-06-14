@@ -405,15 +405,14 @@ class MeerK40t(wx.Frame, Module):
         self.times = -1
         device = self.device
         kernel = device.device_root
-        device.unlisten("background", self.on_background_signal)
+        device.unlisten('background', self.on_background_signal)
         device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
         kernel.unlisten('element_added', self.on_rebuild_tree_request)
         kernel.unlisten('operation_added', self.on_rebuild_tree_request)
         device.unlisten('refresh_scene', self.on_refresh_scene)
-        device.unlisten("element_property_update", self.on_element_update)
-        kernel.unlisten("units", self.space_changed)
-        kernel.unlisten("emphasized", self.on_emphasized_elements_changed)
-        kernel.unlisten("selected", self.on_selected_elements_changed)
+        device.unlisten('element_property_update', self.on_element_update)
+        kernel.unlisten('units', self.space_changed)
+        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
         device.unlisten('pipe;error', self.on_usb_error)
         device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
         device.unlisten('pipe;thread', self.on_pipe_state)
@@ -447,15 +446,14 @@ class MeerK40t(wx.Frame, Module):
             device.setting(int, "bed_width", 320)  # Default Value
             device.setting(int, "bed_height", 220)  # Default Value
 
-        device.listen("background", self.on_background_signal)
+        device.listen('background', self.on_background_signal)
         device.listen('rebuild_tree', self.on_rebuild_tree_request)
         kernel.listen('element_added', self.on_rebuild_tree_request)
         kernel.listen('operation_added', self.on_rebuild_tree_request)
         device.listen('refresh_scene', self.on_refresh_scene)
-        device.listen("element_property_update", self.on_element_update)
-        kernel.listen("units", self.space_changed)
-        kernel.listen("emphasized", self.on_emphasized_elements_changed)
-        kernel.listen("selected", self.on_selected_elements_changed)
+        device.listen('element_property_update', self.on_element_update)
+        kernel.listen('units', self.space_changed)
+        kernel.listen('emphasized', self.on_emphasized_elements_changed)
         device.listen('pipe;error', self.on_usb_error)
         device.listen('pipe;usb_state_text', self.on_usb_state_text)
         device.listen('pipe;thread', self.on_pipe_state)
@@ -606,7 +604,7 @@ class MeerK40t(wx.Frame, Module):
         self.request_refresh_for_animation()
 
     def on_background_signal(self, background):
-        self.widget_scene.signal("background", background)
+        self.widget_scene.signal('background', background)
         self.request_refresh()
 
     def __set_titlebar(self):
@@ -694,7 +692,7 @@ class MeerK40t(wx.Frame, Module):
         self.Layout()
         self.set_buffer()
         self.device.window_width, self.device.window_height = self.Size
-        self.widget_scene.signal("guide")
+        self.widget_scene.signal('guide')
         self.request_refresh()
 
     def update_position(self, pos):
@@ -707,18 +705,14 @@ class MeerK40t(wx.Frame, Module):
         self.request_refresh_for_animation()
 
     def space_changed(self, *args):
-        self.widget_scene.signal("grid")
+        self.widget_scene.signal('grid')
         self.on_size(None)
 
     def bed_changed(self, *args):
-        self.widget_scene.signal("grid")
+        self.widget_scene.signal('grid')
         self.on_size(None)
 
     def on_emphasized_elements_changed(self, *args):
-        self.request_refresh()
-
-    def on_selected_elements_changed(self, *args):
-        self.root.select_in_tree_by_selected()
         self.request_refresh()
 
     def on_erase(self, event):
@@ -925,7 +919,7 @@ class MeerK40t(wx.Frame, Module):
 
         def toggle(event):
             self.device.draw_mode ^= bits
-            self.device.signal("draw_mode", self.device.draw_mode)
+            self.device.signal('draw_mode', self.device.draw_mode)
             self.request_refresh()
 
 
@@ -1001,7 +995,7 @@ class MeerK40t(wx.Frame, Module):
             color = Color(color, 1.0)
             for elem in elements.elems(emphasized=True):
                 elem.fill = color
-                elem.modified()
+                elem.altered()
 
     def open_stroke_dialog(self):
         kernel = self.device.device_root
@@ -1020,7 +1014,7 @@ class MeerK40t(wx.Frame, Module):
             color = Color(color, 1.0)
             for elem in elements.elems(emphasized=True):
                 elem.stroke = color
-                elem.modified()
+                elem.altered()
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
@@ -1359,10 +1353,10 @@ class RootNode(list):
         pass
 
     def notify_tree_data_change(self):
-        self.device.signal("rebuild_tree", 0)
+        self.device.signal('rebuild_tree', 0)
 
     def notify_tree_data_cleared(self):
-        self.device.signal("rebuild_tree", 0)
+        self.device.signal('rebuild_tree', 0)
 
     def on_element_update(self, *args):
         element = args[0]
@@ -1784,7 +1778,7 @@ class RootNode(list):
             element = node.object
             if isinstance(element, RasterOperation):
                 element.raster_step = step_value
-            self.device.signal("element_property_update", node.object)
+            self.device.signal('element_property_update', node.object)
 
         return specific
 
@@ -1806,7 +1800,7 @@ class RootNode(list):
             element.transform = Matrix.scale(float(step_value), float(step_value))
             element.transform.post_translate(tx, ty)
             element.modified()
-            self.device.signal("element_property_update", node.object)
+            self.device.signal('element_property_update', node.object)
             self.root.gui.request_refresh()
 
         return specific
@@ -1950,7 +1944,7 @@ class RootNode(list):
         def specific(event):
             for element in self.elements.elems(emphasized=True):
                 element.reify()
-                element.modified()
+                element.altered()
             self.device.signal('rebuild_tree', 0)
 
         return specific

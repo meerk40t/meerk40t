@@ -163,7 +163,7 @@ class PathProperty(wx.Frame, Module):
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.path_element.name = self.text_name.GetValue()
-            self.device.signal("element_property_update", self.path_element)
+            self.device.signal('element_property_update', self.path_element)
         except AttributeError:
             pass
 
@@ -179,15 +179,19 @@ class PathProperty(wx.Frame, Module):
             if color is not None:
                 self.path_element.stroke = color
                 self.path_element.values[SVG_ATTR_STROKE] = color.hex
+                self.path_element.altered()
             else:
                 self.path_element.stroke = Color('none')
                 self.path_element.values[SVG_ATTR_STROKE] = 'none'
+                self.path_element.altered()
         elif 'fill' in button.name:
             if color is not None:
                 self.path_element.fill = color
                 self.path_element.values[SVG_ATTR_FILL] = color.hex
+                self.path_element.altered()
             else:
                 self.path_element.fill = Color('none')
                 self.path_element.values[SVG_ATTR_FILL] = 'none'
-        self.device.signal("element_property_update", self.path_element)
-        self.device.signal("refresh_scene", 0)
+                self.path_element.altered()
+        self.device.signal('element_property_update', self.path_element)
+        self.device.signal('refresh_scene', 0)

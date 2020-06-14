@@ -298,12 +298,12 @@ class Preferences(wx.Frame, Module):
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.bed_width = int(self.spin_bedwidth.GetValue())
         self.device.bed_height = int(self.spin_bedheight.GetValue())
-        self.device.signal("bed_size", (self.device.bed_width, self.device.bed_height))
+        self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.bed_width = int(self.spin_bedwidth.GetValue())
         self.device.bed_height = int(self.spin_bedheight.GetValue())
-        self.device.signal("bed_size", (self.device.bed_width, self.device.bed_height))
+        self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
         self.device.autolock = self.checkbox_autolock.GetValue()

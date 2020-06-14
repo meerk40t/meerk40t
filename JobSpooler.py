@@ -45,7 +45,7 @@ class JobSpooler(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        self.device.listen("spooler;queue", self.on_spooler_update)
+        self.device.listen('spooler;queue', self.on_spooler_update)
         self.refresh_spooler_list()
 
     def shutdown(self, channel):
@@ -53,7 +53,7 @@ class JobSpooler(wx.Frame, Module):
 
     def on_close(self, event):
         self.device.remove('window', self.name)
-        self.device.unlisten("spooler;queue", self.on_spooler_update)
+        self.device.unlisten('spooler;queue', self.on_spooler_update)
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):

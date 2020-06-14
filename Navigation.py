@@ -133,8 +133,8 @@ class Navigation(wx.Frame, Module):
     def on_close(self, event):
         kernel = self.device.device_root
         self.device.remove('window', self.name)
-        kernel.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.device.unlisten("interpreter;position", self.on_position_update)
+        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
+        self.device.unlisten('interpreter;position', self.on_position_update)
 
         event.Skip()  # Call destroy.
 
@@ -363,8 +363,8 @@ class Navigation(wx.Frame, Module):
         self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
         self.set_jog_distances(self.device.navigate_jog)
 
-        kernel.listen("emphasized", self.on_emphasized_elements_changed)
-        device.listen("interpreter;position", self.on_position_update)
+        kernel.listen('emphasized', self.on_emphasized_elements_changed)
+        device.listen('interpreter;position', self.on_position_update)
         self.console = self.device.using('module', 'Console')
         self.update_matrix_text()
 

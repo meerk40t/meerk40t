@@ -168,32 +168,32 @@ class RasterProperty(wx.Frame, Module):
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.speed = self.spin_speed_set.GetValue()
         self.device.device_root.raster_speed = self.operation.speed
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_spin_power(self, event):
         self.operation.power = self.spin_power_set.GetValue()
         self.device.device_root.raster_power = self.operation.power
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.raster_step = self.spin_step_size.GetValue()
         self.device.device_root.raster_step = self.operation.raster_step
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
         self.operation.raster_direction = self.combo_raster_direction.GetSelection()
         self.device.device_root.raster_direction = self.operation.raster_direction
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_spin_overscan(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.overscan = self.spin_overscan_set.GetValue()
         self.device.device_root.raster_overscan = self.operation.overscan
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.bidirectional = self.radio_directional_raster.GetSelection()
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_radio_corner(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.corner = self.radio_corner.GetSelection()
-        self.device.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
