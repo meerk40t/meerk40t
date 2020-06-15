@@ -1862,7 +1862,7 @@ class Device:
 
     def classify(self, elements):
         if self.device_root is not None and self.device_root is not self:
-            return self.device_root.classify(list(elements))
+            return self.device_root.classify(elements)
 
     def load(self, pathname, **kwargs):
         if self.device_root is not None and self.device_root is not self:
