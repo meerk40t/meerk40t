@@ -1013,7 +1013,7 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            elements.classify(elements.elems(emphasized=True))
+            elements.classify(list(elements.elems(emphasized=True)))
             return
         elif command == 'cut':
             if not elements.has_emphasis():

@@ -2210,7 +2210,7 @@ class RootNode(list):
             kernel = node.root.device.device_root
             elements = kernel.elements
             elements.clear_operations()
-            elements.classify(elements.elems())
+            elements.classify(list(elements.elems()))
 
         return specific
 

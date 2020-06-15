@@ -138,7 +138,7 @@ if device is not kernel:  # We can process this stuff only with a real device.
     if args.auto:
         # Automatically classify and start the job.
         elements = kernel.elements
-        elements.classify()
+        elements.classify((elements.elems()))
         device.spooler.jobs(elements.ops())
         device.setting(bool, 'quit', True)
         device.quit = True
