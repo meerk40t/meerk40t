@@ -2112,6 +2112,16 @@ class RootNode(list):
                     del op[index]
             self.elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)
+        return specific
+
+    def menu_clear_all(self, node):
+        def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
+            if node.type == NODE_ELEMENTS_BRANCH:
+                self.elements.remove_elements_from_operations(elements.elems())
+            node.object.clear()
+            # TODO: Clear like this isn't always an action anymore. Should correct.
 
         return specific
 
@@ -2193,17 +2203,6 @@ class RootNode(list):
         def specific(event):
             node.object.reverse()
             self.device.signal('rebuild_tree', 0)
-
-        return specific
-
-    def menu_clear_all(self, node):
-        def specific(event):
-            kernel = self.device.device_root
-            elements = kernel.elements
-            if node.type == NODE_ELEMENTS_BRANCH:
-                self.elements.remove_elements_from_operations(elements.elems())
-            node.object.clear()
-            # TODO: Clear like this isn't always an action anymore. Should correct.
 
         return specific
 

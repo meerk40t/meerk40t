@@ -1170,7 +1170,7 @@ class Elemental(Module):
 
         self.device.setting(bool, 'raster_acceleration_custom', False)
         self.device.setting(int, 'raster_acceleration', 4)
-        self.device.setting(float, 'raster_speed', 35.0)
+        self.device.setting(float, 'raster_speed', 200.0)
         self.device.setting(float, 'raster_power', 1000.0)
         self.device.setting(int, 'raster_step', 2)
         self.device.setting(int, 'raster_direction', 0)

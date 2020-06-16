@@ -325,6 +325,8 @@ class LhymicroInterpreter(Interpreter):
         self.device.signal('pipe;buffer', 0)
         self.plot = None
         self.pipe.realtime_write(b'I*\n')
+        self.laser = False
+        self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
         self.device.signal('interpreter;mode', self.state)
 
