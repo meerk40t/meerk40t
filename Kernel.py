@@ -1976,6 +1976,8 @@ class Kernel(Device):
         self.keymap['numpad/'] = '+scale_down'
         self.keymap['numpad+'] = '+rotate_cw'
         self.keymap['numpad-'] = '+rotate_ccw'
+        self.keymap['control+a'] = 'element *'
+        self.keymap['control+i'] = 'element ~'
         self.keymap['control+shift+h'] = 'scale -1 1'
         self.keymap['control+shift+v'] = 'scale 1 -1'
         self.keymap['control+1'] = "bind 1 move $x $y"
@@ -1997,8 +1999,8 @@ class Kernel(Device):
         self.keymap['f8'] = "control Path"
         self.keymap['f9'] = "control Transform"
         self.keymap['f12'] = "window open Terminal"
-        self.keymap['pause'] = "control Realtime Pause_Resume"
         self.keymap['alt+f12'] = "terminal_ruida"
+        self.keymap['pause'] = "control Realtime Pause_Resume"
 
     def default_alias(self):
         self.alias['+scale_up'] = "loop scale 1.02"

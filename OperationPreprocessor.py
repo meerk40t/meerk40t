@@ -236,12 +236,26 @@ class OperationPreprocessor:
 
     @staticmethod
     def is_inside(path1, path2):
-        path2 = Polygon([path2.point(i / 100.0, error=1e4) for i in range(101)])
-        vm = VectorMontonizer()
-        vm.add_cluster(path2)
+        if not hasattr(path1, 'bounding_box'):
+            path1.bounding_box = OperationPreprocessor.bounding_box(path1)
+        if not hasattr(path2, 'bounding_box'):
+            path2.bounding_box = OperationPreprocessor.bounding_box(path2)
+        if path1.bounding_box[0] > path1.bounding_box[2]:  # path1 minx is greater than path2 maxx
+            return False
+        if path1.bounding_box[2] < path1.bounding_box[0]:  # path1 maxx is less than path2 minx
+            return False
+        if path1.bounding_box[1] > path1.bounding_box[3]:  # path1 miny is greater than path2 maxy
+            return False
+        if path1.bounding_box[3] < path1.bounding_box[1]:  # path1 maxy is less than path2 miny
+            return False
+        if not hasattr(path2, 'vm'):
+            path2 = Polygon([path2.point(i / 100.0, error=1e4) for i in range(101)])
+            vm = VectorMontonizer()
+            vm.add_cluster(path2)
+            path2.vm = vm
         for i in range(101):
             p = path1.point(i / 100.0, error=1e4)
-            if not vm.is_point_inside(p.x, p.y):
+            if not path2.vm.is_point_inside(p.x, p.y):
                 return False
         return True
 
@@ -261,6 +275,14 @@ class OperationPreprocessor:
                     subpaths[k] = t
         for p in subpaths:
             optimized += p
+            try:
+                del p.vm
+            except AttributeError:
+                pass
+            try:
+                del p.bounding_box
+            except AttributeError:
+                pass
         return optimized
 
 
