@@ -79,10 +79,20 @@ else:
         # Without a booted device, if also no gui, just start a default device.
         device = kernel.open('device', 'Lhystudios')
         device.boot()
+        pass
     else:
-        # There is a gui but the device wasn't booted. Set device to kernel and start the DeviceManager
-        device = kernel
-        kernel.open('window', "DeviceManager", None, -1, "")
+        # There is a gui but the device wasn't booted.
+        if hasattr(kernel, 'list_devices') or len(kernel.list_devices) == 0:
+            # List devices is either missing or empty. Create a default device.
+            kernel.device_add('Lhystudios', 1)
+            kernel.device_boot()
+            for key, d in kernel.instances['device'].items():
+                device = d
+                break
+        if device is None:
+            #  Set device to kernel and start the DeviceManager
+            device = kernel
+            kernel.open('window', "DeviceManager", None, -1, "")
 
 
 if args.verbose:

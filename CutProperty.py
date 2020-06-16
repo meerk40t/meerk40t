@@ -29,11 +29,11 @@ class CutProperty(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_power, self.spin_power_set)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_power, self.spin_power_set)
         self.Bind(wx.EVT_TEXT, self.on_spin_power, self.spin_power_set)
-        self.Bind(wx.EVT_CHECKBOX, lambda e: self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue()), self.checkbox_custom_d_ratio)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_custom_d_ratio, self.checkbox_custom_d_ratio)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_speed_dratio, self.spin_speed_dratio)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_speed_dratio, self.spin_speed_dratio)
         self.Bind(wx.EVT_TEXT, self.on_spin_speed_dratio, self.spin_speed_dratio)
-        self.Bind(wx.EVT_CHECKBOX, lambda e: self.slider_accel.Enable(self.checkbox_custom_accel.GetValue()), self.checkbox_custom_accel)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_custom_accel, self.checkbox_custom_accel)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
         self.operation = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -59,11 +59,26 @@ class CutProperty(wx.Frame, Module):
             self.checkbox_custom_d_ratio.Enable(False)
 
         try:
-            if operation.accel is not None:
-                self.slider_accel.SetValue(operation.accel)
+            if operation.dratio_custom is not None:
+                self.checkbox_custom_d_ratio.SetValue(operation.dratio_custom)
+                self.spin_speed_dratio.Enable(self.checkbox_custom_d_ratio.GetValue())
+        except AttributeError:
+            pass
+
+        try:
+            if operation.acceleration is not None:
+                self.slider_accel.SetValue(operation.acceleration)
         except AttributeError:
             self.slider_accel.Enable(False)
             self.checkbox_custom_accel.Enable(False)
+
+        try:
+            if operation.acceleration_custom is not None:
+                self.checkbox_custom_accel.SetValue(operation.acceleration_custom)
+                self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
+        except AttributeError:
+            pass
+
         return self
 
     def initialize(self):
@@ -139,5 +154,20 @@ class CutProperty(wx.Frame, Module):
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_accel(self, event):  # wxGlade: EngraveProperty.<event_handler>
-        self.operation.accel = self.slider_accel.GetValue()
+        self.operation.acceleration = self.slider_accel.GetValue()
         self.device.signal('element_property_update', self.operation)
+
+    def on_check_custom_d_ratio(self, event):
+        on = self.checkbox_custom_d_ratio.GetValue()
+        self.spin_speed_dratio.Enable(on)
+        self.device.device_root.cut_dratio_custom = on
+        self.operation.dratio_custom = on
+        self.device.signal('element_property_update', self.operation)
+
+    def on_check_custom_accel(self, event):
+        on = self.checkbox_custom_accel.GetValue()
+        self.slider_accel.Enable(on)
+        self.device.device_root.cut_acceleration_custom = on
+        self.operation.acceleration_custom = on
+        self.device.signal('element_property_update', self.operation)
+

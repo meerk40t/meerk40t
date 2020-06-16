@@ -24,7 +24,10 @@ class LaserOperation(list):
         self.status_value = "Queued"
         self.speed = None
         self.power = None
+        self.dratio_custom = False
         self.dratio = None
+        self.acceleration_custom = False
+        self.acceleration = None
         try:
             self.speed = float(kwargs['speed'])
         except ValueError:
@@ -43,6 +46,26 @@ class LaserOperation(list):
             pass
         except KeyError:
             pass
+        try:
+            self.dratio_custom = bool(kwargs['dratio_custom'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
+
+        try:
+            self.acceleration = int(kwargs['acceleration'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
+        try:
+            self.acceleration_custom = bool(kwargs['acceleration_custom'])
+        except ValueError:
+            pass
+        except KeyError:
+            pass
+
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
@@ -51,7 +74,11 @@ class LaserOperation(list):
             elif isinstance(obj, LaserOperation):
                 self.speed = obj.speed
                 self.power = obj.power
+                self.dratio_custom = obj.dratio_custom
                 self.dratio = obj.dratio
+                self.acceleration_custom = obj.acceleration_custom
+                self.acceleration = obj.acceleration
+
                 for element in obj:
                     element_copy = copy(element)
                     self.append(element_copy)
@@ -90,6 +117,9 @@ class LaserOperation(list):
         if 'dratio' in values and values['dratio'] is not None:
             if self.dratio != float(values['dratio']):
                 return False
+        if 'acceleration' in values and values['acceleration'] is not None:
+            if self.acceleration != int(values['acceleration']):
+                return False
         return True
 
     def set_properties(self, values):
@@ -104,6 +134,8 @@ class LaserOperation(list):
             self.power = float(values['power'])
         if 'dratio' in values and values['dratio'] is not None:
             self.dratio = float(values['dratio'])
+        if 'acceleration' in values and values['acceleration'] is not None:
+            self.acceleration = int(values['acceleration'])
 
 
 class RasterOperation(LaserOperation):
@@ -328,8 +360,10 @@ class EngraveOperation(LaserOperation):
         yield COMMAND_SET_SPEED, self.speed
         yield COMMAND_SET_STEP, 0
         yield COMMAND_SET_POWER, self.power
-        if self.dratio is not None:
+        if self.dratio is not None and self.dratio_custom:
             yield COMMAND_SET_D_RATIO, self.dratio
+        if self.acceleration is not None and self.acceleration_custom:
+            yield COMMAND_SET_ACCELERATION, self.acceleration
         for object_path in self:
             plot = abs(object_path)
             first_point = plot.first_point
@@ -386,8 +420,10 @@ class CutOperation(LaserOperation):
         yield COMMAND_SET_SPEED, self.speed
         yield COMMAND_SET_STEP, 0
         yield COMMAND_SET_POWER, self.power
-        if self.dratio is not None:
+        if self.dratio is not None and self.dratio_custom:
             yield COMMAND_SET_D_RATIO, self.dratio
+        if self.acceleration is not None and self.acceleration_custom:
+            yield COMMAND_SET_ACCELERATION, self.acceleration
         for object_path in self:
             plot = abs(object_path)
             first_point = plot.first_point

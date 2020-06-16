@@ -90,8 +90,6 @@ class LhystudiosDevice(Device):
         self.setting(bool, "rotary", False)
         self.setting(float, "scale_x", 1.0)
         self.setting(float, "scale_y", 1.0)
-        self.setting(int, "_stepping_force", None)
-        self.setting(float, "_acceleration_breaks", float("inf"))
         self.setting(int, "bed_width", 320)
         self.setting(int, "bed_height", 220)
 
@@ -549,6 +547,7 @@ class LhymicroInterpreter(Interpreter):
             self.speed,
             self.raster_step,
             d_ratio=self.d_ratio,
+            acceleration=self.acceleration,
             fix_limit=True,
             fix_lows=True,
             fix_speeds=False,

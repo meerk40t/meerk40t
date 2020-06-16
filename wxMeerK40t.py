@@ -999,7 +999,8 @@ class MeerK40t(wx.Frame, Module):
         if first_selected is None:
             return
         data = wx.ColourData()
-        data.SetColour(wx.Colour(swizzlecolor(first_selected.fill)))
+        if first_selected.fill is not None and first_selected.fill != 'none':
+            data.SetColour(wx.Colour(swizzlecolor(first_selected.fill)))
         dlg = wx.ColourDialog(self, data)
         if dlg.ShowModal() == wx.ID_OK:
             data = dlg.GetColourData()
@@ -1018,7 +1019,8 @@ class MeerK40t(wx.Frame, Module):
         if first_selected is None:
             return
         data = wx.ColourData()
-        data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
+        if first_selected.stroke is not None and first_selected.stroke != 'none':
+            data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
         dlg = wx.ColourDialog(self, data)
         if dlg.ShowModal() == wx.ID_OK:
             data = dlg.GetColourData()

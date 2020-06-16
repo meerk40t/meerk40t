@@ -1154,12 +1154,22 @@ class Elemental(Module):
         rasters = []
         engraves = []
         cuts = []
-        self.device.setting(float, 'cut_dratio', None)
+        self.device.setting(bool, 'cut_acceleration_custom', False)
+        self.device.setting(int, 'cut_acceleration', 4)
+        self.device.setting(bool, 'cut_dratio_custom', False)
+        self.device.setting(float, 'cut_dratio', .261)
         self.device.setting(float, 'cut_speed', 10.0)
         self.device.setting(float, 'cut_power', 1000.0)
+
+        self.device.setting(bool, 'engrave_acceleration_custom', False)
+        self.device.setting(int, 'engrave_acceleration', 4)
+        self.device.setting(bool, 'engrave_dratio_custom', False)
         self.device.setting(float, 'engrave_speed', 35.0)
         self.device.setting(float, 'engrave_power', 1000.0)
         self.device.setting(float, 'engrave_dratio', None)
+
+        self.device.setting(bool, 'raster_acceleration_custom', False)
+        self.device.setting(int, 'raster_acceleration', 4)
         self.device.setting(float, 'raster_speed', 35.0)
         self.device.setting(float, 'raster_power', 1000.0)
         self.device.setting(int, 'raster_step', 2)
@@ -1174,7 +1184,10 @@ class Elemental(Module):
                     if cut is None or not cut.has_same_properties(element.values):
                         cut = CutOperation(speed=self.device.cut_speed,
                                            power=self.device.cut_power,
-                                           dratio=self.device.cut_dratio)
+                                           dratio_custom=self.device.cut_dratio_custom,
+                                           dratio=self.device.cut_dratio,
+                                           acceleration_custom=self.device.cut_acceleration_custom,
+                                           acceleration=self.device.cut_acceleration)
                         cuts.append(cut)
                         cut.set_properties(element.values)
                     cut.append(element)
@@ -1182,7 +1195,10 @@ class Elemental(Module):
                     if engrave is None or not engrave.has_same_properties(element.values):
                         engrave = EngraveOperation(speed=self.device.engrave_speed,
                                                    power=self.device.engrave_power,
-                                                   dratio=self.device.engrave_dratio)
+                                                   dratio_custom=self.device.engrave_dratio_custom,
+                                                   dratio=self.device.engrave_dratio,
+                                                   acceleration_custom=self.device.engrave_acceleration_custom,
+                                                   acceleration=self.device.engrave_acceleration)
                         engraves.append(engrave)
                         engrave.set_properties(element.values)
                     engrave.append(element)
@@ -1195,18 +1211,26 @@ class Elemental(Module):
                                                  power=self.device.raster_power,
                                                  raster_step=self.device.raster_step,
                                                  raster_direction=self.device.raster_direction,
-                                                 overscan=self.device.raster_overscan)
+                                                 overscan=self.device.raster_overscan,
+                                                 acceleration_custom=self.device.raster_acceleration_custom,
+                                                 acceleration=self.device.raster_acceleration)
                         rasters.append(raster)
                         raster.set_properties(element.values)
                     raster.append(element)
             elif isinstance(element, SVGImage):
                 # TODO: Add SVGImages to overall Raster, requires function to combine images.
+                try:
+                    step = element.step
+                except AttributeError:
+                    step = self.device.raster_step
                 rasters.append(RasterOperation(element,
                                                speed=self.device.raster_speed,
                                                power=self.device.raster_power,
-                                               raster_step=self.device.raster_step,
+                                               raster_step=step,
                                                raster_direction=self.device.raster_direction,
-                                               overscan=self.device.raster_overscan))
+                                               overscan=self.device.raster_overscan,
+                                               acceleration_custom=self.device.raster_acceleration_custom,
+                                               acceleration=self.device.raster_acceleration))
         rasters = [r for r in rasters if len(r) != 0]
         engraves = [r for r in engraves if len(r) != 0]
         cuts = [r for r in cuts if len(r) != 0]
@@ -1927,18 +1951,7 @@ class Kernel(Device):
         Device.boot(self)
         self.default_keymap()
         self.default_alias()
-        self.setting(str, 'list_devices', '')
-        devices = self.list_devices
-        for device in devices.split(';'):
-            try:
-                d = int(device)
-            except ValueError:
-                return
-            device_name = self.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
-            autoboot = self.read_persistent(bool, 'autoboot', True, uid=d)
-            if autoboot:
-                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
-                dev.boot()
+        self.device_boot()
 
     def shutdown(self, channel=None):
         """
@@ -2078,6 +2091,34 @@ class Kernel(Device):
                 if not hasattr(self, value):
                     setattr(self, value, None)
             more, value, index = config.GetNextEntry(index)
+
+    def device_boot(self):
+        """
+        Boots any devices that are set to boot.
+
+        :return:
+        """
+        self.setting(str, 'list_devices', '')
+        devices = self.list_devices
+        for device in devices.split(';'):
+            try:
+                d = int(device)
+            except ValueError:
+                return
+            device_name = self.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
+            autoboot = self.read_persistent(bool, 'autoboot', True, uid=d)
+            if autoboot:
+                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
+                dev.boot()
+
+    def device_add(self, device_type, device_uid):
+        self.write_persistent('device_name', device_type, uid=device_uid)
+        self.write_persistent('autoboot', True, uid=device_uid)
+        self.setting(str, 'list_devices', '')
+        devices = [d for d in self.list_devices.split(';') if d != '']
+        devices.append(str(device_uid))
+        self.list_devices = ';'.join(devices)
+        self.write_persistent('list_devices', self.list_devices)
 
     def register_loader(self, name, obj):
         self.registered['load'][name] = obj
