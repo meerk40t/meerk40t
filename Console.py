@@ -156,7 +156,7 @@ class Console(Module, Pipe):
             yield 'control [<executive>]'
             yield 'module [(open|close) <module_name>]'
             yield 'schedule'
-            yield 'channel [(open|close) <channel_name>]'
+            yield 'channel [(open|close|save) <channel_name>]'
             yield '-------------------'
             yield 'element [<element>]*'
             yield 'path <svg_path>'
@@ -521,13 +521,19 @@ class Console(Module, Pipe):
                         if value == "*":
                             yield "Selecting all elements."
                             elements.set_selected(list(elements.elems()))
-                            return
+                            continue
                         elif value == "~":
-                            elements.set_selected(list(elements.elems(selected=False)))
-                            return
+                            yield "Invert selection."
+                            elements.set_selected(list(elements.elems(emphasized=False)))
+                            continue
                         elif value == "!":
+                            yield "Select none"
                             elements.set_selected(None)
-                            return
+                            continue
+                        elif value == "delete":
+                            yield "deleting."
+                            elements.remove_elements(list(elements.elems(emphasized=True)))
+                            continue
                         yield "Value Error: %s is not an integer" % value
                         continue
                     try:
@@ -537,9 +543,11 @@ class Console(Module, Pipe):
                             name = name[:50] + '...'
                         if element.selected:
                             element.unselect()
+                            element.unemphasize()
                             yield "Deselecting item %d called %s" % (value, name)
                         else:
                             element.select()
+                            element.emphasize()
                             yield "Selecting item %d called %s" % (value, name)
                     except IndexError:
                         yield 'index %d out of range' % value
@@ -986,13 +994,19 @@ class Console(Module, Pipe):
                         if value == "*":
                             yield "Selecting all operations."
                             elements.set_selected(list(elements.ops()))
-                            return
+                            continue
                         elif value == "~":
-                            elements.set_selected(list(elements.ops(selected=False)))
-                            return
+                            yield "Invert selection."
+                            elements.set_selected(list(elements.ops(emphasized=False)))
+                            continue
                         elif value == "!":
+                            yield "Select none"
                             elements.set_selected(None)
-                            return
+                            continue
+                        elif value == "delete":
+                            yield "Deleting."
+                            elements.remove_operations(list(elements.ops(emphasized=True)))
+                            continue
                         yield "Value Error: %s is not an integer" % value
                         continue
                     try:
@@ -1000,10 +1014,12 @@ class Console(Module, Pipe):
                         name = str(operation)
                         if len(name) > 50:
                             name = name[:50] + '...'
-                        if operation.selected:
+                        if operation.emphasized:
+                            operation.unemphasize()
                             operation.unselect()
                             yield "Deselecting operation %d called %s" % (value, name)
                         else:
+                            operation.emphasize()
                             operation.select()
                             yield "Selecting operation %d called %s" % (value, name)
                     except IndexError:
