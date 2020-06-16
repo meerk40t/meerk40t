@@ -155,6 +155,7 @@ class CutProperty(wx.Frame, Module):
 
     def on_slider_accel(self, event):  # wxGlade: EngraveProperty.<event_handler>
         self.operation.acceleration = self.slider_accel.GetValue()
+        self.device.device_root.cut_acceleration = self.operation.acceleration
         self.device.signal('element_property_update', self.operation)
 
     def on_check_custom_d_ratio(self, event):

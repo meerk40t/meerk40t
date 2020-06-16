@@ -241,6 +241,11 @@ class RasterOperation(LaserOperation):
         direction = self.raster_direction
         step = self.raster_step
         yield COMMAND_SET_POWER, self.power
+        yield COMMAND_SET_D_RATIO, None
+        if self.acceleration is not None and self.acceleration_custom:
+            yield COMMAND_SET_ACCELERATION, self.acceleration
+        else:
+            yield COMMAND_SET_ACCELERATION, None
 
         yield COMMAND_SET_STEP, step
         traverse = 0
@@ -362,8 +367,12 @@ class EngraveOperation(LaserOperation):
         yield COMMAND_SET_POWER, self.power
         if self.dratio is not None and self.dratio_custom:
             yield COMMAND_SET_D_RATIO, self.dratio
+        else:
+            yield COMMAND_SET_D_RATIO, None
         if self.acceleration is not None and self.acceleration_custom:
             yield COMMAND_SET_ACCELERATION, self.acceleration
+        else:
+            yield COMMAND_SET_ACCELERATION, None
         for object_path in self:
             plot = abs(object_path)
             first_point = plot.first_point
@@ -422,8 +431,12 @@ class CutOperation(LaserOperation):
         yield COMMAND_SET_POWER, self.power
         if self.dratio is not None and self.dratio_custom:
             yield COMMAND_SET_D_RATIO, self.dratio
+        else:
+            yield COMMAND_SET_D_RATIO, None
         if self.acceleration is not None and self.acceleration_custom:
             yield COMMAND_SET_ACCELERATION, self.acceleration
+        else:
+            yield COMMAND_SET_ACCELERATION, None
         for object_path in self:
             plot = abs(object_path)
             first_point = plot.first_point

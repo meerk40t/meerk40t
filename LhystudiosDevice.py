@@ -542,6 +542,7 @@ class LhymicroInterpreter(Interpreter):
             return
         controller = self.pipe
         self.ensure_finished_mode()
+
         speed_code = LaserSpeed(
             self.device.board,
             self.speed,
@@ -1188,10 +1189,10 @@ class LhystudioController(Module, Pipe):
         """
         self._main_lock.acquire(True)
         self.count = 0
-        if self.state == STATE_INITIALIZE:
-            # If we are initialized. Change that to active since we're running.
-            self.update_state(STATE_ACTIVE)
         while self.state != STATE_END and self.state != STATE_TERMINATE:
+            if self.state == STATE_INITIALIZE:
+                # If we are initialized. Change that to active since we're running.
+                self.update_state(STATE_ACTIVE)
             if self.state == STATE_PAUSE or self.state == STATE_BUSY:
                 # If we are paused just keep sleeping until the state changes.
                 time.sleep(1)
@@ -1361,7 +1362,7 @@ class LhystudioController(Module, Pipe):
     def update_status(self):
         if self.device.mock:
             from random import randint
-            if randint(0, 5) == 0:
+            if randint(0, 500) == 0:
                 self._status = [255, STATUS_PACKET_REJECTED, 0, 0, 0, 1]
             else:
                 self._status = [255, STATUS_OK, 0, 0, 0, 1]

@@ -1220,8 +1220,8 @@ class Elemental(Module):
             elif isinstance(element, SVGImage):
                 # TODO: Add SVGImages to overall Raster, requires function to combine images.
                 try:
-                    step = element.step
-                except AttributeError:
+                    step = element.values['raster_step']
+                except KeyError:
                     step = self.device.raster_step
                 rasters.append(RasterOperation(element,
                                                speed=self.device.raster_speed,
