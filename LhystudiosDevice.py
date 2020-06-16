@@ -1307,34 +1307,36 @@ class LhystudioController(Module, Pipe):
         else:
             self.open()
 
-        if len(packet) != 30 and len(packet) != 0:
-            # We could only generate a partial packet, throw it back
-            return False
-        self.wait_until_accepting_packets()
-        if self.state == STATE_PAUSE:
-            return False  # Paused during packet fetch.
-        self.send_packet(packet)
-        attempts = 0
-        status = 0
-        while attempts < 300:  # 200 * 300 = 60,000 = 60 seconds.
-            try:
-                self.update_status()
-                status = self._status[1]
-                if status != 0:
-                    break
-            except ConnectionError:
-                # we can't throw raise these, we must report that the packet was sent.
-                attempts += 1
-        if status == STATUS_PACKET_REJECTED:
-            self.device.rejected_count += 1
-            # The packet was rejected. The sent data was not accepted. Return False.
-            return False
-        elif status == 0:
-            raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
-        if status == STATUS_FINISH and post_send_command == self.wait_finished:
-            # The confirmation reply says we finished, and we were going to wait for that, so let's pass.
-            post_send_command = None
-        self.device.packet_count += 1  # Everything went off without a problem.
+        if len(packet) == 30:
+            self.wait_until_accepting_packets()
+            if self.state == STATE_PAUSE:
+                return False  # Paused during packet fetch.
+            self.send_packet(packet)
+            attempts = 0
+            status = 0
+            while attempts < 300:  # 200 * 300 = 60,000 = 60 seconds.
+                try:
+                    self.update_status()
+                    status = self._status[1]
+                    if status != 0:
+                        break
+                except ConnectionError:
+                    # we can't throw raise these, we must report that the packet was sent.
+                    attempts += 1
+            if status == STATUS_PACKET_REJECTED:
+                self.device.rejected_count += 1
+                # The packet was rejected. The sent data was not accepted. Return False.
+                return False
+            elif status == 0:
+                raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
+            if status == STATUS_FINISH and post_send_command == self.wait_finished:
+                # The confirmation reply says we finished, and we were going to wait for that, so let's pass.
+                post_send_command = None
+            self.device.packet_count += 1  # Everything went off without a problem.
+        else:
+            if len(packet) != 0:
+                # We could only generate a partial packet, throw it back
+                return False
 
         # Packet was processed.
         self._buffer = self._buffer[length:]
