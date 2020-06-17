@@ -693,8 +693,6 @@ class MeerK40t(wx.Frame, Module):
             dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
-        if accepted != 0:
-            self.root.notify_tree_data_change()
 
     def on_paint(self, event):
         try:
