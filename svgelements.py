@@ -3304,6 +3304,35 @@ class QuadraticBezier(PathSegment):
         y = (1 - position) * (1 - position) * y0 + 2 * (1 - position) * position * y1 + position * position * y2
         return Point(x, y)
 
+    def bbox(self):
+        """
+        Returns the bounding box for the quadratic bezier curve.
+        """
+        try:
+            n = self.start[0] - self.control[0]
+            d = self.start[0] - 2 * self.control[0] + self.end[0]
+            if d != 0:
+                t = n / d
+            else:
+                t = 0.5
+            if 0 < t < 1:
+                x_values = [self.start[0], self.end[0], self.point(t)[0]]
+            else:
+                x_values = [self.start[0], self.end[0]]
+            n = self.start[1] - self.control[1]
+            d = self.start[1] - 2 * self.control[1] + self.end[1]
+            if d != 0:
+                t = n / d
+            else:
+                t = 0.5
+            if 0 < t < 1:
+                y_values = [self.start[1], self.end[1], self.point(t)[1]]
+            else:
+                y_values = [self.start[1], self.end[1]]
+            return min(x_values), min(y_values), max(x_values), max(y_values)
+        except ZeroDivisionError:
+            return PathSegment.bbox(self)
+
     def length(self, error=None, min_depth=None):
         """Calculate the length of the path up to a certain position"""
         a = self.start - 2 * self.control + self.end
@@ -3442,6 +3471,42 @@ class CubicBezier(PathSegment):
             3 * (1 - position) * position * position * y2 + \
             position * position * position * y3
         return Point(x, y)
+
+    def bbox(self):
+        """returns the tight fitting bounding box of the bezier curve.
+        Code by:
+        https://github.com/mathandy/svgpathtools
+        """
+        xmin, xmax = self._real_minmax(0)
+        ymin, ymax = self._real_minmax(1)
+        return xmin, ymin, xmax, ymax
+
+    def _real_minmax(self, v):
+        """returns the minimum and maximum for a real cubic bezier, with a non-zero denom
+        Code by:
+        https://github.com/mathandy/svgpathtools
+        """
+        local_extremizers = [0, 1]
+        a = [c[v] for c in self]
+        denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
+        if abs(denom) >= 1e-12:
+            delta = a[1] ** 2 -\
+                    (a[0] + a[1]) * a[2] + \
+                    a[2] ** 2 + \
+                    (a[0] - a[1]) * a[3]
+            if delta >= 0:  # otherwise no local extrema
+                sqdelta = sqrt(delta)
+                tau = a[0] - 2 * a[1] + a[2]
+                r1 = (tau + sqdelta) / denom
+                r2 = (tau - sqdelta) / denom
+                if 0 < r1 < 1:
+                    local_extremizers.append(r1)
+                if 0 < r2 < 1:
+                    local_extremizers.append(r2)
+        else:
+            local_extremizers.append(0.5)
+        local_extrema = [self.point(t)[v] for t in local_extremizers]
+        return min(local_extrema), max(local_extrema)
 
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         """Calculate the length of the path up to a certain position"""
@@ -4133,18 +4198,36 @@ class Arc(PathSegment):
         return Ellipse(self.center, self.rx, self.ry, self.get_rotation())
 
     def bbox(self):
-        """Returns the bounding box of the arc."""
-        # TODO: truncated the bounding box to the arc rather than the entire ellipse.
-        theta = Point.angle(self.center, self.prx)
-        a = Point.distance(self.center, self.prx)
-        b = Point.distance(self.center, self.pry)
-        cos_theta = cos(theta)
-        sin_theta = sin(theta)
-        xmax = sqrt(a * a * cos_theta * cos_theta + b * b * sin_theta * sin_theta)
-        xmin = -xmax
-        ymax = sqrt(a * a * sin_theta * sin_theta + b * b * cos_theta * cos_theta)
-        ymin = -xmax
-        return xmin + self.center[0], ymin + self.center[1], xmax + self.center[0], ymax + self.center[1]
+        """Find the bounding box of a arc.
+        Code from: https://github.com/mathandy/svgpathtools
+        """
+        phi = self.get_rotation().as_radians
+        if cos(phi) == 0:
+            atan_x = pi / 2
+            atan_y = 0
+        elif sin(phi) == 0:
+            atan_x = 0
+            atan_y = pi / 2
+        else:
+            rx, ry = self.rx, self.ry
+            atan_x = atan(-(ry / rx) * tan(phi))
+            atan_y = atan((ry / rx) / tan(phi))
+
+        def angle_inv(ang, k):  # inverse of angle from Arc.derivative()
+            return ((ang + pi * k) * (360 / (2 * pi)) - self.theta) / self.delta
+
+        xtrema = [self.start[0], self.end[0]]
+        ytrema = [self.start[1], self.end[1]]
+
+        for k in range(-4, 5):
+            tx = angle_inv(atan_x, k)
+            ty = angle_inv(atan_y, k)
+            if 0 <= tx <= 1:
+                xtrema.append(self.point(tx)[0])
+            if 0 <= ty <= 1:
+                ytrema.append(self.point(ty)[1])
+
+        return min(xtrema), min(ytrema), max(xtrema), max(ytrema)
 
     def d(self, current_point=None, smooth=False):
         if current_point is None:
