@@ -951,27 +951,31 @@ class Elemental(Module):
             del self._filenodes[f]
 
     def remove_elements(self, elements_list):
-        for e in elements_list:
-            self.unregister(e)
-            try:
-                self._elements.remove(e)
-            except ValueError:
-                continue
-            self.device.signal('element_removed', e)
+        for elem in elements_list:
+            for i, e in enumerate(self._elements):
+                if elem is e:
+                    self.unregister(elem)
+                    self.device.signal('element_removed', elem)
+                    self._elements[i] = None
         self.remove_elements_from_operations(elements_list)
 
     def remove_operations(self, operations_list):
         for op in operations_list:
-            self._operations.remove(op)
-            self.unregister(op)
-            self.device.signal('operation_removed', op)
+            for i, o in enumerate(self._operations):
+                if o is op:
+                    self.unregister(op)
+                    self.device.signal('operation_removed', op)
+                    self._operations[i] = None
+        self.purge_unset()
 
     def remove_elements_from_operations(self, elements_list):
-        for i in range(len(self._operations)):
-            elems = [e for e in self._operations[i] if e not in elements_list]
-            self._operations[i].clear()
-            self._operations[i].extend(elems)
-            if len(self._operations[i]) == 0:
+        for i, op in enumerate(self._operations):
+            if op is None:
+                continue
+            elems = [e for e in op if e not in elements_list]
+            op.clear()
+            op.extend(elems)
+            if len(op) == 0:
                 self._operations[i] = None
         self.purge_unset()
 

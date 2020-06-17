@@ -2064,37 +2064,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            kernel = self.device.device_root
-            elements = kernel.elements
-            node = remove_node
-            selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
-
-            def combined(*args):
-                for listv in args:
-                    for itemv in listv:
-                        yield itemv
-
-            selections = [s for s in combined(*selections) if s.type == node.type]
-            if node.type == NODE_ELEMENT:
-                # Removing element can only have 1 copy.
-                elements.remove_elements(self.elements.elems(emphasized=True))
-            elif node.type == NODE_OPERATION_ELEMENT:
-                # Operation_element can occur many times in the same operation node.
-                modified = []
-                for node in selections:
-                    index = node.parent.index(node)
-                    op = node.parent.object
-                    if index == -1:
-                        continue
-                    op[index] = None
-                    if op not in modified:
-                        modified.append(op)
-                for s in modified:
-                    op_elems = [op_elem for op_elem in s if op_elem is not None]
-                    s.clear()
-                    s.extend(op_elems)
-            self.elements.set_selected(None)
-            self.device.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('element delete\n')
 
         return specific
 
@@ -2111,14 +2081,9 @@ class RootNode(list):
             elements = kernel.elements
             node = remove_node
             if node.type == NODE_ELEMENT:
-                # Removing element can only have 1 copy.
-                # All selected elements are removed.
-                removed_objects = list(self.elements.elems(emphasized=True))
-                elements.remove_elements(removed_objects)
+                self.device.using('module', 'Console').write('element delete\n')
             elif node.type == NODE_OPERATION:
-                # Removing operation can only have 1 copy.
-                removed_objects = list(self.elements.ops(emphasized=True))
-                elements.remove_operations([node.object])
+                self.device.using('module', 'Console').write('operation delete\n')
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
                 elements.remove_files([node.filepath])
