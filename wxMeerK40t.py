@@ -1302,6 +1302,7 @@ class RootNode(list):
         self.node_operations = None
         self.node_files = None
         self.do_not_select = False
+        self.device.signal('rebuild_tree')
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -2242,9 +2243,18 @@ class RootNode(list):
         :param node:
         :return:
         """
+        kernel = self.device.device_root
+        elements = kernel.elements
 
         def specific(event):
-            node.object.reverse()
+            t = node.type
+            if t == NODE_ELEMENTS_BRANCH:
+                self.elements._elements.reverse()
+            elif t == NODE_OPERATION_BRANCH:
+                self.elements._operations.reverse()
+            elif t == NODE_OPERATION:
+                for op in elements.ops(emphasized=True):
+                    op.reverse()
             self.device.signal('rebuild_tree', 0)
 
         return specific
