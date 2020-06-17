@@ -418,7 +418,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.unlisten('altered', self.on_element_alteration)
 
         device.unlisten('background', self.on_background_signal)
-        device.unlisten('rebuild_tree', self.on_rebuild_tree_request)
+        device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
         device.unlisten('refresh_scene', self.on_refresh_scene)
         device.unlisten('element_property_update', self.on_element_update)
         device.unlisten('pipe;error', self.on_usb_error)
@@ -463,7 +463,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.listen('altered', self.on_element_alteration)
 
         device.listen('background', self.on_background_signal)
-        device.listen('rebuild_tree', self.on_rebuild_tree_request)
+        device.listen('rebuild_tree', self.on_rebuild_tree_signal)
         device.listen('refresh_scene', self.on_refresh_scene)
         device.listen('element_property_update', self.on_element_update)
         device.listen('pipe;error', self.on_usb_error)
@@ -578,7 +578,17 @@ class MeerK40t(wx.Frame, Module):
 
     def on_rebuild_tree_request(self, *args):
         """
-        Called by 'rebuild_tree' change. To refresh tree.
+        Called by various functions, sends a rebuild_tree signal.
+        This is to prevent multiple events from overtaxing the rebuild.
+
+        :param args:
+        :return:
+        """
+        self.device.signal('rebuild_tree')
+
+    def on_rebuild_tree_signal(self, *args):
+        """
+        Called by 'rebuild_tree' signal. To refresh tree directly
 
         :param args:
         :return:
@@ -730,8 +740,7 @@ class MeerK40t(wx.Frame, Module):
         self.request_refresh()
 
     def on_element_alteration(self, *args):
-        self.root.rebuild_tree()
-        self.request_refresh()
+        self.device.signal('rebuild_tree')
 
     def on_erase(self, event):
         pass
@@ -1294,7 +1303,6 @@ class RootNode(list):
         self.node_elements = None
         self.node_operations = None
         self.node_files = None
-        self.rebuild_tree()
         self.do_not_select = False
 
     def refresh_tree(self, node=None):
