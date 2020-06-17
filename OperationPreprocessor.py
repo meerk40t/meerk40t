@@ -235,27 +235,40 @@ class OperationPreprocessor:
         return xmin, ymin, xmax, ymax
 
     @staticmethod
-    def is_inside(path1, path2):
-        if not hasattr(path1, 'bounding_box'):
-            path1.bounding_box = OperationPreprocessor.bounding_box(path1)
-        if not hasattr(path2, 'bounding_box'):
-            path2.bounding_box = OperationPreprocessor.bounding_box(path2)
-        if path1.bounding_box[0] > path1.bounding_box[2]:  # path1 minx is greater than path2 maxx
+    def is_inside(inner_path, outer_path):
+        """
+        Test that path1 is inside path2.
+        :param inner_path: inner path
+        :param outer_path: outer path
+        :return: whether path1 is wholely inside path2.
+        """
+        if not hasattr(inner_path, 'bounding_box'):
+            inner_path.bounding_box = OperationPreprocessor.bounding_box(inner_path)
+        if not hasattr(outer_path, 'bounding_box'):
+            outer_path.bounding_box = OperationPreprocessor.bounding_box(outer_path)
+        if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+            # outer minx > inner minx (is not contained)
             return False
-        if path1.bounding_box[2] < path1.bounding_box[0]:  # path1 maxx is less than path2 minx
+        if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+            # outer miny > inner miny (is not contained)
             return False
-        if path1.bounding_box[1] > path1.bounding_box[3]:  # path1 miny is greater than path2 maxy
+        if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+            # outer maxx < inner maxx (is not contained)
             return False
-        if path1.bounding_box[3] < path1.bounding_box[1]:  # path1 maxy is less than path2 miny
+        if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+            # outer maxy < inner maxy (is not contained)
             return False
-        if not hasattr(path2, 'vm'):
-            path2 = Polygon([path2.point(i / 100.0, error=1e4) for i in range(101)])
+        if outer_path.bounding_box == inner_path.bounding_box:
+            if outer_path == inner_path:  # This is the same object.
+                return False
+        if not hasattr(outer_path, 'vm'):
+            outer_path = Polygon([outer_path.point(i / 100.0, error=1e4) for i in range(101)])
             vm = VectorMontonizer()
-            vm.add_cluster(path2)
-            path2.vm = vm
+            vm.add_cluster(outer_path)
+            outer_path.vm = vm
         for i in range(101):
-            p = path1.point(i / 100.0, error=1e4)
-            if not path2.vm.is_point_inside(p.x, p.y):
+            p = inner_path.point(i / 100.0, error=1e4)
+            if not outer_path.vm.is_point_inside(p.x, p.y):
                 return False
         return True
 
