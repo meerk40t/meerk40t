@@ -1161,16 +1161,16 @@ class Elemental(Module):
         self.device.setting(bool, 'cut_acceleration_custom', False)
         self.device.setting(int, 'cut_acceleration', 4)
         self.device.setting(bool, 'cut_dratio_custom', False)
-        self.device.setting(float, 'cut_dratio', .261)
+        self.device.setting(float, 'cut_dratio', None)
         self.device.setting(float, 'cut_speed', 10.0)
         self.device.setting(float, 'cut_power', 1000.0)
 
         self.device.setting(bool, 'engrave_acceleration_custom', False)
         self.device.setting(int, 'engrave_acceleration', 4)
         self.device.setting(bool, 'engrave_dratio_custom', False)
+        self.device.setting(float, 'engrave_dratio', None)
         self.device.setting(float, 'engrave_speed', 35.0)
         self.device.setting(float, 'engrave_power', 1000.0)
-        self.device.setting(float, 'engrave_dratio', None)
 
         self.device.setting(bool, 'raster_acceleration_custom', False)
         self.device.setting(int, 'raster_acceleration', 4)

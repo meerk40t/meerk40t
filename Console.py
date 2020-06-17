@@ -541,6 +541,15 @@ class Console(Module, Pipe):
                                 e.select()
                                 e.emphasize()
                             continue
+                        elif value == "subpath":
+                            for e in elements.elems(emphasized=True):
+                                p = abs(e)
+                                add = []
+                                for subpath in p.as_subpaths():
+                                    subelement = Path(subpath)
+                                    add.append(subelement)
+                                elements.add_elems(add)
+                            continue
                         yield "Value Error: %s is not an integer" % value
                         continue
                     try:
@@ -1072,7 +1081,7 @@ class Console(Module, Pipe):
         elif command == 'step':
             if len(args) == 0:
                 found = False
-                for op in elements.elems(emphasized=True):
+                for op in elements.ops(emphasized=True):
                     if isinstance(op, RasterOperation):
                         step = op.raster_step
                         yield 'Step for %s is currently: %d' % (str(op), step)
@@ -1093,7 +1102,7 @@ class Console(Module, Pipe):
             except ValueError:
                 yield 'Not integer value for raster step.'
                 return
-            for op in elements.elems(emphasized=True):
+            for op in elements.ops(emphasized=True):
                 if isinstance(op, RasterOperation):
                     op.raster_step = step
                     self.device.signal('element_property_update', op)
@@ -1108,26 +1117,80 @@ class Console(Module, Pipe):
                 self.device.signal('element_property_update', element)
                 active_device.signal('refresh_scene')
             return
-        elif command == 'resample':
-            for element in elements.elems(emphasized=True):
-                if isinstance(element, SVGImage):
-                    OperationPreprocessor.make_actual(element)
-            active_device.signal('refresh_scene')
-            return
+        elif command == 'image':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Images:'
+                i = 0
+                for element in elements.elems():
+                    if not isinstance(element, SVGImage):
+                        continue
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: %s' % (i, name)
+                    i += 1
+                yield '----------'
+                return
+            elif args[0] == 'threshold':
+                try:
+                    threshold_min = float(args[1])
+                    threshold_max = float(args[2])
+                except (ValueError, IndexError):
+                    yield "Threshold values improper."
+                    return
+                divide = (threshold_max - threshold_min) / 255.0
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    image_element = copy(element)
+                    image_element.image = image_element.image.copy()
+                    if OperationPreprocessor.needs_actualization(image_element):
+                        OperationPreprocessor.make_actual(image_element)
+                    img = image_element.image
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if pixel[3] == 0:
+                                new_data[x, y] = (255, 255, 255, 255)
+                                continue
+                            gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
+                            if threshold_min >= gray:
+                                new_data[x, y] = (0, 0, 0, 255)
+                            elif threshold_max < gray:
+                                new_data[x, y] = (255, 255, 255, 255)
+                            else:  # threshold_min <= grey < threshold_max
+                                v = gray - threshold_min
+                                v *= divide
+                                v = int(round(v))
+                                new_data[x, y] = (v, v, v, 255)
+                    elements.add_elem(image_element)
+            elif args[0] == 'resample':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        OperationPreprocessor.make_actual(element)
+                        element.altered()
+                return
+            elif args[0] == 'dither':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        if img.mode == 'RGBA':
+                            pixel_data = img.load()
+                            width, height = img.size
+                            for y in range(height):
+                                for x in range(width):
+                                    if pixel_data[x, y][3] == 0:
+                                        pixel_data[x, y] = (255, 255, 255, 255)
+                        element.image = img.convert("1")
+                        element.altered()
         elif command == 'reify':
             for element in elements.elems(emphasized=True):
                 element.reify()
-            active_device.signal('refresh_scene')
+                element.altered()
             return
-        elif command == 'duplicate':
-            copies = 1
-            if len(args) >= 1:
-                try:
-                    copies = int(args[0])
-                except ValueError:
-                    pass
-            elements.add_elems([copy(e) for e in list(elements.elems(emphasized=True)) * copies])
-            active_device.signal('refresh_scene')
         # Alias / Bind Command Elements.
         elif command == 'bind':
             if len(args) == 0:

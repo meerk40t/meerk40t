@@ -1850,12 +1850,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            element = node.object
-            if isinstance(element, SVGImage):
-                OperationPreprocessor.make_actual(element)
-                node.bounds = None
-                node.set_icon()
-            self.device.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('image resample\n')
 
         return specific
 
@@ -1868,19 +1863,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            element = node.object
-            if isinstance(element, SVGImage):
-                img = element.image
-                if img.mode == 'RGBA':
-                    pixel_data = img.load()
-                    width, height = img.size
-                    for y in range(height):
-                        for x in range(width):
-                            if pixel_data[x, y][3] == 0:
-                                pixel_data[x, y] = (255, 255, 255, 255)
-                element.image = img.convert("1")
-                element.cache = None
-            self.device.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('image dither\n')
 
         return specific
 
@@ -1894,45 +1877,16 @@ class RootNode(list):
 
         def specific(event):
             kernel = self.device.device_root
-            elements = kernel.elements
             element = node.object
             if not isinstance(element, SVGImage):
                 return
-            adding_elements = []
             if element.image.mode != 'RGBA':
                 element.image = element.image.convert('RGBA')
             band = 255 / divide
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-
-                image_element = copy(element)
-                image_element.image = image_element.image.copy()
-                if OperationPreprocessor.needs_actualization(image_element):
-                    OperationPreprocessor.make_actual(image_element)
-                img = image_element.image
-                new_data = img.load()
-                width, height = img.size
-                for y in range(height):
-                    for x in range(width):
-                        pixel = new_data[x, y]
-                        if pixel[3] == 0:
-                            new_data[x, y] = (255, 255, 255, 255)
-                            continue
-                        gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
-                        if threshold_min >= gray:
-                            new_data[x, y] = (0, 0, 0, 255)
-                        elif threshold_max < gray:
-                            new_data[x, y] = (255, 255, 255, 255)
-                        else:  # threshold_min <= grey < threshold_max
-                            v = gray - threshold_min
-                            v *= divide
-                            v = int(round(v))
-                            new_data[x, y] = (v, v, v, 255)
-                image_element.image = image_element.image.convert('1')
-                adding_elements.append(image_element)
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
+                self.device.using('module', 'Console').write('image threshold %f %f\n' % (threshold_min, threshold_max))
 
         return specific
 
@@ -1978,10 +1932,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for element in self.elements.elems(emphasized=True):
-                element.reify()
-                element.altered()
-            self.device.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('reify\n')
 
         return specific
 
@@ -1994,10 +1945,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.elements.elems(emphasized=True):
-                e.transform.reset()
-                e.modified()
-            self.gui.request_refresh()
+            self.device.using('module', 'Console').write('reset\n')
 
         return specific
 
@@ -2014,13 +1962,9 @@ class RootNode(list):
 
         def specific(event):
             bounds = OperationPreprocessor.bounding_box(node.parent)
-
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-
-            for obj in self.elements.elems(emphasized=True):
-                obj.transform.post_rotate(value, center_x, center_y)
-                obj.modified()
+            self.device.using('module', 'Console').write('rotate %f %f %f\n' % (value, center_x, center_y))
 
         return specific
 
@@ -2035,8 +1979,7 @@ class RootNode(list):
 
         def specific(event):
             center_x, center_y = self.elements.center()
-            for obj in self.elements.elems(emphasized=True):
-                obj.transform.post_scale(value, value, center_x, center_y)
+            self.device.using('module', 'Console').write('scale %f %f %f %f\n' % (value, value, center_x, center_y))
 
         return specific
 
@@ -2111,9 +2054,7 @@ class RootNode(list):
 
     def menu_clear_all_operations_branch(self, node):
         def specific(event):
-            kernel = self.device.device_root
-            elements = kernel.elements
-            elements.clear_operations()
+            self.device.using('module', 'Console').write('operation * delete\n')
 
         return specific
 
@@ -2128,9 +2069,7 @@ class RootNode(list):
 
     def menu_clear_all_elements_branch(self, node):
         def specific(event):
-            kernel = self.device.device_root
-            elements = kernel.elements
-            elements.clear_elements_and_operations()
+            self.device.using('module', 'Console').write('element * delete\n')
 
         return specific
 
@@ -2177,14 +2116,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.elements.elems(emphasized=True):
-                p = abs(e)
-                add = []
-                for subpath in p.as_subpaths():
-                    subelement = Path(subpath)
-                    add.append(subelement)
-                self.elements.add_elems(add)
-            self.elements.set_selected(None)
+            self.device.using('module', 'Console').write('element subpath\n')
 
         return specific
 
