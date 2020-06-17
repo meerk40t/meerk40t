@@ -1338,7 +1338,7 @@ class RootNode(list):
         self.tree_lookup = {}
         self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
-        self.node_operations = Node(NODE_OPERATION_BRANCH, list(elements.ops()), self, self, name=_("Operations"))
+        self.node_operations = Node(NODE_OPERATION_BRANCH, elements._operations, self, self, name=_("Operations"))
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
         self.build_tree(self.node_operations, list(elements.ops()))
         for n in self.node_operations:
@@ -1347,7 +1347,7 @@ class RootNode(list):
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
 
-        self.node_elements = Node(NODE_ELEMENTS_BRANCH, list(elements.elems()), self, self, name=_("Elements"))
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, elements._elements, self, self, name=_("Elements"))
         self.node_elements.set_icon(icons8_vector_20.GetBitmap())
         self.build_tree(self.node_elements, list(elements.elems()))
 
