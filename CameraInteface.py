@@ -166,10 +166,8 @@ class CameraInterface(wx.Frame, Module):
         elif self.device.camera_index == 4:
             self.camera_4_menu.Check(True)
         self.device.add_job(self.init_camera, times=1, interval=0.1)
-        self.device.listen('camera_frame', self.on_camera_frame)
+        self.device.listen('camera_frame', self.on_camera_frame_update)
         self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
-        self.device.add('control', 'camera_snapshot', self.snapshot_close)
-        self.device.add('control', 'camera_update', self.update_close)
 
     def shutdown(self,  channel):
         self.Close()
@@ -177,22 +175,12 @@ class CameraInterface(wx.Frame, Module):
     def on_close(self, event):
         self.camera_lock.acquire()
         self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
-        self.device.unlisten('camera_frame', self.on_camera_frame)
+        self.device.unlisten('camera_frame', self.on_camera_frame_update)
         self.device.signal('camera_frame_raw', None)
         self.close_camera()
         self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
         self.camera_lock.release()
-
-    def snapshot_close(self):
-        self.fetch_image()
-        self.on_button_export(None)
-        self.Close()
-
-    def update_close(self):
-        self.fetch_image()
-        self.on_button_update(None)
-        self.Close()
 
     def on_size(self, event):
         self.Layout()
@@ -204,6 +192,10 @@ class CameraInterface(wx.Frame, Module):
         self._Buffer = wx.Bitmap(width, height)
         self.update_in_gui_thread()
 
+    def on_camera_frame_update(self, frame):
+        self.on_camera_frame(frame)
+        self.update_in_gui_thread()
+
     def on_camera_frame(self, frame):
         if frame is None:
             return
@@ -213,12 +205,11 @@ class CameraInterface(wx.Frame, Module):
         self.image_height, self.image_width = frame.shape[:2]
         self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
 
-        if self.check_perspective.GetValue():
+        if self.device.camera_correction_perspective:
             if bed_width != self.image_width or bed_height != self.image_height:
                 self.image_width = bed_width
                 self.image_height = bed_height
                 self.display_camera.SetSize((self.image_width, self.image_height))
-        self.update_in_gui_thread()
 
     def on_camera_frame_raw(self, frame):
         if frame is None:
@@ -549,8 +540,6 @@ class CameraInterface(wx.Frame, Module):
         return frame
 
     def update_in_gui_thread(self):
-        if self.device is None:
-            return
         self.on_update_buffer()
         self.Refresh(True)
         self.Update()

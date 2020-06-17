@@ -1382,14 +1382,6 @@ class Console(Module, Pipe):
 
             self.device.spooler.job(timed_fire)
             return
-        elif command == 'camera_snapshot':
-            active_device.open('window', 'CameraInterface', None, -1, "")
-            active_device.execute("camera_snapshot")
-            return
-        elif command == 'camera_update':
-            active_device.open('window', 'CameraInterface', None, -1, "")
-            active_device.execute("camera_update")
-            return
         elif command == 'refresh':
             active_device.signal('refresh_scene')
             active_device.signal('rebuild_tree')
