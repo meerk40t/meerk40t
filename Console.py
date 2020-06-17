@@ -534,6 +534,13 @@ class Console(Module, Pipe):
                             yield "deleting."
                             elements.remove_elements(list(elements.elems(emphasized=True)))
                             continue
+                        elif value == "copy":
+                            add_elem = list(map(copy, elements.elems(emphasized=True)))
+                            elements.add_elems(add_elem)
+                            for e in add_elem:
+                                e.select()
+                                e.emphasize()
+                            continue
                         yield "Value Error: %s is not an integer" % value
                         continue
                     try:

@@ -1977,6 +1977,11 @@ class Kernel(Device):
         self.keymap['numpad-'] = '+rotate_ccw'
         self.keymap['control+a'] = 'element *'
         self.keymap['control+i'] = 'element ~'
+        self.keymap['control+f'] = 'control Fill'
+        self.keymap['control+s'] = 'control Stroke'
+        self.keymap['control+r'] = 'rect 0 0 1000 1000'
+        self.keymap['control+e'] = 'circle 500 500 500'
+        self.keymap['control+d'] = 'element copy'
         self.keymap['control+shift+h'] = 'scale -1 1'
         self.keymap['control+shift+v'] = 'scale 1 -1'
         self.keymap['control+1'] = "bind 1 move $x $y"
@@ -1984,14 +1989,10 @@ class Kernel(Device):
         self.keymap['control+3'] = "bind 3 move $x $y"
         self.keymap['control+4'] = "bind 4 move $x $y"
         self.keymap['control+5'] = "bind 5 move $x $y"
-        self.keymap['control+r'] = 'rect 0 0 1000 1000'
-        self.keymap['control+e'] = 'circle 500 500 500'
         self.keymap['alt+r'] = 'raster'
         self.keymap['alt+e'] = 'engrave'
         self.keymap['alt+c'] = 'cut'
         self.keymap['delete'] = 'element delete'
-        self.keymap['control+f'] = 'control Fill'
-        self.keymap['control+s'] = 'control Stroke'
         self.keymap['f4'] = "window open CameraInterface"
         self.keymap['f5'] = "refresh"
         self.keymap['f6'] = "window open JobSpooler"
