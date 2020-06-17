@@ -166,7 +166,7 @@ class RasterOperation(LaserOperation):
         self.unidirectional = False
         self.overscan = 20
         try:
-            self.overscan = int(kwargs['raster_overscan'])
+            self.overscan = int(kwargs['overscan'])
         except ValueError:
             pass
         except KeyError:

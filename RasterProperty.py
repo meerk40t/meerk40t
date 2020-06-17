@@ -187,7 +187,7 @@ class RasterProperty(wx.Frame, Module):
 
     def on_spin_overscan(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.overscan = self.spin_overscan_set.GetValue()
-        self.device.device_root.raster_overscan = self.operation.overscan
+        self.device.device_root.raster_overscan = int(self.operation.overscan)
         self.device.signal('element_property_update', self.operation)
 
     def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>

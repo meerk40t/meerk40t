@@ -1218,7 +1218,6 @@ class Elemental(Module):
                         raster.set_properties(element.values)
                     raster.append(element)
             elif isinstance(element, SVGImage):
-                # TODO: Add SVGImages to overall Raster, requires function to combine images.
                 try:
                     step = element.values['raster_step']
                 except KeyError:
