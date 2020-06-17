@@ -1670,8 +1670,17 @@ class RootNode(list):
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                      menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
-        if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
-            gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
+        if t == NODE_OPERATION_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_operations_branch(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t == NODE_FILES_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_files_branch(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t == NODE_ELEMENTS_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_elements_branch(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t == NODE_OPERATION:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_operation(node),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
@@ -2124,14 +2133,38 @@ class RootNode(list):
             self.device.signal('rebuild_tree', 0)
         return specific
 
-    def menu_clear_all(self, node):
+    def menu_clear_all_operation(self, node):
         def specific(event):
             kernel = self.device.device_root
             elements = kernel.elements
-            if node.type == NODE_ELEMENTS_BRANCH:
-                self.elements.remove_elements_from_operations(elements.elems())
-            node.object.clear()
-            # TODO: Clear like this isn't always an action anymore. Should correct.
+            for op in elements.ops(emphasized=True):
+                op.clear()
+                self.device.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_clear_all_operations_branch(self, node):
+        def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
+            elements.clear_operations()
+
+        return specific
+
+    def menu_clear_all_files_branch(self, node):
+        def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
+            elements.clear_files()
+            self.device.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_clear_all_elements_branch(self, node):
+        def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
+            elements.clear_elements_and_operations()
 
         return specific
 
