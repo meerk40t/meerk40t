@@ -3308,30 +3308,27 @@ class QuadraticBezier(PathSegment):
         """
         Returns the bounding box for the quadratic bezier curve.
         """
-        try:
-            n = self.start[0] - self.control[0]
-            d = self.start[0] - 2 * self.control[0] + self.end[0]
-            if d != 0:
-                t = n / d
-            else:
-                t = 0.5
-            if 0 < t < 1:
-                x_values = [self.start[0], self.end[0], self.point(t)[0]]
-            else:
-                x_values = [self.start[0], self.end[0]]
-            n = self.start[1] - self.control[1]
-            d = self.start[1] - 2 * self.control[1] + self.end[1]
-            if d != 0:
-                t = n / d
-            else:
-                t = 0.5
-            if 0 < t < 1:
-                y_values = [self.start[1], self.end[1], self.point(t)[1]]
-            else:
-                y_values = [self.start[1], self.end[1]]
-            return min(x_values), min(y_values), max(x_values), max(y_values)
-        except ZeroDivisionError:
-            return PathSegment.bbox(self)
+        n = self.start[0] - self.control[0]
+        d = self.start[0] - 2 * self.control[0] + self.end[0]
+        if d != 0:
+            t = n / d
+        else:
+            t = 0.5
+        if 0 < t < 1:
+            x_values = [self.start[0], self.end[0], self.point(t)[0]]
+        else:
+            x_values = [self.start[0], self.end[0]]
+        n = self.start[1] - self.control[1]
+        d = self.start[1] - 2 * self.control[1] + self.end[1]
+        if d != 0:
+            t = n / d
+        else:
+            t = 0.5
+        if 0 < t < 1:
+            y_values = [self.start[1], self.end[1], self.point(t)[1]]
+        else:
+            y_values = [self.start[1], self.end[1]]
+        return min(x_values), min(y_values), max(x_values), max(y_values)
 
     def length(self, error=None, min_depth=None):
         """Calculate the length of the path up to a certain position"""
