@@ -1014,6 +1014,13 @@ class Console(Module, Pipe):
                             yield "Deleting."
                             elements.remove_operations(list(elements.ops(emphasized=True)))
                             continue
+                        elif value == "copy":
+                            add_elem = list(map(copy, elements.ops(emphasized=True)))
+                            elements.add_ops(add_elem)
+                            for e in add_elem:
+                                e.select()
+                                e.emphasize()
+                            continue
                         yield "Value Error: %s is not an integer" % value
                         continue
                     try:
@@ -1280,6 +1287,37 @@ class Console(Module, Pipe):
                 yield 'Pulse laser for %f milliseconds' % (value * 1000.0)
             else:
                 yield 'Pulse laser failed: Busy'
+            return
+        elif command == 'pulse_frequency':
+            if len(args) == 0:
+                yield 'pulse_frequency <duration ms> <frequency hz>'
+                return
+            try:
+                duration = float(args[0]) / 1000.0
+            except ValueError:
+                yield '"%s" not a valid pulse time in milliseconds' % (args[0])
+                return
+            try:
+                frequency = float(args[1])
+            except ValueError:
+                yield '"%s" not a valid pulse frequency in hz' % (args[0])
+                return
+            try:
+                pulses = int(round(duration * 500.0 / frequency))
+                pulse_time = duration / pulses
+            except ZeroDivisionError:
+                yield 'Could not pulse within the allotted time.'
+                return
+
+            def timed_fire():
+                for i in range(pulses):
+                    yield COMMAND_WAIT_FINISH
+                    yield COMMAND_LASER_ON
+                    yield COMMAND_WAIT, pulse_time
+                    yield COMMAND_LASER_OFF
+                    yield COMMAND_WAIT, pulse_time
+
+            self.device.spooler.job(timed_fire)
             return
         elif command == 'camera_snapshot':
             active_device.open('window', 'CameraInterface', None, -1, "")
