@@ -952,11 +952,11 @@ class Elemental(Module):
 
     def remove_elements(self, elements_list):
         for e in elements_list:
+            self.unregister(e)
             try:
                 self._elements.remove(e)
             except ValueError:
                 continue
-            self.unregister(e)
             self.device.signal('element_removed', e)
         self.remove_elements_from_operations(elements_list)
 
@@ -1989,6 +1989,7 @@ class Kernel(Device):
         self.keymap['alt+r'] = 'raster'
         self.keymap['alt+e'] = 'engrave'
         self.keymap['alt+c'] = 'cut'
+        self.keymap['delete'] = 'element delete'
         self.keymap['control+f'] = 'control Fill'
         self.keymap['control+s'] = 'control Stroke'
         self.keymap['f4'] = "window open CameraInterface"
