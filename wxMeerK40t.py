@@ -1537,11 +1537,6 @@ class RootNode(list):
                 # Dragging operation to op branch.
                 pass
 
-        event.Skip()
-        # Do not allow images added to engrave or cut operations
-        # Group dragged into group, creates subgroup.
-        # LaserOperation Elements dragged from one LaserOperation to another.
-
     def on_item_right_click(self, event):
         """
         Right click of element in tree.
@@ -1555,7 +1550,6 @@ class RootNode(list):
         node = self.tree.GetItemData(item)
 
         self.root.create_menu(self.gui, node)
-        event.Skip()
 
     def on_item_activated(self, event):
         """
