@@ -378,9 +378,9 @@ class EngraveOperation(LaserOperation):
             first_point = plot.first_point
             if first_point is None:
                 continue
-            yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, first_point.x, first_point.y
+            yield COMMAND_MODE_FINISHED
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
         yield COMMAND_MODE_RAPID
@@ -442,9 +442,9 @@ class CutOperation(LaserOperation):
             first_point = plot.first_point
             if first_point is None:
                 continue
-            yield COMMAND_MODE_FINISHED
             yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, first_point.x, first_point.y
+            yield COMMAND_MODE_FINISHED
             yield COMMAND_MODE_PROGRAM
             yield COMMAND_PLOT, plot
         yield COMMAND_MODE_RAPID
