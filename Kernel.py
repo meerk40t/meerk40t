@@ -2005,6 +2005,7 @@ class Kernel(Device):
         self.keymap['f9'] = "control Transform"
         self.keymap['f12'] = "window open Terminal"
         self.keymap['alt+f12'] = "terminal_ruida"
+        self.keymap['alt+f13'] = 'terminal_watch'
         self.keymap['pause'] = "control Realtime Pause_Resume"
 
     def default_alias(self):
@@ -2041,6 +2042,7 @@ class Kernel(Device):
         self.alias['-upleft'] = "end move_relative -1mm -1mm"
         self.alias['-downleft'] = "end move_relative -1mm 1mm"
         self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
+        self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
 
     def read_item_persistent(self, item):
         return self.config.Read(item)

@@ -4,8 +4,8 @@ import threading
 from CH341DriverBase import *
 from Kernel import *
 from LaserSpeed import LaserSpeed
-from zinglplotter import ZinglPlotter
 from svgelements import *
+from zinglplotter import ZinglPlotter
 
 """
 LhystudiosDevice is the backend for all Lhystudio Devices.
@@ -24,7 +24,7 @@ STATUS_BAD_STATE = 204
 # 0xCC, 11001100
 STATUS_OK = 206
 # 0xCE, 11001110
-STATUS_PACKET_REJECTED = 207
+STATUS_ERROR = 207
 # 0xCF, 11001111
 STATUS_FINISH = 236
 # 0xEC, 11101100
@@ -42,6 +42,7 @@ class LhystudiosDevice(Device):
     """
     LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
+
     def __init__(self, root=None, uid=1):
         Device.__init__(self, root, uid)
         self.uid = uid
@@ -101,6 +102,7 @@ class LhystudiosDevice(Device):
         self.open('module', "LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
         self.open('module', "Spooler", instance_name='spooler')
 
+
 distance_lookup = [
     b'',
     b'a', b'b', b'c', b'd', b'e', b'f', b'g', b'h', b'i', b'j', b'k', b'l', b'm',
@@ -123,10 +125,8 @@ def lhymicro_distance(v):
 
 class LhymicroInterpreter(Interpreter):
     """
-    LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend to write to the usb
-    the intent is that this class could be switched out for a different class and control a different type of laser if need
-    be. The middle language of generated commands from the LaserNodes are able to be interpreted by a different driver
-    or methodology.
+    LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend
+    to write to the usb.
     """
 
     def __init__(self, pipe):
@@ -329,6 +329,7 @@ class LhymicroInterpreter(Interpreter):
         self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
         self.device.signal('interpreter;mode', self.state)
+        self.is_paused = False
 
     def move(self, x, y):
         self.pulse_modulation = self.laser
@@ -906,7 +907,7 @@ def get_code_string_from_code(code):
         return "OK"
     elif code == STATUS_BUSY:
         return "Busy"
-    elif code == STATUS_PACKET_REJECTED:
+    elif code == STATUS_ERROR:
         return "Rejected"
     elif code == STATUS_FINISH:
         return "Finish"
@@ -964,6 +965,7 @@ class LhystudioController(Module, Pipe):
 
         self._thread = None
         self._buffer = b''  # Threadsafe buffered commands to be sent to controller.
+        self._realtime_buffer = b'' # Threadsafe realtime buffered commands to be sent to the controller.
         self._queue = b''  # Thread-unsafe additional commands to append.
         self._preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
         self._queue_lock = threading.Lock()
@@ -1003,13 +1005,13 @@ class LhystudioController(Module, Pipe):
         self.device.control_instance_add("Wait Abort", abort_wait)
 
         def pause_k40():
-            self.state = STATE_PAUSE
+            self.update_state(STATE_PAUSE)
             self.start()
 
         self.device.control_instance_add("Pause", pause_k40)
 
         def resume_k40():
-            self.state = STATE_ACTIVE
+            self.update_state(STATE_ACTIVE)
             self.start()
 
         self.device.control_instance_add("Resume", resume_k40)
@@ -1068,8 +1070,6 @@ class LhystudioController(Module, Pipe):
         self._preempt = bytes_to_write + self._preempt
         self._preempt_lock.release()
         self.start()
-        if self.state == STATE_PAUSE:
-            self.state = STATE_ACTIVE
         return self
 
     def start(self):
@@ -1081,28 +1081,46 @@ class LhystudioController(Module, Pipe):
             self._thread = self.device.threaded(self._thread_data_send)
             self.update_state(STATE_INITIALIZE)
 
-    def resume(self):
-        if self.state == STATE_TERMINATE:
-            # We cannot resume an aborted process without specifically calling reset.
-            return
-        if self.state == STATE_END:
-            # Ended threats must call reset and start.
-            return
+    def _pause_busy(self):
+        """
+        BUSY can be called in a paused state to packet halt the controller.
+
+        This can only be done from PAUSE..
+        """
+        if self.state != STATE_PAUSE:
+            self.pause()
         if self.state == STATE_PAUSE:
-            self.update_state(STATE_ACTIVE)
+            self.update_state(STATE_BUSY)
+
+    def _resume_busy(self):
+        """
+        Resumes from a BUSY to restore the controller. This will return to a paused state.
+
+        This can only be done from BUSY.
+        """
+        if self.state == STATE_BUSY:
+            self.update_state(STATE_PAUSE)
+            self.resume()
 
     def pause(self):
-        if self.state == STATE_TERMINATE:
-            # We cannot pause an aborted process without specifically calling reset.
-            return
-        if self.state == STATE_END:
-            # We don't allow this state change.
-            return
+        """
+        Pause simply holds the controller from sending any additional packets.
+
+        If this state change is done from INITIALIZE it will start the processing.
+        Otherwise it must be done from ACTIVE or IDLE.
+        """
         if self.state == STATE_INITIALIZE:
             self.start()
             self.update_state(STATE_PAUSE)
         if self.state == STATE_ACTIVE or self.state == STATE_IDLE:
             self.update_state(STATE_PAUSE)
+
+    def resume(self):
+        """
+        Resume can only be called from PAUSE.
+        """
+        if self.state == STATE_PAUSE:
+            self.update_state(STATE_ACTIVE)
 
     def abort(self):
         self._buffer = b''
@@ -1176,7 +1194,7 @@ class LhystudioController(Module, Pipe):
 
     def update_buffer(self):
         if self.device is not None:
-            self.device.signal('pipe;buffer', len(self._buffer))
+            self.device.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer))
 
     def update_packet(self, packet):
         if self.device is not None:
@@ -1197,44 +1215,45 @@ class LhystudioController(Module, Pipe):
                 self.update_state(STATE_ACTIVE)
             if self.state == STATE_PAUSE or self.state == STATE_BUSY:
                 # If we are paused just keep sleeping until the state changes.
-                time.sleep(1)
+                if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
+                    # Only pause if there are no realtime commands to queue.
+                    time.sleep(0.25)
+                    continue
+            try:
+                # We try to process the queue.
+                queue_processed = self.process_queue()
+                self.refuse_counts = 0
+            except ConnectionRefusedError:
+                # The attempt refused the connection.
+                self.refuse_counts += 1
+                time.sleep(3)  # 3 second sleep on failed connection attempt.
+                if self.refuse_counts >= self.max_attempts:
+                    # We were refused too many times, kill the thread.
+                    self.update_state(STATE_TERMINATE)
+                    self.device.signal('pipe;error', self.refuse_counts)
+                    break
                 continue
-            if self.state == STATE_ACTIVE or self.state == STATE_IDLE:
-                try:
-                    # We tried tried to process the queue.
-                    queue_processed = self.process_queue()
-                    self.refuse_counts = 0
-                except ConnectionRefusedError:
-                    # The attempt refused the connection.
-                    self.refuse_counts += 1
-                    time.sleep(3)  # 3 second sleep on failed connection attempt.
-                    if self.refuse_counts >= self.max_attempts:
-                        # We were refused too many times, kill the thread.
-                        self.update_state(STATE_TERMINATE)
-                        self.device.signal('pipe;error', self.refuse_counts)
-                        break
-                    continue
-                except ConnectionError:
-                    # There was an error with the connection, close it and try again.
-                    self.connection_errors += 1
-                    time.sleep(0.5)
-                    self.close()
-                    continue
-                if queue_processed:
-                    # Packet was sent.
-                    if self.state != STATE_PAUSE and self.state != STATE_ACTIVE:
-                        self.update_state(STATE_ACTIVE)
-                    self.count = 0
-                    continue
-                else:
-                    # No packet could be sent.
-                    if self.state != STATE_PAUSE and self.state != STATE_IDLE:
-                        self.update_state(STATE_IDLE)
-                    if self.count > 50:
-                        self.count = 50
-                    time.sleep(0.02 * self.count)
-                    # will tick up to 1 second waits if there's never a queue.
-                    self.count += 1
+            except ConnectionError:
+                # There was an error with the connection, close it and try again.
+                self.connection_errors += 1
+                time.sleep(0.5)
+                self.close()
+                continue
+            if queue_processed:
+                # Packet was sent.
+                if self.state != STATE_PAUSE and self.state != STATE_BUSY and self.state != STATE_ACTIVE:
+                    self.update_state(STATE_ACTIVE)
+                self.count = 0
+                continue
+            else:
+                # No packet could be sent.
+                if self.state != STATE_PAUSE and self.state != STATE_BUSY and self.state != STATE_IDLE:
+                    self.update_state(STATE_IDLE)
+                if self.count > 50:
+                    self.count = 50
+                time.sleep(0.02 * self.count)
+                # will tick up to 1 second waits if there's never a queue.
+                self.count += 1
         self._main_lock.release()
         self._thread = None
         self.update_state(STATE_END)
@@ -1263,27 +1282,36 @@ class LhystudioController(Module, Pipe):
 
         if len(self._preempt):  # check for and prepend preempt
             self._preempt_lock.acquire(True)
-            self._buffer = self._preempt + self._buffer
+            self._realtime_buffer += self._preempt
             self._preempt = b''
             self._preempt_lock.release()
             self.update_buffer()
 
-        if len(self._buffer) == 0:
-            return False
+        if len(self._realtime_buffer) > 0:
+            buffer = self._realtime_buffer
+            realtime = True
+        else:
+            if len(self._buffer) > 0:
+                buffer = self._buffer
+                realtime = False
+            else:
+                # The buffer and realtime buffers are empty. No packet creation possible.
+                return False
 
         # Find buffer of 30 or containing '\n'.
-        find = self._buffer.find(b'\n', 0, 30)
+        find = buffer.find(b'\n', 0, 30)
         if find == -1:  # No end found.
-            length = min(30, len(self._buffer))
+            length = min(30, len(buffer))
         else:  # Line end found.
-            length = min(30, len(self._buffer), find + 1)
-        packet = self._buffer[:length]
+            length = min(30, len(buffer), find + 1)
+        packet = buffer[:length]
 
         # edge condition of catching only pipe command without '\n'
         if packet.endswith((b'-', b'*', b'&', b'!')):
-            packet += self._buffer[length:length + 1]
+            packet += buffer[length:length + 1]
             length += 1
         post_send_command = None
+
         # find pipe commands.
         if packet.endswith(b'\n'):
             packet = packet[:-1]
@@ -1294,54 +1322,74 @@ class LhystudioController(Module, Pipe):
                 post_send_command = self.abort
                 packet = packet[:-1]
             elif packet.endswith(b'&'):  # resume
-                self.resume()  # resume must be done before checking pause state.
+                self._resume_busy()
                 packet = packet[:-1]
             elif packet.endswith(b'!'):  # pause
-                post_send_command = self.pause
+                self._pause_busy()
                 packet = packet[:-1]
             if len(packet) != 0:
                 packet += b'F' * (30 - len(packet))  # Padding. '\n'
-        if self.state == STATE_PAUSE:
-            return False  # Abort due to pause.
-        # Packet is prepared and ready to send.
+        if not realtime and self.state in (STATE_PAUSE, STATE_BUSY):
+            return False  # Processing normal queue, PAUSE and BUSY apply.
+
+        # Packet is prepared and ready to send. Open Channel.
         if self.device.mock:
             self.update_usb_state(STATE_DRIVER_MOCK)
         else:
             self.open()
 
         if len(packet) == 30:
+            # We have a sendable packet.
             self.wait_until_accepting_packets()
-            if self.state == STATE_PAUSE:
-                return False  # Paused during packet fetch.
             self.send_packet(packet)
-            attempts = 0
+
+            # Packet is sent, trying to confirm.
             status = 0
-            while attempts < 300:  # 200 * 300 = 60,000 = 60 seconds.
+            flawless = True
+            for attempts in range(300):
+                # We'll try to confirm this at 300 times.
                 try:
                     self.update_status()
                     status = self._status[1]
-                    if status != 0:
-                        break
                 except ConnectionError:
-                    # we can't throw raise these, we must report that the packet was sent.
-                    attempts += 1
-            if status == STATUS_PACKET_REJECTED:
-                self.device.rejected_count += 1
-                # The packet was rejected. The sent data was not accepted. Return False.
-                return False
-            elif status == 0:
+                    # Errors are ignored, must confirm packet.
+                    flawless = False
+                    continue
+                if status == 0:
+                    # We did not read a status.
+                    continue
+                elif status == STATUS_OK:
+                    # Packet was fine.
+                    break
+                elif status == STATUS_BUSY:
+                    # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
+                    continue
+                elif status == STATUS_ERROR:
+                    self.device.rejected_count += 1
+                    if flawless:  # Packet was rejected. The CRC failed.
+                        return False
+                    else:
+                        # The channel had the error, assuming packet was actually good.
+                        break
+                elif status == STATUS_FINISH:
+                    # We finished. If we were going to wait for that, we no longer need to.
+                    if post_send_command == self.wait_finished:
+                        post_send_command = None
+                    continue  # This is not a confirmation.
+            if status == 0:  # After 300 attempts we could only get status = 0.
                 raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
-            if status == STATUS_FINISH and post_send_command == self.wait_finished:
-                # The confirmation reply says we finished, and we were going to wait for that, so let's pass.
-                post_send_command = None
-            self.device.packet_count += 1  # Everything went off without a problem.
+            self.device.packet_count += 1  # Our packet is confirmed or assumed confirmed.
         else:
             if len(packet) != 0:
                 # We could only generate a partial packet, throw it back
                 return False
+            # We have an empty packet of only commands. Continue work.
 
-        # Packet was processed.
-        self._buffer = self._buffer[length:]
+        # Packet was processed. Remove that data.
+        if realtime:
+            self._realtime_buffer = self._realtime_buffer[length:]
+        else:
+            self._buffer = self._buffer[length:]
         self.update_buffer()
 
         if post_send_command is not None:
@@ -1365,7 +1413,7 @@ class LhystudioController(Module, Pipe):
         if self.device.mock:
             from random import randint
             if randint(0, 500) == 0:
-                self._status = [255, STATUS_PACKET_REJECTED, 0, 0, 0, 1]
+                self._status = [255, STATUS_ERROR, 0, 0, 0, 1]
             else:
                 self._status = [255, STATUS_OK, 0, 0, 0, 1]
             time.sleep(0.01)
@@ -1382,8 +1430,7 @@ class LhystudioController(Module, Pipe):
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
-            # StateBitWAIT = 0x00002000, 204, 206, 207
-            if status & 0x20 == 0:
+            if status == STATUS_OK or status == STATUS_ERROR:
                 break
             time.sleep(0.05)
             if self.device is not None:
@@ -1402,7 +1449,7 @@ class LhystudioController(Module, Pipe):
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
-            if status == STATUS_PACKET_REJECTED:
+            if status == STATUS_ERROR:
                 self.device.rejected_count += 1
             if status & 0x02 == 0:
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100

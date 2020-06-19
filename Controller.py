@@ -372,6 +372,12 @@ class Controller(wx.Frame, Module):
             button.SetBackgroundColour("#009900")
             button.SetLabel(_("Hold Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap())
+            button.Enable(True)
+        elif state == STATE_BUSY:
+            button.SetBackgroundColour("#00dd00")
+            button.SetLabel(_("LOCKED"))
+            button.SetBitmap(icons8_play_50.GetBitmap())
+            button.Enable(False)
         elif state == STATE_PAUSE:
             def f(event):
                 self.device.interpreter.pipe.resume()
@@ -380,6 +386,7 @@ class Controller(wx.Frame, Module):
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("Resume Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap())
+            button.Enable(True)
         elif state == STATE_ACTIVE:
             def f(event):
                 self.device.interpreter.pipe.pause()
@@ -388,6 +395,7 @@ class Controller(wx.Frame, Module):
             button.SetBackgroundColour("#00ff00")
             button.SetLabel(_("Pause Controller"))
             button.SetBitmap(icons8_pause_50.GetBitmap())
+            button.Enable(True)
         elif state == STATE_TERMINATE:
             def f(event):
                 self.device.interpreter.pipe.reset()
@@ -396,5 +404,6 @@ class Controller(wx.Frame, Module):
             button.SetBackgroundColour("#00ffff")
             button.SetLabel(_("Manual Reset"))
             button.SetBitmap(icons8_stop_50.GetBitmap())
+            button.Enable(True)
 
 # end of class Controller
