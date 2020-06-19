@@ -271,9 +271,9 @@ class Interpreter(Module):
         """Commands are middle language LaserCommandConstants there values are given."""
         try:
             if command == COMMAND_LASER_OFF:
-                self.laser_on()
-            elif command == COMMAND_LASER_ON:
                 self.laser_off()
+            elif command == COMMAND_LASER_ON:
+                self.laser_on()
             elif command == COMMAND_LASER_DISABLE:
                 self.laser_disable()
             elif command == COMMAND_LASER_ENABLE:
