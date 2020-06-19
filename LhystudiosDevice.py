@@ -136,8 +136,8 @@ class LhymicroInterpreter(Interpreter):
         self.CODE_TOP = b'L'
         self.CODE_BOTTOM = b'R'
         self.CODE_ANGLE = b'M'
-        self.CODE_ON = b'D'
-        self.CODE_OFF = b'U'
+        self.CODE_LASER_ON = b'D'
+        self.CODE_LASER_OFF = b'U'
 
         self.plot = None
         self.group_modulation = False
@@ -264,9 +264,9 @@ class LhymicroInterpreter(Interpreter):
                                 self.ensure_program_mode()
                             self.v_switch()
                 if on == 0:
-                    self.laser_on()
-                else:
                     self.laser_off()
+                else:
+                    self.laser_on()
                 self.move_absolute(x, y)
             except StopIteration:
                 self.plot = None
@@ -479,39 +479,39 @@ class LhymicroInterpreter(Interpreter):
             self.ensure_program_mode()
 
     def laser_off(self):
-        if self.laser:
+        if not self.laser:
             return False
         controller = self.pipe
         if self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
-            controller.write(self.CODE_ON)
+            controller.write(self.CODE_LASER_OFF)
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_ON)
+            controller.write(self.CODE_LASER_OFF)
         elif self.state == INTERPRETER_STATE_FINISH:
-            controller.write(self.CODE_ON)
+            controller.write(self.CODE_LASER_OFF)
             controller.write(b'N')
-        self.laser = True
+        self.laser = False
         return True
 
     def laser_on(self):
         controller = self.pipe
-        if not self.laser:
+        if self.laser:
             return False
         if self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
-            controller.write(self.CODE_OFF)
+            controller.write(self.CODE_LASER_ON)
             controller.write(b'S1P\n')
             if not self.device.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_OFF)
+            controller.write(self.CODE_LASER_ON)
         elif self.state == INTERPRETER_STATE_FINISH:
-            controller.write(self.CODE_OFF)
+            controller.write(self.CODE_LASER_ON)
             controller.write(b'N')
-        self.laser = False
+        self.laser = True
         return True
 
     def ensure_rapid_mode(self):
