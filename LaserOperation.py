@@ -310,7 +310,7 @@ class RasterOperation(LaserOperation):
                                    m.value_trans_x(),
                                    m.value_trans_y(),
                                    step, image_filter)
-            yield COMMAND_MODE_FINISHED
+            yield COMMAND_MODE_RAPID
             yield COMMAND_LASER_OFF
             x, y = raster.initial_position_in_scene()
             yield COMMAND_MOVE, x, y
