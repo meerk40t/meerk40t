@@ -376,11 +376,6 @@ class EngraveOperation(LaserOperation):
         yield COMMAND_MODE_PROGRAM
         for object_path in self:
             plot = abs(object_path)
-            first_point = plot.first_point
-            if first_point is None:
-                continue
-            yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, first_point.x, first_point.y
             yield COMMAND_PLOT, plot
         yield COMMAND_MODE_RAPID
 
@@ -439,11 +434,6 @@ class CutOperation(LaserOperation):
         yield COMMAND_MODE_PROGRAM
         for object_path in self:
             plot = abs(object_path)
-            first_point = plot.first_point
-            if first_point is None:
-                continue
-            yield COMMAND_LASER_OFF
-            yield COMMAND_MOVE, first_point.x, first_point.y
             yield COMMAND_PLOT, plot
         yield COMMAND_MODE_RAPID
 
