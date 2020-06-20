@@ -2017,6 +2017,7 @@ class Kernel(Device):
         self.keymap['alt+f12'] = "terminal_ruida"
         self.keymap['alt+f13'] = 'terminal_watch'
         self.keymap['pause'] = "control Realtime Pause_Resume"
+        self.keymap['home'] = "home"
 
     def default_alias(self):
         self.alias['+scale_up'] = "loop scale 1.02"

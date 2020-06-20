@@ -203,9 +203,9 @@ class Console(Module, Pipe):
             else:
                 self.untick_command(' '.join(args))
         elif command == '+laser':
-            spooler.add_command(COMMAND_LASER_ON)
+            spooler.job(COMMAND_LASER_ON)
         elif command == '-laser':
-            spooler.add_command(COMMAND_LASER_OFF)
+            spooler.job(COMMAND_LASER_OFF)
         # Laser Control Commands
         elif command == 'right' or command == 'left' or command == 'up' or command == 'down':
             if spooler is None:

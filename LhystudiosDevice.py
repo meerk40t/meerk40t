@@ -327,12 +327,15 @@ class LhymicroInterpreter(Interpreter):
         self.is_paused = False
 
     def cut(self, x, y):
+        self.laser_on()
         self.goto(x, y, True)
 
     def cut_absolute(self, x, y):
+        self.laser_on()
         self.goto_absolute(x, y, True)
 
     def cut_relative(self, x, y):
+        self.laser_on()
         self.goto_absolute(x, y, True)
 
     def move(self, x, y):
@@ -401,8 +404,7 @@ class LhymicroInterpreter(Interpreter):
             return
         if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.ensure_finished_mode()
-            self.ensure_program_mode()
+            self.fly_switch_speed()
 
     def set_d_ratio(self, d_ratio=None):
         change = False
@@ -413,8 +415,7 @@ class LhymicroInterpreter(Interpreter):
             return
         if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.ensure_finished_mode()
-            self.ensure_program_mode()
+            self.fly_switch_speed()
 
     def set_acceleration(self, accel=None):
         change = False
@@ -425,8 +426,7 @@ class LhymicroInterpreter(Interpreter):
             return
         if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the change have an effect, compact must be exited.
-            self.ensure_finished_mode()
-            self.ensure_program_mode()
+            self.fly_switch_speed()
 
     def set_step(self, step=None):
         change = False
@@ -437,8 +437,7 @@ class LhymicroInterpreter(Interpreter):
             return
         if self.state == INTERPRETER_STATE_PROGRAM:
             # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.ensure_finished_mode()
-            self.ensure_program_mode()
+            self.fly_switch_speed()
 
     def laser_off(self):
         if not self.laser:
@@ -489,6 +488,29 @@ class LhymicroInterpreter(Interpreter):
             self.reset_modes()
         self.state = INTERPRETER_STATE_RAPID
         self.device.signal('interpreter;mode', self.state)
+
+    def fly_switch_speed(self):
+        controller = self.pipe
+        switch = b'@NSE'
+        speed_code = LaserSpeed(
+            self.device.board,
+            self.speed,
+            self.raster_step,
+            d_ratio=self.d_ratio,
+            acceleration=self.acceleration,
+            fix_limit=True,
+            fix_lows=True,
+            fix_speeds=False,
+            raster_horizontal=True).speedcode
+        try:
+            speed_code = bytes(speed_code)
+        except TypeError:
+            speed_code = bytes(speed_code, 'utf8')
+        switch += speed_code
+        switch += b'N'
+        switch += self.code_declare_directions()
+        switch += b'S1E'
+        controller.write(switch)
 
     def ensure_finished_mode(self):
         if self.state == INTERPRETER_STATE_FINISH:
@@ -656,7 +678,9 @@ class LhymicroInterpreter(Interpreter):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
         You cannot declare a diagonal direction."""
         controller = self.pipe
+        controller.write(self.code_declare_directions())
 
+    def code_declare_directions(self):
         if self.is_prop(DIRECTION_FLAG_LEFT):
             x_dir = self.CODE_LEFT
         else:
@@ -666,9 +690,9 @@ class LhymicroInterpreter(Interpreter):
         else:
             y_dir = self.CODE_BOTTOM
         if self.is_prop(DIRECTION_FLAG_X):  # FLAG_Y is assumed to be !FLAG_X
-            controller.write(y_dir + x_dir)
+            return y_dir + x_dir
         else:
-            controller.write(x_dir + y_dir)
+            return x_dir + y_dir
 
     @property
     def is_left(self):
@@ -1277,7 +1301,7 @@ class LhystudioController(Module, Pipe):
         packet = buffer[:length]
 
         # edge condition of catching only pipe command without '\n'
-        if packet.endswith((b'-', b'*', b'&', b'!')):
+        if packet.endswith((b'-', b'*', b'&', b'!', b'#')):
             packet += buffer[length:length + 1]
             length += 1
         post_send_command = None
@@ -1298,7 +1322,12 @@ class LhystudioController(Module, Pipe):
                 self._pause_busy()
                 packet = packet[:-1]
             if len(packet) != 0:
-                packet += b'F' * (30 - len(packet))  # Padding. '\n'
+                if packet.endswith(b'#'):
+                    packet = packet[:-1]
+                    c = packet[-1]
+                    packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
+                else:
+                    packet += b'F' * (30 - len(packet))  # Padding. '\n'
         if not realtime and self.state in (STATE_PAUSE, STATE_BUSY):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
