@@ -109,20 +109,10 @@ class GRBLInterpreter(Interpreter):
         Interpreter.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
-        if len(path) == 0:
-            return
-        first_point = path.first_point
-        self.move(first_point[0], first_point[1])
-        sx = self.device.current_x
-        sy = self.device.current_y
-        self.pulse_modulation = True
-        self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_path(path))
+        pass
 
     def plot_raster(self, raster):
-        sx = self.device.current_x
-        sy = self.device.current_y
-        self.pulse_modulation = True
-        self.plot = self.group_plots(sx, sy, self.ungroup_plots(raster.plot()))
+        pass
 
     def move(self, x, y):
         line = []
@@ -161,97 +151,6 @@ class GRBLInterpreter(Interpreter):
                 self.plot = None
                 return
         Interpreter.execute(self)
-
-    def ungroup_plots(self, generate):
-        """
-        Converts a generated x,y,on with long orthogonal steps into a generation of single steps.
-        :param generate: generator creating long orthogonal steps.
-        :return:
-        """
-        current_x = None
-        current_y = None
-        for next_x, next_y, on in generate:
-            if current_x is None or current_y is None:
-                current_x = next_x
-                current_y = next_y
-                yield current_x, current_y, on
-                continue
-            if next_x > current_x:
-                dx = 1
-            elif next_x < current_x:
-                dx = -1
-            else:
-                dx = 0
-            if next_y > current_y:
-                dy = 1
-            elif next_y < current_y:
-                dy = -1
-            else:
-                dy = 0
-            total_dx = next_x - current_x
-            total_dy = next_y - current_y
-            if total_dy * dx != total_dx * dy:
-                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
-            while current_x != next_x or current_y != next_y:
-                current_x += dx
-                current_y += dy
-                yield current_x, current_y, on
-
-    def group_plots(self, start_x, start_y, generate):
-        """
-        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
-        Implements PPI power modulation
-        :param start_x: Start x position
-        :param start_y: Start y position
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        last_x = start_x
-        last_y = start_y
-        last_on = 0
-        dx = 0
-        dy = 0
-        x = None
-        y = None
-        for event in generate:
-            try:
-                x = event[0]
-                y = event[1]
-                plot_on = event[2]
-            except IndexError:
-                plot_on = 1
-            if self.pulse_modulation:
-                self.pulse_total += self.power * plot_on
-                if self.group_modulation and last_on == 1:
-                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
-                    if self.pulse_total > 0.0:
-                        on = 1
-                        self.pulse_total -= 1000.0
-                    else:
-                        on = 0
-                else:
-                    if self.pulse_total >= 1000.0:
-                        on = 1
-                        self.pulse_total -= 1000.0
-                    else:
-                        on = 0
-            else:
-                on = int(round(plot_on))
-            if x == last_x + dx and y == last_y + dy and on == last_on:
-                last_x = x
-                last_y = y
-                continue
-            yield last_x, last_y, last_on
-            dx = x - last_x
-            dy = y - last_y
-            if abs(dx) > 1 or abs(dy) > 1:
-                # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
-                # The bug is in the code that wrongly plotted the data, not here.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
-            last_x = x
-            last_y = y
-            last_on = on
-        yield last_x, last_y, last_on
 
 
 class GRBLEmulator(Module, Pipe):
@@ -723,14 +622,17 @@ class GRBLEmulator(Module, Pipe):
             else:
                 y = 0
             if self.move_mode == 0:
-                spooler.job(COMMAND_LASER_OFF)
+                spooler.job(COMMAND_MODE_RAPID)
                 spooler.job(COMMAND_MOVE, x, y)
             elif self.move_mode == 1:
+                spooler.job(COMMAND_MODE_PROGRAM)
                 if self.on_mode:
                     spooler.job(COMMAND_LASER_ON)
                 spooler.job(COMMAND_MOVE, x, y)
             elif self.move_mode == 2:
+                spooler.job(COMMAND_MODE_PROGRAM)
                 spooler.job(COMMAND_MOVE, x, y)  # TODO: Implement CW_ARC
             elif self.move_mode == 3:
+                spooler.job(COMMAND_MODE_PROGRAM)
                 spooler.job(COMMAND_MOVE, x, y)  # TODO: Implement CCW_ARC
         return 0

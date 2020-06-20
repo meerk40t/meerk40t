@@ -1310,6 +1310,8 @@ class RootNode(list):
         a closed branch."""
         if node is None:
             node = self.root.item
+        if node is None:
+            return
         tree = self.tree
 
         child, cookie = tree.GetFirstChild(node)

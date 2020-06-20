@@ -278,6 +278,9 @@ class Interpreter(Module):
                 self.laser_disable()
             elif command == COMMAND_LASER_ENABLE:
                 self.laser_enable()
+            elif command == COMMAND_CUT:
+                x, y = values
+                self.cut(x, y)
             elif command == COMMAND_MOVE:
                 x, y = values
                 self.move(x, y)
@@ -404,6 +407,10 @@ class Interpreter(Module):
         self.laser_enabled = True
 
     def move(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
+
+    def cut(self, x, y):
         self.device.current_x = x
         self.device.current_y = y
 
@@ -716,6 +723,7 @@ class Elemental(Module):
     must have had the .cache deleted. And anything selecting an element must propagate
     that information out to inform other interested modules.
     """
+
     def __init__(self):
         Module.__init__(self)
 
@@ -1206,8 +1214,8 @@ class Elemental(Module):
                         engraves.append(engrave)
                         engrave.set_properties(element.values)
                     engrave.append(element)
-                if (element.stroke != "red" and element.stroke != "blue") or\
-                        (element.fill is not None and element.fill != "none") or\
+                if (element.stroke != "red" and element.stroke != "blue") or \
+                        (element.fill is not None and element.fill != "none") or \
                         isinstance(element, SVGText):
                     # not classed already, or was already classed but has a fill.
                     if raster is None or not raster.has_same_properties(element.values):
@@ -1601,6 +1609,7 @@ class Device:
                 return value
 
             return wrapper_debug
+
         attach_list = [modules for modules, module_name in self.instances['module'].items()]
         attach_list.append(self)
         for obj in attach_list:
@@ -1744,6 +1753,7 @@ class Device:
                 buff.append(message)
                 if len(buff) + 10 > buffer:
                     self.buffer[channel] = buff[-buffer:]
+
             self.channels[channel] = chan
             if channel in self.greet:
                 chan(self.greet[channel])
@@ -1833,7 +1843,7 @@ class Device:
             del self.instances[type_name][name]
 
     def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
-        return self.open('module', module_name, *args, instance_name=instance_name, **kwargs )
+        return self.open('module', module_name, *args, instance_name=instance_name, **kwargs)
 
     def module_instance_close(self, name):
         self.close('module', name)
@@ -2134,4 +2144,3 @@ class Kernel(Device):
 
     def register_saver(self, name, obj):
         self.registered['save'][name] = obj
-

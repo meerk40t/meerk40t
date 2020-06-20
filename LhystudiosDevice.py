@@ -267,7 +267,8 @@ class LhymicroInterpreter(Interpreter):
                     self.laser_off()
                 else:
                     self.laser_on()
-                self.move_absolute(x, y)
+                self.goto_absolute(x, y, True)
+
             except StopIteration:
                 self.plot = None
                 return
@@ -281,16 +282,10 @@ class LhymicroInterpreter(Interpreter):
             return
         first_point = path.first_point
         self.move_absolute(first_point[0], first_point[1])
-        sx = self.device.current_x
-        sy = self.device.current_y
-        self.pulse_modulation = True
-        self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_path(path))
+        self.plot = self.convert_to_plot(ZinglPlotter.plot_path(path), True)
 
     def plot_raster(self, raster):
-        sx = self.device.current_x
-        sy = self.device.current_y
-        self.pulse_modulation = True
-        self.plot = self.group_plots(sx, sy, self.ungroup_plots(raster.plot()))
+        self.plot = self.convert_to_plot(ZinglPlotter.singles(raster.plot()), True)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -331,26 +326,37 @@ class LhymicroInterpreter(Interpreter):
         self.device.signal('interpreter;mode', self.state)
         self.is_paused = False
 
-    def move(self, x, y):
-        self.pulse_modulation = self.laser
-        sx = self.device.current_x
-        sy = self.device.current_y
+    def cut(self, x, y):
+        self.goto(x, y, True)
 
-        if self.state == INTERPRETER_STATE_PROGRAM:
-            if self.is_relative:
-                x += sx
-                y += sy
-            self.plot = self.group_plots(sx, sy, ZinglPlotter.plot_line(sx, sy, x, y))
-        else:
-            if self.is_relative:
-                self.move_relative(x, y)
-            else:
-                self.move_absolute(x, y)
+    def cut_absolute(self, x, y):
+        self.goto_absolute(x, y, True)
+
+    def cut_relative(self, x, y):
+        self.goto_absolute(x, y, True)
+
+    def move(self, x, y):
+        self.laser_off()
+        self.goto(x, y, False)
 
     def move_absolute(self, x, y):
-        self.move_relative(x - self.device.current_x, y - self.device.current_y)
+        self.laser_off()
+        self.goto_absolute(x, y, False)
 
-    def move_relative(self, dx, dy):
+    def move_relative(self, x, y):
+        self.laser_off()
+        self.goto_absolute(x, y, False)
+
+    def goto(self, x, y, cut):
+        if self.is_relative:
+            self.goto_relative(x, y, cut)
+        else:
+            self.goto_absolute(x, y, cut)
+
+    def goto_absolute(self, x, y, cut):
+        self.goto_relative(x - self.device.current_x, y - self.device.current_y, cut)
+
+    def goto_relative(self, dx, dy, cut):
         if abs(dx) == 0 and abs(dy) == 0:
             return
         dx = int(round(dx))
@@ -358,77 +364,33 @@ class LhymicroInterpreter(Interpreter):
         if self.state == INTERPRETER_STATE_RAPID:
             self.pipe.write(b'I')
             if dx != 0:
-                self.move_x(dx)
+                self.goto_x(dx)
             if dy != 0:
-                self.move_y(dy)
+                self.goto_y(dy)
             self.pipe.write(b'S1P\n')
             if not self.device.autolock:
                 self.pipe.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
             if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                for x, y, on in self.group_plots(self.device.current_x, self.device.current_y,
-                                                 ZinglPlotter.plot_line(self.device.current_x, self.device.current_y,
-                                                                        self.device.current_x + dx,
-                                                                        self.device.current_y + dy)
-                                                 ):
-                    self.move_absolute(x, y)
+                cx = self.device.current_x
+                cy = self.device.current_y
+                for x, y, on in self.convert_to_plot(ZinglPlotter.plot_line(cx, cy, cx + dx, cy + dy), cut):
+                    self.goto_absolute(x, y, cut)
             elif abs(dx) == abs(dy):
-                self.move_angle(dx, dy)
+                self.goto_angle(dx, dy)
             elif dx != 0:
-                self.move_x(dx)
+                self.goto_x(dx)
             else:
-                self.move_y(dy)
+                self.goto_y(dy)
         elif self.state == INTERPRETER_STATE_FINISH:
             if dx != 0:
-                self.move_x(dx)
+                self.goto_x(dx)
             if dy != 0:
-                self.move_y(dy)
+                self.goto_y(dy)
             self.pipe.write(b'N')
         self.check_bounds()
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
                                                     self.device.current_x - dx, self.device.current_y - dy))
-
-    def move_xy_line(self, delta_x, delta_y):
-        """Strictly speaking if this happens it is because of a bug.
-        Nothing should feed the writer this data. It's invalid.
-        All moves should be diagonal or orthogonal.
-
-        Zingl-Bresenham line draw algorithm"""
-
-        dx = abs(delta_x)
-        dy = -abs(delta_y)
-
-        if delta_x > 0:
-            sx = 1
-        else:
-            sx = -1
-        if delta_y > 0:
-            sy = 1
-        else:
-            sy = -1
-        err = dx + dy  # error value e_xy
-        x0 = 0
-        y0 = 0
-        while True:  # /* loop */
-            if x0 == delta_x and y0 == delta_y:
-                break
-            mx = 0
-            my = 0
-            e2 = 2 * err
-            if e2 >= dy:  # e_xy+e_y < 0
-                err += dy
-                x0 += sx
-                mx += sx
-            if e2 <= dx:  # e_xy+e_y < 0
-                err += dx
-                y0 += sy
-                my += sy
-            if abs(mx) == abs(my):
-                self.move_angle(mx, my)
-            elif mx != 0:
-                self.move_x(mx)
-            else:
-                self.move_y(my)
 
     def set_speed(self, speed=None):
         change = False
@@ -651,19 +613,19 @@ class LhymicroInterpreter(Interpreter):
         self.laser = False
         self.properties = 0
 
-    def move_x(self, dx):
+    def goto_x(self, dx):
         if dx > 0:
             self.move_right(dx)
         else:
             self.move_left(dx)
 
-    def move_y(self, dy):
+    def goto_y(self, dy):
         if dy > 0:
             self.move_bottom(dy)
         else:
             self.move_top(dy)
 
-    def move_angle(self, dx, dy):
+    def goto_angle(self, dx, dy):
         controller = self.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
@@ -797,45 +759,53 @@ class LhymicroInterpreter(Interpreter):
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
-    def ungroup_plots(self, generate):
+    def convert_to_plot(self, generate, cut):
+        sx = self.device.current_x
+        sy = self.device.current_y
+        if cut:
+            generate = self.apply_ppi(generate)
+            if self.group_modulation:
+                generate = ZinglPlotter.shift(generate)
+        else:
+            generate = ZinglPlotter.off(generate)
+        return ZinglPlotter.groups(sx, sy, generate)
+
+    def apply_ppi(self, generate):
         """
-        Converts a generated x,y,on with long orthogonal steps into a generation of single steps.
-        :param generate: generator creating long orthogonal steps.
+        Converts single stepped plots, to apply PPI.
+
+        Implements PPI power modulation.
+
+        :param generate: generator of single stepped plots
         :return:
         """
-        current_x = None
-        current_y = None
-        for next_x, next_y, on in generate:
-            if current_x is None or current_y is None:
-                current_x = next_x
-                current_y = next_y
-                yield current_x, current_y, on
-                continue
-            if next_x > current_x:
-                dx = 1
-            elif next_x < current_x:
-                dx = -1
+        ppi = 0
+        if self.laser_enabled:
+            if self.pulse_modulation:
+                ppi = self.power
             else:
-                dx = 0
-            if next_y > current_y:
-                dy = 1
-            elif next_y < current_y:
-                dy = -1
+                ppi = 1000.0
+
+        for event in generate:
+            if len(event) == 3:
+                x, y, on = event
             else:
-                dy = 0
-            total_dx = next_x - current_x
-            total_dy = next_y - current_y
-            if total_dy * dx != total_dx * dy:
-                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
-            while current_x != next_x or current_y != next_y:
-                current_x += dx
-                current_y += dy
-                yield current_x, current_y, on
+                x, y = event
+                on = 1
+            self.pulse_total += ppi * on
+            if self.pulse_total >= 1000.0:
+                on = 1
+                self.pulse_total -= 1000.0
+            else:
+                on = 0
+            yield x, y, on
 
     def group_plots(self, start_x, start_y, generate):
         """
         Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+
         Implements PPI power modulation
+
         :param start_x: Start x position
         :param start_y: Start y position
         :param generate: generator of single stepped plots
@@ -854,7 +824,7 @@ class LhymicroInterpreter(Interpreter):
                 y = event[1]
                 plot_on = event[2]
             except IndexError:
-                plot_on = 1
+                plot_on = int(self.laser)
             if self.pulse_modulation:
                 self.pulse_total += self.power * plot_on
                 if self.group_modulation and last_on == 1:
@@ -965,7 +935,7 @@ class LhystudioController(Module, Pipe):
 
         self._thread = None
         self._buffer = b''  # Threadsafe buffered commands to be sent to controller.
-        self._realtime_buffer = b'' # Threadsafe realtime buffered commands to be sent to the controller.
+        self._realtime_buffer = b''  # Threadsafe realtime buffered commands to be sent to the controller.
         self._queue = b''  # Thread-unsafe additional commands to append.
         self._preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
         self._queue_lock = threading.Lock()

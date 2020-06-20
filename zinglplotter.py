@@ -16,7 +16,8 @@ class ZinglPlotter:
     def plot_path(path):
         """
         Default plot routine.
-        :param obj:
+
+        :param obj: path or segment to plot.
         :return:
         """
         if isinstance(path, Path):
@@ -29,6 +30,15 @@ class ZinglPlotter:
 
     @staticmethod
     def plot_segment(seg):
+        """
+        Plots a given segment. If the segment is a move which is undrawn it returns x, y, 0 if a drawn part of the
+        path it:
+
+        yields x, y, 1
+
+        :param seg:
+        :return:
+        """
         if isinstance(seg, Move):
             if seg.start is not None:
                 for x, y in ZinglPlotter.plot_line(seg.start[0], seg.start[1], seg.end[0], seg.end[1]):
@@ -47,11 +57,11 @@ class ZinglPlotter:
                 yield x, y, 1
 
         elif isinstance(seg, CubicBezier):
-            for e in ZinglPlotter.plot_cubic_bezier(seg.start[0], seg.start[1],
+            for x, y in ZinglPlotter.plot_cubic_bezier(seg.start[0], seg.start[1],
                                                    seg.control1[0], seg.control1[1],
                                                    seg.control2[0], seg.control2[1],
                                                    seg.end[0], seg.end[1]):
-                yield e
+                yield x, y, 1
         elif isinstance(seg, Arc):
             for x, y in ZinglPlotter.plot_arc(seg):
                 yield x, y, 1
@@ -60,6 +70,12 @@ class ZinglPlotter:
 
     @staticmethod
     def plot_arc(arc):
+        """
+        Plots an arc by converting it into a series of cubic bezier curves and plotting those.
+
+        :param arc:
+        :return:
+        """
         # TODO: Should actually plot the arc according to the pixel-perfect standard.
         # TODO: In this case we would plot a Bernstein weighted bezier curve.
         sweep_limit = tau / 12
@@ -115,7 +131,11 @@ class ZinglPlotter:
 
     @staticmethod
     def plot_line(x0, y0, x1, y1):
-        """Zingl-Bresenham line draw algorithm"""
+        """
+        Zingl-Bresenham line draw algorithm
+
+        Yields x and y for the line.
+        """
         x0 = int(x0)
         y0 = int(y0)
         x1 = int(x1)
@@ -149,8 +169,10 @@ class ZinglPlotter:
     @staticmethod
     def plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):
         """plot a limited quadratic Bezier segment
+
         This algorithm can plot curves that do not inflect.
-        It is used as part of the general algorithm, which breaks at the infection points"""
+
+        It is used as part of the general algorithm, which breaks at the infection point."""
         sx = x2 - x1
         sy = y2 - y1
         xx = x0 - x1
@@ -234,7 +256,9 @@ class ZinglPlotter:
     @staticmethod
     def plot_quad_bezier(x0, y0, x1, y1, x2, y2):
         """Zingl-Bresenham quad bezier draw algorithm.
+
         plot any quadratic Bezier curve"""
+
         x0 = int(x0)
         y0 = int(y0)
         # control points are permitted fractional elements.
@@ -286,7 +310,7 @@ class ZinglPlotter:
     def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
         """plot limited cubic Bezier segment
         This algorithm can plot curves that do not inflect.
-        It is used as part of the general algorithm, which breaks at the infection points"""
+        It is used as part of the general algorithm, which breaks at the infection point(s)"""
         second_leg = []
         f = 0
         fx = 0
@@ -444,6 +468,7 @@ class ZinglPlotter:
     @staticmethod
     def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
         """Zingl-Bresenham cubic bezier draw algorithm
+
         plot any quadratic Bezier curve"""
         x0 = int(x0)
         y0 = int(y0)
@@ -540,3 +565,132 @@ class ZinglPlotter:
             fx0 = fx3
             fy0 = fy3
             t1 = t2
+
+    @staticmethod
+    def shift(generate):
+        """
+        Modulates pixel groups to simply them into more coherent subsections.
+        """
+        buffer = []
+        pixels = 0
+        for x, y, on in generate:
+            pixels <<= 1
+            pixels |= (int(on) & 1)
+            pixels &= 0b1111
+            buffer.insert(0, (x, y))
+            if pixels == 0b0101:
+                pixels = 0b0011
+            elif pixels == 0b1010:
+                pixels = 0b1100
+            if len(buffer) >= 4:
+                bx, by = buffer.pop()
+                bon = (pixels >> 3) & 1
+                yield bx, by, bon
+        while len(buffer) > 0:
+            pixels <<= 1
+            bx, by = buffer.pop()
+            bon = (pixels >> 3) & 1
+            yield bx, by, bon
+
+    @staticmethod
+    def singles(generate):
+        """
+        Converts generated x,y,on with long orthogonal steps into a generation of single steps.
+
+        :param generate: generator creating long orthogonal steps.
+        :return:
+        """
+        current_x = None
+        current_y = None
+        for next_x, next_y, on in generate:
+            if current_x is None or current_y is None:
+                current_x = next_x
+                current_y = next_y
+                yield current_x, current_y, on
+                continue
+            if next_x > current_x:
+                dx = 1
+            elif next_x < current_x:
+                dx = -1
+            else:
+                dx = 0
+            if next_y > current_y:
+                dy = 1
+            elif next_y < current_y:
+                dy = -1
+            else:
+                dy = 0
+            total_dx = next_x - current_x
+            total_dy = next_y - current_y
+            if total_dy * dx != total_dx * dy:
+                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
+            while current_x != next_x or current_y != next_y:
+                current_x += dx
+                current_y += dy
+                yield current_x, current_y, on
+
+    @staticmethod
+    def groups(start_x, start_y, generate):
+        """
+        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+
+        :param start_x: Start x position
+        :param start_y: Start y position
+        :param generate: generator of single stepped plots
+        :return:
+        """
+        last_x = start_x
+        last_y = start_y
+        last_on = 0
+        dx = 0
+        dy = 0
+        for event in generate:
+            x = event[0]
+            y = event[1]
+            on = event[2]
+            if x == last_x + dx and y == last_y + dy and on == last_on:
+                # This is an orthogonal/diagonal step along the same path.
+                last_x = x
+                last_y = y
+                continue
+            yield last_x, last_y, last_on
+            dx = x - last_x
+            dy = y - last_y
+            if abs(dx) > 1 or abs(dy) > 1:
+                # The last step was not valid.
+                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
+            last_x = x
+            last_y = y
+            last_on = on
+        yield last_x, last_y, last_on
+
+    @staticmethod
+    def off(generate):
+        """
+        Converts plots, to plots with laser off.
+
+        :param generate: generator of single stepped plots
+        :return:
+        """
+        for event in generate:
+            if len(event) == 3:
+                x, y, on = event
+            else:
+                x, y = event
+            yield x, y, 0
+
+
+    @staticmethod
+    def on(generate):
+        """
+        Converts plots, to plots with laser off.
+
+        :param generate: generator of single stepped plots
+        :return:
+        """
+        for event in generate:
+            if len(event) == 3:
+                x, y, on = event
+            else:
+                x, y = event
+            yield x, y, 1

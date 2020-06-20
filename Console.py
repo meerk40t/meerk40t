@@ -64,7 +64,6 @@ class Console(Module, Pipe):
         def move():
             yield COMMAND_SET_ABSOLUTE
             yield COMMAND_MODE_RAPID
-            yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, int(x_pos), int(y_pos)
         return move
 
@@ -75,7 +74,6 @@ class Console(Module, Pipe):
         def move():
             yield COMMAND_SET_INCREMENTAL
             yield COMMAND_MODE_RAPID
-            yield COMMAND_LASER_OFF
             yield COMMAND_MOVE, int(x_pos), int(y_pos)
             yield COMMAND_SET_ABSOLUTE
         return move
@@ -99,9 +97,7 @@ class Console(Module, Pipe):
             def cut():
                 yield COMMAND_SET_INCREMENTAL
                 yield COMMAND_MODE_PROGRAM
-                yield COMMAND_LASER_ON
-                yield COMMAND_MOVE, x, y
-                yield COMMAND_LASER_OFF
+                yield COMMAND_CUT, x, y
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_SET_ABSOLUTE
             return cut
@@ -1298,7 +1294,6 @@ class Console(Module, Pipe):
 
             def trace_hull():
                 yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_OFF
                 yield COMMAND_MODE_RAPID
                 for p in hull:
                     yield COMMAND_MOVE, p[0], p[1]
@@ -1312,8 +1307,6 @@ class Console(Module, Pipe):
                 return
 
             def trace_quick():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_OFF
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_MOVE, bbox[0], bbox[1]
                 yield COMMAND_MOVE, bbox[2], bbox[1]

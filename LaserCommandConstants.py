@@ -18,6 +18,7 @@ COMMAND_LASER_ON = 2  # Turns laser on
 COMMAND_LASER_DISABLE = 5  # Disables the laser
 COMMAND_LASER_ENABLE = 6  # Enables the laser
 COMMAND_MOVE = 10  # Performs a line move
+COMMAND_CUT = 11  # Performs a line cut.
 COMMAND_WAIT = 20  # Pauses the given time in seconds. (floats accepted).
 COMMAND_WAIT_FINISH = 21  # WAIT until the buffer is finished.
 
