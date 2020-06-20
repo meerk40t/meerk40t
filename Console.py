@@ -273,13 +273,32 @@ class Console(Module, Pipe):
             if interpreter is None:
                 yield 'Device has no interpreter.'
                 return
+
             if len(args) == 0:
                 yield 'Speed set at: %f mm/s' % interpreter.speed
-            else:
-                try:
-                    interpreter.set_speed(float(args[0]))
-                except ValueError:
-                    pass
+                return
+            inc = False
+            percent = False
+            speed = args[0]
+            if speed == "inc":
+                speed = args[1]
+                inc = True
+            if speed.endswith('%'):
+                speed = speed[:-1]
+                percent = True
+            try:
+                s = float(speed)
+            except ValueError:
+                yield 'Not a valid speed or percent.'
+                return
+            if percent and inc:
+                s = interpreter.speed + interpreter.speed * (s / 100.0)
+            elif inc:
+                s += interpreter.speed
+            elif percent:
+                s = interpreter.speed * (s / 100.0)
+            interpreter.set_speed(s)
+            yield 'Speed set at: %f mm/s' % interpreter.speed
         elif command == 'power':
             if interpreter is None:
                 yield 'Device has no interpreter.'

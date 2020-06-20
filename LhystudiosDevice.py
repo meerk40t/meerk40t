@@ -794,6 +794,17 @@ class LhymicroInterpreter(Interpreter):
             generate = ZinglPlotter.off(generate)
         return ZinglPlotter.groups(sx, sy, generate)
 
+    def current_ppi(self):
+        """This is recalculated repeatedly because there is a change the value of the power
+        can change on the fly and it should reflect this in the current work."""
+        ppi = 0
+        if self.laser_enabled:
+            if self.pulse_modulation:
+                ppi = self.power
+            else:
+                ppi = 1000.0
+        return ppi
+
     def apply_ppi(self, generate):
         """
         Converts single stepped plots, to apply PPI.
@@ -803,20 +814,13 @@ class LhymicroInterpreter(Interpreter):
         :param generate: generator of single stepped plots
         :return:
         """
-        ppi = 0
-        if self.laser_enabled:
-            if self.pulse_modulation:
-                ppi = self.power
-            else:
-                ppi = 1000.0
-
         for event in generate:
             if len(event) == 3:
                 x, y, on = event
             else:
                 x, y = event
                 on = 1
-            self.pulse_total += ppi * on
+            self.pulse_total += self.current_ppi() * on
             if self.pulse_total >= 1000.0:
                 on = 1
                 self.pulse_total -= 1000.0
