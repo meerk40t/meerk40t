@@ -381,12 +381,11 @@ class LhymicroInterpreter(Interpreter):
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
                                                     self.device.current_x - dx, self.device.current_y - dy))
 
-
     def goto_octent_abs(self, x, y, on):
         dx = x - self.device.current_x
         dy = y - self.device.current_y
         self.goto_octent(dx,dy, on)
-        
+
     def goto_octent(self, dx, dy, on):
         if on:
             self.laser_on()

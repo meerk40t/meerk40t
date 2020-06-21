@@ -1315,6 +1315,11 @@ class Console(Module, Pipe):
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
+        elif command == 'flush':
+            kernel.flush()
+            if kernel != active_device:
+                active_device.flush()
+                yield 'Persistent settings force saved.'
         elif command == 'trace_hull':
             pts = []
             for obj in elements.elems(emphasized=True):
