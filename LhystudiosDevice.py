@@ -329,27 +329,21 @@ class LhymicroInterpreter(Interpreter):
         self.is_paused = False
 
     def cut(self, x, y):
-        self.laser_on()
         self.goto(x, y, True)
 
     def cut_absolute(self, x, y):
-        self.laser_on()
         self.goto_absolute(x, y, True)
 
     def cut_relative(self, x, y):
-        self.laser_on()
         self.goto_relative(x, y, True)
 
     def move(self, x, y):
-        self.laser_off()
         self.goto(x, y, False)
 
     def move_absolute(self, x, y):
-        self.laser_off()
         self.goto_absolute(x, y, False)
 
     def move_relative(self, x, y):
-        self.laser_off()
         self.goto_relative(x, y, False)
 
     def goto(self, x, y, cut):
@@ -364,6 +358,10 @@ class LhymicroInterpreter(Interpreter):
     def goto_relative(self, dx, dy, cut):
         if abs(dx) == 0 and abs(dy) == 0:
             return
+        if cut:
+            self.laser_on()
+        else:
+            self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == INTERPRETER_STATE_RAPID:
@@ -380,7 +378,7 @@ class LhymicroInterpreter(Interpreter):
                 cx = self.device.current_x
                 cy = self.device.current_y
                 for x, y, on in self.convert_to_plot(ZinglPlotter.plot_line(cx, cy, cx + dx, cy + dy), cut):
-                    self.goto_absolute(x, y, cut)
+                    self.goto_absolute(x, y, on)
             elif abs(dx) == abs(dy):
                 if dx != 0:
                     self.goto_angle(dx, dy)
@@ -461,9 +459,9 @@ class LhymicroInterpreter(Interpreter):
         return True
 
     def laser_on(self):
-        controller = self.pipe
         if self.laser:
             return False
+        controller = self.pipe
         if self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
             controller.write(self.CODE_LASER_ON)

@@ -310,6 +310,26 @@ class Console(Module, Pipe):
                     interpreter.set_power(int(args[0]))
                 except ValueError:
                     pass
+        elif command == 'acceleration':
+            if interpreter is None:
+                yield 'Device has no interpreter.'
+                return
+            if len(args) == 0:
+                if interpreter.acceleration is None:
+                    yield 'Acceleration is set to default.'
+                else:
+                    yield 'Acceleration: %d' % interpreter.acceleration
+
+            else:
+                try:
+                    v = int(args[0])
+                    if v not in (1,2,3,4):
+                        yield 'Invalid Acceleration [1-4]'
+                        return
+                    interpreter.set_acceleration()
+                except ValueError:
+                    yield 'Invalid Acceleration.'
+                    return
         # Kernel Element commands.
         elif command == 'window':
             if len(args) == 0:

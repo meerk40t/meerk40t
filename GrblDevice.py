@@ -1,5 +1,4 @@
-from Kernel import Device, Interpreter, INTERPRETER_STATE_RAPID, INTERPRETER_STATE_PROGRAM
-from zinglplotter import ZinglPlotter
+from Kernel import Device, Interpreter, INTERPRETER_STATE_PROGRAM
 from Kernel import Module, Pipe
 from LaserCommandConstants import *
 from svgelements import *
@@ -161,12 +160,16 @@ class GRBLEmulator(Module, Pipe):
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
-        self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 DEFAULT, mm mode
-        self.feed_invert = lambda s: self.scale * 60.0 * s
+        self.feed_convert = None
+        self.feed_invert = None
+        self.g94_feedrate()  # G94 DEFAULT, mm mode
         self.move_mode = 0
         self.home = None
         self.home2 = None
         self.on_mode = 1
+        self.power = 0
+        self.speed = 0
+        self.used_speed = 0
         self.buffer = ''
         self.grbl_set_re = re.compile(r'\$(\d+)=([-+]?[0-9]*\.?[0-9]*)')
         self.code_re = re.compile(r'([A-Za-z])')
@@ -567,14 +570,9 @@ class GRBLEmulator(Module, Pipe):
                     # Clear Coordinate offset set by 92.
                     pass  # Clear Coordinate offset TODO: Implement
                 elif v == 93.0:
-                    # Feed Rate in Minutes / Unit
-                    self.feed_convert = lambda s: (self.scale * 60.0) / s
-                    self.feed_invert = lambda s: (self.scale * 60.0) / s
+                    self.g93_feedrate()
                 elif v == 94.0:
-                    # Feed Rate in Units / Minute
-                    self.feed_convert = lambda s: s / (self.scale * 60.0)
-                    self.feed_invert = lambda s: s * (self.scale * 60.0)
-                    # units to mm, seconds to minutes.
+                    self.g94_feedrate()
                 else:
                     return 20  # Unsupported or invalid g-code command found in block.
             del gc['g']
@@ -585,7 +583,8 @@ class GRBLEmulator(Module, Pipe):
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 feed_rate = self.feed_convert(v)
-                spooler.job(COMMAND_SET_SPEED, feed_rate)
+                if self.speed != feed_rate:
+                    self.speed = feed_rate
             del gc['f']
         if 's' in gc:
             for v in gc['s']:
@@ -593,14 +592,11 @@ class GRBLEmulator(Module, Pipe):
                     return 2  # Numeric value format is not valid or missing an expected value.
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+                self.power = v
                 spooler.job(COMMAND_SET_POWER, v)
+
             del gc['s']
         if 'x' in gc or 'y' in gc:
-            if self.move_mode == 0:
-                spooler.job(COMMAND_LASER_OFF)
-                spooler.job(COMMAND_MODE_RAPID)
-            elif self.move_mode == 1 or self.move_mode == 2 or self.move_mode == 3:
-                spooler.job(COMMAND_MODE_PROGRAM)
             if 'x' in gc:
                 x = gc['x'].pop(0)
                 if x is None:
@@ -622,17 +618,28 @@ class GRBLEmulator(Module, Pipe):
             else:
                 y = 0
             if self.move_mode == 0:
-                spooler.job(COMMAND_MODE_RAPID)
+                spooler.job(COMMAND_MODE_PROGRAM)
                 spooler.job(COMMAND_MOVE, x, y)
-            elif self.move_mode == 1:
+            elif self.move_mode >= 1:
                 spooler.job(COMMAND_MODE_PROGRAM)
-                if self.on_mode:
-                    spooler.job(COMMAND_LASER_ON)
-                spooler.job(COMMAND_MOVE, x, y)
-            elif self.move_mode == 2:
-                spooler.job(COMMAND_MODE_PROGRAM)
-                spooler.job(COMMAND_MOVE, x, y)  # TODO: Implement CW_ARC
-            elif self.move_mode == 3:
-                spooler.job(COMMAND_MODE_PROGRAM)
-                spooler.job(COMMAND_MOVE, x, y)  # TODO: Implement CCW_ARC
+                if self.power == 0:
+                    spooler.job(COMMAND_MOVE, x, y)
+                else:
+                    if self.used_speed != self.speed:
+                        spooler.job(COMMAND_SET_SPEED, self.speed)
+                        self.used_speed = self.speed
+                    spooler.job(COMMAND_CUT, x, y)
+                # TODO: Implement CW_ARC
+                # TODO: Implement CCW_ARC
         return 0
+
+    def g93_feedrate(self):
+        # Feed Rate in Minutes / Unit
+        self.feed_convert = lambda s: (60.0 / s) * self.scale / MILS_PER_MM
+        self.feed_invert = lambda s:  (60.0 / s) * MILS_PER_MM / self.scale
+
+    def g94_feedrate(self):
+        # Feed Rate in Units / Minute
+        self.feed_convert = lambda s: s / ((self.scale / MILS_PER_MM) * 60.0)
+        self.feed_invert = lambda s: s * ((self.scale / MILS_PER_MM) * 60.0)
+        # units to mm, seconds to minutes.
