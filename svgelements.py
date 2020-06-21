@@ -5996,6 +5996,8 @@ class SVGText(GraphicObject, Transformable):
         self.text = s.text
         self.x = s.x
         self.y = s.y
+        self.width = s.width
+        self.height = s.height
         self.dx = s.dx
         self.dy = s.dy
         self.anchor = s.anchor
@@ -6096,8 +6098,8 @@ class SVGText(GraphicObject, Transformable):
         width = self.width
         height = self.height
         xmin = self.x
-        ymin = self.y - self.height
-        xmax = self.x + self.width
+        ymin = self.y - height
+        xmax = self.x + width
         ymax = self.y
         if not hasattr(self, 'anchor') or self.anchor == 'start':
             pass
