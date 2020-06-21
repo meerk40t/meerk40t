@@ -492,7 +492,13 @@ class CameraInterface(wx.Frame, Module):
         if self.device is None:
             self.camera_lock.release()
             return
-        ret, frame = self.capture.read()
+        ret = self.capture.grab()
+        if not ret:
+            wx.CallAfter(self.camera_error_webcam)
+            self.capture = None
+            self.camera_lock.release()
+            return
+        ret, frame = self.capture.retrieve()
         if not ret or frame is None:
             wx.CallAfter(self.camera_error_webcam)
             self.capture = None
