@@ -324,11 +324,13 @@ class Console(Module, Pipe):
                 try:
                     v = int(args[0])
                     if v not in (1,2,3,4):
-                        yield 'Invalid Acceleration [1-4]'
+                        interpreter.set_acceleration(None)
+                        yield 'Acceleration is set to default.'
                         return
-                    interpreter.set_acceleration()
+                    interpreter.set_acceleration(v)
+                    yield 'Acceleration: %d' % interpreter.acceleration
                 except ValueError:
-                    yield 'Invalid Acceleration.'
+                    yield 'Invalid Acceleration [1-4].'
                     return
         # Kernel Element commands.
         elif command == 'window':

@@ -266,10 +266,9 @@ class LhymicroInterpreter(Interpreter):
                                     self.ensure_program_mode()
                                 self.v_switch()
                 if on == 0:
-                    self.laser_off()
+                    self.goto_absolute(x, y, False)
                 else:
-                    self.laser_on()
-                self.goto_absolute(x, y, True)
+                    self.goto_absolute(x, y, True)
 
             except StopIteration:
                 self.plot = None
