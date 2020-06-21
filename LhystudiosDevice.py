@@ -229,40 +229,42 @@ class LhymicroInterpreter(Interpreter):
                 dx = x - sx
                 dy = y - sy
                 if self.raster_step != 0:
-                    if self.is_prop(DIRECTION_FLAG_X) and dy != 0:
-                        if self.is_prop(DIRECTION_FLAG_TOP):
-                            if abs(dy) > self.raster_step:
-                                self.ensure_finished_mode()
-                                self.move_relative(0, dy + self.raster_step)
-                                self.set_prop(DIRECTION_FLAG_X)
-                                self.unset_prop(DIRECTION_FLAG_Y)
-                                self.ensure_program_mode()
-                            self.h_switch()
-                        else:
-                            if abs(dy) > self.raster_step:
-                                self.ensure_finished_mode()
-                                self.move_relative(0, dy - self.raster_step)
-                                self.set_prop(DIRECTION_FLAG_X)
-                                self.unset_prop(DIRECTION_FLAG_Y)
-                                self.ensure_program_mode()
-                            self.h_switch()
-                    elif self.is_prop(DIRECTION_FLAG_Y) and dx != 0:
-                        if self.is_prop(DIRECTION_FLAG_LEFT):
-                            if abs(dx) > self.raster_step:
-                                self.ensure_finished_mode()
-                                self.move_relative(dx + self.raster_step, 0)
-                                self.set_prop(DIRECTION_FLAG_Y)
-                                self.unset_prop(DIRECTION_FLAG_X)
-                                self.ensure_program_mode()
-                            self.v_switch()
-                        else:
-                            if abs(dx) > self.raster_step:
-                                self.ensure_finished_mode()
-                                self.move_relative(dx - self.raster_step, 0)
-                                self.set_prop(DIRECTION_FLAG_Y)
-                                self.unset_prop(DIRECTION_FLAG_X)
-                                self.ensure_program_mode()
-                            self.v_switch()
+                    if self.is_prop(DIRECTION_FLAG_X):
+                        if dy != 0:
+                            if self.is_prop(DIRECTION_FLAG_TOP):
+                                if abs(dy) > self.raster_step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(0, dy + self.raster_step)
+                                    self.set_prop(DIRECTION_FLAG_X)
+                                    self.unset_prop(DIRECTION_FLAG_Y)
+                                    self.ensure_program_mode()
+                                self.h_switch()
+                            else:
+                                if abs(dy) > self.raster_step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(0, dy - self.raster_step)
+                                    self.set_prop(DIRECTION_FLAG_X)
+                                    self.unset_prop(DIRECTION_FLAG_Y)
+                                    self.ensure_program_mode()
+                                self.h_switch()
+                    elif self.is_prop(DIRECTION_FLAG_Y):
+                        if dx != 0:
+                            if self.is_prop(DIRECTION_FLAG_LEFT):
+                                if abs(dx) > self.raster_step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(dx + self.raster_step, 0)
+                                    self.set_prop(DIRECTION_FLAG_Y)
+                                    self.unset_prop(DIRECTION_FLAG_X)
+                                    self.ensure_program_mode()
+                                self.v_switch()
+                            else:
+                                if abs(dx) > self.raster_step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(dx - self.raster_step, 0)
+                                    self.set_prop(DIRECTION_FLAG_Y)
+                                    self.unset_prop(DIRECTION_FLAG_X)
+                                    self.ensure_program_mode()
+                                self.v_switch()
                 if on == 0:
                     self.laser_off()
                 else:
@@ -336,7 +338,7 @@ class LhymicroInterpreter(Interpreter):
 
     def cut_relative(self, x, y):
         self.laser_on()
-        self.goto_absolute(x, y, True)
+        self.goto_relative(x, y, True)
 
     def move(self, x, y):
         self.laser_off()
@@ -348,7 +350,7 @@ class LhymicroInterpreter(Interpreter):
 
     def move_relative(self, x, y):
         self.laser_off()
-        self.goto_absolute(x, y, False)
+        self.goto_relative(x, y, False)
 
     def goto(self, x, y, cut):
         if self.is_relative:
