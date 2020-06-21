@@ -6093,27 +6093,30 @@ class SVGText(GraphicObject, Transformable):
         """
         if self.path is not None:
             return (self.path * self.transform).bbox(transformed=True)
-        x = self.x
-        y = self.y
         width = self.width
         height = self.height
+        xmin = self.x
+        ymin = self.y - self.height
+        xmax = self.x + self.width
+        ymax = self.y
         if not hasattr(self, 'anchor') or self.anchor == 'start':
-            y -= self.height
+            pass
         elif self.anchor == 'middle':
-            x -= (self.width / 2)
-            y -= self.height
+            xmin -= (width / 2)
+            xmax -= (width / 2)
         elif self.anchor == 'end':
-            x -= self.width
-            y -= self.height
-
-        if not transformed:
-            return x, y, x+width, y+height
-
-        p = Point(x, y)
-        p *= self.transform
-        q = Point(x + width, y+height)
-        q *= self.transform
-        return p[0], p[1], q[0], q[1]
+            xmin -= width
+            xmax -= width
+        if transformed:
+            p0 = self.transform.transform_point([xmin, ymin])
+            p1 = self.transform.transform_point([xmin, ymax])
+            p2 = self.transform.transform_point([xmax, ymin])
+            p3 = self.transform.transform_point([xmax, ymax])
+            xmin = min(p0[0], p1[0], p2[0], p3[0])
+            ymin = min(p0[1], p1[1], p2[1], p3[1])
+            xmax = max(p0[0], p1[0], p2[0], p3[0])
+            ymax = max(p0[1], p1[1], p2[1], p3[1])
+        return xmin, ymin, xmax, ymax
 
 
 class SVGDesc:
