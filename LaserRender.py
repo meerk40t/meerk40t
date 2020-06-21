@@ -244,14 +244,14 @@ class LaserRender:
             image_height = 1
 
         if width is None:
-            width = image_width
+            width = image_width + 2
         if height is None:
-            height = image_height
+            height = image_height + 2
         width /= float(step)
         height /= float(step)
         width = int(width)
         height = int(height)
-        bmp = wx.Bitmap(width + 2, height + 2, 32)
+        bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.Clear()
