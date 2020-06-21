@@ -6093,11 +6093,25 @@ class SVGText(GraphicObject, Transformable):
         """
         if self.path is not None:
             return (self.path * self.transform).bbox(transformed=True)
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+        if not hasattr(self, 'anchor') or self.anchor == 'start':
+            y -= self.height
+        elif self.anchor == 'middle':
+            x -= (self.width / 2)
+            y -= self.height
+        elif self.anchor == 'end':
+            x -= self.width
+            y -= self.height
+
         if not transformed:
-            return self.x, self.y - self.height, self.x + self.width, self.y
-        p = Point(self.x, self.y- self.height)
+            return x, y, x+width, y+height
+
+        p = Point(x, y)
         p *= self.transform
-        q = Point(self.x + self.width, self.y)
+        q = Point(x + width, y+height)
         q *= self.transform
         return p[0], p[1], q[0], q[1]
 

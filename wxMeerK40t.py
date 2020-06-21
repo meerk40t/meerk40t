@@ -1212,7 +1212,7 @@ class Node(list):
                 image = self.root.renderer.make_thumbnail(data_object.image, width=20, height=20)
                 image_id = self.root.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-            if isinstance(data_object, Path):
+            if isinstance(data_object, (Path, SVGText)):
                 image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20,
                                                        bitmap=True)
                 if image is not None:
