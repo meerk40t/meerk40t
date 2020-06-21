@@ -234,6 +234,8 @@ class LaserRender:
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
+        xmax += 1
+        ymax += 1
 
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -244,9 +246,9 @@ class LaserRender:
             image_height = 1
 
         if width is None:
-            width = image_width + 2
+            width = image_width
         if height is None:
-            height = image_height + 2
+            height = image_height
         width /= float(step)
         height /= float(step)
         width = int(width)
