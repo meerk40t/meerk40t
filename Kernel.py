@@ -1444,6 +1444,8 @@ class Device:
         _ = self.device_root.translation
         channel(_("Shutting down."))
         self.detach(self, channel=channel)
+        channel(_("Saving Device State: '%s'") % str(self))
+        self.flush()
         if 'device' in self.instances:
             devices = self.instances['device']
             del self.instances['device']
@@ -1452,8 +1454,6 @@ class Device:
                 channel(_("Device Shutdown Started: '%s'") % str(device))
                 device.shutdown(channel=channel)
                 channel(_("Device Shutdown Finished: '%s'") % str(device))
-        channel(_("Saving Device State: '%s'") % str(self))
-        self.flush()
         for type_name in list(self.instances):
             if type_name in ('control'):
                 continue
