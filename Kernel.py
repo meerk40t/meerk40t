@@ -790,6 +790,10 @@ class Elemental(Module):
             """
             The data structure was changed.
             """
+            try:
+                obj.cache.UnGetNativePath(obj.cache.NativePath)
+            except AttributeError:
+                pass
             del obj.cache
             obj.cache = None
             del obj.icon
@@ -810,7 +814,14 @@ class Elemental(Module):
 
     def unregister(self, e):
         try:
+            e.cache.UngetNativePath(e.cache.NativePath)
+        except AttributeError:
+            pass
+        try:
             del e.cache
+        except AttributeError:
+            pass
+        try:
             del e.icon
         except AttributeError:
             pass
