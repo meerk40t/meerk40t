@@ -267,9 +267,8 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.spin_horizontal_power.GetValue()
         yield COMMAND_MODE_PROGRAM
-        yield COMMAND_LASER_ON
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_MOVE, x, 0
+        yield COMMAND_CUT, x, 0
         yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
@@ -280,9 +279,8 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.spin_vertical_power.GetValue()
         yield COMMAND_MODE_PROGRAM
-        yield COMMAND_LASER_ON
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
-        yield COMMAND_MOVE, 0, y
+        yield COMMAND_CUT, 0, y
         yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 

@@ -265,11 +265,7 @@ class LhymicroInterpreter(Interpreter):
                                     self.unset_prop(DIRECTION_FLAG_X)
                                     self.ensure_program_mode()
                                 self.v_switch()
-                if on == 0:
-                    self.goto_absolute(x, y, False)
-                else:
-                    self.goto_absolute(x, y, True)
-
+                self.goto_octent_abs(x, y, on)
             except StopIteration:
                 self.plot = None
                 return
@@ -283,10 +279,10 @@ class LhymicroInterpreter(Interpreter):
             return
         first_point = path.first_point
         self.move_absolute(first_point[0], first_point[1])
-        self.plot = self.convert_to_plot(ZinglPlotter.plot_path(path), True)
+        self.plot = self.convert_to_absolute_plot(ZinglPlotter.plot_path(path), True)
 
     def plot_raster(self, raster):
-        self.plot = self.convert_to_plot(ZinglPlotter.singles(raster.plot()), True)
+        self.plot = self.convert_to_absolute_plot(ZinglPlotter.singles(raster.plot()), True)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -357,10 +353,6 @@ class LhymicroInterpreter(Interpreter):
     def goto_relative(self, dx, dy, cut):
         if abs(dx) == 0 and abs(dy) == 0:
             return
-        if cut:
-            self.laser_on()
-        else:
-            self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == INTERPRETER_STATE_RAPID:
@@ -373,18 +365,12 @@ class LhymicroInterpreter(Interpreter):
             if not self.device.autolock:
                 self.pipe.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            if dx != 0 and dy != 0 and abs(dx) != abs(dy):
-                cx = self.device.current_x
-                cy = self.device.current_y
-                for x, y, on in self.convert_to_plot(ZinglPlotter.plot_line(cx, cy, cx + dx, cy + dy), cut):
-                    self.goto_absolute(x, y, on)
-            elif abs(dx) == abs(dy):
-                if dx != 0:
-                    self.goto_angle(dx, dy)
-            elif dx != 0:
-                self.goto_x(dx)
-            else:
-                self.goto_y(dy)
+            mx = 0
+            my = 0
+            for x, y, on in self.convert_to_relative_plot(ZinglPlotter.plot_line(0, 0, dx, dy), cut):
+                self.goto_octent(x-mx, y-my, on)
+                mx = x
+                my = y
         elif self.state == INTERPRETER_STATE_FINISH:
             if dx != 0:
                 self.goto_x(dx)
@@ -394,6 +380,25 @@ class LhymicroInterpreter(Interpreter):
         self.check_bounds()
         self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
                                                     self.device.current_x - dx, self.device.current_y - dy))
+
+
+    def goto_octent_abs(self, x, y, on):
+        dx = x - self.device.current_x
+        dy = y - self.device.current_y
+        self.goto_octent(dx,dy, on)
+        
+    def goto_octent(self, dx, dy, on):
+        if on:
+            self.laser_on()
+        else:
+            self.laser_off()
+        if abs(dx) == abs(dy):
+            if dx != 0:
+                self.goto_angle(dx, dy)
+        elif dx != 0:
+            self.goto_x(dx)
+        else:
+            self.goto_y(dy)
 
     def set_speed(self, speed=None):
         change = False
@@ -783,7 +788,7 @@ class LhymicroInterpreter(Interpreter):
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
-    def convert_to_plot(self, generate, cut):
+    def convert_to_absolute_plot(self, generate, cut):
         sx = self.device.current_x
         sy = self.device.current_y
         if cut:
@@ -793,6 +798,15 @@ class LhymicroInterpreter(Interpreter):
         else:
             generate = ZinglPlotter.off(generate)
         return ZinglPlotter.groups(sx, sy, generate)
+
+    def convert_to_relative_plot(self, generate, cut):
+        if cut:
+            generate = self.apply_ppi(generate)
+            if self.group_modulation:
+                generate = ZinglPlotter.shift(generate)
+        else:
+            generate = ZinglPlotter.off(generate)
+        return ZinglPlotter.groups(0, 0, generate)
 
     def current_ppi(self):
         """This is recalculated repeatedly because there is a change the value of the power
