@@ -380,7 +380,8 @@ class LhymicroInterpreter(Interpreter):
                 for x, y, on in self.convert_to_plot(ZinglPlotter.plot_line(cx, cy, cx + dx, cy + dy), cut):
                     self.goto_absolute(x, y, cut)
             elif abs(dx) == abs(dy):
-                self.goto_angle(dx, dy)
+                if dx != 0:
+                    self.goto_angle(dx, dy)
             elif dx != 0:
                 self.goto_x(dx)
             else:

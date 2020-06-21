@@ -236,6 +236,7 @@ class RasterOperation(LaserOperation):
         return True
 
     def generate(self):
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
         direction = self.raster_direction
@@ -311,7 +312,6 @@ class RasterOperation(LaserOperation):
                                    m.value_trans_y(),
                                    step, image_filter)
             yield COMMAND_MODE_RAPID
-            yield COMMAND_LASER_OFF
             x, y = raster.initial_position_in_scene()
             yield COMMAND_MOVE, x, y
             top, left, x_dir, y_dir = raster.initial_direction()
@@ -361,6 +361,7 @@ class EngraveOperation(LaserOperation):
         return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
 
     def generate(self):
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
         yield COMMAND_SET_STEP, 0
@@ -373,6 +374,11 @@ class EngraveOperation(LaserOperation):
             yield COMMAND_SET_ACCELERATION, self.acceleration
         else:
             yield COMMAND_SET_ACCELERATION, None
+        try:
+            first = abs(self[0]).first_point
+            yield COMMAND_MOVE, first[0], first[1]
+        except (IndexError, AttributeError):
+            pass
         yield COMMAND_MODE_PROGRAM
         for object_path in self:
             plot = abs(object_path)
@@ -419,6 +425,7 @@ class CutOperation(LaserOperation):
         return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
 
     def generate(self):
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, self.speed
         yield COMMAND_SET_STEP, 0
@@ -431,6 +438,11 @@ class CutOperation(LaserOperation):
             yield COMMAND_SET_ACCELERATION, self.acceleration
         else:
             yield COMMAND_SET_ACCELERATION, None
+        try:
+            first = abs(self[0]).first_point
+            yield COMMAND_MOVE, first[0], first[1]
+        except (IndexError, AttributeError):
+            pass
         yield COMMAND_MODE_PROGRAM
         for object_path in self:
             plot = abs(object_path)
