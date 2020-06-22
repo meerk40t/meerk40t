@@ -409,6 +409,7 @@ class MeerK40t(wx.Frame, Module):
         self.times = -1
         device = self.device
         kernel = device.device_root
+
         kernel.unlisten('element_added', self.on_rebuild_tree_request)
         kernel.unlisten('operation_added', self.on_rebuild_tree_request)
         kernel.unlisten('element_removed', self.on_rebuild_tree_request)
@@ -2341,25 +2342,22 @@ class wxMeerK40t(wx.App, Module):
         if self.device is not None:
             self.device.stop()
             self.device.thread.join()
-        event.Skip()
 
     def on_query_end(self, event):
+        # MAC DOCK QUIT.
         if self.device is not None:
             self.device.stop()
             self.device.thread.join()
-        event.Skip()
 
     def on_end_session(self, event):
         if self.device is not None:
             self.device.stop()
             self.device.thread.join()
-        event.Skip()
 
     def on_end_process(self, event):
         if self.device is not None:
             self.device.stop()
             self.device.thread.join()
-        event.Skip()
 
     def OnInit(self):
         return True

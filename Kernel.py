@@ -1447,6 +1447,7 @@ class Device:
         channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
         if 'device' in self.instances:
+            # Join and shutdown any child devices.
             devices = self.instances['device']
             del self.instances['device']
             for device_name in devices:
@@ -1478,16 +1479,16 @@ class Device:
                     continue
                 channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
                 if thread is self.thread:
+                    channel(_("%s is the current shutdown thread") % (thread_name))
                     continue
                     # Do not sleep thread waiting for that thread to die. This is that thread.
                 try:
+                    channel(_("Asking thread to stop."))
                     thread.stop()
                 except AttributeError:
                     pass
-                if thread.is_alive:
-                    channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
-                while thread.is_alive():
-                    time.sleep(0.1)
+                channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+                thread.join()
                 channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
         else:
             channel(_("No threads required halting."))
