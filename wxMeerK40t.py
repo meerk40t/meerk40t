@@ -2327,9 +2327,16 @@ class wxMeerK40t(wx.App, Module):
         wx.App.__init__(self, 0)
         Module.__init__(self)
         self.locale = None
+        self.Bind(wx.EVT_CLOSE, self.on_app_close)
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_query_end)
         self.Bind(wx.EVT_END_SESSION, self.on_end_session)
         self.Bind(wx.EVT_END_PROCESS, self.on_end_process)
+
+    def on_app_close(self, event):
+        print("Called App Close")
+        if self.device is not None:
+            self.device.shutdown()
+        event.Skip()
 
     def on_query_end(self, event):
         print("Called QUERY END")
@@ -2339,11 +2346,14 @@ class wxMeerK40t(wx.App, Module):
 
     def on_end_session(self, event):
         print("Called END_SESSION")
-        self.OnExit()
-
+        if self.device is not None:
+            self.device.shutdown()
+        event.Skip()
 
     def on_end_process(self, event):
         print("Called END PROCESS")
+        if self.device is not None:
+            self.device.shutdown()
         event.Skip()
 
     def OnInit(self):
