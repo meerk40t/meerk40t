@@ -665,7 +665,7 @@ class Console(Module, Pipe):
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    if element.stroke is None:
+                    if element.stroke is None or element.stroke == 'none':
                         yield '%d: stroke = none - %s' % \
                               (i, name)
                     else:
@@ -696,7 +696,7 @@ class Console(Module, Pipe):
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    if element.fill is None:
+                    if element.fill is None or element.fill == 'none':
                         yield '%d: fill = none - %s' % \
                               (i, name)
                     else:
