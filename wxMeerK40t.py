@@ -432,8 +432,8 @@ class MeerK40t(wx.Frame, Module):
             kernel.open('window', 'Shutdown', None, -1, "")
         if kernel.print_shutdown:
             kernel.add_watcher('shutdown', print)
-        self.device.remove('window', self.name)
-        self.device.stop()
+        device.remove('window', self.name)
+        device.stop()
         event.Skip()  # Call destroy as regular.
 
     def initialize(self):
@@ -2340,21 +2340,25 @@ class wxMeerK40t(wx.App, Module):
     def on_app_close(self, event):
         if self.device is not None:
             self.device.stop()
+            self.device.thread.join()
         event.Skip()
 
     def on_query_end(self, event):
         if self.device is not None:
             self.device.stop()
+            self.device.thread.join()
         event.Skip()
 
     def on_end_session(self, event):
         if self.device is not None:
             self.device.stop()
+            self.device.thread.join()
         event.Skip()
 
     def on_end_process(self, event):
         if self.device is not None:
             self.device.stop()
+            self.device.thread.join()
         event.Skip()
 
     def OnInit(self):
@@ -2409,7 +2413,7 @@ class wxMeerK40t(wx.App, Module):
         if device.config is not None:
             device.config.DeleteAll()
             device.config = None
-            device.shutdown(None)
+            device.stop()
 
     def update_language(self, lang):
         """

@@ -1452,7 +1452,9 @@ class Device:
             for device_name in devices:
                 device = devices[device_name]
                 channel(_("Device Shutdown Started: '%s'") % str(device))
-                device.shutdown(channel=channel)
+                device.stop()
+                if device.thread is not None:
+                    device.thread.join()
                 channel(_("Device Shutdown Finished: '%s'") % str(device))
         for type_name in list(self.instances):
             if type_name in ('control'):
@@ -1738,6 +1740,9 @@ class Device:
         if channel not in self.watchers:
             self.watchers[channel] = [monitor_function]
         else:
+            for q in self.watchers[channel]:
+                if q is monitor_function:
+                    return  # This is already being watched by that.
             self.watchers[channel].append(monitor_function)
         if channel in self.greet:
             monitor_function(self.greet[channel])
