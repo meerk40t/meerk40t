@@ -22,7 +22,12 @@ class Settings(wx.Frame, Module):
         self.SetSize((412, 183))
 
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
-                                                 choices=["Invert Mouse Wheel Zoom", "Autoclose Shutdown"])
+                                                 choices=[
+                                                     "Invert Mouse Wheel Zoom",
+                                                     "Autoclose Shutdown",
+                                                     "Shutdown Window",
+                                                     "Print Shutdown",
+                                                 ])
 
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),
                                        choices=[_("mm"), _("cm"), _("inch"), _("mils")],
@@ -52,6 +57,8 @@ class Settings(wx.Frame, Module):
 
         self.device.setting(bool, "mouse_zoom_invert", False)
         self.device.setting(bool, "autoclose_shutdown", True)
+        self.device.setting(bool, "window_shutdown", True)
+        self.device.setting(bool, "print_shutdown", False)
         self.device.setting(int, "language", 0)
         self.device.setting(str, "units_name", 'mm')
         self.device.setting(int, "units_marks", 10)
@@ -61,6 +68,10 @@ class Settings(wx.Frame, Module):
             self.checklist_options.Check(0, True)
         if self.device.autoclose_shutdown:
             self.checklist_options.Check(1, True)
+        if self.device.window_shutdown:
+            self.checklist_options.Check(2, True)
+        if self.device.print_shutdown:
+            self.checklist_options.Check(3, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
@@ -95,6 +106,8 @@ class Settings(wx.Frame, Module):
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
         self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
         self.device.autoclose_shutdown = self.checklist_options.IsChecked(1)
+        self.device.window_shutdown = self.checklist_options.IsChecked(2)
+        self.device.print_shutdown = self.checklist_options.IsChecked(3)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()

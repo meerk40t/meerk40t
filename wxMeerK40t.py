@@ -428,7 +428,10 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('interpreter;position', self.update_position)
         device.unlisten('interpreter;mode', self.on_interpreter_mode)
         device.unlisten('bed_size', self.bed_changed)
-        self.device.device_root.open('window', 'Shutdown', None, -1, "")
+        if kernel.window_shutdown:
+            kernel.open('window', 'Shutdown', None, -1, "")
+        if kernel.print_shutdown:
+            kernel.add_watcher('shutdown', print)
         self.device.remove('window', self.name)
         self.device.stop()
         event.Skip()  # Call destroy as regular.
@@ -448,6 +451,8 @@ class MeerK40t(wx.Frame, Module):
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
         kernel.setting(bool, "mouse_zoom_invert", False)
+        kernel.setting(bool, "window_shutdown", True)
+        kernel.setting(bool, "print_shutdown", False)
         device.setting(int, 'fps', 40)
 
         if device is not None:
