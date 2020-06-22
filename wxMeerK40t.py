@@ -2338,27 +2338,23 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_end_process)
 
     def on_app_close(self, event):
-        print("Called App Close")
         if self.device is not None:
-            self.device.shutdown(self.device.channel_open('shutdown'))
+            self.device.stop()
         event.Skip()
 
     def on_query_end(self, event):
-        print("Called QUERY END")
         if self.device is not None:
-            self.device.shutdown(self.device.channel_open('shutdown'))
+            self.device.stop()
         event.Skip()
 
     def on_end_session(self, event):
-        print("Called END_SESSION")
         if self.device is not None:
-            self.device.shutdown(self.device.channel_open('shutdown'))
+            self.device.stop()
         event.Skip()
 
     def on_end_process(self, event):
-        print("Called END PROCESS")
         if self.device is not None:
-            self.device.shutdown(self.device.channel_open('shutdown'))
+            self.device.stop()
         event.Skip()
 
     def OnInit(self):
