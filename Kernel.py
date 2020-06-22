@@ -1453,12 +1453,13 @@ class Device:
             for device_name in devices:
                 device = devices[device_name]
                 channel(_("Device Shutdown Started: '%s'") % str(device))
+                device_thread = device.thread
                 device.stop()
-                if device.thread is not None:
-                    device.thread.join()
+                if device_thread is not None:
+                    device_thread.join()
                 channel(_("Device Shutdown Finished: '%s'") % str(device))
         for type_name in list(self.instances):
-            if type_name in ('control'):
+            if type_name in ('control', 'thread'):
                 continue
             for module_name in list(self.instances[type_name]):
                 obj = self.instances[type_name][module_name]

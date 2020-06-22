@@ -2334,30 +2334,15 @@ class wxMeerK40t(wx.App, Module):
         Module.__init__(self)
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
-        self.Bind(wx.EVT_QUERY_END_SESSION, self.on_query_end)
-        self.Bind(wx.EVT_END_SESSION, self.on_end_session)
-        self.Bind(wx.EVT_END_PROCESS, self.on_end_process)
+        self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
+        self.Bind(wx.EVT_END_SESSION, self.on_app_close)
+        self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
 
     def on_app_close(self, event):
         if self.device is not None:
+            device_thread = self.device.thread
             self.device.stop()
-            self.device.thread.join()
-
-    def on_query_end(self, event):
-        # MAC DOCK QUIT.
-        if self.device is not None:
-            self.device.stop()
-            self.device.thread.join()
-
-    def on_end_session(self, event):
-        if self.device is not None:
-            self.device.stop()
-            self.device.thread.join()
-
-    def on_end_process(self, event):
-        if self.device is not None:
-            self.device.stop()
-            self.device.thread.join()
+            device_thread.join()
 
     def OnInit(self):
         return True
