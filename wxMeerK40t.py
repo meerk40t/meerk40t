@@ -2327,6 +2327,15 @@ class wxMeerK40t(wx.App, Module):
         wx.App.__init__(self, 0)
         Module.__init__(self)
         self.locale = None
+        self.Bind(wx.EVT_QUERY_END_SESSION, self.on_query_end)
+        self.Bind(wx.EVT_END_SESSION, self.on_end_session)
+
+    def on_query_end(self, event):
+        if self.device is not None:
+            self.device.shutdown()
+
+    def on_end_session(self, event):
+        self.OnExit()
 
     def OnInit(self):
         return True
