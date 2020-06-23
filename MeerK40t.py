@@ -52,7 +52,8 @@ args = parser.parse_args(sys.argv[1:])
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
     kernel.register_module('wxMeerK40t', wxMeerK40t)
-    meerk40tgui = kernel.open('module', 'wxMeerK40t')
+    meerk40tgui = kernel.open('module', 'wxMeerK40t', device=kernel)
+
 
 
 kernel.register('module', 'Console', Console)

@@ -6,7 +6,6 @@
 import sys
 import traceback
 
-import wx
 import wx.ribbon as RB
 
 from About import About
@@ -111,7 +110,6 @@ ID_MENU_PREVENT_CACHING = idinc.new()
 ID_MENU_HIDE_IMAGE = idinc.new()
 ID_MENU_HIDE_PATH = idinc.new()
 ID_MENU_HIDE_TEXT = idinc.new()
-
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
@@ -389,6 +387,7 @@ class MeerK40t(wx.Frame, Module):
                 m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
                 if i == self.device.device_root.language:
                     m.Check(True)
+
                 def language_update(q):
                     return lambda e: self.device.device_root.app.update_language(q)
 
@@ -494,15 +493,18 @@ class MeerK40t(wx.Frame, Module):
 
         device.control_instance_add("Transform", self.open_transform_dialog)
         device.control_instance_add("Path", self.open_path_dialog)
-        device.control_instance_add("Fill",self.open_fill_dialog)
+        device.control_instance_add("Fill", self.open_fill_dialog)
         device.control_instance_add("Stroke", self.open_stroke_dialog)
         device.control_instance_add("FPS", self.open_fps_dialog)
         device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
+
         def test_crash_in_thread():
             def foo():
                 a = 1 / 0
+
             device.threaded(foo)
+
         device.control_instance_add("Crash Thread", test_crash_in_thread)
 
         self.SetSize((device.window_width, device.window_height))
@@ -947,7 +949,6 @@ class MeerK40t(wx.Frame, Module):
             self.device.draw_mode ^= bits
             self.device.signal('draw_mode', self.device.draw_mode)
             self.request_refresh()
-
 
         return toggle
 
@@ -2037,6 +2038,7 @@ class RootNode(list):
                     del op[index]
             self.elements.set_selected(None)
             self.device.signal('rebuild_tree', 0)
+
         return specific
 
     def menu_clear_all_operation(self, node):
@@ -2324,9 +2326,10 @@ class wxMeerK40t(wx.App, Module):
     underlying code runs. It should just be a series of frames held together with the kernel.
     """
 
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, device=None):
+        self.init_device = device
         wx.App.__init__(self, 0)
+        Module.__init__(self)
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
@@ -2338,7 +2341,6 @@ class wxMeerK40t(wx.App, Module):
     def on_app_close(self, event):
         try:
             if self.device is not None:
-                device_thread = self.device.thread
                 self.device.stop()
         except AttributeError:
             pass
@@ -2373,25 +2375,17 @@ class wxMeerK40t(wx.App, Module):
         pass
 
     def MacOpenFile(self, filename):
-        dlg = wx.MessageDialog(None, _("Called MacOpenFile"),
-                               _(filename), wx.OK | wx.ICON_WARNING)
-        result = dlg.ShowModal()
-        dlg.Destroy()
         try:
-            if self.device is not None:
-                self.device.load(os.path.realpath(filename))
+            if self.init_device is not None:
+                self.init_device.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
     def MacOpenFiles(self, filenames):
-        dlg = wx.MessageDialog(None, _("Called MacOpenFiles"),
-                               _(str(filenames)), wx.OK | wx.ICON_WARNING)
-        result = dlg.ShowModal()
-        dlg.Destroy()
         try:
-            if self.device is not None:
+            if self.init_device is not None:
                 for filename in filenames:
-                    self.device.load(os.path.realpath(filename))
+                    self.init_device.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
