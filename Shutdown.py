@@ -25,6 +25,7 @@ class Shutdown(wx.Frame, Module):
         # end wxGlade
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.is_closed = False
 
     def initialize(self):
         self.device.close('window', self.name)
@@ -33,8 +34,9 @@ class Shutdown(wx.Frame, Module):
         self.device.device_root.add_watcher('shutdown', self.update_text)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
+        self.is_closed = True
         self.device.remove_watcher('shutdown', self.update_text)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def detach(self, device, channel=None):
@@ -47,14 +49,18 @@ class Shutdown(wx.Frame, Module):
             Module.detach(self, device, channel)
 
     def shutdown(self,  channel):
+        self.is_closed = True
+        self.device.remove_watcher('shutdown', self.update_text)
         self.Close()
 
     def update_text(self, text):
-        wx.CallAfter(self.update_text_gui, text + '\n')
+        if not self.is_closed:
+            wx.CallAfter(self.update_text_gui, text + '\n')
 
     def update_text_gui(self, text):
         try:
-            self.text_shutdown.AppendText(text)
+            if not self.is_closed:
+                self.text_shutdown.AppendText(text)
         except RuntimeError:
             pass
 
