@@ -147,10 +147,8 @@ class LaserRender:
         except AttributeError:
             matrix = Matrix()
         if not hasattr(element, 'cache') or element.cache is None:
-            pass
-        # TODO: Restore these lines.
-        cache = self.make_path(gc, element)
-        element.cache = cache
+            cache = self.make_path(gc, element)
+            element.cache = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, element)
@@ -159,7 +157,6 @@ class LaserRender:
             gc.FillPath(element.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
             gc.StrokePath(element.cache)
-        del element.cache # TODO: Remove these lines.
         gc.PopState()
 
     def draw_text(self, element, gc, draw_mode):
