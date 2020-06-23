@@ -30,7 +30,7 @@ kernel.open('module', 'Signaler')
 kernel.open('module', 'Elemental')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('input', type=argparse.FileType('r'), help='input file')
+parser.add_argument('input', nargs='?', type=argparse.FileType('r'), help='input file')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-c', '--console', action='store_true', help='start as console')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
