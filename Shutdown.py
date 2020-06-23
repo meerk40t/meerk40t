@@ -35,8 +35,8 @@ class Shutdown(wx.Frame, Module):
 
     def on_close(self, event):
         self.is_closed = True
-        self.device.remove_watcher('shutdown', self.update_text)
         self.device.remove('window', self.name)
+        self.device.remove_watcher('shutdown', self.update_text)
         event.Skip()  # Call destroy as regular.
 
     def detach(self, device, channel=None):
@@ -50,7 +50,6 @@ class Shutdown(wx.Frame, Module):
 
     def shutdown(self,  channel):
         self.is_closed = True
-        self.device.remove_watcher('shutdown', self.update_text)
         self.Close()
 
     def update_text(self, text):
