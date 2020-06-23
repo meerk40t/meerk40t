@@ -89,14 +89,9 @@ ID_SPOOLER = idinc.new()
 ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
 
-ID_MENU_NEW = idinc.new()
-ID_MENU_OPEN_PROJECT = idinc.new()
 ID_MENU_RECENT_PROJECT = idinc.new()
 
 ID_MENU_IMPORT = idinc.new()
-ID_MENU_SAVE = idinc.new()
-ID_MENU_SAVE_AS = idinc.new()
-ID_MENU_EXIT = idinc.new()
 ID_MENU_ZOOM_OUT = idinc.new()
 ID_MENU_ZOOM_IN = idinc.new()
 ID_MENU_ZOOM_SIZE = idinc.new()
@@ -120,10 +115,8 @@ ID_MENU_HIDE_TEXT = idinc.new()
 
 
 ID_MENU_ALIGNMENT = idinc.new()
-ID_MENU_ABOUT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_DEVICE_MANAGER = idinc.new()
-ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_SETTINGS = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
@@ -135,7 +128,6 @@ ID_MENU_SPOOLER = idinc.new()
 ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
 
-ID_MENU_WEBPAGE = idinc.new()
 ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
@@ -192,14 +184,16 @@ class MeerK40t(wx.Frame, Module):
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
         # NOTE: New Project
-        wxglade_tmp_menu.Append(ID_MENU_NEW, _("New"), "")
-        wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, _("Open Project"), "")
+
+        wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
+        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_SAVE, _("Save"), "")
-        wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, _("Save As"), "")
+
+        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save"), "")
+        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_EXIT, _("Exit"), "")
+        wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
@@ -226,7 +220,7 @@ class MeerK40t(wx.Frame, Module):
         self.main_menubar.Append(wxglade_tmp_menu, _("View"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, _("Preferences"), "")
+        wxglade_tmp_menu.Append(wx.ID_PREFERENCES, _("Preferences"), "")
         wxglade_tmp_menu.Append(ID_MENU_SETTINGS, _("Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
@@ -243,20 +237,20 @@ class MeerK40t(wx.Frame, Module):
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(ID_MENU_WEBPAGE, _("Webpage"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ABOUT, _("About"), "")
+        wxglade_tmp_menu.Append(wx.ID_HELP, _("Webpage"), "")
+        wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
 
-        self.Bind(wx.EVT_MENU, self.on_click_new, id=ID_MENU_NEW)
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_OPEN_PROJECT)
+        self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
-        self.Bind(wx.EVT_MENU, self.on_click_save, id=ID_MENU_SAVE)
-        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=ID_MENU_SAVE_AS)
+        self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
 
-        self.Bind(wx.EVT_MENU, self.on_click_exit, id=ID_MENU_EXIT)
+        self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
@@ -277,7 +271,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_INVERT), id=ID_MENU_SCREEN_INVERT)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_FLIPXY), id=ID_MENU_SCREEN_FLIPXY)
 
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", None, -1, ""), id=ID_MENU_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", None, -1, ""), id=wx.ID_ABOUT)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
@@ -286,7 +280,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", None, -1, ""),
                   id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", None, -1, ""),
-                  id=ID_MENU_PREFERENCES)
+                  id=wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", None, -1, "", ),
                   id=ID_MENU_SETTINGS)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", None, -1, "", ), id=ID_MENU_ROTARY)
@@ -299,7 +293,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "", )
                   .set_operations(self.device.device_root.elements.ops()), id=ID_MENU_JOB)
 
-        self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
+        self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
@@ -2337,6 +2331,8 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
         self.Bind(wx.EVT_END_SESSION, self.on_app_close)
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
+        # This catches events when the app is asked to activate by some other process
+        self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
 
     def on_app_close(self, event):
         if self.device is not None:
@@ -2346,6 +2342,33 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         return True
+
+    def BringWindowToFront(self):
+        try:  # it's possible for this event to come when the frame is closed
+            self.GetTopWindow().Raise()
+        except:
+            pass
+
+    def OnActivate(self, event):
+        # if this is an activate event, rather than something else, like iconize.
+        if event.GetActive():
+            self.BringWindowToFront()
+        event.Skip()
+
+    def MacReopenApp(self):
+        """Called when the doc icon is clicked, and ???"""
+        self.BringWindowToFront()
+
+    def MacNewFile(self):
+        if self.device is not None:
+            self.device.elements.clear_all()
+
+    def MacPrintFile(self, file_path):
+        pass
+
+    def MacOpenFile(self, filename):
+        if self.device is not None:
+            self.device.load(os.path.realpath(filename))
 
     @staticmethod
     def sub_register(device):

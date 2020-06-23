@@ -36,7 +36,6 @@ parser.add_argument('-c', '--console', action='store_true', help='start as conso
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
 parser.add_argument('-p', '--path', type=str, help='add SVG Path command')
 parser.add_argument('-t', '--transform', type=str, help="adds SVG Transform command")
-# parser.add_argument('-i', '--input', type=argparse.FileType('r'), help='input file name')
 parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='output file name')
 parser.add_argument('-v', '--verbose', action='store_true', help='display verbose debugging')
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
