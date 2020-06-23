@@ -98,6 +98,7 @@ else:
 if args.verbose:
     # Debug the device.
     device.execute('Debug Device')
+    kernel.execute('Debug Device')
 
 if args.input is not None:
     # load the given filename.

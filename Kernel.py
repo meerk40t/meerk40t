@@ -1435,6 +1435,7 @@ class Device:
         """
         if self.thread is None or not self.thread.is_alive():
             self.thread = self.threaded(self.run, 'Device%d' % int(self.uid))
+        self.control_instance_add("Debug Device", self._start_debugging)
 
     def shutdown(self, channel=None):
         """

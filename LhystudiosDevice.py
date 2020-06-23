@@ -96,8 +96,6 @@ class LhystudiosDevice(Device):
 
         self.signal('bed_size', (self.bed_width, self.bed_height))
 
-        self.control_instance_add("Debug Device", self._start_debugging)
-
         pipe = self.open('module', "LhystudioController", instance_name='pipe')
         self.open('module', "LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
         self.open('module', "Spooler", instance_name='spooler')
