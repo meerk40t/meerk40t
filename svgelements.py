@@ -4756,7 +4756,7 @@ class Path(Shape, MutableSequence):
         self._validate_subpath(index)
 
     def reverse(self):
-        if len(self._segments) == 0:  # M 1,0 L 22,7 Q 17,17 91,2
+        if len(self._segments) == 0:
             return
         prepoint = self._segments[0].start
         self._segments[0].start = None
@@ -5899,18 +5899,18 @@ class Subpath:
     def _reverse_segments(self, start, end):
         """Reverses segments between the given indexes in the subpath space."""
         segments = self._path._segments  # must avoid path validation.
-        start = self.index_to_path_index(start)
-        end = self.index_to_path_index(end)
-        while start <= end:
-            start_segment = segments[start]
-            end_segment = segments[end]
+        s = self.index_to_path_index(start)
+        e = self.index_to_path_index(end)
+        while s <= e:
+            start_segment = segments[s]
+            end_segment = segments[e]
             start_segment.reverse()
             if start_segment is not end_segment:
                 end_segment.reverse()
-                segments[start] = end_segment
-                segments[end] = start_segment
-            start += 1
-            end -= 1
+                segments[s] = end_segment
+                segments[e] = start_segment
+            s += 1
+            e -= 1
         start = self.index_to_path_index(start)
         end = self.index_to_path_index(end)
         self._path._validate_connection(start - 1)

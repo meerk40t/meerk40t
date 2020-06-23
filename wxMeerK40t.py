@@ -2372,20 +2372,20 @@ class wxMeerK40t(wx.App, Module):
     def MacPrintFile(self, file_path):
         pass
 
-    def MacOpenFile(self, filename):
-        try:
-            if self.device is not None:
-                self.device.load(os.path.realpath(filename))
-        except AttributeError:
-            pass
-
-    def MacOpenFiles(self, filenames):
-        try:
-            if self.device is not None:
-                for filename in filenames:
-                    self.device.load(os.path.realpath(filename))
-        except AttributeError:
-            pass
+    # def MacOpenFile(self, filename):
+    #     try:
+    #         if self.device is not None:
+    #             self.device.load(os.path.realpath(filename))
+    #     except AttributeError:
+    #         pass
+    #
+    # def MacOpenFiles(self, filenames):
+    #     try:
+    #         if self.device is not None:
+    #             for filename in filenames:
+    #                 self.device.load(os.path.realpath(filename))
+    #     except AttributeError:
+    #         pass
 
     @staticmethod
     def sub_register(device):
