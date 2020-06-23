@@ -2373,6 +2373,10 @@ class wxMeerK40t(wx.App, Module):
         pass
 
     def MacOpenFile(self, filename):
+        dlg = wx.MessageDialog(None, _("Called MacOpenFile"),
+                               _(filename), wx.OK | wx.ICON_WARNING)
+        result = dlg.ShowModal()
+        dlg.Destroy()
         try:
             if self.device is not None:
                 self.device.load(os.path.realpath(filename))
@@ -2380,6 +2384,10 @@ class wxMeerK40t(wx.App, Module):
             pass
 
     def MacOpenFiles(self, filenames):
+        dlg = wx.MessageDialog(None, _("Called MacOpenFiles"),
+                               _(str(filenames)), wx.OK | wx.ICON_WARNING)
+        result = dlg.ShowModal()
+        dlg.Destroy()
         try:
             if self.device is not None:
                 for filename in filenames:
