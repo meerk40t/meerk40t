@@ -2324,8 +2324,8 @@ class wxMeerK40t(wx.App, Module):
     """
 
     def __init__(self):
-        wx.App.__init__(self, 0)
         Module.__init__(self)
+        wx.App.__init__(self, 0)
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
@@ -2376,6 +2376,14 @@ class wxMeerK40t(wx.App, Module):
         try:
             if self.device is not None:
                 self.device.load(os.path.realpath(filename))
+        except AttributeError:
+            pass
+
+    def MacOpenFiles(self, filenames):
+        try:
+            if self.device is not None:
+                for filename in filenames:
+                    self.device.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
