@@ -2335,10 +2335,13 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
 
     def on_app_close(self, event):
-        if self.device is not None:
-            device_thread = self.device.thread
-            self.device.stop()
-            device_thread.join()
+        try:
+            if self.device is not None:
+                device_thread = self.device.thread
+                self.device.stop()
+                device_thread.join()
+        except AttributeError:
+            pass
 
     def OnInit(self):
         return True
@@ -2360,15 +2363,21 @@ class wxMeerK40t(wx.App, Module):
         self.BringWindowToFront()
 
     def MacNewFile(self):
-        if self.device is not None:
-            self.device.elements.clear_all()
+        try:
+            if self.device is not None:
+                self.device.elements.clear_all()
+        except AttributeError:
+            pass
 
     def MacPrintFile(self, file_path):
         pass
 
     def MacOpenFile(self, filename):
-        if self.device is not None:
-            self.device.load(os.path.realpath(filename))
+        try:
+            if self.device is not None:
+                self.device.load(os.path.realpath(filename))
+        except AttributeError:
+            pass
 
     @staticmethod
     def sub_register(device):
