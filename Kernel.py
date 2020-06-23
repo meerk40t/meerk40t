@@ -1,36 +1,42 @@
 import time
-from threading import *
+from threading import Thread, Lock
 
 from LaserOperation import *
 from svgelements import Path, SVGText
 
-THREAD_STATE_UNKNOWN = -1
-THREAD_STATE_UNSTARTED = 0
-THREAD_STATE_STARTED = 1
-THREAD_STATE_PAUSED = 2
-THREAD_STATE_FINISHED = 3
-THREAD_STATE_ABORT = 10
+STATE_UNKNOWN = -1
+STATE_INITIALIZE = 0
+STATE_IDLE = 1
+STATE_ACTIVE = 2
+STATE_BUSY = 3
+STATE_PAUSE = 4
+STATE_END = 5
+STATE_TERMINATE = 10
 
-SHUTDOWN_BEGIN = 0
-SHUTDOWN_FLUSH = 1
-SHUTDOWN_WINDOW = 2
-SHUTDOWN_WINDOW_ERROR = -1
-SHUTDOWN_MODULE = 3
-SHUTDOWN_MODULE_ERROR = -2
-SHUTDOWN_THREAD = 4
-SHUTDOWN_THREAD_ERROR = -4
-SHUTDOWN_THREAD_ALIVE = 5
-SHUTDOWN_THREAD_FINISHED = 6
-SHUTDOWN_LISTENER_ERROR = -10
-SHUTDOWN_FINISH = 100
+INTERPRETER_STATE_RAPID = 0
+INTERPRETER_STATE_FINISH = 1
+INTERPRETER_STATE_PROGRAM = 2
 
 
-class KernelJob:
-    def __init__(self, scheduler, process, args, interval=1.0, times=None):
-        self.scheduler = scheduler
+class Module:
+    """
+    Modules are a generic lifecycle object. When attached they are initialized to that device. When that device
+    is shutdown, the shutdown() event is called. This permits the knowing registering and unregistering of
+    other kernel objects. and the attachment of the module to a device.
+
+    Registered Modules are notified of the activation and deactivation of their device.
+
+    Modules can also be scheduled in the kernel to run at a particular time and a given number of times.
+    """
+
+    def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
+        self.name = name
+        self.device = device
+
         self.interval = interval
-        self.last_run = time.time()
-        self.next_run = self.last_run + self.interval
+        self.last_run = None
+        self.next_run = time.time() + self.interval
+
         self.process = process
         self.args = args
         self.times = times
@@ -43,453 +49,474 @@ class KernelJob:
 
     def cancel(self):
         self.times = -1
-        self.scheduler.jobs.remove(self)
 
-    def run(self):
-        """
-        Scheduler Job: updates the values for next_run and times. Removing if necessary.
-        Executes the process requested in the SchedulerThread.
+    def schedule(self):
+        if self not in self.device.jobs:
+            self.device.jobs.append(self)
 
-        :return:
-        """
-        if self.paused:
-            return
-        self.next_run = None
+    def unschedule(self):
+        if self in self.device.jobs:
+            self.device.jobs.remove(self)
 
-        if self.times is not None:
-            self.times = self.times - 1
-            if self.times <= 0:
-                self.scheduler.jobs.remove(self)
-            if self.times < 0:
-                return
-        if isinstance(self.args, tuple):
-            self.process(*self.args)
-        else:
-            self.process(self.args)
-        self.last_run = time.time()
-        self.next_run = self.last_run + self.interval
-
-
-class Scheduler(Thread):
-    def __init__(self, kernel):
-        Thread.__init__(self, name='Meerk40t-Scheduler')
-        self.daemon = True
-        self.kernel = kernel
-        self.state = THREAD_STATE_UNSTARTED
-        self.jobs = []
-
-    def add_job(self, run, args=(), interval=1.0, times=None):
-        """
-        Adds a job to the scheduler.
-
-        :param run: function to run
-        :param args: arguments to give to that function.
-        :param interval: in seconds, how often should the job be run.
-        :param times: limit on number of executions.
-        :return: Reference to the job added.
-        """
-        job = KernelJob(self, run, args, interval, times)
-        self.jobs.append(job)
-        return job
-
-    def run(self):
-        """
-        Scheduler main loop.
-        Check the Scheduler thread state, and whether it should abort or pause.
-        Check each job, and if that job is scheduled to run. Executes that job.
-        :return:
-        """
-        self.state = THREAD_STATE_STARTED
-        while self.state != THREAD_STATE_FINISHED:
-            time.sleep(0.005)  # 200 ticks a second.
-            if self.state == THREAD_STATE_ABORT:
-                break
-            while self.state == THREAD_STATE_PAUSED:
-                # The scheduler is paused.
-                time.sleep(1.0)
-            for job in self.jobs:
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job.run()
-        self.state = THREAD_STATE_FINISHED
-        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
-        self.kernel.shutdown()
-
-    def state(self):
-        return self.state
-
-    def resume(self):
-        self.state = THREAD_STATE_STARTED
-
-    def pause(self):
-        self.state = THREAD_STATE_PAUSED
-
-    def stop(self):
-        self.state = THREAD_STATE_ABORT
-
-
-class Module:
-    def __init__(self):
-        self.kernel = None
-        self.name = None
-
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
+    def attach(self, device, name=None):
+        self.device = device
         self.name = name
+        self.initialize()
 
-    def shutdown(self, kernel):
-        self.kernel = None
-        if self.name is not None:
-            del kernel.modules[self.name]
+    def detach(self, device, channel=None):
+        try:
+            if self.name is not None and self.name in device.instances['module']:
+                del device.instances['module'][self.name]
+        except KeyError:
+            pass
+        self.shutdown(channel)
+        self.device = None
 
+    def initialize(self):
+        pass
 
-class Backend:
-    def __init__(self, kernel=None, uid=None):
-        self.kernel = kernel
-        self.uid = uid
-
-    def create_device(self, uid):
+    def shutdown(self, channel):
         pass
 
 
-class Device:
-    def __init__(self, kernel=None, uid=None, spooler=None, interpreter=None, pipe=None):
-        self.kernel = kernel
-        self.uid = uid
-        self.spooler = spooler
-        self.interpreter = interpreter
-        self.pipe = pipe
-        self._device_log = ''
-        self.current_x = 0
-        self.current_y = 0
-        self.state = -1
-        self.location = ''
-        self.hold_condition = lambda e: False
-
-    def _start_debugging(self):
-        import functools
-        import datetime
-        import types
-        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-        debug_file = open(filename, "a")
-        debug_file.write("\n\n\n")
-
-        def debug(func, obj):
-            @functools.wraps(func)
-            def wrapper_debug(*args, **kwargs):
-                args_repr = [repr(a) for a in args]
-
-                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
-                signature = ", ".join(args_repr + kwargs_repr)
-                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
-                debug_file.write(start + '\n')
-                print(start)
-                t = time.time()
-                value = func(*args, **kwargs)
-                t = time.time() - t
-                finish = "    %s returned %s after %fms" % (func.__name__, value, t*1000)
-                print(finish)
-                debug_file.write(finish + '\n')
-                debug_file.flush()
-                return value
-
-            return wrapper_debug
-
-        for obj in (self, self.spooler, self.pipe, self.interpreter):
-            for attr in dir(obj):
-                if attr.startswith('_'):
-                    continue
-                fn = getattr(obj, attr)
-                if not isinstance(fn, types.FunctionType) and \
-                        not isinstance(fn, types.MethodType):
-                    continue
-                setattr(obj, attr, debug(fn, obj))
-
-    def hold(self):
-        if self.spooler.thread.state == THREAD_STATE_ABORT:
-            raise InterruptedError
-        while self.hold_condition(0):
-            if self.spooler.thread.state == THREAD_STATE_ABORT:
-                raise InterruptedError
-            time.sleep(0.1)
-
-    def close(self):
-        self.flush()
-
-    def send_job(self, job):
-        self.spooler.send_job(job)
-
-    def execute(self, control_name, *args):
-        self.kernel.controls[self.uid + control_name](*args)
-
-    def signal(self, code, *message):
-        self.kernel.signal(self.uid + ';' + code, *message)
-
-    def log(self, message):
-        self._device_log += message
-        self.signal('pipe;device_log', message)
-
-    def setting(self, setting_type, setting_name, default=None):
-        """
-        Registers a setting to be used on this device. The functionality is
-        similar to that of Kernel.setting except that it registers at the device level.
-        """
-        setting_uid_name = self.uid + setting_name
-        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
-            return
-        if not setting_name.startswith('_') and self.kernel.config is not None:
-            load_value = self.kernel[setting_type, setting_uid_name, default]
-        else:
-            load_value = default
-        setattr(self, setting_name, load_value)
-        return load_value
-
-    def flush(self):
-        for attr in dir(self):
-            if attr.startswith('_'):
-                continue
-            if attr == 'uid':
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            uid_attr = self.uid + attr
-            if isinstance(value, (int, bool, str, float)):
-                self.kernel[uid_attr] = value
-
-    def get(self, key):
-        key = self.uid + key
-        if hasattr(self.kernel, key):
-            return getattr(self.kernel, key)
-
-    def listen(self, signal, function):
-        self.kernel.listen(self.uid + ';' + signal, function)
-
-    def unlisten(self, signal, function):
-        self.kernel.unlisten(self.uid + ';' + signal, function)
-
-    def add_thread(self, name, thread):
-        self.kernel.add_thread(self.uid + name, thread)
-
-    def add_control(self, name, control):
-        self.kernel.add_control(self.uid + name, control)
-
-
-class SpoolerThread(Thread):
+class Spooler(Module):
     """
-    SpoolerThreads perform the spooler functions in an async manner.
-    When the spooler is empty the thread ends.
+    The spooler module stores spoolable lasercode events, as a synchronous queue.
 
-    Expects spooler has commands:
-    peek(), pop(), hold(), execute(), thread_state_update(int),
+    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown device.
 
+    * Peek()
+    * Pop()
+    * Send_Job()
+    * Clear_Queue()
     """
 
-    def __init__(self, spooler):
-        Thread.__init__(self, name='MeerK40t-Spooler')
-        self.spooler = spooler
-        self.state = None
-        self.set_state(THREAD_STATE_UNSTARTED)
-
-    def set_state(self, state):
-        if self.state != state:
-            self.state = state
-            self.spooler.thread_state_update()
-
-    def start_element_producer(self):
-        if self.state != THREAD_STATE_ABORT:
-            self.set_state(THREAD_STATE_STARTED)
-            self.start()
-
-    def pause(self):
-        self.set_state(THREAD_STATE_PAUSED)
-
-    def resume(self):
-        self.set_state(THREAD_STATE_STARTED)
-
-    def abort(self, val):
-        if val != 0:
-            self.set_state(THREAD_STATE_ABORT)
-
-    def stop(self):
-        self.abort(1)
-
-    def run(self):
-        """
-        Main loop for the Spooler Thread.
-
-        This runs the spooled laser commands sent do the device and turns those commands whatever the interpreter needs
-        to send to the pipe. This code runs through all spooled objects which are either generators or code with a
-        'generate' function that produces a generator. And the generators, in turn, yield a series of laser commands.
-
-        The spooler automatically exits when there is no data left to spool.
-        The spooler holds based on the device hold() commands, which should block the thread as needed.
-        The call to hold() will either instantly return, decide to hold, or throw an InterruptError.
-        The error will be caught and cause the thread to terminate.
-        """
-        command_index = 0
-        self.set_state(THREAD_STATE_STARTED)
-        try:
-            self.spooler.device.hold()
-            while True:
-                element = self.spooler.peek()
-                if element is None:
-                    break  # Nothing left in spooler.
-                self.spooler.device.hold()
-                try:
-                    gen = element.generate
-                except AttributeError:
-                    gen = element
-                for e in gen():
-                    if isinstance(e, (tuple, list)):
-                        command = e[0]
-                        if len(e) >= 2:
-                            values = e[1:]
-                        else:
-                            values = [None]
-                    else:
-                        command = e
-                        values = [None]
-                    command_index += 1
-                    if self.state == THREAD_STATE_ABORT:
-                        break
-                    self.spooler.device.hold()
-                    self.spooler.execute(command, *values)
-                self.spooler.pop()
-        except InterruptedError:
-            pass
-        if self.state == THREAD_STATE_ABORT:
-            return
-        self.set_state(THREAD_STATE_FINISHED)
-
-
-class Spooler:
-    """
-    Given spoolable objects it uses an interpreter to convert these to code.
-    The code is then written to a pipe.
-    These operations occur in an async manner with a registered SpoolerThread.
-    """
-
-    def __init__(self, device):
-        self.device = device
-
+    def __init__(self):
+        Module.__init__(self)
         self.queue_lock = Lock()
-        self.queue = []
-        self.thread = None
-        self.reset_thread()
+        self._queue = []
 
     def __repr__(self):
         return "Spooler()"
 
-    def thread_state_update(self):
-        if self.thread is None:
-            self.device.signal('spooler;thread', THREAD_STATE_UNSTARTED)
-        else:
-            self.device.signal('spooler;thread', self.thread.state)
-
-    def execute(self, command, *values):
-        self.device.hold()
-        self.device.interpreter.command(command, *values)
-
-    def realtime(self, command, *values):
-        """Realtimes are sent directly to the interpreter without spooling."""
-        if command == COMMAND_PAUSE:
-            self.thread.pause()
-        elif command == COMMAND_RESUME:
-            self.thread.resume()
-        elif command == COMMAND_RESET:
-            self.thread.stop()
-            self.clear_queue()
-        elif command == COMMAND_CLOSE:
-            self.thread.stop()
-        try:
-            return self.device.interpreter.realtime_command(command, values)
-        except NotImplementedError:
-            pass
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.spooler = self
+        self.initialize()
 
     def peek(self):
-        if len(self.queue) == 0:
+        if len(self._queue) == 0:
             return None
-        return self.queue[0]
+        return self._queue[0]
 
     def pop(self):
-        if len(self.queue) == 0:
+        if len(self._queue) == 0:
             return None
         self.queue_lock.acquire(True)
-        queue_head = self.queue[0]
-        del self.queue[0]
+        queue_head = self._queue[0]
+        del self._queue[0]
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self.queue))
+        self.device.signal('spooler;queue', len(self._queue))
         return queue_head
 
-    def send_job(self, element):
+    def job(self, *job):
+        """
+        Send a single job event with parameters as needed.
+
+        The job can be a single command with (COMMAND_MOVE 20 20) or without parameters (COMMAND_HOME), or a generator
+        which can yield many lasercode commands.
+
+        :param job: job to send to the spooler.
+        :return:
+        """
         self.queue_lock.acquire(True)
-        if isinstance(element, (list, tuple)):
-            self.queue += element
+
+        if len(job) == 1:
+            self._queue.extend(job)
         else:
-            self.queue.append(element)
+            self._queue.append(job)
         self.queue_lock.release()
-        self.start_queue_consumer()
-        self.device.signal("spooler;queue", len(self.queue))
+        self.device.signal('spooler;queue', len(self._queue))
+
+    def jobs(self, jobs):
+        """
+        Send several jobs generators to be appended to the end of the queue.
+
+        The jobs parameter must be suitable to be .extended to the end of the queue list.
+        :param jobs: jobs to extend
+        :return:
+        """
+        self.queue_lock.acquire(True)
+        if isinstance(jobs, (list, tuple)):
+            self._queue.extend(jobs)
+        else:
+            self._queue.append(jobs)
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
+
+    def job_if_idle(self, element):
+        if len(self._queue) == 0:
+            self.job(element)
+            return True
+        else:
+            return False
 
     def clear_queue(self):
         self.queue_lock.acquire(True)
-        self.queue = []
+        self._queue = []
         self.queue_lock.release()
-        self.device.signal("spooler;queue", len(self.queue))
+        self.device.signal('spooler;queue', len(self._queue))
 
-    def reset_thread(self):
-        self.thread = SpoolerThread(self)
-        self.thread_state_update()
-
-    def start_queue_consumer(self):
-        if self.thread.state == THREAD_STATE_ABORT:
-            # We cannot reset an aborted thread without specifically calling reset.
-            return
-        if self.thread.state == THREAD_STATE_FINISHED:
-            self.reset_thread()
-        if self.thread.state == THREAD_STATE_UNSTARTED:
-            self.thread.state = THREAD_STATE_STARTED
-            self.thread.start()
+    def remove(self, element):
+        self.queue_lock.acquire(True)
+        self._queue.remove(element)
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
 
 
-class Interpreter:
+class Interpreter(Module):
     """
-    An Interpreter takes spoolable commands and turns those commands into states and code in a language
+    An Interpreter Module takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
+
+    Interpreters register themselves as device.interpreter objects.
+    Interpreters expect the device.spooler object exists to provide spooled commands as needed.
+
+    These modules function to interpret hardware specific backend information from the reusable spoolers and server
+    objects that may also be common within devices.
     """
 
-    def __init__(self, device=None):
-        self.device = device
+    def __init__(self, pipe=None):
+        Module.__init__(self)
+        self.process_item = None
+        self.spooled_item = None
+        self.process = self.process_spool
+        self.interval = 0.01
+        self.pipe = pipe
+        self.extra_hold = None
 
-    def __len__(self):
-        if self.device.pipe is None:
-            return 0
+        self.state = INTERPRETER_STATE_RAPID
+        self.pulse_total = 0.0
+        self.pulse_modulation = True
+        self.properties = 0
+        self.is_relative = False
+        self.laser = False
+        self.laser_enabled = True
+        self.raster_step = 0
+        self.overscan = 20
+        self.speed = 30
+        self.power = 1000.0
+        self.d_ratio = None  # None means to use speedcode default.
+        self.acceleration = None  # None means to use speedcode default
+
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.interpreter = self
+        self.device.setting(int, 'current_x', 0)
+        self.device.setting(int, 'current_y', 0)
+        self.initialize()
+        self.schedule()
+
+    def process_spool(self, *args):
+        """
+        Get next spooled element if needed.
+        Calls execute.
+
+        :param args:
+        :return:
+        """
+        if self.spooled_item is None:
+            self.fetch_next_item()
+        if self.spooled_item is not None:
+            self.execute()
+
+    def execute(self):
+        """
+        Default process to run entire command as a single call.
+        """
+        if self.hold():
+            return
+        if self.spooled_item is None:
+            return
+        if isinstance(self.spooled_item, tuple):
+            self.command(self.spooled_item[0], *self.spooled_item[1:])
+            self.spooled_item = None
+            return
+        try:
+            e = next(self.spooled_item)
+            if isinstance(e, int):
+                self.command(e)
+            else:
+                self.command(e[0], *e[1:])
+        except StopIteration:
+            self.spooled_item = None
+
+    def fetch_next_item(self):
+        element = self.device.spooler.peek()
+        if element is None:
+            return  # Spooler is empty.
+
+        self.device.spooler.pop()
+        if isinstance(element, int):
+            self.spooled_item = (element,)
+        elif isinstance(element, tuple):
+            self.spooled_item = element
         else:
-            return len(self.device.pipe)
+            try:
+                self.spooled_item = element.generate()
+            except AttributeError:
+                self.spooled_item = element()
 
-    def command(self, command, values=None):
+    def command(self, command, *values):
         """Commands are middle language LaserCommandConstants there values are given."""
-        return NotImplementedError
+        try:
+            if command == COMMAND_LASER_OFF:
+                self.laser_off()
+            elif command == COMMAND_LASER_ON:
+                self.laser_on()
+            elif command == COMMAND_LASER_DISABLE:
+                self.laser_disable()
+            elif command == COMMAND_LASER_ENABLE:
+                self.laser_enable()
+            elif command == COMMAND_CUT:
+                x, y = values
+                self.cut(x, y)
+            elif command == COMMAND_MOVE:
+                x, y = values
+                self.move(x, y)
+            elif command == COMMAND_HOME:
+                self.home()
+            elif command == COMMAND_LOCK:
+                self.lock_rail()
+            elif command == COMMAND_UNLOCK:
+                self.unlock_rail()
+            elif command == COMMAND_PLOT:
+                self.plot_path(values[0])
+            elif command == COMMAND_RASTER:
+                self.plot_raster(values[0])
+            elif command == COMMAND_SET_SPEED:
+                self.set_speed(values[0])
+            elif command == COMMAND_SET_POWER:
+                self.set_power(values[0])
+            elif command == COMMAND_SET_PPI:
+                self.set_ppi(values[0])
+            elif command == COMMAND_SET_PWM:
+                self.set_pwm(values[0])
+            elif command == COMMAND_SET_STEP:
+                self.set_step(values[0])
+            elif command == COMMAND_SET_OVERSCAN:
+                self.set_overscan(values[0])
+            elif command == COMMAND_SET_ACCELERATION:
+                self.set_acceleration(values[0])
+            elif command == COMMAND_SET_D_RATIO:
+                self.set_d_ratio(values[0])
+            elif command == COMMAND_SET_DIRECTION:
+                self.set_directions(values[0], values[1], values[2], values[3])
+            elif command == COMMAND_SET_INCREMENTAL:
+                self.set_incremental()
+            elif command == COMMAND_SET_ABSOLUTE:
+                self.set_absolute()
+            elif command == COMMAND_SET_POSITION:
+                self.set_position(values[0], values[1])
+            elif command == COMMAND_MODE_RAPID:
+                self.ensure_rapid_mode()
+            elif command == COMMAND_MODE_PROGRAM:
+                self.ensure_program_mode()
+            elif command == COMMAND_MODE_FINISHED:
+                self.ensure_finished_mode()
+            elif command == COMMAND_WAIT:
+                self.wait(values[0])
+            elif command == COMMAND_WAIT_FINISH:
+                self.wait_finish()
+            elif command == COMMAND_BEEP:
+                print('\a')  # Beep.
+            elif command == COMMAND_FUNCTION:
+                if len(values) >= 1:
+                    t = values[0]
+                    if callable(t):
+                        t()
+            elif command == COMMAND_SIGNAL:
+                if isinstance(values, str):
+                    self.device.signal(values, None)
+                elif len(values) >= 2:
+                    self.device.signal(values[0], *values[1:])
+        except AttributeError:
+            pass
 
-    def realtime_command(self, command, values=None):
+    def realtime_command(self, command, *values):
         """Asks for the execution of a realtime command. Unlike the spooled commands these
         return False if rejected and something else if able to be performed. These will not
         be queued. If rejected. They must be performed in realtime or cancelled.
         """
-        return self.command(command, values)
+        try:
+            if command == REALTIME_PAUSE:
+                self.pause()
+            elif command == REALTIME_RESUME:
+                self.resume()
+            elif command == REALTIME_RESET:
+                self.reset()
+            elif command == REALTIME_STATUS:
+                self.status()
+            elif command == REALTIME_SAFETY_DOOR:
+                self.safety_door()
+            elif command == REALTIME_JOG_CANCEL:
+                self.jog_cancel(*values)
+            elif command == REALTIME_SPEED_PERCENT:
+                self.realtime_speed_percent(*values)
+            elif command == REALTIME_SPEED:
+                self.realtime_speed(*values)
+            elif command == REALTIME_RAPID_PERCENT:
+                self.realtime_rapid_percent(*values)
+            elif command == REALTIME_RAPID:
+                self.realtime_rapid(*values)
+            elif command == REALTIME_POWER_PERCENT:
+                self.realtime_power_percent(*values)
+            elif command == REALTIME_POWER:
+                self.realtime_power(*values)
+            elif command == REALTIME_OVERSCAN:
+                self.realtime_overscan(*values)
+            elif command == REALTIME_LASER_DISABLE:
+                self.realtime_laser_disable(*values)
+            elif command == REALTIME_LASER_ENABLE:
+                self.realtime_laser_enable(*values)
+            elif command == REALTIME_FLOOD_COOLANT:
+                self.realtime_flood_coolant(*values)
+            elif command == REALTIME_MIST_COOLANT:
+                self.realtime_mist_coolant(*values)
+        except AttributeError:
+            pass  # Method doesn't exist.
+
+    def hold(self):
+        if self.extra_hold is not None:
+            if self.extra_hold():
+                return True
+            else:
+                self.extra_hold = None
+        return False
+
+    def laser_off(self, *values):
+        self.laser = False
+
+    def laser_on(self, *values):
+        self.laser = True
+
+    def laser_disable(self, *values):
+        self.laser_enabled = False
+
+    def laser_enable(self, *values):
+        self.laser_enabled = True
+
+    def move(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
+
+    def cut(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
+
+    def home(self, *values):
+        self.device.current_x = 0
+        self.device.current_y = 0
+
+    def ensure_rapid_mode(self, *values):
+        if self.state == INTERPRETER_STATE_RAPID:
+            return
+        self.state = INTERPRETER_STATE_RAPID
+        self.device.signal('interpreter;mode', self.state)
+
+    def ensure_finished_mode(self, *values):
+        if self.state == INTERPRETER_STATE_FINISH:
+            return
+        self.state = INTERPRETER_STATE_FINISH
+        self.device.signal('interpreter;mode', self.state)
+
+    def ensure_program_mode(self, *values):
+        if self.state == INTERPRETER_STATE_PROGRAM:
+            return
+        self.state = INTERPRETER_STATE_PROGRAM
+        self.device.signal('interpreter;mode', self.state)
+
+    def set_speed(self, speed=None):
+        self.speed = speed
+
+    def set_power(self, power=1000.0):
+        self.power = power
+
+    def set_ppi(self, power=1000.0):
+        self.power = power
+
+    def set_pwm(self, power=1000.0):
+        self.power = power
+
+    def set_d_ratio(self, d_ratio=None):
+        self.d_ratio = d_ratio
+
+    def set_acceleration(self, accel=None):
+        self.acceleration = accel
+
+    def set_step(self, step=None):
+        self.raster_step = step
+
+    def set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def set_incremental(self, *values):
+        self.is_relative = True
+
+    def set_absolute(self, *values):
+        self.is_relative = False
+
+    def set_position(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
+
+    def wait(self, t):
+        self.next_run = t
+
+    def wait_finish(self, *values):
+        """Adds an additional holding requirement if the pipe has any data."""
+        self.extra_hold = lambda: len(self.pipe) != 0
+
+    def reset(self):
+        self.spooled_item = None
+        self.device.spooler.clear_queue()
+        self.spooled_item = None
+        self.extra_hold = None
+
+    def status(self):
+        parts = list()
+        parts.append("x=%f" % self.device.current_x)
+        parts.append("y=%f" % self.device.current_y)
+        parts.append("speed=%f" % self.speed)
+        parts.append("power=%d" % self.power)
+        status = ";".join(parts)
+        self.device.signal('interpreter;status', status)
+
+    def set_prop(self, mask):
+        self.properties |= mask
+
+    def unset_prop(self, mask):
+        self.properties &= ~mask
+
+    def is_prop(self, mask):
+        return bool(self.properties & mask)
+
+    def toggle_prop(self, mask):
+        if self.is_prop(mask):
+            self.unset_prop(mask)
+        else:
+            self.set_prop(mask)
 
 
 class Pipe:
     """
-    Write location in the kernel. Provides general information about buffer size but is
-    agnostic as to where the code ends up.
+    Pipes are a generic file-like object with write commands and a realtime_write function.
 
-    Example pipes are mock, file, print, libusb-driver, and ch341-win. (these may or maynot exist).
+    The realtime_write function should exist, but code using pipes should do so in a try block. Excepting
+    the AttributeError if it doesn't exist. So that pipes are able to be exchanged for real file-like objects.
+
+    Buffer size general information is provided through len() builtin.
     """
-
-    def __init__(self, device=None):
-        self.device = device
 
     def __len__(self):
         return 0
@@ -501,22 +528,14 @@ class Pipe:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    @property
-    def name(self):
-        return NotImplementedError
-
     def open(self):
-        raise NotImplementedError
+        pass
 
     def close(self):
-        raise NotImplementedError
+        pass
 
     def write(self, bytes_to_write):
-        raise NotImplementedError
-
-    def read(self, size=-1):
-        """Most pipes will be outstreams but some could provide data through this method."""
-        raise NotImplementedError
+        pass
 
     def realtime_write(self, bytes_to_write):
         """
@@ -527,74 +546,49 @@ class Pipe:
         self.write(bytes_to_write)
 
 
-class Kernel:
+class Effect:
     """
-    The kernel is the software framework that is tasked with the API implementation.
+    Effects are intended to be external program modifications of the data.
+    None of these are implemented yet.
 
-    The class serves as:
-    * a hub of communications between different processes.
-    * implementation of event listeners
-    * persistent saving and loading settings data
-    * the threading of different events
-    * interactions between different modules
-
-    Since most parts of the system are intended to allow swapping between the different modules a level of API
-    abstraction is required. The hackability of various systems depends on a robust code that is agnostic to the state
-    of the rest of modules.
-
-    LaserNode data is primarily of three types: path, image, and text.
-    Readers convert some file or streams being read into LaserNode data.
-    Saver, convert LaserNode data into some types of files or streams.
-    Effects convert LaserNode data into different LaserNode data.
-    Operations are functions that can be arbitrarily added to spoolers.
-    Controls are functions that can simply be called, typically for very light threads.
-    A spooler is a processing queue for LaserNode data and other command generators.
-    Command generators use the LaserCommandConstant middle language to facilitate controller events.
-    LaserNode are command generators.
-
-    Most MeerK40t objects will have a direct reference to the Kernel. However, the Kernel should not directly reference
-    any object.
-
-    kernel.setting(type, name, default): Registers kernel.name as a persistent setting.
-    kernel.flush(): push out persistent settings
-    kernel.listen(signal, function): Registers function as a listener for the given signal.
-    kernel.unlisten(signal, function): Unregister function as a listener for the signal.
-    kernel.add_loader(loader): Registers a qualified loader function.
-    kernel.add_saver(file): Registers a qualified saver function.
-    kernel.add_effect(effect): registers a qualified effect.
-    kernel.add_operation(op): registers a spooler operation
-    kernel.add_thread(thread, object): Registers a thread.
-    kernel.remove_thread(thread)
-
-    kernel.load(file): Loads the given file and turns it into laser nodes.
-    kernel.write(file): Saves the laser nodes to the given filename or stream.
-    kernel.tick(seconds, function): tick each x seconds until function returns False.
-    kernel.shutdown(): shuts down kernel.
-
-    kernel(signal, value): Calls the signal with the given value.
+    The select is a selections string for the exporting element selection.
+    The save is the export file to use.
+    The path refers to the external program.
+    The command is the command to call the path with.
+    The load is the file expected to exist when the execution finishes.
     """
 
-    def __init__(self, config=None):
-        self.elements = []
-        self.operations = []
-        self.filenodes = {}
+    def __init__(self, select, save, path, command, load):
+        self.select = select
+        self.save = save
+        self.path = path
+        self.command = command
+        self.load = load
 
-        self.config = None
 
-        self.modules = {}
-        self.loaders = {}
-        self.savers = {}
-        self.threads = {}
-        self.controls = {}
-        self.windows = {}
-        self.open_windows = {}
+class Modification:
+    """
+    Modifications are intended to be lazy implemented changes to SVGElement objects and groups. The intent is to
+    provide a method for delayed modifications of data.
 
-        self.backends = {}
+    Modifications are functions called on single SVGElement objects.
+    Type Input is the input type kind of element this is intended to act upon.
+    Type Output is the output type of the element this is intended to produce.
+    """
 
-        self.devices = {}
-        self.device = None
+    def __init__(self, input_type, output_type):
+        self.input_type = input_type
+        self.output_type = output_type
 
-        self.effects = []
+
+class Signaler(Module):
+    """
+    Signaler provides the signals functionality for a device. It replaces the functions for .signal(), .listen(),
+    .unlisten(), .last_signal().
+    """
+
+    def __init__(self):
+        Module.__init__(self)
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []
@@ -602,34 +596,60 @@ class Kernel:
         self.queue_lock = Lock()
         self.message_queue = {}
         self._is_queue_processing = False
+        self.process = self.delegate_messages
+        self.interval = 0.05
+        self.args = ()
 
-        self.run_later = lambda listener, message: listener(message)
-        self.shutdown_watcher = lambda i, e, o: True
-        self.translation = lambda e: e  # Default for this code is do nothing.
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.signal = self.signal
+        self.device.listen = self.listen
+        self.device.unlisten = self.unlisten
+        self.device.last_signal = self.last_signal
+        self.schedule()
 
-        self.keymap = {}
+    def shutdown(self, channel):
+        _ = self.device.device_root.translation
+        for key, listener in self.listeners.items():
+            if len(listener):
+                channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
+        self.last_message = {}
+        self.listeners = {}
 
-        if config is not None:
-            self.set_config(config)
-        self.cron = None
-
-    def __str__(self):
-        return "Project"
-
-    def __call__(self, code, *message):
-        self.signal(code, *message)
+    # Signal processing.
 
     def signal(self, code, *message):
+        """
+        Signals add the latest message to the message queue.
+
+        :param code: Signal code
+        :param message: Message to send.
+        """
         self.queue_lock.acquire(True)
         self.message_queue[code] = message
         self.queue_lock.release()
 
     def delegate_messages(self):
+        """
+        Delegate the process queue to the run_later thread.
+        run_later should be a threading instance wherein all signals are delivered.
+        """
         if self._is_queue_processing:
             return
-        self.run_later(self.process_queue, None)
+        if self.device.run_later is not None:
+            self.device.run_later(self.process_queue, None)
+        else:
+            self.process_queue(None)
 
     def process_queue(self, *args):
+        """
+        Performed in the run_later thread. Signal groups. Threadsafe.
+
+        Process the signals queued up. Inserting any attaching listeners, removing any removing listeners. And
+        providing the newly attached listeners the last message known from that signal.
+        :param args: None
+        :return:
+        """
         if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
             return
         self._is_queue_processing = True
@@ -665,8 +685,6 @@ class Kernel:
                         print("Value error removing: %s  %s" % (str(listeners), signal))
 
         for code, message in queue.items():
-            # if 'spooler' in code:
-            #     print("%s : %s" % (code,message))
             if code in self.listeners:
                 listeners = self.listeners[code]
                 for listener in listeners:
@@ -675,116 +693,1395 @@ class Kernel:
         self._is_queue_processing = False
 
     def last_signal(self, code):
+        """
+        Queries the last signal for a particular code.
+        :param code: code to query.
+        :return: Last signal sent through the kernel for that code.
+        """
         try:
             return self.last_message[code]
         except KeyError:
             return None
 
-    def __setitem__(self, key, value):
-        if isinstance(key, tuple):
-            if value is None:
-                key, value = key
-                self.unlisten(key, value)
+    def listen(self, signal, funct):
+        self.queue_lock.acquire(True)
+        self.adding_listeners.append((signal, funct))
+        self.queue_lock.release()
+
+    def unlisten(self, signal, funct):
+        self.queue_lock.acquire(True)
+        self.removing_listeners.append((signal, funct))
+        self.queue_lock.release()
+
+
+class Elemental(Module):
+    """
+    The elemental module is governs all the interactions with the various elements,
+    operations, and filenodes. Handling structure change and selection, emphasis, and
+    highlighting changes. The goal of this module is to make sure that the life cycle
+    of the elements is strictly enforced. For example, every element that is removed
+    must have had the .cache deleted. And anything selecting an element must propagate
+    that information out to inform other interested modules.
+    """
+
+    def __init__(self):
+        Module.__init__(self)
+
+        self._operations = list()
+        self._elements = list()
+        self._filenodes = {}
+
+        self._bounds = None
+
+    def attach(self, device, name=None):
+        Module.attach(self, device, name)
+        self.device.elements = self
+        self.device.classify = self.classify
+        self.device.save = self.save
+        self.device.save_types = self.save_types
+        self.device.load = self.load
+        self.device.load_types = self.load_types
+
+    def register(self, obj):
+        obj.cache = None
+        obj.icon = None
+        obj.bounds = None
+        obj.last_transform = None
+        obj.selected = False
+        obj.emphasized = False
+        obj.highlighted = False
+
+        def select():
+            obj.selected = True
+            self.device.signal('selected', obj)
+
+        def unselect():
+            obj.selected = False
+            self.device.signal('selected', obj)
+
+        def highlight():
+            obj.highlighted = True
+            self.device.signal('highlighted', obj)
+
+        def unhighlight():
+            obj.highlighted = False
+            self.device.signal('highlighted', obj)
+
+        def emphasize():
+            obj.emphasized = True
+            self.device.signal('emphasized', obj)
+            self.validate_bounds()
+
+        def unemphasize():
+            obj.emphasized = False
+            self.device.signal('emphasized', obj)
+            self.validate_bounds()
+
+        def modified():
+            """
+            The matrix transformation was changed.
+            """
+            obj.bounds = None
+            self._bounds = None
+            self.validate_bounds()
+            self.device.signal('modified', obj)
+
+        def altered():
+            """
+            The data structure was changed.
+            """
+            try:
+                obj.cache.UnGetNativePath(obj.cache.NativePath)
+            except AttributeError:
+                pass
+            del obj.cache
+            obj.cache = None
+            del obj.icon
+            obj.icon = None
+            obj.bounds = None
+            self._bounds = None
+            self.validate_bounds()
+            self.device.signal('altered', obj)
+
+        obj.select = select
+        obj.unselect = unselect
+        obj.highlight = highlight
+        obj.unhighlight = unhighlight
+        obj.emphasize = emphasize
+        obj.unemphasize = unemphasize
+        obj.modified = modified
+        obj.altered = altered
+
+    def unregister(self, e):
+        try:
+            e.cache.UngetNativePath(e.cache.NativePath)
+        except AttributeError:
+            pass
+        try:
+            del e.cache
+        except AttributeError:
+            pass
+        try:
+            del e.icon
+        except AttributeError:
+            pass
+        try:
+            e.unselect()
+            e.unemphasize()
+            e.unhighlight()
+            e.modified()
+        except AttributeError:
+            pass
+
+    def items(self, **kwargs):
+        def combined(*args):
+            for listv in args:
+                for itemv in listv:
+                    yield itemv
+
+        for j in combined(self.ops(**kwargs), self.elems(**kwargs)):
+            yield j
+
+    def _filtered_list(self, item_list, **kwargs):
+        """
+        Filters a list of items with selected, emphasized, and highlighted.
+        False values means find where that parameter is false.
+        True values means find where that parameter is true.
+        If the filter does not exist then it isn't used to filter that data.
+
+        Items which are set to None are skipped.
+
+        :param item_list:
+        :param kwargs:
+        :return:
+        """
+        s = 'selected' in kwargs
+        if s:
+            s = kwargs['selected']
+        else:
+            s = None
+        e = 'emphasized' in kwargs
+        if e:
+            e = kwargs['emphasized']
+        else:
+            e = None
+        h = 'highlighted' in kwargs
+        if h:
+            h = kwargs['highlighted']
+        else:
+            h = None
+        for obj in item_list:
+            if obj is None:
+                continue
+            if s is not None and s != obj.selected:
+                continue
+            if e is not None and e != obj.emphasized:
+                continue
+            if h is not None and s != obj.highlighted:
+                continue
+            yield obj
+
+    def ops(self, **kwargs):
+        for item in self._filtered_list(self._operations, **kwargs):
+            yield item
+
+    def elems(self, **kwargs):
+        for item in self._filtered_list(self._elements, **kwargs):
+            yield item
+
+    def first_element(self, **kwargs):
+        for e in self.elems(**kwargs):
+            return e
+        return None
+
+    def has_emphasis(self):
+        return self.first_element(emphasized=True) is not None
+
+    def count_elems(self, **kwargs):
+        return len(list(self.elems(**kwargs)))
+
+    def count_op(self, **kwargs):
+        return len(list(self.ops(**kwargs)))
+
+    def get_op(self, index, **kwargs):
+        for i, op in enumerate(self.ops(**kwargs)):
+            if i == index:
+                return op
+        raise IndexError
+
+    def get_elem(self, index, **kwargs):
+        for i, elem in enumerate(self.elems(**kwargs)):
+            if i == index:
+                return elem
+        raise IndexError
+
+    def add_op(self, op):
+        self._operations.append(op)
+        self.register(op)
+        self.device.signal('operation_added', op)
+
+    def add_ops(self, adding_ops):
+        self._operations.extend(adding_ops)
+        for op in adding_ops:
+            self.register(op)
+        self.device.signal('operation_added', adding_ops)
+
+    def add_elem(self, element):
+        self._elements.append(element)
+        self.register(element)
+        self.device.signal('element_added', element)
+
+    def add_elems(self, adding_elements):
+        self._elements.extend(adding_elements)
+        for element in adding_elements:
+            self.register(element)
+        self.device.signal('element_added', adding_elements)
+
+    def files(self):
+        return self._filenodes
+
+    def clear_operations(self):
+        for op in self._operations:
+            self.unregister(op)
+            self.device.signal('operation_removed', op)
+        self._operations.clear()
+
+    def clear_elements(self):
+        for e in self._elements:
+            self.unregister(e)
+            self.device.signal('element_removed', e)
+        self._elements.clear()
+
+    def clear_files(self):
+        self._filenodes.clear()
+
+    def clear_elements_and_operations(self):
+        self.clear_elements()
+        self.clear_operations()
+
+    def clear_all(self):
+        self.clear_elements()
+        self.clear_operations()
+        self.clear_files()
+        self.validate_bounds()
+
+    def remove_files(self, file_list):
+        for f in file_list:
+            del self._filenodes[f]
+
+    def remove_elements(self, elements_list):
+        for elem in elements_list:
+            for i, e in enumerate(self._elements):
+                if elem is e:
+                    self.unregister(elem)
+                    self.device.signal('element_removed', elem)
+                    self._elements[i] = None
+        self.remove_elements_from_operations(elements_list)
+
+    def remove_operations(self, operations_list):
+        for op in operations_list:
+            for i, o in enumerate(self._operations):
+                if o is op:
+                    self.unregister(op)
+                    self.device.signal('operation_removed', op)
+                    self._operations[i] = None
+        self.purge_unset()
+
+    def remove_elements_from_operations(self, elements_list):
+        for i, op in enumerate(self._operations):
+            if op is None:
+                continue
+            elems = [e for e in op if e not in elements_list]
+            op.clear()
+            op.extend(elems)
+            if len(op) == 0:
+                self._operations[i] = None
+        self.purge_unset()
+
+    def purge_unset(self):
+        if None in self._operations:
+            ops = [op for op in self._operations if op is not None]
+            self._operations.clear()
+            self._operations.extend(ops)
+        if None in self._elements:
+            elems = [elem for elem in self._elements if elem is not None]
+            self._elements.clear()
+            self._elements.extend(elems)
+
+    def bounds(self):
+        return self._bounds
+
+    def validate_bounds(self):
+        boundary_points = []
+        for e in self._elements:
+            if e.last_transform is None or e.last_transform != e.transform or e.bounds is None:
+                e.bounds = e.bbox(False)
+                e.last_transform = copy(e.transform)
+            if e.bounds is None:
+                continue
+            if not e.emphasized:
+                continue
+            box = e.bounds
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+
+        if len(boundary_points) == 0:
+            new_bounds = None
+        else:
+            xmin = min([e[0] for e in boundary_points])
+            ymin = min([e[1] for e in boundary_points])
+            xmax = max([e[0] for e in boundary_points])
+            ymax = max([e[1] for e in boundary_points])
+            new_bounds = [xmin, ymin, xmax, ymax]
+        if self._bounds != new_bounds:
+            self._bounds = new_bounds
+            self.device.device_root.signal('selected_bounds', self._bounds)
+
+    def is_in_set(self, v, selected, flat=True):
+        for q in selected:
+            if flat and isinstance(q, (list, tuple)) and self.is_in_set(v, q, flat):
+                return True
+            if q is v:
+                return True
+        return False
+
+    def set_selected(self, selected):
+        """
+        Sets selected and other properties of a given element.
+
+        All selected elements are also semi-selected.
+
+        If elements itself is selected, all subelements are semiselected.
+
+        If any operation is selected, all sub-operations are highlighted.
+
+        """
+        if selected is None:
+            selected = []
+        for s in self._elements:
+            should_select = self.is_in_set(s, selected, False)
+            should_emphasize = self.is_in_set(s, selected)
+            if s.emphasized:
+                if not should_emphasize:
+                    s.unemphasize()
             else:
-                key, value = key
-                self.listen(key, value)
-        elif isinstance(key, str):
-            self.write_config(key, value)
+                if should_emphasize:
+                    s.emphasize()
+            if s.selected:
+                if not should_select:
+                    s.unselect()
+            else:
+                if should_select:
+                    s.select()
+        for s in self._operations:
+            should_select = self.is_in_set(s, selected, False)
+            should_emphasize = self.is_in_set(s, selected)
+            if s.emphasized:
+                if not should_emphasize:
+                    s.unemphasize()
+            else:
+                if should_emphasize:
+                    s.emphasize()
+            if s.selected:
+                if not should_select:
+                    s.unselect()
+            else:
+                if should_select:
+                    s.select()
+
+    def center(self):
+        bounds = self._bounds
+        return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
+
+    def ensure_positive_bounds(self):
+        b = self._bounds
+        self._bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
+        self.device.device_root.signal('selected_bounds', self._bounds)
+
+    def update_bounds(self, b):
+        self._bounds = [b[0], b[1], b[0], b[1]]
+        self.device.device_root.signal('selected_bounds', self._bounds)
+
+    @staticmethod
+    def bounding_box(elements):
+        if isinstance(elements, SVGElement):
+            elements = [elements]
+        elif isinstance(elements, list):
+            try:
+                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+            except AttributeError:
+                pass
+        boundary_points = []
+        for e in elements:
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
+
+    def move_selected(self, dx, dy):
+        for obj in self.elems(emphasized=True):
+            obj.transform.post_translate(dx, dy)
+            obj.modified()
+
+    def set_selected_by_position(self, position):
+        def contains(box, x, y=None):
+            if y is None:
+                y = x[1]
+                x = x[0]
+            return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+        if self.has_emphasis():
+            if self._bounds is not None and contains(self._bounds, position):
+                return  # Select by position aborted since selection position within current select bounds.
+        for e in reversed(list(self.elems())):
+            bounds = e.bbox()
+            if bounds is None:
+                continue
+            if contains(bounds, position):
+                self.set_selected([e])
+                return
+        self.set_selected(None)
+
+    def classify(self, elements):
+        """
+        Classify does the initial placement of elements as operations.
+        RasterOperation is the default for images.
+        If element strokes are red they get classed as cut operations
+        If they are otherwise they get classed as engrave.
+        """
+        if elements is None:
+            return
+        raster = None
+        engrave = None
+        cut = None
+        rasters = []
+        engraves = []
+        cuts = []
+        self.device.setting(bool, 'cut_acceleration_custom', False)
+        self.device.setting(int, 'cut_acceleration', 4)
+        self.device.setting(bool, 'cut_dratio_custom', False)
+        self.device.setting(float, 'cut_dratio', None)
+        self.device.setting(float, 'cut_speed', 10.0)
+        self.device.setting(float, 'cut_power', 1000.0)
+
+        self.device.setting(bool, 'engrave_acceleration_custom', False)
+        self.device.setting(int, 'engrave_acceleration', 4)
+        self.device.setting(bool, 'engrave_dratio_custom', False)
+        self.device.setting(float, 'engrave_dratio', None)
+        self.device.setting(float, 'engrave_speed', 35.0)
+        self.device.setting(float, 'engrave_power', 1000.0)
+
+        self.device.setting(bool, 'raster_acceleration_custom', False)
+        self.device.setting(int, 'raster_acceleration', 4)
+        self.device.setting(float, 'raster_speed', 200.0)
+        self.device.setting(float, 'raster_power', 1000.0)
+        self.device.setting(int, 'raster_step', 2)
+        self.device.setting(int, 'raster_direction', 0)
+        self.device.setting(int, 'raster_overscan', 20)
+
+        if not isinstance(elements, list):
+            elements = [elements]
+        for element in elements:
+            if isinstance(element, (Path, SVGText)):
+                if element.stroke == "red" and not isinstance(element, SVGText):
+                    if cut is None or not cut.has_same_properties(element.values):
+                        cut = CutOperation(speed=self.device.cut_speed,
+                                           power=self.device.cut_power,
+                                           dratio_custom=self.device.cut_dratio_custom,
+                                           dratio=self.device.cut_dratio,
+                                           acceleration_custom=self.device.cut_acceleration_custom,
+                                           acceleration=self.device.cut_acceleration)
+                        cuts.append(cut)
+                        cut.set_properties(element.values)
+                    cut.append(element)
+                elif element.stroke == "blue" and not isinstance(element, SVGText):
+                    if engrave is None or not engrave.has_same_properties(element.values):
+                        engrave = EngraveOperation(speed=self.device.engrave_speed,
+                                                   power=self.device.engrave_power,
+                                                   dratio_custom=self.device.engrave_dratio_custom,
+                                                   dratio=self.device.engrave_dratio,
+                                                   acceleration_custom=self.device.engrave_acceleration_custom,
+                                                   acceleration=self.device.engrave_acceleration)
+                        engraves.append(engrave)
+                        engrave.set_properties(element.values)
+                    engrave.append(element)
+                if (element.stroke != "red" and element.stroke != "blue") or \
+                        (element.fill is not None and element.fill != "none") or \
+                        isinstance(element, SVGText):
+                    # not classed already, or was already classed but has a fill.
+                    if raster is None or not raster.has_same_properties(element.values):
+                        raster = RasterOperation(speed=self.device.raster_speed,
+                                                 power=self.device.raster_power,
+                                                 raster_step=self.device.raster_step,
+                                                 raster_direction=self.device.raster_direction,
+                                                 overscan=self.device.raster_overscan,
+                                                 acceleration_custom=self.device.raster_acceleration_custom,
+                                                 acceleration=self.device.raster_acceleration)
+                        rasters.append(raster)
+                        raster.set_properties(element.values)
+                    raster.append(element)
+            elif isinstance(element, SVGImage):
+                try:
+                    step = element.values['raster_step']
+                except KeyError:
+                    step = self.device.raster_step
+                rasters.append(RasterOperation(element,
+                                               speed=self.device.raster_speed,
+                                               power=self.device.raster_power,
+                                               raster_step=step,
+                                               raster_direction=self.device.raster_direction,
+                                               overscan=self.device.raster_overscan,
+                                               acceleration_custom=self.device.raster_acceleration_custom,
+                                               acceleration=self.device.raster_acceleration))
+        rasters = [r for r in rasters if len(r) != 0]
+        engraves = [r for r in engraves if len(r) != 0]
+        cuts = [r for r in cuts if len(r) != 0]
+        ops = []
+        self.add_ops(rasters)
+        self.add_ops(engraves)
+        self.add_ops(cuts)
+        return ops
+
+    def load(self, pathname, **kwargs):
+        for loader_name, loader in self.device.registered['load'].items():
+            for description, extensions, mimetype in loader.load_types():
+                if pathname.lower().endswith(extensions):
+                    results = loader.load(self.device, pathname, **kwargs)
+                    if results is None:
+                        continue
+                    elements, pathname, basename = results
+                    self._filenodes[pathname] = elements
+                    self.add_elems(elements)
+                    return elements, pathname, basename
+        return None
+
+    def load_types(self, all=True):
+        filetypes = []
+        if all:
+            filetypes.append('All valid types')
+            exts = []
+            for loader_name, loader in self.device.registered['load'].items():
+                for description, extensions, mimetype in loader.load_types():
+                    for ext in extensions:
+                        exts.append('*.%s' % ext)
+            filetypes.append(';'.join(exts))
+        for loader_name, loader in self.device.registered['load'].items():
+            for description, extensions, mimetype in loader.load_types():
+                exts = []
+                for ext in extensions:
+                    exts.append('*.%s' % ext)
+                filetypes.append("%s (%s)" % (description, extensions[0]))
+                filetypes.append(';'.join(exts))
+        return "|".join(filetypes)
+
+    def save(self, pathname):
+        for save_name, saver in self.device.registered['save'].items():
+            for description, extension, mimetype in saver.save_types():
+                if pathname.lower().endswith(extension):
+                    saver.save(self.device, pathname, 'default')
+                    return True
+        return False
+
+    def save_types(self):
+        filetypes = []
+        for saver_name, saver in self.device.registered['save'].items():
+            for description, extension, mimetype in saver.save_types():
+                filetypes.append("%s (%s)" % (description, extension))
+                filetypes.append("*.%s" % (extension))
+        return "|".join(filetypes)
+
+
+class Device:
+    """
+    A Device is a specific module cluster that serves a unified purpose.
+
+    The Kernel is a type of device which provides root functionality.
+
+    * Provides job scheduler
+    * Registers devices, modules, pipes, modifications, and effects.
+    * Stores instanced devices, modules, pipes, channels, controls and threads.
+    * Processes local channels.
+
+    Channels are a device object with specific uids that sends messages to watcher functions. These can be watched
+    even if the channels are not ever opened or used. The channels can opened and provided information without any
+    consideration of what might be watching.
+    """
+
+    def __init__(self, root=None, uid=0):
+        self.thread = None
+        self.name = None
+        self.device_root = root
+        self.device_name = "Device"
+        self.device_version = "0.0.0"
+        self.device_location = "Kernel"
+        self.uid = uid
+
+        self.state = STATE_UNKNOWN
+        self.jobs = []
+
+        self.registered = {}
+        self.instances = {}
+
+        # Channel processing.
+        self.channels = {}
+        self.watchers = {}
+        self.buffer = {}
+        self.greet = {}
+        self.element = None
+
+    def __str__(self):
+        if self.uid == 0:
+            return "Project"
+        else:
+            return "%s:%d" % (self.device_name, self.uid)
+
+    def __call__(self, code, *message):
+        self.signal(code, *message)
+
+    def __setitem__(self, key, value):
+        """
+        Kernel value settings. If Config is registered this will be persistent.
+
+        :param key: Key to set.
+        :param value: Value to set
+        :return: None
+        """
+        if isinstance(key, str):
+            self.write_persistent(key, value)
 
     def __getitem__(self, item):
+        """
+        Kernel value get. If Config is set registered this will be persistent.
+
+        As a shorthand any float, int, string, or bool set with this will also be found at kernel.item
+
+        :param item:
+        :return:
+        """
         if isinstance(item, tuple):
             if len(item) == 2:
                 t, key = item
-                return self.read_config(t, key)
+                return self.read_persistent(t, key)
             else:
                 t, key, default = item
-                return self.read_config(t, key, default)
-        return self.config.Read(item)
+                return self.read_persistent(t, key, default)
+        return self.read_item_persistent(item)
+
+    def attach(self, device, name=None):
+        self.device_root = device
+        self.name = name
+        self.initialize(device)
+
+    def detach(self, device, channel=None):
+        if 'device' in self.device_root.instances:
+            devices = self.device_root.instances['device']
+            if self.uid in devices:
+                del devices[self.uid]
+
+    def initialize(self, device):
+        pass
+
+    def read_item_persistent(self, item):
+        return self.device_root.read_item_persistent(item)
+
+    def write_persistent(self, key, value, uid=0):
+        self.device_root.write_persistent(key, value, uid=uid)
+
+    def read_persistent(self, t, key, default=None, uid=0):
+        return self.device_root.read_persistent(t, key, default, uid=uid)
+
+    def threaded(self, func, thread_name=None):
+        if thread_name is None:
+            thread_name = func.__name__
+        thread = Thread(name=thread_name)
+
+        def run():
+            self.thread_instance_add(thread_name, thread)
+            try:
+                func()
+            except:
+                import sys
+                sys.excepthook(*sys.exc_info())
+            self.thread_instance_remove(thread_name)
+
+        thread.run = run
+        thread.start()
+        return thread
 
     def boot(self):
-        if self.cron is None or not self.cron.is_alive():
-            self.cron = Scheduler(self)
-            self.cron.add_job(self.delegate_messages, args=(), interval=0.05)
-            self.add_thread('Scheduler', self.cron)
-            self.cron.start()
-
-    def shutdown(self):
         """
-        Begins kernel shutdown procedure.
-
-        Checks if shutdown should be done.
-        Save Kernel Persistent settings.
-        Save Device Persistent settings.
-        Closes all windows.
-        Ask all modules to shutdown.
-        Wait for threads to end.
-        -- If threads do not end, threads must be aborted.
-        Notifies of listener errors.
+        Kernel boot sequence. This should be called after all the registered devices are established.
+        :return:
         """
+        if self.thread is None or not self.thread.is_alive():
+            self.thread = self.threaded(self.run, 'Device%d' % int(self.uid))
+        self.control_instance_add("Debug Device", self._start_debugging)
 
-        kill = self.shutdown_watcher
-
-        if not kill(SHUTDOWN_BEGIN, 'shutdown', self):
-            return
+    def shutdown(self, channel=None):
+        """
+        Begins device shutdown procedure.
+        """
+        self.state = STATE_TERMINATE
+        _ = self.device_root.translation
+        channel(_("Shutting down."))
+        self.detach(self, channel=channel)
+        channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
-        for device_name in self.devices:
-            device = self.devices[device_name]
-            if kill(SHUTDOWN_FLUSH, device_name, device):
-                device.flush()
-        if self.config is not None:
-            self.config.Flush()
-        windows = list(self.open_windows)
-        for i in range(0, len(windows)):
-            window_name = windows[i]
-            window = self.open_windows[window_name]
-            if kill(SHUTDOWN_WINDOW, window_name, window):
-                try:
-                    window.Close()
-                except AttributeError:
-                    pass
-
-        for window_name in list(self.open_windows):
-            window = self.open_windows[window_name]
-            kill(SHUTDOWN_WINDOW_ERROR, window_name, window)
-
-        for module_name in list(self.modules):
-            module = self.modules[module_name]
-            if kill(SHUTDOWN_MODULE, module_name, module):
-                try:
-                    module.shutdown(self)
-                except AttributeError:
-                    pass
-        for module_name in self.modules:
-            module = self.modules[module_name]
-            kill(SHUTDOWN_MODULE_ERROR, module_name, module)
-
-        for thread_name in self.threads:
-            thread = self.threads[thread_name]
-            if not thread.is_alive:
-                kill(SHUTDOWN_THREAD_ERROR, thread_name, thread)
+        if 'device' in self.instances:
+            # Join and shutdown any child devices.
+            devices = self.instances['device']
+            del self.instances['device']
+            for device_name in devices:
+                device = devices[device_name]
+                channel(_("Device Shutdown Started: '%s'") % str(device))
+                device_thread = device.thread
+                device.stop()
+                if device_thread is not None:
+                    device_thread.join()
+                channel(_("Device Shutdown Finished: '%s'") % str(device))
+        for type_name in list(self.instances):
+            if type_name in ('control', 'thread'):
                 continue
-            if kill(SHUTDOWN_THREAD, thread_name, thread):
-                if thread is self.cron:
-                    continue
-                    # Do not sleep thread waiting for cron thread to die. This is the cron thread.
+            for module_name in list(self.instances[type_name]):
+                obj = self.instances[type_name][module_name]
                 try:
+                    obj.stop()
+                    channel(_("Stopping %s %s: %s") % (module_name, type_name, str(obj)))
+                except AttributeError:
+                    pass
+        if 'thread' in self.instances:
+            for thread_name in list(self.instances['thread']):
+                try:
+                    thread = self.instances['thread'][thread_name]
+                except KeyError:
+                    channel(_("Thread %s exited safely %s") % (thread_name, str(thread)))
+                    continue
+                if not thread.is_alive:
+                    channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
+                    continue
+                channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+                if thread is self.thread:
+                    channel(_("%s is the current shutdown thread") % (thread_name))
+                    continue
+                    # Do not sleep thread waiting for that thread to die. This is that thread.
+                try:
+                    channel(_("Asking thread to stop."))
                     thread.stop()
                 except AttributeError:
                     pass
-                if thread.is_alive:
-                    kill(SHUTDOWN_THREAD_ALIVE, thread_name, thread)
-                while thread.is_alive():
-                    time.sleep(0.1)
-                kill(SHUTDOWN_THREAD_FINISHED, thread_name, thread)
-        for key, listener in self.listeners.items():
-            if len(listener):
-                kill(SHUTDOWN_LISTENER_ERROR, key, listener)
-        kill(SHUTDOWN_FINISH, 'shutdown', self)
-        self.last_message = {}
-        self.listeners = {}
-        self.device = None
+                channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+                thread.join()
+                channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
+        else:
+            channel(_("No threads required halting."))
+        for type_name in list(self.instances):
+            if type_name in ('control'):
+                continue
+            for module_name in list(self.instances[type_name]):
+                obj = self.instances[type_name][module_name]
+                try:
+                    obj.detach(self, channel=channel)
+                    channel(_("Shutting down %s %s: %s") % (module_name, type_name, str(obj)))
+                except AttributeError:
+                    pass
+        for type_name in list(self.instances):
+            if type_name in ('control'):
+                continue
+            for module_name in self.instances[type_name]:
+                obj = self.instances[type_name][module_name]
+                if obj is self.thread:
+                    continue  # Don't warn about failure to close current thread.
+                channel(_("WARNING: %s %s was not closed.") % (type_name, module_name))
 
-    def read_config(self, t, key, default=None):
+        channel(_("Shutdown."))
+        shutdown_root = False
+        if not self.is_root():
+            if 'device' in self.device_root.instances:
+                root_devices = self.device_root.instances['device']
+                if root_devices is None:
+                    shutdown_root = True
+                else:
+                    if str(self.uid) in root_devices:
+                        del root_devices[str(self.uid)]
+                    if len(root_devices) == 0:
+                        shutdown_root = True
+            else:
+                shutdown_root = True
+        if shutdown_root:
+            channel(_("All Devices are shutdown. Stopping Kernel."))
+            self.device_root.stop()
+
+    def add_job(self, run, args=(), interval=1.0, times=None):
+        """
+        Adds a job to the scheduler.
+
+        :param run: function to run
+        :param args: arguments to give to that function.
+        :param interval: in seconds, how often should the job be run.
+        :param times: limit on number of executions.
+        :return: Reference to the job added.
+        """
+        job = Module(self, process=run, args=args, interval=interval, times=times)
+        self.jobs.append(job)
+        return job
+
+    def run(self):
+        """
+        Scheduler main loop.
+        Check the Scheduler thread state, and whether it should abort or pause.
+        Check each job, and if that job is scheduled to run. Executes that job.
+        :return:
+        """
+        self.state = STATE_ACTIVE
+        while self.state != STATE_END:
+            time.sleep(0.005)  # 200 ticks a second.
+            if self.state == STATE_TERMINATE:
+                break
+            while self.state == STATE_PAUSE:
+                # The scheduler is paused.
+                time.sleep(1.0)
+            jobs = self.jobs
+            jobs_update = False
+            for job in jobs:
+                # Checking if jobs should run.
+                if job.scheduled:
+                    job.next_run = 0  # Set to zero while running.
+                    if job.times is not None:
+                        job.times = job.times - 1
+                        if job.times <= 0:
+                            jobs_update = True
+                        if job.times < 0:
+                            continue
+                    try:
+                        if isinstance(jobs, int):
+                            job.process(job.args[0])
+                        elif isinstance(job.args, tuple):
+                            job.process(*job.args)
+                        else:
+                            job.process(job.args)
+                    except:
+                        import sys
+                        sys.excepthook(*sys.exc_info())
+                    job.last_run = time.time()
+                    job.next_run += job.last_run + job.interval
+            if jobs_update:
+                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
+        self.state = STATE_END
+
+        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
+        self.shutdown(self.device_root.channel_open('shutdown'))
+
+    def _start_debugging(self):
+        """
+        Debug function hooks all functions within the device with a debug call that saves the data to the disk and
+        prints that information.
+
+        :return:
+        """
+        import functools
+        import datetime
+        import types
+        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+        debug_file = open(filename, "a")
+        debug_file.write("\n\n\n")
+
+        def debug(func, obj):
+            @functools.wraps(func)
+            def wrapper_debug(*args, **kwargs):
+                args_repr = [repr(a) for a in args]
+
+                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
+                signature = ", ".join(args_repr + kwargs_repr)
+                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
+                debug_file.write(start + '\n')
+                print(start)
+                t = time.time()
+                value = func(*args, **kwargs)
+                t = time.time() - t
+                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
+                print(finish)
+                debug_file.write(finish + '\n')
+                debug_file.flush()
+                return value
+
+            return wrapper_debug
+
+        attach_list = [modules for modules, module_name in self.instances['module'].items()]
+        attach_list.append(self)
+        for obj in attach_list:
+            for attr in dir(obj):
+                if attr.startswith('_'):
+                    continue
+                fn = getattr(obj, attr)
+                if not isinstance(fn, types.FunctionType) and \
+                        not isinstance(fn, types.MethodType):
+                    continue
+                setattr(obj, attr, debug(fn, obj))
+
+    def setting(self, setting_type, setting_name, default=None):
+        """
+        Registers a setting to be used between modules.
+
+        If the setting exists, its value remains unchanged.
+        If the setting exists in the persistent storage that value is used.
+        If there is no settings value, the default will be used.
+
+        :param setting_type: int, float, str, or bool value
+        :param setting_name: name of the setting
+        :param default: default value for the setting to have.
+        :return: load_value
+        """
+        if self.uid != 0:
+            setting_uid_name = '%s/%s' % (self.uid, setting_name)
+        else:
+            setting_uid_name = setting_name
+
+        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
+            return getattr(self, setting_name)
+        if not setting_name.startswith('_'):
+            load_value = self.read_persistent(setting_type, setting_uid_name, default)
+        else:
+            load_value = default
+        setattr(self, setting_name, load_value)
+        return load_value
+
+    def flush(self):
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            if attr == 'uid':
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            if self.uid != 0:
+                uid_attr = '%d/%s' % (self.uid, attr)
+            else:
+                uid_attr = attr
+            if isinstance(value, (int, bool, str, float)):
+                self.write_persistent(uid_attr, value)
+
+    def update(self, setting_name, value):
+        if hasattr(self, setting_name):
+            old_value = getattr(self, setting_name)
+        else:
+            old_value = None
+        setattr(self, setting_name, value)
+        self(setting_name, (value, old_value))
+
+    def execute(self, control_name, *args):
+        self.instances['control'][control_name](*args)
+
+    def signal(self, code, *message):
+        if self.uid != 0:
+            code = '%d;%s' % (self.uid, code)
+        if self.device_root is not None and self.device_root is not self:
+            self.device_root.signal(code, *message)
+
+    def last_signal(self, signal):
+        if self.uid != 0:
+            signal = '%d;%s' % (self.uid, signal)
+        if self.device_root is not None and self.device_root is not self:
+            try:
+                return self.device_root.last_signal(signal)
+            except AttributeError:
+                pass
+        return None
+
+    def listen(self, signal, funct):
+        if self.uid != 0:
+            signal = '%d;%s' % (self.uid, signal)
+        if self.device_root is not None and self.device_root is not self:
+            self.device_root.listen(signal, funct)
+
+    def unlisten(self, signal, funct):
+        if self.uid != 0:
+            signal = '%d;%s' % (self.uid, signal)
+        if self.device_root is not None and self.device_root is not self:
+            self.device_root.unlisten(signal, funct)
+
+    def state(self):
+        return self.state
+
+    def resume(self):
+        self.state = STATE_ACTIVE
+
+    def pause(self):
+        self.state = STATE_PAUSE
+
+    def stop(self):
+        self.state = STATE_TERMINATE
+
+    # Channel processing
+
+    def add_greet(self, channel, greet):
+        self.greet[channel] = greet
+        if channel in self.channels:
+            self.channels[channel](greet)
+
+    def add_watcher(self, channel, monitor_function):
+        if channel not in self.watchers:
+            self.watchers[channel] = [monitor_function]
+        else:
+            for q in self.watchers[channel]:
+                if q is monitor_function:
+                    return  # This is already being watched by that.
+            self.watchers[channel].append(monitor_function)
+        if channel in self.greet:
+            monitor_function(self.greet[channel])
+        if channel in self.buffer:
+            for line in self.buffer[channel]:
+                monitor_function(line)
+
+    def remove_watcher(self, channel, monitor_function):
+        self.watchers[channel].remove(monitor_function)
+
+    def channel_open(self, channel, buffer=0):
+        if channel not in self.channels:
+            def chan(message):
+                if channel in self.watchers:
+                    for w in self.watchers[channel]:
+                        w(message)
+                if buffer <= 0:
+                    return
+                try:
+                    buff = self.buffer[channel]
+                except KeyError:
+                    buff = list()
+                    self.buffer[channel] = buff
+                buff.append(message)
+                if len(buff) + 10 > buffer:
+                    self.buffer[channel] = buff[-buffer:]
+
+            self.channels[channel] = chan
+            if channel in self.greet:
+                chan(self.greet[channel])
+        return self.channels[channel]
+
+    # Kernel object registration
+
+    def register(self, object_type, name, obj):
+        if object_type not in self.registered:
+            self.registered[object_type] = {}
+        self.registered[object_type][name] = obj
+        try:
+            obj.sub_register(self)
+        except AttributeError:
+            pass
+
+    def register_module(self, name, obj):
+        self.register('module', name, obj)
+
+    def register_device(self, name, obj):
+        self.register('device', name, obj)
+
+    def register_pipe(self, name, obj):
+        self.register('pipe', name, obj)
+
+    def register_modification(self, name, obj):
+        self.register('modification', name, obj)
+
+    def register_effect(self, name, obj):
+        self.register('effect', name, obj)
+
+    # Device kernel object
+
+    def is_root(self):
+        return self.device_root is None or self.device_root is self
+
+    def device_instance_open(self, device_name, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = device_name
+        return self.open('device', device_name, self, instance_name=instance_name, **kwargs)
+
+    def device_instance_close(self, name):
+        self.close('device', name)
+
+    def device_instance_remove(self, name):
+        if name in self.instances['device']:
+            del self.instances['device'][name]
+
+    def using(self, type_name, object_name, *args, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = object_name
+        if type_name in self.instances:
+            if instance_name in self.instances[type_name]:
+                return self.instances[type_name][instance_name]
+        return self.open(type_name, object_name, *args, instance_name=instance_name, **kwargs)
+
+    def open(self, type_name, object_name, *args, instance_name=None, **kwargs):
+        if instance_name is None:
+            instance_name = object_name
+        if self.device_root is None or self.device_root is self:
+            module_object = self.registered[type_name][object_name]
+        else:
+            module_object = self.device_root.registered[type_name][object_name]
+        instance = module_object(*args, **kwargs)
+        instance.attach(self, name=instance_name)
+        self.add(type_name, instance_name, instance)
+        return instance
+
+    def close(self, type_name, name):
+        if type_name in self.instances and name in self.instances[type_name]:
+            obj = self.instances[type_name][name]
+            try:
+                obj.close()
+            except AttributeError:
+                pass
+            obj.detach(self)
+            if name in self.instances[type_name]:
+                del self.instances[type_name][name]
+
+    def add(self, type_name, name, instance):
+        if type_name not in self.instances:
+            self.instances[type_name] = {}
+        self.instances[type_name][name] = instance
+
+    def remove(self, type_name, name):
+        if name in self.instances[type_name]:
+            del self.instances[type_name][name]
+
+    def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
+        return self.open('module', module_name, *args, instance_name=instance_name, **kwargs)
+
+    def module_instance_close(self, name):
+        self.close('module', name)
+
+    def module_instance_remove(self, name):
+        self.remove('module', name)
+
+    # Pipe kernel object
+
+    def pipe_instance_open(self, pipe_name, instance_name=None, **kwargs):
+        self.open('pipe', pipe_name, instance_name=instance_name, **kwargs)
+
+    # Control kernel object. Registered function calls.
+
+    def control_instance_add(self, control_name, function):
+        self.add('control', control_name, function)
+
+    def control_instance_remove(self, control_name):
+        self.remove('control', control_name)
+
+    # Thread kernel object. Registered Threads.
+
+    def thread_instance_add(self, thread_name, obj):
+        self.add('thread', thread_name, obj)
+
+    def thread_instance_remove(self, thread_name):
+        self.remove('thread', thread_name)
+
+    def get_text_thread_state(self, state):
+        _ = self.device_root.translation
+        if state == STATE_INITIALIZE:
+            return _("Unstarted")
+        elif state == STATE_TERMINATE:
+            return _("Abort")
+        elif state == STATE_END:
+            return _("Finished")
+        elif state == STATE_PAUSE:
+            return _("Pause")
+        elif state == STATE_BUSY:
+            return _("Busy")
+        elif state == STATE_ACTIVE:
+            return _("Active")
+        elif state == STATE_IDLE:
+            return _("Idle")
+        elif state == STATE_UNKNOWN:
+            return _("Unknown")
+
+    def get_state(self, thread_name):
+        try:
+            return self.instances['thread'][thread_name].state()
+        except AttributeError:
+            return STATE_UNKNOWN
+
+    def classify(self, elements):
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.classify(elements)
+
+    def load(self, pathname, **kwargs):
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.load(pathname, **kwargs)
+
+    def load_types(self, all=True):
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.load_types(all)
+
+    def save(self, pathname):
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.save(pathname)
+
+    def save_types(self):
+        if self.device_root is not None and self.device_root is not self:
+            return self.device_root.save_types()
+
+
+class Kernel(Device):
+    """
+    The Kernel is the device root object. It stores device independent settings, values, and functions.
+
+    * It is itself a type of device. It has no root, and should be the DeviceRoot.
+    * Shared location of loaded elements data
+    * Registered loaders and savers.
+    * The persistent storage object
+    * The translation function
+    * The run later function
+    * The keymap object
+    """
+
+    def __init__(self, config=None):
+        Device.__init__(self, self, 0)
+        # Current Project.
+        self.device_name = "MeerK40t"
+        self.device_version = "0.6.0"
+        self.device_root = self
+
+        # Persistent storage if it exists.
+        self.config = None
+        if config is not None:
+            self.set_config(config)
+
+        # Translation function if exists.
+        self.translation = lambda e: e  # Default for this code is do nothing.
+
+        # Keymap/alias values
+        self.keymap = {}
+        self.alias = {}
+
+        self.run_later = lambda listener, message: listener(message)
+
+        self.register_module('Signaler', Signaler)
+        self.register_module('Elemental', Elemental)
+        self.register_module('Spooler', Spooler)
+
+    def boot(self):
+        """
+        Kernel boot sequence. This should be called after all the registered devices are established.
+        :return:
+        """
+        Device.boot(self)
+        self.default_keymap()
+        self.default_alias()
+        self.device_boot()
+
+    def shutdown(self, channel=None):
+        """
+        Begins kernel shutdown procedure.
+        """
+        Device.shutdown(self, channel)
+
+        if self.config is not None:
+            self.config.Flush()
+
+    def default_keymap(self):
+        self.keymap["escape"] = "window open Adjustments"
+        self.keymap["d"] = "+right"
+        self.keymap["a"] = "+left"
+        self.keymap["w"] = "+up"
+        self.keymap["s"] = "+down"
+        self.keymap['numpad_down'] = '+translate_down'
+        self.keymap['numpad_up'] = '+translate_up'
+        self.keymap['numpad_left'] = '+translate_left'
+        self.keymap['numpad_right'] = '+translate_right'
+        self.keymap['numpad*'] = '+scale_up'
+        self.keymap['numpad/'] = '+scale_down'
+        self.keymap['numpad+'] = '+rotate_cw'
+        self.keymap['numpad-'] = '+rotate_ccw'
+        self.keymap['control+a'] = 'element *'
+        self.keymap['control+i'] = 'element ~'
+        self.keymap['control+f'] = 'control Fill'
+        self.keymap['control+s'] = 'control Stroke'
+        self.keymap['control+r'] = 'rect 0 0 1000 1000'
+        self.keymap['control+e'] = 'circle 500 500 500'
+        self.keymap['control+d'] = 'element copy'
+        self.keymap['control+shift+h'] = 'scale -1 1'
+        self.keymap['control+shift+v'] = 'scale 1 -1'
+        self.keymap['control+1'] = "bind 1 move $x $y"
+        self.keymap['control+2'] = "bind 2 move $x $y"
+        self.keymap['control+3'] = "bind 3 move $x $y"
+        self.keymap['control+4'] = "bind 4 move $x $y"
+        self.keymap['control+5'] = "bind 5 move $x $y"
+        self.keymap['alt+r'] = 'raster'
+        self.keymap['alt+e'] = 'engrave'
+        self.keymap['alt+c'] = 'cut'
+        self.keymap['delete'] = 'element delete'
+        self.keymap['f4'] = "window open CameraInterface"
+        self.keymap['f5'] = "refresh"
+        self.keymap['f6'] = "window open JobSpooler"
+        self.keymap['f7'] = "window open Controller"
+        self.keymap['f8'] = "control Path"
+        self.keymap['f9'] = "control Transform"
+        self.keymap['f12'] = "window open Terminal"
+        self.keymap['alt+f12'] = "terminal_ruida"
+        self.keymap['alt+f13'] = 'terminal_watch'
+        self.keymap['pause'] = "control Realtime Pause_Resume"
+        self.keymap['home'] = "home"
+
+    def default_alias(self):
+        self.alias['+scale_up'] = "loop scale 1.02"
+        self.alias['+scale_down'] = "loop scale 0.98"
+        self.alias['+rotate_cw'] = "loop rotate 2"
+        self.alias['+rotate_ccw'] = "loop rotate -2"
+        self.alias['+translate_right'] = "loop translate 1mm 0"
+        self.alias['+translate_left'] = "loop translate -1mm 0"
+        self.alias['+translate_down'] = "loop translate 0 1mm"
+        self.alias['+translate_up'] = "loop translate 0 -1mm"
+        self.alias['+right'] = "loop right 1mm"
+        self.alias['+left'] = "loop left 1mm"
+        self.alias['+up'] = "loop up 1mm"
+        self.alias['+down'] = "loop down 1mm"
+        self.alias['+upright'] = "loop move_relative 1mm -1mm"
+        self.alias['+downright'] = "loop move_relative 1mm 1mm"
+        self.alias['+upleft'] = "loop move_relative -1mm -1mm"
+        self.alias['+downleft'] = "loop move_relative -1mm 1mm"
+        self.alias['-scale_up'] = "end scale 1.02"
+        self.alias['-scale_down'] = "end scale 0.98"
+        self.alias['-rotate_cw'] = "end rotate 2"
+        self.alias['-rotate_ccw'] = "end rotate -2"
+        self.alias['-translate_right'] = "end translate 1mm 0"
+        self.alias['-translate_left'] = "end translate -1mm 0"
+        self.alias['-translate_down'] = "end translate 0 1mm"
+        self.alias['-translate_up'] = "end translate 0 -1mm"
+        self.alias['-right'] = "end right 1mm"
+        self.alias['-left'] = "end left 1mm"
+        self.alias['-up'] = "end up 1mm"
+        self.alias['-down'] = "end down 1mm"
+        self.alias['-upright'] = "end move_relative 1mm -1mm"
+        self.alias['-downright'] = "end move_relative 1mm 1mm"
+        self.alias['-upleft'] = "end move_relative -1mm -1mm"
+        self.alias['-downleft'] = "end move_relative -1mm 1mm"
+        self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
+        self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
+
+    def read_item_persistent(self, item):
+        return self.config.Read(item)
+
+    def read_persistent(self, t, key, default=None, uid=0):
+        if self.config is None:
+            return default
+        if uid != 0:
+            key = '%s/%s' % (str(uid), key)
         if default is not None:
             if t == str:
                 return self.config.Read(key, default)
@@ -803,7 +2100,11 @@ class Kernel:
         elif t == bool:
             return self.config.ReadBool(key)
 
-    def write_config(self, key, value):
+    def write_persistent(self, key, value, uid=0):
+        if self.config is None:
+            return
+        if uid != 0:
+            key = '%d/%s' % (uid, key)
         if isinstance(value, str):
             self.config.Write(key, value)
         elif isinstance(value, int):
@@ -822,7 +2123,7 @@ class Kernel:
             if value is None:
                 continue
             if isinstance(value, (int, bool, float, str)):
-                self.write_config(attr, value)
+                self.write_persistent(attr, value)
         more, value, index = config.GetFirstEntry()
         while more:
             if not value.startswith('_'):
@@ -830,280 +2131,36 @@ class Kernel:
                     setattr(self, value, None)
             more, value, index = config.GetNextEntry(index)
 
-    def setting(self, setting_type, setting_name, default=None):
+    def device_boot(self):
         """
-        Registers a setting to be used between modules.
+        Boots any devices that are set to boot.
 
-        If the setting exists, it's value remains unchanged.
-        If the setting exists in the persistent storage that value is used.
-        If there is no settings value, the default will be used.
-
-        :param setting_type: int, float, str, or bool value
-        :param setting_name: name of the setting
-        :param default: default value for the setting to have.
-        :return: load_value
+        :return:
         """
-        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
-            return
-        if not setting_name.startswith('_') and self.config is not None:
-            load_value = self[setting_type, setting_name, default]
-        else:
-            load_value = default
-        setattr(self, setting_name, load_value)
-        return load_value
-
-    def flush(self):
-        for attr in dir(self):
-            if attr.startswith('_'):
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float)):
-                self[attr] = value
-
-    def update(self, setting_name, value):
-        if hasattr(self, setting_name):
-            old_value = getattr(self, setting_name)
-        else:
-            old_value = None
-        setattr(self, setting_name, value)
-        self(setting_name, (value, old_value))
-
-    def add_window(self, window_name, window):
-        self.windows[window_name] = window
-
-    def mark_window_closed(self, name):
-        if name in self.open_windows:
-            del self.open_windows[name]
-
-    def close_old_window(self, name):
-        if name in self.open_windows:
+        self.setting(str, 'list_devices', '')
+        devices = self.list_devices
+        for device in devices.split(';'):
             try:
-                self.open_windows[name].Close()
-            except RuntimeError:
-                pass  # already closed.
-        self.mark_window_closed(name)
+                d = int(device)
+            except ValueError:
+                return
+            device_name = self.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
+            autoboot = self.read_persistent(bool, 'autoboot', True, uid=d)
+            if autoboot:
+                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
+                dev.boot()
 
-    def open_window(self, window_name):
-        self.close_old_window(window_name)
-        w = self.windows[window_name]
-        window = w(None, -1, "")
-        window.Show()
-        window.set_kernel(self)
-        self.open_windows[window_name] = window
-        return window
+    def device_add(self, device_type, device_uid):
+        self.write_persistent('device_name', device_type, uid=device_uid)
+        self.write_persistent('autoboot', True, uid=device_uid)
+        self.setting(str, 'list_devices', '')
+        devices = [d for d in self.list_devices.split(';') if d != '']
+        devices.append(str(device_uid))
+        self.list_devices = ';'.join(devices)
+        self.write_persistent('list_devices', self.list_devices)
 
-    def listen(self, signal, funct):
-        self.queue_lock.acquire(True)
-        self.adding_listeners.append((signal, funct))
-        self.queue_lock.release()
+    def register_loader(self, name, obj):
+        self.registered['load'][name] = obj
 
-    def unlisten(self, signal, funct):
-        self.queue_lock.acquire(True)
-        self.removing_listeners.append((signal, funct))
-        self.queue_lock.release()
-
-    def add_module(self, module_name, module):
-        self.modules[module_name] = module
-        module.initialize(self, name=module_name)
-
-    def remove_module(self, module_name):
-        del self.modules[module_name]
-
-    def add_loader(self, loader_name, loader):
-        self.loaders[loader_name] = loader
-
-    def add_saver(self, saver_name, saver):
-        self.savers[saver_name] = saver
-
-    def remove_backend(self, backend_name):
-        del self.backends[backend_name]
-
-    def add_backend(self, backend_name, backend):
-        self.backends[backend_name] = backend
-
-    def add_device(self, device_name, device):
-        self.devices[device_name] = device
-
-    def activate_device(self, device_name):
-        if device_name is None:
-            self.device = None
-        else:
-            self.device = self.devices[device_name]
-        self.signal("device", self.device)
-
-    def add_control(self, control_name, function):
-        self.controls[control_name] = function
-
-    def remove_control(self, control_name):
-        del self.controls[control_name]
-
-    def execute(self, control_name, *args):
-        self.controls[control_name](*args)
-
-    def add_thread(self, thread_name, obj):
-        self.threads[thread_name] = obj
-
-    def remove_thread(self, thread_name):
-        del self.threads[thread_name]
-
-    def get_text_thread_state(self, state):
-        _ = self.translation
-        if state == THREAD_STATE_UNSTARTED:
-            return _("Unstarted")
-        elif state == THREAD_STATE_ABORT:
-            return _("Aborted")
-        elif state == THREAD_STATE_FINISHED:
-            return _("Finished")
-        elif state == THREAD_STATE_PAUSED:
-            return _("Paused")
-        elif state == THREAD_STATE_STARTED:
-            return _("Started")
-        elif state == THREAD_STATE_UNKNOWN:
-            return _("Unknown")
-
-    def get_state(self, thread_name):
-        try:
-            return self.threads[thread_name].state()
-        except AttributeError:
-            return THREAD_STATE_UNKNOWN
-
-    def start(self, thread_name):
-        try:
-            self.modules[thread_name].start()
-        except AttributeError:
-            pass
-
-    def resume(self, thread_name):
-        try:
-            self.modules[thread_name].resume()
-        except AttributeError:
-            pass
-
-    def pause(self, thread_name):
-        try:
-            self.modules[thread_name].pause()
-        except AttributeError:
-            pass
-
-    def abort(self, thread_name):
-        try:
-            self.modules[thread_name].abort()
-        except AttributeError:
-            pass
-
-    def reset(self, thread_name):
-        try:
-            self.modules[thread_name].reset()
-        except AttributeError:
-            pass
-
-    def stop(self, thread_name):
-        try:
-            self.modules[thread_name].stop()
-        except AttributeError:
-            pass
-
-    def classify(self, elements):
-        """
-        Classify does the initial placement of elements as operations.
-        RasterOperation is the default for images.
-        If element strokes are red they get classed as cut operations
-        If they are otherwise they get classed as engrave.
-        """
-        if elements is None:
-            return
-        raster = None
-        engrave = None
-        cut = None
-        rasters = []
-        engraves = []
-        cuts = []
-
-        if not isinstance(elements, list):
-            elements = [elements]
-        for element in elements:
-            if isinstance(element, Path):
-                if element.stroke == "red":
-                    if cut is None or not cut.has_same_properties(element):
-                        cut = CutOperation()
-                        cuts.append(cut)
-                        cut.set_properties(element)
-                    cut.append(element)
-                elif element.stroke == "blue":
-                    if engrave is None or not engrave.has_same_properties(element):
-                        engrave = EngraveOperation()
-                        engraves.append(engrave)
-                        engrave.set_properties(element)
-                    engrave.append(element)
-                if (element.stroke != "red" and element.stroke != "blue") or element.fill is not None:
-                    # not classed already, or was already classed but has a fill.
-                    if raster is None or not raster.has_same_properties(element):
-                        raster = RasterOperation()
-                        rasters.append(raster)
-                        raster.set_properties(element)
-                    raster.append(element)
-            elif isinstance(element, SVGImage):
-                # TODO: Add SVGImages to overall Raster
-                rasters.append(RasterOperation(element))
-            elif isinstance(element, SVGText):
-                pass  # I can't process actual text.
-        rasters = [r for r in rasters if len(r) != 0]
-        engraves = [r for r in engraves if len(r) != 0]
-        cuts = [r for r in cuts if len(r) != 0]
-        ops = []
-        ops.extend(rasters)
-        ops.extend(engraves)
-        ops.extend(cuts)
-        self.operations.extend(ops)
-        return ops
-
-    def load(self, pathname):
-        for loader_name, loader in self.loaders.items():
-            for description, extensions, mimetype in loader.load_types():
-                if pathname.lower().endswith(extensions):
-                    results = loader.load(pathname)
-                    if results is None:
-                        continue
-                    elements, pathname, basename = results
-                    self.filenodes[pathname] = elements
-                    self.elements.extend(elements)
-                    self.signal('rebuild_tree', elements)
-                    return elements, pathname, basename
-        return None
-
-    def load_types(self, all=True):
-        filetypes = []
-        if all:
-            filetypes.append('All valid types')
-            exts = []
-            for loader_name, loader in self.loaders.items():
-                for description, extensions, mimetype in loader.load_types():
-                    for ext in extensions:
-                        exts.append('*.%s' % ext)
-            filetypes.append(';'.join(exts))
-        for loader_name, loader in self.loaders.items():
-            for description, extensions, mimetype in loader.load_types():
-                exts = []
-                for ext in extensions:
-                    exts.append('*.%s' % ext)
-                filetypes.append("%s (%s)" % (description, extensions[0]))
-                filetypes.append(';'.join(exts))
-        return "|".join(filetypes)
-
-    def save(self, pathname):
-        for save_name, saver in self.savers.items():
-            for description, extension, mimetype in saver.save_types():
-                if pathname.lower().endswith(extension):
-                    saver.save(pathname, 'default')
-                    return True
-        return False
-
-    def save_types(self):
-        filetypes = []
-        for saver_name, saver in self.savers.items():
-            for description, extension, mimetype in saver.save_types():
-                filetypes.append("%s (%s)" % (description, extension))
-                filetypes.append("*.%s" % (extension))
-        return "|".join(filetypes)
+    def register_saver(self, name, obj):
+        self.registered['save'][name] = obj

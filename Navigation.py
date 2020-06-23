@@ -5,22 +5,20 @@
 
 import wx
 
-from LaserCommandConstants import *
+from Kernel import Module
 from icons import *
-from svgelements import Angle, Point, SVGImage, Path
 
 _ = wx.GetTranslation
 
-# begin wxGlade: dependencies
-# end wxGlade
 MILS_IN_MM = 39.3701
 
 
-class Navigation(wx.Frame):
+class Navigation(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Navigation.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((598, 429))
         self.spin_jog_mils = wx.SpinCtrlDouble(self, wx.ID_ANY, "394.0", min=0.0, max=10000.0)
         self.spin_jog_mm = wx.SpinCtrlDouble(self, wx.ID_ANY, "10.0", min=0.0, max=254.0)
@@ -82,25 +80,25 @@ class Navigation(wx.Frame):
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_inch)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_inch)
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_UL, self.button_navigate_up_left)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_U, self.button_navigate_up)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_UR, self.button_navigate_up_right)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_L, self.button_navigate_left)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_R, self.button_navigate_right)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_DL, self.button_navigate_down_left)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_D, self.button_navigate_down)
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_DR, self.button_navigate_down_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_ul, self.button_navigate_up_left)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_u, self.button_navigate_up)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_ur, self.button_navigate_up_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_l, self.button_navigate_left)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_dl, self.button_navigate_down_left)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_d, self.button_navigate_down)
+        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_dr, self.button_navigate_down_right)
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_unlock, self.button_navigate_unlock)
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_lock, self.button_navigate_lock)
-        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_TL, self.button_align_corner_top_left)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_tl, self.button_align_corner_top_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_drag_up, self.button_align_drag_up)
-        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_TR, self.button_align_corner_top_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_tr, self.button_align_corner_top_right)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_drag_left, self.button_align_drag_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_center, self.button_align_center)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_drag_right, self.button_align_drag_right)
-        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_BL, self.button_align_corner_bottom_left)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_bl, self.button_align_corner_bottom_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_drag_down, self.button_align_drag_down)
-        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_BR, self.button_align_corner_bottom_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_br, self.button_align_corner_bottom_right)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_trace_quick, self.button_align_trace_quick)
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_pulse, self.button_navigate_pulse)
@@ -126,19 +124,18 @@ class Navigation(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
         self.elements = None
-        self.bounds = None
+        self.console = None
         self.design_locked = False
         self.drag_ready(False)
         self.select_ready(False)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Navigation")
-        self.kernel.unlisten("selected_elements", self.on_selected_elements_change)
-        self.kernel.unlisten("selected_bounds", self.on_selected_bounds_change)
-        self.device.unlisten("interpreter;position", self.on_position_update)
+        kernel = self.device.device_root
+        self.device.remove('window', self.name)
+        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
+        self.device.unlisten('interpreter;position', self.on_position_update)
+
         event.Skip()  # Call destroy.
 
     def __set_properties(self):
@@ -201,6 +198,17 @@ class Navigation(wx.Frame):
         self.button_rotate_ccw.SetSize(self.button_rotate_ccw.GetBestSize())
         self.button_translate_down.SetSize(self.button_translate_down.GetBestSize())
         self.button_rotate_cw.SetSize(self.button_rotate_cw.GetBestSize())
+
+        self.button_scale_down.SetToolTip(_("Scale Down"))
+        self.button_translate_up.SetToolTip(_("Translate Top"))
+        self.button_scale_up.SetToolTip(_("Scale Up"))
+        self.button_translate_left.SetToolTip(_("Translate Left"))
+        self.button_reset.SetToolTip(_("Reset Matrix"))
+        self.button_translate_right.SetToolTip(_("Translate Right"))
+        self.button_rotate_ccw.SetToolTip(_("Rotate Counterclockwise"))
+        self.button_translate_down.SetToolTip(_("Translate Bottom"))
+        self.button_rotate_cw.SetToolTip(_("Rotate Clockwise"))
+
         self.text_a.SetMinSize((70, 23))
         self.text_a.SetToolTip(_("Transform: Scale X"))
         self.text_c.SetMinSize((70, 23))
@@ -333,10 +341,13 @@ class Navigation(wx.Frame):
         self.Layout()
         # end wxGlade
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        self.device = kernel.device
-        if self.device is None:
+    def initialize(self):
+        device = self.device
+        kernel = self.device.device_root
+        self.elements = kernel.elements
+        device.close('window', self.name)
+        self.Show()
+        if device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -345,23 +356,27 @@ class Navigation(wx.Frame):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             dlg.ShowModal()
             dlg.Destroy()
-        else:
-            self.device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
-            self.device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
-            self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
-            self.set_jog_distances(self.device.navigate_jog)
-        self.kernel.listen("selected_elements", self.on_selected_elements_change)
-        self.kernel.listen("selected_bounds", self.on_selected_bounds_change)
-        self.device.listen("interpreter;position", self.on_position_update)
+            return
+
+        device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
+        device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
+        self.spin_pulse_duration.SetValue(self.device.navigate_pulse)
+        self.set_jog_distances(self.device.navigate_jog)
+
+        kernel.listen('emphasized', self.on_emphasized_elements_changed)
+        device.listen('interpreter;position', self.on_position_update)
+        self.console = self.device.using('module', 'Console')
         self.update_matrix_text()
 
-    def on_selected_elements_change(self, elements):
-        self.elements = elements
-        self.select_ready(self.elements is not None and len(self.elements) != 0)
+    def shutdown(self,  channel):
+        self.Close()
+
+    def on_emphasized_elements_changed(self, elements):
+        self.select_ready(self.elements.has_emphasis())
         self.update_matrix_text()
 
     def update_matrix_text(self):
-        v = self.elements is not None and len(self.elements) == 1
+        v = self.elements.has_emphasis()
         self.text_a.Enable(v)
         self.text_b.Enable(v)
         self.text_c.Enable(v)
@@ -369,7 +384,7 @@ class Navigation(wx.Frame):
         self.text_e.Enable(v)
         self.text_f.Enable(v)
         if v:
-            matrix = self.elements[0].transform
+            matrix = self.elements.first_element(emphasized=True).transform
             self.text_a.SetValue(str(matrix.a))
             self.text_b.SetValue(str(matrix.b))
             self.text_c.SetValue(str(matrix.c))
@@ -377,13 +392,9 @@ class Navigation(wx.Frame):
             self.text_e.SetValue(str(matrix.e))
             self.text_f.SetValue(str(matrix.f))
 
-    def on_selected_bounds_change(self, bounds):
-        self.bounds = bounds
-
     def on_position_update(self, *args):
         self.text_position_x.SetValue(str(self.device.current_x))
         self.text_position_y.SetValue(str(self.device.current_y))
-        self.Refresh()
 
     def drag_ready(self, v):
         self.design_locked = v
@@ -393,6 +404,11 @@ class Navigation(wx.Frame):
         self.button_align_drag_left.Enable(v)
 
     def select_ready(self, v):
+        """
+        Enables the relevant buttons when there is a selection in the elements.
+        :param v: whether selection is currently drag ready.
+        :return:
+        """
         if not v:
             self.button_align_drag_down.Enable(False)
             self.button_align_drag_up.Enable(False)
@@ -433,86 +449,107 @@ class Navigation(wx.Frame):
         self.set_jog_distances(int(self.device.navigate_jog))
 
     def on_button_navigate_home(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.home()
+        self.console.write('home\n')
         self.drag_ready(False)
 
-    def on_button_navigate_UL(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(-self.device.navigate_jog, -self.device.navigate_jog)
+    def on_button_navigate_ul(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = -self.device.navigate_jog
+        dy = -self.device.navigate_jog
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_U(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(0, -self.device.navigate_jog)
+    def on_button_navigate_u(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = 0
+        dy = -self.device.navigate_jog
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_UR(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(self.device.navigate_jog, -self.device.navigate_jog)
+    def on_button_navigate_ur(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = self.device.navigate_jog
+        dy = -self.device.navigate_jog
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_L(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(-self.device.navigate_jog, 0)
+    def on_button_navigate_l(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = -self.device.navigate_jog
+        dy = 0
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_R(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(self.device.navigate_jog, 0)
+    def on_button_navigate_r(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = self.device.navigate_jog
+        dy = 0
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_DL(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(-self.device.navigate_jog, self.device.navigate_jog)
+    def on_button_navigate_dl(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = -self.device.navigate_jog
+        dy = self.device.navigate_jog
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_D(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(0, self.device.navigate_jog)
+    def on_button_navigate_d(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = 0
+        dy = self.device.navigate_jog
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
-    def on_button_navigate_DR(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.move_relative(self.device.navigate_jog, self.device.navigate_jog)
+    def on_button_navigate_dr(self, event):  # wxGlade: Navigation.<event_handler>
+        dx = self.device.navigate_jog
+        dy = self.device.navigate_jog
+        self.console.write('move_relative %d %d\n' % (dx, dy))
         self.drag_ready(False)
 
     def on_button_navigate_unlock(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.unlock_rail()
+        self.console.write('unlock\n')
 
     def on_button_navigate_lock(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.interpreter.lock_rail()
+        self.console.write('lock\n')
 
     def on_button_align_center(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.bounds
+        elements = self.elements
+        bbox = elements.bounds()
         if bbox is None:
             return
-        self.device.interpreter.move_absolute((bbox[0] + bbox[2]) / 2.0, (bbox[3] + bbox[1]) / 2.0)
+        px = (bbox[0] + bbox[2]) / 2.0
+        py = (bbox[3] + bbox[1]) / 2.0
+        self.console.write('move_absolute %f %f\n' % (px,py))
         self.drag_ready(True)
 
-    def on_button_align_corner_TL(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.bounds
+    def on_button_align_corner_tl(self, event):  # wxGlade: Navigation.<event_handler>
+        elements = self.elements
+        bbox = elements.bounds()
         if bbox is None:
             return
-        self.device.interpreter.move_absolute(bbox[0], bbox[1])
+        self.console.write('move_absolute %f %f\n' % (bbox[0], bbox[1]))
         self.drag_ready(True)
 
-    def on_button_align_corner_TR(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.bounds
+    def on_button_align_corner_tr(self, event):  # wxGlade: Navigation.<event_handler>
+        elements = self.device.device_root.elements
+        bbox = elements.bounds()
         if bbox is None:
             return
-        self.device.interpreter.move_absolute(bbox[2], bbox[1])
+        self.console.write('move_absolute %f %f\n' % (bbox[2], bbox[1]))
         self.drag_ready(True)
 
-    def on_button_align_corner_BL(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.bounds
+    def on_button_align_corner_bl(self, event):  # wxGlade: Navigation.<event_handler>
+        elements = self.device.device_root.elements
+        bbox = elements.bounds()
         if bbox is None:
             return
-        self.device.interpreter.move_absolute(bbox[0], bbox[3])
+        self.console.write('move_absolute %f %f\n' % (bbox[0], bbox[3]))
         self.drag_ready(True)
 
-    def on_button_align_corner_BR(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.bounds
+    def on_button_align_corner_br(self, event):  # wxGlade: Navigation.<event_handler>
+        elements = self.device.device_root.elements
+        bbox = elements.bounds()
         if bbox is None:
             return
-        self.device.interpreter.move_absolute(bbox[2], bbox[3])
+        self.console.write('move_absolute %f %f\n' % (bbox[2], bbox[3]))
         self.drag_ready(True)
 
     def drag_relative(self, dx, dy):
-        if self.elements is not None:
-            self.kernel.root.move_selected(dx, dy)
-        self.device.interpreter.move_relative(dx, dy)
+        self.console.write('move_relative %d %d\ntranslate %d %d\n' % (dx, dy, dx, dy))
 
     def on_button_align_drag_down(self, event):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(0, self.device.navigate_jog)
@@ -531,141 +568,99 @@ class Navigation(wx.Frame):
         self.update_matrix_text()
 
     def on_button_align_trace_hull(self, event):  # wxGlade: Navigation.<event_handler>
-        pts = []
-        for obj in self.elements:
-            if isinstance(obj, Path):
-                epath = abs(obj)
-                pts += [q for q in epath.as_points()]
-            elif isinstance(obj, SVGImage):
-                bounds = obj.bbox()
-                pts += [(bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3])]
-        hull = [p for p in Point.convex_hull(pts)]
-        if len(hull) == 0:
-            return
-
-        def trace_hull():
-            yield COMMAND_WAIT_BUFFER_EMPTY
-            yield COMMAND_LASER_OFF
-            for p in hull:
-                yield COMMAND_RAPID_MOVE, p
-
-        self.device.send_job(trace_hull)
+        self.console.write('trace_hull\n')
 
     def on_button_align_trace_quick(self, event):  # wxGlade: Navigation.<event_handler>
-        bbox = self.bounds
-        if bbox is None:
-            return
-
-        def trace_quick():
-            yield COMMAND_WAIT_BUFFER_EMPTY
-            yield COMMAND_LASER_OFF
-            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[1])
-            yield COMMAND_RAPID_MOVE, (bbox[2], bbox[1])
-            yield COMMAND_RAPID_MOVE, (bbox[2], bbox[3])
-            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[3])
-            yield COMMAND_RAPID_MOVE, (bbox[0], bbox[1])
-
-        self.device.send_job(trace_quick)
+        self.console.write('trace_quick\n')
         self.drag_ready(True)
 
     def on_button_navigate_pulse(self, event):  # wxGlade: Navigation.<event_handler>
         value = self.spin_pulse_duration.GetValue()
-        value = value / 1000.0
-
-        def timed_fire():
-            yield COMMAND_WAIT_BUFFER_EMPTY
-            yield COMMAND_LASER_ON
-            yield COMMAND_WAIT, value
-            yield COMMAND_LASER_OFF
-
-        self.device.send_job(timed_fire)
+        self.console.write('pulse %f\n' % value)
 
     def on_spin_pulse_duration(self, event):  # wxGlade: Navigation.<event_handler>
-        self.device.navigate_pulse = self.spin_pulse_duration.GetValue()
+        self.device.navigate_pulse = float(self.spin_pulse_duration.GetValue())
 
     def on_button_navigate_move_to(self, event):  # wxGlade: Navigation.<event_handler>
         try:
             x = int(self.text_position_x.GetValue())
             y = int(self.text_position_y.GetValue())
-            self.device.interpreter.move_absolute(x, y)
+            self.console.write('move %d %d\n' % (x, y))
         except ValueError:
             return
 
     def matrix_updated(self):
-        self.kernel.signal('refresh_scene')
-        self.kernel.root.selection_bounds_updated()
+        self.device.signal('refresh_scene')
         self.update_matrix_text()
         self.drag_ready(False)
 
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_scale(0.95, 0.95, self.device.current_x, self.device.current_y)
-            self.matrix_updated()
+        scale = 19.0 / 20.0
+        self.console.write('scale %f %f %f %f\n' % (scale,
+                                                                              scale,
+                                                                              self.device.current_x,
+                                                                              self.device.current_y))
+        self.matrix_updated()
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_scale(1.05, 1.05, self.device.current_x, self.device.current_y)
-            self.matrix_updated()
+        scale = 20.0 / 19.0
+        self.console.write('scale %f %f %f %f\n' % (scale,
+                                                                              scale,
+                                                                              self.device.current_x,
+                                                                              self.device.current_y))
+        self.matrix_updated()
 
     def on_translate_up(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_translate(0, -self.device.navigate_jog)
-            self.matrix_updated()
+        dx = 0
+        dy = -self.device.navigate_jog
+        self.console.write('translate %f %f\n' % (dx, dy))
+        self.matrix_updated()
 
     def on_translate_left(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_translate(-self.device.navigate_jog, 0)
-            self.matrix_updated()
+        dx = -self.device.navigate_jog
+        dy = 0
+        self.console.write('translate %f %f\n' % (dx, dy))
+        self.matrix_updated()
 
     def on_translate_right(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_translate(self.device.navigate_jog, 0)
-            self.matrix_updated()
-
-    def on_reset(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.reset()
-            self.matrix_updated()
-
-    def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_rotate(Angle.degrees(-5), self.device.current_x, self.device.current_y)
-            self.matrix_updated()
+        dx = self.device.navigate_jog
+        dy = 0
+        self.console.write('translate %f %f\n' % (dx, dy))
+        self.matrix_updated()
 
     def on_translate_down(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_translate(0, self.device.navigate_jog)
-            self.matrix_updated()
+        dx = 0
+        dy = self.device.navigate_jog
+        self.console.write('translate %f %f\n' % (dx, dy))
+        self.matrix_updated()
+
+    def on_reset(self, event):  # wxGlade: Navigation.<event_handler>
+        self.console.write('reset\n')
+        self.matrix_updated()
+
+    def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
+        self.console.write('rotate %fdeg %f %f\n' % (-5,
+                                                                               self.device.current_x,
+                                                                               self.device.current_y))
+        self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None:
-            for e in self.elements:
-                e.transform.post_rotate(Angle.degrees(5), self.device.current_x, self.device.current_y)
-            self.matrix_updated()
+        self.console.write('rotate %fdeg %f %f\n' % (5,
+                                                                               self.device.current_x,
+                                                                               self.device.current_y))
+        self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>
-        if self.elements is not None and len(self.elements) == 1:
-            matrix = self.elements[0].transform
-            try:
-                matrix.a = float(self.text_a.GetValue())
-                matrix.b = float(self.text_b.GetValue())
-                matrix.c = float(self.text_c.GetValue())
-                matrix.d = float(self.text_d.GetValue())
-                matrix.e = float(self.text_e.GetValue())
-                matrix.f = float(self.text_f.GetValue())
-                self.kernel.root.selection_bounds_updated()
-            except ValueError:
-                self.update_matrix_text()
+        try:
+            self.console.write("matrix %f %f %f %f %s %s" % (
+                float(self.text_a.GetValue()),
+                float(self.text_b.GetValue()),
+                float(self.text_c.GetValue()),
+                float(self.text_d.GetValue()),
+                self.text_e.GetValue(),
+                self.text_f.GetValue()
+            ))
+        except ValueError:
+            self.update_matrix_text()
             self.drag_ready(False)
-        self.kernel.signal('refresh_scene')
+        self.device.signal('refresh_scene')

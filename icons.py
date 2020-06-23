@@ -1204,3 +1204,17 @@ icons8_rotate_right_50 = PyEmbeddedImage(
     b'L07hREx6HcYhRmPkOCpxkzu9SlYCf2FmACyJo5JLImUZseuw7mnBxyBmpnwbZM0QlTTyf5zD'
     b'uakngGXDwmeMZEm6KHCOpHfKvTHd0NCQlo6Of9ewYWPOK1cIAAAAAElFTkSuQmCC')
 
+icons8_choose_font_50 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC'
+    b'RElEQVRoge3ZvWsUQRiA8d8lQYyIH6CHBCsV/ACtLMQqEBQrMYpGxcpSELT1T7BSBFsbKytR'
+    b'o1ZCCkXETtRgEwlpVBANKDGJOYtNuFxmL3u37N5eZB/YZvZl5nl3bvbemaWkpKRkLVHJqJ8N'
+    b'OIgq1sfc78FCBuNMYwwzGfTVwDGMYha1Dl2jWSawCfc7KL/8+plVElWMF5jEtSyS6MfbFZ1P'
+    b'4QYOYfOy2G34uyJ2YfFBFM5NjWLPsLVJ7BnhE33fAcdEdmFOXeqNaIaacUeYyN2cHVvitrrQ'
+    b'H+xNiH8nTORcnoKtMqUudC8hdrtoPaxcHzvyFGyVCXWpowmxZ4Wz8TFPub42YodxBS/xKiF2'
+    b'MKZtrI2xuoYPwhk5X6hRCqrC9VHDQJFSaRgRJjGe96A9OfQ5GNOW+/poZ7GvxgCOoBfHY+7X'
+    b'RG+yZuRWnrfDTnzXZeV5Gk7osvI8Lf14hHldUJ5nQR++CSWHipRKw5AwiR9Y14nBs3z9nopp'
+    b'W9rPrxkqmBTOyEiRUmk4LExiFls6JZDVT2s4pm1MtEbWDH0aN11L19UipdIwLExiTpfsBtvh'
+    b'uTCRx4UapWCf8OyqhtNFSqXhqTCJz7KrqjPhgGh7uqfJ/Yvi66brHbFrkcvqReCcxvOoiuiP'
+    b'bkaYxKTVD+06zleNgr/wRHREOiF+Jmq4UIRsMyr4rf1S/EERsknc0l4Sr7GxENMEekXHoq0k'
+    b'8VD04aeruYRPQvl5vMDJ4tQaafVj6H7sXoz/Ijqnms5LqqSkpOT/5x8uy2K2p2FyYgAAAABJ'
+    b'RU5ErkJggg==')

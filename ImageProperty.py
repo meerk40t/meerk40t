@@ -1,13 +1,16 @@
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class ImageProperty(wx.Frame):
+class ImageProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: ImageProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
         self.combo_dpi = wx.ComboBox(self, wx.ID_ANY,
@@ -33,12 +36,11 @@ class ImageProperty(wx.Frame):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
         # end wxGlade
-        self.kernel = None
         self.image_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("ImageProperty")
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -62,8 +64,12 @@ class ImageProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
+    def initialize(self):
+        self.device.close('window', self.name)
+        self.Show()
+
+    def shutdown(self,  channel):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: ImageProperty.__set_properties
@@ -124,14 +130,12 @@ class ImageProperty(wx.Frame):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.image_element.values['raster_step'] = self.spin_step_size.GetValue()
         self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.image_element)
+        self.device.signal('element_property_update', self.image_element)
 
     def on_combo_dpi(self, event):  # wxGlade: ImageProperty.<event_handler>
         self.spin_step_size.SetValue(self.combo_dpi.GetSelection() + 1)
         self.image_element.values['raster_step'] = self.spin_step_size.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.image_element)
+        self.device.signal('element_property_update', self.image_element)
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()

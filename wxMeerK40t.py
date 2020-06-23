@@ -6,7 +6,6 @@
 import sys
 import traceback
 
-import wx
 import wx.ribbon as RB
 
 from About import About
@@ -15,6 +14,7 @@ from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller
+from CutProperty import CutProperty
 from DefaultModules import *
 from DeviceManager import DeviceManager
 from EngraveProperty import EngraveProperty
@@ -24,7 +24,7 @@ from JobSpooler import JobSpooler
 from Kernel import *
 from Keymap import Keymap
 from LaserOperation import *
-from LaserRender import LaserRender, swizzlecolor
+from LaserRender import *
 from Navigation import Navigation
 from OperationPreprocessor import OperationPreprocessor
 from PathProperty import PathProperty
@@ -32,10 +32,11 @@ from Preferences import Preferences
 from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
-from Shutdown import Shutdown
+from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
-from ZMatrix import ZMatrix
+from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
+    LaserPathWidget
 from icons import *
 from svgelements import *
 
@@ -47,12 +48,11 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
 wxMeerK40t is the primary gui addon for MeerK40t. It requires wxPython for the interface.
-The Transformations work in Windows for wxPython 4.0+ and OSX/Linux wxPython 4.1+.
+The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely before)
 
 """
 
 MILS_IN_MM = 39.3701
-MEERK40T_VERSION = "0.5.2"
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
@@ -80,20 +80,16 @@ ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
 ID_PREFERENCES = idinc.new()
 ID_DEVICES = idinc.new()
+ID_CAMERA = idinc.new()
 ID_JOB = idinc.new()
 ID_SPOOLER = idinc.new()
 
 ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
 
-ID_MENU_NEW = idinc.new()
-ID_MENU_OPEN_PROJECT = idinc.new()
 ID_MENU_RECENT_PROJECT = idinc.new()
 
 ID_MENU_IMPORT = idinc.new()
-ID_MENU_SAVE = idinc.new()
-ID_MENU_SAVE_AS = idinc.new()
-ID_MENU_EXIT = idinc.new()
 ID_MENU_ZOOM_OUT = idinc.new()
 ID_MENU_ZOOM_IN = idinc.new()
 ID_MENU_ZOOM_SIZE = idinc.new()
@@ -108,26 +104,27 @@ ID_MENU_HIDE_RETICLE = idinc.new()
 ID_MENU_HIDE_SELECTION = idinc.new()
 ID_MENU_SCREEN_REFRESH = idinc.new()
 ID_MENU_SCREEN_ANIMATE = idinc.new()
+ID_MENU_SCREEN_INVERT = idinc.new()
+ID_MENU_SCREEN_FLIPXY = idinc.new()
+ID_MENU_PREVENT_CACHING = idinc.new()
 ID_MENU_HIDE_IMAGE = idinc.new()
 ID_MENU_HIDE_PATH = idinc.new()
 ID_MENU_HIDE_TEXT = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
-ID_MENU_ABOUT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_DEVICE_MANAGER = idinc.new()
-ID_MENU_PREFERENCES = idinc.new()
 ID_MENU_SETTINGS = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
 ID_MENU_CAMERA = idinc.new()
+ID_MENU_TERMINAL = idinc.new()
 ID_MENU_USB = idinc.new()
 ID_MENU_SPOOLER = idinc.new()
 ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
 
-ID_MENU_WEBPAGE = idinc.new()
 ID_CUT_TREE = idinc.new()
 ID_CUT_BURN_BUTTON = idinc.new()
 
@@ -138,7 +135,7 @@ supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('es', u'español', wx.LANGUAGE_SPANISH))
 
 
-class MeerK40t(wx.Frame):
+class MeerK40t(wx.Frame, Module):
     """
     MeerK40t main window
     """
@@ -147,6 +144,7 @@ class MeerK40t(wx.Frame):
         # begin wxGlade: MeerK40t.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.DragAcceptFiles(True)
 
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
@@ -175,20 +173,24 @@ class MeerK40t(wx.Frame):
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
+        windows.AddButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
         self._ribbon.Realize()
 
         self.CenterOnScreen()
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(ID_MENU_NEW, _("New"), "")
-        wxglade_tmp_menu.Append(ID_MENU_OPEN_PROJECT, _("Open Project"), "")
+        # NOTE: New Project
+
+        wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
+        wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_SAVE, _("Save"), "")
-        wxglade_tmp_menu.Append(ID_MENU_SAVE_AS, _("Save As"), "")
+
+        wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save"), "")
+        wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As"), "")
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(ID_MENU_EXIT, _("Exit"), "")
+        wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
 
@@ -206,19 +208,23 @@ class MeerK40t(wx.Frame):
         wxglade_tmp_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
+
         self.main_menubar.Append(wxglade_tmp_menu, _("View"))
         wxglade_tmp_menu = wx.Menu()
 
-        wxglade_tmp_menu.Append(ID_MENU_PREFERENCES, _("Preferences"), "")
+        wxglade_tmp_menu.Append(wx.ID_PREFERENCES, _("Preferences"), "")
         wxglade_tmp_menu.Append(ID_MENU_SETTINGS, _("Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
         wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
         wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
         wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
-
+        wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
         wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
@@ -228,67 +234,83 @@ class MeerK40t(wx.Frame):
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(ID_MENU_WEBPAGE, _("Webpage"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ABOUT, _("About"), "")
+        wxglade_tmp_menu.Append(wx.ID_HELP, _("Webpage"), "")
+        wxglade_tmp_menu.Append(wx.ID_ABOUT, _("About"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
         # Menu Bar end
 
-        self.Bind(wx.EVT_MENU, self.on_click_new, id=ID_MENU_NEW)
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_OPEN_PROJECT)
+        self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
-        self.Bind(wx.EVT_MENU, self.on_click_save, id=ID_MENU_SAVE)
-        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=ID_MENU_SAVE_AS)
+        self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
 
-        self.Bind(wx.EVT_MENU, self.on_click_exit, id=ID_MENU_EXIT)
+        self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
 
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0004), id=ID_MENU_HIDE_GRID)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0002), id=ID_MENU_HIDE_GUIDES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0400), id=ID_MENU_HIDE_PATH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0800), id=ID_MENU_HIDE_IMAGE)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x1000), id=ID_MENU_HIDE_TEXT)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0001), id=ID_MENU_HIDE_FILLS)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0008), id=ID_MENU_HIDE_LASERPATH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0010), id=ID_MENU_HIDE_RETICLE)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0020), id=ID_MENU_HIDE_SELECTION)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0040), id=ID_MENU_HIDE_STROKES)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0100), id=ID_MENU_SCREEN_REFRESH)
-        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(0x0200), id=ID_MENU_SCREEN_ANIMATE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GUIDES), id=ID_MENU_HIDE_GUIDES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_PATH), id=ID_MENU_HIDE_PATH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_IMAGE), id=ID_MENU_HIDE_IMAGE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_TEXT), id=ID_MENU_HIDE_TEXT)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_FILLS), id=ID_MENU_HIDE_FILLS)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_LASERPATH), id=ID_MENU_HIDE_LASERPATH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_RETICLE), id=ID_MENU_HIDE_RETICLE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_SELECTION), id=ID_MENU_HIDE_SELECTION)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_STROKES), id=ID_MENU_HIDE_STROKES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_CACHE), id=ID_MENU_PREVENT_CACHING)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_REFRESH), id=ID_MENU_SCREEN_REFRESH)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_ANIMATE), id=ID_MENU_SCREEN_ANIMATE)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_INVERT), id=ID_MENU_SCREEN_INVERT)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_FLIPXY), id=ID_MENU_SCREEN_FLIPXY)
 
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("About"), id=ID_MENU_ABOUT)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Alignment"), id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("CameraInterface"), id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("DeviceManager"), id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Keymap"), id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Preferences"), id=ID_MENU_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Settings"), id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Rotary"), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Navigation"), id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("Controller"), id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("UsbConnect"), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobSpooler"), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations),
-                  id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", None, -1, ""), id=wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", None, -1, ""), id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "CameraInterface", None, -1, ""), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Terminal", None, -1, ""), id=ID_MENU_TERMINAL)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "DeviceManager", None, -1, ""),
+                  id=ID_MENU_DEVICE_MANAGER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", None, -1, ""),
+                  id=ID_MENU_KEYMAP)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", None, -1, ""),
+                  id=wx.ID_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", None, -1, "", ),
+                  id=ID_MENU_SETTINGS)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", None, -1, "", ), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", None, -1, "", ),
+                  id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", None, -1, "", ),
+                  id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", None, -1, "", ), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", None, -1, "", ), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", None, -1, "", )
+                  .set_operations(self.device.device_root.elements.ops()), id=ID_MENU_JOB)
 
-        self.Bind(wx.EVT_MENU, self.launch_webpage, id=ID_MENU_WEBPAGE)
+        self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
-                     lambda v: self.kernel.open_window("JobInfo").set_operations(self.kernel.operations), id=ID_JOB)
-
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("UsbConnect"), id=ID_USB)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Navigation"), id=ID_NAV)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Controller"), id=ID_CONTROLLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("Preferences"),
-                     id=ID_PREFERENCES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("DeviceManager"), id=ID_DEVICES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, lambda v: self.kernel.open_window("JobSpooler"), id=ID_SPOOLER)
-
+                     lambda v: self.device.open('window', "JobInfo", None, -1, "")
+                     .set_operations(list(self.device.device_root.elements.ops())), id=ID_JOB)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "UsbConnect", None, -1, ""), id=ID_USB)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Navigation", None, -1, ""), id=ID_NAV)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Controller", None, -1, ""), id=ID_CONTROLLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Preferences", None, -1, ""), id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.device_root.open('window', "DeviceManager", None, -1, ""), id=ID_DEVICES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "CameraInterface", None, -1, ""), id=ID_CAMERA)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "JobSpooler", None, -1, ""), id=ID_SPOOLER)
         self.main_statusbar = self.CreateStatusBar(3)
 
         # end wxGlade
@@ -307,11 +329,8 @@ class MeerK40t(wx.Frame):
         self.screen_refresh_is_running = False
         self.background_brush = wx.Brush("Grey")
         self.renderer = None
-        self.grid = None
-        self.guide_lines = None
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
-        self.mouse_move_function = self.move_pan
         self.working_file = None
 
         self.__set_properties()
@@ -345,19 +364,19 @@ class MeerK40t(wx.Frame):
         self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
         self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
 
-        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
+        self.scene.SetFocus()
+        self.process = self.refresh_scene
         self.fps_job = None
-        self.kernel = None
-        self.root = None  # RootNode value, must have kernel for init.
-        self.device_listening = None
-        self.background = None
-
-    def notify_change(self):
-        self.kernel.signal('rebuild_tree', 0)
+        self.root = None
+        self.widget_scene = None
 
     def add_language_menu(self):
         if os.path.exists('./locale'):
@@ -366,96 +385,189 @@ class MeerK40t(wx.Frame):
             for lang in supported_languages:
                 language_code, language_name, language_index = lang
                 m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
-                if i == self.kernel.language:
+                if i == self.device.device_root.language:
                     m.Check(True)
-                self.Bind(wx.EVT_MENU, self.kernel.gui.language_to(i), id=m.GetId())
+
+                def language_update(q):
+                    return lambda e: self.device.device_root.app.update_language(q)
+
+                self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
                 if not os.path.exists('./locale/%s' % language_code) and i != 0:
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        kernel.setting(int, "draw_mode", 0)  # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
-        kernel.setting(int, "window_width", 1200)
-        kernel.setting(int, "window_height", 600)
+    def on_close(self, event):
+        self.times = -1
+        device = self.device
+        kernel = device.device_root
+
+        kernel.unlisten('element_added', self.on_rebuild_tree_request)
+        kernel.unlisten('operation_added', self.on_rebuild_tree_request)
+        kernel.unlisten('element_removed', self.on_rebuild_tree_request)
+        kernel.unlisten('operation_removed', self.on_rebuild_tree_request)
+        kernel.unlisten('units', self.space_changed)
+        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
+        kernel.unlisten('altered', self.on_element_alteration)
+
+        device.unlisten('background', self.on_background_signal)
+        device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
+        device.unlisten('refresh_scene', self.on_refresh_scene)
+        device.unlisten('element_property_update', self.on_element_update)
+        device.unlisten('pipe;error', self.on_usb_error)
+        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
+        device.unlisten('pipe;thread', self.on_pipe_state)
+        device.unlisten('spooler;thread', self.on_spooler_state)
+        device.unlisten('interpreter;position', self.update_position)
+        device.unlisten('interpreter;mode', self.on_interpreter_mode)
+        device.unlisten('bed_size', self.bed_changed)
+        device.remove('window', self.name)
+        wx.CallAfter(self.gui_shutdown)
+        event.Skip()  # Call destroy as regular.
+
+    def gui_shutdown(self):
+        device = self.device
+        kernel = device.device_root
+        if kernel.print_shutdown:
+            kernel.add_watcher('shutdown', print)
+        device.stop()
+
+    def initialize(self):
+        self.device.close('window', self.name)
+        device = self.device
+        kernel = self.device.device_root
+        self.Show()
+        self.__set_titlebar()
+        device.gui = self
+        device.setting(int, "draw_mode", 0)
+        device.setting(int, "window_width", 1200)
+        device.setting(int, "window_height", 600)
         kernel.setting(float, "units_convert", MILS_IN_MM)
         kernel.setting(str, "units_name", 'mm')
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
         kernel.setting(bool, "mouse_zoom_invert", False)
-        kernel.setting(int, 'fps', 40)
-        kernel.setting(int, "bed_width", 320)  # Default Value
-        kernel.setting(int, "bed_height", 220)  # Default Value
-        self.listen_scene()
-        if kernel.fps <= 0:
-            kernel.fps = 60
-        self.renderer = LaserRender(kernel)
-        self.root = RootNode(kernel, self)
-        kernel.setting(wx.App, 'root', self.root)
-        kernel.root = self.root
+        kernel.setting(bool, "print_shutdown", False)
+        device.setting(int, 'fps', 40)
 
-        if kernel.window_width < 300:
-            kernel.window_width = 300
-        if kernel.window_height < 300:
-            kernel.window_height = 300
+        if device is not None:
+            device.setting(int, "bed_width", 320)  # Default Value
+            device.setting(int, "bed_height", 220)  # Default Value
 
-        kernel.add_control("Transform", self.open_transform_dialog)
-        kernel.add_control("Path", self.open_path_dialog)
-        kernel.add_control("FPS", self.open_fps_dialog)
-        kernel.add_control("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
-        kernel.add_control("Home and Dot", self.run_home_and_dot_test)
+        kernel.listen('element_added', self.on_rebuild_tree_request)
+        kernel.listen('operation_added', self.on_rebuild_tree_request)
+        kernel.listen('element_removed', self.on_rebuild_tree_request)
+        kernel.listen('operation_removed', self.on_rebuild_tree_request)
+        kernel.listen('units', self.space_changed)
+        kernel.listen('emphasized', self.on_emphasized_elements_changed)
+        kernel.listen('altered', self.on_element_alteration)
 
-        self.SetSize((kernel.window_width, kernel.window_height))
-        bedwidth = kernel.bed_width
-        bedheight = kernel.bed_height
+        device.listen('background', self.on_background_signal)
+        device.listen('rebuild_tree', self.on_rebuild_tree_signal)
+        device.listen('refresh_scene', self.on_refresh_scene)
+        device.listen('element_property_update', self.on_element_update)
+        device.listen('pipe;error', self.on_usb_error)
+        device.listen('pipe;usb_state_text', self.on_usb_state_text)
+        device.listen('pipe;thread', self.on_pipe_state)
+        device.listen('spooler;thread', self.on_spooler_state)
+        device.listen('interpreter;position', self.update_position)
+        device.listen('interpreter;mode', self.on_interpreter_mode)
+        device.listen('bed_size', self.bed_changed)
+        if device.fps <= 0:
+            device.fps = 60
+        self.renderer = LaserRender(device)
+        self.root = RootNode(device, self, kernel.elements)
+        device.root = self.root
 
-        self.kernel.boot()
-        self.focus_viewport_scene((0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM), 0.1)
-        self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(kernel.fps))
+        if device.window_width < 300:
+            device.window_width = 300
+        if device.window_height < 300:
+            device.window_height = 300
+        self.widget_scene = device.open('module', 'Scene')
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.root, self.renderer))
+        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+
+        device.control_instance_add("Transform", self.open_transform_dialog)
+        device.control_instance_add("Path", self.open_path_dialog)
+        device.control_instance_add("Fill", self.open_fill_dialog)
+        device.control_instance_add("Stroke", self.open_stroke_dialog)
+        device.control_instance_add("FPS", self.open_fps_dialog)
+        device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
+
+        def test_crash_in_thread():
+            def foo():
+                a = 1 / 0
+
+            device.threaded(foo)
+
+        device.control_instance_add("Crash Thread", test_crash_in_thread)
+
+        self.SetSize((device.window_width, device.window_height))
+        self.interval = 1.0 / float(device.fps)
+        self.schedule()
+        self.process()
         self.add_language_menu()
 
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
-        m.Check(self.kernel.draw_mode & 0x0001 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_FILLS != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
-        m.Check(self.kernel.draw_mode & 0x0002 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_GUIDES != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
-        m.Check(self.kernel.draw_mode & 0x0004 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_GRID != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LASERPATH)
-        m.Check(self.kernel.draw_mode & 0x0008 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_LASERPATH != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_RETICLE)
-        m.Check(self.kernel.draw_mode & 0x0010 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_RETICLE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_SELECTION)
-        m.Check(self.kernel.draw_mode & 0x0020 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_SELECTION != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_STROKES)
-        m.Check(self.kernel.draw_mode & 0x0040 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_STROKES != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_CACHING)
+        m.Check(self.device.draw_mode & DRAW_MODE_CACHE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_REFRESH)
-        m.Check(self.kernel.draw_mode & 0x0100 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_REFRESH != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_ANIMATE)
-        m.Check(self.kernel.draw_mode & 0x0200 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_ANIMATE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_PATH)
-        m.Check(self.kernel.draw_mode & 0x0400 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_PATH != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_IMAGE)
-        m.Check(self.kernel.draw_mode & 0x0800 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_IMAGE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TEXT)
-        m.Check(self.kernel.draw_mode & 0x1000 != 0)
+        m.Check(self.device.draw_mode & DRAW_MODE_TEXT != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_FLIPXY)
+        m.Check(self.device.draw_mode & DRAW_MODE_FLIPXY != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
+        m.Check(self.device.draw_mode & DRAW_MODE_INVERT != 0)
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
-        self.space_changed(0)
-        self.default_keymap()
+        self.space_changed()
 
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_changed, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_selection_changed, self.tree)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
+
+        if device is not None:
+            bedwidth = device.bed_width
+            bedheight = device.bed_height
+            bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+            self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
+
+    def shutdown(self, channel):
+        self.Close()
 
     def set_fps(self, fps):
         if fps == 0:
             fps = 1
-        self.fps_job.times = 0
-        self.kernel.fps = fps
-        self.fps_job = self.kernel.cron.add_job(self.refresh_scene, interval=1.0 / float(self.kernel.fps))
+        self.device.fps = fps
+        self.interval = 1.0 / float(self.device.fps)
+        self.schedule()
 
     def on_element_update(self, *args):
         """
@@ -469,7 +581,17 @@ class MeerK40t(wx.Frame):
 
     def on_rebuild_tree_request(self, *args):
         """
-        Called by 'rebuild_tree' change. To refresh tree.
+        Called by various functions, sends a rebuild_tree signal.
+        This is to prevent multiple events from overtaxing the rebuild.
+
+        :param args:
+        :return:
+        """
+        self.device.signal('rebuild_tree')
+
+    def on_rebuild_tree_signal(self, *args):
+        """
+        Called by 'rebuild_tree' signal. To refresh tree directly
 
         :param args:
         :return:
@@ -492,17 +614,14 @@ class MeerK40t(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def on_usb_status(self, value):
-        if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
+    def on_usb_state_text(self, value):
+        self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
     def on_pipe_state(self, value):
-        if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Controller: %s") % self.kernel.get_text_thread_state(value), 1)
+        self.main_statusbar.SetStatusText(_("Controller: %s") % self.device.get_text_thread_state(value), 1)
 
     def on_spooler_state(self, value):
-        if self.kernel is not None:
-            self.main_statusbar.SetStatusText(_("Spooler: %s") % self.kernel.get_text_thread_state(value), 2)
+        self.main_statusbar.SetStatusText(_("Spooler: %s") % self.device.get_text_thread_state(value), 2)
 
     def on_interpreter_mode(self, state):
         if state == 0:
@@ -512,73 +631,22 @@ class MeerK40t(wx.Frame):
         self.request_refresh_for_animation()
 
     def on_background_signal(self, background):
-        if isinstance(background, str):
-            return  # Assumed color.
-        if isinstance(background, int):
-            return  # Assumed color.
-        self.background = background
+        self.widget_scene.signal('background', background)
         self.request_refresh()
 
-    def on_device_switch(self, device):
-        self.unlisten_device()
-        self.listen_device(device)
-
-    def listen_device(self, device):
-        if self.device_listening is not None:
-            self.unlisten_device()
-        self.device_listening = device
-        if device is not None:
-            device.listen('pipe;error', self.on_usb_error)
-            device.listen('pipe;usb_status', self.on_usb_status)
-            device.listen('pipe;thread', self.on_pipe_state)
-            device.listen('spooler;thread', self.on_spooler_state)
-            device.listen('interpreter;position', self.update_position)
-            device.listen('interpreter;mode', self.on_interpreter_mode)
-            device.listen('bed_size', self.bed_changed)
-
-    def unlisten_device(self):
-        if self.device_listening is None:
-            return  # Can't unlisten to nothing, ---
-        device = self.device_listening
-        if device is not None:
-            device.unlisten('pipe;error', self.on_usb_error)
-            device.unlisten('pipe;usb_status', self.on_usb_status)
-            device.unlisten('pipe;thread', self.on_pipe_state)
-            device.unlisten('spooler;thread', self.on_spooler_state)
-            device.unlisten('interpreter;position', self.update_position)
-            device.unlisten('interpreter;mode', self.on_interpreter_mode)
-            device.unlisten('bed_size', self.bed_changed)
-        self.device_listening = None
-
-    def listen_scene(self):
-        self.kernel.listen("background", self.on_background_signal)
-        self.kernel.listen("device", self.on_device_switch)
-        self.kernel.listen('rebuild_tree', self.on_rebuild_tree_request)
-        self.kernel.listen('refresh_scene', self.on_refresh_scene)
-        self.kernel.listen("element_property_update", self.on_element_update)
-        self.kernel.listen("units", self.space_changed)
-        self.kernel.listen("selected_elements", self.selection_changed)
-
-    def unlisten_scene(self):
-        self.kernel.unlisten("background", self.on_background_signal)
-        self.kernel.unlisten("device", self.on_device_switch)
-        self.kernel.unlisten('rebuild_tree', self.on_rebuild_tree_request)
-        self.kernel.unlisten('refresh_scene', self.on_refresh_scene)
-        self.kernel.unlisten("element_property_update", self.on_element_update)
-        self.kernel.unlisten("units", self.space_changed)
-        self.kernel.unlisten("selected_elements", self.selection_changed)
-
-    def on_close(self, event):
-        self.unlisten_device()
-        self.unlisten_scene()
-        self.kernel.open_window('Shutdown')
-        self.kernel.mark_window_closed('MeerK40t')
-        self.kernel.cron.stop()
-        event.Skip()  # Call destroy as regular.
+    def __set_titlebar(self):
+        device_text = ''
+        device_name = ''
+        device_version = ''
+        if self.device is not None:
+            device_text = '- %s:%s' % (self.device.device_name, self.device.uid)
+            device_version = self.device.device_root.device_version
+            device_name = self.device.device_root.device_name
+        self.SetTitle(_("%s v%s %s") % (device_name, device_version, device_text))
 
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
-        self.SetTitle(_("MeerK40t v%s") % MEERK40T_VERSION)
+        self.__set_titlebar()
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
@@ -600,10 +668,10 @@ class MeerK40t(wx.Frame):
         self.Layout()
 
     def load(self, pathname):
-        results = self.kernel.load(pathname)
+        results = self.device.load(pathname, channel=self.device.channel_open('load'))
         if results is not None:
             elements, pathname, basename = results
-            self.kernel.classify(elements)
+            self.device.classify(elements)
             return True
         return False
 
@@ -628,8 +696,6 @@ class MeerK40t(wx.Frame):
             dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
-        if accepted != 0:
-            self.root.notify_tree_data_change()
 
     def on_paint(self, event):
         try:
@@ -646,12 +712,12 @@ class MeerK40t(wx.Frame):
         self._Buffer = wx.Bitmap(width, height)
 
     def on_size(self, event):
-        if self.kernel is None:
+        if self.device is None:
             return
         self.Layout()
         self.set_buffer()
-        self.kernel.window_width, self.kernel.window_height = self.Size
-        self.guide_lines = None
+        self.device.window_width, self.device.window_height = self.Size
+        self.widget_scene.signal('guide')
         self.request_refresh()
 
     def update_position(self, pos):
@@ -663,28 +729,31 @@ class MeerK40t(wx.Frame):
         self.laserpath_index %= len(self.laserpath[0])
         self.request_refresh_for_animation()
 
-    def space_changed(self, units):
-        self.grid = None
+    def space_changed(self, *args):
+        self.widget_scene.signal('grid')
         self.on_size(None)
 
-    def bed_changed(self, size):
-        self.grid = None
+    def bed_changed(self, *args):
+        self.widget_scene.signal('grid')
         self.on_size(None)
 
-    def selection_changed(self, selection):
+    def on_emphasized_elements_changed(self, *args):
         self.request_refresh()
+
+    def on_element_alteration(self, *args):
+        self.device.signal('rebuild_tree')
 
     def on_erase(self, event):
         pass
 
     def request_refresh_for_animation(self):
         """Called on the various signals trying to animate the screen."""
-        if self.kernel.draw_mode & 0x0200 == 0:
+        if self.device.draw_mode & DRAW_MODE_ANIMATE == 0:
             self.request_refresh()
 
     def request_refresh(self):
         """Request an update to the scene."""
-        if self.kernel.draw_mode & 0x0100 == 0:
+        if self.device.draw_mode & DRAW_MODE_REFRESH == 0:
             self.screen_refresh_is_requested = True
 
     def refresh_scene(self):
@@ -695,493 +764,124 @@ class MeerK40t(wx.Frame):
 
     def refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
-        if self.kernel is None:
+        if self.device is None:
             return
         self.update_buffer_ui_thread()
         self.scene.Refresh()
+        self.scene.Update()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
+        dm = self.device.draw_mode
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(self.background_brush)
         dc.Clear()
+        w, h = dc.Size
+        if dm & DRAW_MODE_FLIPXY != 0:
+            dc.SetUserScale(-1, -1)
+            dc.SetLogicalOrigin(w, h)
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        gc.Size = dc.Size
+
+        gc.laserpath = self.laserpath
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
-
-        self.on_draw_scene(gc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix()))
-        self.on_draw_interface(gc)
+        if self.widget_scene is not None:
+            self.widget_scene.draw(gc)
+        if dm & DRAW_MODE_INVERT != 0:
+            dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         del dc
 
-    def on_matrix_change(self):
-        self.guide_lines = None
-
-    def scene_matrix_reset(self):
-        self.matrix.reset()
-        self.on_matrix_change()
-
-    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.post_scale(sx, sy, ax, ay)
-        self.on_matrix_change()
-
-    def scene_post_pan(self, px, py):
-        self.matrix.post_translate(px, py)
-        self.on_matrix_change()
-
-    def scene_post_rotate(self, angle, rx=0, ry=0):
-        self.matrix.post_rotate(angle, rx, ry)
-        self.on_matrix_change()
-
-    def scene_pre_scale(self, sx, sy=None, ax=0, ay=0):
-        self.matrix.pre_scale(sx, sy, ax, ay)
-        self.on_matrix_change()
-
-    def scene_pre_pan(self, px, py):
-        self.matrix.pre_translate(px, py)
-        self.on_matrix_change()
-
-    def scene_pre_rotate(self, angle, rx=0, ry=0):
-        self.matrix.pre_rotate(angle, rx, ry)
-        self.on_matrix_change()
-
-    def get_scale_x(self):
-        return self.matrix.value_scale_x()
-
-    def get_scale_y(self):
-        return self.matrix.value_scale_y()
-
-    def get_skew_x(self):
-        return self.matrix.value_skew_x()
-
-    def get_skew_y(self):
-        return self.matrix.value_skew_y()
-
-    def get_translate_x(self):
-        return self.matrix.value_trans_x()
-
-    def get_translate_y(self):
-        return self.matrix.value_trans_y()
+    # Mouse Events.
 
     def on_mousewheel(self, event):
+        if self.scene.HasCapture():
+            return
         rotation = event.GetWheelRotation()
-        mouse = event.GetPosition()
-        if self.kernel.mouse_zoom_invert:
+        if self.device.device_root.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
-            self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
+            self.widget_scene.event(event.GetPosition(), 'wheelup')
         elif rotation < -1:
-            self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
-        self.request_refresh()
+            self.widget_scene.event(event.GetPosition(), 'wheeldown')
 
     def on_mouse_middle_down(self, event):
-        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-        self.scene.CaptureMouse()
-        self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+        self.scene.SetFocus()
+        if not self.scene.HasCapture():
+            self.scene.CaptureMouse()
+        self.widget_scene.event(event.GetPosition(), 'middledown')
 
     def on_mouse_middle_up(self, event):
         if self.scene.HasCapture():
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.scene.ReleaseMouse()
-        self.previous_window_position = None
-        self.previous_scene_position = None
+        self.widget_scene.event(event.GetPosition(), 'middleup')
 
     def on_left_mouse_down(self, event):
-        self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-        self.scene.CaptureMouse()
-        self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
-        self.root.set_selected_by_position(self.previous_scene_position)
-        self.mouse_move_function = self.move_selected
-        self.request_refresh()
+        self.scene.SetFocus()
+        if not self.scene.HasCapture():
+            self.scene.CaptureMouse()
+        self.widget_scene.event(event.GetPosition(), 'leftdown')
 
     def on_left_mouse_up(self, event):
         if self.scene.HasCapture():
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             self.scene.ReleaseMouse()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-        self.mouse_move_function = self.move_pan
+        self.widget_scene.event(event.GetPosition(), 'leftup')
 
     def on_mouse_double_click(self, event):
-        position = event.GetPosition()
-        position = self.convert_window_to_scene(position)
-        self.root.set_selected_by_position(position)
-        self.root.activate_selected_node()
-
-    def move_pan(self, wdx, wdy, sdx, sdy):
-        self.scene_post_pan(wdx, wdy)
-        self.request_refresh()
-
-    def move_selected(self, wdx, wdy, sdx, sdy):
-        self.root.move_selected(sdx, sdy)
-        self.request_refresh()
+        if self.scene.HasCapture():
+            return
+        self.widget_scene.event(event.GetPosition(), 'doubleclick')
 
     def on_mouse_move(self, event):
         if not event.Dragging():
+            self.widget_scene.event(event.GetPosition(), 'hover')
             return
-        else:
-            self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-        if self.previous_window_position is None:
-            return
-
-        pos = event.GetPosition()
-        window_position = pos.x, pos.y
-        scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
-        sdx = (scene_position[0] - self.previous_scene_position[0])
-        sdy = (scene_position[1] - self.previous_scene_position[1])
-        wdx = (window_position[0] - self.previous_window_position[0])
-        wdy = (window_position[1] - self.previous_window_position[1])
-        self.mouse_move_function(wdx, wdy, sdx, sdy)
-        self.previous_window_position = window_position
-        self.previous_scene_position = scene_position
+        self.widget_scene.event(event.GetPosition(), 'move')
 
     def on_right_mouse_down(self, event):
-        self.popup_window_position = event.GetPosition()
-        self.popup_scene_position = self.convert_window_to_scene(self.popup_window_position)
-        self.root.set_selected_by_position(self.popup_scene_position)
-        if len(self.root.selected_elements) == 0:
-            return
-        self.root.create_menu(self, self.root.selected_elements[0])
+        self.scene.SetFocus()
+        self.widget_scene.event(event.GetPosition(), 'rightdown')
 
     def on_right_mouse_up(self, event):
-        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        self.widget_scene.event(event.GetPosition(), 'rightup')
 
-    def default_keymap(self):
-        self.kernel.keymap[wx.WXK_ESCAPE] = MappedKey("escape", "window Adjustments")
-        self.kernel.keymap[wx.WXK_RIGHT] = MappedKey("right", "move right 1mm")
-        self.kernel.keymap[wx.WXK_LEFT] = MappedKey("left", "move left 1mm")
-        self.kernel.keymap[wx.WXK_UP] = MappedKey("up", "move up 1mm")
-        self.kernel.keymap[wx.WXK_DOWN] = MappedKey("down", "move down 1mm")
-        self.kernel.keymap[ord('1')] = MappedKey('1', "set_position 1")
-        self.kernel.keymap[ord('2')] = MappedKey('2', "set_position 2")
-        self.kernel.keymap[ord('3')] = MappedKey('3', "set_position 3")
-        self.kernel.keymap[ord('4')] = MappedKey('4', "set_position 4")
-        self.kernel.keymap[ord('5')] = MappedKey('5', "set_position 5")
-        self.kernel.keymap[wx.WXK_F4] = MappedKey('F4', "window CameraInterface")
-        self.kernel.keymap[wx.WXK_F6] = MappedKey('F6', "window JobSpooler")
-        self.kernel.keymap[wx.WXK_F7] = MappedKey('F7', "window Controller")
-        self.kernel.keymap[wx.WXK_F8] = MappedKey('F8', "control Path")
-        self.kernel.keymap[wx.WXK_F9] = MappedKey('F9', "control Transform")
-
-    def execute_string_action(self, action, *args):
-        device = self.kernel.device
-        if device is None:
-            return
-        spooler = device.spooler
-        if action == 'move':
-            spooler.send_job(self.execute_move_action(*args))
-        elif action == 'move_to':
-            spooler.send_job(self.execute_move_to_action(*args))
-        elif action == 'set_position':
-            self.execute_set_position_action(*args)
-        elif action == 'window':
-            self.execute_open_window_action(*args)
-        elif action == 'control':
-            self.execute_execute_control(*args)
-
-    def execute_execute_control(self, *args):
-        self.kernel.execute(args[0])
-
-    def execute_open_window_action(self, *args):
-        window_name = args[0]
-        if window_name in self.kernel.windows:
-            self.kernel.open_window(window_name)
-
-    def execute_set_position_action(self, index):
-        x = self.kernel.device.current_x
-        y = self.kernel.device.current_y
-        self.kernel.keymap[ord(index)] = MappedKey(index, "move_to %d %d" % (x, y))
-
-    def execute_move_action(self, direction, amount):
-        min_dim = min(self.kernel.window_width, self.kernel.window_height)
-        amount = Length(amount).value(ppi=1000.0, relative_length=min_dim)
-        x = 0
-        y = 0
-        if direction == 'right':
-            x = amount
-        elif direction == 'left':
-            x = -amount
-        elif direction == 'up':
-            y = -amount
-        elif direction == 'down':
-            y = amount
-
-        def move():
-            yield COMMAND_SET_INCREMENTAL
-            yield COMMAND_RAPID_MOVE, (x, y)
-            yield COMMAND_SET_ABSOLUTE
-
-        return move
-
-    def execute_move_to_action(self, position_x, position_y):
-        def move():
-            yield COMMAND_RAPID_MOVE, (int(position_x), int(position_y))
-
-        return move
-
-    def on_key_press(self, event):
-        keycode = event.GetKeyCode()
-        if event.ControlDown():
-            pass
-        if event.AltDown():
-            pass
-        if event.ShiftDown():
-            pass
-        if event.MetaDown():
-            pass
-        if keycode in self.kernel.keymap:
-            action = self.kernel.keymap[keycode].command
-            args = str(action).split(' ')
-            self.execute_string_action(*args)
-
-    def focus_on_elements(self):
-        bbox = self.root.bounds
-        if bbox is None:
-            return
-        self.focus_viewport_scene(bbox)
-        self.request_refresh()
-
-    def focus_position_scene(self, scene_point):
-        window_width, window_height = self.scene.ClientSize
-        scale_x = self.get_scale_x()
-        scale_y = self.get_scale_y()
-        self.scene_matrix_reset()
-        self.scene_post_pan(-scene_point[0], -scene_point[1])
-        self.scene_post_scale(scale_x, scale_y)
-        self.scene_post_pan(window_width / 2.0, window_height / 2.0)
-
-    def focus_viewport_scene(self, new_scene_viewport, buffer=0.0, lock=True):
-        window_width, window_height = self.scene.ClientSize
-        left = new_scene_viewport[0]
-        top = new_scene_viewport[1]
-        right = new_scene_viewport[2]
-        bottom = new_scene_viewport[3]
-        viewport_width = right - left
-        viewport_height = bottom - top
-
-        left -= viewport_width * buffer
-        right += viewport_width * buffer
-        top -= viewport_height * buffer
-        bottom += viewport_height * buffer
-
-        if right == left:
-            scale_x = 100
+    def on_key_down(self, event):
+        keyvalue = get_key_name(event)
+        keymap = self.device.device_root.keymap
+        if keyvalue in keymap:
+            action = keymap[keyvalue]
+            self.device.using('module', 'Console').write(action + "\n")
         else:
-            scale_x = window_width / float(right - left)
-        if bottom == top:
-            scale_y = 100
+            event.Skip()
+
+    def on_key_up(self, event):
+        keyvalue = get_key_name(event)
+        keymap = self.device.device_root.keymap
+        if keyvalue in keymap:
+            action = keymap[keyvalue]
+            if action.startswith('+'):
+                # Keyup commands only trigger if the down command started with +
+                action = '-' + action[1:]
+                self.device.using('module', 'Console').write(action + "\n")
         else:
-            scale_y = window_height / float(bottom - top)
-
-        cx = ((right + left) / 2)
-        cy = ((top + bottom) / 2)
-        self.matrix.reset()
-        self.matrix.post_translate(-cx, -cy)
-        if lock:
-            scale = min(scale_x, scale_y)
-            if scale != 0:
-                self.matrix.post_scale(scale)
-        else:
-            if scale_x != 0 and scale_y != 0:
-                self.matrix.post_scale(scale_x, scale_y)
-        self.matrix.post_translate(window_width / 2.0, window_height / 2.0)
-
-    def convert_scene_to_window(self, position):
-        point = self.matrix.point_in_matrix_space(position)
-        return point[0], point[1]
-
-    def convert_window_to_scene(self, position):
-        point = self.matrix.point_in_inverse_space(position)
-        return point[0], point[1]
-
-    def calculate_grid(self):
-        if self.kernel.device is not None:
-            v = self.kernel.device
-        else:
-            v = self.kernel
-        p = self.kernel
-        wmils = v.bed_width * MILS_IN_MM
-        hmils = v.bed_height * MILS_IN_MM
-        convert = p.units_convert
-        marks = p.units_marks
-        step = convert * marks
-        starts = []
-        ends = []
-        if step == 0:
-            self.grid = None
-            return starts, ends
-        x = 0.0
-        while x < wmils:
-            starts.append((x, 0))
-            ends.append((x, hmils))
-            x += step
-        y = 0.0
-        while y < hmils:
-            starts.append((0, y))
-            ends.append((wmils, y))
-            y += step
-        self.grid = starts, ends
-
-    def on_draw_grid(self, gc):
-        # Convert to GC.
-        if self.grid is None:
-            self.calculate_grid()
-        starts, ends = self.grid
-        gc.StrokeLineSegments(starts, ends)
-
-    def on_draw_guides(self, gc):
-        w, h = self.Size
-        p = self.kernel
-        scaled_conversion = p.units_convert * self.matrix.value_scale_x()
-        if scaled_conversion == 0:
-            return
-
-        wpoints = w / 15.0
-        hpoints = h / 15.0
-        points = min(wpoints, hpoints)
-        # tweak the scaled points into being useful.
-        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        points = scaled_conversion * float('{:.1g}'.format(points / scaled_conversion))
-        sx, sy = self.convert_scene_to_window([0, 0])
-        if points == 0:
-            return
-        offset_x = sx % points
-        offset_y = sy % points
-
-        starts = []
-        ends = []
-        x = offset_x
-        length = 50
-        font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, wx.BLACK)
-        while x < w:
-            starts.append((x, 0))
-            ends.append((x, length))
-
-            starts.append((x, h))
-            ends.append((x, h - length))
-
-            mark_point = (x - sx) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
-            x += points
-
-        y = offset_y
-        while y < h:
-            starts.append((0, y))
-            ends.append((length, y))
-
-            starts.append((w, y))
-            ends.append((w - length, y))
-
-            mark_point = (y - sy) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
-            y += points
-        gc.StrokeLineSegments(starts, ends)
-
-    def on_draw_interface(self, gc):
-        pen = wx.Pen(wx.BLACK)
-        pen.SetWidth(1)
-        pen.SetCap(wx.CAP_BUTT)
-        gc.SetPen(pen)
-        if self.kernel.draw_mode & 2 == 0:
-            self.on_draw_guides(gc)
-        if self.kernel.draw_mode & 16 == 0:
-            # Draw Reticle
-            gc.SetPen(wx.RED_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            try:
-                x = self.kernel.device.current_x
-                y = self.kernel.device.current_y
-                x, y = self.convert_scene_to_window([x, y])
-                gc.DrawEllipse(x - 5, y - 5, 10, 10)
-            except AttributeError:
-                pass
-
-    def on_draw_bed(self, gc):
-        if self.kernel.device is not None:
-            v = self.kernel.device
-        else:
-            v = self.kernel
-        wmils = v.bed_width * MILS_IN_MM
-        hmils = v.bed_height * MILS_IN_MM
-        if self.background is None:
-            gc.SetBrush(wx.WHITE_BRUSH)
-            gc.DrawRectangle(0, 0, wmils, hmils)
-        else:
-            gc.DrawBitmap(self.background, 0, 0, wmils, hmils)
-
-    def on_draw_selection(self, gc, draw_mode):
-        """Draw Selection Box"""
-        bounds = self.root.bounds
-        if bounds is not None:
-            linewidth = 3.0 / self.matrix.value_scale_x()
-            self.selection_pen.SetWidth(linewidth)
-            font = wx.Font(14.0 / self.matrix.value_scale_x(), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, wx.BLACK)
-
-            gc.SetPen(self.selection_pen)
-            gc.SetBrush(wx.BLACK_BRUSH)
-            x0, y0, x1, y1 = bounds
-            center_x = (x0 + x1) / 2.0
-            center_y = (y0 + y1) / 2.0
-            gc.StrokeLine(center_x, 0, center_x, y0)
-            gc.StrokeLine(0, center_y, x0, center_y)
-            gc.StrokeLine(x0, y0, x1, y0)
-            gc.StrokeLine(x1, y0, x1, y1)
-            gc.StrokeLine(x1, y1, x0, y1)
-            gc.StrokeLine(x0, y1, x0, y0)
-            if draw_mode & 128 == 0:
-                p = self.kernel
-                conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
-                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
-                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
-                gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
-                gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
-
-    def on_draw_laserpath(self, gc, draw_mode):
-        gc.SetPen(wx.BLUE_PEN)
-        starts, ends = self.laserpath
-        gc.StrokeLineSegments(starts, ends)
-
-    def on_draw_scene(self, gc):
-        self.on_draw_bed(gc)
-        gc.SetPen(wx.BLACK_PEN)
-        if self.kernel.draw_mode & 4 == 0:
-            self.on_draw_grid(gc)
-        pen = wx.Pen(wx.BLACK)
-        pen.SetWidth(1)
-        pen.SetCap(wx.CAP_BUTT)
-        gc.SetPen(pen)
-        if self.kernel is None:
-            return
-        self.renderer.render(gc, self.kernel.draw_mode)
-        if self.kernel.draw_mode & 32 == 0:
-            self.on_draw_selection(gc, self.kernel.draw_mode)
-        if self.kernel.draw_mode & 8 == 0:
-            self.on_draw_laserpath(gc, self.kernel.draw_mode)
+            event.Skip()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
+        kernel = self.device.device_root
         self.working_file = None
-        self.kernel.elements = []
-        self.kernel.operations = []
-        self.kernel.filenodes = {}
+        kernel.elements.clear_all()
+        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
+        self.laserpath_index = 0
         self.request_refresh()
-        self.kernel.signal('rebuild_tree', 0)
+        self.device.signal('rebuild_tree', 0)
 
     def on_click_open(self, event):  # wxGlade: MeerK40t.<event_handler>
         # This code should load just specific project files rather than all importable formats.
-        files = self.kernel.load_types()
+        files = self.device.load_types()
         with wx.FileDialog(self, _("Open"), wildcard=files,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -1193,10 +893,10 @@ class MeerK40t(wx.Frame):
         if self.working_file is None:
             self.on_click_save_as(event)
         else:
-            self.kernel.save(self.working_file)
+            self.device.save(self.working_file)
 
     def on_click_save_as(self, event):
-        files = self.kernel.save_types()
+        files = self.device.save_types()
         with wx.FileDialog(self, "Save Project", wildcard=files,
                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -1204,7 +904,7 @@ class MeerK40t(wx.Frame):
             pathname = fileDialog.GetPath()
             if not pathname.lower().endswith('.svg'):
                 pathname += '.svg'
-            self.kernel.save(pathname)
+            self.device.save(pathname)
             self.working_file = pathname
 
     def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -1215,7 +915,7 @@ class MeerK40t(wx.Frame):
         Zoomout button press
         """
         m = self.scene.ClientSize / 2
-        self.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
+        self.widget_scene.widget_root.scene_widget.scene_post_scale(1.0 / 1.5, 1.0 / 1.5, m[0], m[1])
         self.request_refresh()
 
     def on_click_zoom_in(self, event):  # wxGlade: MeerK40t.<event_handler>
@@ -1223,14 +923,20 @@ class MeerK40t(wx.Frame):
         Zoomin button press
         """
         m = self.scene.ClientSize / 2
-        self.scene_post_scale(1.5, 1.5, m[0], m[1])
+        self.widget_scene.widget_root.scene_widget.scene_post_scale(1.5, 1.5, m[0], m[1])
         self.request_refresh()
 
     def on_click_zoom_size(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom size button press.
         """
-        self.focus_on_elements()
+        elements = self.device.device_root.elements
+        bbox = elements.bounds()
+        if bbox is None:
+            bedwidth = self.device.bed_width
+            bedheight = self.device.bed_height
+            bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+        self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize)
 
     def toggle_draw_mode(self, bits):
         """
@@ -1240,7 +946,8 @@ class MeerK40t(wx.Frame):
         """
 
         def toggle(event):
-            self.kernel.draw_mode ^= bits
+            self.device.draw_mode ^= bits
+            self.device.signal('draw_mode', self.device.draw_mode)
             self.request_refresh()
 
         return toggle
@@ -1252,9 +959,9 @@ class MeerK40t(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             value = dlg.GetValue()
             if value in ('0', '1', '2', '3', '4'):
-                self.kernel._stepping_force = int(value)
+                self.device._stepping_force = int(value)
             else:
-                self.kernel._stepping_force = None
+                self.device._stepping_force = None
         dlg.Destroy()
 
     def open_fps_dialog(self):
@@ -1276,7 +983,8 @@ class MeerK40t(wx.Frame):
         dlg.SetValue('')
 
         if dlg.ShowModal() == wx.ID_OK:
-            p = self.kernel.device
+            p = self.device
+            kernel = self.device.device_root
             m = str(dlg.GetValue())
             m = m.replace('$x', str(p.current_x))
             m = m.replace('$y', str(p.current_y))
@@ -1291,47 +999,84 @@ class MeerK40t(wx.Frame):
                 result = dlg.ShowModal()
                 dlg.Destroy()
             else:
-                for element in self.kernel.elements:
+                for element in kernel.elements.elems():
                     try:
                         element *= mx
                     except AttributeError:
                         pass
-                self.kernel.signal('rebuild_tree', 0)
+
+    def open_fill_dialog(self):
+        kernel = self.device.device_root
+        elements = kernel.elements
+        first_selected = elements.first_element(selected=True)
+        if first_selected is None:
+            return
+        data = wx.ColourData()
+        if first_selected.fill is not None and first_selected.fill != 'none':
+            data.SetColour(wx.Colour(swizzlecolor(first_selected.fill)))
+        dlg = wx.ColourDialog(self, data)
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetColourData()
+            color = data.GetColour()
+            rgb = color.GetRGB()
+            color = swizzlecolor(rgb)
+            color = Color(color, 1.0)
+            for elem in elements.elems(emphasized=True):
+                elem.fill = color
+                elem.altered()
+
+    def open_stroke_dialog(self):
+        kernel = self.device.device_root
+        elements = kernel.elements
+        first_selected = elements.first_element(emphasized=True)
+        if first_selected is None:
+            return
+        data = wx.ColourData()
+        if first_selected.stroke is not None and first_selected.stroke != 'none':
+            data.SetColour(wx.Colour(swizzlecolor(first_selected.stroke)))
+        dlg = wx.ColourDialog(self, data)
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetColourData()
+            color = data.GetColour()
+            rgb = color.GetRGB()
+            color = swizzlecolor(rgb)
+            color = Color(color, 1.0)
+            for elem in elements.elems(emphasized=True):
+                elem.stroke = color
+                elem.altered()
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
         dlg.SetValue('')
 
         if dlg.ShowModal() == wx.ID_OK:
+            kernel = self.device.device_root
             path = Path(dlg.GetValue())
             path.stroke = 'blue'
             p = abs(path)
-            self.kernel.elements.append(p)
-            self.kernel.classify(p)
-            self.kernel.signal("rebuild_tree", 0)
+            kernel.elements.add_elem(p)
+            self.device.classify(p)
         dlg.Destroy()
 
     def run_home_and_dot_test(self):
-        self.kernel.signal("rebuild_tree", 0)
 
         def home_dot_test():
             for i in range(25):
                 yield COMMAND_SET_ABSOLUTE
-                yield COMMAND_MODE_DEFAULT
+                yield COMMAND_MODE_RAPID
                 yield COMMAND_HOME
-                yield COMMAND_WAIT_BUFFER_EMPTY
-                yield COMMAND_RAPID_MOVE, (3000, 3000)
-                yield COMMAND_LOCK
-                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MOVE, 3000, 3000
+                yield COMMAND_WAIT_FINISH
                 yield COMMAND_LASER_ON
                 yield COMMAND_WAIT, 0.05
                 yield COMMAND_LASER_OFF
-                yield COMMAND_LOCK
-                yield COMMAND_WAIT_BUFFER_EMPTY
+                yield COMMAND_WAIT_FINISH
             yield COMMAND_HOME
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
 
-        self.kernel.device.spooler.send_job(home_dot_test)
+        self.device.spooler.job(home_dot_test)
 
     def launch_webpage(self, event):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -1466,10 +1211,10 @@ class Node(list):
         tree = root.tree
         if icon is None:
             if isinstance(data_object, SVGImage):
-                image = self.root.renderer.make_thumbnail(data_object, width=20, height=20)
+                image = self.root.renderer.make_thumbnail(data_object.image, width=20, height=20)
                 image_id = self.root.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-            if isinstance(data_object, Path):
+            if isinstance(data_object, (Path, SVGText)):
                 image = self.root.renderer.make_raster(data_object, data_object.bbox(), width=20, height=20,
                                                        bitmap=True)
                 if image is not None:
@@ -1479,13 +1224,6 @@ class Node(list):
         else:
             image_id = self.root.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
-
-    def center(self):
-        try:
-            bounds = self.bounds
-            return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
-        except Exception:
-            return None
 
     def bbox(self):
         return OperationPreprocessor.bounding_box(self.object)
@@ -1524,42 +1262,38 @@ class Node(list):
 
 class RootNode(list):
     """"Nodes are the presentation layer used to wrap the LaserOperations and the SVGElement classes. Stored in the
-    kernel. This is to allow nested structures beyond the flat structure of the actual data. It serves to help with
-    menu creation, name, drag and drop, bounding box cache, tree element updates.
+    elements. This serves to help with menu creation, naming, drag and drop.
 
     The tree is structured with three main sub-elements of the RootNode, these are the Operations, the Elements, and
-    the files.
+    the files. The primary distinction between the items within elements is that an item appears twice in the tree with
+    different highlighting, selection, and interactions.
 
-    The Operations each contain a list of elements which they run in order and are stored within actual operations.
+    The Operations each contain a list of elements they run in order and are stored within each operation.
 
-    Elements store the graphics elements stored within the scene. The Elements are a list of elements stored in their
-    desired ordered. This structure should reflect those changes back to structure in the kernel.
+    Elements store the scene's graphics elements. The Elements are stored in their order. Changes in this structure
+    should reflect those changes back to structure of elements.
 
     Deleting an element from the tree should remove that element from any operation using it.
-    Deleting an operation should make no change to the elements structure.
+
+    Deleting an operation should make no change to the graphical elements structure.
 
     All the nodes store a reference to their given tree item. So that a determination can be made when those items have
-    changed and provide piecemeal updates to the tree rather than recreating the entire thing.
+    changed and provide piecemeal updates to the tree.
     """
 
-    def __init__(self, kernel, gui):
+    def __init__(self, device, gui, elements):
         list.__init__(self)
         self.root = self
         self.parent = self
         self.object = "Project"
         self.name = "Project"
-        self.semi_selected = []
-        self.highlighted = []
         self.type = NODE_ROOT
 
-        self.kernel = kernel
+        self.device = device
         self.gui = gui
         self.tree = gui.tree
         self.renderer = gui.renderer
-
-        self.bounds = None
-        self.selected_elements = []
-        self.selected_operations = []
+        self.elements = elements
 
         self.item = None
         self.dragging_node = None
@@ -1569,72 +1303,65 @@ class RootNode(list):
         self.node_elements = None
         self.node_operations = None
         self.node_files = None
-        self.rebuild_tree()
+        self.do_not_select = False
+        self.device.signal('rebuild_tree')
 
-    def highlight_select(self, item):
-        if item not in self.highlighted:
-            self.highlighted.append(item)
-            self.tree.SetItemBackgroundColour(item, wx.YELLOW)
+    def refresh_tree(self, node=None):
+        """Any tree elements currently displaying wrong data as per elements should be updated to display
+        the proper values and contexts and icons. This will not happen for any elements currently within
+        a closed branch."""
+        if node is None:
+            node = self.root.item
+        if node is None:
+            return
+        tree = self.tree
 
-    def highlight_unselect(self):
-        self.set_selected_elements(None)
-        self.set_selected_operations(None)
-        for item in self.highlighted:
-            self.tree.SetItemBackgroundColour(item, wx.WHITE)
-        self.highlighted.clear()
-
-    def highlight_select_all(self, objects):
-        for e in objects:
-            self.highlight_select(e)
-
-    def semi_select(self, item):
-        if item not in self.semi_selected:
-            self.semi_selected.append(item)
-            self.tree.SetItemBackgroundColour(item, wx.CYAN)
-            node = self.tree.GetItemData(item)
-            if node.type == NODE_ELEMENT:
-                self.selected_elements.append(node.object)
-            elif node.type == NODE_OPERATION:
-                self.selected_operations.append(node.object)
-
-    def semi_unselect(self):
-        self.set_selected_elements(None)
-        self.set_selected_operations(None)
-        for item in self.semi_selected:
-            self.tree.SetItemBackgroundColour(item, wx.WHITE)
-        self.semi_selected.clear()
-
-    def semi_select_all(self, objects):
-        for e in objects:
-            self.semi_select(e)
+        child, cookie = tree.GetFirstChild(node)
+        while child.IsOk():
+            child_node = self.tree.GetItemData(child)
+            element = child_node.object
+            tree.SetItemBackgroundColour(child, wx.WHITE)
+            try:
+                if element.highlighted:
+                    tree.SetItemBackgroundColour(child, wx.YELLOW)
+                elif element.emphasized:
+                    tree.SetItemBackgroundColour(child, wx.CYAN)
+                elif element.selected:
+                    tree.SetItemBackgroundColour(child, wx.RED)
+            except AttributeError:
+                pass
+            self.refresh_tree(child)
+            child, cookie = tree.GetNextChild(node, cookie)
 
     def rebuild_tree(self):
-        self.semi_selected.clear()
-        self.highlighted.clear()
+        kernel = self.device.device_root
+        elements = kernel.elements
         self.tree.DeleteAllItems()
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
         self.tree_lookup = {}
         self.tree.SetImageList(self.tree_images)
         self.item = self.tree.AddRoot(self.name)
-        self.node_operations = Node(NODE_OPERATION_BRANCH, self.kernel.operations, self, self, name=_("Operations"))
+        self.node_operations = Node(NODE_OPERATION_BRANCH, elements._operations, self, self, name=_("Operations"))
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
-        self.build_tree(self.node_operations, self.kernel.operations)
+        self.build_tree(self.node_operations, list(elements.ops()))
         for n in self.node_operations:
             if isinstance(n.object, RasterOperation):
                 n.set_icon(icons8_direction_20.GetBitmap())
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
 
-        self.node_elements = Node(NODE_ELEMENTS_BRANCH, self.kernel.elements, self, self, name=_("Elements"))
+        self.node_elements = Node(NODE_ELEMENTS_BRANCH, elements._elements, self, self, name=_("Elements"))
         self.node_elements.set_icon(icons8_vector_20.GetBitmap())
-        self.build_tree(self.node_elements, self.kernel.elements)
+        self.build_tree(self.node_elements, list(elements.elems()))
 
-        self.node_files = Node(NODE_FILES_BRANCH, self.kernel.filenodes, self, self, name=_("Files"))
+        self.node_files = Node(NODE_FILES_BRANCH, elements.files(), self, self, name=_("Files"))
         self.node_files.set_icon(icons8_file_20.GetBitmap())
-        self.build_tree(self.node_files, self.kernel.filenodes)
+        self.build_tree(self.node_files, elements.files())
+
         for n in self.node_files:
             n.set_icon(icons8_file_20.GetBitmap())
+
         self.tree.ExpandAll()
 
     def build_tree(self, parent_node, objects):
@@ -1657,10 +1384,10 @@ class RootNode(list):
         pass
 
     def notify_tree_data_change(self):
-        self.kernel.signal("rebuild_tree", 0)
+        self.device.signal('rebuild_tree', 0)
 
     def notify_tree_data_cleared(self):
-        self.kernel.signal("rebuild_tree", 0)
+        self.device.signal('rebuild_tree', 0)
 
     def on_element_update(self, *args):
         element = args[0]
@@ -1670,50 +1397,6 @@ class RootNode(list):
                 node.update_name()
         except KeyError:
             pass
-
-    def set_selected_elements(self, selected):
-        self.selected_operations.clear()
-        self.selected_elements.clear()
-        if selected is not None:
-            if not isinstance(selected, list):
-                self.selected_elements.append(selected)
-            else:
-                self.selected_elements.extend(selected)
-        self.selection_updated()
-
-    def set_selected_operations(self, selected):
-        self.selected_operations.clear()
-        self.selected_elements.clear()
-        if selected is not None:
-            if not isinstance(selected, list):
-                self.selected_operations.append(selected)
-            else:
-                self.selected_operations.extend(selected)
-        self.selection_updated()
-
-    def selection_updated(self):
-        self.kernel.signal("selected_ops", self.selected_operations)
-        self.kernel.signal("selected_elements", self.selected_elements)
-        self.selection_bounds_updated()
-
-    def selection_bounds_updated(self):
-        self.bounds = OperationPreprocessor.bounding_box(self.selected_elements)
-        self.kernel.signal("selected_bounds", self.bounds)
-
-    def activate_selected_node(self):
-        if self.selected_elements is not None and len(self.selected_elements) != 0:
-            self.activated_object(self.selected_elements[0])
-
-    def move_selected(self, dx, dy):
-        if self.selected_elements is None:
-            return
-        if len(self.selected_elements) == 0:
-            return
-        for obj in self.selected_elements:
-            obj.transform.post_translate(dx, dy)
-        b = self.bounds
-        self.bounds = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
-        self.kernel.signal("selected_bounds", self.bounds)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1797,7 +1480,7 @@ class RootNode(list):
                 return
             elif drop_node.type == NODE_OPERATION_BRANCH:
                 obj = drag_node.object
-                self.kernel.classify(obj)
+                self.device.classify(obj)
                 event.Allow()
                 self.notify_tree_data_change()
         elif drag_node.type == NODE_OPERATION_ELEMENT:
@@ -1858,11 +1541,6 @@ class RootNode(list):
                 # Dragging operation to op branch.
                 pass
 
-        event.Skip()
-        # Do not allow images added to engrave or cut operations
-        # Group dragged into group, creates subgroup.
-        # LaserOperation Elements dragged from one LaserOperation to another.
-
     def on_item_right_click(self, event):
         """
         Right click of element in tree.
@@ -1876,7 +1554,6 @@ class RootNode(list):
         node = self.tree.GetItemData(item)
 
         self.root.create_menu(self.gui, node)
-        event.Skip()
 
     def on_item_activated(self, event):
         """
@@ -1893,97 +1570,66 @@ class RootNode(list):
         if node is not None:
             self.activated_object(node.object)
 
-    def activated_object(self, obj):
-        if isinstance(obj, RasterOperation):
-            self.kernel.open_window("RasterProperty").set_operation(obj)
-        elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.kernel.open_window("EngraveProperty").set_operation(obj)
-        elif isinstance(obj, Path):
-            self.kernel.open_window("PathProperty").set_element(obj)
-        elif isinstance(obj, SVGText):
-            self.kernel.open_window("TextProperty").set_element(obj)
-        elif isinstance(obj, SVGImage):
-            self.kernel.open_window("ImageProperty").set_element(obj)
-        elif isinstance(obj, SVGElement):
-            self.kernel.open_window("PathProperty").set_element(obj)
-        elif isinstance(obj, LaserOperation):
-            self.kernel.open_window("EngraveProperty").set_operation(obj)
+    def activate_selected_node(self):
+        self.activated_object(self.elements.first_element(selected=True))
 
-    def on_item_changed(self, event):
+    def activated_object(self, obj):
+        if obj is None:
+            return
+        if isinstance(obj, RasterOperation):
+            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
+        elif isinstance(obj, EngraveOperation):
+            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+        elif isinstance(obj, CutOperation):
+            self.device.open('window', "CutProperty", None, -1, "").set_operation(obj)
+        elif isinstance(obj, Path):
+            self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
+        elif isinstance(obj, SVGText):
+            self.device.open('window', "TextProperty", None, -1, "").set_element(obj)
+        elif isinstance(obj, SVGImage):
+            self.device.open('window', "ImageProperty", None, -1, "").set_element(obj)
+        elif isinstance(obj, SVGElement):
+            self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
+        elif isinstance(obj, LaserOperation):
+            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+
+    def on_item_selection_changed(self, event):
         """
         Tree menu item is changed. Modify the selection.
 
         :param event:
         :return:
         """
-        item = event.GetItem()
-        node = self.tree.GetItemData(item)
-
-        if node is None:
+        if self.do_not_select:
             return
-        self.semi_unselect()
-        self.highlight_unselect()
-        self.semi_select_all(self.tree.GetSelections())
-        if node.type == NODE_ELEMENTS_BRANCH:
-            for n in self.node_elements:
-                self.semi_select(n.item)
-            self.gui.request_refresh()
-            self.selection_updated()
-            return
-        elif node.type == NODE_OPERATION:
-            for n in node:
-                self.highlight_select(n.item)
-            self.gui.request_refresh()
-            self.selection_updated()
-            return
-        elif node.type == NODE_FILE_FILE:
-            for n in node:
-                obj = n.object
-                links = self.tree_lookup[id(obj)]
-                for link in links:
-                    self.semi_select(link.item)
-            self.gui.request_refresh()
-            self.selection_updated()
-            return
-        elif node.type == NODE_OPERATION_ELEMENT:
-            obj = node.object
-            if len(self.semi_selected) != 1:
-                return  # If this is a multi-selection event, do not select other nodeop_elements
-            links = self.tree_lookup[id(obj)]
-            for link in links:
-                self.semi_select(link.item)
-            self.selection_updated()
-            return
-        elif node.type == NODE_ELEMENT:
-            for item in self.tree.GetSelections():
-                node = self.tree.GetItemData(item)
-                obj = node.object
-                links = self.tree_lookup[id(obj)]
-                for link in links:
-                    self.semi_select(link.item)
-            self.selection_updated()
-            return
+        selected = [self.tree.GetItemData(item).object for item in self.tree.GetSelections()]
+        self.elements.set_selected(selected)
+        self.refresh_tree()
         self.gui.request_refresh()
-        self.selection_updated()
         event.Allow()
 
-    def set_selected_by_position(self, position):
-        if self.selected_elements is not None:
-            if self.bounds is not None and self.contains(self.bounds, position):
-                return  # Select by position aborted since selection position within current select bounds.
-        self.selected_elements.clear()
-        for e in reversed(self.kernel.elements):
-            bounds = e.bbox()
-            if bounds is None:
-                continue
-            if self.contains(bounds, position):
-                self.set_selected_elements(e)
-                return
-        self.selection_updated()
+    def select_in_tree_by_selected(self):
+        """
+        :return:
+        """
+        self.do_not_select = True
+        for e in self.elements.elems():
+            try:
+                nodes = self.tree_lookup[id(e)]
+                for n in nodes:
+                    if n.type == NODE_ELEMENT:
+                        self.tree.SelectItem(n.item, e.selected)
+            except KeyError:
+                self.device.signal('rebuild_tree', 0)
+                break
+        self.refresh_tree()
+        self.gui.request_refresh()
+        self.do_not_select = False
 
     def contains(self, box, x, y=None):
         if y is None:
-            x, y = x
+            y = x[1]
+            x = x[0]
         return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
     def create_menu(self, gui, node):
@@ -2009,15 +1655,31 @@ class RootNode(list):
         menu = wx.Menu()
         if isinstance(node, RootNode):
             return
+        elements = self.elements
 
         t = node.type
-        selections = [self.tree.GetItemData(e) for e in self.semi_selected]
-        selections = [s for s in selections if s.type == t]
+        selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
+
+        def combined(*args):
+            for listv in args:
+                for itemv in listv:
+                    yield itemv
+
+        selections = [s for s in combined(*selections) if s.type == t]
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                      menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
-        if t in (NODE_OPERATION_BRANCH, NODE_FILES_BRANCH, NODE_ELEMENTS_BRANCH, NODE_OPERATION):
-            gui.Bind(wx.EVT_MENU, self.menu_clear_all(node),
+        if t == NODE_OPERATION_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_operations_branch(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t == NODE_FILES_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_files_branch(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t == NODE_ELEMENTS_BRANCH:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_elements_branch(node),
+                     menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
+        if t == NODE_OPERATION:
+            gui.Bind(wx.EVT_MENU, self.menu_clear_all_operation(node),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
         if t in (NODE_OPERATION, NODE_ELEMENT, NODE_FILE_FILE, NODE_OPERATION_ELEMENT):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
@@ -2040,10 +1702,6 @@ class RootNode(list):
         elif t == NODE_OPERATION:
             operation_convert_submenu = wx.Menu()
             for name in ("Raster", "Engrave", "Cut"):
-                menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
-                gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
-                menu_op.Enable(False)
-            for name in ("ZDepth_Raster", "Multishade_Raster", "Wait-Step_Raster"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
                 menu_op.Enable(False)
@@ -2077,8 +1735,10 @@ class RootNode(list):
                 gui.Bind(wx.EVT_MENU, self.menu_duplicate(node, i),
                          duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
+        if t in (NODE_ELEMENTS_BRANCH, NODE_ELEMENT):
             gui.Bind(wx.EVT_MENU, self.menu_reset(node),
                      menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+        if t == NODE_ELEMENT:
             path_scale_sub_menu = wx.Menu()
             for i in range(1, 25):
                 gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
@@ -2152,7 +1812,7 @@ class RootNode(list):
             element = node.object
             if isinstance(element, RasterOperation):
                 element.raster_step = step_value
-            self.kernel.signal("element_property_update", node.object)
+            self.device.signal('element_property_update', node.object)
 
         return specific
 
@@ -2173,7 +1833,8 @@ class RootNode(list):
             ty = m.f
             element.transform = Matrix.scale(float(step_value), float(step_value))
             element.transform.post_translate(tx, ty)
-            self.kernel.signal("element_property_update", node.object)
+            element.modified()
+            self.device.signal('element_property_update', node.object)
             self.root.gui.request_refresh()
 
         return specific
@@ -2187,13 +1848,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            element = node.object
-            if isinstance(element, SVGImage):
-                OperationPreprocessor.make_actual(element)
-                node.bounds = None
-                node.set_icon()
-            self.selection_bounds_updated()
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('image resample\n')
 
         return specific
 
@@ -2206,19 +1861,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            element = node.object
-            if isinstance(element, SVGImage):
-                img = element.image
-                if img.mode == 'RGBA':
-                    pixel_data = img.load()
-                    width, height = img.size
-                    for y in range(height):
-                        for x in range(width):
-                            if pixel_data[x, y][3] == 0:
-                                pixel_data[x, y] = (255, 255, 255, 255)
-                element.image = img.convert("1")
-                element.cache = None
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('image dither\n')
 
         return specific
 
@@ -2231,46 +1874,17 @@ class RootNode(list):
         """
 
         def specific(event):
+            kernel = self.device.device_root
             element = node.object
             if not isinstance(element, SVGImage):
                 return
-            adding_elements = []
             if element.image.mode != 'RGBA':
                 element.image = element.image.convert('RGBA')
             band = 255 / divide
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-
-                image_element = copy(element)
-                image_element.image = image_element.image.copy()
-                if OperationPreprocessor.needs_actualization(image_element):
-                    OperationPreprocessor.make_actual(image_element)
-                img = image_element.image
-                new_data = img.load()
-                width, height = img.size
-                for y in range(height):
-                    for x in range(width):
-                        pixel = new_data[x, y]
-                        if pixel[3] == 0:
-                            new_data[x, y] = (255, 255, 255, 255)
-                            continue
-                        gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
-                        if threshold_min >= gray:
-                            new_data[x, y] = (0, 0, 0, 255)
-                        elif threshold_max < gray:
-                            new_data[x, y] = (255, 255, 255, 255)
-                        else:  # threshold_min <= grey < threshold_max
-                            v = gray - threshold_min
-                            v *= divide
-                            v = int(round(v))
-                            new_data[x, y] = (v, v, v, 255)
-                image_element.image = image_element.image.convert('1')
-                adding_elements.append(image_element)
-            self.kernel.elements.extend(adding_elements)
-            self.kernel.classify(adding_elements)
-            self.set_selected_elements(None)
-            self.kernel.signal('rebuild_tree', 0)
+                self.device.using('module', 'Console').write('image threshold %f %f\n' % (threshold_min, threshold_max))
 
         return specific
 
@@ -2283,6 +1897,8 @@ class RootNode(list):
         """
 
         def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
             bounds = OperationPreprocessor.bounding_box(child_objects)
@@ -2291,18 +1907,17 @@ class RootNode(list):
             step = float(node.object.raster_step)
             xmin, ymin, xmax, ymax = bounds
 
-            image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin) / step, height=(ymax - ymin) / step)
+            image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin), height=(ymax - ymin), step=step)
             image_element = SVGImage(image=image)
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
             image_element.values['raster_step'] = step
 
-            self.kernel.elements.append(image_element)
+            elements.add_elem(image_element)
             node.object.clear()
             self.build_tree(self.node_elements, image_element)
             node.object.append(image_element)
-            self.selection_bounds_updated()
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2315,10 +1930,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for element in self.selected_elements:
-                element.reify()
-                element.cache = None
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('reify\n')
 
         return specific
 
@@ -2331,10 +1943,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.selected_elements:
-                e.transform.reset()
-            self.selection_bounds_updated()
-            self.gui.request_refresh()
+            self.device.using('module', 'Console').write('reset\n')
 
         return specific
 
@@ -2351,15 +1960,9 @@ class RootNode(list):
 
         def specific(event):
             bounds = OperationPreprocessor.bounding_box(node.parent)
-
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            # center = node.parent.center()
-
-            for obj in self.selected_elements:
-                obj.transform.post_rotate(value, center_x, center_y)
-            self.selection_bounds_updated()
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('rotate %f %f %f\n' % (value, center_x, center_y))
 
         return specific
 
@@ -2373,16 +1976,8 @@ class RootNode(list):
         """
 
         def specific(event):
-            bounds = self.bounds
-
-            center_x = (bounds[2] + bounds[0]) / 2.0
-            center_y = (bounds[3] + bounds[1]) / 2.0
-            # center = node.parent.center()
-
-            for obj in self.selected_elements:
-                obj.transform.post_scale(value, value, center_x, center_y)
-            self.selection_bounds_updated()
-            self.kernel.signal('rebuild_tree', 0)
+            center_x, center_y = self.elements.center()
+            self.device.using('module', 'Console').write('scale %f %f %f %f\n' % (value, value, center_x, center_y))
 
         return specific
 
@@ -2396,6 +1991,7 @@ class RootNode(list):
 
         def specific(event):
             filepath = node.filepath
+            self.elements.clear_elements_and_operations()
             self.gui.load(filepath)
 
         return specific
@@ -2404,48 +2000,12 @@ class RootNode(list):
         """
         Menu to remove an element from the scene.
 
-        :param node:
+        :param remove_node:
         :return:
         """
 
         def specific(event):
-            node = remove_node
-
-            selections = [self.tree.GetItemData(e) for e in self.semi_selected]
-            selections = [s for s in selections if s.type == node.type]
-
-            if node.type == NODE_ELEMENT:
-                # Removing element can only have 1 copy.
-                removed_objects = self.selected_elements
-                for e in removed_objects:
-                    self.kernel.elements.remove(e)
-
-                for i in range(len(self.kernel.operations)):
-                    elems = [e for e in self.kernel.operations[i] if e not in removed_objects]
-                    self.kernel.operations[i].clear()
-                    self.kernel.operations[i].extend(elems)
-                    if len(self.kernel.operations[i]) == 0:
-                        self.kernel.operations[i] = None
-                ops = [op for op in self.kernel.operations if op is not None]
-                self.kernel.operations.clear()
-                self.kernel.operations.extend(ops)
-            elif node.type == NODE_OPERATION_ELEMENT:
-                # Operation_element can occur many times in the same operation node.
-                modified = []
-                for node in selections:
-                    index = node.parent.index(node)
-                    op = node.parent.object
-                    if index == -1:
-                        continue
-                    op[index] = None
-                    if op not in modified:
-                        modified.append(op)
-                for s in modified:
-                    op_elems = [op_elem for op_elem in s if op_elem is not None]
-                    s.clear()
-                    s.extend(op_elems)
-            self.set_selected_elements(None)
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.using('module', 'Console').write('element delete\n')
 
         return specific
 
@@ -2453,33 +2013,21 @@ class RootNode(list):
         """
         Menu to remove an element from the scene.
 
-        :param node:
+        :param remove_node:
         :return:
         """
 
         def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
             node = remove_node
             if node.type == NODE_ELEMENT:
-                # Removing element can only have 1 copy.
-                # All selected elements are removed.
-                removed_objects = self.selected_elements
-                for e in removed_objects:
-                    self.kernel.elements.remove(e)
-                for i in range(len(self.kernel.operations)):
-                    elems = [e for e in self.kernel.operations[i] if e not in removed_objects]
-                    self.kernel.operations[i].clear()
-                    self.kernel.operations[i].extend(elems)
-                    if len(self.kernel.operations[i]) == 0:
-                        self.kernel.operations[i] = None
-                ops = [op for op in self.kernel.operations if op is not None]
-                self.kernel.operations.clear()
-                self.kernel.operations.extend(ops)
+                self.device.using('module', 'Console').write('element delete\n')
             elif node.type == NODE_OPERATION:
-                # Removing operation can only have 1 copy.
-                self.kernel.operations.remove(node.object)
+                self.device.using('module', 'Console').write('operation delete\n')
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
-                del self.kernel.filenodes[node.filepath]
+                elements.remove_files([node.filepath])
             elif node.type == NODE_OPERATION_ELEMENT:
                 # Operation_element can occur many times in the same operation node.
                 index = node.parent.index(node)
@@ -2488,8 +2036,39 @@ class RootNode(list):
                     op.remove(node.object)
                 else:
                     del op[index]
-            self.set_selected_elements(None)
-            self.kernel.signal('rebuild_tree', 0)
+            self.elements.set_selected(None)
+            self.device.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_clear_all_operation(self, node):
+        def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
+            for op in elements.ops(emphasized=True):
+                op.clear()
+                self.device.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_clear_all_operations_branch(self, node):
+        def specific(event):
+            self.device.using('module', 'Console').write('operation * delete\n')
+
+        return specific
+
+    def menu_clear_all_files_branch(self, node):
+        def specific(event):
+            kernel = self.device.device_root
+            elements = kernel.elements
+            elements.clear_files()
+            self.device.signal('rebuild_tree', 0)
+
+        return specific
+
+    def menu_clear_all_elements_branch(self, node):
+        def specific(event):
+            self.device.using('module', 'Console').write('element * delete\n')
 
         return specific
 
@@ -2502,11 +2081,12 @@ class RootNode(list):
         """
 
         def specific(event):
-            adding_elements = [copy(e) for e in list(self.selected_elements) * copies]
-            self.kernel.elements.extend(adding_elements)
-            self.kernel.classify(adding_elements)
-            self.set_selected_elements(None)
-            self.kernel.signal('rebuild_tree', 0)
+            kernel = self.device.device_root
+            elements = kernel.elements
+            adding_elements = [copy(e) for e in list(self.elements.elems(emphasized=True)) * copies]
+            elements.add_elems(adding_elements)
+            elements.classify(adding_elements)
+            elements.set_selected(None)
 
         return specific
 
@@ -2522,7 +2102,7 @@ class RootNode(list):
             op = node.object
             adding_elements = list(op) * copies
             op.extend(adding_elements)
-            self.kernel.signal('rebuild_tree', 0)
+            self.device.signal('rebuild_tree', 0)
 
         return specific
 
@@ -2535,15 +2115,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            for e in self.selected_elements:
-                p = abs(e)
-                add = []
-                for subpath in p.as_subpaths():
-                    subelement = Path(subpath)
-                    add.append(subelement)
-                self.kernel.elements.extend(add)
-            self.kernel.signal('rebuild_tree', 0)
-            self.set_selected_elements(None)
+            self.device.using('module', 'Console').write('element subpath\n')
 
         return specific
 
@@ -2556,7 +2128,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.kernel.open_window("JobInfo").set_operations(self.selected_operations)
+            self.device.open('window', "JobInfo", None, -1, "").set_operations(list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 
@@ -2567,36 +2139,28 @@ class RootNode(list):
         :param node:
         :return:
         """
+        kernel = self.device.device_root
+        elements = kernel.elements
 
         def specific(event):
-            node.object.reverse()
-            self.kernel.signal('rebuild_tree', 0)
-
-        return specific
-
-    def menu_clear_all(self, node):
-        def specific(event):
-            if node.type == NODE_ELEMENTS_BRANCH:
-                elements = self.kernel.elements
-                for i in range(len(self.kernel.operations)):
-                    self.kernel.operations[i] = [e for e in self.kernel.operations[i]
-                                                 if e not in elements]
-                    if len(self.kernel.operations[i]) == 0:
-                        self.kernel.operations[i] = None
-                self.kernel.operations = [op for op in self.kernel.operations
-                                          if op is not None]
-            node.object.clear()
-            self.selection_bounds_updated()
-            self.kernel.signal('rebuild_tree', 0)
+            t = node.type
+            if t == NODE_ELEMENTS_BRANCH:
+                self.elements._elements.reverse()
+            elif t == NODE_OPERATION_BRANCH:
+                self.elements._operations.reverse()
+            elif t == NODE_OPERATION:
+                for op in elements.ops(emphasized=True):
+                    op.reverse()
+            self.device.signal('rebuild_tree', 0)
 
         return specific
 
     def menu_reclassify_operations(self, node):
         def specific(event):
-            kernel = node.root.kernel
-            kernel.operations.clear()
-            kernel.classify(kernel.elements)
-            self.kernel.signal('rebuild_tree', 0)
+            kernel = node.root.device.device_root
+            elements = kernel.elements
+            elements.clear_operations()
+            elements.classify(list(elements.elems()))
 
         return specific
 
@@ -2613,116 +2177,285 @@ class RootNode(list):
         return specific
 
 
-class MappedKey:
-    """
-    Mapped key class containing the key and the command.
-    """
+def get_key_name(event):
+    keyvalue = ''
+    if event.ControlDown():
+        keyvalue += 'control+'
+    if event.AltDown():
+        keyvalue += 'alt+'
+    if event.ShiftDown():
+        keyvalue += 'shift+'
+    if event.MetaDown():
+        keyvalue += 'meta+'
+    key = event.GetKeyCode()
+    if key == wx.WXK_CONTROL:
+        return
+    if key == wx.WXK_ALT:
+        return
+    if key == wx.WXK_SHIFT:
+        return
+    if key == wx.WXK_F1:
+        keyvalue += 'f1'
+    elif key == wx.WXK_F2:
+        keyvalue += 'f2'
+    elif key == wx.WXK_F3:
+        keyvalue += 'f3'
+    elif key == wx.WXK_F4:
+        keyvalue += 'f4'
+    elif key == wx.WXK_F5:
+        keyvalue += 'f5'
+    elif key == wx.WXK_F6:
+        keyvalue += 'f6'
+    elif key == wx.WXK_F7:
+        keyvalue += 'f7'
+    elif key == wx.WXK_F8:
+        keyvalue += 'f8'
+    elif key == wx.WXK_F9:
+        keyvalue += 'f9'
+    elif key == wx.WXK_F10:
+        keyvalue += 'f10'
+    elif key == wx.WXK_F11:
+        keyvalue += 'f11'
+    elif key == wx.WXK_F12:
+        keyvalue += 'f12'
+    elif key == wx.WXK_F13:
+        keyvalue += 'f13'
+    elif key == wx.WXK_F14:
+        keyvalue += 'f14'
+    elif key == wx.WXK_F15:
+        keyvalue += 'f15'
+    elif key == wx.WXK_F16:
+        keyvalue += 'f16'
+    elif key == wx.WXK_ADD:
+        keyvalue += '+'
+    elif key == wx.WXK_END:
+        keyvalue += 'end'
+    elif key == wx.WXK_NUMPAD0:
+        keyvalue += 'numpad0'
+    elif key == wx.WXK_NUMPAD1:
+        keyvalue += 'numpad1'
+    elif key == wx.WXK_NUMPAD2:
+        keyvalue += 'numpad2'
+    elif key == wx.WXK_NUMPAD3:
+        keyvalue += 'numpad3'
+    elif key == wx.WXK_NUMPAD4:
+        keyvalue += 'numpad4'
+    elif key == wx.WXK_NUMPAD5:
+        keyvalue += 'numpad5'
+    elif key == wx.WXK_NUMPAD6:
+        keyvalue += 'numpad6'
+    elif key == wx.WXK_NUMPAD7:
+        keyvalue += 'numpad7'
+    elif key == wx.WXK_NUMPAD8:
+        keyvalue += 'numpad8'
+    elif key == wx.WXK_NUMPAD9:
+        keyvalue += 'numpad9'
+    elif key == wx.WXK_NUMPAD_ADD:
+        keyvalue += 'numpad+'
+    elif key == wx.WXK_NUMPAD_SUBTRACT:
+        keyvalue += 'numpad-'
+    elif key == wx.WXK_NUMPAD_MULTIPLY:
+        keyvalue += 'numpad*'
+    elif key == wx.WXK_NUMPAD_DIVIDE:
+        keyvalue += 'numpad/'
+    elif key == wx.WXK_NUMPAD_DECIMAL:
+        keyvalue += 'numpad.'
+    elif key == wx.WXK_NUMPAD_ENTER:
+        keyvalue += 'numpad_enter'
+    elif key == wx.WXK_NUMPAD_RIGHT:
+        keyvalue += 'numpad_right'
+    elif key == wx.WXK_NUMPAD_LEFT:
+        keyvalue += 'numpad_left'
+    elif key == wx.WXK_NUMPAD_UP:
+        keyvalue += 'numpad_up'
+    elif key == wx.WXK_NUMPAD_DOWN:
+        keyvalue += 'numpad_down'
+    elif key == wx.WXK_NUMPAD_DELETE:
+        keyvalue += 'numpad_delete'
+    elif key == wx.WXK_NUMPAD_INSERT:
+        keyvalue += 'numpad_insert'
+    elif key == wx.WXK_NUMPAD_PAGEUP:
+        keyvalue += 'numpad_pgup'
+    elif key == wx.WXK_NUMPAD_PAGEDOWN:
+        keyvalue += 'numpad_pgdn'
+    elif key == wx.WXK_NUMLOCK:
+        keyvalue += 'numlock'
+    elif key == wx.WXK_SCROLL:
+        keyvalue += 'scroll'
+    elif key == wx.WXK_HOME:
+        keyvalue += 'home'
+    elif key == wx.WXK_DOWN:
+        keyvalue += 'down'
+    elif key == wx.WXK_UP:
+        keyvalue += 'up'
+    elif key == wx.WXK_RIGHT:
+        keyvalue += 'right'
+    elif key == wx.WXK_LEFT:
+        keyvalue += 'left'
+    elif key == wx.WXK_ESCAPE:
+        keyvalue += 'escape'
+    elif key == wx.WXK_BACK:
+        keyvalue += 'back'
+    elif key == wx.WXK_PAUSE:
+        keyvalue += 'pause'
+    elif key == wx.WXK_PAGEDOWN:
+        keyvalue += 'pagedown'
+    elif key == wx.WXK_PAGEUP:
+        keyvalue += 'pageup'
+    elif key == wx.WXK_PRINT:
+        keyvalue += 'print'
+    elif key == wx.WXK_RETURN:
+        keyvalue += 'return'
+    elif key == wx.WXK_SPACE:
+        keyvalue += 'space'
+    elif key == wx.WXK_TAB:
+        keyvalue += 'tab'
+    elif key == wx.WXK_DELETE:
+        keyvalue += 'delete'
+    elif key == wx.WXK_INSERT:
+        keyvalue += 'insert'
+    else:
+        keyvalue += chr(key)
+    return keyvalue.lower()
 
-    def __init__(self, key, command):
-        self.key = key
-        self.command = command
 
-    def __str__(self):
-        return self.key
-
-
-class wxMeerK40t(Module, wx.App):
+class wxMeerK40t(wx.App, Module):
     """
     wxMeerK40t is the wx.App main class and a qualified Module for the MeerK40t kernel.
     Running MeerK40t without the wxMeerK40t gui is both possible and reasonable. This should not change the way the
     underlying code runs. It should just be a series of frames held together with the kernel.
     """
 
-    def __init__(self):
+    def __init__(self, device=None):
+        self.init_device = device
         wx.App.__init__(self, 0)
         Module.__init__(self)
         self.locale = None
-        self.kernel = None
+        self.Bind(wx.EVT_CLOSE, self.on_app_close)
+        self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
+        self.Bind(wx.EVT_END_SESSION, self.on_app_close)
+        self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
+        # This catches events when the app is asked to activate by some other process
+        self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
+
+    def on_app_close(self, event):
+        try:
+            if self.device is not None:
+                self.device.stop()
+        except AttributeError:
+            pass
 
     def OnInit(self):
         return True
 
-    def initialize(self, kernel, name=None):
-        kernel.setting(wx.App, 'gui', self)  # Registers self as kernel.gui
-        kernel.add_window("MeerK40t", MeerK40t)
+    def BringWindowToFront(self):
+        try:  # it's possible for this event to come when the frame is closed
+            self.GetTopWindow().Raise()
+        except:
+            pass
 
-        self.kernel = kernel
+    def OnActivate(self, event):
+        # if this is an activate event, rather than something else, like iconize.
+        if event.GetActive():
+            self.BringWindowToFront()
+        event.Skip()
+
+    def MacReopenApp(self):
+        """Called when the doc icon is clicked, and ???"""
+        self.BringWindowToFront()
+
+    def MacNewFile(self):
+        try:
+            if self.device is not None:
+                self.device.elements.clear_all()
+        except AttributeError:
+            pass
+
+    def MacPrintFile(self, file_path):
+        pass
+
+    def MacOpenFile(self, filename):
+        try:
+            if self.init_device is not None:
+                self.init_device.load(os.path.realpath(filename))
+        except AttributeError:
+            pass
+
+    def MacOpenFiles(self, filenames):
+        try:
+            if self.init_device is not None:
+                for filename in filenames:
+                    self.init_device.load(os.path.realpath(filename))
+        except AttributeError:
+            pass
+
+    @staticmethod
+    def sub_register(device):
+        device.register('window', "MeerK40t", MeerK40t)
+        device.register('module', 'Scene', Scene)
+        device.register('window', 'PathProperty', PathProperty)
+        device.register('window', 'TextProperty', TextProperty)
+        device.register('window', 'ImageProperty', ImageProperty)
+        device.register('window', 'RasterProperty', RasterProperty)
+        device.register('window', 'EngraveProperty', EngraveProperty)
+        device.register('window', 'CutProperty', CutProperty)
+        device.register('window', 'Controller', Controller)
+        device.register('window', "Preferences", Preferences)
+        device.register('window', "CameraInterface", CameraInterface)
+        device.register('window', "Terminal", Terminal)
+        device.register('window', "Settings", Settings)
+        device.register('window', "Rotary", RotarySettings)
+        device.register('window', "Alignment", Alignment)
+        device.register('window', "About", About)
+        device.register('window', "DeviceManager", DeviceManager)
+        device.register('window', "Keymap", Keymap)
+        device.register('window', "UsbConnect", UsbConnect)
+        device.register('window', "Navigation", Navigation)
+        device.register('window', "Controller", Controller)
+        device.register('window', "JobSpooler", JobSpooler)
+        device.register('window', "JobInfo", JobInfo)
+        device.register('window', "BufferView", BufferView)
+        device.register('window', "Adjustments", Adjustments)
+
+    def initialize(self):
+        device = self.device
         _ = wx.GetTranslation
-
         wx.Locale.AddCatalogLookupPathPrefix('locale')
 
-        kernel.run_later = wx.CallAfter
-        kernel.translation = wx.GetTranslation
-        kernel.set_config(wx.Config("MeerK40t"))
-        kernel.setting(int, 'language', None)
-
-        kernel.add_window('Shutdown', Shutdown)
-        kernel.add_window('PathProperty', PathProperty)
-        kernel.add_window('TextProperty', TextProperty)
-        kernel.add_window('ImageProperty', ImageProperty)
-        kernel.add_window('RasterProperty', RasterProperty)
-        kernel.add_window('EngraveProperty', EngraveProperty)
-        kernel.add_window('Controller', Controller)
-        kernel.add_window("Preferences", Preferences)
-        kernel.add_window("CameraInterface", CameraInterface)
-        kernel.add_window("Settings", Settings)
-        kernel.add_window("Rotary", RotarySettings)
-        kernel.add_window("Alignment", Alignment)
-        kernel.add_window("About", About)
-        kernel.add_window("DeviceManager", DeviceManager)
-        kernel.add_window("Keymap", Keymap)
-        kernel.add_window("UsbConnect", UsbConnect)
-        kernel.add_window("Navigation", Navigation)
-        kernel.add_window("Controller", Controller)
-        kernel.add_window("JobSpooler", JobSpooler)
-        kernel.add_window("JobInfo", JobInfo)
-        kernel.add_window("BufferView", BufferView)
-        kernel.add_window("Adjustments", Adjustments)
-        kernel.add_control("Delete Settings", self.clear_control)
-        language = kernel.language
+        device.run_later = wx.CallAfter
+        device.translation = wx.GetTranslation
+        device.set_config(wx.Config("MeerK40t"))
+        device.app = self  # Registers self as kernel.app
+        device.setting(int, 'language', None)
+        device.add('control', "Delete Settings", self.clear_control)
+        language = device.language
         if language is not None and language != 0:
-            self.language_to(language)(None)
-        self.kernel.open_window("MeerK40t")
+            self.update_language(language)
 
     def clear_control(self):
-        if self.kernel.config is not None:
-            self.kernel.config.DeleteAll()
-            self.kernel.config = None
-            self.kernel.shutdown()
+        device = self.device.device_root
+        if device.config is not None:
+            device.config.DeleteAll()
+            device.config = None
+            device.stop()
 
-    def shutdown(self, kernel):
-        self.kernel = None
-        del kernel.modules['MeerK40t']
-
-    def language_swap(self, lang):
-        self.language_to(lang)(None)
-        self.kernel.open_window("MeerK40t")
-
-    def language_to(self, lang):
+    def update_language(self, lang):
         """
-        Returns a function to change the language to the language specified.
-        :param lang: language to switch to
-        :return:
+        Update language to the requested language.
         """
+        device = self.device
+        language_code, language_name, language_index = supported_languages[lang]
+        device.language = lang
 
-        def update_language(event):
-            """
-            Update language to the requested language.
-            """
-            language_code, language_name, language_index = supported_languages[lang]
-            self.kernel.language = lang
-
-            if self.locale:
-                assert sys.getrefcount(self.locale) <= 2
-                del self.locale
-            self.locale = wx.Locale(language_index)
-            if self.locale.IsOk():
-                self.locale.AddCatalog('meerk40t')
-            else:
-                self.locale = None
-            self.kernel.signal('language', (lang, language_code, language_name, language_index))
-
-        return update_language
+        if self.locale:
+            assert sys.getrefcount(self.locale) <= 2
+            del self.locale
+        self.locale = wx.Locale(language_index)
+        if self.locale.IsOk():
+            self.locale.AddCatalog('meerk40t')
+        else:
+            self.locale = None
+        device.signal('language', (lang, language_code, language_name, language_index))
 
 
 # end of class MeerK40tGui
@@ -2743,15 +2476,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % MEERK40T_VERSION)
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.0')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
+        dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+        dlg.Destroy()
     except:  # I already crashed once, if there's another here just ignore it.
         pass
-    dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
-    dlg.ShowModal()
-    dlg.Destroy()
 
 
 sys.excepthook = handleGUIException

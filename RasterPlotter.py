@@ -243,7 +243,7 @@ class RasterPlotter:
             dy = -1
         yield offset_x + x * step, offset_y + y * step, 0
         if (traversal & Y_AXIS) != 0:
-            # This code is for up/down across rastering.
+            # This code is for /\up-down\/ column rastering.
             while 0 <= x < width:
                 lower_bound = self.topmost_not_equal(x)
                 if lower_bound == -1:
@@ -287,7 +287,7 @@ class RasterPlotter:
                 yield offset_x + x * step, offset_y + y * step, 0
                 dy = -dy
         else:
-            # This code is left<->right row-rastering.
+            # This code is left<->right row rastering.
             while 0 <= y < height:
                 lower_bound = self.leftmost_not_equal(y)
                 if lower_bound == -1:

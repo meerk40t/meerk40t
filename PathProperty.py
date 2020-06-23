@@ -1,16 +1,18 @@
 import wx
 
+from Kernel import Module
 from LaserRender import swizzlecolor
 from svgelements import *
 
 _ = wx.GetTranslation
 
 
-class PathProperty(wx.Frame):
+class PathProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
@@ -69,12 +71,11 @@ class PathProperty(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
         # end wxGlade
-        self.kernel = None
         self.path_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("PathProperty")
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
 
     def set_element(self, element):
@@ -86,8 +87,12 @@ class PathProperty(wx.Frame):
         except AttributeError:
             pass
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
+    def initialize(self):
+        self.device.close('window', self.name)
+        self.Show()
+
+    def shutdown(self,  channel):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: PathProperty.__set_properties
@@ -158,8 +163,7 @@ class PathProperty(wx.Frame):
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.path_element.name = self.text_name.GetValue()
-            if self.kernel is not None:
-                self.kernel.signal("element_property_update", self.path_element)
+            self.device.signal('element_property_update', self.path_element)
         except AttributeError:
             pass
 
@@ -175,16 +179,19 @@ class PathProperty(wx.Frame):
             if color is not None:
                 self.path_element.stroke = color
                 self.path_element.values[SVG_ATTR_STROKE] = color.hex
+                self.path_element.altered()
             else:
                 self.path_element.stroke = Color('none')
                 self.path_element.values[SVG_ATTR_STROKE] = 'none'
+                self.path_element.altered()
         elif 'fill' in button.name:
             if color is not None:
                 self.path_element.fill = color
                 self.path_element.values[SVG_ATTR_FILL] = color.hex
+                self.path_element.altered()
             else:
                 self.path_element.fill = Color('none')
                 self.path_element.values[SVG_ATTR_FILL] = 'none'
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.path_element)
-            self.kernel.signal("refresh_scene", 0)
+                self.path_element.altered()
+        self.device.signal('element_property_update', self.path_element)
+        self.device.signal('refresh_scene', 0)

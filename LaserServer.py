@@ -1,93 +1,121 @@
 import socket
-import threading
 
 from Kernel import *
-
-
-class ServerThread(threading.Thread):
-    def __init__(self, server):
-        threading.Thread.__init__(self, name='ServerThread')
-        self.server = server
-        self.state = None
-        self.connection = None
-        self.addr = None
-        self.set_state(THREAD_STATE_UNSTARTED)
-        self.buffer = None
-
-    def set_state(self, state):
-        if self.state != state:
-            self.state = state
-
-    def run(self):
-        self.set_state(THREAD_STATE_STARTED)
-
-        while self.state != THREAD_STATE_ABORT and self.state != THREAD_STATE_FINISHED:
-            if self.connection is None:
-                try:
-                    self.connection, self.addr = self.server.socket.accept()
-                except OSError:
-                    break  # Socket was killed.
-                continue
-            if self.state == THREAD_STATE_PAUSED:
-                while self.state == THREAD_STATE_PAUSED:
-                    time.sleep(1)
-                    if self.state == THREAD_STATE_ABORT:
-                        return
-                self.set_state(THREAD_STATE_STARTED)
-
-            push_message = self.server.pipe.read(1024)
-            if push_message is not None:
-                if isinstance(push_message, str):
-                    push_message = push_message.encode('utf8')
-                if len(push_message) != 0:
-                    print(push_message)
-                self.connection.send(push_message)
-
-            data_from_socket = self.connection.recv(1024)
-            if len(data_from_socket) != 0:
-                print("Processing Gcode: %s" % str(data_from_socket))
-            self.server.pipe.write(data_from_socket)
-
-            push_message = self.server.pipe.read(1024)
-            if push_message is not None:
-                if isinstance(push_message, str):
-                    push_message = push_message.encode('utf8')
-                if len(push_message) != 0:
-                    print(push_message)
-                self.connection.send(push_message)
-        if self.connection is not None:
-            self.connection.close()
 
 
 class LaserServer(Module):
     """
     Laser Server opens up a localhost server and waits, sends whatever data received to the pipe
     """
-    def __init__(self, port=1040, pipe=None, name=''):
+    def __init__(self, tcp=True, port=23, pipe=None, name='', greet=None):  # port 1040
         Module.__init__(self)
+        self.tcp = tcp
         self.pipe = pipe
         self.port = port
         self.name = name
+        self.greet = greet
 
+        self.server_channel = None
         self.socket = None
-        self.thread = None
-        self.kernel = None
+        self.connection = None
+        self.addr = None
 
-    def initialize(self, kernel, name=None):
-        self.kernel = kernel
-        self.name = name
+    def initialize(self):
+        if self.tcp:
+            self.device.threaded(self.tcp_run)
+        else:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.socket.settimeout(2)
+            self.socket.bind(('', self.port))
+            self.device.threaded(self.udp_run)
+        self.server_channel = self.device.channel_open('server')
+
+    def udp_run(self):
+        def reply(e):
+            self.socket.sendto(e, address)
+
+        def elems(e):
+            self.device.device_root.elements.add_elem(e)
+
+        try:
+            if self.server_channel is not None:
+                self.server_channel("UDP Socket Listening.")
+            while True:
+                try:
+                    message, address = self.socket.recvfrom(1024)
+                except socket.timeout:
+                    if self.device.state == STATE_TERMINATE:
+                        return
+                    continue
+                self.pipe.checksum_parse(message, reply=reply, elements=elems)
+        except OSError:
+            pass
+
+    def tcp_run(self):
+        """
+        TCP Run is a connection thread delegate. Any connections are given a different threaded
+        handle to interact with that connection. This thread here waits for sockets and delegates.
+        """
         self.socket = socket.socket()
-        self.socket.bind(('', self.port))
-        self.socket.listen(1)
-        self.thread = ServerThread(self)
-        self.kernel.add_control('Set_Server_Pipe' + self.name, self.set_pipe)
-        self.kernel.add_thread('ServerThread', self.thread)
-        self.thread.start()
+        self.socket.settimeout(2)
+        try:
+            self.socket.bind(('', self.port))
+            self.socket.listen(5)
+        except OSError:
+            self.server_channel("Could not start listening.")
+            return
 
-    def shutdown(self, kernel):
-        Module.shutdown(self, kernel)
+        while self.device.state != STATE_TERMINATE:
+            self.server_channel("Listening %s on port %d..." % (self.name, self.port))
+            connection = None
+            addr = None
+            try:
+                connection, addr = self.socket.accept()
+                self.server_channel("Socket Connected: %s" % str(addr))
+                self.device.threaded(self.tcp_connection_handle(connection, addr))
+            except socket.timeout:
+                pass
+            except OSError:
+                self.server_channel("Socket was killed: %s" % str(addr))
+                if connection is not None:
+                    connection.close()
+                break
         self.socket.close()
-        self.thread.state = THREAD_STATE_FINISHED
+
+    def tcp_connection_handle(self, connection, addr):
+        """
+        The TCP Connection Handle, handles all connections delegated by the tcp_run() method.
+        The threaded context is entirely local and independent.
+        """
+        def reply(e):
+            if connection is not None:
+                connection.send(bytes(e, 'utf-8'))
+                self.server_channel("<-- %s" % str(e))
+
+        def elems(e):
+            self.device.device_root.elements.add_elem(e)
+
+        def handle():
+            if self.greet is not None:
+                reply(self.greet)
+            while self.device.state != STATE_TERMINATE:
+                try:
+                    data_from_socket = connection.recv(1024)
+                    if len(data_from_socket) != 0:
+                        self.server_channel("--> %s" % str(data_from_socket))
+                    self.pipe.write(data_from_socket, reply=reply, elements=elems)
+                except socket.timeout:
+                    self.server_channel("Connection to %s timed out." % str(addr))
+                    break
+                except socket.error:
+                    if connection is not None:
+                        connection.close()
+                    break
+        return handle
+
+    def shutdown(self,  channel):
+        self.server_channel("Shutting down server.")
+        self.socket.close()
 
     def set_pipe(self, pipe):
         self.pipe = pipe

@@ -4,8 +4,8 @@
 #
 
 import wx
-import sys
 
+from Kernel import Module
 
 _ = wx.GetTranslation
 
@@ -13,15 +13,19 @@ _ = wx.GetTranslation
 # begin wxGlade: dependencies
 # end wxGlade
 
-class Settings(wx.Frame):
+class Settings(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Preferences.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((412, 183))
 
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
-                                                 choices=["Invert Mouse Wheel Zoom", "Autoclose Shutdown"])
+                                                 choices=[
+                                                     "Invert Mouse Wheel Zoom",
+                                                     "Print Shutdown",
+                                                 ])
 
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),
                                        choices=[_("mm"), _("cm"), _("inch"), _("mils")],
@@ -39,28 +43,32 @@ class Settings(wx.Frame):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_language, self.combo_language)
         self.Bind(wx.EVT_CHECKLISTBOX, self.on_checklist_settings, self.checklist_options)
         # end wxGlade
-        self.kernel = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Settings")
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        kernel.setting(bool, "mouse_zoom_invert", False)
-        kernel.setting(bool, "autoclose_shutdown", True)
-        kernel.setting(int, "language", 0)
-        kernel.setting(str, "units_name", 'mm')
-        kernel.setting(int, "units_marks", 10)
-        kernel.setting(int, "units_index", 0)
+    def initialize(self):
+        self.device.close('window', self.name)
+        self.Show()
 
-        if self.kernel.mouse_zoom_invert:
+        self.device.setting(bool, "mouse_zoom_invert", False)
+        self.device.setting(bool, "print_shutdown", False)
+        self.device.setting(int, "language", 0)
+        self.device.setting(str, "units_name", 'mm')
+        self.device.setting(int, "units_marks", 10)
+        self.device.setting(int, "units_index", 0)
+
+        if self.device.mouse_zoom_invert:
             self.checklist_options.Check(0, True)
-        if self.kernel.autoclose_shutdown:
+        if self.device.print_shutdown:
             self.checklist_options.Check(1, True)
-        self.radio_units.SetSelection(self.kernel.units_index)
-        self.combo_language.SetSelection(self.kernel.language)
+        self.radio_units.SetSelection(self.device.units_index)
+        self.combo_language.SetSelection(self.device.language)
+
+    def shutdown(self,  channel):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: Settings.__set_properties
@@ -88,13 +96,13 @@ class Settings(wx.Frame):
         # end wxGlade
 
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
-        self.kernel.mouse_zoom_invert = self.checklist_options.IsChecked(0)
-        self.kernel.autoclose_shutdown = self.checklist_options.IsChecked(1)
+        self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
+        self.device.print_shutdown = self.checklist_options.IsChecked(1)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
-        if lang != -1 and self.kernel.gui is not None:
-            self.kernel.gui.language_swap(lang)
+        if lang != -1 and self.device.app is not None:
+            self.device.app.update_language(lang)
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
         if event.Int == 0:
@@ -107,21 +115,21 @@ class Settings(wx.Frame):
             self.set_mil()
 
     def set_inch(self):
-        p = self.kernel
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1000.0, "inch", 1, 2)
-        p("units", 0)
+        p.signal('units')
 
     def set_mil(self):
-        p = self.kernel
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1.0, "mil", 1000, 3)
-        p("units", 0)
+        p.signal('units')
 
     def set_cm(self):
-        p = self.kernel
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (393.7, "cm", 1, 1)
-        p("units", 0)
+        p.signal('units')
 
     def set_mm(self):
-        p = self.kernel
+        p = self.device.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (39.37, "mm", 10, 0)
-        p("units", 0)
+        p.signal('units')

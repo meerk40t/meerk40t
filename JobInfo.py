@@ -1,5 +1,6 @@
 import wx
 
+from Kernel import Module
 from LaserOperation import *
 from icons import icons8_laser_beam_52, icons8_route_50
 from OperationPreprocessor import OperationPreprocessor
@@ -7,13 +8,13 @@ from OperationPreprocessor import OperationPreprocessor
 _ = wx.GetTranslation
 
 
-class JobInfo(wx.Frame):
+class JobInfo(wx.Frame, Module):
 
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobInfo.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
-
+        Module.__init__(self)
         self.SetSize((659, 612))
         self.operations_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.commands_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
@@ -28,6 +29,8 @@ class JobInfo(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
         self.menu_autostart = wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_auto_start_controller, id=self.menu_autostart.GetId())
+        self.menu_prehome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home Before"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_home_before, id=self.menu_prehome.GetId())
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_home_after, id=self.menu_autohome.GetId())
         self.menu_autobeep = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep After"), "", wx.ITEM_CHECK)
@@ -60,9 +63,8 @@ class JobInfo(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        # TODO: Move this to Elements
         self.preprocessor = OperationPreprocessor()
-        self.kernel = None
-        self.device = None
         self.operations = []
 
     def jobadd_home(self, event):
@@ -82,7 +84,7 @@ class JobInfo(wx.Frame):
         self.update_gui()
 
     def interrupt(self):
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_FUNCTION, self.interrupt_popup
 
     def interrupt_popup(self):
@@ -92,12 +94,13 @@ class JobInfo(wx.Frame):
         dlg.Destroy()
 
     def set_operations(self, operations):
-        self.preprocessor.kernel = self.kernel
         self.preprocessor.device = self.device
 
         if not isinstance(operations, list):
             operations = [operations]
         self.operations.clear()
+        if self.device.prehome:
+            self.jobadd_home(None)
         for op in operations:
             self.operations.append(copy(op))
         if self.device.autobeep:
@@ -109,9 +112,20 @@ class JobInfo(wx.Frame):
         self.preprocessor.process(self.operations)
         self.update_gui()
 
-    def set_device(self, device):
-        self.device = device
-        if self.device is None:
+    def initialize(self):
+        self.device.close('module', self.name)
+        self.Show()
+        self.operations = []
+        self.device.setting(bool, "rotary", False)
+        self.device.setting(float, "scale_x", 1.0)
+        self.device.setting(float, "scale_y", 1.0)
+        self.device.setting(bool, "prehome", False)
+        self.device.setting(bool, "autohome", False)
+        self.device.setting(bool, "autobeep", True)
+        self.device.setting(bool, "autostart", True)
+        self.device.listen('element_property_update', self.on_element_property_update)
+
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -120,21 +134,18 @@ class JobInfo(wx.Frame):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
-        else:
-            self.menu_autohome.Check(device.autohome)
-            self.menu_autobeep.Check(device.autobeep)
-            self.menu_autostart.Check(device.autostart)
+            return
+        self.menu_prehome.Check(self.device.prehome)
+        self.menu_autohome.Check(self.device.autohome)
+        self.menu_autobeep.Check(self.device.autobeep)
+        self.menu_autostart.Check(self.device.autostart)
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        self.set_device(kernel.device)
-        self.operations = []
-        self.kernel.listen("element_property_update", self.on_element_property_update)
+    def shutdown(self, channel):
+        self.Close()
 
     def on_close(self, event):
-        self.kernel.unlisten("element_property_update", self.on_element_property_update)
-        self.kernel.mark_window_closed("JobInfo")
-        self.kernel = None
+        self.device.unlisten('element_property_update', self.on_element_property_update)
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
@@ -167,6 +178,9 @@ class JobInfo(wx.Frame):
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autostart = self.menu_autostart.IsChecked()
 
+    def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.device.prehome = self.menu_prehome.IsChecked()
+
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autohome = self.menu_autohome.IsChecked()
 
@@ -174,13 +188,13 @@ class JobInfo(wx.Frame):
         self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.kernel.open_window("JobSpooler")
+        self.device.open("window", "JobSpooler", None, -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
-            self.device.send_job(self.operations)
+            self.device.spooler.jobs(self.operations)
             self.on_button_job_spooler()
-            self.kernel.close_old_window("JobInfo")
+            self.device.close('window', "JobInfo")
         else:
             self.preprocessor.execute()
             self.update_gui()
@@ -195,24 +209,23 @@ class JobInfo(wx.Frame):
         obj = self.operations[node_index]
 
         if isinstance(obj, RasterOperation):
-            self.kernel.open_window("RasterProperty").set_operation(obj)
+            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
         elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.kernel.open_window("EngraveProperty").set_operation(obj)
+            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_listbox_commands_click' not implemented!")
+        # print("Event handler 'on_listbox_commands_click' not implemented!")
         event.Skip()
 
     def on_listbox_commands_dclick(self, event):  # wxGlade: JobInfo.<event_handler>
-        print("Event handler 'on_listbox_commands_dclick' not implemented!")
+        # print("Event handler 'on_listbox_commands_dclick' not implemented!")
         event.Skip()
 
     def on_element_property_update(self, *args):
         self.update_gui()
 
     def update_gui(self):
-
         def name_str(e):
             try:
                 return e.__name__

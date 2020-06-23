@@ -1,15 +1,17 @@
 import wx
 
+from Kernel import Module
 from icons import *
 
 _ = wx.GetTranslation
 
 
-class Adjustments(wx.Frame):
+class Adjustments(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Adjustments.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((424, 417))
         self.check_speed_override = wx.CheckBox(self, wx.ID_ANY, "")
         self.slider_speed_override = wx.Slider(self, wx.ID_ANY, 100, 0, 500,
@@ -68,8 +70,6 @@ class Adjustments(wx.Frame):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.SetFocus()
         # end wxGlade
-        self.kernel = None
-        self.device = None
 
     def __set_properties(self):
         # begin wxGlade: Adjustments.__set_properties
@@ -153,15 +153,15 @@ class Adjustments(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Adjustments")
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
-        if self.device is not None:
-            self.device.execute("Realtime Resume")
+        self.device.execute("Realtime Resume")
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        self.device = kernel.device
-        if self.device is None:
+    def initialize(self):
+        self.device.close('window', self.name)
+        device = self.device
+        self.Show()
+        if device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -176,6 +176,9 @@ class Adjustments(wx.Frame):
             self.checkbox_pattern_group.SetValue(self.device.interpreter.group_modulation)
         except AttributeError:
             pass
+
+    def shutdown(self,  channel):
+        self.Close()
 
     def on_slider_speed_override(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_slider_speed_override' not implemented!")

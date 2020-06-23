@@ -1,13 +1,16 @@
 import wx
 
+from Kernel import Module
+
 _ = wx.GetTranslation
 
 
-class RasterProperty(wx.Frame):
+class RasterProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: RasterProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((359, 355))
         self.spin_speed_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "200.0", min=0.0, max=500.0)
         self.spin_power_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "1000.0", min=0.0, max=1000.0)
@@ -16,7 +19,6 @@ class RasterProperty(wx.Frame):
         self.spin_overscan_set = wx.SpinCtrlDouble(self, wx.ID_ANY, "20.0", min=0.0, max=1000.0)
         self.radio_directional_raster = wx.RadioBox(self, wx.ID_ANY, _("Directional Raster"), choices=[_("Bidirectional"), _("Unidirectional")], majorDimension=2, style=wx.RA_SPECIFY_ROWS)
         self.radio_corner = wx.RadioBox(self, wx.ID_ANY, _("Start Corner"), choices=[" ", " ", " ", " "], majorDimension=2, style=wx.RA_SPECIFY_ROWS)
-        self.combo_second_pass = wx.ComboBox(self, wx.ID_ANY, choices=[_("None"), _("Crosshatch"), _("Backwards"), _("Repeat")], style=wx.CB_DROPDOWN)
 
         self.__set_properties()
         self.__do_layout()
@@ -36,14 +38,12 @@ class RasterProperty(wx.Frame):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_overscan, self.spin_overscan_set)
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_corner, self.radio_corner)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_second_pass, self.combo_second_pass)
         # end wxGlade
-        self.kernel = None
         self.operation = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("RasterProperty")
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
 
     def set_operation(self, operation):
@@ -88,16 +88,14 @@ class RasterProperty(wx.Frame):
                 self.radio_corner.SetSelection(operation.corner)
         except AttributeError:
             self.radio_corner.Enable(False)
-
-        try:
-            if operation.second_pass is not None:
-                self.combo_second_pass.SetSelection(operation.second_pass)
-        except AttributeError:
-            self.combo_second_pass.Enable(False)
         return self
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
+    def initialize(self):
+        self.device.close('window', self.name)
+        self.Show()
+
+    def shutdown(self,  channel):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: RasterProperty.__set_properties
@@ -118,15 +116,11 @@ class RasterProperty(wx.Frame):
         self.radio_corner.SetToolTip(_("Which corner should we start in?"))
         self.radio_corner.Enable(False)
         self.radio_corner.SetSelection(0)
-        self.combo_second_pass.SetToolTip(_("Direction to perform a second pass rastering"))
-        self.combo_second_pass.Enable(False)
-        self.combo_second_pass.SetSelection(0)
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: RasterProperty.__do_layout
         sizer_8 = wx.BoxSizer(wx.VERTICAL)
-        sizer_7 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Second Pass")), wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
@@ -148,7 +142,7 @@ class RasterProperty(wx.Frame):
         label_7 = wx.StaticText(self, wx.ID_ANY, _("Raster Step"))
         sizer_3.Add(label_7, 1, 0, 0)
         sizer_3.Add(self.spin_step_size, 1, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, _(" mil"))
+        label_4 = wx.StaticText(self, wx.ID_ANY, _("mils"))
         sizer_3.Add(label_4, 1, 0, 0)
         sizer_8.Add(sizer_3, 1, wx.EXPAND, 0)
         label_5 = wx.StaticText(self, wx.ID_ANY, _("Raster Direction"))
@@ -166,8 +160,6 @@ class RasterProperty(wx.Frame):
         sizer_5.Add(self.radio_directional_raster, 3, wx.EXPAND, 0)
         sizer_5.Add(self.radio_corner, 1, 0, 0)
         sizer_8.Add(sizer_5, 1, wx.EXPAND, 0)
-        sizer_7.Add(self.combo_second_pass, 3, 0, 0)
-        sizer_8.Add(sizer_7, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_8)
         self.Layout()
         self.Centre()
@@ -175,41 +167,33 @@ class RasterProperty(wx.Frame):
 
     def on_spin_speed(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.speed = self.spin_speed_set.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.device_root.raster_speed = self.operation.speed
+        self.device.signal('element_property_update', self.operation)
 
     def on_spin_power(self, event):
         self.operation.power = self.spin_power_set.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.device_root.raster_power = self.operation.power
+        self.device.signal('element_property_update', self.operation)
 
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.operation.raster_step = self.spin_step_size.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.device_root.raster_step = self.operation.raster_step
+        self.device.signal('element_property_update', self.operation)
 
     def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
         self.operation.raster_direction = self.combo_raster_direction.GetSelection()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
-
-    def on_combo_second_pass(self, event):  # wxGlade: RasterProperty.<event_handler>
-        self.operation.second_pass = self.combo_second_pass.GetSelection()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.device_root.raster_direction = self.operation.raster_direction
+        self.device.signal('element_property_update', self.operation)
 
     def on_spin_overscan(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.overscan = self.spin_overscan_set.GetValue()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.device_root.raster_overscan = int(self.operation.overscan)
+        self.device.signal('element_property_update', self.operation)
 
     def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.bidirectional = self.radio_directional_raster.GetSelection()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
+        self.device.signal('element_property_update', self.operation)
 
     def on_radio_corner(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.corner = self.radio_corner.GetSelection()
-        if self.kernel is not None:
-            self.kernel.signal("element_property_update", self.operation)
-
+        self.device.signal('element_property_update', self.operation)

@@ -1,16 +1,18 @@
 import wx
 
+from Kernel import Module
 from LaserCommandConstants import *
 from icons import icons8_stop_50, icons8_resize_horizontal_50, icons8_resize_vertical_50
 
 _ = wx.GetTranslation
 
 
-class Alignment(wx.Frame):
+class Alignment(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Alignment.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((631, 365))
 
         self.spin_vertical_distance = wx.SpinCtrl(self, wx.ID_ANY, "180", min=10, max=400)
@@ -55,18 +57,15 @@ class Alignment(wx.Frame):
         self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_square_power_change, self.slider_square_power)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.kernel = None
-        self.device = None
 
     def on_close(self, event):
-        self.kernel.mark_window_closed("Alignment")
-        self.kernel = None
+        self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
-    def set_kernel(self, kernel):
-        self.kernel = kernel
-        self.device = kernel.device
-        if self.device is None:
+    def initialize(self):
+        self.device.close('window', self.name)
+        self.Show()
+        if self.device.is_root():
             for attr in dir(self):
                 value = getattr(self, attr)
                 if isinstance(value, wx.Control):
@@ -75,6 +74,9 @@ class Alignment(wx.Frame):
                                    _("No Device Selected."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
+
+    def shutdown(self, channel):
+        self.Close()
 
     def __set_properties(self):
         # begin wxGlade: Alignment.__set_properties
@@ -174,11 +176,11 @@ class Alignment(wx.Frame):
 
     def on_button_vertical_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.vertical_near_far_test)
+        spooler.job(self.vertical_near_far_test)
 
     def on_button_vertical_align(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.vertical_test)
+        spooler.job(self.vertical_test)
 
     def on_spin_vertical_distance(self, event):  # wxGlade: Alignment.<event_handler>
         pass
@@ -195,11 +197,11 @@ class Alignment(wx.Frame):
 
     def on_button_horizontal_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.horizontal_near_far_test)
+        spooler.job(self.horizontal_near_far_test)
 
     def on_button_horizontal_align(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.horizontal_test)
+        spooler.job(self.horizontal_test)
 
     def on_spin_horizontal_distance(self, event):  # wxGlade: Alignment.<event_handler>
         pass
@@ -217,31 +219,33 @@ class Alignment(wx.Frame):
 
     def on_button_square_align_4_corners(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.square4_test)
+        spooler.job(self.square4_test)
 
     def on_button_square_align(self, event):  # wxGlade: Alignment.<event_handler>
         spooler = self.device.spooler
-        spooler.send_job(self.square_test)
+        spooler.job(self.square_test)
 
     def square_test(self):
-        yield COMMAND_HOME, 0
+        yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.slider_square_power.GetValue()
-        yield COMMAND_MODE_COMPACT, 0
-        yield COMMAND_LASER_ON, 0
+        yield COMMAND_MODE_PROGRAM
+        yield COMMAND_LASER_ON
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_CUT, (0, y)
-        yield COMMAND_CUT, (x, y)
-        yield COMMAND_CUT, (x, 0)
-        yield COMMAND_CUT, (0, 0)
-        yield COMMAND_MODE_DEFAULT, 0
+        yield COMMAND_MOVE, 0, y
+        yield COMMAND_MOVE, x, y
+        yield COMMAND_MOVE, x, 0
+        yield COMMAND_MOVE, 0, 0
+        yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
     def dotfield_test(self):
         yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MODE_DEFAULT
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
         y_val = self.device.current_y
@@ -249,51 +253,49 @@ class Alignment(wx.Frame):
         y_step = round(5 * 39.3701)
 
         while y_val < y_max:
-            yield COMMAND_LOCK  # Need something to fill the buffer.
-            yield COMMAND_WAIT_BUFFER_EMPTY
+            yield COMMAND_WAIT_FINISH
             yield COMMAND_LASER_ON
             yield COMMAND_WAIT, 0.001
             yield COMMAND_LASER_OFF
-            yield COMMAND_RAPID_MOVE, (x_val, y_val)
+            yield COMMAND_MOVE, x_val, y_val
             y_val += y_step
 
     def horizontal_test(self):
         yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.spin_horizontal_power.GetValue()
-        yield COMMAND_MODE_COMPACT
-        yield COMMAND_LASER_ON
+        yield COMMAND_MODE_PROGRAM
         x = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_CUT, (x, 0)
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_CUT, x, 0
+        yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
     def vertical_test(self):
         yield COMMAND_HOME
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_SET_SPEED, 35
         yield COMMAND_SET_POWER, self.spin_vertical_power.GetValue()
-        yield COMMAND_MODE_COMPACT
-        yield COMMAND_LASER_ON
+        yield COMMAND_MODE_PROGRAM
         y = round(self.spin_vertical_distance.GetValue() * 39.3701)
-        yield COMMAND_CUT, (0, y)
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_CUT, 0, y
+        yield COMMAND_MODE_RAPID
         yield COMMAND_UNLOCK
 
     def vertical_near_far_test(self):
         yield COMMAND_HOME
         yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_RAPID
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
-        yield COMMAND_RAPID_MOVE, (0, y_max)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_MOVE, 0, y_max
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
@@ -301,16 +303,15 @@ class Alignment(wx.Frame):
     def horizontal_near_far_test(self):
         yield COMMAND_HOME
         yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MODE_DEFAULT
+        yield COMMAND_MODE_RAPID
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
-        yield COMMAND_RAPID_MOVE, (x_max, 0)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_MOVE, x_max, 0
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.2
         yield COMMAND_LASER_OFF
@@ -318,31 +319,28 @@ class Alignment(wx.Frame):
     def square4_test(self):
         yield COMMAND_HOME
         yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MODE_RAPID
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_RAPID_MOVE, (0, y_max)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MOVE, 0, y_max
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_RAPID_MOVE, (x_max, y_max)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MOVE, x_max, y_max
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
 
-        yield COMMAND_RAPID_MOVE, (x_max, 0)
-        yield COMMAND_LOCK  # Need something to fill the buffer.
-        yield COMMAND_WAIT_BUFFER_EMPTY
+        yield COMMAND_MOVE, x_max, 0
+        yield COMMAND_WAIT_FINISH
         yield COMMAND_LASER_ON
         yield COMMAND_WAIT, 0.1
         yield COMMAND_LASER_OFF
