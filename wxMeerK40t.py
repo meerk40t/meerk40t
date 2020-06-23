@@ -2332,7 +2332,7 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_SESSION, self.on_app_close)
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
-        self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
+        # self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
 
     def on_app_close(self, event):
         try:
