@@ -9,7 +9,6 @@ class Console(Module, Pipe):
         Pipe.__init__(self)
         self.channel_file = None
         self.channel = None
-        self.pipe = None
         self.buffer = ''
         self.active_device = None
         self.interval = 0.05
@@ -24,13 +23,6 @@ class Console(Module, Pipe):
         self.active_device = self.device
 
     def write(self, data):
-        if data == 'exit\n':  # process first to quit a delegate.
-            self.pipe = None
-            self.channel("Exited Mode.\n")
-            return
-        if self.pipe is not None:
-            self.pipe.write(data)
-            return
         if isinstance(data, bytes):
             data = data.decode()
         self.buffer += data
