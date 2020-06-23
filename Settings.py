@@ -97,9 +97,7 @@ class Settings(wx.Frame, Module):
 
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
         self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
-        self.device.autoclose_shutdown = self.checklist_options.IsChecked(1)
-        self.device.window_shutdown = self.checklist_options.IsChecked(2)
-        self.device.print_shutdown = self.checklist_options.IsChecked(3)
+        self.device.print_shutdown = self.checklist_options.IsChecked(1)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
