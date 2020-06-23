@@ -24,8 +24,6 @@ class Settings(wx.Frame, Module):
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
                                                  choices=[
                                                      "Invert Mouse Wheel Zoom",
-                                                     "Autoclose Shutdown",
-                                                     "Shutdown Window",
                                                      "Print Shutdown",
                                                  ])
 
@@ -56,8 +54,6 @@ class Settings(wx.Frame, Module):
         self.Show()
 
         self.device.setting(bool, "mouse_zoom_invert", False)
-        self.device.setting(bool, "autoclose_shutdown", True)
-        self.device.setting(bool, "window_shutdown", True)
         self.device.setting(bool, "print_shutdown", False)
         self.device.setting(int, "language", 0)
         self.device.setting(str, "units_name", 'mm')
@@ -66,12 +62,8 @@ class Settings(wx.Frame, Module):
 
         if self.device.mouse_zoom_invert:
             self.checklist_options.Check(0, True)
-        if self.device.autoclose_shutdown:
-            self.checklist_options.Check(1, True)
-        if self.device.window_shutdown:
-            self.checklist_options.Check(2, True)
         if self.device.print_shutdown:
-            self.checklist_options.Check(3, True)
+            self.checklist_options.Check(1, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 

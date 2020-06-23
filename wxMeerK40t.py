@@ -33,7 +33,6 @@ from Preferences import Preferences
 from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
-from Shutdown import Shutdown
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
@@ -432,8 +431,6 @@ class MeerK40t(wx.Frame, Module):
         kernel = device.device_root
         if kernel.print_shutdown:
             kernel.add_watcher('shutdown', print)
-        if kernel.window_shutdown:
-            kernel.open('window', 'Shutdown', None, -1, "")
         device.stop()
 
     def initialize(self):
@@ -451,7 +448,6 @@ class MeerK40t(wx.Frame, Module):
         kernel.setting(int, "units_marks", 10)
         kernel.setting(int, "units_index", 0)
         kernel.setting(bool, "mouse_zoom_invert", False)
-        kernel.setting(bool, "window_shutdown", True)
         kernel.setting(bool, "print_shutdown", False)
         device.setting(int, 'fps', 40)
 
@@ -2395,7 +2391,6 @@ class wxMeerK40t(wx.App, Module):
     def sub_register(device):
         device.register('window', "MeerK40t", MeerK40t)
         device.register('module', 'Scene', Scene)
-        device.register('window', 'Shutdown', Shutdown)
         device.register('window', 'PathProperty', PathProperty)
         device.register('window', 'TextProperty', TextProperty)
         device.register('window', 'ImageProperty', ImageProperty)
