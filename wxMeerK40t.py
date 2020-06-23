@@ -2339,7 +2339,6 @@ class wxMeerK40t(wx.App, Module):
             if self.device is not None:
                 device_thread = self.device.thread
                 self.device.stop()
-                device_thread.join()
         except AttributeError:
             pass
 
