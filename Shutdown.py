@@ -57,11 +57,8 @@ class Shutdown(wx.Frame, Module):
             wx.CallAfter(self.update_text_gui, text + '\n')
 
     def update_text_gui(self, text):
-        try:
-            if not self.is_closed:
-                self.text_shutdown.AppendText(text)
-        except RuntimeError:
-            pass
+        if not self.is_closed:
+            self.text_shutdown.AppendText(text)
 
     def __set_properties(self):
         # begin wxGlade: Shutdown.__set_properties

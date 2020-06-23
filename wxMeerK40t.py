@@ -423,13 +423,18 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('interpreter;position', self.update_position)
         device.unlisten('interpreter;mode', self.on_interpreter_mode)
         device.unlisten('bed_size', self.bed_changed)
-        if kernel.window_shutdown:
-            kernel.open('window', 'Shutdown', None, -1, "")
+        device.remove('window', self.name)
+        wx.CallAfter(self.gui_shutdown)
+        event.Skip()  # Call destroy as regular.
+
+    def gui_shutdown(self):
+        device = self.device
+        kernel = device.device_root
         if kernel.print_shutdown:
             kernel.add_watcher('shutdown', print)
-        device.remove('window', self.name)
+        if kernel.window_shutdown:
+            kernel.open('window', 'Shutdown', None, -1, "")
         device.stop()
-        event.Skip()  # Call destroy as regular.
 
     def initialize(self):
         self.device.close('window', self.name)
