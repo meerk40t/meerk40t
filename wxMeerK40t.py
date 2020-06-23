@@ -2345,32 +2345,32 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         return True
-
-    def BringWindowToFront(self):
-        try:  # it's possible for this event to come when the frame is closed
-            self.GetTopWindow().Raise()
-        except:
-            pass
-
-    def OnActivate(self, event):
-        # if this is an activate event, rather than something else, like iconize.
-        if event.GetActive():
-            self.BringWindowToFront()
-        event.Skip()
-
-    def MacReopenApp(self):
-        """Called when the doc icon is clicked, and ???"""
-        self.BringWindowToFront()
-
-    def MacNewFile(self):
-        try:
-            if self.device is not None:
-                self.device.elements.clear_all()
-        except AttributeError:
-            pass
-
-    def MacPrintFile(self, file_path):
-        pass
+    #
+    # def BringWindowToFront(self):
+    #     try:  # it's possible for this event to come when the frame is closed
+    #         self.GetTopWindow().Raise()
+    #     except:
+    #         pass
+    #
+    # def OnActivate(self, event):
+    #     # if this is an activate event, rather than something else, like iconize.
+    #     if event.GetActive():
+    #         self.BringWindowToFront()
+    #     event.Skip()
+    #
+    # def MacReopenApp(self):
+    #     """Called when the doc icon is clicked, and ???"""
+    #     self.BringWindowToFront()
+    #
+    # def MacNewFile(self):
+    #     try:
+    #         if self.device is not None:
+    #             self.device.elements.clear_all()
+    #     except AttributeError:
+    #         pass
+    #
+    # def MacPrintFile(self, file_path):
+    #     pass
 
     # def MacOpenFile(self, filename):
     #     try:

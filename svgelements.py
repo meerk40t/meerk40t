@@ -4340,10 +4340,13 @@ class Path(Shape, MutableSequence):
         self._segments[index].end = Point(self._segments[0].end)
         # If move is never found, just the end point of the first element.
 
-    def _validate_connection(self, index):
+    def _validate_connection(self, index, prefer_second=False):
         """
         Validates the connection at the index.
         Connection 0 is the connection between getitem(0) and getitem(1)
+
+        prefer_second is for those cases where failing the connection requires replacing
+        a existing value. It will prefer the authority of right side, second value.
         """
         if index < 0 or index + 1 >= len(self._segments):
             return  # This connection doesn't exist.
@@ -4354,7 +4357,11 @@ class Path(Shape, MutableSequence):
         elif first.end is None and second.start is not None:
             first.end = Point(second.start)
         elif first.end != second.start:
-            second.start = Point(first.end)
+            # The two values exist but are not equal. One must replace the other.
+            if prefer_second:
+                first.end = Point(second.start)
+            else:
+                second.start = Point(first.end)
 
     def __setitem__(self, index, new_element):
         if isinstance(new_element, str):
@@ -5899,22 +5906,22 @@ class Subpath:
     def _reverse_segments(self, start, end):
         """Reverses segments between the given indexes in the subpath space."""
         segments = self._path._segments  # must avoid path validation.
-        s = self.index_to_path_index(start)
-        e = self.index_to_path_index(end)
-        while s <= e:
-            start_segment = segments[s]
-            end_segment = segments[e]
+        start = self.index_to_path_index(start)
+        end = self.index_to_path_index(end)
+        while start <= end:
+            start_segment = segments[start]
+            end_segment = segments[end]
             start_segment.reverse()
             if start_segment is not end_segment:
                 end_segment.reverse()
-                segments[s] = end_segment
-                segments[e] = start_segment
-            s += 1
-            e -= 1
+                segments[start] = end_segment
+                segments[end] = start_segment
+            start += 1
+            end -= 1
         start = self.index_to_path_index(start)
         end = self.index_to_path_index(end)
         self._path._validate_connection(start - 1)
-        self._path._validate_connection(end)
+        self._path._validate_connection(end, prefer_second=True)
 
     def reverse(self):
         size = len(self)
