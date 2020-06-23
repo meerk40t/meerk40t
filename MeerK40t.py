@@ -49,13 +49,6 @@ parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y posi
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 args = parser.parse_args(sys.argv[1:])
 
-if not args.no_gui:
-    from wxMeerK40t import wxMeerK40t
-    kernel.register_module('wxMeerK40t', wxMeerK40t)
-    meerk40tgui = kernel.open('module', 'wxMeerK40t', device=kernel)
-
-
-
 kernel.register('module', 'Console', Console)
 kernel.register('module', 'LaserServer', LaserServer)
 kernel.register('load', 'SVGLoader', SVGLoader)
@@ -66,6 +59,11 @@ kernel.register('device', 'Lhystudios', LhystudiosDevice)
 kernel.register('disabled-device', 'Moshiboard', MoshiboardDevice)
 kernel.register('disabled-device', 'Ruida', RuidaDevice)
 kernel.register('disabled-device', 'GRBL', GrblDevice)
+
+if not args.no_gui:
+    from wxMeerK40t import wxMeerK40t
+    kernel.register_module('wxMeerK40t', wxMeerK40t)
+    meerk40tgui = kernel.open('module', 'wxMeerK40t', device=kernel)
 
 kernel.boot()
 device = None
