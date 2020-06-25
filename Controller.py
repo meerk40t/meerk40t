@@ -60,8 +60,9 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.buffer_max = 1
         self.last_control_state = None
+        self.gui_update = True
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 
@@ -88,20 +89,23 @@ class Controller(wx.Frame, Module):
         self.text_device.SetValue(self.device.device_name)
         self.text_location.SetValue(self.device.device_location)
 
-    def shutdown(self, channel):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-        self.device = None
-
-    def on_close(self, event):
-        self.device.remove('window', self.name)
+    def finalize(self, channel=None):
         self.device.unlisten('pipe;status', self.update_status)
         self.device.unlisten('pipe;packet_text', self.update_packet_text)
         self.device.unlisten('pipe;buffer', self.on_buffer_update)
         self.device.unlisten('pipe;usb_state', self.on_connection_state_change)
         self.device.unlisten('pipe;thread', self.on_control_state)
+
+    def shutdown(self, channel):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        print("CLOSED")
+        self.gui_update = False
         event.Skip()  # delegate destroy to super
 
     def device_execute(self, control_name):
@@ -351,11 +355,12 @@ class Controller(wx.Frame, Module):
             self.device.execute("Disconnect_USB")
 
     def on_buffer_update(self, value, *args):
-        if value > self.buffer_max:
-            self.buffer_max = value
-        self.text_buffer_length.SetValue(str(value))
-        self.gauge_buffer.SetRange(self.buffer_max)
-        self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
+        if self.gui_update:
+            if value > self.buffer_max:
+                self.buffer_max = value
+            self.text_buffer_length.SetValue(str(value))
+            self.gauge_buffer.SetRange(self.buffer_max)
+            self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
 
     def on_control_state(self, state):
         if self.last_control_state == state:

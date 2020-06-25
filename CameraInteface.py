@@ -135,7 +135,7 @@ class CameraInterface(wx.Frame, Module):
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
         self.device.setting(int, 'draw_mode', 0)

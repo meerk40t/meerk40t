@@ -43,7 +43,7 @@ class MoshiboardDevice(Device):
         device.register('module', 'MoshiInterpreter', MoshiInterpreter)
         device.register('module', 'MoshiboardController', MoshiboardController)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
         """
         Device initialize.
 
@@ -93,7 +93,7 @@ class MoshiInterpreter(Interpreter):
     def set_step(self, new_step):
         self.step = new_step
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -253,7 +253,7 @@ class MoshiboardController(Module, Pipe):
         self.status = [0] * 6
         self.usb_state = -1
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.usb_log = self.device.channel_open("usb")
 
     def open(self):

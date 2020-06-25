@@ -32,7 +32,7 @@ class JobSpooler(wx.Frame, Module):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
         if self.device.is_root():

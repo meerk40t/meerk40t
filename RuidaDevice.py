@@ -44,7 +44,7 @@ class RuidaDevice(Device):
         device.register('load', 'RDLoader', RDLoader)
         device.register('module', 'RuidaEmulator', RuidaEmulator)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
         """
         Device initialize.
 
@@ -75,7 +75,7 @@ class RuidaInterpreter(Interpreter):
     def set_step(self, new_step):
         self.step = new_step
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -258,7 +258,7 @@ class RuidaEmulator(Module):
         self.power2_min = 0
         self.power2_max = 0
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.channel = self.device.channel_open('ruida')
 
     @staticmethod

@@ -157,7 +157,7 @@ class Adjustments(wx.Frame, Module):
         event.Skip()  # Call destroy as regular.
         self.device.execute("Realtime Resume")
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         device = self.device
         self.Show()

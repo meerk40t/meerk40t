@@ -49,7 +49,7 @@ class Settings(wx.Frame, Module):
         self.device.remove('window', self.name)
         event.Skip()  # Call destroy.
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 

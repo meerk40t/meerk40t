@@ -341,7 +341,7 @@ class Navigation(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def initialize(self, channel=None):
         device = self.device
         kernel = self.device.device_root
         self.elements = kernel.elements

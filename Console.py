@@ -16,7 +16,7 @@ class Console(Module, Pipe):
         self.commands = []
         self.laser_on = False
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(int, "bed_width", 280)
         self.device.setting(int, "bed_height", 200)
         self.channel = self.device.channel_open('console')

@@ -54,7 +54,7 @@ class Scene(Module):
         self.time = None
         self.distance = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(int, "draw_mode", 0)
 
     def shutdown(self, channel):

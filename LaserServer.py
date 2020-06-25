@@ -20,7 +20,7 @@ class LaserServer(Module):
         self.connection = None
         self.addr = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         if self.tcp:
             self.device.threaded(self.tcp_run)
         else:

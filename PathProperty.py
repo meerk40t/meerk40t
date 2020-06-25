@@ -87,7 +87,7 @@ class PathProperty(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 

@@ -20,13 +20,24 @@ INTERPRETER_STATE_PROGRAM = 2
 
 class Module:
     """
-    Modules are a generic lifecycle object. When attached they are initialized to that device. When that device
-    is shutdown, the shutdown() event is called. This permits the knowing registering and unregistering of
-    other kernel objects. and the attachment of the module to a device.
+    Modules are a generic lifecycle object. When open() is called for a module registered with the device the device is
+    attached. When attached the module is initialized to that device. When close() is called for a module initialized
+    on the device. The device is detached. When detached the module is finalized. When that device controlling the
+    initialized module is shutdown the the shutdown() event is called. By default shutdown() calls the close for the
+    device. During device shutdown initialized modules will be notified by a call to shutdown() that it is shutting down
+    and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
+    them.
 
-    Registered Modules are notified of the activation and deactivation of their device.
+    A module always has an understanding of it's current state within the device, and is notified of any changes in this
+    state.
 
-    Modules can also be scheduled in the kernel to run at a particular time and a given number of times.
+    Modules are also qualified jobs that can be scheduled in the kernel to run at a particular time and a given number
+    of times. This is done calling schedule() and unschedule() and setting the parameters for process, args, times,
+    paused and executing.
+
+    All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
+    any relevant information. Attach and initialize are given the channel 'open', detach and finalize are given the
+    channel 'close' and shutdown is given the channel 'shutdown'.
     """
 
     def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
@@ -40,8 +51,6 @@ class Module:
         self.process = process
         self.args = args
         self.times = times
-        self.paused = False
-        self.executing = False
 
     @property
     def scheduled(self):
@@ -58,24 +67,22 @@ class Module:
         if self in self.device.jobs:
             self.device.jobs.remove(self)
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         self.device = device
         self.name = name
-        self.initialize()
+        self.initialize(channel=channel)
 
     def detach(self, device, channel=None):
-        try:
-            if self.name is not None and self.name in device.instances['module']:
-                del device.instances['module'][self.name]
-        except KeyError:
-            pass
-        self.shutdown(channel)
+        self.finalize(channel=channel)
         self.device = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         pass
 
-    def shutdown(self, channel):
+    def finalize(self, channel=None):
+        pass
+
+    def shutdown(self, channel=None):
         pass
 
 
@@ -99,10 +106,10 @@ class Spooler(Module):
     def __repr__(self):
         return "Spooler()"
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.spooler = self
-        self.initialize()
+        self.initialize(channel=channel)
 
     def peek(self):
         if len(self._queue) == 0:
@@ -209,12 +216,12 @@ class Interpreter(Module):
         self.d_ratio = None  # None means to use speedcode default.
         self.acceleration = None  # None means to use speedcode default
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.interpreter = self
         self.device.setting(int, 'current_x', 0)
         self.device.setting(int, 'current_y', 0)
-        self.initialize()
+        self.initialize(channel=channel)
         self.schedule()
 
     def process_spool(self, *args):
@@ -600,7 +607,7 @@ class Signaler(Module):
         self.interval = 0.05
         self.args = ()
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.signal = self.signal
         self.device.listen = self.listen
@@ -733,7 +740,7 @@ class Elemental(Module):
 
         self._bounds = None
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.elements = self
         self.device.classify = self.classify
@@ -1387,18 +1394,18 @@ class Device:
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         self.device_root = device
         self.name = name
-        self.initialize(device)
+        self.initialize(device, channel=channel)
 
     def detach(self, device, channel=None):
-        if 'device' in self.device_root.instances:
-            devices = self.device_root.instances['device']
-            if self.uid in devices:
-                del devices[self.uid]
+        self.finalize(device, channel=channel)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
+        pass
+
+    def finalize(self, device, channel=None):
         pass
 
     def read_item_persistent(self, item):
@@ -1447,6 +1454,8 @@ class Device:
         self.detach(self, channel=channel)
         channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
+
+        # Stop all devices.
         if 'device' in self.instances:
             # Join and shutdown any child devices.
             devices = self.instances['device']
@@ -1459,6 +1468,8 @@ class Device:
                 if device_thread is not None:
                     device_thread.join()
                 channel(_("Device Shutdown Finished: '%s'") % str(device))
+
+        # Stop all instances.
         for type_name in list(self.instances):
             if type_name in ('control', 'thread'):
                 continue
@@ -1469,8 +1480,13 @@ class Device:
                     channel(_("Stopping %s %s: %s") % (module_name, type_name, str(obj)))
                 except AttributeError:
                     pass
+                self.close(type_name, module_name)
+                channel(_("Closing %s %s: %s") % (module_name, type_name, str(obj)))
+
+        # Stop/Wait for all threads.
         if 'thread' in self.instances:
             for thread_name in list(self.instances['thread']):
+                thread = None
                 try:
                     thread = self.instances['thread'][thread_name]
                 except KeyError:
@@ -1494,6 +1510,8 @@ class Device:
                 channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
         else:
             channel(_("No threads required halting."))
+
+        # Detach all instances.
         for type_name in list(self.instances):
             if type_name in ('control'):
                 continue
@@ -1504,6 +1522,8 @@ class Device:
                     channel(_("Shutting down %s %s: %s") % (module_name, type_name, str(obj)))
                 except AttributeError:
                     pass
+
+        # Check for failures.
         for type_name in list(self.instances):
             if type_name in ('control'):
                 continue
@@ -1514,6 +1534,7 @@ class Device:
                 channel(_("WARNING: %s %s was not closed.") % (type_name, module_name))
 
         channel(_("Shutdown."))
+
         shutdown_root = False
         if not self.is_root():
             if 'device' in self.device_root.instances:
@@ -1837,29 +1858,29 @@ class Device:
         else:
             module_object = self.device_root.registered[type_name][object_name]
         instance = module_object(*args, **kwargs)
-        instance.attach(self, name=instance_name)
+        instance.attach(self, name=instance_name, channel=self.channel_open('open'))
         self.add(type_name, instance_name, instance)
         return instance
 
-    def close(self, type_name, name):
-        if type_name in self.instances and name in self.instances[type_name]:
-            obj = self.instances[type_name][name]
+    def close(self, type_name, instance_name):
+        if type_name in self.instances and instance_name in self.instances[type_name]:
+            instance = self.instances[type_name][instance_name]
             try:
-                obj.close()
+                instance.close()
             except AttributeError:
                 pass
-            obj.detach(self)
-            if name in self.instances[type_name]:
-                del self.instances[type_name][name]
+            self.remove(type_name, instance_name)
+            instance.detach(self, channel=self.channel_open('close'))
+            self.remove(type_name, instance_name)
 
-    def add(self, type_name, name, instance):
+    def add(self, type_name, instance_name, instance):
         if type_name not in self.instances:
             self.instances[type_name] = {}
-        self.instances[type_name][name] = instance
+        self.instances[type_name][instance_name] = instance
 
-    def remove(self, type_name, name):
-        if name in self.instances[type_name]:
-            del self.instances[type_name][name]
+    def remove(self, type_name, instance_name):
+        if instance_name in self.instances[type_name]:
+            del self.instances[type_name][instance_name]
 
     def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
         return self.open('module', module_name, *args, instance_name=instance_name, **kwargs)

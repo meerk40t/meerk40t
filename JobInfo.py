@@ -112,7 +112,7 @@ class JobInfo(wx.Frame, Module):
         self.preprocessor.process(self.operations)
         self.update_gui()
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('module', self.name)
         self.Show()
         self.operations = []

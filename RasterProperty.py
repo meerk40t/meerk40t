@@ -90,7 +90,7 @@ class RasterProperty(wx.Frame, Module):
             self.radio_corner.Enable(False)
         return self
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 

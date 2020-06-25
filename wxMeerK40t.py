@@ -436,7 +436,7 @@ class MeerK40t(wx.Frame, Module):
             kernel.add_watcher('shutdown', print)
         device.stop()
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         device = self.device
         kernel = self.device.device_root
@@ -2429,7 +2429,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "BufferView", BufferView)
         device.register('window', "Adjustments", Adjustments)
 
-    def initialize(self):
+    def initialize(self, channel=None):
         device = self.device
         _ = wx.GetTranslation
         wx.Locale.AddCatalogLookupPathPrefix('locale')

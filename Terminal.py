@@ -31,7 +31,7 @@ class Terminal(wx.Frame, Module):
     def on_middle_click(self, event):
         self.text_main.SetValue('')
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', 'Terminal')
         self.Show()
         self.pipe = self.device.using('module', 'Console')

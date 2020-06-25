@@ -64,7 +64,7 @@ class LhystudiosDevice(Device):
         device.register('module', 'LhystudioController', LhystudioController)
         device.register('load', 'EgvLoader', EgvLoader)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
         """
         Device initialize.
 
@@ -150,7 +150,7 @@ class LhymicroInterpreter(Interpreter):
         self.start_y = None
         self.is_paused = False
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -995,7 +995,7 @@ class LhystudioController(Module, Pipe):
         self.recv_channel = None
         self.pipe_channel = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(int, 'packet_count', 0)
         self.device.setting(int, 'rejected_count', 0)
 
