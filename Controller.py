@@ -16,7 +16,7 @@ _ = wx.GetTranslation
 class Controller(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Controller.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((499, 505))
@@ -52,7 +52,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", None, -1, ""), self.button_buffer_viewer)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", self, -1, ""), self.button_buffer_viewer)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
         # end wxGlade
@@ -89,7 +89,10 @@ class Controller(wx.Frame, Module):
         self.text_location.SetValue(self.device.device_location)
 
     def shutdown(self, channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
         self.device = None
 
     def on_close(self, event):

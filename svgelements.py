@@ -2064,7 +2064,7 @@ class Matrix:
 
     def __str__(self):
         """
-        Many of SVG's graphics operations utilize 2x3 matrices of the form:
+        Many of SVG's graphics operations utilize 2x3:
 
         :returns string representation of matrix.
         """
@@ -2884,6 +2884,8 @@ class PathSegment:
     """
 
     def __init__(self):
+        self.relative = False
+        self.smooth = True
         self.start = None
         self.end = None
 
@@ -2908,9 +2910,17 @@ class PathSegment:
     __add__ = __iadd__
 
     def __str__(self):
+        """
+        This defines an individual path segment string. Since this isn't part of a Path it appends a pseudo-Move
+        command to correctly provide the starting position.
+        :return: string representation of the object.
+        """
         d = self.d()
         if self.start is not None:
-            return 'M %s %s' % (self.start, d)
+            if self.relative:
+                return 'm %s %s' % (self.start, d)
+            else:
+                return 'M %s %s' % (self.start, d)
         return d
 
     def __iter__(self):
@@ -2971,26 +2981,44 @@ class PathSegment:
         return xmin, ymin, xmax, ymax
 
     def reverse(self):
+        """
+        Reverses the current path segment.
+        """
         end = self.end
         self.end = self.start
         self.start = end
 
     def point(self, position):
+        """
+        Returns the point at a given amount through the path segment.
+        :param position:  t value between 0 and 1
+        :return:
+        """
         return self.end
 
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        """
+        Returns the length of this path segment.
+
+        :param error:
+        :param min_depth:
+        :return:
+        """
         return 0
 
     def d(self, current_point=None, smooth=False):
-        """If current point is None, the function will return the absolute form. If it contains a point,
-        it will give the value relative to that point."""
+        """Returns the fragment path_d value for the current path segment.
+
+        For a relative segment the current_point must be provided. If it is omitted then only an absolute segment
+        can be returned."""
         raise NotImplementedError
 
 
 class Move(PathSegment):
-    """Represents move commands. Does nothing, but is there to handle
-    paths that consist of only move commands, which is valid, but pointless.
-    Also serve as a bridge to make discontinuous paths into continuous paths
+    """Represents move commands. Moves to a new location without any path distance.
+    Paths that consist of only move commands, are valid.
+
+    Move serve to make discontinuous paths into continuous linked paths segments
     with non-drawn sections.
     """
 
@@ -2998,6 +3026,9 @@ class Move(PathSegment):
         """
         Move commands most importantly go to a place. So if one location is given, that's the end point.
         If two locations are given then first is the start location.
+
+        For many Move commands it is not necessary to have an original start location. The start point provides a
+        linked locations for some elements that may require it. If known it can be provided.
 
         Move(p) where p is the End point.
         Move(s,e) where s is the Start point, e is the End point.
@@ -3072,10 +3103,10 @@ class Move(PathSegment):
             raise IndexError
 
     def d(self, current_point=None, smooth=False):
-        if current_point is None:
+        # TODO: Finish the relative commands.
+        if current_point is None or not self.relative:
             return 'M %s' % (self.end)
-        else:
-            return 'm %s' % (self.end - current_point)
+        return 'm %s' % (self.end - current_point)
 
 
 class Close(PathSegment):

@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 class EngraveProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: EngraveProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((305, 216))

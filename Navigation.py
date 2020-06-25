@@ -16,7 +16,7 @@ MILS_IN_MM = 39.3701
 class Navigation(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Navigation.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((598, 429))

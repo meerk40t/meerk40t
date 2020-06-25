@@ -12,7 +12,7 @@ class JobInfo(wx.Frame, Module):
 
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobInfo.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((659, 612))
@@ -188,7 +188,7 @@ class JobInfo(wx.Frame, Module):
         self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.device.open("window", "JobSpooler", None, -1, "")
+        self.device.open("window", "JobSpooler", self, -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
@@ -209,9 +209,9 @@ class JobInfo(wx.Frame, Module):
         obj = self.operations[node_index]
 
         if isinstance(obj, RasterOperation):
-            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "RasterProperty", self, -1, "").set_operation(obj)
         elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "EngraveProperty", self, -1, "").set_operation(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

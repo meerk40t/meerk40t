@@ -345,7 +345,12 @@ class Console(Module, Pipe):
                     if len(args) >= 3:
                         name = args[2]
                     if index in kernel.registered['window']:
-                        active_device.open('window', name, None, -1, "")
+                        parent_window = None
+                        try:
+                            parent_window = active_device.gui
+                        except AttributeError:
+                            pass
+                        active_device.open('window', name, parent_window, -1, "")
                         yield 'Window %s opened.' % name
                     else:
                         yield "Window '%s' not found." % index

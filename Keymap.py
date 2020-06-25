@@ -8,7 +8,7 @@ _ = wx.GetTranslation
 class Keymap(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Keymap.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((500, 530))
@@ -36,7 +36,10 @@ class Keymap(wx.Frame, Module):
         self.reload_keymap()
 
     def shutdown(self, channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: Keymap.__set_properties
