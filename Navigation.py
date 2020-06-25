@@ -367,6 +367,7 @@ class Navigation(wx.Frame, Module):
         device.listen('interpreter;position', self.on_position_update)
         self.console = self.device.using('module', 'Console')
         self.update_matrix_text()
+        self.SetFocus()
 
     def shutdown(self,  channel):
         try:
