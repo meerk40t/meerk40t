@@ -7,7 +7,7 @@ from icons import *
 class OperationProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: OperationProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((414, 593))
@@ -94,8 +94,10 @@ class OperationProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
         # end wxGlade
-
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.SetFocus()
+        self.MacGetTopLevelWindowRef()
 
     def on_close(self, event):
         self.device.remove('window', self.name)
@@ -344,4 +346,15 @@ class OperationProperty(wx.Frame, Module):
 
     def on_check_group_pulses(self, event):  # wxGlade: OperationProperty.<event_handler>
         print("Event handler 'on_check_group_pulses' not implemented!")
+        event.Skip()
+
+    def on_key_press(self, event):
+        keycode = event.GetKeyCode()
+        if keycode == wx.WXK_ESCAPE:
+            self.Close()
+        if keycode == wx.WXK_TAB:
+            self.text_speed.SetFocus()
+            self.text_speed.SelectAll()
+            focus = self.FindFocus()
+            print(focus)
         event.Skip()
