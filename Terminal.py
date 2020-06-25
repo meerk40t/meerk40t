@@ -21,6 +21,7 @@ class Terminal(wx.Frame, Module):
         # self.Bind(wx.EVT_TEXT, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_main)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.pipe = None
@@ -76,6 +77,9 @@ class Terminal(wx.Frame, Module):
 
     def on_key_down(self, event):
         key = event.GetKeyCode()
+        if self.FindFocus() is not self.text_entry:
+            self.text_entry.SetFocus()
+            self.text_entry.AppendText(str(chr(key)).lower())
         try:
             if key == wx.WXK_DOWN:
                 self.text_entry.SetValue(self.command_log[self.command_position + 1])
