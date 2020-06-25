@@ -35,7 +35,9 @@ class Terminal(wx.Frame, Module):
         self.Show()
         self.pipe = self.device.using('module', 'Console')
         self.device.add_watcher('console', self.update_text)
+        self.SetCanFocus(True)
         self.SetFocus()
+        self.text_entry.SetFocus()
 
     def on_close(self, event):
         self.device.remove_watcher('console', self.update_text)
