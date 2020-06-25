@@ -76,7 +76,10 @@ class Alignment(wx.Frame, Module):
             dlg.Destroy()
 
     def shutdown(self, channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: Alignment.__set_properties

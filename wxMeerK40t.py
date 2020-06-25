@@ -564,7 +564,10 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
 
     def shutdown(self, channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def set_fps(self, fps):
         if fps == 0:
@@ -913,7 +916,10 @@ class MeerK40t(wx.Frame, Module):
             self.working_file = pathname
 
     def on_click_exit(self, event):  # wxGlade: MeerK40t.<event_handler>
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_click_zoom_out(self, event):  # wxGlade: MeerK40t.<event_handler>
         """

@@ -69,7 +69,10 @@ class ImageProperty(wx.Frame, Module):
         self.Show()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: ImageProperty.__set_properties

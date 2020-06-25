@@ -95,7 +95,10 @@ class RasterProperty(wx.Frame, Module):
         self.Show()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: RasterProperty.__set_properties

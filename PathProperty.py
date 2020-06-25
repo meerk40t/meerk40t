@@ -92,7 +92,10 @@ class PathProperty(wx.Frame, Module):
         self.Show()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: PathProperty.__set_properties

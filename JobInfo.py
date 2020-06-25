@@ -141,7 +141,10 @@ class JobInfo(wx.Frame, Module):
         self.menu_autostart.Check(self.device.autostart)
 
     def shutdown(self, channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_close(self, event):
         self.device.unlisten('element_property_update', self.on_element_property_update)

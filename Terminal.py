@@ -42,7 +42,10 @@ class Terminal(wx.Frame, Module):
         event.Skip()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def update_text(self, text):
         wx.CallAfter(self.update_text_gui, text + '\n')

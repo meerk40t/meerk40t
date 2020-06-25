@@ -49,7 +49,10 @@ class JobSpooler(wx.Frame, Module):
         self.refresh_spooler_list()
 
     def shutdown(self, channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_close(self, event):
         self.device.remove('window', self.name)

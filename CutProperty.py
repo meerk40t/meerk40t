@@ -86,7 +86,10 @@ class CutProperty(wx.Frame, Module):
         self.Show()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_close(self, event):
         self.device.remove('window', self.name)

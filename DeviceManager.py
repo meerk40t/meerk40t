@@ -47,7 +47,10 @@ class DeviceManager(wx.Frame, Module):
         self.refresh_device_list()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
         item = self.devices_list.GetFirstSelected()
         if item != -1:
             uid = self.devices_list.GetItem(item).Text

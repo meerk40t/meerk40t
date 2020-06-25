@@ -58,7 +58,10 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
         # begin wxGlade: BufferView.__set_properties

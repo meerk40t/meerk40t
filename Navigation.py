@@ -369,7 +369,10 @@ class Navigation(wx.Frame, Module):
         self.update_matrix_text()
 
     def shutdown(self,  channel):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_emphasized_elements_changed(self, elements):
         self.select_ready(self.elements.has_emphasis())
