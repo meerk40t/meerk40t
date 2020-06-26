@@ -140,7 +140,7 @@ class JobInfo(wx.Frame, Module):
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

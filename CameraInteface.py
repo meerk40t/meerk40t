@@ -169,7 +169,7 @@ class CameraInterface(wx.Frame, Module):
         self.device.listen('camera_frame', self.on_camera_frame_update)
         self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

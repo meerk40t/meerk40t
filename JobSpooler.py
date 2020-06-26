@@ -48,7 +48,7 @@ class JobSpooler(wx.Frame, Module):
         self.device.listen('spooler;queue', self.on_spooler_update)
         self.refresh_spooler_list()
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

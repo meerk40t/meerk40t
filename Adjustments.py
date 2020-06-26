@@ -177,7 +177,7 @@ class Adjustments(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

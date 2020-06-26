@@ -25,7 +25,7 @@ class About(wx.Frame, Module):
         self.device.remove('window', self.name)
         event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, channel):
         self.device.close('window', self.name)
         name = self.device.device_root.device_name
         version = self.device.device_root.device_version
@@ -33,7 +33,7 @@ class About(wx.Frame, Module):
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
         self.Show()
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

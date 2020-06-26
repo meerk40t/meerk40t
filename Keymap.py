@@ -35,7 +35,7 @@ class Keymap(wx.Frame, Module):
         self.Show()
         self.reload_keymap()
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

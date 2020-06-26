@@ -45,7 +45,7 @@ class Terminal(wx.Frame, Module):
         self.device.remove('window', 'Terminal')
         event.Skip()
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

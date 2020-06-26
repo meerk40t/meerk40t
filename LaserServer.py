@@ -113,7 +113,7 @@ class LaserServer(Module):
                     break
         return handle
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         self.server_channel("Shutting down server.")
         self.socket.close()
 

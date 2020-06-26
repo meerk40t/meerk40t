@@ -67,7 +67,7 @@ class Settings(wx.Frame, Module):
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

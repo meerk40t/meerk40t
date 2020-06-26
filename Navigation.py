@@ -369,7 +369,7 @@ class Navigation(wx.Frame, Module):
         self.update_matrix_text()
         self.SetFocus()
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

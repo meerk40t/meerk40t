@@ -563,7 +563,7 @@ class MeerK40t(wx.Frame, Module):
             bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

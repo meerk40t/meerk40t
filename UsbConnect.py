@@ -33,7 +33,7 @@ class UsbConnect(wx.Frame, Module):
         self.device.remove('window', 'UsbConnect')
         event.Skip()
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

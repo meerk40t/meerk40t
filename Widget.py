@@ -57,7 +57,7 @@ class Scene(Module):
     def initialize(self, channel=None):
         self.device.setting(int, "draw_mode", 0)
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         elements = self.device.device_root.elements
         for e in elements.elems():
             elements.unregister(e)

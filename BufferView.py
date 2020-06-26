@@ -57,7 +57,7 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
         self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

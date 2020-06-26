@@ -60,29 +60,45 @@ class Module:
         self.times = -1
 
     def schedule(self):
+        """Schedule this as a job."""
         if self not in self.device.jobs:
             self.device.jobs.append(self)
 
     def unschedule(self):
+        """Unschedule this module as a job"""
         if self in self.device.jobs:
             self.device.jobs.remove(self)
 
     def attach(self, device, name=None, channel=None):
+        """
+        Called by open to attach module to device.
+        This should be overloaded if making a specific module type for reuse and registering that on the device.
+        """
         self.device = device
         self.name = name
         self.initialize(channel=channel)
 
     def detach(self, device, channel=None):
+        """
+        Called by close to detach the module from device.
+
+        :param device:
+        :param channel:
+        :return:
+        """
         self.finalize(channel=channel)
         self.device = None
 
     def initialize(self, channel=None):
+        """Called when device is registered and module is named. On a freshly opened module."""
         pass
 
     def finalize(self, channel=None):
+        """Called when the module is being closed."""
         pass
 
     def shutdown(self, channel=None):
+        """Called during the shutdown process to notify the module that it should stop working."""
         pass
 
 
@@ -90,12 +106,16 @@ class Spooler(Module):
     """
     The spooler module stores spoolable lasercode events, as a synchronous queue.
 
-    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown device.
+    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown
+    device.
 
-    * Peek()
-    * Pop()
-    * Send_Job()
-    * Clear_Queue()
+    * peek()
+    * pop()
+    * job(job)
+    * jobs(iterable<job>)
+    * job_if_idle(job) -- Will enqueue the job if the device is currently idle.
+    * clear_queue()
+    * remove(job)
     """
 
     def __init__(self):
@@ -107,6 +127,7 @@ class Spooler(Module):
         return "Spooler()"
 
     def attach(self, device, name=None, channel=None):
+        """Overloaded attach to demand .spooler attribute."""
         Module.attach(self, device, name)
         self.device.spooler = self
         self.initialize(channel=channel)
@@ -553,41 +574,6 @@ class Pipe:
         self.write(bytes_to_write)
 
 
-class Effect:
-    """
-    Effects are intended to be external program modifications of the data.
-    None of these are implemented yet.
-
-    The select is a selections string for the exporting element selection.
-    The save is the export file to use.
-    The path refers to the external program.
-    The command is the command to call the path with.
-    The load is the file expected to exist when the execution finishes.
-    """
-
-    def __init__(self, select, save, path, command, load):
-        self.select = select
-        self.save = save
-        self.path = path
-        self.command = command
-        self.load = load
-
-
-class Modification:
-    """
-    Modifications are intended to be lazy implemented changes to SVGElement objects and groups. The intent is to
-    provide a method for delayed modifications of data.
-
-    Modifications are functions called on single SVGElement objects.
-    Type Input is the input type kind of element this is intended to act upon.
-    Type Output is the output type of the element this is intended to produce.
-    """
-
-    def __init__(self, input_type, output_type):
-        self.input_type = input_type
-        self.output_type = output_type
-
-
 class Signaler(Module):
     """
     Signaler provides the signals functionality for a device. It replaces the functions for .signal(), .listen(),
@@ -615,7 +601,7 @@ class Signaler(Module):
         self.device.last_signal = self.last_signal
         self.schedule()
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
             if len(listener):

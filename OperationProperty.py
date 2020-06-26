@@ -117,7 +117,7 @@ class OperationProperty(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

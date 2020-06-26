@@ -46,7 +46,7 @@ class DeviceManager(wx.Frame, Module):
         self.device.setting(str, 'list_devices', '')
         self.refresh_device_list()
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

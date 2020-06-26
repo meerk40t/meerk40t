@@ -91,7 +91,7 @@ class PathProperty(wx.Frame, Module):
         self.device.close('window', self.name)
         self.Show()
 
-    def shutdown(self,  channel):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

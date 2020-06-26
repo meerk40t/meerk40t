@@ -96,7 +96,7 @@ class Controller(wx.Frame, Module):
         self.device.unlisten('pipe;usb_state', self.on_connection_state_change)
         self.device.unlisten('pipe;thread', self.on_control_state)
 
-    def shutdown(self, channel):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:
