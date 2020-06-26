@@ -49,7 +49,10 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_info = self.text_buffer_info.SetValue(buffer_str)
 
     def finalize(self, channel=None):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self,  channel=None):
         try:

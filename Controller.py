@@ -84,12 +84,15 @@ class Controller(wx.Frame, Module):
         self.text_location.SetValue(self.device.device_location)
 
     def finalize(self, channel=None):
-        self.Close()
         self.device.unlisten('pipe;status', self.update_status)
         self.device.unlisten('pipe;packet_text', self.update_packet_text)
         self.device.unlisten('pipe;buffer', self.on_buffer_update)
         self.device.unlisten('pipe;usb_state', self.on_connection_state_change)
         self.device.unlisten('pipe;thread', self.on_control_state)
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self, channel=None):
         try:

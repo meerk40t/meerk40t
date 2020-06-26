@@ -56,7 +56,10 @@ class DeviceManager(wx.Frame, Module):
         self.refresh_device_list()
 
     def finalize(self, channel=None):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self,  channel=None):
         try:
@@ -150,7 +153,10 @@ class DeviceManager(wx.Frame, Module):
         if device.state == STATE_UNKNOWN:
             device.open('window', "MeerK40t", None, -1, "")
             device.boot()
-            self.Close()
+            try:
+                self.Close()
+            except RuntimeError:
+                pass
         else:
             dlg = wx.MessageDialog(None, _("That device already booted."),
                                    _("Cannot Boot Selected Device"), wx.OK | wx.ICON_WARNING)

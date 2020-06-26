@@ -559,7 +559,10 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('interpreter;position', self.update_position)
         device.unlisten('interpreter;mode', self.on_interpreter_mode)
         device.unlisten('bed_size', self.bed_changed)
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self, channel=None):
         try:

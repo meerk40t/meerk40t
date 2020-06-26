@@ -130,7 +130,10 @@ class Preferences(wx.Frame, Module):
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def finalize(self, channel=None):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self,  channel=None):
         try:

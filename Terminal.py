@@ -44,7 +44,10 @@ class Terminal(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.remove_watcher('console', self.update_text)
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self,  channel=None):
         try:

@@ -136,7 +136,10 @@ class JobInfo(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.unlisten('element_property_update', self.on_element_property_update)
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self, channel=None):
         try:

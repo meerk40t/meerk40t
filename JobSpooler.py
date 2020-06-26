@@ -45,7 +45,10 @@ class JobSpooler(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.unlisten('spooler;queue', self.on_spooler_update)
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self, channel=None):
         try:

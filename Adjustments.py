@@ -167,7 +167,10 @@ class Adjustments(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.execute("Realtime Resume")
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self,  channel=None):
         try:
@@ -236,5 +239,8 @@ class Adjustments(wx.Frame, Module):
     def on_key_press(self, event):
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_ESCAPE:
-            self.Close()
+            try:
+                self.Close()
+            except RuntimeError:
+                pass
         event.Skip()

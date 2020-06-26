@@ -72,7 +72,10 @@ class RotarySettings(wx.Frame, Module):
         self.on_check_rotary(None)
 
     def finalize(self, channel=None):
-        self.Close()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def shutdown(self,  channel=None):
         try:
