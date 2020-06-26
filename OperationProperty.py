@@ -424,7 +424,7 @@ class OperationProperty(wx.Frame, Module):
         self.operation.acceleration_custom = on
         self.device.signal('element_property_update', self.operation)
 
-    def on_slider_accel(self, event):  # wxGlade: EngraveProperty.<event_handler>
+    def on_slider_accel(self, event):
         self.operation.acceleration = self.slider_accel.GetValue()
         self.device.device_root.engrave_acceleration = self.operation.acceleration
         self.device.signal('element_property_update', self.operation)

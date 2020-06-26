@@ -17,7 +17,7 @@ class LaserOperation(list):
         try:
             self.operation = kwargs['operation']
         except KeyError:
-            self.operation = "Engrave"
+            self.operation = "Unknown"
         self.status_value = "Queued"
         self.speed = None
         self.power = None
@@ -103,6 +103,8 @@ class LaserOperation(list):
                 self.set_properties(obj.values)
                 self.append(obj)
             elif isinstance(obj, LaserOperation):
+                self.operation = obj.operation
+
                 self.speed = obj.speed
                 self.power = obj.power
                 self.dratio_custom = obj.dratio_custom
@@ -113,6 +115,22 @@ class LaserOperation(list):
                 self.raster_direction = obj.raster_direction
                 self.raster_swing = obj.raster_swing
                 self.overscan = obj.overscan
+
+                self.raster_preference_top = obj.raster_preference_top
+                self.raster_preference_right = obj.raster_preference_right
+                self.raster_preference_left = obj.raster_preference_left
+                self.raster_preference_bottom = obj.raster_preference_bottom
+
+                self.dot_length_custom = obj.dot_length_custom
+                self.dot_length = obj.dot_length
+
+                self.group_pulses = obj.group_pulses
+
+                self.passes_custom = obj.passes_custom
+                self.passes = obj.passes
+                self.output = obj.output
+                self.show = obj.show
+
                 for element in obj:
                     element_copy = copy(element)
                     self.append(element_copy)
@@ -121,25 +139,19 @@ class LaserOperation(list):
         parts = list()
         parts.append("speed=%f" % self.speed)
         parts.append("power=%f" % self.power)
+        op = self.operation
         if self.dratio is not None:
             parts.append("dratio=%f" % self.dratio)
-        if self.operation == "Cut":
-            return "Cut: (%s)" % ", ".join(parts)
-        elif self.operation == "Raster":
+        if self.operation == "Raster":
             parts.append("step=%d" % self.raster_step)
             parts.append("direction=%d" % self.raster_direction)
             if isinstance(self.overscan, str):
                 parts.append("overscan=%s" % self.overscan)
             else:
                 parts.append("overscan=%d" % self.overscan)
-            return "Raster: (%s)" % ", ".join(parts)
-        elif self.operation == "Engrave":
-            return "Engrave: (%s)" % ", ".join(parts)
-        elif self.operation == "Image":
-            return "Image: (%s)" % ", ".join(parts)
-        elif self.operation == "Raw":
-            return "Raw: (%s)" % ", ".join(parts)
-        return "Unknown: (%s)" % ", ".join(parts)
+        if op is None:
+            op = "Unknown"
+        return "%s: (%s)" % (op, ", ".join(parts))
 
     def __copy__(self):
         return LaserOperation(self)
