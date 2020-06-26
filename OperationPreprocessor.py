@@ -1,7 +1,7 @@
 
 from svgelements import *
 from LaserCommandConstants import *
-from LaserOperation import LaserOperation, RasterOperation, CutOperation
+from LaserOperation import LaserOperation
 from LaserRender import LaserRender
 
 
@@ -29,66 +29,84 @@ class OperationPreprocessor:
 
     def conditional_jobadd_make_raster(self):
         for op in self.operations:
-            if isinstance(op, RasterOperation):
-                if len(op) == 0:
-                    continue
-                if len(op) == 1 and isinstance(op[0], SVGImage):
-                    continue  # make raster not needed since its a single real raster.
-                self.jobadd_make_raster()
-                return True
+            try:
+                if op.operation in ("Raster", "Image"):
+                    if len(op) == 0:
+                        continue
+                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                        continue  # make raster not needed since its a single real raster.
+                    self.jobadd_make_raster()
+                    return True
+            except AttributeError:
+                pass
         return False
 
     def jobadd_make_raster(self):
         def make_image():
             for op in self.operations:
-                if isinstance(op, RasterOperation):
-                    if len(op) == 1 and isinstance(op[0], SVGImage):
-                        continue
-                    renderer = LaserRender(self.device.device_root)
-                    bounds = OperationPreprocessor.bounding_box(op)
-                    if bounds is None:
-                        return None
-                    xmin, ymin, xmax, ymax = bounds
+                try:
+                    if op.operation in ("Raster", "Image"):
+                        if len(op) == 1 and isinstance(op[0], SVGImage):
+                            continue
+                        renderer = LaserRender(self.device.device_root)
+                        bounds = OperationPreprocessor.bounding_box(op)
+                        if bounds is None:
+                            return None
+                        xmin, ymin, xmax, ymax = bounds
 
-                    image = renderer.make_raster(op, bounds, step=op.raster_step)
-                    image_element = SVGImage(image=image)
-                    image_element.transform.post_translate(xmin, ymin)
-                    op.clear()
-                    op.append(image_element)
+                        image = renderer.make_raster(op, bounds, step=op.raster_step)
+                        image_element = SVGImage(image=image)
+                        image_element.transform.post_translate(xmin, ymin)
+                        op.clear()
+                        op.append(image_element)
+                except AttributeError:
+                    pass
 
         self.commands.append(make_image)
 
     def conditional_jobadd_optimize_cuts(self):
         for op in self.operations:
-            if isinstance(op, CutOperation):
-                self.jobadd_optimize_cuts()
-                return
+            try:
+                if op.operation in ("Cut"):
+                    self.jobadd_optimize_cuts()
+                    return
+            except AttributeError:
+                pass
 
     def jobadd_optimize_cuts(self):
         def optimize_cuts():
             for op in self.operations:
-                if isinstance(op, CutOperation):
-                    op_cuts = OperationPreprocessor.optimize_cut_inside(op)
-                    op.clear()
-                    op.append(op_cuts)
+                try:
+                    if op.operation in ("Cut"):
+                        op_cuts = OperationPreprocessor.optimize_cut_inside(op)
+                        op.clear()
+                        op.append(op_cuts)
+                except AttributeError:
+                    pass
 
         self.commands.append(optimize_cuts)
 
     def conditional_jobadd_actualize_image(self):
         for op in self.operations:
-            if isinstance(op, RasterOperation):
-                for elem in op:
-                    if OperationPreprocessor.needs_actualization(elem, op.raster_step):
-                        self.jobadd_actualize_image()
-                        return
+            try:
+                if op.operation in ("Raster", "Image"):
+                    for elem in op:
+                        if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                            self.jobadd_actualize_image()
+                            return
+            except AttributeError:
+                pass
 
     def jobadd_actualize_image(self):
         def actualize():
             for op in self.operations:
-                if isinstance(op, RasterOperation):
-                    for elem in op:
-                        if OperationPreprocessor.needs_actualization(elem, op.raster_step):
-                            OperationPreprocessor.make_actual(elem, op.raster_step)
+                try:
+                    if op.operation in ("Raster", "Image"):
+                        for elem in op:
+                            if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                                OperationPreprocessor.make_actual(elem, op.raster_step)
+                except AttributeError:
+                    pass
         self.commands.append(actualize)
 
     def conditional_jobadd_scale_rotary(self):

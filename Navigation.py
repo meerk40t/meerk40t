@@ -359,6 +359,7 @@ class Navigation(wx.Frame, Module):
     def finalize(self, channel=None):
         self.device.device_root.unlisten('emphasized', self.on_emphasized_elements_changed)
         self.device.unlisten('interpreter;position', self.on_position_update)
+        self.Close()
 
     def shutdown(self,  channel=None):
         try:

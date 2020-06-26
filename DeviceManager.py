@@ -55,6 +55,9 @@ class DeviceManager(wx.Frame, Module):
         self.device.setting(str, 'list_devices', '')
         self.refresh_device_list()
 
+    def finalize(self, channel=None):
+        self.Close()
+
     def shutdown(self,  channel=None):
         try:
             self.Close()

@@ -66,6 +66,9 @@ class Alignment(wx.Frame, Module):
         self.device.close('window', self.name)
         self.Show()
 
+    def finalize(self, channel=None):
+        self.Close()
+
     def shutdown(self, channel=None):
         try:
             self.Close()

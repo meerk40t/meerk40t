@@ -180,6 +180,7 @@ class CameraInterface(wx.Frame, Module):
         self.camera_lock.acquire()
         self.close_camera()
         self.camera_lock.release()
+        self.Close()
 
     def shutdown(self,  channel=None):
         try:

@@ -68,7 +68,7 @@ class Settings(wx.Frame, Module):
         self.combo_language.SetSelection(self.device.language)
 
     def finalize(self, channel=None):
-        pass
+        self.Close()
 
     def shutdown(self,  channel=None):
         try:

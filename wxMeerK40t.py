@@ -14,10 +14,8 @@ from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller
-from CutProperty import CutProperty
 from DefaultModules import *
 from DeviceManager import DeviceManager
-from EngraveProperty import EngraveProperty
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
 from JobSpooler import JobSpooler
@@ -30,7 +28,6 @@ from OperationPreprocessor import OperationPreprocessor
 from OperationProperty import OperationProperty
 from PathProperty import PathProperty
 from Preferences import Preferences
-from RasterProperty import RasterProperty
 from RotarySettings import RotarySettings
 from Settings import Settings
 from Terminal import Terminal
@@ -292,7 +289,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", self, -1, "", ), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", self, -1, "", )
                   .set_operations(list(self.device.device_root.elements.ops())), id=ID_MENU_JOB)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Operations", self, -1, "", ),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "OperationProperty", self, -1, "", ),
                   id=ID_MENU_OPERATIONS)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
@@ -562,6 +559,7 @@ class MeerK40t(wx.Frame, Module):
         device.unlisten('interpreter;position', self.update_position)
         device.unlisten('interpreter;mode', self.on_interpreter_mode)
         device.unlisten('bed_size', self.bed_changed)
+        self.Close()
 
     def shutdown(self, channel=None):
         try:
@@ -1357,7 +1355,7 @@ class RootNode(list):
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
         self.build_tree(self.node_operations, list(elements.ops()))
         for n in self.node_operations:
-            if isinstance(n.object, RasterOperation):
+            if n.object.operation in ("Raster", "Image"):
                 n.set_icon(icons8_direction_20.GetBitmap())
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
@@ -1587,12 +1585,8 @@ class RootNode(list):
     def activated_object(self, obj):
         if obj is None:
             return
-        if isinstance(obj, RasterOperation):
-            self.device.open('window', "RasterProperty", self.gui, -1, "").set_operation(obj)
-        elif isinstance(obj, EngraveOperation):
-            self.device.open('window', "EngraveProperty", self.gui, -1, "").set_operation(obj)
-        elif isinstance(obj, CutOperation):
-            self.device.open('window', "CutProperty", self.gui, -1, "").set_operation(obj)
+        if isinstance(obj, LaserOperation):
+            self.device.open('window', "OperationProperty", self.gui, -1, "").set_operation(obj)
         elif isinstance(obj, Path):
             self.device.open('window', "PathProperty", self.gui, -1, "").set_element(obj)
         elif isinstance(obj, SVGText):
@@ -1601,8 +1595,6 @@ class RootNode(list):
             self.device.open('window', "ImageProperty", self.gui, -1, "").set_element(obj)
         elif isinstance(obj, SVGElement):
             self.device.open('window', "PathProperty", self.gui, -1, "").set_element(obj)
-        elif isinstance(obj, LaserOperation):
-            self.device.open('window', "EngraveProperty", self.gui, -1, "").set_operation(obj)
 
     def on_item_selection_changed(self, event):
         """
@@ -1724,7 +1716,7 @@ class RootNode(list):
                 gui.Bind(wx.EVT_MENU, self.menu_passes(node, i),
                          duplicate_menu.Append(wx.ID_ANY, _("Add %d passes.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Passes"))
-            if isinstance(node.object, RasterOperation):
+            if node.object.operation in ("Raster", "Image"):
                 raster_step_menu = wx.Menu()
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
@@ -1821,8 +1813,7 @@ class RootNode(list):
 
         def specific(event):
             element = node.object
-            if isinstance(element, RasterOperation):
-                element.raster_step = step_value
+            element.raster_step = step_value
             self.device.signal('element_property_update', node.object)
 
         return specific
@@ -1838,7 +1829,7 @@ class RootNode(list):
 
         def specific(event):
             element = node.object
-            element.values[VARIABLE_NAME_RASTER_STEP] = str(step_value)
+            element.values["raster_step"] = str(step_value)
             m = element.transform
             tx = m.e
             ty = m.f
@@ -2407,9 +2398,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', 'PathProperty', PathProperty)
         device.register('window', 'TextProperty', TextProperty)
         device.register('window', 'ImageProperty', ImageProperty)
-        device.register('window', 'RasterProperty', RasterProperty)
-        device.register('window', 'EngraveProperty', EngraveProperty)
-        device.register('window', 'CutProperty', CutProperty)
+        device.register('window', "OperationProperty", OperationProperty)
         device.register('window', 'Controller', Controller)
         device.register('window', "Preferences", Preferences)
         device.register('window', "CameraInterface", CameraInterface)
@@ -2422,7 +2411,6 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "Keymap", Keymap)
         device.register('window', "UsbConnect", UsbConnect)
         device.register('window', "Navigation", Navigation)
-        device.register('window', "Operations", OperationProperty)
         device.register('window', "Controller", Controller)
         device.register('window', "JobSpooler", JobSpooler)
         device.register('window', "JobInfo", JobInfo)

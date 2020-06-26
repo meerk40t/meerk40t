@@ -45,6 +45,7 @@ class JobSpooler(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.unlisten('spooler;queue', self.on_spooler_update)
+        self.Close()
 
     def shutdown(self, channel=None):
         try:
@@ -100,13 +101,10 @@ class JobSpooler(wx.Frame, Module):
                     except AttributeError:
                         pass
                     self.list_job_spool.SetItem(m, 3, self.device.device_name)
-                    settings = []
-                    if isinstance(e, EngraveOperation):
-                        self.list_job_spool.SetItem(m, 4, _("Engrave"))
-                    if isinstance(e, CutOperation):
-                        self.list_job_spool.SetItem(m, 4, _("Cut"))
-                    if isinstance(e, RasterOperation):
-                        self.list_job_spool.SetItem(m, 4, _("Raster"))
+                    try:
+                        self.list_job_spool.SetItem(m, 4, e.operation)
+                    except AttributeError:
+                        pass
                     try:
                         self.list_job_spool.SetItem(m, 5, _("%.1fmm/s") % (e.speed))
                     except AttributeError:

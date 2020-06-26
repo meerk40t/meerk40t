@@ -12,7 +12,7 @@ class OperationProperty(wx.Frame, Module):
         kwds["style"] = kwds.get("style",
                                  0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_TOOL_WINDOW | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((414, 593))
+        self.SetSize((371, 724))
 
         # Menu Bar
         self.RasterProperty_menubar = wx.MenuBar()
@@ -41,6 +41,7 @@ class OperationProperty(wx.Frame, Module):
         self.combo_type = wx.ComboBox(self.main_panel, wx.ID_ANY, choices=[_("Engrave"), _("Cut"), _("Raster"), _("Image")],
                                       style=wx.CB_DROPDOWN)
         self.checkbox_output = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Output"))
+        self.checkbox_show = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Show"))
         self.text_speed = wx.TextCtrl(self.main_panel, wx.ID_ANY, "20.0")
         self.text_power = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1000.0")
         self.text_raster_step = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1")
@@ -49,14 +50,17 @@ class OperationProperty(wx.Frame, Module):
                                                   choices=[_("Top To Bottom"), _("Bottom To Top"), _("Right To Left"),
                                                            _("Left To Right"), _("Crosshatch")], style=wx.CB_DROPDOWN)
         self.radio_directional_raster = wx.RadioBox(self.main_panel, wx.ID_ANY, _("Directional Raster"),
-                                                    choices=[_("Bidirectional"), _("Unidirectional")], majorDimension=2,
+                                                    choices=[_("Bidirectional"), _("Unidirectional")], majorDimension=1,
                                                     style=wx.RA_SPECIFY_ROWS)
-        self.radio_start_preference = wx.RadioBox(self.main_panel, wx.ID_ANY, _("Raster Start Preference"),
-                                                  choices=[" ", " ", " ", " ", " ", " ", " ", " ", " "], majorDimension=3,
-                                                  style=wx.RA_SPECIFY_ROWS)
+        self.slider_top = wx.Slider(self.main_panel, wx.ID_ANY, 1, 0, 2)
+        self.slider_left = wx.Slider(self.main_panel, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
+        self.panel_raster_display = wx.Panel(self.main_panel, wx.ID_ANY)
+        self.slider_right = wx.Slider(self.main_panel, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
+        self.slider_bottom = wx.Slider(self.main_panel, wx.ID_ANY, 1, 0, 2)
+
         self.checkbox_advanced = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Advanced"))
-        self.checkbox_custom_d_ratio = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Custom D-Ratio"))
-        self.text_custom_d_ratio = wx.TextCtrl(self.main_panel, wx.ID_ANY, "0.261")
+        self.check_dratio_custom = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Custom D-Ratio"))
+        self.text_dratio = wx.TextCtrl(self.main_panel, wx.ID_ANY, "0.261")
         self.checkbox_custom_accel = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Acceleration"))
         self.slider_accel = wx.Slider(self.main_panel, wx.ID_ANY, 1, 1, 4, style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         self.check_dot_enable = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Dot Length (mils)"))
@@ -75,6 +79,7 @@ class OperationProperty(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_show, self.checkbox_show)
         self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
         self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
@@ -85,11 +90,14 @@ class OperationProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
-        self.Bind(wx.EVT_RADIOBOX, self.on_radio_raster_preference, self.radio_start_preference)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_advanced, self.checkbox_advanced)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.checkbox_custom_d_ratio)
-        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_custom_d_ratio)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_custom_d_ratio)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_enable)
@@ -99,6 +107,7 @@ class OperationProperty(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.combo_type.SetFocus()
+        self.operation = None
 
     def on_close(self, event):
         self.device.close('window', self.name)
@@ -107,6 +116,9 @@ class OperationProperty(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+
+    def finalize(self, channel=None):
+        self.Close()
 
     def shutdown(self, channel=None):
         try:
@@ -126,6 +138,8 @@ class OperationProperty(wx.Frame, Module):
         self.combo_type.SetSelection(0)
         self.checkbox_output.SetToolTip(_("Output This Layer"))
         self.checkbox_output.SetValue(1)
+        self.checkbox_show.SetToolTip(_("Show This Layer"))
+        self.checkbox_show.SetValue(1)
         self.text_speed.SetToolTip(_("Speed at which to perform the action in mm/s."))
         self.text_power.SetToolTip(_("1000 always on. 500 it's half power (fire every other step). This is software PPI control."))
         self.text_raster_step.SetToolTip(_("Scan gap / step size, is the distance between scanlines in a raster engrave. Distance here is in 1/1000th of an inch."))
@@ -134,11 +148,11 @@ class OperationProperty(wx.Frame, Module):
         self.combo_raster_direction.SetSelection(0)
         self.radio_directional_raster.SetToolTip(_("Rastering on forward and backswing or only forward swing?"))
         self.radio_directional_raster.SetSelection(0)
-        self.radio_start_preference.SetToolTip(_("Set the preference for where rasters should start. Middle means no preference."))
-        self.radio_start_preference.SetSelection(4)
+        self.panel_raster_display.SetToolTip(_("Set the preference for where rasters should start. Middle means no preference."))
+
         self.checkbox_advanced.SetToolTip(_("Turn on advanced options?"))
-        self.checkbox_custom_d_ratio.SetToolTip(_("Enables the ability to modify the diagonal ratio."))
-        self.text_custom_d_ratio.SetToolTip(_("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"))
+        self.check_dratio_custom.SetToolTip(_("Enables the ability to modify the diagonal ratio."))
+        self.text_dratio.SetToolTip(_("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"))
         self.checkbox_custom_accel.SetToolTip(_("Enables the ability to modify the acceleration factor."))
         self.slider_accel.SetToolTip(_("Acceleration Factor Override"))
         self.check_dot_enable.SetToolTip(_("Enable Dot Length Feature"))
@@ -163,7 +177,8 @@ class OperationProperty(wx.Frame, Module):
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         raster_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Raster")), wx.VERTICAL)
-        sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Start Preference")), wx.VERTICAL)
+        sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -173,37 +188,43 @@ class OperationProperty(wx.Frame, Module):
         layer_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Layer")), wx.HORIZONTAL)
         layers_sizer = wx.BoxSizer(wx.VERTICAL)
         layers_sizer.Add(self.button_add_layer, 0, 0, 0)
-        layers_sizer.Add(self.listbox_layer, 10, wx.EXPAND, 0)
+        layers_sizer.Add(self.listbox_layer, 1, wx.EXPAND, 0)
         layers_sizer.Add(self.button_remove_layer, 0, 0, 0)
         sizer_main.Add(layers_sizer, 1, wx.EXPAND, 0)
         layer_sizer.Add(self.button_layer_color, 0, 0, 0)
         layer_sizer.Add(self.combo_type, 1, 0, 0)
         layer_sizer.Add(self.checkbox_output, 1, 0, 0)
+        layer_sizer.Add(self.checkbox_show, 1, 0, 0)
         param_sizer.Add(layer_sizer, 0, wx.EXPAND, 0)
         speed_sizer.Add(self.text_speed, 1, 0, 0)
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
         power_sizer.Add(self.text_power, 1, 0, 0)
         speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
         param_sizer.Add(speed_power_sizer, 0, wx.EXPAND, 0)
-        label_7 = wx.StaticText(self.main_panel, wx.ID_ANY, _("Raster Step (mils)"))
+        label_7 = wx.StaticText(self.main_panel, wx.ID_ANY, "Raster Step (mils)")
         sizer_3.Add(label_7, 1, 0, 0)
         sizer_3.Add(self.text_raster_step, 1, 0, 0)
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
-        label_6 = wx.StaticText(self.main_panel, wx.ID_ANY, _("Overscan (mils/%)"))
+        label_6 = wx.StaticText(self.main_panel, wx.ID_ANY, "Overscan (mils/%)")
         sizer_6.Add(label_6, 1, 0, 0)
         sizer_6.Add(self.text_overscan, 1, 0, 0)
         raster_sizer.Add(sizer_6, 0, wx.EXPAND, 0)
-        label_5 = wx.StaticText(self.main_panel, wx.ID_ANY, _("Raster Direction"))
+        label_5 = wx.StaticText(self.main_panel, wx.ID_ANY, "Raster Direction")
         sizer_4.Add(label_5, 1, 0, 0)
         sizer_4.Add(self.combo_raster_direction, 1, 0, 0)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
-        sizer_5.Add(self.radio_directional_raster, 3, wx.EXPAND, 0)
-        sizer_5.Add(self.radio_start_preference, 1, 0, 0)
-        raster_sizer.Add(sizer_5, 1, wx.EXPAND, 0)
+        raster_sizer.Add(self.radio_directional_raster, 0, wx.EXPAND, 0)
+        sizer_2.Add(self.slider_top, 0, wx.EXPAND, 0)
+        sizer_7.Add(self.slider_left, 0, wx.EXPAND, 0)
+        sizer_7.Add(self.panel_raster_display, 1, wx.EXPAND, 0)
+        sizer_7.Add(self.slider_right, 0, 0, 0)
+        sizer_2.Add(sizer_7, 0, wx.EXPAND, 0)
+        sizer_2.Add(self.slider_bottom, 0, wx.EXPAND, 0)
+        raster_sizer.Add(sizer_2, 1, wx.EXPAND, 0)
         param_sizer.Add(raster_sizer, 0, wx.EXPAND, 0)
         param_sizer.Add(self.checkbox_advanced, 0, 0, 0)
-        sizer_11.Add(self.checkbox_custom_d_ratio, 1, 0, 0)
-        sizer_11.Add(self.text_custom_d_ratio, 1, 0, 0)
+        sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
+        sizer_11.Add(self.text_dratio, 1, 0, 0)
         advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
         sizer_12.Add(self.checkbox_custom_accel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_12.Add(self.slider_accel, 1, wx.EXPAND, 0)
@@ -226,6 +247,39 @@ class OperationProperty(wx.Frame, Module):
         self.Layout()
         self.Centre()
         # end wxGlade
+
+    def set_operation(self, operation):
+        self.operation = operation
+        if operation.speed is not None:
+            self.text_speed.SetValue(str(operation.speed))
+        if operation.power is not None:
+            self.text_power.SetValue(str(operation.power))
+        if operation.dratio is not None:
+            self.text_dratio.SetValue(str(operation.dratio))
+        if operation.dratio_custom is not None:
+            self.check_dratio_custom.SetValue(operation.dratio_custom)
+        if operation.acceleration is not None:
+            self.slider_accel.SetValue(operation.acceleration)
+        if operation.acceleration_custom is not None:
+            self.checkbox_custom_accel.SetValue(operation.acceleration_custom)
+            self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
+        if operation.raster_step is not None:
+            self.text_raster_step.SetValue(str(operation.raster_step))
+        if operation.overscan is not None:
+            self.text_overscan.SetValue(str(operation.overscan))
+        if operation.raster_direction is not None:
+            self.combo_raster_direction.SetSelection(operation.raster_direction)
+        if operation.raster_swing is not None:
+            self.radio_directional_raster.SetSelection(operation.raster_swing)
+        if operation.raster_preference_top is not None:
+            self.slider_top.SetValue(operation.raster_preference_top + 1)
+        if operation.raster_preference_left is not None:
+            self.slider_left.SetValue(operation.raster_preference_left + 1)
+        if operation.raster_preference_right is not None:
+            self.slider_right.SetValue(operation.raster_preference_right + 1)
+        if operation.raster_preference_bottom is not None:
+            self.slider_bottom.SetValue(operation.raster_preference_bottom + 1)
+        return self
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
         print("Event handler 'on_menu_clear' not implemented!")
@@ -272,60 +326,105 @@ class OperationProperty(wx.Frame, Module):
         event.Skip()
 
     def on_combo_operation(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_combo_operation' not implemented!")
-        event.Skip()
+        select = self.combo_raster_direction.GetSelection()
+        if select == 0:
+            self.operation.operation = "Engrave"
+        if select == 1:
+            self.operation.operation = "Cut"
+        if select == 2:
+            self.operation.operation = "Raster"
+        if select == 3:
+            self.operation.operation = "Image"
+        self.device.signal('element_property_update', self.operation)
 
     def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_check_output' not implemented!")
-        event.Skip()
+        self.operation.output = self.checkbox_output.GetValue()
+
+    def on_check_show(self, event):
+        self.operation.show = self.checkbox_show.GetValue()
 
     def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_text_speed' not implemented!")
-        event.Skip()
+        try:
+            self.operation.speed = float(self.text_speed.GetValue())
+        except:
+            return
+        self.device.signal('element_property_update', self.operation)
 
     def on_text_power(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_text_power' not implemented!")
-        event.Skip()
+        try:
+            self.operation.power = float(self.text_power.GetValue())
+        except ValueError:
+            return
+        self.device.signal('element_property_update', self.operation)
 
     def on_text_raster_step(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_text_raster_step' not implemented!")
-        event.Skip()
+        try:
+            self.operation.raster_step = int(self.text_raster_step.GetValue())
+        except ValueError:
+            return
+        self.device.signal('element_property_update', self.operation)
 
     def on_text_overscan(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_text_overscan' not implemented!")
-        event.Skip()
+        overscan = self.text_overscan.GetValue()
+        if not overscan.endswith('%'):
+            try:
+                overscan = int(overscan)
+            except ValueError:
+                return
+        self.operation.overscan = overscan
+        self.device.signal('element_property_update', self.operation)
 
-    def on_combo_raster_direction(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_combo_raster_direction' not implemented!")
-        event.Skip()
+    def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
+        self.operation.raster_direction = self.combo_raster_direction.GetSelection()
+        self.device.device_root.raster_direction = self.operation.raster_direction
+        self.device.signal('element_property_update', self.operation)
 
-    def on_radio_directional(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_radio_directional' not implemented!")
-        event.Skip()
+    def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>
+        self.operation.raster_swing = self.radio_directional_raster.GetSelection()
+        self.device.signal('element_property_update', self.operation)
 
-    def on_radio_raster_preference(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_radio_raster_preference' not implemented!")
-        event.Skip()
+    def on_slider_top(self, event):  # wxGlade: OperationProperty.<event_handler>
+        self.operation.start_preference = self.slider_top.GetValue()
+        self.device.signal('element_property_update', self.operation)
+
+    def on_slider_left(self, event):  # wxGlade: OperationProperty.<event_handler>
+        self.operation.start_preference = self.slider_left.GetValue()
+        self.device.signal('element_property_update', self.operation)
+
+    def on_slider_right(self, event):  # wxGlade: OperationProperty.<event_handler>
+        self.operation.start_preference = self.slider_right.GetValue()
+        self.device.signal('element_property_update', self.operation)
+
+    def on_slider_bottom(self, event):  # wxGlade: OperationProperty.<event_handler>
+        self.operation.start_preference = self.slider_bottom.GetValue()
+        self.device.signal('element_property_update', self.operation)
 
     def on_check_advanced(self, event):  # wxGlade: OperationProperty.<event_handler>
         print("Event handler 'on_check_advanced' not implemented!")
         event.Skip()
 
     def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_check_dratio' not implemented!")
-        event.Skip()
+        on = self.check_dratio_custom.GetValue()
+        self.text_speed.Enable(on)
+        self.operation.dratio_custom = on
+        self.device.signal('element_property_update', self.operation)
 
     def on_text_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_text_dratio' not implemented!")
-        event.Skip()
+        self.operation.dratio = float(self.text_speed.GetValue())
+        self.device.device_root.cut_dratio = self.operation.dratio
+        self.device.signal('element_property_update', self.operation)
 
     def on_check_acceleration(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_check_acceleration' not implemented!")
-        event.Skip()
+        on = self.checkbox_custom_accel.GetValue()
+        self.slider_accel.Enable(on)
+        self.device.device_root.cut_acceleration_custom = on
+        self.operation.acceleration_custom = on
+        self.device.signal('element_property_update', self.operation)
 
-    def on_slider_accel(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_slider_accel' not implemented!")
-        event.Skip()
+    def on_slider_accel(self, event):  # wxGlade: EngraveProperty.<event_handler>
+        self.operation.acceleration = self.slider_accel.GetValue()
+        self.device.device_root.engrave_acceleration = self.operation.acceleration
+        self.device.signal('element_property_update', self.operation)
 
     def on_check_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
         print("Event handler 'on_check_dot_length' not implemented!")
@@ -343,19 +442,4 @@ class OperationProperty(wx.Frame, Module):
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_ESCAPE:
             self.Close()
-        if keycode == wx.WXK_TAB:
-            self.on_tab_traversal()
         event.Skip()
-
-    def on_tab_traversal(self):
-        """ Tab Traversal is part of wx.Panel, so It's added here programatically, rather than add one."""
-        focus = self.FindFocus()
-        if focus is self:
-            self.text_speed.SetFocus()
-            self.text_speed.SelectAll()
-        elif focus is self.text_speed:
-            self.text_power.SetFocus()
-            self.text_power.SelectAll()
-        elif focus is self.text_power:
-            self.text_raster_step.SetFocus()
-            self.text_power.SelectAll()

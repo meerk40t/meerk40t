@@ -167,6 +167,7 @@ class Adjustments(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.execute("Realtime Resume")
+        self.Close()
 
     def shutdown(self,  channel=None):
         try:

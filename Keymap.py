@@ -36,7 +36,7 @@ class Keymap(wx.Frame, Module):
         self.reload_keymap()
 
     def finalize(self, channel=None):
-        pass
+        self.Close()
 
     def shutdown(self, channel=None):
         try:

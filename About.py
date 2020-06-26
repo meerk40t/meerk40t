@@ -33,6 +33,9 @@ class About(wx.Frame, Module):
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
         self.Show()
 
+    def finalize(self, channel=None):
+        self.Close()
+
     def shutdown(self,  channel=None):
         try:
             self.Close()

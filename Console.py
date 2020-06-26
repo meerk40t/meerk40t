@@ -1092,7 +1092,8 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            op = CutOperation()
+            op = LaserOperation()
+            op.operation = "Cut"
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
@@ -1100,7 +1101,8 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            op = EngraveOperation()
+            op = LaserOperation()
+            op.operation = "Engrave"
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
@@ -1108,7 +1110,8 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
-            op = RasterOperation()
+            op = LaserOperation()
+            op.operation = "Cut"
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
@@ -1116,14 +1119,14 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 found = False
                 for op in elements.ops(emphasized=True):
-                    if isinstance(op, RasterOperation):
+                    if op.operation in ("Raster", "Image"):
                         step = op.raster_step
                         yield 'Step for %s is currently: %d' % (str(op), step)
                         found = True
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         try:
-                            step = element.values[VARIABLE_NAME_RASTER_STEP]
+                            step = element.values['raster_step']
                         except KeyError:
                             step = 1
                         yield 'Image step for %s is currently: %s' % (str(element), step)
@@ -1137,11 +1140,11 @@ class Console(Module, Pipe):
                 yield 'Not integer value for raster step.'
                 return
             for op in elements.ops(emphasized=True):
-                if isinstance(op, RasterOperation):
+                if op.operation in ("Raster", "Image"):
                     op.raster_step = step
                     self.device.signal('element_property_update', op)
             for element in elements.elems(emphasized=True):
-                element.values[VARIABLE_NAME_RASTER_STEP] = str(step)
+                element.values['raster_step'] = str(step)
                 m = element.transform
                 tx = m.e
                 ty = m.f

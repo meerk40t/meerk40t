@@ -136,6 +136,7 @@ class JobInfo(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.unlisten('element_property_update', self.on_element_property_update)
+        self.Close()
 
     def shutdown(self, channel=None):
         try:
@@ -203,10 +204,7 @@ class JobInfo(wx.Frame, Module):
             return
         obj = self.operations[node_index]
 
-        if isinstance(obj, RasterOperation):
-            self.device.open('window', "RasterProperty", self, -1, "").set_operation(obj)
-        elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.device.open('window', "EngraveProperty", self, -1, "").set_operation(obj)
+        self.device.open('window', "OperationProperty", self, -1, "").set_operation(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

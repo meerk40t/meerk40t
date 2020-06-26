@@ -84,6 +84,7 @@ class Controller(wx.Frame, Module):
         self.text_location.SetValue(self.device.device_location)
 
     def finalize(self, channel=None):
+        self.Close()
         self.device.unlisten('pipe;status', self.update_status)
         self.device.unlisten('pipe;packet_text', self.update_packet_text)
         self.device.unlisten('pipe;buffer', self.on_buffer_update)

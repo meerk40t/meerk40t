@@ -71,6 +71,9 @@ class RotarySettings(wx.Frame, Module):
         self.checkbox_rotary.SetValue(self.device.rotary)
         self.on_check_rotary(None)
 
+    def finalize(self, channel=None):
+        self.Close()
+
     def shutdown(self,  channel=None):
         try:
             self.Close()

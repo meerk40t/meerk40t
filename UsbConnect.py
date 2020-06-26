@@ -34,7 +34,7 @@ class UsbConnect(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.device.remove_watcher('usb', self.update_text)
-
+        self.Close()
 
     def shutdown(self, channel=None):
         try:

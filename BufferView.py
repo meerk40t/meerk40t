@@ -48,6 +48,9 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_length = self.text_buffer_length.SetValue(str(len(buffer_str)))
         self.text_buffer_info = self.text_buffer_info.SetValue(buffer_str)
 
+    def finalize(self, channel=None):
+        self.Close()
+
     def shutdown(self,  channel=None):
         try:
             self.Close()
