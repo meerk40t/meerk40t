@@ -81,6 +81,10 @@ class CutProperty(wx.Frame, Module):
 
         return self
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy.
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
@@ -90,10 +94,6 @@ class CutProperty(wx.Frame, Module):
             self.Close()
         except RuntimeError:
             pass
-
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
 
     def __set_properties(self):
         # begin wxGlade: EngraveProperty.__set_properties

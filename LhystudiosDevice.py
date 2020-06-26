@@ -181,6 +181,12 @@ class LhymicroInterpreter(Interpreter):
         self.device.add('control', "Realtime Resume", self.resume)
         self.device.add('control', "Update Codes", self.update_codes)
 
+    def finalize(self, channel=None):
+        self.device.remove('control', "Realtime Pause_Resume")
+        self.device.remove('control', "Realtime Pause")
+        self.device.remove('control', "Realtime Resume")
+        self.device.remove('control', "Update Codes")
+
     def __repr__(self):
         return "LhymicroInterpreter()"
 

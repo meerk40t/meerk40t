@@ -291,7 +291,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", self, -1, "", ), id=ID_MENU_USB)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", self, -1, "", ), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", self, -1, "", )
-                  .set_operations(self.device.device_root.elements.ops()), id=ID_MENU_JOB)
+                  .set_operations(list(self.device.device_root.elements.ops())), id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Operations", self, -1, "", ),
                   id=ID_MENU_OPERATIONS)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
@@ -402,45 +402,14 @@ class MeerK40t(wx.Frame, Module):
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     def on_close(self, event):
-        self.times = -1
-        device = self.device
-        kernel = device.device_root
-
-        kernel.unlisten('element_added', self.on_rebuild_tree_request)
-        kernel.unlisten('operation_added', self.on_rebuild_tree_request)
-        kernel.unlisten('element_removed', self.on_rebuild_tree_request)
-        kernel.unlisten('operation_removed', self.on_rebuild_tree_request)
-        kernel.unlisten('units', self.space_changed)
-        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
-        kernel.unlisten('altered', self.on_element_alteration)
-
-        device.unlisten('background', self.on_background_signal)
-        device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
-        device.unlisten('refresh_scene', self.on_refresh_scene)
-        device.unlisten('element_property_update', self.on_element_update)
-        device.unlisten('pipe;error', self.on_usb_error)
-        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
-        device.unlisten('pipe;thread', self.on_pipe_state)
-        device.unlisten('spooler;thread', self.on_spooler_state)
-        device.unlisten('interpreter;position', self.update_position)
-        device.unlisten('interpreter;mode', self.on_interpreter_mode)
-        device.unlisten('bed_size', self.bed_changed)
-        device.remove('window', self.name)
-        wx.CallAfter(self.gui_shutdown)
+        self.device.close('window', self.name)
         event.Skip()  # Call destroy as regular.
-
-    def gui_shutdown(self):
-        device = self.device
-        kernel = device.device_root
-        if kernel.print_shutdown:
-            kernel.add_watcher('shutdown', print)
-        device.stop()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
+        self.Show()
         device = self.device
         kernel = self.device.device_root
-        self.Show()
         self.__set_titlebar()
         device.gui = self
         device.setting(int, "draw_mode", 0)
@@ -562,6 +531,37 @@ class MeerK40t(wx.Frame, Module):
             bedheight = device.bed_height
             bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
+
+    def finalize(self, channel=None):
+        device = self.device
+        kernel = device.device_root
+        if kernel.print_shutdown:
+            kernel.add_watcher('shutdown', print)
+        device.stop()
+
+        self.unschedule()
+        device = self.device
+        kernel = device.device_root
+
+        kernel.unlisten('element_added', self.on_rebuild_tree_request)
+        kernel.unlisten('operation_added', self.on_rebuild_tree_request)
+        kernel.unlisten('element_removed', self.on_rebuild_tree_request)
+        kernel.unlisten('operation_removed', self.on_rebuild_tree_request)
+        kernel.unlisten('units', self.space_changed)
+        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
+        kernel.unlisten('altered', self.on_element_alteration)
+
+        device.unlisten('background', self.on_background_signal)
+        device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
+        device.unlisten('refresh_scene', self.on_refresh_scene)
+        device.unlisten('element_property_update', self.on_element_update)
+        device.unlisten('pipe;error', self.on_usb_error)
+        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
+        device.unlisten('pipe;thread', self.on_pipe_state)
+        device.unlisten('spooler;thread', self.on_spooler_state)
+        device.unlisten('interpreter;position', self.update_position)
+        device.unlisten('interpreter;mode', self.on_interpreter_mode)
+        device.unlisten('bed_size', self.bed_changed)
 
     def shutdown(self, channel=None):
         try:

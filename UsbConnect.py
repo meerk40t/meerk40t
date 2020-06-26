@@ -23,15 +23,18 @@ class UsbConnect(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.pipe = None
 
+    def on_close(self, event):
+        self.device.close('window', 'UsbConnect')
+        event.Skip()
+
     def initialize(self, channel=None):
         self.device.close('window', 'UsbConnect')
         self.Show()
         self.device.add_watcher('usb', self.update_text)
 
-    def on_close(self, event):
+    def finalize(self, channel=None):
         self.device.remove_watcher('usb', self.update_text)
-        self.device.remove('window', 'UsbConnect')
-        event.Skip()
+
 
     def shutdown(self, channel=None):
         try:

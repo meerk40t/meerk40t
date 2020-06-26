@@ -130,14 +130,6 @@ class Navigation(wx.Frame, Module):
         self.drag_ready(False)
         self.select_ready(False)
 
-    def on_close(self, event):
-        kernel = self.device.device_root
-        self.device.remove('window', self.name)
-        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
-        self.device.unlisten('interpreter;position', self.on_position_update)
-
-        event.Skip()  # Call destroy.
-
     def __set_properties(self):
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
@@ -341,22 +333,17 @@ class Navigation(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy.
+
     def initialize(self, channel=None):
         device = self.device
         kernel = self.device.device_root
-        self.elements = kernel.elements
         device.close('window', self.name)
         self.Show()
-        if device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
+
+        self.elements = kernel.elements
 
         device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
         device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
@@ -368,6 +355,10 @@ class Navigation(wx.Frame, Module):
         self.console = self.device.using('module', 'Console')
         self.update_matrix_text()
         self.SetFocus()
+
+    def finalize(self, channel=None):
+        self.device.device_root.unlisten('emphasized', self.on_emphasized_elements_changed)
+        self.device.unlisten('interpreter;position', self.on_position_update)
 
     def shutdown(self,  channel=None):
         try:

@@ -39,10 +39,6 @@ class ImageProperty(wx.Frame, Module):
         self.image_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
-
     def set_element(self, element):
         self.image_element = element
         try:
@@ -63,6 +59,10 @@ class ImageProperty(wx.Frame, Module):
             self.text_height.SetValue("%f" % (bounds[3] - bounds[1]))
         except AttributeError:
             pass
+
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy.
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)

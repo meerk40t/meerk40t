@@ -32,32 +32,25 @@ class JobSpooler(wx.Frame, Module):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy as regular.
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
+
         self.device.listen('spooler;queue', self.on_spooler_update)
         self.refresh_spooler_list()
+
+    def finalize(self, channel=None):
+        self.device.unlisten('spooler;queue', self.on_spooler_update)
 
     def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:
             pass
-
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        self.device.unlisten('spooler;queue', self.on_spooler_update)
-        event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
         # begin wxGlade: JobSpooler.__set_properties

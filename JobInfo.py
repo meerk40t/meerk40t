@@ -112,8 +112,12 @@ class JobInfo(wx.Frame, Module):
         self.preprocessor.process(self.operations)
         self.update_gui()
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy as regular.
+
     def initialize(self, channel=None):
-        self.device.close('module', self.name)
+        self.device.close('window', self.name)
         self.Show()
         self.operations = []
         self.device.setting(bool, "rotary", False)
@@ -125,31 +129,19 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(bool, "autostart", True)
         self.device.listen('element_property_update', self.on_element_property_update)
 
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
         self.menu_prehome.Check(self.device.prehome)
         self.menu_autohome.Check(self.device.autohome)
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
+
+    def finalize(self, channel=None):
+        self.device.unlisten('element_property_update', self.on_element_property_update)
 
     def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:
             pass
-
-    def on_close(self, event):
-        self.device.unlisten('element_property_update', self.on_element_property_update)
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
         # begin wxGlade: JobInfo.__set_properties

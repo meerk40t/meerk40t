@@ -37,7 +37,6 @@ class RuidaDevice(Device):
     def __repr__(self):
         return "RuidaDevice(uid='%s')" % str(self.uid)
 
-
     @staticmethod
     def sub_register(device):
         device.register('module', 'RuidaInterpreter', RuidaInterpreter)
@@ -47,10 +46,6 @@ class RuidaDevice(Device):
     def initialize(self, device, channel=None):
         """
         Device initialize.
-
-        :param device:
-        :param name:
-        :return:
         """
         pass
 

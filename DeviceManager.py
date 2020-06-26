@@ -40,6 +40,15 @@ class DeviceManager(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+    def on_close(self, event):
+        item = self.devices_list.GetFirstSelected()
+        if item != -1:
+            uid = self.devices_list.GetItem(item).Text
+            self.device.device_primary = uid
+
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy as regular.
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
@@ -51,14 +60,6 @@ class DeviceManager(wx.Frame, Module):
             self.Close()
         except RuntimeError:
             pass
-
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        item = self.devices_list.GetFirstSelected()
-        if item != -1:
-            uid = self.devices_list.GetItem(item).Text
-            self.device.device_primary = uid
-        event.Skip()  # Call destroy as regular.
 
     def __set_properties(self):
         # begin wxGlade: DeviceManager.__set_properties

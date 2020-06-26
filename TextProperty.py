@@ -80,10 +80,6 @@ class TextProperty(wx.Frame,  Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
-
     def set_element(self, element):
         self.element = element
         try:
@@ -97,6 +93,10 @@ class TextProperty(wx.Frame,  Module):
                 self.device.signal('refresh_scene', 0)
         except AttributeError:
             pass
+
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy.
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)

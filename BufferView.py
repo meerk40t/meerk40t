@@ -21,22 +21,13 @@ class BufferView(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
+        self.device.close('window', self.name)
         event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
+
         pipe = self.device.interpreter.pipe
         buffer = None
         if pipe is not None:
@@ -48,14 +39,14 @@ class BufferView(wx.Frame, Module):
             buffer = _("Could not find buffer.\n")
 
         try:
-            bufferstr = buffer.decode()
+            buffer_str = buffer.decode()
         except ValueError:
-            bufferstr = buffer.decode("ascii")
+            buffer_str = buffer.decode("ascii")
         except AttributeError:
-            bufferstr = buffer
+            buffer_str = buffer
 
-        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(bufferstr)))
-        self.text_buffer_info = self.text_buffer_info.SetValue(bufferstr)
+        self.text_buffer_length = self.text_buffer_length.SetValue(str(len(buffer_str)))
+        self.text_buffer_info = self.text_buffer_info.SetValue(buffer_str)
 
     def shutdown(self,  channel=None):
         try:

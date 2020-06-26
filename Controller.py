@@ -62,20 +62,14 @@ class Controller(wx.Frame, Module):
         self.last_control_state = None
         self.gui_update = True
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        self.gui_update = False
+        event.Skip()  # delegate destroy to super
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
 
         self.device.setting(int, "buffer_max", 1500)
         self.device.setting(bool, "buffer_limit", True)
@@ -101,12 +95,6 @@ class Controller(wx.Frame, Module):
             self.Close()
         except RuntimeError:
             pass
-
-    def on_close(self, event):
-        self.device.close('window', self.name)
-        print("CLOSED")
-        self.gui_update = False
-        event.Skip()  # delegate destroy to super
 
     def device_execute(self, control_name):
         def menu_element(event):

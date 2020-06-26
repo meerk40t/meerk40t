@@ -27,13 +27,16 @@ class Keymap(wx.Frame, Module):
         self.SetFocus()
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
+        self.device.close('window', self.name)
         event.Skip()  # Call destroy.
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
         self.reload_keymap()
+
+    def finalize(self, channel=None):
+        pass
 
     def shutdown(self, channel=None):
         try:

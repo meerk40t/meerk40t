@@ -135,6 +135,10 @@ class CameraInterface(wx.Frame, Module):
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy.
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
@@ -169,21 +173,19 @@ class CameraInterface(wx.Frame, Module):
         self.device.listen('camera_frame', self.on_camera_frame_update)
         self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
 
+    def finalize(self, channel=None):
+        self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
+        self.device.unlisten('camera_frame', self.on_camera_frame_update)
+        self.device.signal('camera_frame_raw', None)
+        self.camera_lock.acquire()
+        self.close_camera()
+        self.camera_lock.release()
+
     def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:
             pass
-
-    def on_close(self, event):
-        self.camera_lock.acquire()
-        self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
-        self.device.unlisten('camera_frame', self.on_camera_frame_update)
-        self.device.signal('camera_frame_raw', None)
-        self.close_camera()
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
-        self.camera_lock.release()
 
     def on_size(self, event):
         self.Layout()

@@ -22,10 +22,10 @@ class About(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
+        self.device.close('window', self.name)
         event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         name = self.device.device_root.device_name
         version = self.device.device_root.device_version

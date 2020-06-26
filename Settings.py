@@ -46,7 +46,7 @@ class Settings(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
+        self.device.close('window', self.name)
         event.Skip()  # Call destroy.
 
     def initialize(self, channel=None):
@@ -66,6 +66,9 @@ class Settings(wx.Frame, Module):
             self.checklist_options.Check(1, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
+
+    def finalize(self, channel=None):
+        pass
 
     def shutdown(self,  channel=None):
         try:

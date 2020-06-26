@@ -601,6 +601,10 @@ class Signaler(Module):
         self.device.last_signal = self.last_signal
         self.schedule()
 
+    def detach(self, device, channel=None):
+        self.unschedule()
+        Module.detach(self, device, channel=channel)
+
     def shutdown(self, channel=None):
         _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
@@ -1697,7 +1701,10 @@ class Device:
         self(setting_name, (value, old_value))
 
     def execute(self, control_name, *args):
-        self.instances['control'][control_name](*args)
+        try:
+            self.instances['control'][control_name](*args)
+        except KeyError:
+            pass
 
     def signal(self, code, *message):
         if self.uid != 0:
@@ -1857,7 +1864,6 @@ class Device:
                 pass
             self.remove(type_name, instance_name)
             instance.detach(self, channel=self.channel_open('close'))
-            self.remove(type_name, instance_name)
 
     def add(self, type_name, instance_name, instance):
         if type_name not in self.instances:

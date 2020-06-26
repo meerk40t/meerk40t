@@ -82,22 +82,12 @@ class Preferences(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
+        self.device.close('window', self.name)
         event.Skip()  # Call destroy.
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
 
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)

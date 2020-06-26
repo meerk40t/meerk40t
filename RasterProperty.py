@@ -42,10 +42,6 @@ class RasterProperty(wx.Frame, Module):
         self.operation = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
-
     def set_operation(self, operation):
         self.operation = operation
         try:
@@ -89,6 +85,10 @@ class RasterProperty(wx.Frame, Module):
         except AttributeError:
             self.radio_corner.Enable(False)
         return self
+
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()  # Call destroy.
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)

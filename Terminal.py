@@ -31,19 +31,19 @@ class Terminal(wx.Frame, Module):
     def on_middle_click(self, event):
         self.text_main.SetValue('')
 
+    def on_close(self, event):
+        self.device.close('window', self.name)
+        event.Skip()
+
     def initialize(self, channel=None):
-        self.device.close('window', 'Terminal')
+        self.device.close('window', self.name)
         self.Show()
         self.pipe = self.device.using('module', 'Console')
         self.device.add_watcher('console', self.update_text)
-        self.SetCanFocus(True)
-        self.SetFocus()
         self.text_entry.SetFocus()
 
-    def on_close(self, event):
+    def finalize(self, channel=None):
         self.device.remove_watcher('console', self.update_text)
-        self.device.remove('window', 'Terminal')
-        event.Skip()
 
     def shutdown(self,  channel=None):
         try:

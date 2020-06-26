@@ -57,10 +57,13 @@ class Scene(Module):
     def initialize(self, channel=None):
         self.device.setting(int, "draw_mode", 0)
 
-    def shutdown(self, channel=None):
+    def finalize(self, channel=None):
         elements = self.device.device_root.elements
         for e in elements.elems():
             elements.unregister(e)
+
+    def shutdown(self, channel=None):
+        pass
 
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)
