@@ -1588,21 +1588,21 @@ class RootNode(list):
         if obj is None:
             return
         if isinstance(obj, RasterOperation):
-            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "RasterProperty", self, -1, "").set_operation(obj)
         elif isinstance(obj, EngraveOperation):
-            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "EngraveProperty", self, -1, "").set_operation(obj)
         elif isinstance(obj, CutOperation):
-            self.device.open('window', "CutProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "CutProperty", self, -1, "").set_operation(obj)
         elif isinstance(obj, Path):
-            self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "PathProperty", self, -1, "").set_element(obj)
         elif isinstance(obj, SVGText):
-            self.device.open('window', "TextProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "TextProperty", self, -1, "").set_element(obj)
         elif isinstance(obj, SVGImage):
-            self.device.open('window', "ImageProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "ImageProperty", self, -1, "").set_element(obj)
         elif isinstance(obj, SVGElement):
-            self.device.open('window', "PathProperty", None, -1, "").set_element(obj)
+            self.device.open('window', "PathProperty", self, -1, "").set_element(obj)
         elif isinstance(obj, LaserOperation):
-            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+            self.device.open('window', "EngraveProperty", self, -1, "").set_operation(obj)
 
     def on_item_selection_changed(self, event):
         """
