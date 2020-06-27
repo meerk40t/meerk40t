@@ -1201,7 +1201,7 @@ class Elemental(Module):
         for element in elements:
             if isinstance(element, (Path, SVGText)):
                 if element.stroke == "red" and not isinstance(element, SVGText):
-                    if cut is None or not cut.has_same_properties(element.values):
+                    if cut is None:
                         cut = LaserOperation(operation="Cut",
                                              speed=self.device.cut_speed,
                                              power=self.device.cut_power,
@@ -1210,25 +1210,23 @@ class Elemental(Module):
                                              acceleration_custom=self.device.cut_acceleration_custom,
                                              acceleration=self.device.cut_acceleration)
                         cuts.append(cut)
-                        cut.set_properties(element.values)
                     cut.append(element)
                 elif element.stroke == "blue" and not isinstance(element, SVGText):
-                    if engrave is None or not engrave.has_same_properties(element.values):
+                    if engrave is None:
                         engrave = LaserOperation(operation="Engrave",
-                                                    speed=self.device.engrave_speed,
-                                                    power=self.device.engrave_power,
-                                                    dratio_custom=self.device.engrave_dratio_custom,
-                                                    dratio=self.device.engrave_dratio,
-                                                    acceleration_custom=self.device.engrave_acceleration_custom,
-                                                    acceleration=self.device.engrave_acceleration)
+                                                 speed=self.device.engrave_speed,
+                                                 power=self.device.engrave_power,
+                                                 dratio_custom=self.device.engrave_dratio_custom,
+                                                 dratio=self.device.engrave_dratio,
+                                                 acceleration_custom=self.device.engrave_acceleration_custom,
+                                                 acceleration=self.device.engrave_acceleration)
                         engraves.append(engrave)
-                        engrave.set_properties(element.values)
                     engrave.append(element)
                 if (element.stroke != "red" and element.stroke != "blue") or \
                         (element.fill is not None and element.fill != "none") or \
                         isinstance(element, SVGText):
                     # not classed already, or was already classed but has a fill.
-                    if raster is None or not raster.has_same_properties(element.values):
+                    if raster is None:
                         raster = LaserOperation(operation="Raster",
                                                 speed=self.device.raster_speed,
                                                 power=self.device.raster_power,
@@ -1238,7 +1236,6 @@ class Elemental(Module):
                                                 acceleration_custom=self.device.raster_acceleration_custom,
                                                 acceleration=self.device.raster_acceleration)
                         rasters.append(raster)
-                        raster.set_properties(element.values)
                     raster.append(element)
             elif isinstance(element, SVGImage):
                 try:
@@ -1246,14 +1243,14 @@ class Elemental(Module):
                 except KeyError:
                     step = self.device.raster_step
                 rasters.append(LaserOperation(element,
-                                               operation="Image",
-                                               speed=self.device.raster_speed,
-                                               power=self.device.raster_power,
-                                               raster_step=step,
-                                               raster_direction=self.device.raster_direction,
-                                               overscan=self.device.raster_overscan,
-                                               acceleration_custom=self.device.raster_acceleration_custom,
-                                               acceleration=self.device.raster_acceleration))
+                                              operation="Image",
+                                              speed=self.device.raster_speed,
+                                              power=self.device.raster_power,
+                                              raster_step=step,
+                                              raster_direction=self.device.raster_direction,
+                                              overscan=self.device.raster_overscan,
+                                              acceleration_custom=self.device.raster_acceleration_custom,
+                                              acceleration=self.device.raster_acceleration))
         rasters = [r for r in rasters if len(r) != 0]
         engraves = [r for r in engraves if len(r) != 0]
         cuts = [r for r in cuts if len(r) != 0]

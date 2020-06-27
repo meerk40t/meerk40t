@@ -78,8 +78,63 @@ class LaserOperation(list):
             self.raster_direction = int(kwargs['raster_direction'])
         except (ValueError, KeyError):
             pass
+
+        try:
+            self.raster_swing = bool(kwargs['raster_swing'])
+        except (ValueError, KeyError):
+            pass
+
+        try:
+            self.raster_preference_top = int(kwargs['raster_preference_top'])
+        except (ValueError, KeyError):
+            pass
+
+        try:
+            self.raster_preference_right = int(kwargs['raster_preference_right'])
+        except (ValueError, KeyError):
+            pass
+
+        try:
+            self.raster_preference_left = int(kwargs['raster_preference_left'])
+        except (ValueError, KeyError):
+            pass
+
+        try:
+            self.raster_preference_bottom = int(kwargs['raster_preference_bottom'])
+        except (ValueError, KeyError):
+            pass
+
         try:
             self.overscan = int(kwargs['overscan'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.dot_length = int(kwargs['dot_length'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.dot_length_custom = bool(kwargs['dot_length_custom'])
+        except (ValueError, KeyError):
+            pass
+
+        try:
+            self.group_pulses = bool(kwargs['group_pulses'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.passes = int(kwargs['passes'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.passes_custom = bool(kwargs['passes_custom'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.output = bool(kwargs['output'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.show = bool(kwargs['show'])
         except (ValueError, KeyError):
             pass
         if self.operation == "Cut":
@@ -190,61 +245,6 @@ class LaserOperation(list):
     @property
     def status(self):
         return self.status_value
-
-    def has_same_properties(self, values):
-        """
-        Checks the object to see if there are changed properties from the otherwise set values of these attributes.
-        :param values: property to check
-        :return:
-        """
-        if 'speed' in values and values['speed'] is not None:
-            if self.speed != float(values['speed']):
-                return False
-        if 'power' in values and values['power'] is not None:
-            if self.power != float(values['power']):
-                return False
-        if 'dratio' in values and values['dratio'] is not None:
-            if self.dratio != float(values['dratio']):
-                return False
-        if 'acceleration' in values and values['acceleration'] is not None:
-            if self.acceleration != int(values['acceleration']):
-                return False
-        if 'raster_step' in values and values['raster_step'] is not None:
-            if self.raster_step != int(values['raster_step']):
-                return False
-        if 'raster_direction' in values and values['raster_direction'] is not None:
-            if self.raster_direction != int(values['raster_direction']):
-                return False
-        if 'unidirectional' in values and values['unidirectional'] is not None:
-            if self.raster_swing != bool(values['unidirectional']):
-                return False
-        if 'overscan' in values and values['overscan'] is not None:
-            if self.overscan != int(values['overscan']):
-                return False
-        return True
-
-    def set_properties(self, values):
-        """
-        Sets the new value based on the given object. Assuming the object has the properties in question.
-        :param values:
-        :return:
-        """
-        if 'speed' in values and values['speed'] is not None:
-            self.speed = float(values['speed'])
-        if 'power' in values and values['power'] is not None:
-            self.power = float(values['power'])
-        if 'dratio' in values and values['dratio'] is not None:
-            self.dratio = float(values['dratio'])
-        if 'acceleration' in values and values['acceleration'] is not None:
-            self.acceleration = int(values['acceleration'])
-        if 'raster_step' in values and values['raster_step'] is not None:
-            self.raster_step = int(values['raster_step'])
-        if 'raster_direction' in values and values['raster_direction'] is not None:
-            self.raster_direction = int(values['raster_direction'])
-        if 'unidirectional' in values and values['unidirectional'] is not None:
-            self.raster_swing = bool(values['unidirectional'])
-        if 'overscan' in values and values['overscan'] is not None:
-            self.overscan = int(values['overscan'])
 
     def generate(self):
         if self.operation in ("Cut", "Engrave"):
