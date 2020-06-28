@@ -107,6 +107,8 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.camera_lock = threading.Lock()
         self.process = self.fetch_image
+        self.camera_job = None
+        self.fetch_job = None
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -156,7 +158,6 @@ class CameraInterface(wx.Frame, Module):
             self.fisheye_k, self.fisheye_d = eval(self.device.fisheye)
         if self.device.perspective is not None and len(self.device.perspective) != 0:
             self.perspective = eval(self.device.perspective)
-            # print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(self.device.camera_fps)
 
         if self.device.camera_index == 0:
@@ -169,7 +170,9 @@ class CameraInterface(wx.Frame, Module):
             self.camera_3_menu.Check(True)
         elif self.device.camera_index == 4:
             self.camera_4_menu.Check(True)
-        self.device.add_job(self.init_camera, times=1, interval=0.1)
+        if self.camera_job is not None:
+            self.camera_job.cancel()
+        self.camera_job = self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.device.listen('camera_frame', self.on_camera_frame_update)
         self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
 
@@ -177,9 +180,14 @@ class CameraInterface(wx.Frame, Module):
         self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
         self.device.unlisten('camera_frame', self.on_camera_frame_update)
         self.device.signal('camera_frame_raw', None)
+        self.unschedule()
         self.camera_lock.acquire()
         self.close_camera()
         self.camera_lock.release()
+        if self.camera_job is not None:
+            self.camera_job.cancel()
+        if self.fetch_job is not None:
+            self.fetch_job.cancel()
         try:
             self.Close()
         except RuntimeError:
@@ -293,7 +301,9 @@ class CameraInterface(wx.Frame, Module):
         self.camera_lock.acquire()
         self.device.camera_index = camera_index
         self.close_camera()
-        self.device.add_job(self.init_camera, times=1, interval=0.1)
+        if self.camera_job is not None:
+            self.camera_job.cancel()
+        self.camera_job = self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.camera_lock.release()
 
     def close_camera(self):
@@ -339,6 +349,8 @@ class CameraInterface(wx.Frame, Module):
             pass
 
     def init_camera(self):
+        if self.device is None:
+            return
         if self.capture is not None:
             self.capture = None
         try:
@@ -595,4 +607,6 @@ class CameraInterface(wx.Frame, Module):
         self.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        self.device.add_job(self.fetch_image, args=True, times=1, interval=0)
+        if self.fetch_job is not None:
+            self.fetch_job.cancel()
+        self.fetch_job = self.device.add_job(self.fetch_image, args=True, times=1, interval=0)
