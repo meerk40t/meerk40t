@@ -141,7 +141,7 @@ class Scene(Module):
         self.last_position = window_pos
         try:
             previous_top_element = self.hit_chain[0][0]
-        except IndexError:
+        except (IndexError, TypeError):
             previous_top_element = None
         if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'hover'):
             self.time = time.time()
@@ -164,11 +164,10 @@ class Scene(Module):
                 if previous_top_element is not None:
                     previous_top_element.event(window_pos, window_pos, 'hover_end')
                 current_widget.event(window_pos, space_pos, 'hover_start')
-            if event_type == 'leftup':
-                duration = time.time() - self.time
-                if duration <= 0.15:
-                    current_widget.event(window_pos, space_pos, 'leftclick')
-            response = current_widget.event(window_pos, space_pos, event_type)
+            if event_type == 'leftup' and time.time() - self.time <= 0.15:
+                response = current_widget.event(window_pos, space_pos, 'leftclick')
+            else:
+                response = current_widget.event(window_pos, space_pos, event_type)
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()
                 return
@@ -502,8 +501,7 @@ class ElementsWidget(Widget):
             elements.set_selected_by_position(space_pos)
             self.root.select_in_tree_by_selected()
             return RESPONSE_CONSUME
-        else:
-            return RESPONSE_CHAIN
+        return RESPONSE_DROP
 
 
 class SelectionWidget(Widget):
@@ -812,11 +810,11 @@ class RectSelectWidget(Widget):
             self.start_location = space_pos
             self.end_location = space_pos
             return RESPONSE_CONSUME
-        if event_type == 'leftup':
+        elif event_type == 'leftup':
             self.start_location = None
             self.end_location = None
             return RESPONSE_CONSUME
-        if event_type == 'move':
+        elif event_type == 'move':
             self.end_location = space_pos
             for obj in elements.elems():
                 # r = Rect(self.start_location, self.end_location)
@@ -824,10 +822,9 @@ class RectSelectWidget(Widget):
                 pass
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        return RESPONSE_CHAIN
+        return RESPONSE_DROP
 
     def process_draw(self, gc):
-        elements = self.scene.device.device_root.elements
         matrix = self.parent.matrix
         if self.start_location is not None and self.end_location is not None:
             x0 = self.start_location[0]
@@ -1040,9 +1037,9 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        elif event_type in ('middledown'):
+        elif event_type == 'middledown':
             return RESPONSE_CONSUME
-        elif event_type == ('middleup'):
+        elif event_type == 'middleup':
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
         self.scene.device.signal('refresh_scene', 0)
