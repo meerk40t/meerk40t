@@ -6,7 +6,7 @@ import wx
 from Kernel import Module
 from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID
 from ZMatrix import ZMatrix
-from svgelements import Matrix, Point, Color
+from svgelements import Matrix, Point, Color, Rect
 
 MILS_IN_MM = 39.3701
 
@@ -791,6 +791,56 @@ class SelectionWidget(Widget):
                 gc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
+
+
+class RectSelectWidget(Widget):
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=True)
+        self.selection_pen = wx.Pen()
+        self.selection_pen.SetColour(wx.BLUE)
+        self.selection_pen.SetWidth(25)
+        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.start_location = None
+        self.end_location = None
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        elements = self.scene.device.device_root.elements
+        if event_type == 'leftdown':
+            self.start_location = space_pos
+            self.end_location = space_pos
+            return RESPONSE_CONSUME
+        if event_type == 'leftup':
+            self.start_location = None
+            self.end_location = None
+            return RESPONSE_CONSUME
+        if event_type == 'move':
+            self.end_location = space_pos
+            for obj in elements.elems():
+                # r = Rect(self.start_location, self.end_location)
+                # q = Rect(obj.bounds)
+                pass
+            self.scene.device.signal('refresh_scene', 0)
+            return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
+
+    def process_draw(self, gc):
+        elements = self.scene.device.device_root.elements
+        matrix = self.parent.matrix
+        if self.start_location is not None and self.end_location is not None:
+            x0 = self.start_location[0]
+            y0 = self.start_location[1]
+            x1 = self.end_location[0]
+            y1 = self.end_location[1]
+            linewidth = 3.0 / matrix.value_scale_x()
+            self.selection_pen.SetWidth(linewidth)
+            gc.SetPen(self.selection_pen)
+            gc.StrokeLine(x0, y0, x1, y0)
+            gc.StrokeLine(x1, y0, x1, y1)
+            gc.StrokeLine(x1, y1, x0, y1)
+            gc.StrokeLine(x0, y1, x0, y0)
 
 
 class ReticleWidget(Widget):

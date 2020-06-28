@@ -34,7 +34,7 @@ from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
 from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
-    LaserPathWidget
+    LaserPathWidget, RectSelectWidget
 from icons import *
 from svgelements import *
 
@@ -454,7 +454,9 @@ class MeerK40t(wx.Frame, Module):
         if device.window_height < 300:
             device.window_height = 300
         self.widget_scene = device.open('module', 'Scene')
+
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.root, self.renderer))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
