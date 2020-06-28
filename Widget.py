@@ -816,10 +816,32 @@ class RectSelectWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == 'move':
             self.end_location = space_pos
+            elements.validate_bounds()
             for obj in elements.elems():
-                # r = Rect(self.start_location, self.end_location)
-                # q = Rect(obj.bounds)
-                pass
+                sx = self.start_location[0]
+                sy = self.start_location[1]
+                ex = self.end_location[0]
+                ey = self.end_location[1]
+                right_drag = sx <= ex and ey <= ey
+                if not right_drag:
+                    ex = self.start_location[0]
+                    ey = self.start_location[1]
+                    sx = self.end_location[0]
+                    sy = self.end_location[1]
+                q = obj.bbox(True)
+                xmin = q[0]
+                ymin = q[1]
+                xmax = q[2]
+                ymax = q[3]
+                if (
+                        sx <= xmin <= ex and
+                        sy <= ymin <= ey and
+                        sx <= xmax <= ex and
+                        sy <= ymax <= ey
+                    ):
+                    obj.emphasize()
+                else:
+                    obj.unemphasize()
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP
@@ -986,7 +1008,7 @@ class GuideWidget(Widget):
             ends.append((x, length))
 
             starts.append((x, h))
-            ends.append((x, h-length))
+            ends.append((x, h - length))
 
             mark_point = (x - sx) / scaled_conversion
             if round(mark_point * 1000) == 0:
@@ -1000,7 +1022,7 @@ class GuideWidget(Widget):
             ends.append((length, y))
 
             starts.append((w, y))
-            ends.append((w-length, y))
+            ends.append((w - length, y))
 
             mark_point = (y - sy) / scaled_conversion
             if round(mark_point * 1000) == 0:
