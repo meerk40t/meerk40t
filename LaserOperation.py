@@ -155,11 +155,9 @@ class LaserOperation(list):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.set_properties(obj.values)
                 self.append(obj)
             elif isinstance(obj, LaserOperation):
                 self.operation = obj.operation
-
                 self.speed = obj.speed
                 self.power = obj.power
                 self.dratio_custom = obj.dratio_custom

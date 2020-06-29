@@ -1223,6 +1223,27 @@ class Console(Module, Pipe):
                                         pixel_data[x, y] = (255, 255, 255, 255)
                         element.image = img.convert("1")
                         element.altered()
+            elif args[0] == 'flatrotary':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        points = len(args) - 1
+                        im = element.image
+                        w, h = im.size
+                        from PIL import Image
+
+                        def t(i):
+                            return int(i * w / (points-1))
+
+                        def x(i):
+                            return int(w * float(args[i+1]))
+
+                        boxes = list((t(i), 0, t(i+1), h) for i in range(points-1))
+                        quads = list((x(i), 0, x(i), h, x(i+1), h, x(i+1), 0) for i in range(points-1))
+                        mesh = list(zip(boxes, quads))
+                        element.image = im.transform(im.size, Image.MESH,
+                                                   mesh,
+                                                   Image.BILINEAR)
+                        element.altered()
         elif command == 'reify':
             for element in elements.elems(emphasized=True):
                 element.reify()
