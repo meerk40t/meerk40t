@@ -85,13 +85,18 @@ class JobSpooler(wx.Frame, Module):
         event.Skip()
 
     def refresh_spooler_list(self):
+        if not self.update_spooler:
+            return
+
         def name_str(e):
             try:
                 return e.__name__
             except AttributeError:
                 return str(e)
-
-        self.list_job_spool.DeleteAllItems()
+        try:
+            self.list_job_spool.DeleteAllItems()
+        except RuntimeError:
+            return
         if len(self.device.spooler._queue) > 0:
             # This should actually process and update the queue items.
             i = 0

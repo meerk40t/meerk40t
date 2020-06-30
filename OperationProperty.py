@@ -1,7 +1,9 @@
 import wx
 
 from Kernel import Module
+from LaserRender import swizzlecolor
 from icons import *
+from svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -33,7 +35,13 @@ class OperationProperty(wx.Frame, Module):
         self.RasterProperty_menubar.Append(wxglade_tmp_menu, _("Layers"))
         self.SetMenuBar(self.RasterProperty_menubar)
         # Menu Bar end
+
         self.main_panel = wx.Panel(self, wx.ID_ANY)
+        self.advanced_ppi_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("PPI Advanced")),
+                                                    wx.HORIZONTAL)
+        self.advanced_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Speedcode Advanced")),
+                                                wx.VERTICAL)
+        self.passes_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Passes")), wx.VERTICAL)
         self.button_add_layer = wx.BitmapButton(self.main_panel, wx.ID_ANY, icons8_plus_50.GetBitmap())
         self.listbox_layer = wx.ListBox(self.main_panel, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.button_remove_layer = wx.BitmapButton(self.main_panel, wx.ID_ANY, icons8_delete_50.GetBitmap())
@@ -63,7 +71,7 @@ class OperationProperty(wx.Frame, Module):
         self.text_dratio = wx.TextCtrl(self.main_panel, wx.ID_ANY, "0.261")
         self.checkbox_custom_accel = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Acceleration"))
         self.slider_accel = wx.Slider(self.main_panel, wx.ID_ANY, 1, 1, 4, style=wx.SL_AUTOTICKS | wx.SL_LABELS)
-        self.check_dot_enable = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Dot Length (mils)"))
+        self.check_dot_length_custom = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Dot Length (mils)"))
         self.text_dot_length = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1")
         self.check_group_pulse = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Group Pulses"))
         self.check_passes = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Passes"))
@@ -90,17 +98,20 @@ class OperationProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_top, self.slider_top)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_left, self.slider_left)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_right, self.slider_right)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_bottom, self.slider_bottom)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_advanced, self.checkbox_advanced)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
         self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_enable)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
+        self.Bind(wx.EVT_TEXT, self.on_text_passes, self.text_passes)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_passes, self.text_passes)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
         self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
@@ -158,8 +169,8 @@ class OperationProperty(wx.Frame, Module):
         self.text_dratio.SetToolTip(_("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"))
         self.checkbox_custom_accel.SetToolTip(_("Enables the ability to modify the acceleration factor."))
         self.slider_accel.SetToolTip(_("Acceleration Factor Override"))
-        self.check_dot_enable.SetToolTip(_("Enable Dot Length Feature"))
-        self.check_dot_enable.SetValue(1)
+        self.check_dot_length_custom.SetToolTip(_("Enable Dot Length Feature"))
+        self.check_dot_length_custom.SetValue(1)
         self.text_dot_length.SetToolTip(_("PPI minimum on length for making dash patterns"))
         self.check_group_pulse.SetToolTip(_("Attempts to adjust the pulse grouping for data efficiency."))
         self.check_passes.SetToolTip(_("Enable Passes"))
@@ -171,12 +182,9 @@ class OperationProperty(wx.Frame, Module):
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
         param_sizer = wx.BoxSizer(wx.VERTICAL)
-        passes_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Passes")), wx.VERTICAL)
         sizer_22 = wx.BoxSizer(wx.HORIZONTAL)
-        advanced_ppi_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("PPI Advanced")), wx.HORIZONTAL)
         sizer_19 = wx.BoxSizer(wx.VERTICAL)
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
-        advanced_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Speedcode Advanced")), wx.VERTICAL)
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         raster_sizer = wx.StaticBoxSizer(wx.StaticBox(self.main_panel, wx.ID_ANY, _("Raster")), wx.VERTICAL)
@@ -228,21 +236,21 @@ class OperationProperty(wx.Frame, Module):
         param_sizer.Add(self.checkbox_advanced, 0, 0, 0)
         sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
         sizer_11.Add(self.text_dratio, 1, 0, 0)
-        advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
+        self.advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
         sizer_12.Add(self.checkbox_custom_accel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_12.Add(self.slider_accel, 1, wx.EXPAND, 0)
-        advanced_sizer.Add(sizer_12, 0, wx.EXPAND, 0)
-        param_sizer.Add(advanced_sizer, 0, wx.EXPAND, 0)
-        sizer_20.Add(self.check_dot_enable, 1, 0, 0)
+        self.advanced_sizer.Add(sizer_12, 0, wx.EXPAND, 0)
+        param_sizer.Add(self.advanced_sizer, 0, wx.EXPAND, 0)
+        sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
         sizer_20.Add(self.text_dot_length, 1, 0, 0)
         sizer_19.Add(sizer_20, 1, wx.EXPAND, 0)
         sizer_19.Add(self.check_group_pulse, 0, 0, 0)
-        advanced_ppi_sizer.Add(sizer_19, 1, wx.EXPAND, 0)
-        param_sizer.Add(advanced_ppi_sizer, 0, wx.EXPAND, 0)
+        self.advanced_ppi_sizer.Add(sizer_19, 1, wx.EXPAND, 0)
+        param_sizer.Add(self.advanced_ppi_sizer, 0, wx.EXPAND, 0)
         sizer_22.Add(self.check_passes, 1, 0, 0)
         sizer_22.Add(self.text_passes, 1, 0, 0)
-        passes_sizer.Add(sizer_22, 0, wx.EXPAND, 0)
-        param_sizer.Add(passes_sizer, 0, wx.EXPAND, 0)
+        self.passes_sizer.Add(sizer_22, 0, wx.EXPAND, 0)
+        param_sizer.Add(self.passes_sizer, 0, wx.EXPAND, 0)
         sizer_main.Add(param_sizer, 1, wx.EXPAND, 0)
         self.main_panel.SetSizer(sizer_main)
         sizer_1.Add(self.main_panel, 1, wx.EXPAND, 0)
@@ -253,6 +261,17 @@ class OperationProperty(wx.Frame, Module):
 
     def set_operation(self, operation):
         self.operation = operation
+        if operation.operation is not None:
+            op = operation.operation
+            if op == "Engrave":
+                self.combo_type.SetSelection(0)
+            elif op == "Cut":
+                self.combo_type.SetSelection(1)
+            elif op == "Raster":
+                self.combo_type.SetSelection(2)
+            elif op == "Image":
+                self.combo_type.SetSelection(3)
+        self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(operation.color)))
         if operation.speed is not None:
             self.text_speed.SetValue(str(operation.speed))
         if operation.power is not None:
@@ -282,61 +301,77 @@ class OperationProperty(wx.Frame, Module):
             self.slider_right.SetValue(operation.raster_preference_right + 1)
         if operation.raster_preference_bottom is not None:
             self.slider_bottom.SetValue(operation.raster_preference_bottom + 1)
+        if operation.advanced is not None:
+            self.checkbox_advanced.SetValue(operation.advanced)
+        if operation.dot_length_custom is not None:
+            self.check_dot_length_custom.SetValue(operation.dot_length_custom)
+        if operation.dot_length is not None:
+            self.text_dot_length.SetValue(str(operation.dot_length))
+        if operation.group_pulses is not None:
+            self.check_group_pulse.SetValue(operation.group_pulses)
+        if operation.passes_custom is not None:
+            self.check_passes.SetValue(operation.passes_custom)
+        if operation.passes is not None:
+            self.text_passes.SetValue(str(operation.passes))
+        if operation.output is not None:
+            self.checkbox_output.SetValue(operation.output)
+        if operation.show is not None:
+            self.checkbox_show.SetValue(operation.show)
+        self.on_check_advanced()
         return self
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_menu_clear' not implemented!")
-        event.Skip()
+        pass
 
     def on_menu_default0(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_menu_default0' not implemented!")
-        event.Skip()
+        pass
 
     def on_menu_default1(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_menu_default1' not implemented!")
-        event.Skip()
+        pass
 
     def on_menu_save(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_menu_save' not implemented!")
-        event.Skip()
+        pass
 
     def on_menu_load(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_menu_load' not implemented!")
-        event.Skip()
+        pass
 
     def on_menu_import(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_menu_import' not implemented!")
-        event.Skip()
+        pass
 
     def on_button_add(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_button_add' not implemented!")
-        event.Skip()
+        pass
 
     def on_list_layer_click(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_list_layer_click' not implemented!")
-        event.Skip()
+        pass
 
     def on_list_layer_dclick(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_list_layer_dclick' not implemented!")
-        event.Skip()
+        pass
 
     def on_button_remove(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_button_remove' not implemented!")
-        event.Skip()
+        pass
 
     def on_button_layer(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_button_layer' not implemented!")
-        event.Skip()
+        data = wx.ColourData()
+        if self.operation.color is not None and self.operation.color != 'none':
+            data.SetColour(wx.Colour(swizzlecolor(self.operation.color)))
+        dlg = wx.ColourDialog(self, data)
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetColourData()
+            color = data.GetColour()
+            rgb = color.GetRGB()
+            color = swizzlecolor(rgb)
+            self.operation.color = Color(color, 1.0)
+            self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
 
     def on_combo_operation(self, event):  # wxGlade: OperationProperty.<event_handler>
-        select = self.combo_raster_direction.GetSelection()
+        select = self.combo_type.GetSelection()
         if select == 0:
             self.operation.operation = "Engrave"
-        if select == 1:
+        elif select == 1:
             self.operation.operation = "Cut"
-        if select == 2:
+        elif select == 2:
             self.operation.operation = "Raster"
-        if select == 3:
+        elif select == 3:
             self.operation.operation = "Image"
         self.device.signal('element_property_update', self.operation)
 
@@ -387,59 +422,88 @@ class OperationProperty(wx.Frame, Module):
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_top(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.start_preference = self.slider_top.GetValue()
+        self.operation.raster_preference_top = self.slider_top.GetValue() - 1
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_left(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.start_preference = self.slider_left.GetValue()
+        self.operation.raster_preference_left = self.slider_left.GetValue() - 1
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_right(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.start_preference = self.slider_right.GetValue()
+        self.operation.raster_preference_right = self.slider_right.GetValue() - 1
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_bottom(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.start_preference = self.slider_bottom.GetValue()
+        self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
         self.device.signal('element_property_update', self.operation)
 
-    def on_check_advanced(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_check_advanced' not implemented!")
-        event.Skip()
+    def on_check_advanced(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        on = self.checkbox_advanced.GetValue()
+        self.check_dratio_custom.Show(on)
+        self.text_dratio.Show(on)
+        self.slider_accel.Show(on)
+        self.checkbox_custom_accel.Show(on)
+        self.check_dot_length_custom.Show(on)
+        self.text_dot_length.Show(on)
+        self.check_group_pulse.Show(on)
+        self.check_passes.Show(on)
+        self.text_passes.Show(on)
+        # self.passes_sizer.Show(on)
+        # self.advanced_sizer.Show(on)
+        # self.advanced_ppi_sizer.Show(on)
+
+        self.operation.advanced = on
+
 
     def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
-        self.text_speed.Enable(on)
+        self.text_dratio.Enable(on)
         self.operation.dratio_custom = on
         self.device.signal('element_property_update', self.operation)
 
     def on_text_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.dratio = float(self.text_speed.GetValue())
-        self.device.device_root.cut_dratio = self.operation.dratio
+        try:
+            self.operation.dratio = float(self.text_dratio.GetValue())
+        except ValueError:
+            return
         self.device.signal('element_property_update', self.operation)
 
     def on_check_acceleration(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
-        self.device.device_root.cut_acceleration_custom = on
         self.operation.acceleration_custom = on
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_accel(self, event):
         self.operation.acceleration = self.slider_accel.GetValue()
-        self.device.device_root.engrave_acceleration = self.operation.acceleration
         self.device.signal('element_property_update', self.operation)
 
     def on_check_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_check_dot_length' not implemented!")
-        event.Skip()
+        on = self.check_dot_length_custom.GetValue()
+        self.text_dot_length.Enable(on)
+        self.operation.dot_length_custom = on
+        self.device.signal('element_property_update', self.operation)
 
     def on_text_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_text_dot_length' not implemented!")
-        event.Skip()
+        self.operation.dot_length = self.text_dot_length.GetValue()
+        self.device.signal('element_property_update', self.operation)
 
     def on_check_group_pulses(self, event):  # wxGlade: OperationProperty.<event_handler>
-        print("Event handler 'on_check_group_pulses' not implemented!")
-        event.Skip()
+        self.operation.group_pulses = self.check_group_pulse.GetValue()
+        self.device.signal('element_property_update', self.operation)
+
+    def on_check_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
+        on = self.check_passes.GetValue()
+        self.text_passes.Enable(on)
+        self.operation.passes_custom = on
+        self.device.signal('element_property_update', self.operation)
+
+    def on_text_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
+        try:
+            self.operation.passes = int(self.text_passes.GetValue())
+        except ValueError:
+            return
+        self.device.signal('element_property_update', self.operation)
 
     def on_key_press(self, event):
         keycode = event.GetKeyCode()

@@ -2,7 +2,7 @@ from copy import copy
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import SVGImage, SVGElement, Shape
+from svgelements import SVGImage, SVGElement, Shape, Color
 
 
 class LaserOperation(list):
@@ -18,7 +18,11 @@ class LaserOperation(list):
             self.operation = kwargs['operation']
         except KeyError:
             self.operation = "Unknown"
+        self.output = True
+        self.show = True
+
         self.status_value = "Queued"
+        self.color = Color('black')
         self.speed = None
         self.power = None
         self.dratio_custom = False
@@ -35,6 +39,8 @@ class LaserOperation(list):
         self.raster_preference_bottom = 0
         self.overscan = 20
 
+        self.advanced = False
+
         self.dot_length_custom = False
         self.dot_length = 1
 
@@ -42,8 +48,18 @@ class LaserOperation(list):
 
         self.passes_custom = False
         self.passes = 1
-        self.output = True
-        self.show = True
+        try:
+            self.color = Color(kwargs['color'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.output = bool(kwargs['output'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            self.show = bool(kwargs['show'])
+        except (ValueError, KeyError):
+            pass
         try:
             self.speed = float(kwargs['speed'])
         except (ValueError, KeyError):
@@ -129,14 +145,7 @@ class LaserOperation(list):
             self.passes_custom = bool(kwargs['passes_custom'])
         except (ValueError, KeyError):
             pass
-        try:
-            self.output = bool(kwargs['output'])
-        except (ValueError, KeyError):
-            pass
-        try:
-            self.show = bool(kwargs['show'])
-        except (ValueError, KeyError):
-            pass
+
         if self.operation == "Cut":
             if self.speed is None:
                 self.speed = 10.0
@@ -158,6 +167,11 @@ class LaserOperation(list):
                 self.append(obj)
             elif isinstance(obj, LaserOperation):
                 self.operation = obj.operation
+
+                self.color = Color(obj.color)
+                self.output = obj.output
+                self.show = obj.show
+
                 self.speed = obj.speed
                 self.power = obj.power
                 self.dratio_custom = obj.dratio_custom
@@ -174,6 +188,7 @@ class LaserOperation(list):
                 self.raster_preference_left = obj.raster_preference_left
                 self.raster_preference_bottom = obj.raster_preference_bottom
 
+                self.advanced = obj.advanced
                 self.dot_length_custom = obj.dot_length_custom
                 self.dot_length = obj.dot_length
 
@@ -181,8 +196,6 @@ class LaserOperation(list):
 
                 self.passes_custom = obj.passes_custom
                 self.passes = obj.passes
-                self.output = obj.output
-                self.show = obj.show
 
                 for element in obj:
                     element_copy = copy(element)
