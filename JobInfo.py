@@ -102,6 +102,10 @@ class JobInfo(wx.Frame, Module):
         if self.device.prehome:
             self.jobadd_home(None)
         for op in operations:
+            if len(op) == 0:
+                continue
+            if not op.output:
+                continue
             self.operations.append(copy(op))
         if self.device.autobeep:
             self.jobadd_beep(None)
