@@ -50,100 +50,100 @@ class LaserOperation(list):
         self.passes = 1
         try:
             self.color = Color(kwargs['color'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.output = bool(kwargs['output'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.show = bool(kwargs['show'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.speed = float(kwargs['speed'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.power = float(kwargs['power'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.dratio = float(kwargs['dratio'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.dratio_custom = bool(kwargs['dratio_custom'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.acceleration = int(kwargs['acceleration'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.acceleration_custom = bool(kwargs['acceleration_custom'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_step = int(kwargs['raster_step'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_direction = int(kwargs['raster_direction'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_swing = bool(kwargs['raster_swing'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_preference_top = int(kwargs['raster_preference_top'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_preference_right = int(kwargs['raster_preference_right'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_preference_left = int(kwargs['raster_preference_left'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.raster_preference_bottom = int(kwargs['raster_preference_bottom'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.overscan = int(kwargs['overscan'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.dot_length = int(kwargs['dot_length'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.dot_length_custom = bool(kwargs['dot_length_custom'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         try:
             self.group_pulses = bool(kwargs['group_pulses'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.passes = int(kwargs['passes'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
         try:
             self.passes_custom = bool(kwargs['passes_custom'])
-        except (ValueError, KeyError):
+        except (ValueError, TypeError, KeyError):
             pass
 
         if self.operation == "Cut":

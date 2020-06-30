@@ -2,7 +2,6 @@ import time
 from threading import Thread, Lock
 
 from LaserOperation import *
-from svgelements import Path, SVGText
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -831,15 +830,14 @@ class Elemental(Module):
 
     def load_default(self):
         self.add_op(LaserOperation(operation="Cut", color="red",
-                                     speed=10.0,
-                                     power=1000.0,))
+                                   speed=10.0,
+                                   power=1000.0, ))
         self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
         self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
         self.add_op(LaserOperation(operation="Image", color="black",
-                                  speed=140.0,
-                                  power=self.device.raster_power,
-                                  raster_step=3))
-
+                                   speed=140.0,
+                                   power=self.device.raster_power,
+                                   raster_step=3))
 
     def finalize(self, channel=None):
         kernel = self.device.device_root
@@ -877,6 +875,10 @@ class Elemental(Module):
         config.SetPath('operations')
 
         more, value, index = config.GetFirstGroup()
+        if not more:
+            self.load_default()
+            config.SetPath('..')
+            return
         while more:
             config.SetPath(value)
             op = LaserOperation()
@@ -1246,7 +1248,12 @@ class Elemental(Module):
                 if op.color == element.stroke:
                     op.append(element)
                 elif op.color == 'black':
-                    op.append(element)
+                    if op.operation == 'Raster' and not isinstance(element, SVGImage):
+                        op.append(element)
+                    elif op.operation == 'Image' and isinstance(element, SVGImage):
+                        op.append(element)
+                    elif op.operation not in ('Raster', 'Image'):
+                        op.append(element)
 
     def load(self, pathname, **kwargs):
         for loader_name, loader in self.device.registered['load'].items():
