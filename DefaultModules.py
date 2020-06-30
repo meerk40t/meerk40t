@@ -309,7 +309,9 @@ class DxfLoader:
                 bottom_left_position = entity.dxf.insert
                 size = entity.dxf.image_size
                 imagedef = entity.dxf.image_def_handle
-                element = SVGImage(href=imagedef.filename,
+                if not isinstance(imagedef, str):
+                    imagedef = imagedef.filename
+                element = SVGImage(href=imagedef,
                                    x=bottom_left_position[0],
                                    y=bottom_left_position[1] - size[1],
                                    width=size[0],
