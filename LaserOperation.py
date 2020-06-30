@@ -23,12 +23,12 @@ class LaserOperation(list):
 
         self.status_value = "Queued"
         self.color = Color('black')
-        self.speed = None
-        self.power = None
+        self.speed = 20.0
+        self.power = 1000.0
         self.dratio_custom = False
-        self.dratio = None
+        self.dratio = 0.261
         self.acceleration_custom = False
-        self.acceleration = None
+        self.acceleration = 1
 
         self.raster_step = 1
         self.raster_direction = 0

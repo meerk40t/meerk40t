@@ -723,7 +723,6 @@ class Elemental(Module):
 
     def __init__(self):
         Module.__init__(self)
-
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
@@ -829,6 +828,71 @@ class Elemental(Module):
             e.modified()
         except AttributeError:
             pass
+
+    def load_default(self):
+        pass
+
+    def finalize(self, channel=None):
+        kernel = self.device.device_root
+        config = kernel.config
+
+        config.SetPath('operations')
+        for i, op in enumerate(self.ops()):
+            config.SetPath(str(i))
+            for key in dir(op):
+                if key.startswith('_'):
+                    continue
+                value = getattr(op, key)
+                if value is None:
+                    continue
+                if isinstance(value, Color):
+                    value = value.value
+                if isinstance(value, (int, bool, str, float)):
+                    if isinstance(value, str):
+                        config.Write(key, value)
+                    elif isinstance(value, float):
+                        config.WriteFloat(key, value)
+                    elif isinstance(value, bool):
+                        config.WriteBool(key, value)
+                    elif isinstance(value, int):
+                        config.WriteInt(key, value)
+            config.SetPath('..')
+        config.SetPath('..')
+
+    def boot(self):
+        kernel = self.device.device_root
+        config = kernel.config
+        if config is None:
+            self.load_default()
+            return
+        config.SetPath('operations')
+
+        more, value, index = config.GetFirstGroup()
+        while more:
+            config.SetPath(value)
+            op = LaserOperation()
+            m, value, i = config.GetFirstEntry()
+            while m:
+                t = getattr(op, value, None)
+                try:
+                    if isinstance(t, str):
+                        setattr(op, value, config.Read(value, t))
+                    elif isinstance(t, float):
+                        setattr(op, value, config.ReadFloat(value, t))
+                    elif isinstance(t, bool):
+                        setattr(op, value, config.ReadBool(value, t))
+                    elif isinstance(t, int):
+                        setattr(op, value, config.ReadInt(value, t))
+                    elif isinstance(t, Color):
+                        setattr(op, value, Color(config.ReadInt(value, t)))
+                except AttributeError:
+                    pass
+                m, value, i = config.GetNextEntry(i)
+            self.add_op(op)
+            config.SetPath('..')
+            more, value, index = config.GetNextGroup(index)
+        config.SetPath('..')
+        self.device.signal('rebuild_tree')
 
     def items(self, **kwargs):
         def combined(*args):
@@ -1168,97 +1232,76 @@ class Elemental(Module):
         """
         if elements is None:
             return
-        raster = None
-        engrave = None
-        cut = None
-        rasters = []
-        engraves = []
-        cuts = []
-        self.device.setting(bool, 'cut_acceleration_custom', False)
-        self.device.setting(int, 'cut_acceleration', 4)
-        self.device.setting(bool, 'cut_dratio_custom', False)
-        self.device.setting(float, 'cut_dratio', None)
-        self.device.setting(float, 'cut_speed', 10.0)
-        self.device.setting(float, 'cut_power', 1000.0)
-
-        self.device.setting(bool, 'engrave_acceleration_custom', False)
-        self.device.setting(int, 'engrave_acceleration', 4)
-        self.device.setting(bool, 'engrave_dratio_custom', False)
-        self.device.setting(float, 'engrave_dratio', None)
-        self.device.setting(float, 'engrave_speed', 35.0)
-        self.device.setting(float, 'engrave_power', 1000.0)
-
-        self.device.setting(bool, 'raster_acceleration_custom', False)
-        self.device.setting(int, 'raster_acceleration', 4)
-        self.device.setting(float, 'raster_speed', 200.0)
-        self.device.setting(float, 'raster_power', 1000.0)
-        self.device.setting(int, 'raster_step', 2)
-        self.device.setting(int, 'raster_direction', 0)
-        self.device.setting(int, 'raster_overscan', 20)
-
-        if not isinstance(elements, list):
-            elements = [elements]
-        for element in elements:
-            if isinstance(element, (Path, SVGText)):
-                if element.stroke == "red" and not isinstance(element, SVGText):
-                    if cut is None:
-                        cut = LaserOperation(operation="Cut",
-                                             speed=self.device.cut_speed,
-                                             power=self.device.cut_power,
-                                             dratio_custom=self.device.cut_dratio_custom,
-                                             dratio=self.device.cut_dratio,
-                                             acceleration_custom=self.device.cut_acceleration_custom,
-                                             acceleration=self.device.cut_acceleration)
-                        cuts.append(cut)
-                    cut.append(element)
-                elif element.stroke == "blue" and not isinstance(element, SVGText):
-                    if engrave is None:
-                        engrave = LaserOperation(operation="Engrave",
-                                                 speed=self.device.engrave_speed,
-                                                 power=self.device.engrave_power,
-                                                 dratio_custom=self.device.engrave_dratio_custom,
-                                                 dratio=self.device.engrave_dratio,
-                                                 acceleration_custom=self.device.engrave_acceleration_custom,
-                                                 acceleration=self.device.engrave_acceleration)
-                        engraves.append(engrave)
-                    engrave.append(element)
-                if (element.stroke != "red" and element.stroke != "blue") or \
-                        (element.fill is not None and element.fill != "none") or \
-                        isinstance(element, SVGText):
-                    # not classed already, or was already classed but has a fill.
-                    if raster is None:
-                        raster = LaserOperation(operation="Raster",
-                                                speed=self.device.raster_speed,
-                                                power=self.device.raster_power,
-                                                raster_step=self.device.raster_step,
-                                                raster_direction=self.device.raster_direction,
-                                                overscan=self.device.raster_overscan,
-                                                acceleration_custom=self.device.raster_acceleration_custom,
-                                                acceleration=self.device.raster_acceleration)
-                        rasters.append(raster)
-                    raster.append(element)
-            elif isinstance(element, SVGImage):
-                try:
-                    step = element.values['raster_step']
-                except KeyError:
-                    step = self.device.raster_step
-                rasters.append(LaserOperation(element,
-                                              operation="Image",
-                                              speed=self.device.raster_speed,
-                                              power=self.device.raster_power,
-                                              raster_step=step,
-                                              raster_direction=self.device.raster_direction,
-                                              overscan=self.device.raster_overscan,
-                                              acceleration_custom=self.device.raster_acceleration_custom,
-                                              acceleration=self.device.raster_acceleration))
-        rasters = [r for r in rasters if len(r) != 0]
-        engraves = [r for r in engraves if len(r) != 0]
-        cuts = [r for r in cuts if len(r) != 0]
-        ops = []
-        self.add_ops(rasters)
-        self.add_ops(engraves)
-        self.add_ops(cuts)
-        return ops
+        # raster = None
+        # engrave = None
+        # cut = None
+        # rasters = []
+        # engraves = []
+        # cuts = []
+        #
+        # if not isinstance(elements, list):
+        #     elements = [elements]
+        # for element in elements:
+        #     if isinstance(element, (Path, SVGText)):
+        #         if element.stroke == "red" and not isinstance(element, SVGText):
+        #             if cut is None:
+        #                 cut = LaserOperation(operation="Cut",
+        #                                      speed=self.device.cut_speed,
+        #                                      power=self.device.cut_power,
+        #                                      dratio_custom=self.device.cut_dratio_custom,
+        #                                      dratio=self.device.cut_dratio,
+        #                                      acceleration_custom=self.device.cut_acceleration_custom,
+        #                                      acceleration=self.device.cut_acceleration)
+        #                 cuts.append(cut)
+        #             cut.append(element)
+        #         elif element.stroke == "blue" and not isinstance(element, SVGText):
+        #             if engrave is None:
+        #                 engrave = LaserOperation(operation="Engrave",
+        #                                          speed=self.device.engrave_speed,
+        #                                          power=self.device.engrave_power,
+        #                                          dratio_custom=self.device.engrave_dratio_custom,
+        #                                          dratio=self.device.engrave_dratio,
+        #                                          acceleration_custom=self.device.engrave_acceleration_custom,
+        #                                          acceleration=self.device.engrave_acceleration)
+        #                 engraves.append(engrave)
+        #             engrave.append(element)
+        #         if (element.stroke != "red" and element.stroke != "blue") or \
+        #                 (element.fill is not None and element.fill != "none") or \
+        #                 isinstance(element, SVGText):
+        #             # not classed already, or was already classed but has a fill.
+        #             if raster is None:
+        #                 raster = LaserOperation(operation="Raster",
+        #                                         speed=self.device.raster_speed,
+        #                                         power=self.device.raster_power,
+        #                                         raster_step=self.device.raster_step,
+        #                                         raster_direction=self.device.raster_direction,
+        #                                         overscan=self.device.raster_overscan,
+        #                                         acceleration_custom=self.device.raster_acceleration_custom,
+        #                                         acceleration=self.device.raster_acceleration)
+        #                 rasters.append(raster)
+        #             raster.append(element)
+        #     elif isinstance(element, SVGImage):
+        #         try:
+        #             step = element.values['raster_step']
+        #         except KeyError:
+        #             step = self.device.raster_step
+        #         rasters.append(LaserOperation(element,
+        #                                       operation="Image",
+        #                                       speed=self.device.raster_speed,
+        #                                       power=self.device.raster_power,
+        #                                       raster_step=step,
+        #                                       raster_direction=self.device.raster_direction,
+        #                                       overscan=self.device.raster_overscan,
+        #                                       acceleration_custom=self.device.raster_acceleration_custom,
+        #                                       acceleration=self.device.raster_acceleration))
+        # rasters = [r for r in rasters if len(r) != 0]
+        # engraves = [r for r in engraves if len(r) != 0]
+        # cuts = [r for r in cuts if len(r) != 0]
+        # ops = []
+        # self.add_ops(rasters)
+        # self.add_ops(engraves)
+        # self.add_ops(cuts)
+        # return ops
 
     def load(self, pathname, **kwargs):
         for loader_name, loader in self.device.registered['load'].items():
@@ -1428,12 +1471,21 @@ class Device:
 
     def boot(self):
         """
-        Kernel boot sequence. This should be called after all the registered devices are established.
+        Device boot sequence. This should be called after all the registered devices are established.
         :return:
         """
         if self.thread is None or not self.thread.is_alive():
             self.thread = self.threaded(self.run, 'Device%d' % int(self.uid))
         self.control_instance_add("Debug Device", self._start_debugging)
+        try:
+            for m in self.instances['module']:
+                m = self.instances['module'][m]
+                try:
+                    m.boot()
+                except AttributeError:
+                    pass
+        except KeyError:
+            pass
 
     def shutdown(self, channel=None):
         """
@@ -2130,6 +2182,8 @@ class Kernel(Device):
 
     def set_config(self, config):
         self.config = config
+
+        # Write any data already set in the device before registering the config.
         for attr in dir(self):
             if attr.startswith('_'):
                 continue
@@ -2138,6 +2192,8 @@ class Kernel(Device):
                 continue
             if isinstance(value, (int, bool, float, str)):
                 self.write_persistent(attr, value)
+
+        # Iterate all the root entries for the registered config.
         more, value, index = config.GetFirstEntry()
         while more:
             if not value.startswith('_'):

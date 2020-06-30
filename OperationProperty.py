@@ -376,15 +376,15 @@ class OperationProperty(wx.Frame, Module):
         self.device.signal('element_property_update', self.operation)
 
     def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.output = self.checkbox_output.GetValue()
+        self.operation.output = bool(self.checkbox_output.GetValue())
 
     def on_check_show(self, event):
-        self.operation.show = self.checkbox_show.GetValue()
+        self.operation.show = bool(self.checkbox_show.GetValue())
 
     def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.speed = float(self.text_speed.GetValue())
-        except:
+        except ValueError:
             return
         self.device.signal('element_property_update', self.operation)
 
@@ -448,17 +448,12 @@ class OperationProperty(wx.Frame, Module):
         self.check_group_pulse.Show(on)
         self.check_passes.Show(on)
         self.text_passes.Show(on)
-        # self.passes_sizer.Show(on)
-        # self.advanced_sizer.Show(on)
-        # self.advanced_ppi_sizer.Show(on)
-
-        self.operation.advanced = on
-
+        self.operation.advanced = bool(on)
 
     def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
-        self.operation.dratio_custom = on
+        self.operation.dratio_custom = bool(on)
         self.device.signal('element_property_update', self.operation)
 
     def on_text_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
@@ -471,7 +466,7 @@ class OperationProperty(wx.Frame, Module):
     def on_check_acceleration(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
-        self.operation.acceleration_custom = on
+        self.operation.acceleration_custom = bool(on)
         self.device.signal('element_property_update', self.operation)
 
     def on_slider_accel(self, event):
@@ -481,21 +476,21 @@ class OperationProperty(wx.Frame, Module):
     def on_check_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
-        self.operation.dot_length_custom = on
+        self.operation.dot_length_custom = bool(on)
         self.device.signal('element_property_update', self.operation)
 
     def on_text_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.dot_length = self.text_dot_length.GetValue()
+        self.operation.dot_length = int(self.text_dot_length.GetValue())
         self.device.signal('element_property_update', self.operation)
 
     def on_check_group_pulses(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.group_pulses = self.check_group_pulse.GetValue()
+        self.operation.group_pulses = bool(self.check_group_pulse.GetValue())
         self.device.signal('element_property_update', self.operation)
 
     def on_check_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
-        self.operation.passes_custom = on
+        self.operation.passes_custom = bool(on)
         self.device.signal('element_property_update', self.operation)
 
     def on_text_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
