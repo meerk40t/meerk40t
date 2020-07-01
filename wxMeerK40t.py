@@ -1181,6 +1181,12 @@ class Node(list):
             self.root.tree.SetItemTextColour(self.item, color)
         except AttributeError:
             pass
+        try:
+            color = self.object.color
+            c = wx.Colour(swizzlecolor(Color(color)))
+            self.root.tree.SetItemTextColour(self.item, c)
+        except AttributeError:
+            pass
 
     def remove_node(self):
         for q in self:
@@ -1217,6 +1223,15 @@ class Node(list):
 
     def __eq__(self, other):
         return other is self
+
+    def set_color(self, color=None):
+        root = self.root
+        item = self.item
+        tree = root.tree
+        if color is None:
+            tree.SetItemTextColour(item, None)
+        else:
+            tree.SetItemTextColour(item, wx.Colour(swizzlecolor(color)))
 
     def set_icon(self, icon=None):
         root = self.root
@@ -1364,6 +1379,11 @@ class RootNode(list):
                 n.set_icon(icons8_direction_20.GetBitmap())
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
+            try:
+                c = n.object.color
+                n.set_color(c)
+            except AttributeError:
+                pass
 
         self.node_elements = Node(NODE_ELEMENTS_BRANCH, elements._elements, self, self, name=_("Elements"))
         self.node_elements.set_icon(icons8_vector_20.GetBitmap())

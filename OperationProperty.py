@@ -362,6 +362,7 @@ class OperationProperty(wx.Frame, Module):
             color = swizzlecolor(rgb)
             self.operation.color = Color(color, 1.0)
             self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
+        self.device.signal('element_property_update', self.operation)
 
     def on_combo_operation(self, event):  # wxGlade: OperationProperty.<event_handler>
         select = self.combo_type.GetSelection()
@@ -377,9 +378,11 @@ class OperationProperty(wx.Frame, Module):
 
     def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.output = bool(self.checkbox_output.GetValue())
+        self.device.signal('element_property_update', self.operation)
 
     def on_check_show(self, event):
         self.operation.show = bool(self.checkbox_show.GetValue())
+        self.device.signal('element_property_update', self.operation)
 
     def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
