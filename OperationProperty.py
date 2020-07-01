@@ -321,13 +321,13 @@ class OperationProperty(wx.Frame, Module):
         return self
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
+        self.device.device_root.elements.clear_operations()
 
     def on_menu_default0(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
+        self.device.device_root.elements.load_default()
 
     def on_menu_default1(self, event):  # wxGlade: OperationProperty.<event_handler>
-        pass
+        self.device.device_root.elements.load_default2()
 
     def on_menu_save(self, event):  # wxGlade: OperationProperty.<event_handler>
         pass

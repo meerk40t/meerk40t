@@ -829,15 +829,31 @@ class Elemental(Module):
             pass
 
     def load_default(self):
-        self.add_op(LaserOperation(operation="Cut", color="red",
-                                   speed=10.0,
-                                   power=1000.0, ))
-        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
-        self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
+        self.clear_operations()
         self.add_op(LaserOperation(operation="Image", color="black",
                                    speed=140.0,
                                    power=self.device.raster_power,
                                    raster_step=3))
+        self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
+        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
+        self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
+        self.classify(self.elems())
+
+    def load_default2(self):
+        self.clear_operations()
+        self.add_op(LaserOperation(operation="Image", color="black",
+                                   speed=140.0,
+                                   power=self.device.raster_power,
+                                   raster_step=3))
+        self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
+        self.add_op(LaserOperation(operation="Engrave", color="orange", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="yellow", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="green", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="indigo", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="violet", speed=35.0))
+        self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
+        self.classify(self.elems())
 
     def finalize(self, channel=None):
         kernel = self.device.device_root
