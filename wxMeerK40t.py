@@ -1732,7 +1732,6 @@ class RootNode(list):
             for name in ("Raster", "Engrave", "Cut"):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
-                menu_op.Enable(False)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
             duplicate_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
@@ -2193,7 +2192,8 @@ class RootNode(list):
 
     def menu_convert_operation(self, node, name):
         def specific(event):
-            raise NotImplementedError
+            node.object.operation = name
+            self.device.signal('element_property_update', node.object)
 
         return specific
 
