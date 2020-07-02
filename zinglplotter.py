@@ -662,7 +662,6 @@ class ZinglPlotter:
             x = event[0]
             y = event[1]
             on = event[2]
-            print((x, y, on))
             if x == last_x + dx and y == last_y + dy and on == last_on:
                 # This is an orthogonal/diagonal step along the same path.
                 last_x = x
