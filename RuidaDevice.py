@@ -244,6 +244,8 @@ class RuidaEmulator(Module):
         self.magic = 0x88  # 0x11 for the 634XG
         # Should automatically shift encoding if wrong.
         # self.magic = 0x38
+        self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
+        self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
 
         self.filename = ''
         self.speed = 20.0
@@ -336,10 +338,12 @@ class RuidaEmulator(Module):
             byte = f.read(1)
             if len(byte) == 0:
                 break
-            b = self.unswizzle_byte(ord(byte))
+            b = self.lut_unswizzle[ord(byte)]
             if (b == 0x41 or b == 0x65) and len(array) == 0:
                 self.magic ^= 0x99
-                b = self.unswizzle_byte(ord(byte))
+                self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
+                self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
+                b = self.lut_unswizzle[ord(byte)]
             if b >= 0x80 and len(array) > 0:
                 yield array
                 array.clear()
@@ -360,9 +364,13 @@ class RuidaEmulator(Module):
         if len(sent_data) > 3:
             if self.magic != 0x88 and sent_data[2] == 0xD4:
                 self.magic = 0x88
+                self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
+                self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
                 channel("Setting magic to 0x88")
             if self.magic != 0x11 and sent_data[2] == 0x4B:
                 self.magic = 0x11
+                self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
+                self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
                 channel("Setting magic to 0x11")
         if checksum_check == checksum_sum:
             response = b'\xCC'
@@ -1259,13 +1267,13 @@ class RuidaEmulator(Module):
     def unswizzle(self, data):
         array = list()
         for b in data:
-            array.append(self.unswizzle_byte(b))
+            array.append(self.lut_unswizzle[b])
         return bytes(array)
 
     def swizzle(self, data):
         array = list()
         for b in data:
-            array.append(self.swizzle_byte(b))
+            array.append(self.lut_swizzle[b])
         return bytes(array)
 
     def swizzle_byte(self, b):
