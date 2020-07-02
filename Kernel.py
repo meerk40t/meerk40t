@@ -1273,9 +1273,10 @@ class Elemental(Module):
                     elif op.operation not in ('Raster', 'Image'):
                         op.append(element)
             if not found_color:
-                op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
-                op.append(element)
-                self.add_op(op)
+                if element.stroke is not None and element.stroke.value is not None:
+                    op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
+                    op.append(element)
+                    self.add_op(op)
 
     def load(self, pathname, **kwargs):
         for loader_name, loader in self.device.registered['load'].items():
