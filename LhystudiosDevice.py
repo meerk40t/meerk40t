@@ -388,7 +388,7 @@ class LhymicroInterpreter(Interpreter):
     def goto_octent_abs(self, x, y, on):
         dx = x - self.device.current_x
         dy = y - self.device.current_y
-        self.goto_octent(dx,dy, on)
+        self.goto_octent(dx, dy, on)
 
     def goto_octent(self, dx, dy, on):
         if on:

@@ -221,9 +221,9 @@ class ZinglPlotter:
             err = dx + dy + xy  # /* error 1st step */
             while True:
                 if points is None:
-                    yield x0, y0  # /* plot curve */
+                    yield int(x0), int(y0)  # /* plot curve */
                 else:
-                    points.append((x0, y0))
+                    points.append((int(x0), int(y0)))
                 if x0 == x2 and y0 == y2:
                     if points is not None:
                         for plot in reversed(points):
@@ -268,6 +268,7 @@ class ZinglPlotter:
         y = y0 - y1
         t = x0 - 2 * x1 + x2
         r = 0
+        points = None
 
         if x * (x2 - x1) > 0:  # /* horizontal cut at P4? */
             if y * (y2 - y1) > 0:  # /* vertical cut at P6 too? */
@@ -276,6 +277,7 @@ class ZinglPlotter:
                     x2 = x + x1
                     y0 = y2
                     y2 = y + y1  # /* swap points */
+                    points = []
                     # /* now horizontal cut at P4 comes first */
             t = (x0 - x1) / t
             r = (1 - t) * ((1 - t) * y0 + 2.0 * t * y1) + t * t * y2  # /* By(t=P4) */
@@ -284,7 +286,10 @@ class ZinglPlotter:
             y = floor(r + 0.5)
             r = (y1 - y0) * (t - x0) / (x1 - x0) + y0  # /* intersect P3 | P0 P1 */
             for plot in ZinglPlotter.plot_quad_bezier_seg(x0, y0, x, floor(r + 0.5), x, y):
-                yield plot
+                if points is None:
+                    yield plot
+                else:
+                    points.append(plot)
             r = (y1 - y2) * (t - x2) / (x1 - x2) + y2  # /* intersect P4 | P1 P2 */
             x0 = x1 = x
             y0 = y
@@ -298,13 +303,22 @@ class ZinglPlotter:
             y = floor(t + 0.5)
             r = (x1 - x0) * (t - y0) / (y1 - y0) + x0  # /* intersect P6 | P0 P1 */
             for plot in ZinglPlotter.plot_quad_bezier_seg(x0, y0, floor(r + 0.5), y, x, y):
-                yield plot
+                if points is None:
+                    yield plot
+                else:
+                    points.append(plot)
             r = (x1 - x2) * (t - y2) / (y1 - y2) + x2  # /* intersect P7 | P1 P2 */
             x0 = x
             x1 = floor(r + 0.5)
             y0 = y1 = y  # /* P0 = P6, P1 = P7 */
         for plot in ZinglPlotter.plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):  # /* remaining part */
-            yield plot
+            if points is None:
+                yield plot
+            else:
+                points.append(plot)
+        if points is not None:
+            for plot in reversed(points):
+                yield plot
 
     @staticmethod
     def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
@@ -648,6 +662,7 @@ class ZinglPlotter:
             x = event[0]
             y = event[1]
             on = event[2]
+            print((x, y, on))
             if x == last_x + dx and y == last_y + dy and on == last_on:
                 # This is an orthogonal/diagonal step along the same path.
                 last_x = x
