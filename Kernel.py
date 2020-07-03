@@ -859,6 +859,8 @@ class Elemental(Module):
         kernel = self.device.device_root
         config = kernel.config
 
+        config.SetPath('/')
+        config.DeleteGroup('operations')
         config.SetPath('operations')
         for i, op in enumerate(self.ops()):
             config.SetPath(str(i))
