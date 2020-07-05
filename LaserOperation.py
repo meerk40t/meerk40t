@@ -354,9 +354,10 @@ class LaserOperation(list):
                         overscan = int(overscan)
                     except ValueError:
                         overscan = 20
+                p = m.transform_point([0,0])
                 raster = RasterPlotter(data, width, height, traverse, 0, overscan,
-                                       m.value_trans_x(),
-                                       m.value_trans_y(),
+                                       p[0],
+                                       p[1],
                                        step, image_filter)
                 yield COMMAND_MODE_RAPID
                 x, y = raster.initial_position_in_scene()

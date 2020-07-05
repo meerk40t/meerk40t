@@ -279,6 +279,15 @@ class LhymicroInterpreter(Interpreter):
         Interpreter.execute(self)
 
     def plot_path(self, path):
+        if isinstance(path, SVGImage):
+            bounds = path.bbox()
+            p = Path()
+            p.move([(bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3])])
+            self.plot = self.convert_to_absolute_plot(ZinglPlotter.plot_path(p), True)
+            return
         if len(path) == 0:
             return
         first_point = path.first_point
@@ -372,7 +381,7 @@ class LhymicroInterpreter(Interpreter):
             mx = 0
             my = 0
             for x, y, on in self.convert_to_relative_plot(ZinglPlotter.plot_line(0, 0, dx, dy), cut):
-                self.goto_octent(x-mx, y-my, on)
+                self.goto_octent(x - mx, y - my, on)
                 mx = x
                 my = y
         elif self.state == INTERPRETER_STATE_FINISH:

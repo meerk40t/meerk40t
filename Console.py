@@ -1,6 +1,6 @@
 from Kernel import *
-from svgelements import *
 from OperationPreprocessor import OperationPreprocessor
+from svgelements import *
 
 
 class Console(Module, Pipe):
@@ -57,6 +57,7 @@ class Console(Module, Pipe):
             yield COMMAND_SET_ABSOLUTE
             yield COMMAND_MODE_RAPID
             yield COMMAND_MOVE, int(x_pos), int(y_pos)
+
         return move
 
     def execute_relative_position(self, position_x, position_y):
@@ -68,6 +69,7 @@ class Console(Module, Pipe):
             yield COMMAND_MODE_RAPID
             yield COMMAND_MOVE, int(x_pos), int(y_pos)
             yield COMMAND_SET_ABSOLUTE
+
         return move
 
     def execute_jog(self, direction, amount):
@@ -92,6 +94,7 @@ class Console(Module, Pipe):
                 yield COMMAND_CUT, x, y
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_SET_ABSOLUTE
+
             return cut
         else:
             def move():
@@ -99,6 +102,7 @@ class Console(Module, Pipe):
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_MOVE, x, y
                 yield COMMAND_SET_ABSOLUTE
+
             return move
 
     def channel_file_write(self, v):
@@ -315,7 +319,7 @@ class Console(Module, Pipe):
             else:
                 try:
                     v = int(args[0])
-                    if v not in (1,2,3,4):
+                    if v not in (1, 2, 3, 4):
                         interpreter.set_acceleration(None)
                         yield 'Acceleration is set to default.'
                         return
@@ -437,7 +441,7 @@ class Console(Module, Pipe):
             yield 'Scheduled Processes:'
             for i, job in enumerate(active_device.jobs):
                 parts = list()
-                parts.append('%d:' % (i+1))
+                parts.append('%d:' % (i + 1))
                 parts.append(str(job))
                 if job.times is None:
                     parts.append('forever')
@@ -492,7 +496,7 @@ class Console(Module, Pipe):
                 yield '----------'
                 yield 'Backends permitted:'
                 for i, name in enumerate(kernel.registered['device']):
-                    yield '%d: %s' % (i+1, name)
+                    yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
                 devices = kernel.setting(str, 'list_devices', '')
@@ -511,7 +515,7 @@ class Console(Module, Pipe):
                 yield '%d: %s on %s' % (0, kernel.device_name, kernel.device_location)
                 for i, name in enumerate(kernel.instances['device']):
                     device = kernel.instances['device'][name]
-                    yield '%d: %s on %s' % (i+1, device.device_name, device.device_location)
+                    yield '%d: %s on %s' % (i + 1, device.device_name, device.device_location)
                 yield '----------'
             else:
                 value = args[0]
@@ -611,7 +615,7 @@ class Console(Module, Pipe):
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             r_pos = Length(args[1]).value(ppi=1000.0,
-                                          relative_length=min(self.device.bed_height,self.device.bed_width) * 39.3701)
+                                          relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
             element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             element = Path(element)
             self.add_element(element)
@@ -1165,7 +1169,11 @@ class Console(Module, Pipe):
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: %s' % (i, name)
+                    yield '%d: (%d, %d) %s, %s' % (i,
+                                                   element.image_width,
+                                                   element.image_height,
+                                                   element.image.mode,
+                                                   name)
                     i += 1
                 yield '----------'
                 return
@@ -1223,6 +1231,271 @@ class Console(Module, Pipe):
                                         pixel_data[x, y] = (255, 255, 255, 255)
                         element.image = img.convert("1")
                         element.altered()
+            elif args[0] == 'white_remove':
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    img = element.image
+                    if img.mode != "RGBA":
+                        img = img.convert('RGBA')
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if pixel[0] >= 240 and pixel[1] >= 240 and pixel[2] >= 240:
+                                new_data[x, y] = (255, 255, 255, 0)
+                                continue
+                    element.image = img
+                    element.altered()
+            elif args[0] == 'crop':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        try:
+                            left = int(args[1])
+                            upper = int(args[2])
+                            right = int(args[3])
+                            lower = int(args[4])
+                            element.image = img.crop((left, upper, right, lower))
+                            element.image_width = right - left
+                            element.image_height = lower - upper
+                            element.altered()
+                        except (KeyError, ValueError):
+                            yield "image crop <left> <upper> <right> <lower>"
+                return
+            elif args[0] == 'contrast':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Contrast(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield "Image Contrast Factor: %f" % factor
+                        except (IndexError, ValueError):
+                            yield "image contrast <factor>"
+                return
+            elif args[0] == 'brightness':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Brightness(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield "Image Brightness Factor: %f" % factor
+                        except (IndexError, ValueError):
+                            yield "image brightness <factor>"
+                return
+            elif args[0] == 'color':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Color(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield "Image Color Factor: %f" % factor
+                        except (IndexError, ValueError):
+                            yield "image color <factor>"
+                return
+            elif args[0] == 'sharpness':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Sharpness(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield "Image Sharpness Factor: %f" % factor
+                        except (IndexError, ValueError):
+                            yield "image sharpness <factor>"
+                return
+            elif args[0] == 'blur':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.BLUR)
+                        element.altered()
+                        yield "Image Blurred."
+                return
+            elif args[0] == 'sharpen':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.SHARPEN)
+                        element.altered()
+                        yield "Image Sharpened."
+                return
+            elif args[0] == 'edge_enhance':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
+                        element.altered()
+                        yield "Image Edges Enhanced."
+                return
+            elif args[0] == 'find_edges':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.FIND_EDGES)
+                        element.altered()
+                        yield "Image Edges Found."
+                return
+            elif args[0] == 'emboss':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.EMBOSS)
+                        element.altered()
+                        yield "Image Embossed."
+                return
+            elif args[0] == 'smooth':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.SMOOTH)
+                        element.altered()
+                        yield "Image Smoothed."
+                return
+            elif args[0] == 'contour':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.CONTOUR)
+                        element.altered()
+                        yield "Image Contoured."
+                return
+            elif args[0] == 'detail':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.DETAIL)
+                        element.altered()
+                        yield "Image Detailed."
+                return
+            elif args[0] == 'quantize':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            colors = int(args[1])
+                            img = element.image
+                            element.image = img.quantize(colors=colors)
+                            element.altered()
+                            yield "Image Quantized to %d colors." % colors
+                        except (IndexError, ValueError):
+                            yield "image quantize <colors>"
+                return
+            elif args[0] == 'solarize':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            threshold = int(args[1])
+                            img = element.image
+                            element.image = ImageOps.solarize(img, threshold=threshold)
+                            element.altered()
+                            yield "Image Solarized at %d gray." % threshold
+                        except (IndexError, ValueError):
+                            yield "image solarize <threshold>"
+                return
+            elif args[0] == 'invert':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        if img.mode == 'P':
+                            img = img.convert('RGB')
+                        element.image = ImageOps.invert(img)
+                        element.altered()
+                        yield "Image Inverted."
+                return
+            elif args[0] == 'flip':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.flip(img)
+                        element.altered()
+                        yield "Image Flipped."
+                return
+            elif args[0] == 'mirror':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.mirror(img)
+                        element.altered()
+                        yield "Image Mirrored."
+                return
+            elif args[0] == 'autocontrast':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            cutoff = int(args[1])
+                            img = element.image
+                            if img.mode == 'RGBA':
+                                img = img.convert('RGB')
+                            element.image = ImageOps.autocontrast(img, cutoff=cutoff)
+                            element.altered()
+                            yield "Image Auto-Contrasted."
+                        except (IndexError, ValueError):
+                            yield "image autocontrast <cutoff-percent>"
+                return
+            elif args[0] == 'grayscale' or args[0] == 'greyscale':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.grayscale(img)
+                        element.altered()
+                        yield "Image Grayscale."
+                return
+            elif args[0] == 'equalize':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.equalize(img)
+                        element.altered()
+                        yield "Image Equalized."
+                return
+            elif args[0] == 'save':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            img = element.image
+                            img.save(args[1])
+                            yield "Saved: %s" % (args[1])
+                        except IndexError:
+                            yield "No file given."
+                        except OSError:
+                            yield "File could not be written / created."
+                        except ValueError:
+                            yield "Could not determine expected format."
+
+                return
             elif args[0] == 'flatrotary':
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
@@ -1232,23 +1505,18 @@ class Console(Module, Pipe):
                         from PIL import Image
 
                         def t(i):
-                            return int(i * w / (points-1))
+                            return int(i * w / (points - 1))
 
                         def x(i):
-                            return int(w * float(args[i+1]))
+                            return int(w * float(args[i + 1]))
 
-                        boxes = list((t(i), 0, t(i+1), h) for i in range(points-1))
-                        quads = list((x(i), 0, x(i), h, x(i+1), h, x(i+1), 0) for i in range(points-1))
+                        boxes = list((t(i), 0, t(i + 1), h) for i in range(points - 1))
+                        quads = list((x(i), 0, x(i), h, x(i + 1), h, x(i + 1), 0) for i in range(points - 1))
                         mesh = list(zip(boxes, quads))
                         element.image = im.transform(im.size, Image.MESH,
-                                                   mesh,
-                                                   Image.BILINEAR)
+                                                     mesh,
+                                                     Image.BILINEAR)
                         element.altered()
-        elif command == 'reify':
-            for element in elements.elems(emphasized=True):
-                element.reify()
-                element.altered()
-            return
         # Alias / Bind Command Elements.
         elif command == 'bind':
             if len(args) == 0:
@@ -1410,37 +1678,6 @@ class Console(Module, Pipe):
                 yield 'Pulse laser for %f milliseconds' % (value * 1000.0)
             else:
                 yield 'Pulse laser failed: Busy'
-            return
-        elif command == 'pulse_frequency':
-            if len(args) == 0:
-                yield 'pulse_frequency <duration ms> <frequency hz>'
-                return
-            try:
-                duration = float(args[0]) / 1000.0
-            except ValueError:
-                yield '"%s" not a valid pulse time in milliseconds' % (args[0])
-                return
-            try:
-                frequency = float(args[1])
-            except ValueError:
-                yield '"%s" not a valid pulse frequency in hz' % (args[0])
-                return
-            try:
-                pulses = int(round(duration * 500.0 / frequency))
-                pulse_time = duration / pulses
-            except ZeroDivisionError:
-                yield 'Could not pulse within the allotted time.'
-                return
-
-            def timed_fire():
-                for i in range(pulses):
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_LASER_ON
-                    yield COMMAND_WAIT, pulse_time
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT, pulse_time
-
-            self.device.spooler.job(timed_fire)
             return
         elif command == 'refresh':
             active_device.signal('refresh_scene')
