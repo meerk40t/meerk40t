@@ -1442,6 +1442,15 @@ class RootNode(list):
         self.dragging_node = None
 
         drag_item = event.GetItem()
+        if drag_item is None:
+            event.Skip()
+            return
+        if drag_item.ID is None:
+            event.Skip()
+            return
+        if not drag_item.IsOk():
+            event.Skip()
+            return
         node_data = self.tree.GetItemData(drag_item)
         if node_data.type == NODE_ELEMENTS_BRANCH or node_data.type == NODE_OPERATION_BRANCH or \
                 node_data.type == NODE_FILES_BRANCH or node_data.type == NODE_FILE_ELEMENT or node_data.type == NODE_FILE_FILE:
