@@ -3577,7 +3577,7 @@ class Arc(PathSegment):
         If points are modified by an affine transformation, the arc is transformed.
         There is a special case for when the scale factor inverts, it inverts the sweep.
 
-        Note: t-values are not angles from center in ellipical arcs. These are the same thing in
+        Note: t-values are not angles from center in elliptical arcs. These are the same thing in
         circular arcs. But, here t is a parameterization around the ellipse, as if it were a circle.
         The position on the arc is (a * cos(t), b * sin(t)). If r-major was 0 for example. The
         positions would all fall on the x-axis. And the angle from center would all be either 0 or
@@ -3595,7 +3595,7 @@ class Arc(PathSegment):
         The sweep angle can be a value greater than tau and less than -tau.
         However if this is the case, conversion back to Path.d() is expected to fail.
         We can denote these arc events but not as a single command.
-        should equal sweep or mod thereof.
+
         start_t + sweep = end_t
         """
 
@@ -4793,6 +4793,30 @@ class Path(Shape, MutableSequence):
         self._validate_connection(index)
         self._validate_subpath(index)
 
+    def direct_close(self):
+        """Forces close operations to be zero length by introducing a direct
+        line to operation just before any non-zero length close.
+
+        This is helpful because for some operations like reverse() because the
+        close must located at the very end of the path sequence. But, if it's
+        in effect a line-to and close, the line-to would need to start the sequence.
+
+        But, for some operations a this won't matter since it will still result in
+        a closed shape with reversed ordering. But, if the final point in the
+        sequence must exactly switch with the first point in the sequence. The
+        close segments must be direct and zero length.
+        """
+        if len(self._segments) == 0:
+            return
+        for i in range(len(self._segments) - 1, -1, -1):
+            segment = self._segments[i]
+            if isinstance(segment, Close):
+                if segment.length() != 0:
+                    line = Line(segment.start, segment.end)
+                    segment.start = Point(segment.end)
+                    self.insert(i, line)
+        return self
+
     def reverse(self):
         if len(self._segments) == 0:
             return
@@ -5793,7 +5817,7 @@ class Subpath:
     Subpath is a Path-backed window implementation. It does not store a list of segments but rather
     stores a Path, start position, end position. When a function is called on a subpath, the result of
     those events is performed on the backing Path. When the backing Path is modified the behavior is
-     undefined."""
+    undefined."""
 
     def __init__(self, path, start, end):
         self._path = path

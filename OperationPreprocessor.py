@@ -1,4 +1,4 @@
-
+from CutPlanner import CutPlanner
 from svgelements import *
 from LaserCommandConstants import *
 from LaserOperation import LaserOperation
@@ -78,7 +78,7 @@ class OperationPreprocessor:
             for op in self.operations:
                 try:
                     if op.operation in ("Cut"):
-                        op_cuts = OperationPreprocessor.optimize_cut_inside(op)
+                        op_cuts = CutPlanner.optimize_cut_inside(op)
                         op.clear()
                         op.append(op_cuts)
                 except AttributeError:

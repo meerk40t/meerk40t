@@ -1,3 +1,4 @@
+from CutPlanner import CutPlanner
 from Kernel import *
 from OperationPreprocessor import OperationPreprocessor
 from svgelements import *
@@ -579,6 +580,18 @@ class Console(Module, Pipe):
                                 e.select()
                                 e.emphasize()
                             continue
+                        elif value == "merge":
+                            superelement = Path()
+                            for e in elements.elems(emphasized=True):
+                                if superelement.stroke is None:
+                                    superelement.stroke = e.stroke
+                                if superelement.fill is None:
+                                    superelement.fill = e.fill
+                                superelement += abs(e)
+                            elements.remove_elements(list(elements.elems(emphasized=True)))
+                            elements.add_elem(superelement)
+                            superelement.emphasize()
+                            continue
                         elif value == "subpath":
                             for e in elements.elems(emphasized=True):
                                 p = abs(e)
@@ -1022,6 +1035,28 @@ class Console(Module, Pipe):
                 element.altered()
             active_device.signal('refresh_scene')
             return
+        elif command == 'optimize':
+            if not elements.has_emphasis():
+                yield "No selected elements."
+                return
+            elif args[0] == 'cut_inner':
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_cut_inside(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+            elif args[0] == 'travel':
+                yield "Travel Optimizing: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_travel(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+                yield "Optimized: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+            else:
+                yield 'Optimization not found.'
+                return
+
         # Operation Command Elements
         elif command == 'operation':
             if len(args) == 0:
@@ -1176,6 +1211,9 @@ class Console(Module, Pipe):
                                                    name)
                     i += 1
                 yield '----------'
+                return
+            if not elements.has_emphasis():
+                yield "No selected images."
                 return
             elif args[0] == 'threshold':
                 try:

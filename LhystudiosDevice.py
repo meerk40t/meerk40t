@@ -411,6 +411,8 @@ class LhymicroInterpreter(Interpreter):
             self.goto_x(dx)
         else:
             self.goto_y(dy)
+        self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
+                                                    self.device.current_x - dx, self.device.current_y - dy))
 
     def set_speed(self, speed=None):
         change = False
