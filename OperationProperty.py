@@ -120,10 +120,14 @@ class OperationProperty(wx.Frame, Module):
         self.travel_pen.SetColour(wx.Colour(255, 127, 255, 64))
         self.travel_pen.SetWidth(1)
 
+        self.raster_lines = None
+        self.travel_lines = None
+
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
         self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
+        self.raster_lines = None
 
     def on_close(self, event):
         self.device.close('window', self.name)
@@ -358,14 +362,7 @@ class OperationProperty(wx.Frame, Module):
     def refresh_display(self):
         wx.CallAfter(self.refresh_in_ui)
 
-    def refresh_in_ui(self):
-        """Performs the redraw of the data in the UI thread."""
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        dc.SetBackground(wx.WHITE_BRUSH)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-        gc.SetPen(self.raster_pen)
+    def calculate_raster_lines(self):
         w, h = self._Buffer.Size
         pos = 20
         steps = 20
@@ -377,24 +374,49 @@ class OperationProperty(wx.Frame, Module):
         step = (h - 40) / steps
         right = True
         last = None
+        r_start = list()
+        r_end = list()
+        t_start = list()
+        t_end = list()
         for j in range(steps):
-            gc.StrokeLine(20, pos, w - 40, pos)
+            r_start.append((20, pos))
+            r_end.append((w - 40, pos))
             if right:
                 if last is not None:
-                    gc.SetPen(self.travel_pen)
-                    gc.StrokeLine(last[0], last[1], w - 40, pos)
-                    gc.SetPen(self.raster_pen)
-                gc.StrokeLine(w - 40, pos, w - 42, pos - 2)
+                    t_start.append((last[0], last[1]))
+                    t_end.append((w - 40, pos))
+                r_start.append((w - 40, pos))
+                r_end.append((w - 42, pos - 2))
                 last = (w - 40, pos)
             else:
                 if last is not None:
-                    gc.SetPen(self.travel_pen)
-                    gc.StrokeLine(last[0], last[1], 20, pos)
-                    gc.SetPen(self.raster_pen)
-                gc.StrokeLine(20, pos, 22, pos - 2)
-                last = (22, pos - 2)
+                    t_start.append((last[0], last[1]))
+                    t_end.append((20, pos))
+                r_start.append((20, pos))
+                r_end.append((22, pos - 2))
             right = not right
             pos += step
+        self.raster_lines = r_start, r_end
+        self.travel_lines = t_start, t_end
+
+    def refresh_in_ui(self):
+        """Performs the redraw of the data in the UI thread."""
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        if self.raster_lines is None:
+            self.calculate_raster_lines()
+
+        starts, ends = self.raster_lines
+        gc.SetPen(self.raster_pen)
+        gc.StrokeLineSegments(starts, ends)
+
+        gc.SetPen(self.travel_pen)
+        starts, ends = self.raster_lines
+        gc.StrokeLineSegments(starts, ends)
+
         gc.Destroy()
         del dc
         self.display_panel.Refresh()
@@ -492,6 +514,8 @@ class OperationProperty(wx.Frame, Module):
         except ValueError:
             return
         self.device.signal('element_property_update', self.operation)
+        self.raster_lines = None
+        self.travel_lines = None
         self.refresh_display()
 
     def on_text_overscan(self, event):  # wxGlade: OperationProperty.<event_handler>
