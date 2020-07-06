@@ -112,6 +112,16 @@ class OperationProperty(wx.Frame, Module):
         self.combo_type.SetFocus()
         self.operation = None
 
+        self.selection_pen = wx.Pen()
+        self.selection_pen.SetColour(wx.BLUE)
+        self.selection_pen.SetWidth(25)
+        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+
+        self.on_size(None)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
+        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
+
     def on_close(self, event):
         self.device.close('window', self.name)
         event.Skip()  # Call destroy as regular.
@@ -134,6 +144,9 @@ class OperationProperty(wx.Frame, Module):
 
     def __set_properties(self):
         # begin wxGlade: OperationProperty.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        self.SetIcon(_icon)
         self.SetTitle(_("Operation Properties"))
         self.button_add_layer.SetSize(self.button_add_layer.GetBestSize())
         self.listbox_layer.SetMinSize((40, -1))
@@ -316,6 +329,27 @@ class OperationProperty(wx.Frame, Module):
         self.on_check_advanced()
         self.on_combo_operation()
         return self
+
+    def on_display_paint(self, event):
+        try:
+            wx.BufferedPaintDC(self.display_panel, self._Buffer)
+        except RuntimeError:
+            pass
+
+    def on_display_erase(self, event):
+        pass
+
+    def set_buffer(self):
+        width, height = self.display_panel.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+
+    def on_size(self, event):
+        self.Layout()
+        self.set_buffer()
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.device.device_root.elements.clear_operations()
