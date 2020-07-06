@@ -112,10 +112,13 @@ class OperationProperty(wx.Frame, Module):
         self.combo_type.SetFocus()
         self.operation = None
 
-        self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.BLUE)
-        self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.raster_pen = wx.Pen()
+        self.raster_pen.SetColour(wx.BLACK)
+        self.raster_pen.SetWidth(2)
+
+        self.travel_pen = wx.Pen()
+        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 64))
+        self.travel_pen.SetWidth(1)
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -350,6 +353,52 @@ class OperationProperty(wx.Frame, Module):
     def on_size(self, event):
         self.Layout()
         self.set_buffer()
+        self.refresh_display()
+
+    def refresh_display(self):
+        wx.CallAfter(self.refresh_in_ui)
+
+    def refresh_in_ui(self):
+        """Performs the redraw of the data in the UI thread."""
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetPen(self.raster_pen)
+        w, h = self._Buffer.Size
+        pos = 20
+        steps = 20
+        try:
+            steps /= self.operation.raster_step
+            steps = int(steps)
+        except ValueError:
+            pass
+        step = (h - 40) / steps
+        right = True
+        last = None
+        for j in range(steps):
+            gc.StrokeLine(20, pos, w - 40, pos)
+            if right:
+                if last is not None:
+                    gc.SetPen(self.travel_pen)
+                    gc.StrokeLine(last[0], last[1], w - 40, pos)
+                    gc.SetPen(self.raster_pen)
+                gc.StrokeLine(w - 40, pos, w - 42, pos - 2)
+                last = (w - 40, pos)
+            else:
+                if last is not None:
+                    gc.SetPen(self.travel_pen)
+                    gc.StrokeLine(last[0], last[1], 20, pos)
+                    gc.SetPen(self.raster_pen)
+                gc.StrokeLine(20, pos, 22, pos - 2)
+                last = (22, pos - 2)
+            right = not right
+            pos += step
+        gc.Destroy()
+        del dc
+        self.display_panel.Refresh()
+        self.display_panel.Update()
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.device.device_root.elements.clear_operations()
@@ -400,21 +449,19 @@ class OperationProperty(wx.Frame, Module):
         if select == 0:
             self.operation.operation = "Engrave"
             self.raster_panel.Show(False)
+            self.Layout()
         elif select == 1:
             self.operation.operation = "Cut"
             self.raster_panel.Show(False)
-            self.Update()
-            self.Refresh()
+            self.Layout()
         elif select == 2:
             self.operation.operation = "Raster"
             self.raster_panel.Show(True)
-            self.Update()
-            self.Refresh()
+            self.Layout()
         elif select == 3:
             self.operation.operation = "Image"
             self.raster_panel.Show(True)
-            self.Update()
-            self.Refresh()
+            self.Layout()
         self.device.signal('element_property_update', self.operation)
 
     def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
@@ -445,6 +492,7 @@ class OperationProperty(wx.Frame, Module):
         except ValueError:
             return
         self.device.signal('element_property_update', self.operation)
+        self.refresh_display()
 
     def on_text_overscan(self, event):  # wxGlade: OperationProperty.<event_handler>
         overscan = self.text_overscan.GetValue()
