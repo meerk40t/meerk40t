@@ -314,6 +314,7 @@ class OperationProperty(wx.Frame, Module):
         if operation.show is not None:
             self.checkbox_show.SetValue(operation.show)
         self.on_check_advanced()
+        self.on_combo_operation()
         return self
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
@@ -360,16 +361,26 @@ class OperationProperty(wx.Frame, Module):
             self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
         self.device.signal('element_property_update', self.operation)
 
-    def on_combo_operation(self, event):  # wxGlade: OperationProperty.<event_handler>
+    def on_combo_operation(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         select = self.combo_type.GetSelection()
         if select == 0:
             self.operation.operation = "Engrave"
+            self.raster_panel.Show(False)
         elif select == 1:
             self.operation.operation = "Cut"
+            self.raster_panel.Show(False)
+            self.Update()
+            self.Refresh()
         elif select == 2:
             self.operation.operation = "Raster"
+            self.raster_panel.Show(True)
+            self.Update()
+            self.Refresh()
         elif select == 3:
             self.operation.operation = "Image"
+            self.raster_panel.Show(True)
+            self.Update()
+            self.Refresh()
         self.device.signal('element_property_update', self.operation)
 
     def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
@@ -441,7 +452,7 @@ class OperationProperty(wx.Frame, Module):
         self.advanced_panel.Show(on)
         self.operation.advanced = bool(on)
         if on:
-            self.SetSize((612, 500))
+            self.SetSize((712, 500))
         else:
             self.SetSize((400, 500))
 
