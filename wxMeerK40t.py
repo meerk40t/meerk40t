@@ -1736,6 +1736,9 @@ class RootNode(list):
                      menu.Append(wx.ID_ANY, _("Set Other/Blue/Red Classify"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, lambda e: self.device.device_root.elements.load_default2(),
                      menu.Append(wx.ID_ANY, _("Set Basic Classification"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.device.device_root.elements.add_op(LaserOperation()),
+                     menu.Append(wx.ID_ANY, _("Add Operation"), "", wx.ITEM_NORMAL))
+
         elif t == NODE_ELEMENTS_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
                      menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL))
@@ -1747,6 +1750,7 @@ class RootNode(list):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
+
             duplicate_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
                      duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL))
