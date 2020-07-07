@@ -1750,7 +1750,8 @@ class RootNode(list):
                 menu_op = operation_convert_submenu.Append(wx.ID_ANY, _("Convert %s") % name, "", wx.ITEM_NORMAL)
                 gui.Bind(wx.EVT_MENU, self.menu_convert_operation(node, name), menu_op)
             menu.AppendSubMenu(operation_convert_submenu, _("Convert Operation"))
-
+            gui.Bind(wx.EVT_MENU, self.menu_duplicate_operation(node),
+                     menu.Append(wx.ID_ANY, _("Duplicate Operation"), "", wx.ITEM_NORMAL))
             duplicate_menu = wx.Menu()
             gui.Bind(wx.EVT_MENU, self.menu_passes(node, 1),
                      duplicate_menu.Append(wx.ID_ANY, _("Add 1 pass."), "", wx.ITEM_NORMAL))
@@ -2212,6 +2213,15 @@ class RootNode(list):
         def specific(event):
             node.object.operation = name
             self.device.signal('element_property_update', node.object)
+
+        return specific
+
+    def menu_duplicate_operation(self, node):
+        def specific(event):
+            op = LaserOperation(node.object)
+            op.clear()
+            op.extend(node.object)
+            self.device.device_root.elements.add_op(op)
 
         return specific
 
