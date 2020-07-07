@@ -48,7 +48,7 @@ class SVGWriter:
                 if key.startswith('_'):
                     continue
                 value = getattr(operation, key)
-                if type(value) not in (int, float, str):
+                if type(value) not in (int, float, str, bool):
                     continue
                 subelement.set(key, str(value))
         for element in elements.elems():

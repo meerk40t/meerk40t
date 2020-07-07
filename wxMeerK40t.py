@@ -2204,6 +2204,7 @@ class RootNode(list):
             elements = kernel.elements
             elements.remove_elements_from_operations(list(elements.elems()))
             elements.classify(list(elements.elems()))
+            self.device.signal('rebuild_tree', 0)
 
         return specific
 

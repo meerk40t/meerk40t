@@ -21,7 +21,7 @@ class LaserOperation(list):
         self.output = True
         self.show = True
 
-        self.status_value = "Queued"
+        self._status_value = "Queued"
         self.color = Color('black')
         self.speed = 20.0
         self.power = 1000.0
@@ -222,7 +222,6 @@ class LaserOperation(list):
     def __copy__(self):
         return LaserOperation(self)
 
-    @property
     def time_estimate(self):
         if self.operation in ("Cut", "Engrave"):
             estimate = 0
@@ -252,10 +251,6 @@ class LaserOperation(list):
             minutes, seconds = divmod(remainder, 60)
             return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
         return "Unknown"
-
-    @property
-    def status(self):
-        return self.status_value
 
     def generate(self):
         if self.operation in ("Cut", "Engrave"):
@@ -354,6 +349,7 @@ class LaserOperation(list):
                         overscan = int(overscan)
                     except ValueError:
                         overscan = 20
+                # TODO: FIX CRITICAL BUG HERE WITH ROTATED ELEMENT
                 p = m.transform_point([0,0])
                 raster = RasterPlotter(data, width, height, traverse, 0, overscan,
                                        p[0],

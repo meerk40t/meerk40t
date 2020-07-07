@@ -105,7 +105,7 @@ class JobSpooler(wx.Frame, Module):
                 if m != -1:
                     self.list_job_spool.SetItem(m, 1, name_str(e))
                     try:
-                        self.list_job_spool.SetItem(m, 2, e.status)
+                        self.list_job_spool.SetItem(m, 2, e._status_value)
                     except AttributeError:
                         pass
                     self.list_job_spool.SetItem(m, 3, self.device.device_name)
@@ -132,7 +132,7 @@ class JobSpooler(wx.Frame, Module):
                         pass
                     self.list_job_spool.SetItem(m, 6, " ".join(settings))
                     try:
-                        self.list_job_spool.SetItem(m, 7, e.time_estimate)
+                        self.list_job_spool.SetItem(m, 7, e.time_estimate())
                     except AttributeError:
                         pass
 
