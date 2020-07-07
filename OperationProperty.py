@@ -7,8 +7,8 @@ from svgelements import Color
 
 _ = wx.GetTranslation
 
-simple_width = 350
-advanced_width = 612
+_simple_width = 350
+_advanced_width = 612
 
 
 class OperationProperty(wx.Frame, Module):
@@ -16,7 +16,7 @@ class OperationProperty(wx.Frame, Module):
         # begin wxGlade: OperationProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((simple_width, 500))
+        self.SetSize((_simple_width, 500))
 
         # # Menu Bar
         # self.RasterProperty_menubar = wx.MenuBar()
@@ -488,18 +488,30 @@ class OperationProperty(wx.Frame, Module):
         if select == 0:
             self.operation.operation = "Engrave"
             self.raster_panel.Show(False)
+            self.check_dratio_custom.Enable(True)
+            self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
         elif select == 1:
             self.operation.operation = "Cut"
             self.raster_panel.Show(False)
+            self.check_dratio_custom.Enable(True)
+            self.text_dratio.Enable(self.check_dratio_custom.GetValue())
             self.Layout()
         elif select == 2:
             self.operation.operation = "Raster"
             self.raster_panel.Show(True)
+            self.text_raster_step.Enable(True)
+            self.text_raster_step.SetValue(str(self.operation.raster_step))
+            self.check_dratio_custom.Enable(False)
+            self.text_dratio.Enable(False)
             self.Layout()
         elif select == 3:
             self.operation.operation = "Image"
             self.raster_panel.Show(True)
+            self.text_raster_step.Enable(False)
+            self.text_raster_step.SetValue("Pass Through")
+            self.check_dratio_custom.Enable(False)
+            self.text_dratio.Enable(False)
             self.Layout()
         self.device.signal('element_property_update', self.operation)
 
@@ -575,9 +587,9 @@ class OperationProperty(wx.Frame, Module):
         self.advanced_panel.Show(on)
         self.operation.advanced = bool(on)
         if on:
-            self.SetSize((advanced_width, 500))
+            self.SetSize((_advanced_width, 500))
         else:
-            self.SetSize((simple_width, 500))
+            self.SetSize((_simple_width, 500))
 
     def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
