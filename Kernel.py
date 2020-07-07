@@ -896,9 +896,14 @@ class Elemental(Module):
             self.load_default()
             config.SetPath('..')
             return
+        ops = [None] * config.GetNumberOfGroups(bRecursive=False)
         while more:
             config.SetPath(value)
             op = LaserOperation()
+            try:
+                ops[int(value)] = op
+            except (ValueError, IndexError):
+                ops.append(op)
             m, value, i = config.GetFirstEntry()
             while m:
                 t = getattr(op, value, None)
@@ -916,10 +921,10 @@ class Elemental(Module):
                 except AttributeError:
                     pass
                 m, value, i = config.GetNextEntry(i)
-            self.add_op(op)
             config.SetPath('..')
             more, value, index = config.GetNextGroup(index)
         config.SetPath('..')
+        self.add_ops([o for o in ops if o is not None])
         self.device.signal('rebuild_tree')
 
     def items(self, **kwargs):
