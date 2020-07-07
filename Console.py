@@ -1053,6 +1053,14 @@ class Console(Module, Pipe):
                     element += e
                     element.altered()
                 yield "Optimized: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+            elif args[0] == 'cut_travel':
+                yield "Cut Travel Initial: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_general(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+                yield "Cut Travel Optimized: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
             else:
                 yield 'Optimization not found.'
                 return

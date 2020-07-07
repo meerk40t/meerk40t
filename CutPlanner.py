@@ -173,6 +173,78 @@ class CutPlanner:
             distance += d
         return distance
 
+    @staticmethod
+    def is_order_constrained(paths, constraints, j, k):
+        """Is the order of the sequences between j and k constrained. Such that reversing this order will violate
+        the constraints."""
+        for q in range(j, k):
+            # search between j and k.
+            first_path = paths[q]
+            for constraint in constraints:
+                if first_path is not constraint[0]:
+                    # Constraint does not apply to the value at q.
+                    continue
+                for m in range(q + 1, k):
+                    second_path = paths[m]
+                    if second_path is constraint[1]:
+                        # Constraint demands the order must be first_path then second_path.
+                        return True
+        return False
+
+    @staticmethod
+    def optimize_general(paths):
+        optimized = Path()
+        if isinstance(paths, Path):
+            paths = [paths]
+        subpaths = []
+        for path in paths:
+            subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
+        constraints = []
+        for j in range(len(subpaths)):
+            for k in range(j + 1, len(subpaths)):
+                if CutPlanner.is_inside(subpaths[k], subpaths[j]):
+                    constraints.append((subpaths[k], subpaths[j]))
+                elif CutPlanner.is_inside(subpaths[j], subpaths[k]):
+                    constraints.append((subpaths[j], subpaths[k]))
+        for j in range(len(subpaths)):
+            for k in range(j + 1, len(subpaths)):
+                if CutPlanner.is_inside(subpaths[k], subpaths[j]):
+                    t = subpaths[j]
+                    subpaths[j] = subpaths[k]
+                    subpaths[k] = t
+        # for constraint in constraints:
+        #     success = False
+        #     for q in range(len(subpaths)):
+        #         first_path = subpaths[q]
+        #         if first_path is constraint[0]:
+        #             for m in range(q, len(subpaths)):
+        #                 second_path = subpaths[m]
+        #                 if second_path is constraint[1]:
+        #                     success = True
+        improved = True
+        while improved:
+            improved = False
+            for j in range(len(subpaths)):
+                for k in range(j + 1, len(subpaths)):
+                    new_cut = CutPlanner.delta_distance(subpaths, j, k)
+                    if new_cut < 0:
+                        if CutPlanner.is_order_constrained(subpaths, constraints, j, k):
+                            # Our order is constrained. Performing 2-opt cross is disallowed.
+                            continue
+                        CutPlanner.cross(subpaths, j, k)
+                        improved = True
+        for p in subpaths:
+            optimized += p
+            try:
+                del p.vm
+            except AttributeError:
+                pass
+            try:
+                del p.bounding_box
+            except AttributeError:
+                pass
+        return optimized
+
 
 class VectorMontonizer:
     def __init__(self, low_value=-float('inf'), high_value=float(inf), start=-float('inf')):
