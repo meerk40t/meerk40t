@@ -1135,6 +1135,12 @@ class Console(Module, Pipe):
                 return
             elements.classify(list(elements.elems(emphasized=True)))
             return
+        elif command == 'declassify':
+            if not elements.has_emphasis():
+                yield "No selected elements."
+                return
+            elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
+            return
         elif command == 'cut':
             if not elements.has_emphasis():
                 yield "No selected elements."
