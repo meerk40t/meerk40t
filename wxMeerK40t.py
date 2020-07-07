@@ -1730,7 +1730,12 @@ class RootNode(list):
         if t == NODE_ROOT:
             pass
         elif t == NODE_OPERATION_BRANCH:
-            pass
+            gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
+                     menu.Append(wx.ID_ANY, _("Refresh Classification"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.device.device_root.elements.load_default(),
+                     menu.Append(wx.ID_ANY, _("Set Other/Blue/Red Classify"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.device.device_root.elements.load_default2(),
+                     menu.Append(wx.ID_ANY, _("Set Basic Classification"), "", wx.ITEM_NORMAL))
         elif t == NODE_ELEMENTS_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
                      menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL))
@@ -2194,7 +2199,7 @@ class RootNode(list):
         def specific(event):
             kernel = node.root.device.device_root
             elements = kernel.elements
-            elements.clear_operations()
+            elements.remove_elements_from_operations(list(elements.elems()))
             elements.classify(list(elements.elems()))
 
         return specific

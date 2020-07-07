@@ -1084,8 +1084,6 @@ class Elemental(Module):
             elems = [e for e in op if e not in elements_list]
             op.clear()
             op.extend(elems)
-            if len(op) == 0:
-                self._operations[i] = None
         self.purge_unset()
 
     def purge_unset(self):
