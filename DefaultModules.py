@@ -42,6 +42,15 @@ class SVGWriter:
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = device.elements
+        for operation in elements.ops():
+            subelement = SubElement(root, "Operation")
+            for key in dir(operation):
+                if key.startswith('_'):
+                    continue
+                value = getattr(operation, key)
+                if type(value) not in (int, float, str):
+                    continue
+                subelement.set(key, str(value))
         for element in elements.elems():
             if isinstance(element, Path):
                 subelement = SubElement(root, SVG_TAG_PATH)

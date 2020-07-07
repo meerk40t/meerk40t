@@ -83,7 +83,7 @@ class TextProperty(wx.Frame,  Module):
     def set_element(self, element):
         self.element = element
         try:
-            if element.stroke is not None and element.stroke != "none":
+            if element.text is not None:
                 self.text_text.SetValue(element.text)
                 self.label_fonttest.SetLabelText(element.text)
                 try:
