@@ -846,12 +846,11 @@ class Elemental(Module):
                                    power=self.device.raster_power,
                                    raster_step=3))
         self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
-        self.add_op(LaserOperation(operation="Engrave", color="orange", speed=35.0))
-        self.add_op(LaserOperation(operation="Engrave", color="yellow", speed=35.0))
-        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
         self.add_op(LaserOperation(operation="Engrave", color="green", speed=35.0))
-        self.add_op(LaserOperation(operation="Engrave", color="indigo", speed=35.0))
-        self.add_op(LaserOperation(operation="Engrave", color="violet", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="magenta", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="cyan", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="yellow", speed=35.0))
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(self.elems())
 
