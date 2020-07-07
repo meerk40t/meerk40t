@@ -1130,8 +1130,8 @@ class Node(list):
             self.name = str(data_object)
         else:
             self.name = name
-        if len(self.name) >= 27:
-            self.name = self.name[:28] + '...'
+        # if len(self.name) >= 27:
+        #     self.name = self.name[:28] + '...'
         self.type = node_type
         parent.append(self)
         self.filepath = None
