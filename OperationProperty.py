@@ -7,33 +7,36 @@ from svgelements import Color
 
 _ = wx.GetTranslation
 
+simple_width = 350
+advanced_width = 612
+
 
 class OperationProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: OperationProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
-        self.SetSize((400, 500))
+        self.SetSize((simple_width, 500))
 
-        # Menu Bar
-        self.RasterProperty_menubar = wx.MenuBar()
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Clear"), _("Delete all the layers"))
-        self.Bind(wx.EVT_MENU, self.on_menu_clear, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Other/Blue/Red"), _("Set layers to the default"))
-        self.Bind(wx.EVT_MENU, self.on_menu_default0, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Basic"), _("Set layers to basic form"))
-        self.Bind(wx.EVT_MENU, self.on_menu_default1, id=item.GetId())
-        wxglade_tmp_menu.AppendSeparator()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Save"), _("Save the current layer set"))
-        self.Bind(wx.EVT_MENU, self.on_menu_save, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Load"), _("Load existing layer sets"))
-        self.Bind(wx.EVT_MENU, self.on_menu_load, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Import"), _("Import existing layers"))
-        self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
-        self.RasterProperty_menubar.Append(wxglade_tmp_menu, _("Layers"))
-        self.SetMenuBar(self.RasterProperty_menubar)
-        # Menu Bar end
+        # # Menu Bar
+        # self.RasterProperty_menubar = wx.MenuBar()
+        # wxglade_tmp_menu = wx.Menu()
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Clear"), _("Delete all the layers"))
+        # self.Bind(wx.EVT_MENU, self.on_menu_clear, id=item.GetId())
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Other/Blue/Red"), _("Set layers to the default"))
+        # self.Bind(wx.EVT_MENU, self.on_menu_default0, id=item.GetId())
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Basic"), _("Set layers to basic form"))
+        # self.Bind(wx.EVT_MENU, self.on_menu_default1, id=item.GetId())
+        # wxglade_tmp_menu.AppendSeparator()
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Save"), _("Save the current layer set"))
+        # self.Bind(wx.EVT_MENU, self.on_menu_save, id=item.GetId())
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Load"), _("Load existing layer sets"))
+        # self.Bind(wx.EVT_MENU, self.on_menu_load, id=item.GetId())
+        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Import"), _("Import existing layers"))
+        # self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
+        # self.RasterProperty_menubar.Append(wxglade_tmp_menu, _("Layers"))
+        # self.SetMenuBar(self.RasterProperty_menubar)
+        # # Menu Bar end
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_add_layer = wx.BitmapButton(self.main_panel, wx.ID_ANY, icons8_plus_50.GetBitmap())
@@ -185,6 +188,20 @@ class OperationProperty(wx.Frame, Module):
         self.check_passes.SetToolTip(_("Enable Passes"))
         self.text_passes.SetToolTip(_("Run operation how many times?"))
         # end wxGlade
+
+        # 0.6.1 freeze, drops.
+        self.check_group_pulse.Enable(False)
+        self.check_dot_length_custom.Enable(False)
+        self.text_dot_length.Enable(False)
+        self.slider_top.Enable(False)
+        self.slider_right.Enable(False)
+        self.slider_left.Enable(False)
+        self.slider_bottom.Enable(False)
+        self.check_passes.Enable(False)
+        self.text_passes.Enable(False)
+        self.button_add_layer.Show(False)
+        self.button_remove_layer.Show(False)
+        self.listbox_layer.Show(False)
 
     def __do_layout(self):
         # begin wxGlade: OperationProperty.__do_layout
@@ -558,9 +575,9 @@ class OperationProperty(wx.Frame, Module):
         self.advanced_panel.Show(on)
         self.operation.advanced = bool(on)
         if on:
-            self.SetSize((712, 500))
+            self.SetSize((advanced_width, 500))
         else:
-            self.SetSize((400, 500))
+            self.SetSize((simple_width, 500))
 
     def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()

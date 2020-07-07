@@ -832,7 +832,7 @@ class Elemental(Module):
         self.clear_operations()
         self.add_op(LaserOperation(operation="Image", color="black",
                                    speed=140.0,
-                                   power=self.device.raster_power,
+                                   power=1000.0,
                                    raster_step=3))
         self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
         self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
@@ -843,7 +843,7 @@ class Elemental(Module):
         self.clear_operations()
         self.add_op(LaserOperation(operation="Image", color="black",
                                    speed=140.0,
-                                   power=self.device.raster_power,
+                                   power=1000.0,
                                    raster_step=3))
         self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
         self.add_op(LaserOperation(operation="Engrave", color="green", speed=35.0))
