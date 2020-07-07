@@ -43,7 +43,7 @@ class SVGWriter:
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = device.elements
         for operation in elements.ops():
-            subelement = SubElement(root, "Operation")
+            subelement = SubElement(root, "operation")
             for key in dir(operation):
                 if key.startswith('_'):
                     continue
@@ -51,6 +51,9 @@ class SVGWriter:
                 if type(value) not in (int, float, str, bool):
                     continue
                 subelement.set(key, str(value))
+        if elements.note is not None:
+            subelement = SubElement(root, "note")
+            subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
             if isinstance(element, Path):
                 subelement = SubElement(root, SVG_TAG_PATH)

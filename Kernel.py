@@ -725,7 +725,7 @@ class Elemental(Module):
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
-
+        self._note = None
         self._bounds = None
 
     def attach(self, device, name=None, channel=None):
@@ -1057,7 +1057,11 @@ class Elemental(Module):
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
+        self.clear_note()
         self.validate_bounds()
+
+    def clear_note(self):
+        self.note = None
 
     def remove_files(self, file_list):
         for f in file_list:

@@ -1141,6 +1141,15 @@ class Console(Module, Pipe):
                 return
             elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
             return
+        elif command == 'note':
+            if len(args) == 0:
+                if elements.note is None:
+                    yield "No Note."
+                else:
+                    yield str(elements.note)
+            else:
+                elements.note = ' '.join(args)
+                yield "Note Set."
         elif command == 'cut':
             if not elements.has_emphasis():
                 yield "No selected elements."
