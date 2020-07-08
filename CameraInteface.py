@@ -28,6 +28,15 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera 1"), "", wx.ITEM_RADIO)
+        self.camera_ip_menu1 = item
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-1), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera 2"), "", wx.ITEM_RADIO)
+        self.camera_ip_menu2 = item
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-2), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera 3"), "", wx.ITEM_RADIO)
+        self.camera_ip_menu3 = item
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-3), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "", wx.ITEM_RADIO)
         self.camera_0_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(0), id=item.GetId())
@@ -152,6 +161,9 @@ class CameraInterface(wx.Frame, Module):
         self.device.setting(bool, 'camera_correction_perspective', False)
         self.device.setting(str, 'fisheye', '')
         self.device.setting(str, 'perspective', '')
+        self.device.setting(str, 'camera_uri1', '')
+        self.device.setting(str, 'camera_uri2', '')
+        self.device.setting(str, 'camera_uri3', '')
         self.check_fisheye.SetValue(self.device.camera_correction_fisheye)
         self.check_perspective.SetValue(self.device.camera_correction_perspective)
         if self.device.fisheye is not None and len(self.device.fisheye) != 0:
@@ -160,7 +172,13 @@ class CameraInterface(wx.Frame, Module):
             self.perspective = eval(self.device.perspective)
         self.slider_fps.SetValue(self.device.camera_fps)
 
-        if self.device.camera_index == 0:
+        if self.device.camera_index == -3:
+            self.camera_ip_menu3.Check(True)
+        elif self.device.camera_index == -2:
+            self.camera_ip_menu2.Check(True)
+        elif self.device.camera_index == -1:
+            self.camera_ip_menu1.Check(True)
+        elif self.device.camera_index == 0:
             self.camera_0_menu.Check(True)
         elif self.device.camera_index == 1:
             self.camera_1_menu.Check(True)
@@ -303,6 +321,12 @@ class CameraInterface(wx.Frame, Module):
         self.close_camera()
         if self.camera_job is not None:
             self.camera_job.cancel()
+        if camera_index < 0:
+            self.camera_uri_request(abs(camera_index))
+            uri = self.get_camera_uri()
+            if uri is None or len(uri) == 0:
+                self.camera_lock.release()
+                return
         self.camera_job = self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.camera_lock.release()
 
@@ -339,6 +363,24 @@ class CameraInterface(wx.Frame, Module):
         except RuntimeError:
             pass
 
+    def camera_uri_request(self, index=None):
+        if index is None:
+            index = abs(self.device.camera_index)
+        try:
+            dlg = wx.TextEntryDialog(self, _(
+                "Enter the HTTP or RTSP uri for the webcam #%d") % index,
+                                     _("Webcam URI Update"), '')
+            dlg.SetValue(self.get_camera_uri())
+            modal = dlg.ShowModal()
+            if modal == wx.ID_OK:
+                self.set_camera_uri(str(dlg.GetValue()))
+                wx.CallAfter(self.init_camera)
+            else:
+                wx.CallAfter(self.camera_error_webcam)
+            dlg.Destroy()
+        except RuntimeError:
+            pass
+
     def camera_success(self):
         try:
             for attr in dir(self):
@@ -347,6 +389,17 @@ class CameraInterface(wx.Frame, Module):
                     value.Enable(True)
         except RuntimeError:
             pass
+
+    def set_camera_uri(self, uri):
+        return setattr(self.device,
+                       "camera_uri%d" % abs(self.device.camera_index),
+                       uri)
+
+    def get_camera_uri(self):
+        index = self.device.camera_index
+        if index >= 0:
+            return index
+        return getattr(self.device, "camera_uri%d" % abs(index))
 
     def init_camera(self):
         if self.device is None:
@@ -358,7 +411,14 @@ class CameraInterface(wx.Frame, Module):
         except ImportError:
             wx.CallAfter(self.camera_error_requirement)
             return
-        self.capture = cv2.VideoCapture(self.device.camera_index)
+        if self.device.camera_index >= 0:
+            self.capture = cv2.VideoCapture(self.device.camera_index)
+        else:
+            uri = self.get_camera_uri()
+            if uri is None or len(uri) == 0:
+                return
+            else:
+                self.capture = cv2.VideoCapture(self.get_camera_uri())
         wx.CallAfter(self.camera_success)
         try:
             self.interval = 1.0 / self.device.camera_fps
