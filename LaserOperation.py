@@ -202,32 +202,45 @@ class LaserOperation(list):
                     self.append(element_copy)
 
     def __str__(self):
-        parts = list()
-        parts.append("%gmm/s" % self.speed)
-        parts.append("%gppi" % self.power)
         op = self.operation
-        if self.dratio_custom:
-            parts.append("d:%g" % self.dratio)
-        if self.operation == "Raster":
-            op += str(self.raster_step)
-            if self.raster_direction == 0:
-                parts.append("T2B")
-            elif self.raster_direction == 1:
-                parts.append("B2T")
-            elif self.raster_direction == 2:
-                parts.append("R2L")
-            elif self.raster_direction == 3:
-                parts.append("L2R")
-            elif self.raster_direction == 4:
-                parts.append("X")
-            else:
-                parts.append("%d" % self.raster_direction)
-            if isinstance(self.overscan, str):
-                parts.append("%s" % self.overscan)
-            else:
-                parts.append("%d" % self.overscan)
         if op is None:
             op = "Unknown"
+        if self.operation == "Raster":
+            op += str(self.raster_step)
+        parts = list()
+        parts.append("%gmm/s" % self.speed)
+        if self.operation in ("Raster", "Image"):
+            if self.raster_swing:
+                raster_dir = "-"
+            else:
+                raster_dir = "="
+            if self.raster_direction == 0:
+                raster_dir += "T2B"
+            elif self.raster_direction == 1:
+                raster_dir += "B2T"
+            elif self.raster_direction == 2:
+                raster_dir += "R2L"
+            elif self.raster_direction == 3:
+                raster_dir += "L2R"
+            elif self.raster_direction == 4:
+                raster_dir += "X"
+            else:
+                raster_dir += "%d" % self.raster_direction
+            parts.append(raster_dir)
+        parts.append("%gppi" % self.power)
+        if self.operation in ("Raster", "Image"):
+            if isinstance(self.overscan, str):
+                parts.append("±%s" % self.overscan)
+            else:
+                parts.append("±%d" % self.overscan)
+        if self.dratio_custom:
+            parts.append("d:%g" % self.dratio)
+        if self.acceleration_custom:
+            parts.append("a:%d" % self.acceleration)
+        if self.passes_custom:
+            parts.append("passes: %d" % self.passes)
+        if self.dot_length_custom:
+            parts.append("dot: %d" % self.dot_length)
         return "%s %s" % (op, " ".join(parts))
 
     def __copy__(self):
