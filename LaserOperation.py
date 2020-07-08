@@ -203,8 +203,8 @@ class LaserOperation(list):
 
     def __str__(self):
         parts = list()
-        parts.append("s:%g" % self.speed)
-        parts.append("p:%g" % self.power)
+        parts.append("%gmm/s" % self.speed)
+        parts.append("%gppi" % self.power)
         op = self.operation
         if self.dratio_custom:
             parts.append("d:%g" % self.dratio)
@@ -223,12 +223,12 @@ class LaserOperation(list):
             else:
                 parts.append("%d" % self.raster_direction)
             if isinstance(self.overscan, str):
-                parts.append("o=%s" % self.overscan)
+                parts.append("%s" % self.overscan)
             else:
-                parts.append("o=%d" % self.overscan)
+                parts.append("%d" % self.overscan)
         if op is None:
             op = "Unknown"
-        return "%s %s" % (op, ", ".join(parts))
+        return "%s %s" % (op, " ".join(parts))
 
     def __copy__(self):
         return LaserOperation(self)
