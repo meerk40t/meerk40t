@@ -209,8 +209,19 @@ class LaserOperation(list):
         if self.dratio_custom:
             parts.append("d:%g" % self.dratio)
         if self.operation == "Raster":
-            parts.append("%d" % self.raster_step)
-            parts.append("%d" % self.raster_direction)
+            op += str(self.raster_step)
+            if self.raster_direction == 0:
+                parts.append("T2B")
+            elif self.raster_direction == 1:
+                parts.append("B2T")
+            elif self.raster_direction == 2:
+                parts.append("R2L")
+            elif self.raster_direction == 3:
+                parts.append("L2R")
+            elif self.raster_direction == 4:
+                parts.append("X")
+            else:
+                parts.append("%d" % self.raster_direction)
             if isinstance(self.overscan, str):
                 parts.append("o=%s" % self.overscan)
             else:
