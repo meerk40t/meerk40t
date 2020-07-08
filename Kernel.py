@@ -725,7 +725,7 @@ class Elemental(Module):
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
-        self._note = None
+        self.note = None
         self._bounds = None
 
     def attach(self, device, name=None, channel=None):
@@ -1295,9 +1295,15 @@ class Elemental(Module):
                     results = loader.load(self.device, pathname, **kwargs)
                     if results is None:
                         continue
-                    elements, pathname, basename = results
+                    elements, ops, note, pathname, basename = results
                     self._filenodes[pathname] = elements
                     self.add_elems(elements)
+                    if ops is not None:
+                        self.clear_operations()
+                        self.add_ops(ops)
+                    if note is not None:
+                        self.clear_note()
+                        self.note = note
                     return elements, pathname, basename
         return None
 

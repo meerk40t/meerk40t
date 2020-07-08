@@ -6826,8 +6826,12 @@ class SVG(Group):
                     s = Rect(values)
                 elif SVG_TAG_IMAGE == tag:
                     s = SVGImage(values)
-                else:
+                elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC):
                     # <style>, <text>, <desc>
+                    continue
+                else:
+                    s = SVGElement(values)  # SVG Unknown object return as element.
+                    context.append(s)
                     continue
                 s.render(ppi=ppi, width=width, height=height)
                 if reify:

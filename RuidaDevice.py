@@ -1305,4 +1305,4 @@ class RDLoader:
         elements = list()
         with open(pathname, 'rb') as f:
             ruidaemulator.parse(f, elements=elements.append, channel=channel)
-        return elements, pathname, basename
+        return elements, None, None, pathname, basename
