@@ -124,9 +124,6 @@ ID_MENU_SPOOLER = idinc.new()
 ID_MENU_JOB = idinc.new()
 ID_MENU_TREE = idinc.new()
 
-ID_CUT_TREE = idinc.new()
-ID_CUT_BURN_BUTTON = idinc.new()
-
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('fr', u'français', wx.LANGUAGE_FRENCH),
@@ -665,16 +662,16 @@ class MeerK40t(wx.Frame, Module):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
+        self.tree.SetMaxSize((200,-1))
 
     def __do_layout(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
         widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
         widget_sizer.Add(self.tree, 1, wx.EXPAND, 0)
-        widget_sizer.Add(self.scene, 5, wx.ALL | wx.EXPAND, 2)
+        widget_sizer.Add(self.scene, 5, wx.EXPAND, 0)
         main_sizer.Add(widget_sizer, 5, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
-        # main_sizer.Fit(self)
         self.Layout()
 
     def load(self, pathname):
