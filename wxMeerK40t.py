@@ -662,7 +662,7 @@ class MeerK40t(wx.Frame, Module):
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
             self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
-        self.tree.SetMaxSize((350, -1))
+        self.tree.SetMaxSize((275, -1))
 
     def __do_layout(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
