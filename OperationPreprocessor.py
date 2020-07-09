@@ -210,6 +210,7 @@ class OperationPreprocessor:
         if width != element_width and height != element_height:
             image_element.image_width, image_element.image_height = (width, height)
             pil_image = pil_image.crop(box)
+            box = pil_image.getbbox()
             m.post_translate(box[0], box[1])
         # step level requires the new actualized matrix be scaled up.
         m.post_scale(step_level, step_level)

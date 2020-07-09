@@ -2002,7 +2002,7 @@ class RootNode(list):
             bounds = OperationPreprocessor.bounding_box(node.parent)
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.device.using('module', 'Console').write('rotate %f %f %f\n' % (value, center_x, center_y))
+            self.device.using('module', 'Console').write('rotate %frad %f %f\n' % (value, center_x, center_y))
 
         return specific
 

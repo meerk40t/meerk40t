@@ -1,8 +1,9 @@
 from copy import copy
 
+from CutPlanner import CutPlanner
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import SVGImage, SVGElement, Shape, Color
+from svgelements import SVGImage, SVGElement, Shape, Color, Matrix
 
 
 class LaserOperation(list):
@@ -373,11 +374,11 @@ class LaserOperation(list):
                         overscan = int(overscan)
                     except ValueError:
                         overscan = 20
-                # TODO: FIX CRITICAL BUG HERE WITH ROTATED ELEMENT
-                p = m.transform_point([0,0])
+                tx = m.value_trans_x()
+                ty = m.value_trans_y()
                 raster = RasterPlotter(data, width, height, traverse, 0, overscan,
-                                       p[0],
-                                       p[1],
+                                       tx,
+                                       ty,
                                        step, image_filter)
                 yield COMMAND_MODE_RAPID
                 x, y = raster.initial_position_in_scene()
