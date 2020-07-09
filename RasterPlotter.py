@@ -59,15 +59,22 @@ class RasterPlotter:
 
         self.traversal = traversal
         self.skip_pixel = skip_pixel
-        self.overscan = overscan
+        if isinstance(overscan, str) and overscan.endswith('%'):
+            try:
+                overscan = float(overscan[:-1]) / 100.0
+                if self.traversal & Y_AXIS != 0:
+                    overscan *= self.height
+                else:
+                    overscan *= self.width
+            except ValueError:
+                pass
+        self.overscan = round(overscan / float(step))
         self.offset_x = int(offset_x)
         self.offset_y = int(offset_y)
         self.step = step
         self.px_filter = px_filter
         self.back_filter = back_filter
-        x, y = self.calculate_first_pixel()
-        self.initial_x = x
-        self.initial_y = y
+        self.initial_x, self.initial_y = self.calculate_first_pixel()
 
     def px(self, x, y):
         """
@@ -235,13 +242,13 @@ class RasterPlotter:
             if rightside:
                 while True:
                     x = self.rightmost_not_equal(y)
-                    if x != self.width:
+                    if x != self.width-1:
                         break
                     y += dy
             else:
                 while True:
                     x = self.leftmost_not_equal(y)
-                    if x != -1:
+                    if x != 0:
                         break
                     y += dy
         except IndexError:
@@ -265,7 +272,7 @@ class RasterPlotter:
                     # find that the bottommost pixel in that row.
                     y = self.bottommost_not_equal(x)
 
-                    if y != self.height:
+                    if y != self.height - 1:
                         # This is a valid pixel.
                         break
                     # No pixel in that row was valid. Move to the next row.
@@ -273,7 +280,7 @@ class RasterPlotter:
             else:
                 while True:
                     y = self.topmost_not_equal(x)
-                    if y != -1:
+                    if y != 0:
                         break
                     x += dx
         except IndexError:
@@ -293,7 +300,7 @@ class RasterPlotter:
         if (self.traversal & Y_AXIS) != 0:
             x = 0
             dx = 1
-            if (self.traversal & RIGHT) != 0:
+            if (self.traversal & RIGHT) != 0:  # Start on Right Edge?
                 x = self.width - 1
                 dx = -1
             x, y = self.calculate_next_vertical_pixel(x, dx, self.traversal & BOTTOM != 0)
@@ -301,7 +308,7 @@ class RasterPlotter:
         else:
             y = 0
             dy = 1
-            if (self.traversal & BOTTOM) != 0:
+            if (self.traversal & BOTTOM) != 0:  # Start on Bottom Edge?
                 y = self.height - 1
                 dy = -1
             x, y = self.calculate_next_horizontal_pixel(y, dy, self.traversal & RIGHT != 0)
