@@ -107,44 +107,52 @@ class RasterPlotter:
     def leftmost_not_equal(self, y):
         """"
         Determine the leftmost pixel that is not equal to the skip_pixel value.
+
+        if all pixels skipped returns None
         """
         for x in range(0, self.width):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
-        return -1
+        return None
 
     def topmost_not_equal(self, x):
         """
         Determine the topmost pixel that is not equal to the skip_pixel value
+
+        if all pixels skipped returns None
         """
         for y in range(0, self.height):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
-        return -1
+        return None
 
     def rightmost_not_equal(self, y):
         """
         Determine the rightmost pixel that is not equal to the skip_pixel value
+
+        if all pixels skipped returns None
         """
         for x in range(self.width - 1, -1, -1):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
-        return self.width
+        return None
 
     def bottommost_not_equal(self, x):
         """
         Determine the bottommost pixel that is not equal to the skip_pixel value
+
+        if all pixels skipped returns None
         """
         for y in range(self.height - 1, -1, -1):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
-        return self.height
+        return None
 
-    def nextcolor_left(self, x, y, default):
+    def nextcolor_left(self, x, y, default=None):
         """
         Determine the next pixel change going left from the (x,y) point.
         If no next pixel is found default is returned.
@@ -165,7 +173,7 @@ class RasterPlotter:
                 return ix
         return 0
 
-    def nextcolor_top(self, x, y, default):
+    def nextcolor_top(self, x, y, default=None):
         """
         Determine the next pixel change going top from the (x,y) point.
         If no next pixel is found default is returned.
@@ -186,7 +194,7 @@ class RasterPlotter:
                 return iy
         return 0
 
-    def nextcolor_right(self, x, y, default):
+    def nextcolor_right(self, x, y, default=None):
         """
         Determine the next pixel change going right from the (x,y) point.
         If no next pixel is found default is returned.
@@ -207,7 +215,7 @@ class RasterPlotter:
                 return ix
         return self.width - 1
 
-    def nextcolor_bottom(self, x, y, default):
+    def nextcolor_bottom(self, x, y, default=None):
         """
         Determine the next pixel change going bottom from the (x,y) point.
         If no next pixel is found default is returned.
@@ -242,13 +250,13 @@ class RasterPlotter:
             if rightside:
                 while True:
                     x = self.rightmost_not_equal(y)
-                    if x != self.width-1:
+                    if x is not None:
                         break
                     y += dy
             else:
                 while True:
                     x = self.leftmost_not_equal(y)
-                    if x != 0:
+                    if x is not None:
                         break
                     y += dy
         except IndexError:
@@ -272,7 +280,7 @@ class RasterPlotter:
                     # find that the bottommost pixel in that row.
                     y = self.bottommost_not_equal(x)
 
-                    if y != self.height - 1:
+                    if y is not None:
                         # This is a valid pixel.
                         break
                     # No pixel in that row was valid. Move to the next row.
@@ -280,7 +288,7 @@ class RasterPlotter:
             else:
                 while True:
                     y = self.topmost_not_equal(x)
-                    if y != 0:
+                    if y is not None:
                         break
                     x += dx
         except IndexError:
@@ -366,7 +374,7 @@ class RasterPlotter:
             # This code is for /\up-down\/ column rastering.
             while 0 <= x < width:
                 lower_bound = self.topmost_not_equal(x)
-                if lower_bound == -1:
+                if lower_bound is None:
                     x += dx
                     yield offset_x + x * step, offset_y + y * step, 0
                     continue
@@ -410,7 +418,7 @@ class RasterPlotter:
             # This code is left<->right row rastering.
             while 0 <= y < height:
                 lower_bound = self.leftmost_not_equal(y)
-                if lower_bound == -1:
+                if lower_bound is None:
                     y += dy
                     yield offset_x + x * step, offset_y + y * step, 0
                     continue
