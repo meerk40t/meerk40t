@@ -31,7 +31,7 @@ or only on forward swing.
 class RasterPlotter:
 
     def __init__(self, data, width, height, traversal=0, skip_pixel=0, overscan=0,
-                 offset_x=0, offset_y=0, step=1, px_filter=None, back_filter=None):
+                 offset_x=0, offset_y=0, step=1, filter=None, alt_filter=None):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
 
@@ -44,11 +44,11 @@ class RasterPlotter:
         :param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
         :param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
         :param step: The amount units per pixel. This is both scanline gap and pixel step.
-        :param px_filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
+        :param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
                             implementation is agnostic with regards to what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                             part of the skip pixel.
-        :param back_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
+        :param alt_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
                             static. But, an alternative backswing filter could allow for that some plotting to occur
                             on the backswing based on a different criteria than forward swing. By default this returns
                             skip pixels, which will not plot anything.
@@ -56,13 +56,12 @@ class RasterPlotter:
         self.data = data
         self.width = width
         self.height = height
-
         self.traversal = traversal
         self.skip_pixel = skip_pixel
         if isinstance(overscan, str) and overscan.endswith('%'):
             try:
                 overscan = float(overscan[:-1]) / 100.0
-                if self.traversal & Y_AXIS != 0:
+                if self.traversal & Y_AXIS:
                     overscan *= self.height
                 else:
                     overscan *= self.width
@@ -72,9 +71,20 @@ class RasterPlotter:
         self.offset_x = int(offset_x)
         self.offset_y = int(offset_y)
         self.step = step
-        self.px_filter = px_filter
-        self.back_filter = back_filter
+        self.filter = filter
+        self.main_filter = filter
+        self.alt_filter = alt_filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
+
+    def swap(self):
+        """
+        Swaps the px_filter
+        :return:
+        """
+        if self.filter == self.main_filter:
+            self.filter = self.alt_filter
+        else:
+            self.filter = self.main_filter
 
     def px(self, x, y):
         """
@@ -85,23 +95,9 @@ class RasterPlotter:
         :return: Filtered Pixel
         """
         if 0 <= y < self.height and 0 <= x < self.width:
-            if self.px_filter is None:
+            if self.filter is None:
                 return self.data[x, y]
-            return self.px_filter(self.data[x, y])
-        raise IndexError
-
-    def bpx(self, x, y):
-        """
-        Returns the backswing-filtered pixel.
-
-        :param x:
-        :param y:
-        :return: Filtered pixel.
-        """
-        if 0 <= y < self.height and 0 <= x < self.width:
-            if self.back_filter is None:
-                return self.skip_pixel
-            return self.back_filter(self.data[x, y])
+            return self.filter(self.data[x, y])
         raise IndexError
 
     def leftmost_not_equal(self, y):
@@ -305,21 +301,21 @@ class RasterPlotter:
 
         :return: x,y coordinates of first pixel.
         """
-        if (self.traversal & Y_AXIS) != 0:
+        if self.traversal & Y_AXIS:
             x = 0
             dx = 1
-            if (self.traversal & RIGHT) != 0:  # Start on Right Edge?
+            if self.traversal & RIGHT:  # Start on Right Edge?
                 x = self.width - 1
                 dx = -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, self.traversal & BOTTOM != 0)
+            x, y = self.calculate_next_vertical_pixel(x, dx, bool(self.traversal & BOTTOM))
             return x, y
         else:
             y = 0
             dy = 1
-            if (self.traversal & BOTTOM) != 0:  # Start on Bottom Edge?
+            if self.traversal & BOTTOM:  # Start on Bottom Edge?
                 y = self.height - 1
                 dy = -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, self.traversal & RIGHT != 0)
+            x, y = self.calculate_next_horizontal_pixel(y, dy, bool(self.traversal & RIGHT))
             return x, y
 
     def initial_position(self):
@@ -344,7 +340,7 @@ class RasterPlotter:
         If we are not rastering in the y-axis direction, the x-direction will have momentum.
         """
         t = self.traversal
-        return (t & RIGHT) != 0, (t & BOTTOM) != 0, (t & Y_AXIS) == 0, (t & Y_AXIS) != 0
+        return bool(t & RIGHT), bool(t & BOTTOM), not bool(t & Y_AXIS), bool(t & Y_AXIS)
 
     def plot(self):
         """
@@ -365,12 +361,12 @@ class RasterPlotter:
         x, y = self.initial_position()
         dx = 1
         dy = 1
-        if (self.traversal & RIGHT) != 0:
+        if self.traversal & RIGHT:
             dx = -1
-        if (self.traversal & BOTTOM) != 0:
+        if self.traversal & BOTTOM:
             dy = -1
         yield offset_x + x * step, offset_y + y * step, 0
-        if (traversal & Y_AXIS) != 0:
+        if traversal & Y_AXIS:
             # This code is for /\up-down\/ column rastering.
             while 0 <= x < width:
                 lower_bound = self.topmost_not_equal(x)

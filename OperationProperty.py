@@ -509,7 +509,7 @@ class OperationProperty(wx.Frame, Module):
             self.operation.operation = "Image"
             self.raster_panel.Show(True)
             self.text_raster_step.Enable(False)
-            self.text_raster_step.SetValue("Pass Through")
+            self.text_raster_step.SetValue(_("Pass Through"))
             self.check_dratio_custom.Enable(False)
             self.text_dratio.Enable(False)
             self.Layout()
