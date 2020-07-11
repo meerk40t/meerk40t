@@ -190,6 +190,8 @@ class OperationProperty(wx.Frame, Module):
         # end wxGlade
 
         # 0.6.1 freeze, drops.
+
+        self.radio_directional_raster.Enable(False)
         self.check_group_pulse.Enable(False)
         self.check_dot_length_custom.Enable(False)
         self.text_dot_length.Enable(False)
