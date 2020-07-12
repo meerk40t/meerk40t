@@ -811,11 +811,6 @@ class RectSelectWidget(Widget):
             self.end_location = space_pos
             return RESPONSE_CONSUME
         elif event_type == 'leftup':
-            self.start_location = None
-            self.end_location = None
-            return RESPONSE_CONSUME
-        elif event_type == 'move':
-            self.end_location = space_pos
             elements.validate_bounds()
             for obj in elements.elems():
                 sx = self.start_location[0]
@@ -843,6 +838,12 @@ class RectSelectWidget(Widget):
                 else:
                     obj.unemphasize()
             self.scene.device.signal('refresh_scene', 0)
+            self.start_location = None
+            self.end_location = None
+            return RESPONSE_CONSUME
+        elif event_type == 'move':
+            self.scene.device.signal('refresh_scene', 0)
+            self.end_location = space_pos
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
