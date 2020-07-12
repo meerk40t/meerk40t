@@ -132,6 +132,12 @@ supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('es', u'español', wx.LANGUAGE_SPANISH))
 
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+
 class MeerK40t(wx.Frame, Module):
     """
     MeerK40t main window
@@ -378,7 +384,7 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene = None
 
     def add_language_menu(self):
-        if os.path.exists('./locale'):
+        if os.path.exists(resource_path('./locale')):
             wxglade_tmp_menu = wx.Menu()
             i = 0
             for lang in supported_languages:
@@ -391,7 +397,7 @@ class MeerK40t(wx.Frame, Module):
                     return lambda e: self.device.device_root.app.update_language(q)
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
-                if not os.path.exists('./locale/%s' % language_code) and i != 0:
+                if not os.path.exists(resource_path('./locale/%s' % language_code)) and i != 0:
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
@@ -2470,7 +2476,7 @@ class wxMeerK40t(wx.App, Module):
     def initialize(self, channel=None):
         device = self.device
         _ = wx.GetTranslation
-        wx.Locale.AddCatalogLookupPathPrefix('locale')
+        wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
 
         device.run_later = wx.CallAfter
         device.translation = wx.GetTranslation
