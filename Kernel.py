@@ -365,7 +365,12 @@ class Interpreter(Module):
                     except:
                         pass
                 else:
-                    print('\a')  # Beep.
+                    try:
+                        from sys import stdout
+                        stdout.write('\a')
+                        stdout.flush()
+                    except:
+                        print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]

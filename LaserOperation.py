@@ -315,6 +315,8 @@ class LaserOperation(list):
                 yield COMMAND_SET_ACCELERATION, None
 
             yield COMMAND_SET_STEP, step
+            crosshatch = False
+            cross_traverse = 0
             traverse = 0
             if direction == 0:
                 traverse |= X_AXIS
@@ -328,9 +330,12 @@ class LaserOperation(list):
             elif direction == 3:
                 traverse |= Y_AXIS
                 traverse |= LEFT
+            elif direction == 4:
+                traverse |= X_AXIS
+                traverse |= TOP
+                crosshatch = True
             if self.raster_swing:
                 traverse |= UNIDIRECTIONAL
-
             for svgimage in self:
                 if not isinstance(svgimage, SVGImage):
                     continue  # We do not raster anything that is not classed properly.
@@ -386,4 +391,27 @@ class LaserOperation(list):
                 yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
                 yield COMMAND_MODE_PROGRAM
                 yield COMMAND_RASTER, raster
+                if crosshatch:
+                    cross_traverse = traverse
+                    if traverse & Y_AXIS:
+                        traverse ^= Y_AXIS
+                        cross_traverse ^= RIGHT
+                        if width % 1 == 0 and not traverse & UNIDIRECTIONAL:
+                            cross_traverse ^= BOTTOM
+                    else:
+                        traverse ^= Y_AXIS
+                        cross_traverse ^= BOTTOM
+                        if height % 1 == 0 and not traverse & UNIDIRECTIONAL:
+                            cross_traverse ^= RIGHT
+                    cross_raster = RasterPlotter(data, width, height, cross_traverse, 0, overscan,
+                                           tx,
+                                           ty,
+                                           step, image_filter)
+                    yield COMMAND_MODE_RAPID
+                    x, y = cross_raster.initial_position_in_scene()
+                    yield COMMAND_MOVE, x, y
+                    top, left, x_dir, y_dir = cross_raster.initial_direction()
+                    yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
+                    yield COMMAND_MODE_PROGRAM
+                    yield COMMAND_RASTER, cross_raster
             yield COMMAND_MODE_RAPID

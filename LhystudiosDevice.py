@@ -1,4 +1,3 @@
-import os
 import threading
 
 from CH341DriverBase import *
