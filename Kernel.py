@@ -358,8 +358,12 @@ class Interpreter(Module):
                 self.wait_finish()
             elif command == COMMAND_BEEP:
                 if os.name == 'nt':
-                    import winsound
-                    winsound.Beep(900, 500)
+                    try:
+                        import winsound
+                        for x in range(5):
+                            winsound.Beep(2000, 100)
+                    except:
+                        pass
                 else:
                     print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:

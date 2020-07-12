@@ -126,6 +126,7 @@ ID_MENU_TREE = idinc.new()
 
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
+                       ('it', u'italiano', wx.LANGUAGE_ITALIAN),
                        ('fr', u'français', wx.LANGUAGE_FRENCH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
                        ('es', u'español', wx.LANGUAGE_SPANISH))

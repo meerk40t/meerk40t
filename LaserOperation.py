@@ -1,6 +1,5 @@
 from copy import copy
 
-from CutPlanner import CutPlanner
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
 from svgelements import SVGImage, SVGElement, Shape, Color, Matrix
