@@ -1,3 +1,4 @@
+import os
 import time
 from threading import Thread, Lock
 
@@ -356,7 +357,11 @@ class Interpreter(Module):
             elif command == COMMAND_WAIT_FINISH:
                 self.wait_finish()
             elif command == COMMAND_BEEP:
-                print('\a')  # Beep.
+                if os.name == 'nt':
+                    import winsound
+                    winsound.Beep(900, 500)
+                else:
+                    print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]
