@@ -306,17 +306,13 @@ class LaserOperation(list):
             yield COMMAND_SET_ABSOLUTE
             yield COMMAND_SET_SPEED, self.speed
             direction = self.raster_direction
-            step = self.raster_step
             yield COMMAND_SET_POWER, self.power
             yield COMMAND_SET_D_RATIO, None
             if self.acceleration is not None and self.acceleration_custom:
                 yield COMMAND_SET_ACCELERATION, self.acceleration
             else:
                 yield COMMAND_SET_ACCELERATION, None
-
-            yield COMMAND_SET_STEP, step
             crosshatch = False
-            cross_traverse = 0
             traverse = 0
             if direction == 0:
                 traverse |= X_AXIS
@@ -336,6 +332,11 @@ class LaserOperation(list):
                 crosshatch = True
             if self.raster_swing:
                 traverse |= UNIDIRECTIONAL
+            if self.operation == "Raster":
+                step = self.raster_step
+            else:
+                step = self
+            yield COMMAND_SET_STEP, step
             for svgimage in self:
                 if not isinstance(svgimage, SVGImage):
                     continue  # We do not raster anything that is not classed properly.

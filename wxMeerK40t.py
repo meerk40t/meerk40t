@@ -14,7 +14,6 @@ from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller
-from DefaultModules import *
 from DeviceManager import DeviceManager
 from ImageProperty import ImageProperty
 from JobInfo import JobInfo
