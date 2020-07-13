@@ -393,16 +393,16 @@ class LaserOperation(list):
                 yield COMMAND_RASTER, raster
                 if crosshatch:
                     cross_traverse = traverse
+                    cross_traverse ^= Y_AXIS
                     if traverse & Y_AXIS:
-                        traverse ^= Y_AXIS
                         cross_traverse ^= RIGHT
-                        if width % 1 == 0 and not traverse & UNIDIRECTIONAL:
+                        if int(round(width)) & 1 and not traverse & UNIDIRECTIONAL:
                             cross_traverse ^= BOTTOM
                     else:
-                        traverse ^= Y_AXIS
                         cross_traverse ^= BOTTOM
-                        if height % 1 == 0 and not traverse & UNIDIRECTIONAL:
+                        if int(round(height)) & 1 and not traverse & UNIDIRECTIONAL:
                             cross_traverse ^= RIGHT
+
                     cross_raster = RasterPlotter(data, width, height, cross_traverse, 0, overscan,
                                            tx,
                                            ty,
