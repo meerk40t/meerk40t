@@ -30,7 +30,7 @@ class OperationPreprocessor:
     def conditional_jobadd_make_raster(self):
         for op in self.operations:
             try:
-                if op.operation in ("Raster", "Image"):
+                if op.operation == "Raster":
                     if len(op) == 0:
                         continue
                     if len(op) == 1 and isinstance(op[0], SVGImage):
@@ -45,7 +45,7 @@ class OperationPreprocessor:
         def make_image():
             for op in self.operations:
                 try:
-                    if op.operation in ("Raster", "Image"):
+                    if op.operation == "Raster":
                         if len(op) == 1 and isinstance(op[0], SVGImage):
                             continue
                         renderer = LaserRender(self.device.device_root)
@@ -89,9 +89,14 @@ class OperationPreprocessor:
     def conditional_jobadd_actualize_image(self):
         for op in self.operations:
             try:
-                if op.operation in ("Raster", "Image"):
+                if op.operation == "Raster":
                     for elem in op:
                         if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                            self.jobadd_actualize_image()
+                            return
+                if op.operation == "Image":
+                    for elem in op:
+                        if OperationPreprocessor.needs_actualization(elem, None):
                             self.jobadd_actualize_image()
                             return
             except AttributeError:
@@ -101,10 +106,14 @@ class OperationPreprocessor:
         def actualize():
             for op in self.operations:
                 try:
-                    if op.operation in ("Raster", "Image"):
+                    if op.operation == "Raster":
                         for elem in op:
                             if OperationPreprocessor.needs_actualization(elem, op.raster_step):
                                 OperationPreprocessor.make_actual(elem, op.raster_step)
+                    if op.operation == "Image":
+                        for elem in op:
+                            if OperationPreprocessor.needs_actualization(elem, None):
+                                OperationPreprocessor.make_actual(elem, None)
                 except AttributeError:
                     pass
         self.commands.append(actualize)

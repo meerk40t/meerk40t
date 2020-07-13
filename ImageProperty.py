@@ -1,6 +1,6 @@
 import wx
 
-from Kernel import Module
+from Kernel import Module, Matrix
 
 _ = wx.GetTranslation
 
@@ -139,12 +139,24 @@ class ImageProperty(wx.Frame, Module):
     def on_spin_step(self, event):  # wxGlade: ElementProperty.<event_handler>
         self.image_element.values['raster_step'] = self.spin_step_size.GetValue()
         self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
-        self.device.signal('element_property_update', self.image_element)
+        self.update_step_image()
 
     def on_combo_dpi(self, event):  # wxGlade: ImageProperty.<event_handler>
         self.spin_step_size.SetValue(self.combo_dpi.GetSelection() + 1)
         self.image_element.values['raster_step'] = self.spin_step_size.GetValue()
-        self.device.signal('element_property_update', self.image_element)
+        self.update_step_image()
+
+    def update_step_image(self):
+        element = self.image_element
+        step_value = self.spin_step_size.GetValue()
+        m = element.transform
+        tx = m.e
+        ty = m.f
+        element.transform = Matrix.scale(float(step_value), float(step_value))
+        element.transform.post_translate(tx, ty)
+        element.modified()
+        self.device.signal('element_property_update', element)
+        self.device.signal('refresh_scene')
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()

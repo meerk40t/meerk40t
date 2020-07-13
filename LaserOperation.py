@@ -269,7 +269,10 @@ class LaserOperation(list):
                     try:
                         step = e.raster_step
                     except AttributeError:
-                        step = 1
+                        try:
+                            step = int(e.values['raster_step'])
+                        except (KeyError, ValueError):
+                            step = 1
                     estimate += (e.image_width * e.image_height * step) / (39.3701 * self.speed)
             hours, remainder = divmod(estimate, 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -332,14 +335,17 @@ class LaserOperation(list):
                 crosshatch = True
             if self.raster_swing:
                 traverse |= UNIDIRECTIONAL
-            if self.operation == "Raster":
-                step = self.raster_step
-            else:
-                step = self
-            yield COMMAND_SET_STEP, step
             for svgimage in self:
                 if not isinstance(svgimage, SVGImage):
                     continue  # We do not raster anything that is not classed properly.
+                if self.operation == "Raster":
+                    step = self.raster_step
+                else:
+                    try:
+                        step = int(svgimage.values['raster_step'])
+                    except (KeyError, ValueError):
+                        step = 1
+                yield COMMAND_SET_STEP, step
                 image = svgimage.image
                 width, height = image.size
                 mode = image.mode
