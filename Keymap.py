@@ -23,6 +23,7 @@ class Keymap(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.SetFocus()
@@ -69,6 +70,40 @@ class Keymap(wx.Frame, Module):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def on_item_activated(self, event):
+        element = event.Text
+        self.text_key_name.SetValue(element)
+        self.text_command_name.SetValue(self.device.device_root.keymap[element])
+
+    def on_item_rightclick(self, event):
+        element = event.Text
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, _("Reset Default"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_tree_popup_clear(self, element):
+        def delete(event):
+            self.device.default_keymap()
+            self.list_keymap.DeleteAllItems()
+            self.reload_keymap()
+
+        return delete
+
+    def on_tree_popup_delete(self, element):
+        def delete(event):
+            try:
+                del self.device.keymap[element]
+                self.list_keymap.DeleteAllItems()
+                self.reload_keymap()
+            except KeyError:
+                pass
+
+        return delete
 
     def reload_keymap(self):
         i = 0
