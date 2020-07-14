@@ -2,7 +2,7 @@ from copy import copy
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import SVGImage, SVGElement, Shape, Color, Matrix
+from svgelements import SVGImage, SVGElement, Shape, Color, Matrix, Path, Polygon
 
 
 class LaserOperation(list):
@@ -301,8 +301,13 @@ class LaserOperation(list):
                 pass
             yield COMMAND_MODE_PROGRAM
             for object_path in self:
-                plot = abs(object_path)
-                yield COMMAND_PLOT, plot
+                if isinstance(object_path, SVGImage):
+                    box = object_path.bbox()
+                    plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
+                    yield COMMAND_PLOT, plot
+                else:
+                    plot = abs(object_path)
+                    yield COMMAND_PLOT, plot
             yield COMMAND_MODE_RAPID
         elif self.operation in ("Raster", "Image"):
             yield COMMAND_MODE_RAPID
