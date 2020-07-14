@@ -22,6 +22,7 @@ class Keymap(wx.Frame, Module):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.SetFocus()

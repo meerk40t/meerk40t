@@ -82,7 +82,21 @@ class JobSpooler(wx.Frame, Module):
         event.Skip()
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
-        event.Skip()
+        index = event.Index
+        if index == 0:
+            event.Skip()
+            return  # We can't delete the running element.
+        try:
+            element = self.device.spooler._queue[index]
+        except IndexError:
+            return
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
 
     def refresh_spooler_list(self):
         if not self.update_spooler:
