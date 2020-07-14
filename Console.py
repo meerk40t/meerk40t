@@ -1173,7 +1173,7 @@ class Console(Module, Pipe):
                 yield "No selected elements."
                 return
             op = LaserOperation()
-            op.operation = "Cut"
+            op.operation = "Raster"
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
