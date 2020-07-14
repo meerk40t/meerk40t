@@ -2052,18 +2052,65 @@ class Kernel(Device):
         :return:
         """
         Device.boot(self)
-        self.default_keymap()
-        self.default_alias()
+        self.boot_keymap()
+        self.boot_alias()
         self.device_boot()
 
     def shutdown(self, channel=None):
         """
         Begins kernel shutdown procedure.
         """
+        self.save_keymap_alias()
         Device.shutdown(self, channel)
 
         if self.config is not None:
             self.config.Flush()
+
+    def save_keymap_alias(self):
+        config = self.config
+        if config is None:
+            return
+        config.DeleteGroup('keymap')
+        config.DeleteGroup('alias')
+        config.SetPath('keymap')
+        for key in self.keymap:
+            config.Write(key, self.keymap[key])
+        config.SetPath('..')
+
+        config.SetPath('alias')
+        for key in self.alias:
+            config.Write(key, self.alias[key])
+        config.SetPath('..')
+
+    def boot_keymap(self):
+        self.keymap = dict()
+        config = self.config
+        if config is None:
+            self.default_keymap()
+            return
+        config.SetPath('keymap')
+        m, value, i = config.GetFirstEntry()
+        while m:
+            self.keymap[value] = config.Read(value, '')
+            m, value, i = config.GetNextEntry(i)
+        config.SetPath('..')
+        if not len(self.keymap):
+            self.default_keymap()
+
+    def boot_alias(self):
+        self.alias = dict()
+        config = self.config
+        if config is None:
+            self.default_alias()
+            return
+        config.SetPath('alias')
+        m, value, i = config.GetFirstEntry()
+        while m:
+            self.alias[value] = config.Read(value, '')
+            m, value, i = config.GetNextEntry(i)
+        config.SetPath('..')
+        if not len(self.alias):
+            self.default_alias()
 
     def default_keymap(self):
         self.keymap["escape"] = "window open Adjustments"
