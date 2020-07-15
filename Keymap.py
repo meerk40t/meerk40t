@@ -135,6 +135,7 @@ class Keymap(wx.Frame, Module):
         self.device.device_root.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
         self.text_key_name.SetValue('')
         self.text_command_name.SetValue('')
+        self.list_keymap.DeleteAllItems()
         self.reload_keymap()
 
     def on_key_press(self, event):
