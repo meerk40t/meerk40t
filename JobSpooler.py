@@ -87,9 +87,6 @@ class JobSpooler(wx.Frame, Module):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
-        if index == 0:
-            event.Skip()
-            return  # We can't delete the running element.
         try:
             element = self.device.spooler._queue[index]
         except IndexError:

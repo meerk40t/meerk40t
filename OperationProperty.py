@@ -190,7 +190,7 @@ class OperationProperty(wx.Frame, Module):
         sizer_3.Add(label_7, 1, 0, 0)
         sizer_3.Add(self.text_raster_step, 1, 0, 0)
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
-        label_6 = wx.StaticText(self.raster_panel, wx.ID_ANY, _("Overscan (mils/%)"))
+        label_6 = wx.StaticText(self.raster_panel, wx.ID_ANY, _("Overscan (mils)"))
         sizer_6.Add(label_6, 1, 0, 0)
         sizer_6.Add(self.text_overscan, 1, 0, 0)
         raster_sizer.Add(sizer_6, 0, wx.EXPAND, 0)

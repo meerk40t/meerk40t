@@ -1728,6 +1728,12 @@ class RootNode(list):
         if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(selections) > 1:
             gui.Bind(wx.EVT_MENU, self.menu_remove_multi(node),
                      menu.Append(wx.ID_ANY, _("Remove: %d objects") % len(selections), "", wx.ITEM_NORMAL))
+        if t == NODE_OPERATION_ELEMENT:
+            duplicate_menu_eop = wx.Menu()
+            for i in range(1, 10):
+                gui.Bind(wx.EVT_MENU, self.menu_duplicate_element_op(node, i),
+                         duplicate_menu_eop.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(duplicate_menu_eop, _("Duplicate"))
         if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
             gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
                      menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
@@ -2121,6 +2127,14 @@ class RootNode(list):
 
         return specific
 
+    def menu_duplicate_element_op(self, node, copies):
+        def specific(event):
+            node.parent.object.extend([node.object] * copies)
+            node.parent.object.modified()
+            self.device.signal('rebuild_tree', 0)
+
+        return specific
+
     def menu_duplicate(self, node, copies):
         """
         Menu to duplicate elements.
@@ -2177,7 +2191,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window', "JobInfo", None, -1, "").set_operations(list(self.elements.ops(selected=True)))
+            self.device.open('window', "JobInfo", self.gui, -1, "").set_operations(list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 
