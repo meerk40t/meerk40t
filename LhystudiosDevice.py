@@ -1041,6 +1041,9 @@ class LhystudioController(Module, Pipe):
 
         self.device.control_instance_add("Resume", resume_k40)
 
+    def shutdown(self, channel=None):
+        Module.shutdown(channel=channel)
+
     def __repr__(self):
         return "LhystudioController()"
 
@@ -1159,6 +1162,7 @@ class LhystudioController(Module, Pipe):
 
     def stop(self):
         self.abort()
+        self._thread.join()  # Wait until stop completes before continuing.
 
     def update_usb_state(self, code):
         """
@@ -1266,13 +1270,13 @@ class LhystudioController(Module, Pipe):
                 continue
             if queue_processed:
                 # Packet was sent.
-                if self.state != STATE_PAUSE and self.state != STATE_BUSY and self.state != STATE_ACTIVE:
+                if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_ACTIVE, STATE_TERMINATE):
                     self.update_state(STATE_ACTIVE)
                 self.count = 0
                 continue
             else:
                 # No packet could be sent.
-                if self.state != STATE_PAUSE and self.state != STATE_BUSY and self.state != STATE_IDLE:
+                if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_BUSY, STATE_TERMINATE):
                     self.update_state(STATE_IDLE)
                 if self.count > 50:
                     self.count = 50

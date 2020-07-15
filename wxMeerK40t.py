@@ -182,7 +182,6 @@ class MeerK40t(wx.Frame, Module):
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        # NOTE: New Project
 
         wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
         wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
@@ -402,8 +401,12 @@ class MeerK40t(wx.Frame, Module):
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     def on_close(self, event):
-        self.device.close('window', self.name)
-        event.Skip()  # Call destroy as regular.
+        try:
+            v = self.device.instances['window'][self.name]
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+        except KeyError:
+            event.Veto()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
@@ -1524,7 +1527,7 @@ class RootNode(list):
                 return
             elif drop_node.type == NODE_OPERATION_BRANCH:
                 obj = drag_node.object
-                self.device.classify(obj)
+                self.device.classify([obj])
                 event.Allow()
                 self.notify_tree_data_change()
         elif drag_node.type == NODE_OPERATION_ELEMENT:
