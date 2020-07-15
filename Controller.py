@@ -63,9 +63,13 @@ class Controller(wx.Frame, Module):
         self.gui_update = True
 
     def on_close(self, event):
-        self.device.close('window', self.name)
         self.gui_update = False
-        event.Skip()  # delegate destroy to super
+        try:
+            v = self.device.instances['window'][self.name]
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+        except KeyError:
+            event.Veto()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)

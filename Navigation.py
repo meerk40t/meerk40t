@@ -337,8 +337,12 @@ class Navigation(wx.Frame, Module):
         # end wxGlade
 
     def on_close(self, event):
-        self.device.close('window', self.name)
-        event.Skip()  # Call destroy.
+        try:
+            v = self.device.instances['window'][self.name]
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+        except KeyError:
+            event.Veto()
 
     def initialize(self, channel=None):
         device = self.device

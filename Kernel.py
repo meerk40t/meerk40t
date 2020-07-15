@@ -1442,7 +1442,6 @@ class Device:
         def signal(code, *message):
             _ = self.device_root.translation
             channel(_("Suspended Signal: %s for %s" % (code, message)))
-
         self.signal = signal
         self.finalize(device, channel=channel)
 
@@ -1923,6 +1922,7 @@ class Device:
         return instance
 
     def close(self, type_name, instance_name):
+
         if type_name in self.instances and instance_name in self.instances[type_name]:
             instance = self.instances[type_name][instance_name]
             try:

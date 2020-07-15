@@ -47,8 +47,12 @@ class DeviceManager(wx.Frame, Module):
             uid = self.devices_list.GetItem(item).Text
             self.device.device_primary = uid
 
-        self.device.close('window', self.name)
-        event.Skip()  # Call destroy as regular.
+        try:
+            v = self.device.instances['window'][self.name]
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+        except KeyError:
+            event.Veto()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
