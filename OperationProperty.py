@@ -184,6 +184,7 @@ class OperationProperty(wx.Frame, Module):
         self.button_add_layer.Show(False)
         self.button_remove_layer.Show(False)
         self.listbox_layer.Show(False)
+        self.checkbox_show.Enable(False)
 
     def __do_layout(self):
         # begin wxGlade: OperationProperty.__do_layout

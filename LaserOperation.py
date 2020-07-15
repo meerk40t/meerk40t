@@ -241,6 +241,8 @@ class LaserOperation(list):
             parts.append("passes: %d" % self.passes)
         if self.dot_length_custom:
             parts.append("dot: %d" % self.dot_length)
+        if not self.output:
+            op = "(Disabled) " + op
         return "%s %s" % (op, " ".join(parts))
 
     def __copy__(self):

@@ -2074,11 +2074,15 @@ class Kernel(Device):
         config.DeleteGroup('alias')
         config.SetPath('keymap')
         for key in self.keymap:
+            if key is None or len(key) == 0:
+                continue
             config.Write(key, self.keymap[key])
         config.SetPath('..')
 
         config.SetPath('alias')
         for key in self.alias:
+            if key is None or len(key) == 0:
+                continue
             config.Write(key, self.alias[key])
         config.SetPath('..')
 
