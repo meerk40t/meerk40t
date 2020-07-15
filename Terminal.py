@@ -57,7 +57,10 @@ class Terminal(wx.Frame, Module):
             pass
 
     def update_text(self, text):
-        wx.CallAfter(self.update_text_gui, text + '\n')
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, text + '\n')
+        else:
+            self.update_text_gui(text + '\n')
 
     def update_text_gui(self, text):
         try:
@@ -91,11 +94,17 @@ class Terminal(wx.Frame, Module):
         try:
             if key == wx.WXK_DOWN:
                 self.text_entry.SetValue(self.command_log[self.command_position + 1])
-                wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                if not wx.IsMainThread():
+                    wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                else:
+                    self.text_entry.SetInsertionPointEnd()
                 self.command_position += 1
             elif key == wx.WXK_UP:
                 self.text_entry.SetValue(self.command_log[self.command_position - 1])
-                wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                if not wx.IsMainThread():
+                    wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                else:
+                    self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
         except IndexError:
             pass

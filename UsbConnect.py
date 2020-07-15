@@ -47,7 +47,10 @@ class UsbConnect(wx.Frame, Module):
             pass
 
     def update_text(self, text):
-        wx.CallAfter(self.update_text_gui, text + '\n')
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, text + '\n')
+        else:
+            self.update_text_gui(text + '\n')
 
     def update_text_gui(self, text):
         try:

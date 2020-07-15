@@ -58,39 +58,6 @@ class OperationProperty(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
-        self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
-        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_layer_dclick, self.listbox_layer)
-        self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.button_remove_layer)
-        self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_show, self.checkbox_show)
-        self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
-        self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
-        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
-        self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
-        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_advanced, self.checkbox_advanced)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
-        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
-        self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
-
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.combo_type.SetFocus()
         self.operation = None
@@ -105,12 +72,6 @@ class OperationProperty(wx.Frame, Module):
 
         self.raster_lines = None
         self.travel_lines = None
-
-        self.on_size(None)
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
-        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
-        self.raster_lines = None
 
     def on_close(self, event):
         self.device.close('window', self.name)
@@ -335,6 +296,43 @@ class OperationProperty(wx.Frame, Module):
             self.checkbox_show.SetValue(operation.show)
         self.on_check_advanced()
         self.on_combo_operation()
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
+        self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_layer_dclick, self.listbox_layer)
+        self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.button_remove_layer)
+        self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_show, self.checkbox_show)
+        self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
+        self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
+        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
+        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_advanced, self.checkbox_advanced)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
+        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
+        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
+        self.on_size(None)
+        self.Bind(wx.EVT_SIZE, self.on_size)
         return self
 
     def on_display_paint(self, event):
@@ -360,7 +358,10 @@ class OperationProperty(wx.Frame, Module):
         self.refresh_display()
 
     def refresh_display(self):
-        wx.CallAfter(self.refresh_in_ui)
+        if not wx.IsMainThread():
+            wx.CallAfter(self.refresh_in_ui)
+        else:
+            self.refresh_in_ui()
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size

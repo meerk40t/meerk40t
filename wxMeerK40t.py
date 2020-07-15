@@ -774,7 +774,10 @@ class MeerK40t(wx.Frame, Module):
         """Called by the Scheduler at a given the specified framerate."""
         if self.screen_refresh_is_requested and not self.screen_refresh_is_running:
             self.screen_refresh_is_running = True
-            wx.CallAfter(self.refresh_in_ui)
+            if not wx.IsMainThread():
+                wx.CallAfter(self.refresh_in_ui)
+            else:
+                self.refresh_in_ui()
 
     def refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
