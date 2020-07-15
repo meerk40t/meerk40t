@@ -231,7 +231,6 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
         wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
         wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
-        wxglade_tmp_menu.Append(ID_MENU_OPERATIONS, _("Operations"), "")
 
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
@@ -291,8 +290,6 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", self, -1, "", ), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", self, -1, "", )
                   .set_operations(list(self.device.device_root.elements.ops())), id=ID_MENU_JOB)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "OperationProperty", self, -1, "", ),
-                  id=ID_MENU_OPERATIONS)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)

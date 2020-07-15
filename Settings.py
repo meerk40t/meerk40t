@@ -6,6 +6,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_administrative_tools_50
 
 _ = wx.GetTranslation
 
@@ -80,6 +81,9 @@ class Settings(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Settings.__set_properties
         self.SetTitle(_("Settings"))
         self.radio_units.SetBackgroundColour(wx.Colour(192, 192, 192))

@@ -1,8 +1,7 @@
 import wx
 
 from Kernel import Module
-from icons import icon_meerk40t
-
+from icons import icon_meerk40t, icons8_about_50
 
 _ = wx.GetTranslation
 
@@ -46,6 +45,9 @@ class About(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: About.__set_properties
         self.SetTitle(_("About"))
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())

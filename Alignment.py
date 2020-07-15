@@ -2,7 +2,7 @@ import wx
 
 from Kernel import Module
 from LaserCommandConstants import *
-from icons import icons8_stop_50, icons8_resize_horizontal_50, icons8_resize_vertical_50
+from icons import icons8_stop_50, icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50
 
 _ = wx.GetTranslation
 
@@ -79,6 +79,9 @@ class Alignment(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_hazard_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Alignment.__set_properties
         self.SetTitle(_("Alignment."))
         self.button_vertical_align_nearfar.SetToolTip(_("Perform vertical near-far alignment test"))

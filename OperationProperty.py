@@ -18,26 +18,6 @@ class OperationProperty(wx.Frame, Module):
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((_simple_width, 500))
 
-        # # Menu Bar
-        # self.RasterProperty_menubar = wx.MenuBar()
-        # wxglade_tmp_menu = wx.Menu()
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Clear"), _("Delete all the layers"))
-        # self.Bind(wx.EVT_MENU, self.on_menu_clear, id=item.GetId())
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Other/Blue/Red"), _("Set layers to the default"))
-        # self.Bind(wx.EVT_MENU, self.on_menu_default0, id=item.GetId())
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Basic"), _("Set layers to basic form"))
-        # self.Bind(wx.EVT_MENU, self.on_menu_default1, id=item.GetId())
-        # wxglade_tmp_menu.AppendSeparator()
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Save"), _("Save the current layer set"))
-        # self.Bind(wx.EVT_MENU, self.on_menu_save, id=item.GetId())
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Load"), _("Load existing layer sets"))
-        # self.Bind(wx.EVT_MENU, self.on_menu_load, id=item.GetId())
-        # item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Import"), _("Import existing layers"))
-        # self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
-        # self.RasterProperty_menubar.Append(wxglade_tmp_menu, _("Layers"))
-        # self.SetMenuBar(self.RasterProperty_menubar)
-        # # Menu Bar end
-
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_add_layer = wx.BitmapButton(self.main_panel, wx.ID_ANY, icons8_plus_50.GetBitmap())
         self.listbox_layer = wx.ListBox(self.main_panel, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)

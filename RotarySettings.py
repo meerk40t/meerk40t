@@ -7,6 +7,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_roll_50
 
 _ = wx.GetTranslation
 
@@ -84,6 +85,9 @@ class RotarySettings(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties
         self.SetTitle("RotarySettings")
         self.checkbox_rotary.SetFont(

@@ -120,6 +120,9 @@ class Controller(wx.Frame, Module):
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        self.SetIcon(_icon)
         self.SetTitle(_("Controller"))
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetFont(

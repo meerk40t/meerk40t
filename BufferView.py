@@ -1,6 +1,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_info_50, icons8_comments_50
 
 _ = wx.GetTranslation
 
@@ -61,6 +62,9 @@ class BufferView(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: BufferView.__set_properties
         self.SetTitle(_("BufferView"))
         self.text_buffer_length.SetMinSize((165, 23))

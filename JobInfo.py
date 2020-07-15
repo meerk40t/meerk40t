@@ -152,6 +152,9 @@ class JobInfo(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: JobInfo.__set_properties
         self.SetTitle("Job")
         self.operations_listbox.SetToolTip(_("operation List"))

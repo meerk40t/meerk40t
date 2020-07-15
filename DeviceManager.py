@@ -7,7 +7,8 @@
 import wx
 
 from Kernel import Module, STATE_UNKNOWN
-from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50
+from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50, \
+    icons8_manager_50
 
 _ = wx.GetTranslation
 
@@ -68,6 +69,9 @@ class DeviceManager(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: DeviceManager.__set_properties
         self.SetTitle("Device Manager")
         self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))

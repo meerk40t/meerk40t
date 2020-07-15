@@ -136,6 +136,9 @@ class CameraInterface(wx.Frame, Module):
         self.Layout()
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: CameraInterface.__set_properties
         self.SetTitle("CameraInterface")
         self.button_update.SetToolTip(_("Update Image"))
@@ -628,8 +631,11 @@ class CameraInterface(wx.Frame, Module):
 
     def update_in_gui_thread(self):
         self.on_update_buffer()
-        self.Refresh(True)
-        self.Update()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
 
     def on_check_perspective(self, event):
         self.device.camera_correction_perspective = self.check_perspective.GetValue()

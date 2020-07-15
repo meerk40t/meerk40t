@@ -2,6 +2,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_console_50
 
 _ = wx.GetTranslation
 
@@ -65,6 +66,9 @@ class Terminal(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_('Terminal'))
         self.text_entry.SetFocus()

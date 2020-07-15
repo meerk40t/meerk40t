@@ -1,6 +1,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_underline_50, icons8_keyboard_50
 
 _ = wx.GetTranslation
 
@@ -50,6 +51,9 @@ class Keymap(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))

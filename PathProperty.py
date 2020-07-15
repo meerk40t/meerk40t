@@ -104,6 +104,9 @@ class PathProperty(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties
         self.SetTitle(_("Path Properties"))
         self.button_stroke_none.SetToolTip(_("\"none\" defined value"))

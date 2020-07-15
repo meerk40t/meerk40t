@@ -2,7 +2,7 @@ import wx
 
 from Kernel import Module
 from LaserRender import swizzlecolor
-from icons import icons8_choose_font_50
+from icons import icons8_choose_font_50, icons8_text_50
 from svgelements import *
 
 _ = wx.GetTranslation
@@ -115,6 +115,9 @@ class TextProperty(wx.Frame,  Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: TextProperty.__set_properties
         self.SetTitle("Text Properties")
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())

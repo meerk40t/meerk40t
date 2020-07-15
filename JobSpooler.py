@@ -1,6 +1,7 @@
 import wx
 
 from Kernel import *
+from icons import icons8_route_50
 
 _ = wx.GetTranslation
 
@@ -57,6 +58,9 @@ class JobSpooler(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: JobSpooler.__set_properties
         self.SetTitle("Spooler")
         self.list_job_spool.SetToolTip("List and modify the queued operations")

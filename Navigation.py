@@ -131,6 +131,9 @@ class Navigation(wx.Frame, Module):
         self.select_ready(False)
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
         self.spin_jog_mils.SetMinSize((80, 23))
