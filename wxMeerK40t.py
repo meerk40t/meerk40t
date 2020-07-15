@@ -1733,12 +1733,12 @@ class RootNode(list):
             for i in range(1, 10):
                 gui.Bind(wx.EVT_MENU, self.menu_duplicate_element_op(node, i),
                          duplicate_menu_eop.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
-            menu.AppendSubMenu(duplicate_menu_eop, _("Soft Copy"))
+            menu.AppendSubMenu(duplicate_menu_eop, _("Clone Reference"))
             duplicate_menu_eop = wx.Menu()
             for i in range(1, 10):
                 gui.Bind(wx.EVT_MENU, self.menu_duplicate(node, i),
                          duplicate_menu_eop.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
-            menu.AppendSubMenu(duplicate_menu_eop, _("Hard Copy"))
+            menu.AppendSubMenu(duplicate_menu_eop, _("Duplicate"))
         if t in (NODE_OPERATION, NODE_ELEMENTS_BRANCH, NODE_OPERATION_BRANCH) and len(node) > 1:
             gui.Bind(wx.EVT_MENU, self.menu_reverse_order(node),
                      menu.Append(wx.ID_ANY, _("Reverse Layer Order"), "", wx.ITEM_NORMAL))
