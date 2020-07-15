@@ -1439,6 +1439,11 @@ class Device:
         self.initialize(device, channel=channel)
 
     def detach(self, device, channel=None):
+        def signal(code, *message):
+            _ = self.device_root.translation
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
+
+        self.signal = signal
         self.finalize(device, channel=channel)
 
     def initialize(self, device, channel=None):
@@ -1528,8 +1533,8 @@ class Device:
                     channel(_("Stopping %s %s: %s") % (module_name, type_name, str(obj)))
                 except AttributeError:
                     pass
-                self.close(type_name, module_name)
                 channel(_("Closing %s %s: %s") % (module_name, type_name, str(obj)))
+                self.close(type_name, module_name)
 
         # Stop/Wait for all threads.
         if 'thread' in self.instances:
@@ -1599,6 +1604,8 @@ class Device:
         if shutdown_root:
             channel(_("All Devices are shutdown. Stopping Kernel."))
             self.device_root.stop()
+        else:
+            self.device_root.resume()
 
     def add_job(self, run, args=(), interval=1.0, times=None):
         """
@@ -1628,7 +1635,9 @@ class Device:
                 break
             while self.state == STATE_PAUSE:
                 # The scheduler is paused.
-                time.sleep(1.0)
+                time.sleep(0.1)
+            if self.state == STATE_TERMINATE:
+                break
             jobs = self.jobs
             jobs_update = False
             for job in jobs:

@@ -2494,12 +2494,18 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "BufferView", BufferView)
         device.register('window', "Adjustments", Adjustments)
 
+    def run_later(self, command, *args):
+        if wx.IsMainThread():
+            command(*args)
+        else:
+            wx.CallAfter(command, *args)
+
     def initialize(self, channel=None):
         device = self.device
         _ = wx.GetTranslation
         wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
 
-        device.run_later = wx.CallAfter
+        device.run_later = self.run_later
         device.translation = wx.GetTranslation
         device.set_config(wx.Config("MeerK40t"))
         device.app = self  # Registers self as kernel.app
