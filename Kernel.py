@@ -2036,7 +2036,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.1"
+        self.device_version = "0.6.2"
         self.device_root = self
 
         # Persistent storage if it exists.
@@ -2083,6 +2083,7 @@ class Kernel(Device):
             return
         config.DeleteGroup('keymap')
         config.DeleteGroup('alias')
+
         config.SetPath('keymap')
         for key in self.keymap:
             if key is None or len(key) == 0:

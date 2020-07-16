@@ -58,7 +58,10 @@ class LaserServer(Module):
                     if self.device.state == STATE_TERMINATE:
                         return
                     continue
-                self.pipe.checksum_parse(message, reply=reply, elements=elems)
+                if self.port == 50207:
+                    self.pipe.jog_parse(message, reply=reply, elements=elems)
+                else:
+                    self.pipe.checksum_parse(message, reply=reply, elements=elems)
         except OSError:
             pass
 
