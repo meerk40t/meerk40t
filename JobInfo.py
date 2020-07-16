@@ -117,12 +117,12 @@ class JobInfo(wx.Frame, Module):
         self.update_gui()
 
     def on_close(self, event):
-        try:
-            v = self.device.instances['window'][self.name]
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
-        except KeyError:
-            event.Veto()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
@@ -198,7 +198,7 @@ class JobInfo(wx.Frame, Module):
         self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.device.open("window", "JobSpooler", self.GetParent(), -1, "")
+        self.device.open('window', "JobSpooler", self.GetParent(), -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:

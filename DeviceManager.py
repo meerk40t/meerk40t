@@ -18,6 +18,7 @@ class DeviceManager(wx.Frame, Module):
         # begin wxGlade: DeviceManager.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((707, 337))
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
@@ -47,12 +48,12 @@ class DeviceManager(wx.Frame, Module):
             uid = self.devices_list.GetItem(item).Text
             self.device.device_primary = uid
 
-        try:
-            v = self.device.instances['window'][self.name]
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
-        except KeyError:
-            event.Veto()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)

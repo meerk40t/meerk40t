@@ -43,6 +43,7 @@ class Module:
     def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
         self.name = name
         self.device = device
+        self.state = STATE_INITIALIZE
 
         self.interval = interval
         self.last_run = None
@@ -88,6 +89,7 @@ class Module:
         """
         self.finalize(channel=channel)
         self.device = None
+        self.state = STATE_END
 
     def initialize(self, channel=None):
         """Called when device is registered and module is named. On a freshly opened module."""

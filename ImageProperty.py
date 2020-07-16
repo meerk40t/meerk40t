@@ -61,12 +61,13 @@ class ImageProperty(wx.Frame, Module):
             pass
 
     def on_close(self, event):
-        try:
-            v = self.device.instances['window'][self.name]
+        if self.state == 5:
+            event.Veto()
+            return
+        else:
+            self.state = 5
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
-        except KeyError:
-            event.Veto()
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
