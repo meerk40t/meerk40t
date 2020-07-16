@@ -12,7 +12,7 @@ class JobInfo(wx.Frame, Module):
 
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobInfo.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((659, 612))
@@ -102,6 +102,10 @@ class JobInfo(wx.Frame, Module):
         if self.device.prehome:
             self.jobadd_home(None)
         for op in operations:
+            if len(op) == 0:
+                continue
+            if not op.output:
+                continue
             self.operations.append(copy(op))
         if self.device.autobeep:
             self.jobadd_beep(None)
@@ -112,8 +116,16 @@ class JobInfo(wx.Frame, Module):
         self.preprocessor.process(self.operations)
         self.update_gui()
 
-    def initialize(self):
-        self.device.close('module', self.name)
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
+        self.device.close('window', self.name)
         self.Show()
         self.operations = []
         self.device.setting(bool, "rotary", False)
@@ -125,30 +137,28 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(bool, "autostart", True)
         self.device.listen('element_property_update', self.on_element_property_update)
 
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
         self.menu_prehome.Check(self.device.prehome)
         self.menu_autohome.Check(self.device.autohome)
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
 
-    def shutdown(self, channel):
-        self.Close()
-
-    def on_close(self, event):
+    def finalize(self, channel=None):
         self.device.unlisten('element_property_update', self.on_element_property_update)
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy as regular.
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: JobInfo.__set_properties
         self.SetTitle("Job")
         self.operations_listbox.SetToolTip(_("operation List"))
@@ -188,7 +198,7 @@ class JobInfo(wx.Frame, Module):
         self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.device.open("window", "JobSpooler", None, -1, "")
+        self.device.open('window', "JobSpooler", self.GetParent(), -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
@@ -208,10 +218,7 @@ class JobInfo(wx.Frame, Module):
             return
         obj = self.operations[node_index]
 
-        if isinstance(obj, RasterOperation):
-            self.device.open('window', "RasterProperty", None, -1, "").set_operation(obj)
-        elif isinstance(obj, (CutOperation, EngraveOperation)):
-            self.device.open('window', "EngraveProperty", None, -1, "").set_operation(obj)
+        self.device.open('window', "OperationProperty", self, -1, "").set_operation(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

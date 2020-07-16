@@ -6,6 +6,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_administrative_tools_50
 
 _ = wx.GetTranslation
 
@@ -16,7 +17,7 @@ _ = wx.GetTranslation
 class Settings(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Preferences.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((412, 183))
@@ -46,10 +47,14 @@ class Settings(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 
@@ -67,10 +72,22 @@ class Settings(wx.Frame, Module):
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
-    def shutdown(self,  channel):
-        self.Close()
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Settings.__set_properties
         self.SetTitle(_("Settings"))
         self.radio_units.SetBackgroundColour(wx.Colour(192, 192, 192))

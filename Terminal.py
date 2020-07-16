@@ -2,6 +2,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_console_50
 
 _ = wx.GetTranslation
 
@@ -9,7 +10,7 @@ _ = wx.GetTranslation
 class Terminal(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Terminal.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_NO_TASKBAR | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((581, 410))
@@ -21,6 +22,7 @@ class Terminal(wx.Frame, Module):
         # self.Bind(wx.EVT_TEXT, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_main)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.pipe = None
@@ -30,22 +32,39 @@ class Terminal(wx.Frame, Module):
     def on_middle_click(self, event):
         self.text_main.SetValue('')
 
-    def initialize(self):
-        self.device.close('window', 'Terminal')
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
+        self.device.close('window', self.name)
         self.Show()
         self.pipe = self.device.using('module', 'Console')
         self.device.add_watcher('console', self.update_text)
+        self.text_entry.SetFocus()
 
-    def on_close(self, event):
+    def finalize(self, channel=None):
         self.device.remove_watcher('console', self.update_text)
-        self.device.remove('window', 'Terminal')
-        event.Skip()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
-    def shutdown(self,  channel):
-        self.Close()
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def update_text(self, text):
-        wx.CallAfter(self.update_text_gui, text + '\n')
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, text + '\n')
+        else:
+            self.update_text_gui(text + '\n')
 
     def update_text_gui(self, text):
         try:
@@ -54,6 +73,9 @@ class Terminal(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_('Terminal'))
         self.text_entry.SetFocus()
@@ -70,14 +92,23 @@ class Terminal(wx.Frame, Module):
 
     def on_key_down(self, event):
         key = event.GetKeyCode()
+        if self.FindFocus() is not self.text_entry:
+            self.text_entry.SetFocus()
+            self.text_entry.AppendText(str(chr(key)).lower())
         try:
             if key == wx.WXK_DOWN:
                 self.text_entry.SetValue(self.command_log[self.command_position + 1])
-                wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                if not wx.IsMainThread():
+                    wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                else:
+                    self.text_entry.SetInsertionPointEnd()
                 self.command_position += 1
             elif key == wx.WXK_UP:
                 self.text_entry.SetValue(self.command_log[self.command_position - 1])
-                wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                if not wx.IsMainThread():
+                    wx.CallAfter(self.text_entry.SetInsertionPointEnd)
+                else:
+                    self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
         except IndexError:
             pass

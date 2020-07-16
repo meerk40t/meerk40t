@@ -2,7 +2,7 @@ import wx
 
 from Kernel import Module
 from LaserRender import swizzlecolor
-from icons import icons8_choose_font_50
+from icons import icons8_choose_font_50, icons8_text_50
 from svgelements import *
 
 _ = wx.GetTranslation
@@ -11,7 +11,7 @@ _ = wx.GetTranslation
 class TextProperty(wx.Frame,  Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((317, 360))
@@ -80,14 +80,10 @@ class TextProperty(wx.Frame,  Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
-
     def set_element(self, element):
         self.element = element
         try:
-            if element.stroke is not None and element.stroke != "none":
+            if element.text is not None:
                 self.text_text.SetValue(element.text)
                 self.label_fonttest.SetLabelText(element.text)
                 try:
@@ -98,14 +94,34 @@ class TextProperty(wx.Frame,  Module):
         except AttributeError:
             pass
 
-    def initialize(self):
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 
-    def shutdown(self, channel):
-        self.Close()
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: TextProperty.__set_properties
         self.SetTitle("Text Properties")
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())

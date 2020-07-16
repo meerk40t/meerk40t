@@ -16,7 +16,7 @@ _ = wx.GetTranslation
 class Controller(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Controller.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((499, 505))
@@ -52,7 +52,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", None, -1, ""), self.button_buffer_viewer)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", self, -1, ""), self.button_buffer_viewer)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
         # end wxGlade
@@ -60,21 +60,20 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.buffer_max = 1
         self.last_control_state = None
+        self.gui_update = True
 
-    def initialize(self):
+    def on_close(self, event):
+        self.gui_update = False
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
 
         self.device.setting(int, "buffer_max", 1500)
         self.device.setting(bool, "buffer_limit", True)
@@ -88,18 +87,22 @@ class Controller(wx.Frame, Module):
         self.text_device.SetValue(self.device.device_name)
         self.text_location.SetValue(self.device.device_location)
 
-    def shutdown(self, channel):
-        self.Close()
-        self.device = None
-
-    def on_close(self, event):
-        self.device.remove('window', self.name)
+    def finalize(self, channel=None):
         self.device.unlisten('pipe;status', self.update_status)
         self.device.unlisten('pipe;packet_text', self.update_packet_text)
         self.device.unlisten('pipe;buffer', self.on_buffer_update)
         self.device.unlisten('pipe;usb_state', self.on_connection_state_change)
         self.device.unlisten('pipe;thread', self.on_control_state)
-        event.Skip()  # delegate destroy to super
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def device_execute(self, control_name):
         def menu_element(event):
@@ -121,6 +124,9 @@ class Controller(wx.Frame, Module):
 
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        self.SetIcon(_icon)
         self.SetTitle(_("Controller"))
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetFont(
@@ -348,11 +354,12 @@ class Controller(wx.Frame, Module):
             self.device.execute("Disconnect_USB")
 
     def on_buffer_update(self, value, *args):
-        if value > self.buffer_max:
-            self.buffer_max = value
-        self.text_buffer_length.SetValue(str(value))
-        self.gauge_buffer.SetRange(self.buffer_max)
-        self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
+        if self.gui_update:
+            if value > self.buffer_max:
+                self.buffer_max = value
+            self.text_buffer_length.SetValue(str(value))
+            self.gauge_buffer.SetRange(self.buffer_max)
+            self.gauge_buffer.SetValue(min(value, self.gauge_buffer.GetRange()))
 
     def on_control_state(self, state):
         if self.last_control_state == state:

@@ -1,6 +1,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_underline_50, icons8_keyboard_50
 
 _ = wx.GetTranslation
 
@@ -8,7 +9,7 @@ _ = wx.GetTranslation
 class Keymap(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Keymap.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((500, 530))
@@ -22,23 +23,41 @@ class Keymap(wx.Frame, Module):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.SetFocus()
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
         self.reload_keymap()
 
-    def shutdown(self, channel):
-        self.Close()
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
@@ -59,6 +78,40 @@ class Keymap(wx.Frame, Module):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def on_item_activated(self, event):
+        element = event.Text
+        self.text_key_name.SetValue(element)
+        self.text_command_name.SetValue(self.device.device_root.keymap[element])
+
+    def on_item_rightclick(self, event):
+        element = event.Text
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, _("Reset Default"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_tree_popup_clear(self, element):
+        def delete(event):
+            self.device.default_keymap()
+            self.list_keymap.DeleteAllItems()
+            self.reload_keymap()
+
+        return delete
+
+    def on_tree_popup_delete(self, element):
+        def delete(event):
+            try:
+                del self.device.keymap[element]
+                self.list_keymap.DeleteAllItems()
+                self.reload_keymap()
+            except KeyError:
+                pass
+
+        return delete
 
     def reload_keymap(self):
         i = 0
@@ -86,6 +139,7 @@ class Keymap(wx.Frame, Module):
         self.device.device_root.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
         self.text_key_name.SetValue('')
         self.text_command_name.SetValue('')
+        self.list_keymap.DeleteAllItems()
         self.reload_keymap()
 
     def on_key_press(self, event):

@@ -1,8 +1,7 @@
 import wx
 
 from Kernel import Module
-from icons import icon_meerk40t
-
+from icons import icon_meerk40t, icons8_about_50
 
 _ = wx.GetTranslation
 
@@ -10,7 +9,7 @@ _ = wx.GetTranslation
 class About(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: About.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((699, 442))
@@ -22,10 +21,14 @@ class About(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy as regular.
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         name = self.device.device_root.device_name
         version = self.device.device_root.device_version
@@ -33,10 +36,22 @@ class About(wx.Frame, Module):
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
         self.Show()
 
-    def shutdown(self,  channel):
-        self.Close()
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: About.__set_properties
         self.SetTitle(_("About"))
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())

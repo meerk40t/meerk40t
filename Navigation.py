@@ -16,7 +16,7 @@ MILS_IN_MM = 39.3701
 class Navigation(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Navigation.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((598, 429))
@@ -130,15 +130,10 @@ class Navigation(wx.Frame, Module):
         self.drag_ready(False)
         self.select_ready(False)
 
-    def on_close(self, event):
-        kernel = self.device.device_root
-        self.device.remove('window', self.name)
-        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
-        self.device.unlisten('interpreter;position', self.on_position_update)
-
-        event.Skip()  # Call destroy.
-
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
         self.spin_jog_mils.SetMinSize((80, 23))
@@ -341,22 +336,21 @@ class Navigation(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-    def initialize(self):
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         device = self.device
         kernel = self.device.device_root
-        self.elements = kernel.elements
         device.close('window', self.name)
         self.Show()
-        if device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
+
+        self.elements = kernel.elements
 
         device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
         device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
@@ -367,9 +361,21 @@ class Navigation(wx.Frame, Module):
         device.listen('interpreter;position', self.on_position_update)
         self.console = self.device.using('module', 'Console')
         self.update_matrix_text()
+        self.SetFocus()
 
-    def shutdown(self,  channel):
-        self.Close()
+    def finalize(self, channel=None):
+        self.device.device_root.unlisten('emphasized', self.on_emphasized_elements_changed)
+        self.device.unlisten('interpreter;position', self.on_position_update)
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_emphasized_elements_changed(self, elements):
         self.select_ready(self.elements.has_emphasis())

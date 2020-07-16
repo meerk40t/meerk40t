@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 class Adjustments(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Adjustments.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((424, 417))
@@ -153,32 +153,34 @@ class Adjustments(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy as regular.
-        self.device.execute("Realtime Resume")
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
-        device = self.device
         self.Show()
-        if device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
         self.device.execute("Realtime Pause")
         try:
             self.checkbox_pattern_group.SetValue(self.device.interpreter.group_modulation)
         except AttributeError:
             pass
 
-    def shutdown(self,  channel):
-        self.Close()
+    def finalize(self, channel=None):
+        self.device.execute("Realtime Resume")
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_slider_speed_override(self, event):  # wxGlade: Adjustments.<event_handler>
         print("Event handler 'on_slider_speed_override' not implemented!")
@@ -241,5 +243,8 @@ class Adjustments(wx.Frame, Module):
     def on_key_press(self, event):
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_ESCAPE:
-            self.Close()
+            try:
+                self.Close()
+            except RuntimeError:
+                pass
         event.Skip()

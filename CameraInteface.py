@@ -16,7 +16,7 @@ CORNER_SIZE = 25
 class CameraInterface(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: CameraInterface.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((608, 549))
@@ -28,6 +28,15 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera 1"), "", wx.ITEM_RADIO)
+        self.camera_ip_menu1 = item
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-1), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera 2"), "", wx.ITEM_RADIO)
+        self.camera_ip_menu2 = item
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-2), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera 3"), "", wx.ITEM_RADIO)
+        self.camera_ip_menu3 = item
+        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-3), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "", wx.ITEM_RADIO)
         self.camera_0_menu = item
         self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(0), id=item.GetId())
@@ -107,6 +116,8 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.camera_lock = threading.Lock()
         self.process = self.fetch_image
+        self.camera_job = None
+        self.fetch_job = None
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -125,6 +136,9 @@ class CameraInterface(wx.Frame, Module):
         self.Layout()
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: CameraInterface.__set_properties
         self.SetTitle("CameraInterface")
         self.button_update.SetToolTip(_("Update Image"))
@@ -135,7 +149,15 @@ class CameraInterface(wx.Frame, Module):
         self.button_detect.SetSize(self.button_detect.GetBestSize())
         # end wxGlade
 
-    def initialize(self):
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
         self.device.setting(int, 'draw_mode', 0)
@@ -146,16 +168,24 @@ class CameraInterface(wx.Frame, Module):
         self.device.setting(bool, 'camera_correction_perspective', False)
         self.device.setting(str, 'fisheye', '')
         self.device.setting(str, 'perspective', '')
+        self.device.setting(str, 'camera_uri1', '')
+        self.device.setting(str, 'camera_uri2', '')
+        self.device.setting(str, 'camera_uri3', '')
         self.check_fisheye.SetValue(self.device.camera_correction_fisheye)
         self.check_perspective.SetValue(self.device.camera_correction_perspective)
         if self.device.fisheye is not None and len(self.device.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.device.fisheye)
         if self.device.perspective is not None and len(self.device.perspective) != 0:
             self.perspective = eval(self.device.perspective)
-            # print("Perspective value loaded: %s" % kernel.perspective)
         self.slider_fps.SetValue(self.device.camera_fps)
 
-        if self.device.camera_index == 0:
+        if self.device.camera_index == -3:
+            self.camera_ip_menu3.Check(True)
+        elif self.device.camera_index == -2:
+            self.camera_ip_menu2.Check(True)
+        elif self.device.camera_index == -1:
+            self.camera_ip_menu1.Check(True)
+        elif self.device.camera_index == 0:
             self.camera_0_menu.Check(True)
         elif self.device.camera_index == 1:
             self.camera_1_menu.Check(True)
@@ -165,22 +195,34 @@ class CameraInterface(wx.Frame, Module):
             self.camera_3_menu.Check(True)
         elif self.device.camera_index == 4:
             self.camera_4_menu.Check(True)
-        self.device.add_job(self.init_camera, times=1, interval=0.1)
+        if self.camera_job is not None:
+            self.camera_job.cancel()
+        self.camera_job = self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.device.listen('camera_frame', self.on_camera_frame_update)
         self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
 
-    def shutdown(self,  channel):
-        self.Close()
-
-    def on_close(self, event):
-        self.camera_lock.acquire()
+    def finalize(self, channel=None):
         self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
         self.device.unlisten('camera_frame', self.on_camera_frame_update)
         self.device.signal('camera_frame_raw', None)
+        self.unschedule()
+        self.camera_lock.acquire()
         self.close_camera()
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
         self.camera_lock.release()
+        if self.camera_job is not None:
+            self.camera_job.cancel()
+        if self.fetch_job is not None:
+            self.fetch_job.cancel()
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def on_size(self, event):
         self.Layout()
@@ -284,7 +326,15 @@ class CameraInterface(wx.Frame, Module):
         self.camera_lock.acquire()
         self.device.camera_index = camera_index
         self.close_camera()
-        self.device.add_job(self.init_camera, times=1, interval=0.1)
+        if self.camera_job is not None:
+            self.camera_job.cancel()
+        if camera_index < 0:
+            self.camera_uri_request(abs(camera_index))
+            uri = self.get_camera_uri()
+            if uri is None or len(uri) == 0:
+                self.camera_lock.release()
+                return
+        self.camera_job = self.device.add_job(self.init_camera, times=1, interval=0.1)
         self.camera_lock.release()
 
     def close_camera(self):
@@ -320,6 +370,24 @@ class CameraInterface(wx.Frame, Module):
         except RuntimeError:
             pass
 
+    def camera_uri_request(self, index=None):
+        if index is None:
+            index = abs(self.device.camera_index)
+        try:
+            dlg = wx.TextEntryDialog(self, _(
+                "Enter the HTTP or RTSP uri for the webcam #%d") % index,
+                                     _("Webcam URI Update"), '')
+            dlg.SetValue(self.get_camera_uri())
+            modal = dlg.ShowModal()
+            if modal == wx.ID_OK:
+                self.set_camera_uri(str(dlg.GetValue()))
+                wx.CallAfter(self.init_camera)
+            else:
+                wx.CallAfter(self.camera_error_webcam)
+            dlg.Destroy()
+        except RuntimeError:
+            pass
+
     def camera_success(self):
         try:
             for attr in dir(self):
@@ -329,7 +397,20 @@ class CameraInterface(wx.Frame, Module):
         except RuntimeError:
             pass
 
+    def set_camera_uri(self, uri):
+        return setattr(self.device,
+                       "camera_uri%d" % abs(self.device.camera_index),
+                       uri)
+
+    def get_camera_uri(self):
+        index = self.device.camera_index
+        if index >= 0:
+            return index
+        return getattr(self.device, "camera_uri%d" % abs(index))
+
     def init_camera(self):
+        if self.device is None:
+            return
         if self.capture is not None:
             self.capture = None
         try:
@@ -337,7 +418,14 @@ class CameraInterface(wx.Frame, Module):
         except ImportError:
             wx.CallAfter(self.camera_error_requirement)
             return
-        self.capture = cv2.VideoCapture(self.device.camera_index)
+        if self.device.camera_index >= 0:
+            self.capture = cv2.VideoCapture(self.device.camera_index)
+        else:
+            uri = self.get_camera_uri()
+            if uri is None or len(uri) == 0:
+                return
+            else:
+                self.capture = cv2.VideoCapture(self.get_camera_uri())
         wx.CallAfter(self.camera_success)
         try:
             self.interval = 1.0 / self.device.camera_fps
@@ -547,8 +635,11 @@ class CameraInterface(wx.Frame, Module):
 
     def update_in_gui_thread(self):
         self.on_update_buffer()
-        self.Refresh(True)
-        self.Update()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
 
     def on_check_perspective(self, event):
         self.device.camera_correction_perspective = self.check_perspective.GetValue()
@@ -586,4 +677,6 @@ class CameraInterface(wx.Frame, Module):
         self.interval = tick
 
     def on_button_detect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        self.device.add_job(self.fetch_image, args=True, times=1, interval=0)
+        if self.fetch_job is not None:
+            self.fetch_job.cancel()
+        self.fetch_job = self.device.add_job(self.fetch_image, args=True, times=1, interval=0)

@@ -1,4 +1,3 @@
-import os
 import threading
 
 from CH341DriverBase import *
@@ -64,7 +63,7 @@ class LhystudiosDevice(Device):
         device.register('module', 'LhystudioController', LhystudioController)
         device.register('load', 'EgvLoader', EgvLoader)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
         """
         Device initialize.
 
@@ -150,7 +149,7 @@ class LhymicroInterpreter(Interpreter):
         self.start_y = None
         self.is_paused = False
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -180,6 +179,12 @@ class LhymicroInterpreter(Interpreter):
         self.device.add('control', "Realtime Pause", self.pause)
         self.device.add('control', "Realtime Resume", self.resume)
         self.device.add('control', "Update Codes", self.update_codes)
+
+    def finalize(self, channel=None):
+        self.device.remove('control', "Realtime Pause_Resume")
+        self.device.remove('control', "Realtime Pause")
+        self.device.remove('control', "Realtime Resume")
+        self.device.remove('control', "Update Codes")
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -273,6 +278,15 @@ class LhymicroInterpreter(Interpreter):
         Interpreter.execute(self)
 
     def plot_path(self, path):
+        if isinstance(path, SVGImage):
+            bounds = path.bbox()
+            p = Path()
+            p.move([(bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3])])
+            self.plot = self.convert_to_absolute_plot(ZinglPlotter.plot_path(p), True)
+            return
         if len(path) == 0:
             return
         first_point = path.first_point
@@ -366,7 +380,7 @@ class LhymicroInterpreter(Interpreter):
             mx = 0
             my = 0
             for x, y, on in self.convert_to_relative_plot(ZinglPlotter.plot_line(0, 0, dx, dy), cut):
-                self.goto_octent(x-mx, y-my, on)
+                self.goto_octent(x - mx, y - my, on)
                 mx = x
                 my = y
         elif self.state == INTERPRETER_STATE_FINISH:
@@ -382,7 +396,7 @@ class LhymicroInterpreter(Interpreter):
     def goto_octent_abs(self, x, y, on):
         dx = x - self.device.current_x
         dy = y - self.device.current_y
-        self.goto_octent(dx,dy, on)
+        self.goto_octent(dx, dy, on)
 
     def goto_octent(self, dx, dy, on):
         if on:
@@ -396,6 +410,8 @@ class LhymicroInterpreter(Interpreter):
             self.goto_x(dx)
         else:
             self.goto_y(dy)
+        self.device.signal('interpreter;position', (self.device.current_x, self.device.current_y,
+                                                    self.device.current_x - dx, self.device.current_y - dy))
 
     def set_speed(self, speed=None):
         change = False
@@ -995,7 +1011,7 @@ class LhystudioController(Module, Pipe):
         self.recv_channel = None
         self.pipe_channel = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(int, 'packet_count', 0)
         self.device.setting(int, 'rejected_count', 0)
 
@@ -1024,6 +1040,9 @@ class LhystudioController(Module, Pipe):
             self.start()
 
         self.device.control_instance_add("Resume", resume_k40)
+
+    def shutdown(self, channel=None):
+        Module.shutdown(channel=channel)
 
     def __repr__(self):
         return "LhystudioController()"
@@ -1143,6 +1162,7 @@ class LhystudioController(Module, Pipe):
 
     def stop(self):
         self.abort()
+        self._thread.join()  # Wait until stop completes before continuing.
 
     def update_usb_state(self, code):
         """
@@ -1250,13 +1270,13 @@ class LhystudioController(Module, Pipe):
                 continue
             if queue_processed:
                 # Packet was sent.
-                if self.state != STATE_PAUSE and self.state != STATE_BUSY and self.state != STATE_ACTIVE:
+                if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_ACTIVE, STATE_TERMINATE):
                     self.update_state(STATE_ACTIVE)
                 self.count = 0
                 continue
             else:
                 # No packet could be sent.
-                if self.state != STATE_PAUSE and self.state != STATE_BUSY and self.state != STATE_IDLE:
+                if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_BUSY, STATE_TERMINATE):
                     self.update_state(STATE_IDLE)
                 if self.count > 50:
                     self.count = 50

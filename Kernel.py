@@ -1,8 +1,8 @@
+import os
 import time
 from threading import Thread, Lock
 
 from LaserOperation import *
-from svgelements import Path, SVGText
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -20,18 +20,30 @@ INTERPRETER_STATE_PROGRAM = 2
 
 class Module:
     """
-    Modules are a generic lifecycle object. When attached they are initialized to that device. When that device
-    is shutdown, the shutdown() event is called. This permits the knowing registering and unregistering of
-    other kernel objects. and the attachment of the module to a device.
+    Modules are a generic lifecycle object. When open() is called for a module registered with the device the device is
+    attached. When attached the module is initialized to that device. When close() is called for a module initialized
+    on the device. The device is detached. When detached the module is finalized. When that device controlling the
+    initialized module is shutdown the the shutdown() event is called. By default shutdown() calls the close for the
+    device. During device shutdown initialized modules will be notified by a call to shutdown() that it is shutting down
+    and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
+    them.
 
-    Registered Modules are notified of the activation and deactivation of their device.
+    A module always has an understanding of it's current state within the device, and is notified of any changes in this
+    state.
 
-    Modules can also be scheduled in the kernel to run at a particular time and a given number of times.
+    Modules are also qualified jobs that can be scheduled in the kernel to run at a particular time and a given number
+    of times. This is done calling schedule() and unschedule() and setting the parameters for process, args, times,
+    paused and executing.
+
+    All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
+    any relevant information. Attach and initialize are given the channel 'open', detach and finalize are given the
+    channel 'close' and shutdown is given the channel 'shutdown'.
     """
 
     def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
         self.name = name
         self.device = device
+        self.state = STATE_INITIALIZE
 
         self.interval = interval
         self.last_run = None
@@ -40,8 +52,6 @@ class Module:
         self.process = process
         self.args = args
         self.times = times
-        self.paused = False
-        self.executing = False
 
     @property
     def scheduled(self):
@@ -51,31 +61,46 @@ class Module:
         self.times = -1
 
     def schedule(self):
+        """Schedule this as a job."""
         if self not in self.device.jobs:
             self.device.jobs.append(self)
 
     def unschedule(self):
+        """Unschedule this module as a job"""
         if self in self.device.jobs:
             self.device.jobs.remove(self)
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
+        """
+        Called by open to attach module to device.
+        This should be overloaded if making a specific module type for reuse and registering that on the device.
+        """
         self.device = device
         self.name = name
-        self.initialize()
+        self.initialize(channel=channel)
 
     def detach(self, device, channel=None):
-        try:
-            if self.name is not None and self.name in device.instances['module']:
-                del device.instances['module'][self.name]
-        except KeyError:
-            pass
-        self.shutdown(channel)
-        self.device = None
+        """
+        Called by close to detach the module from device.
 
-    def initialize(self):
+        :param device:
+        :param channel:
+        :return:
+        """
+        self.finalize(channel=channel)
+        self.device = None
+        self.state = STATE_END
+
+    def initialize(self, channel=None):
+        """Called when device is registered and module is named. On a freshly opened module."""
         pass
 
-    def shutdown(self, channel):
+    def finalize(self, channel=None):
+        """Called when the module is being closed."""
+        pass
+
+    def shutdown(self, channel=None):
+        """Called during the shutdown process to notify the module that it should stop working."""
         pass
 
 
@@ -83,12 +108,16 @@ class Spooler(Module):
     """
     The spooler module stores spoolable lasercode events, as a synchronous queue.
 
-    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown device.
+    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown
+    device.
 
-    * Peek()
-    * Pop()
-    * Send_Job()
-    * Clear_Queue()
+    * peek()
+    * pop()
+    * job(job)
+    * jobs(iterable<job>)
+    * job_if_idle(job) -- Will enqueue the job if the device is currently idle.
+    * clear_queue()
+    * remove(job)
     """
 
     def __init__(self):
@@ -99,10 +128,11 @@ class Spooler(Module):
     def __repr__(self):
         return "Spooler()"
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
+        """Overloaded attach to demand .spooler attribute."""
         Module.attach(self, device, name)
         self.device.spooler = self
-        self.initialize()
+        self.initialize(channel=channel)
 
     def peek(self):
         if len(self._queue) == 0:
@@ -209,12 +239,12 @@ class Interpreter(Module):
         self.d_ratio = None  # None means to use speedcode default.
         self.acceleration = None  # None means to use speedcode default
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.interpreter = self
         self.device.setting(int, 'current_x', 0)
         self.device.setting(int, 'current_y', 0)
-        self.initialize()
+        self.initialize(channel=channel)
         self.schedule()
 
     def process_spool(self, *args):
@@ -329,7 +359,20 @@ class Interpreter(Module):
             elif command == COMMAND_WAIT_FINISH:
                 self.wait_finish()
             elif command == COMMAND_BEEP:
-                print('\a')  # Beep.
+                if os.name == 'nt':
+                    try:
+                        import winsound
+                        for x in range(5):
+                            winsound.Beep(2000, 100)
+                    except:
+                        pass
+                else:
+                    try:
+                        from sys import stdout
+                        stdout.write('\a')
+                        stdout.flush()
+                    except:
+                        print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]
@@ -546,41 +589,6 @@ class Pipe:
         self.write(bytes_to_write)
 
 
-class Effect:
-    """
-    Effects are intended to be external program modifications of the data.
-    None of these are implemented yet.
-
-    The select is a selections string for the exporting element selection.
-    The save is the export file to use.
-    The path refers to the external program.
-    The command is the command to call the path with.
-    The load is the file expected to exist when the execution finishes.
-    """
-
-    def __init__(self, select, save, path, command, load):
-        self.select = select
-        self.save = save
-        self.path = path
-        self.command = command
-        self.load = load
-
-
-class Modification:
-    """
-    Modifications are intended to be lazy implemented changes to SVGElement objects and groups. The intent is to
-    provide a method for delayed modifications of data.
-
-    Modifications are functions called on single SVGElement objects.
-    Type Input is the input type kind of element this is intended to act upon.
-    Type Output is the output type of the element this is intended to produce.
-    """
-
-    def __init__(self, input_type, output_type):
-        self.input_type = input_type
-        self.output_type = output_type
-
-
 class Signaler(Module):
     """
     Signaler provides the signals functionality for a device. It replaces the functions for .signal(), .listen(),
@@ -600,7 +608,7 @@ class Signaler(Module):
         self.interval = 0.05
         self.args = ()
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.signal = self.signal
         self.device.listen = self.listen
@@ -608,7 +616,11 @@ class Signaler(Module):
         self.device.last_signal = self.last_signal
         self.schedule()
 
-    def shutdown(self, channel):
+    def detach(self, device, channel=None):
+        self.unschedule()
+        Module.detach(self, device, channel=channel)
+
+    def shutdown(self, channel=None):
         _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
             if len(listener):
@@ -726,14 +738,13 @@ class Elemental(Module):
 
     def __init__(self):
         Module.__init__(self)
-
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
-
+        self.note = None
         self._bounds = None
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         Module.attach(self, device, name)
         self.device.elements = self
         self.device.classify = self.classify
@@ -832,6 +843,105 @@ class Elemental(Module):
             e.modified()
         except AttributeError:
             pass
+
+    def load_default(self):
+        self.clear_operations()
+        self.add_op(LaserOperation(operation="Image", color="black",
+                                   speed=140.0,
+                                   power=1000.0,
+                                   raster_step=3))
+        self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
+        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
+        self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
+        self.classify(self.elems())
+
+    def load_default2(self):
+        self.clear_operations()
+        self.add_op(LaserOperation(operation="Image", color="black",
+                                   speed=140.0,
+                                   power=1000.0,
+                                   raster_step=3))
+        self.add_op(LaserOperation(operation="Raster", color="black", speed=140.0))
+        self.add_op(LaserOperation(operation="Engrave", color="green", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="blue", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="magenta", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="cyan", speed=35.0))
+        self.add_op(LaserOperation(operation="Engrave", color="yellow", speed=35.0))
+        self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
+        self.classify(self.elems())
+
+    def finalize(self, channel=None):
+        kernel = self.device.device_root
+        config = kernel.config
+
+        config.SetPath('/')
+        config.DeleteGroup('operations')
+        config.SetPath('operations')
+        for i, op in enumerate(self.ops()):
+            config.SetPath(str(i))
+            for key in dir(op):
+                if key.startswith('_'):
+                    continue
+                value = getattr(op, key)
+                if value is None:
+                    continue
+                if isinstance(value, Color):
+                    value = value.value
+                if isinstance(value, (int, bool, str, float)):
+                    if isinstance(value, str):
+                        config.Write(key, value)
+                    elif isinstance(value, float):
+                        config.WriteFloat(key, value)
+                    elif isinstance(value, bool):
+                        config.WriteBool(key, value)
+                    elif isinstance(value, int):
+                        config.WriteInt(key, value)
+            config.SetPath('..')
+        config.SetPath('..')
+
+    def boot(self):
+        kernel = self.device.device_root
+        config = kernel.config
+        if config is None:
+            self.load_default()
+            return
+        config.SetPath('operations')
+
+        more, value, index = config.GetFirstGroup()
+        if not more:
+            self.load_default()
+            config.SetPath('..')
+            return
+        ops = [None] * config.GetNumberOfGroups(bRecursive=False)
+        while more:
+            config.SetPath(value)
+            op = LaserOperation()
+            try:
+                ops[int(value)] = op
+            except (ValueError, IndexError):
+                ops.append(op)
+            m, value, i = config.GetFirstEntry()
+            while m:
+                t = getattr(op, value, None)
+                try:
+                    if isinstance(t, str):
+                        setattr(op, value, config.Read(value, t))
+                    elif isinstance(t, float):
+                        setattr(op, value, config.ReadFloat(value, t))
+                    elif isinstance(t, bool):
+                        setattr(op, value, config.ReadBool(value, t))
+                    elif isinstance(t, int):
+                        setattr(op, value, config.ReadInt(value, t))
+                    elif isinstance(t, Color):
+                        setattr(op, value, Color(config.ReadInt(value, t)))
+                except AttributeError:
+                    pass
+                m, value, i = config.GetNextEntry(i)
+            config.SetPath('..')
+            more, value, index = config.GetNextGroup(index)
+        config.SetPath('..')
+        self.add_ops([o for o in ops if o is not None])
+        self.device.signal('rebuild_tree')
 
     def items(self, **kwargs):
         def combined(*args):
@@ -963,7 +1073,11 @@ class Elemental(Module):
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
+        self.clear_note()
         self.validate_bounds()
+
+    def clear_note(self):
+        self.note = None
 
     def remove_files(self, file_list):
         for f in file_list:
@@ -994,8 +1108,6 @@ class Elemental(Module):
             elems = [e for e in op if e not in elements_list]
             op.clear()
             op.extend(elems)
-            if len(op) == 0:
-                self._operations[i] = None
         self.purge_unset()
 
     def purge_unset(self):
@@ -1165,102 +1277,32 @@ class Elemental(Module):
     def classify(self, elements):
         """
         Classify does the initial placement of elements as operations.
-        RasterOperation is the default for images.
+        "Image" is the default for images.
         If element strokes are red they get classed as cut operations
         If they are otherwise they get classed as engrave.
         """
         if elements is None:
             return
-        raster = None
-        engrave = None
-        cut = None
-        rasters = []
-        engraves = []
-        cuts = []
-        self.device.setting(bool, 'cut_acceleration_custom', False)
-        self.device.setting(int, 'cut_acceleration', 4)
-        self.device.setting(bool, 'cut_dratio_custom', False)
-        self.device.setting(float, 'cut_dratio', None)
-        self.device.setting(float, 'cut_speed', 10.0)
-        self.device.setting(float, 'cut_power', 1000.0)
-
-        self.device.setting(bool, 'engrave_acceleration_custom', False)
-        self.device.setting(int, 'engrave_acceleration', 4)
-        self.device.setting(bool, 'engrave_dratio_custom', False)
-        self.device.setting(float, 'engrave_dratio', None)
-        self.device.setting(float, 'engrave_speed', 35.0)
-        self.device.setting(float, 'engrave_power', 1000.0)
-
-        self.device.setting(bool, 'raster_acceleration_custom', False)
-        self.device.setting(int, 'raster_acceleration', 4)
-        self.device.setting(float, 'raster_speed', 200.0)
-        self.device.setting(float, 'raster_power', 1000.0)
-        self.device.setting(int, 'raster_step', 2)
-        self.device.setting(int, 'raster_direction', 0)
-        self.device.setting(int, 'raster_overscan', 20)
-
-        if not isinstance(elements, list):
-            elements = [elements]
         for element in elements:
-            if isinstance(element, (Path, SVGText)):
-                if element.stroke == "red" and not isinstance(element, SVGText):
-                    if cut is None or not cut.has_same_properties(element.values):
-                        cut = CutOperation(speed=self.device.cut_speed,
-                                           power=self.device.cut_power,
-                                           dratio_custom=self.device.cut_dratio_custom,
-                                           dratio=self.device.cut_dratio,
-                                           acceleration_custom=self.device.cut_acceleration_custom,
-                                           acceleration=self.device.cut_acceleration)
-                        cuts.append(cut)
-                        cut.set_properties(element.values)
-                    cut.append(element)
-                elif element.stroke == "blue" and not isinstance(element, SVGText):
-                    if engrave is None or not engrave.has_same_properties(element.values):
-                        engrave = EngraveOperation(speed=self.device.engrave_speed,
-                                                   power=self.device.engrave_power,
-                                                   dratio_custom=self.device.engrave_dratio_custom,
-                                                   dratio=self.device.engrave_dratio,
-                                                   acceleration_custom=self.device.engrave_acceleration_custom,
-                                                   acceleration=self.device.engrave_acceleration)
-                        engraves.append(engrave)
-                        engrave.set_properties(element.values)
-                    engrave.append(element)
-                if (element.stroke != "red" and element.stroke != "blue") or \
-                        (element.fill is not None and element.fill != "none") or \
-                        isinstance(element, SVGText):
-                    # not classed already, or was already classed but has a fill.
-                    if raster is None or not raster.has_same_properties(element.values):
-                        raster = RasterOperation(speed=self.device.raster_speed,
-                                                 power=self.device.raster_power,
-                                                 raster_step=self.device.raster_step,
-                                                 raster_direction=self.device.raster_direction,
-                                                 overscan=self.device.raster_overscan,
-                                                 acceleration_custom=self.device.raster_acceleration_custom,
-                                                 acceleration=self.device.raster_acceleration)
-                        rasters.append(raster)
-                        raster.set_properties(element.values)
-                    raster.append(element)
-            elif isinstance(element, SVGImage):
-                try:
-                    step = element.values['raster_step']
-                except KeyError:
-                    step = self.device.raster_step
-                rasters.append(RasterOperation(element,
-                                               speed=self.device.raster_speed,
-                                               power=self.device.raster_power,
-                                               raster_step=step,
-                                               raster_direction=self.device.raster_direction,
-                                               overscan=self.device.raster_overscan,
-                                               acceleration_custom=self.device.raster_acceleration_custom,
-                                               acceleration=self.device.raster_acceleration))
-        rasters = [r for r in rasters if len(r) != 0]
-        engraves = [r for r in engraves if len(r) != 0]
-        cuts = [r for r in cuts if len(r) != 0]
-        ops = []
-        self.add_ops(rasters)
-        self.add_ops(engraves)
-        self.add_ops(cuts)
-        return ops
+            found_color = False
+            for op in self.ops():
+                if op.operation in ("Engrave", "Cut", "Raster") and op.color == element.stroke:
+                    op.append(element)
+                    found_color = True
+                elif op.operation == 'Image' and isinstance(element, SVGImage):
+                    op.append(element)
+                    found_color = True
+                elif op.operation == 'Raster' and \
+                        not isinstance(element, SVGImage) and \
+                        element.fill is not None and \
+                        element.fill.value is not None:
+                    op.append(element)
+                    found_color = True
+            if not found_color:
+                if element.stroke is not None and element.stroke.value is not None:
+                    op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
+                    op.append(element)
+                    self.add_op(op)
 
     def load(self, pathname, **kwargs):
         for loader_name, loader in self.device.registered['load'].items():
@@ -1269,9 +1311,15 @@ class Elemental(Module):
                     results = loader.load(self.device, pathname, **kwargs)
                     if results is None:
                         continue
-                    elements, pathname, basename = results
+                    elements, ops, note, pathname, basename = results
                     self._filenodes[pathname] = elements
                     self.add_elems(elements)
+                    if ops is not None:
+                        self.clear_operations()
+                        self.add_ops(ops)
+                    if note is not None:
+                        self.clear_note()
+                        self.note = note
                     return elements, pathname, basename
         return None
 
@@ -1387,18 +1435,22 @@ class Device:
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
-    def attach(self, device, name=None):
+    def attach(self, device, name=None, channel=None):
         self.device_root = device
         self.name = name
-        self.initialize(device)
+        self.initialize(device, channel=channel)
 
     def detach(self, device, channel=None):
-        if 'device' in self.device_root.instances:
-            devices = self.device_root.instances['device']
-            if self.uid in devices:
-                del devices[self.uid]
+        def signal(code, *message):
+            _ = self.device_root.translation
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
+        self.signal = signal
+        self.finalize(device, channel=channel)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
+        pass
+
+    def finalize(self, device, channel=None):
         pass
 
     def read_item_persistent(self, item):
@@ -1430,12 +1482,21 @@ class Device:
 
     def boot(self):
         """
-        Kernel boot sequence. This should be called after all the registered devices are established.
+        Device boot sequence. This should be called after all the registered devices are established.
         :return:
         """
         if self.thread is None or not self.thread.is_alive():
             self.thread = self.threaded(self.run, 'Device%d' % int(self.uid))
         self.control_instance_add("Debug Device", self._start_debugging)
+        try:
+            for m in self.instances['module']:
+                m = self.instances['module'][m]
+                try:
+                    m.boot()
+                except AttributeError:
+                    pass
+        except KeyError:
+            pass
 
     def shutdown(self, channel=None):
         """
@@ -1447,6 +1508,8 @@ class Device:
         self.detach(self, channel=channel)
         channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
+
+        # Stop all devices.
         if 'device' in self.instances:
             # Join and shutdown any child devices.
             devices = self.instances['device']
@@ -1459,6 +1522,8 @@ class Device:
                 if device_thread is not None:
                     device_thread.join()
                 channel(_("Device Shutdown Finished: '%s'") % str(device))
+
+        # Stop all instances.
         for type_name in list(self.instances):
             if type_name in ('control', 'thread'):
                 continue
@@ -1469,8 +1534,13 @@ class Device:
                     channel(_("Stopping %s %s: %s") % (module_name, type_name, str(obj)))
                 except AttributeError:
                     pass
+                channel(_("Closing %s %s: %s") % (module_name, type_name, str(obj)))
+                self.close(type_name, module_name)
+
+        # Stop/Wait for all threads.
         if 'thread' in self.instances:
             for thread_name in list(self.instances['thread']):
+                thread = None
                 try:
                     thread = self.instances['thread'][thread_name]
                 except KeyError:
@@ -1494,6 +1564,8 @@ class Device:
                 channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
         else:
             channel(_("No threads required halting."))
+
+        # Detach all instances.
         for type_name in list(self.instances):
             if type_name in ('control'):
                 continue
@@ -1504,6 +1576,8 @@ class Device:
                     channel(_("Shutting down %s %s: %s") % (module_name, type_name, str(obj)))
                 except AttributeError:
                     pass
+
+        # Check for failures.
         for type_name in list(self.instances):
             if type_name in ('control'):
                 continue
@@ -1514,6 +1588,7 @@ class Device:
                 channel(_("WARNING: %s %s was not closed.") % (type_name, module_name))
 
         channel(_("Shutdown."))
+
         shutdown_root = False
         if not self.is_root():
             if 'device' in self.device_root.instances:
@@ -1530,6 +1605,8 @@ class Device:
         if shutdown_root:
             channel(_("All Devices are shutdown. Stopping Kernel."))
             self.device_root.stop()
+        else:
+            self.device_root.resume()
 
     def add_job(self, run, args=(), interval=1.0, times=None):
         """
@@ -1559,7 +1636,9 @@ class Device:
                 break
             while self.state == STATE_PAUSE:
                 # The scheduler is paused.
-                time.sleep(1.0)
+                time.sleep(0.1)
+            if self.state == STATE_TERMINATE:
+                break
             jobs = self.jobs
             jobs_update = False
             for job in jobs:
@@ -1690,7 +1769,10 @@ class Device:
         self(setting_name, (value, old_value))
 
     def execute(self, control_name, *args):
-        self.instances['control'][control_name](*args)
+        try:
+            self.instances['control'][control_name](*args)
+        except KeyError:
+            pass
 
     def signal(self, code, *message):
         if self.uid != 0:
@@ -1837,29 +1919,29 @@ class Device:
         else:
             module_object = self.device_root.registered[type_name][object_name]
         instance = module_object(*args, **kwargs)
-        instance.attach(self, name=instance_name)
+        instance.attach(self, name=instance_name, channel=self.channel_open('open'))
         self.add(type_name, instance_name, instance)
         return instance
 
-    def close(self, type_name, name):
-        if type_name in self.instances and name in self.instances[type_name]:
-            obj = self.instances[type_name][name]
+    def close(self, type_name, instance_name):
+
+        if type_name in self.instances and instance_name in self.instances[type_name]:
+            instance = self.instances[type_name][instance_name]
             try:
-                obj.close()
+                instance.close()
             except AttributeError:
                 pass
-            obj.detach(self)
-            if name in self.instances[type_name]:
-                del self.instances[type_name][name]
+            self.remove(type_name, instance_name)
+            instance.detach(self, channel=self.channel_open('close'))
 
-    def add(self, type_name, name, instance):
+    def add(self, type_name, instance_name, instance):
         if type_name not in self.instances:
             self.instances[type_name] = {}
-        self.instances[type_name][name] = instance
+        self.instances[type_name][instance_name] = instance
 
-    def remove(self, type_name, name):
-        if name in self.instances[type_name]:
-            del self.instances[type_name][name]
+    def remove(self, type_name, instance_name):
+        if instance_name in self.instances[type_name]:
+            del self.instances[type_name][instance_name]
 
     def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
         return self.open('module', module_name, *args, instance_name=instance_name, **kwargs)
@@ -1954,7 +2036,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.0"
+        self.device_version = "0.6.1"
         self.device_root = self
 
         # Persistent storage if it exists.
@@ -1981,18 +2063,69 @@ class Kernel(Device):
         :return:
         """
         Device.boot(self)
-        self.default_keymap()
-        self.default_alias()
+        self.boot_keymap()
+        self.boot_alias()
         self.device_boot()
 
     def shutdown(self, channel=None):
         """
         Begins kernel shutdown procedure.
         """
+        self.save_keymap_alias()
         Device.shutdown(self, channel)
 
         if self.config is not None:
             self.config.Flush()
+
+    def save_keymap_alias(self):
+        config = self.config
+        if config is None:
+            return
+        config.DeleteGroup('keymap')
+        config.DeleteGroup('alias')
+        config.SetPath('keymap')
+        for key in self.keymap:
+            if key is None or len(key) == 0:
+                continue
+            config.Write(key, self.keymap[key])
+        config.SetPath('..')
+
+        config.SetPath('alias')
+        for key in self.alias:
+            if key is None or len(key) == 0:
+                continue
+            config.Write(key, self.alias[key])
+        config.SetPath('..')
+
+    def boot_keymap(self):
+        self.keymap = dict()
+        config = self.config
+        if config is None:
+            self.default_keymap()
+            return
+        config.SetPath('keymap')
+        m, value, i = config.GetFirstEntry()
+        while m:
+            self.keymap[value] = config.Read(value, '')
+            m, value, i = config.GetNextEntry(i)
+        config.SetPath('..')
+        if not len(self.keymap):
+            self.default_keymap()
+
+    def boot_alias(self):
+        self.alias = dict()
+        config = self.config
+        if config is None:
+            self.default_alias()
+            return
+        config.SetPath('alias')
+        m, value, i = config.GetFirstEntry()
+        while m:
+            self.alias[value] = config.Read(value, '')
+            m, value, i = config.GetNextEntry(i)
+        config.SetPath('..')
+        if not len(self.alias):
+            self.default_alias()
 
     def default_keymap(self):
         self.keymap["escape"] = "window open Adjustments"
@@ -2116,6 +2249,8 @@ class Kernel(Device):
 
     def set_config(self, config):
         self.config = config
+
+        # Write any data already set in the device before registering the config.
         for attr in dir(self):
             if attr.startswith('_'):
                 continue
@@ -2124,6 +2259,8 @@ class Kernel(Device):
                 continue
             if isinstance(value, (int, bool, float, str)):
                 self.write_persistent(attr, value)
+
+        # Iterate all the root entries for the registered config.
         more, value, index = config.GetFirstEntry()
         while more:
             if not value.startswith('_'):

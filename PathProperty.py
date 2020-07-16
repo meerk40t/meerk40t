@@ -10,7 +10,7 @@ _ = wx.GetTranslation
 class PathProperty(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((288, 303))
@@ -74,10 +74,6 @@ class PathProperty(wx.Frame, Module):
         self.path_element = None
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
-
     def set_element(self, element):
         self.path_element = element
         try:
@@ -87,14 +83,34 @@ class PathProperty(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def initialize(self):
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
 
-    def shutdown(self,  channel):
-        self.Close()
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties
         self.SetTitle(_("Path Properties"))
         self.button_stroke_none.SetToolTip(_("\"none\" defined value"))
@@ -193,5 +209,8 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.fill = Color('none')
                 self.path_element.values[SVG_ATTR_FILL] = 'none'
                 self.path_element.altered()
+        self.path_element.emphasize()
+
+        self.device.using('module', 'Console').write('declassify\nclassify\n')
         self.device.signal('element_property_update', self.path_element)
         self.device.signal('refresh_scene', 0)

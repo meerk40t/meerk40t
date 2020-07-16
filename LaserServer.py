@@ -20,7 +20,7 @@ class LaserServer(Module):
         self.connection = None
         self.addr = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         if self.tcp:
             self.device.threaded(self.tcp_run)
         else:
@@ -29,6 +29,17 @@ class LaserServer(Module):
             self.socket.bind(('', self.port))
             self.device.threaded(self.udp_run)
         self.server_channel = self.device.channel_open('server')
+
+    def finalize(self, channel=None):
+        if self.socket is not None:
+            self.socket.close()
+            self.socket = None
+
+    def shutdown(self,  channel=None):
+        self.server_channel("Shutting down server.")
+        if self.socket is not None:
+            self.socket.close()
+            self.socket = None
 
     def udp_run(self):
         def reply(e):
@@ -112,10 +123,6 @@ class LaserServer(Module):
                         connection.close()
                     break
         return handle
-
-    def shutdown(self,  channel):
-        self.server_channel("Shutting down server.")
-        self.socket.close()
 
     def set_pipe(self, pipe):
         self.pipe = pipe

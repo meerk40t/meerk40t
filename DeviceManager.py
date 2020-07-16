@@ -7,7 +7,8 @@
 import wx
 
 from Kernel import Module, STATE_UNKNOWN
-from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50
+from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50, \
+    icons8_manager_50
 
 _ = wx.GetTranslation
 
@@ -15,8 +16,9 @@ _ = wx.GetTranslation
 class DeviceManager(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: DeviceManager.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((707, 337))
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
@@ -40,24 +42,41 @@ class DeviceManager(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def initialize(self):
-        self.device.close('window', self.name)
-        self.Show()
-        self.device.setting(str, 'list_devices', '')
-        self.refresh_device_list()
-
-    def shutdown(self,  channel):
-        self.Close()
+    def on_close(self, event):
         item = self.devices_list.GetFirstSelected()
         if item != -1:
             uid = self.devices_list.GetItem(item).Text
             self.device.device_primary = uid
 
-    def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy as regular.
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
+        self.device.close('window', self.name)
+        self.Show()
+        self.device.setting(str, 'list_devices', '')
+        self.refresh_device_list()
+
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: DeviceManager.__set_properties
         self.SetTitle("Device Manager")
         self.devices_list.SetFont(wx.Font(13, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
@@ -143,7 +162,10 @@ class DeviceManager(wx.Frame, Module):
         if device.state == STATE_UNKNOWN:
             device.open('window', "MeerK40t", None, -1, "")
             device.boot()
-            self.Close()
+            try:
+                self.Close()
+            except RuntimeError:
+                pass
         else:
             dlg = wx.MessageDialog(None, _("That device already booted."),
                                    _("Cannot Boot Selected Device"), wx.OK | wx.ICON_WARNING)
@@ -194,7 +216,7 @@ class DeviceManager(wx.Frame, Module):
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
         dev = self.device.device_root.instances['device'][uid]
-        dev.open('window', "Preferences", None, -1, "")
+        dev.open('window', "Preferences", self, -1, "")
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")

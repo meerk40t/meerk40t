@@ -38,7 +38,7 @@ class GrblDevice(Device):
         device.register('module', 'GRBLInterpreter', GRBLInterpreter)
         device.register('module', 'GRBLEmulator', GRBLEmulator)
 
-    def initialize(self, device):
+    def initialize(self, device, channel=None):
         """
         Device initialize.
 
@@ -96,7 +96,7 @@ class GRBLInterpreter(Interpreter):
         Interpreter.set_speed(self, speed)
         self.speed_updated = True
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(str, 'line_end', '\n')
 
     def ensure_program_mode(self, *values):
@@ -215,7 +215,7 @@ class GRBLEmulator(Module, Pipe):
         self.channel = None
         self.elements = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.grbl_channel = self.device.channel_open('grbl')
 
     def close(self):

@@ -6,6 +6,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_administrative_tools_50
 
 _ = wx.GetTranslation
 
@@ -16,7 +17,7 @@ _ = wx.GetTranslation
 class Preferences(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Preferences.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((395, 424))
@@ -82,22 +83,16 @@ class Preferences(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
-        self.device.remove('window', self.name)
-        event.Skip()  # Call destroy.
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
 
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
@@ -139,10 +134,22 @@ class Preferences(wx.Frame, Module):
         self.spin_home_x.SetValue(self.device.home_adjust_x)
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
-    def shutdown(self,  channel):
-        self.Close()
+    def finalize(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self,  channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Preferences.__set_properties
         self.SetTitle(_("Preferences"))
         self.combobox_board.SetToolTip(_("Select the board to use. This has affects the speedcodes used."))

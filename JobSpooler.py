@@ -1,6 +1,7 @@
 import wx
 
 from Kernel import *
+from icons import icons8_route_50
 
 _ = wx.GetTranslation
 
@@ -8,7 +9,7 @@ _ = wx.GetTranslation
 class JobSpooler(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: JobSpooler.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((661, 402))
@@ -32,31 +33,38 @@ class JobSpooler(wx.Frame, Module):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def initialize(self):
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        if self.device.is_root():
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _("You do not have a selected device."),
-                                   _("No Device Selected."), wx.OK | wx.ICON_WARNING)
-            result = dlg.ShowModal()
-            dlg.Destroy()
-            return
+
         self.device.listen('spooler;queue', self.on_spooler_update)
         self.refresh_spooler_list()
 
-    def shutdown(self, channel):
-        self.Close()
-
-    def on_close(self, event):
-        self.device.remove('window', self.name)
+    def finalize(self, channel=None):
         self.device.unlisten('spooler;queue', self.on_spooler_update)
-        event.Skip()  # Call destroy as regular.
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
+
+    def shutdown(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: JobSpooler.__set_properties
         self.SetTitle("Spooler")
         self.list_job_spool.SetToolTip("List and modify the queued operations")
@@ -82,16 +90,32 @@ class JobSpooler(wx.Frame, Module):
         event.Skip()
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
-        event.Skip()
+        index = event.Index
+        try:
+            element = self.device.spooler._queue[index]
+        except IndexError:
+            return
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
 
     def refresh_spooler_list(self):
+        if not self.update_spooler:
+            return
+
         def name_str(e):
             try:
                 return e.__name__
             except AttributeError:
                 return str(e)
-
-        self.list_job_spool.DeleteAllItems()
+        try:
+            self.list_job_spool.DeleteAllItems()
+        except RuntimeError:
+            return
         if len(self.device.spooler._queue) > 0:
             # This should actually process and update the queue items.
             i = 0
@@ -100,17 +124,14 @@ class JobSpooler(wx.Frame, Module):
                 if m != -1:
                     self.list_job_spool.SetItem(m, 1, name_str(e))
                     try:
-                        self.list_job_spool.SetItem(m, 2, e.status)
+                        self.list_job_spool.SetItem(m, 2, e._status_value)
                     except AttributeError:
                         pass
                     self.list_job_spool.SetItem(m, 3, self.device.device_name)
-                    settings = []
-                    if isinstance(e, EngraveOperation):
-                        self.list_job_spool.SetItem(m, 4, _("Engrave"))
-                    if isinstance(e, CutOperation):
-                        self.list_job_spool.SetItem(m, 4, _("Cut"))
-                    if isinstance(e, RasterOperation):
-                        self.list_job_spool.SetItem(m, 4, _("Raster"))
+                    try:
+                        self.list_job_spool.SetItem(m, 4, e.operation)
+                    except AttributeError:
+                        pass
                     try:
                         self.list_job_spool.SetItem(m, 5, _("%.1fmm/s") % (e.speed))
                     except AttributeError:
@@ -130,7 +151,7 @@ class JobSpooler(wx.Frame, Module):
                         pass
                     self.list_job_spool.SetItem(m, 6, " ".join(settings))
                     try:
-                        self.list_job_spool.SetItem(m, 7, e.time_estimate)
+                        self.list_job_spool.SetItem(m, 7, e.time_estimate())
                     except AttributeError:
                         pass
 

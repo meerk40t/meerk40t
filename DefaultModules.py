@@ -3,6 +3,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
+from LaserOperation import LaserOperation
 from svgelements import *
 
 MILS_PER_MM = 39.3701
@@ -42,6 +43,22 @@ class SVGWriter:
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = device.elements
+        for operation in elements.ops():
+            subelement = SubElement(root, "operation")
+            c = getattr(operation, 'color')
+            if c is not None:
+                subelement.set('color', str(c))
+            for key in dir(operation):
+                if key.startswith('_'):
+                    continue
+                value = getattr(operation, key)
+                if type(value) not in (int, float, str, bool):
+                    continue
+                subelement.set(key, str(value))
+
+        if elements.note is not None:
+            subelement = SubElement(root, "note")
+            subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
             if isinstance(element, Path):
                 subelement = SubElement(root, SVG_TAG_PATH)
@@ -113,6 +130,8 @@ class SVGLoader:
                         height='%fmm' % (kernel.bed_height),
                         ppi=96.0,
                         transform='scale(%f)' % scale_factor)
+        ops = None
+        note = None
         for element in svg.elements():
             try:
                 if element.values['visibility'] == 'hidden':
@@ -136,7 +155,39 @@ class SVGLoader:
                         elements.append(element)
                 except OSError:
                     pass
-        return elements, pathname, basename
+            elif isinstance(element, SVG):
+                continue
+            elif isinstance(element, Group):
+                continue
+            elif isinstance(element, SVGElement):
+                try:
+                    if str(element.values[SVG_ATTR_TAG]).lower() == 'note':
+                        try:
+                            note = element.values[SVG_TAG_TEXT]
+                        except KeyError:
+                            pass
+                except KeyError:
+                    pass
+                try:
+                    if str(element.values[SVG_ATTR_TAG]).lower() == 'operation':
+                        op = LaserOperation()
+                        for key in dir(op):
+                            if key.startswith('_'):
+                                continue
+                            v = getattr(op, key)
+                            if key in element.values:
+                                type_v = type(v)
+                                if type_v in (bool, str, int, float, Color):
+                                    try:
+                                        setattr(op, key, type_v(element.values[key]))
+                                    except (ValueError, KeyError):
+                                        pass
+                        if ops is None:
+                            ops = list()
+                        ops.append(op)
+                except KeyError:
+                    pass
+        return elements, ops, note, pathname, basename
 
 
 class ImageLoader:
@@ -157,7 +208,7 @@ class ImageLoader:
 
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
-        return [image], pathname, basename
+        return [image], None, None, pathname, basename
 
 
 class DxfLoader:
@@ -309,7 +360,9 @@ class DxfLoader:
                 bottom_left_position = entity.dxf.insert
                 size = entity.dxf.image_size
                 imagedef = entity.dxf.image_def_handle
-                element = SVGImage(href=imagedef.filename,
+                if not isinstance(imagedef, str):
+                    imagedef = imagedef.filename
+                element = SVGImage(href=imagedef,
                                    x=bottom_left_position[0],
                                    y=bottom_left_position[1] - size[1],
                                    width=size[0],
@@ -370,4 +423,4 @@ class DxfLoader:
             else:
                 elements.append(abs(Path(element)))
 
-        return elements, pathname, basename
+        return elements, None, None, pathname, basename

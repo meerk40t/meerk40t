@@ -1,6 +1,7 @@
 import wx
 
 from Kernel import Module
+from icons import icons8_usb_connector_50
 
 _ = wx.GetTranslation
 
@@ -8,8 +9,7 @@ _ = wx.GetTranslation
 class UsbConnect(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: Terminal.__init__
-        kwds["style"] = kwds.get("style",
-                                 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_NO_TASKBAR | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((915, 424))
@@ -24,21 +24,38 @@ class UsbConnect(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.pipe = None
 
-    def initialize(self):
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
         self.device.close('window', 'UsbConnect')
         self.Show()
         self.device.add_watcher('usb', self.update_text)
 
-    def on_close(self, event):
+    def finalize(self, channel=None):
         self.device.remove_watcher('usb', self.update_text)
-        self.device.remove('window', 'UsbConnect')
-        event.Skip()
+        try:
+            self.Close()
+        except RuntimeError:
+            print("runtimeerror %s %s")
+            pass
 
-    def shutdown(self, channel):
-        self.Close()
+    def shutdown(self, channel=None):
+        try:
+            self.Close()
+        except RuntimeError:
+            pass
 
     def update_text(self, text):
-        wx.CallAfter(self.update_text_gui, text + '\n')
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, text + '\n')
+        else:
+            self.update_text_gui(text + '\n')
 
     def update_text_gui(self, text):
         try:
@@ -47,6 +64,9 @@ class UsbConnect(wx.Frame, Module):
             pass
 
     def __set_properties(self):
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
+        self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_('UsbConnect'))
         self.text_entry.SetFocus()

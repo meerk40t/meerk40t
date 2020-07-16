@@ -6,7 +6,7 @@ import wx
 from Kernel import Module
 from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID
 from ZMatrix import ZMatrix
-from svgelements import Matrix, Point, Color
+from svgelements import Matrix, Point, Color, Rect
 
 MILS_IN_MM = 39.3701
 
@@ -54,13 +54,16 @@ class Scene(Module):
         self.time = None
         self.distance = None
 
-    def initialize(self):
+    def initialize(self, channel=None):
         self.device.setting(int, "draw_mode", 0)
 
-    def shutdown(self, channel):
+    def finalize(self, channel=None):
         elements = self.device.device_root.elements
         for e in elements.elems():
             elements.unregister(e)
+
+    def shutdown(self, channel=None):
+        pass
 
     def signal(self, *args, **kwargs):
         self._signal_widget(self.widget_root, *args, **kwargs)
@@ -138,7 +141,7 @@ class Scene(Module):
         self.last_position = window_pos
         try:
             previous_top_element = self.hit_chain[0][0]
-        except IndexError:
+        except (IndexError, TypeError):
             previous_top_element = None
         if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'hover'):
             self.time = time.time()
@@ -161,11 +164,10 @@ class Scene(Module):
                 if previous_top_element is not None:
                     previous_top_element.event(window_pos, window_pos, 'hover_end')
                 current_widget.event(window_pos, space_pos, 'hover_start')
-            if event_type == 'leftup':
-                duration = time.time() - self.time
-                if duration <= 0.15:
-                    current_widget.event(window_pos, space_pos, 'leftclick')
-            response = current_widget.event(window_pos, space_pos, event_type)
+            if event_type == 'leftup' and time.time() - self.time <= 0.15:
+                response = current_widget.event(window_pos, space_pos, 'leftclick')
+            else:
+                response = current_widget.event(window_pos, space_pos, event_type)
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()
                 return
@@ -499,8 +501,7 @@ class ElementsWidget(Widget):
             elements.set_selected_by_position(space_pos)
             self.root.select_in_tree_by_selected()
             return RESPONSE_CONSUME
-        else:
-            return RESPONSE_CHAIN
+        return RESPONSE_DROP
 
 
 class SelectionWidget(Widget):
@@ -790,6 +791,78 @@ class SelectionWidget(Widget):
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
 
+class RectSelectWidget(Widget):
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=True)
+        self.selection_pen = wx.Pen()
+        self.selection_pen.SetColour(wx.BLUE)
+        self.selection_pen.SetWidth(25)
+        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.start_location = None
+        self.end_location = None
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        elements = self.scene.device.device_root.elements
+        if event_type == 'leftdown':
+            self.start_location = space_pos
+            self.end_location = space_pos
+            return RESPONSE_CONSUME
+        elif event_type == 'leftup':
+            elements.validate_bounds()
+            for obj in elements.elems():
+                sx = self.start_location[0]
+                sy = self.start_location[1]
+                ex = self.end_location[0]
+                ey = self.end_location[1]
+                right_drag = sx <= ex and ey <= ey
+                if not right_drag:
+                    ex = self.start_location[0]
+                    ey = self.start_location[1]
+                    sx = self.end_location[0]
+                    sy = self.end_location[1]
+                q = obj.bbox(True)
+                xmin = q[0]
+                ymin = q[1]
+                xmax = q[2]
+                ymax = q[3]
+                if (
+                        sx <= xmin <= ex and
+                        sy <= ymin <= ey and
+                        sx <= xmax <= ex and
+                        sy <= ymax <= ey
+                    ):
+                    obj.emphasize()
+                else:
+                    obj.unemphasize()
+            self.scene.device.signal('refresh_scene', 0)
+            self.start_location = None
+            self.end_location = None
+            return RESPONSE_CONSUME
+        elif event_type == 'move':
+            self.scene.device.signal('refresh_scene', 0)
+            self.end_location = space_pos
+            return RESPONSE_CONSUME
+        return RESPONSE_DROP
+
+    def process_draw(self, gc):
+        matrix = self.parent.matrix
+        if self.start_location is not None and self.end_location is not None:
+            x0 = self.start_location[0]
+            y0 = self.start_location[1]
+            x1 = self.end_location[0]
+            y1 = self.end_location[1]
+            linewidth = 3.0 / matrix.value_scale_x()
+            self.selection_pen.SetWidth(linewidth)
+            gc.SetPen(self.selection_pen)
+            gc.StrokeLine(x0, y0, x1, y0)
+            gc.StrokeLine(x1, y0, x1, y1)
+            gc.StrokeLine(x1, y1, x0, y1)
+            gc.StrokeLine(x0, y1, x0, y0)
+
+
 class ReticleWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
@@ -936,7 +1009,7 @@ class GuideWidget(Widget):
             ends.append((x, length))
 
             starts.append((x, h))
-            ends.append((x, h-length))
+            ends.append((x, h - length))
 
             mark_point = (x - sx) / scaled_conversion
             if round(mark_point * 1000) == 0:
@@ -950,7 +1023,7 @@ class GuideWidget(Widget):
             ends.append((length, y))
 
             starts.append((w, y))
-            ends.append((w-length, y))
+            ends.append((w - length, y))
 
             mark_point = (y - sy) / scaled_conversion
             if round(mark_point * 1000) == 0:
@@ -987,9 +1060,9 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
             self.scene.device.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
-        elif event_type in ('middledown'):
+        elif event_type == 'middledown':
             return RESPONSE_CONSUME
-        elif event_type == ('middleup'):
+        elif event_type == 'middleup':
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
         self.scene.device.signal('refresh_scene', 0)
