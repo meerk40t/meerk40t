@@ -1649,12 +1649,13 @@ class Console(Module, Pipe):
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
+
         elif command == "ruidaserver":
-            port = 50200
-            tcp = False
             try:
-                server = active_device.open('module', 'LaserServer', instance_name='ruidaserver', port=port, tcp=tcp)
-                yield 'Ruida Server opened on port %d.' % port
+                server = active_device.open('module', 'LaserServer', instance_name='ruidaserver', port=50200, tcp=False)
+                jog = active_device.open('module', 'LaserServer', instance_name='ruidajog', port=50207, tcp=False)
+                yield 'Ruida Data Server opened on port %d.' % 50200
+                yield 'Ruida Jog Server opened on port %d.' % 50207
                 chan = 'ruida'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
@@ -1662,8 +1663,9 @@ class Console(Module, Pipe):
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
                 server.set_pipe(active_device.using('module', 'RuidaEmulator'))
+                jog.set_pipe(active_device.using('module', 'RuidaEmulator'))
             except OSError:
-                yield 'Server failed on port: %d' % port
+                yield 'Server failed.'
             return
         elif command == 'flush':
             kernel.flush()

@@ -338,18 +338,25 @@ class RuidaEmulator(Module):
             byte = f.read(1)
             if len(byte) == 0:
                 break
-            b = self.lut_unswizzle[ord(byte)]
-            if (b == 0x41 or b == 0x65) and len(array) == 0:
-                self.magic ^= 0x99
-                self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
-                self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
-                b = self.lut_unswizzle[ord(byte)]
+            b = ord(byte)
             if b >= 0x80 and len(array) > 0:
                 yield array
                 array.clear()
             array.append(b)
         if len(array) > 0:
             yield array
+
+    def jog_parse(self, data, reply=None, channel=None, elements=None):
+        if channel is None:
+            channel = self.channel
+        if reply is None:
+            reply = lambda e: e
+        if elements is None:
+            elements = lambda e: e
+        response = b'\xCC'  # Clear ACK.
+        reply(response)
+        self.parse(BytesIO(data), reply=reply, channel=channel, elements=elements)
+        channel("<-- %s\t(ACK)" % str(response.hex()))
 
     def checksum_parse(self, sent_data, reply=None, channel=None, elements=None):
         if channel is None:
@@ -382,7 +389,7 @@ class RuidaEmulator(Module):
             channel("--> " + str(data.hex()))
             channel("<--     (Checksum Fail (%d != %d))" % (str(response.hex()), checksum_sum, checksum_check))
             return
-        self.parse(BytesIO(data), reply=reply, channel=channel, elements=elements)
+        self.parse(BytesIO(self.unswizzle(data)), reply=reply, channel=channel, elements=elements)
 
     def parse(self, data, reply=None, channel=None, elements=None):
         um_per_mil = 25.4
@@ -456,6 +463,50 @@ class RuidaEmulator(Module):
                     desc = "Axis Y Move %f" % (value)
                 elif array[1] == 0x08:
                     desc = "Axis U Move %f" % (value)
+            elif array[0] == 0xA5:
+                key = None
+                if array[1] == 0x50:
+                    key = "Down"
+                elif array[1] == 0x51:
+                    key = "Up"
+                if array[1] == 0x53:
+                    if array[2] == 0x00:
+                        desc = "Interface Frame"
+                else:
+                    if array[2] == 0x02:
+                        desc = "Interface +X %s" % key
+                    elif array[2] == 0x01:
+                        desc = "Interface -X %s" % key
+                    if array[2] == 0x03:
+                        desc = "Interface +Y %s" % key
+                    elif array[2] == 0x04:
+                        desc = "Interface -Y %s" % key
+                    if array[2] == 0x0A:
+                        desc = "Interface +Z %s" % key
+                    elif array[2] == 0x0B:
+                        desc = "Interface -Z %s" % key
+                    if array[2] == 0x0C:
+                        desc = "Interface +U %s" % key
+                    elif array[2] == 0x0D:
+                        desc = "Interface -U %s" % key
+                    elif array[2] == 0x05:
+                        desc = "Interface Pulse %s" % key
+                    elif array[2] == 0x11:
+                        desc = "Interface Speed"
+                    elif array[2] == 0x06:
+                        desc = "Interface Start/Pause"
+                    elif array[2] == 0x09:
+                        desc = "Interface Stop"
+                    elif array[2] == 0x5A:
+                        desc = "Interface Reset"
+                    elif array[2] == 0x0F:
+                        desc = "Interface Trace On/Off"
+                    elif array[2] == 0x07:
+                        desc = "Interface ESC"
+                    elif array[2] == 0x12:
+                        desc = "Interface Laser Gate"
+                    elif array[2] == 0x08:
+                        desc = "Interface Origin"
             elif array[0] == 0xA8:  # 0b10101000 11 characters.
                 self.x = self.abscoord(array[1:6])
                 self.y = self.abscoord(array[6:11])
@@ -690,6 +741,8 @@ class RuidaEmulator(Module):
                 desc = "ACK from machine"
             elif array[0] == 0xCD:
                 desc = "ERR from machine"
+            elif array[0] == 0xCE:
+                desc = "Keep Alive"
             elif array[0] == 0xD7:
                 if len(path_d) != 0:
                     new_path()
