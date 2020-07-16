@@ -16,6 +16,7 @@ class OperationProperty(wx.Frame, Module):
         # begin wxGlade: OperationProperty.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
+        Module.__init__(self)
         self.SetSize((_simple_width, 500))
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
