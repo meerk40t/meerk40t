@@ -625,10 +625,19 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'circle':
-            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            r_pos = Length(args[1]).value(ppi=1000.0,
-                                          relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+            if len(args) == 3:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                r_pos = Length(args[2]).value(ppi=1000.0,
+                                              relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+            elif len(args) == 1:
+                x_pos = 0
+                y_pos = 0
+                r_pos = Length(args[0]).value(ppi=1000.0,
+                                      relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+            else:
+                yield 'Circle <x> <y> <r> or circle <r>'
+                return
             element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             element = Path(element)
             self.add_element(element)
@@ -1064,7 +1073,28 @@ class Console(Module, Pipe):
             else:
                 yield 'Optimization not found.'
                 return
-
+        elif command == 'embroider':
+            yield "Embroidery Filling"
+            if len(args) >= 1:
+                angle = Angle.parse(args[0])
+            else:
+                angle = None
+            if len(args) >= 2:
+                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            else:
+                distance = 16
+            for element in elements.elems(emphasized=True):
+                if not isinstance(element, Path):
+                    continue
+                if angle is not None:
+                    element *= Matrix.rotate(angle)
+                e = CutPlanner.eulerian_fill([abs(element)], distance=distance)
+                element.transform.reset()
+                element.clear()
+                element += e
+                if angle is not None:
+                    element *= Matrix.rotate(-angle)
+                element.altered()
         # Operation Command Elements
         elif command == 'operation':
             if len(args) == 0:
