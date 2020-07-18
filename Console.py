@@ -15,6 +15,7 @@ class Console(Module, Pipe):
         self.interval = 0.05
         self.process = self.tick
         self.commands = []
+        self.queue = []
         self.laser_on = False
         self.dx = 0
         self.dy = 0
@@ -41,6 +42,19 @@ class Console(Module, Pipe):
             for e in self.interface(command):
                 if self.channel is not None:
                     self.channel(e)
+        if len(self.queue):
+            for command in self.queue:
+                for e in self.interface(command):
+                    if self.channel is not None:
+                        self.channel(e)
+            self.queue.clear()
+        if len(self.commands) == 0 and len(self.queue) == 0:
+            self.unschedule()
+
+    def queue_command(self, command):
+        self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
+        self.queue.append(command)
+        self.schedule()
 
     def tick_command(self, command):
         self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
@@ -75,39 +89,6 @@ class Console(Module, Pipe):
 
         return move
 
-    def execute_jog(self, direction, amount):
-        x = 0
-        y = 0
-        if direction == 'right':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            x = amount
-        elif direction == 'left':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            x = -amount
-        elif direction == 'up':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            y = -amount
-        elif direction == 'down':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            y = amount
-        if self.laser_on:
-            def cut():
-                yield COMMAND_SET_INCREMENTAL
-                yield COMMAND_MODE_PROGRAM
-                yield COMMAND_CUT, x, y
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_SET_ABSOLUTE
-
-            return cut
-        else:
-            def move():
-                yield COMMAND_SET_INCREMENTAL
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, x, y
-                yield COMMAND_SET_ABSOLUTE
-
-            return move
-
     def channel_file_write(self, v):
         if self.channel_file is not None:
             self.channel_file.write('%s\n' % v)
@@ -135,7 +116,6 @@ class Console(Module, Pipe):
         if command == 'help':
             yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
-            yield 'position (right|left|up|down|execute) <length>'
             yield 'move <x> <y>'
             yield 'move_relative <dx> <dy>'
             yield 'home'
@@ -212,33 +192,32 @@ class Console(Module, Pipe):
                 yield 'Device has no spooler.'
                 return
             if len(args) == 1:
-                if not spooler.job_if_idle(self.execute_jog(command, *args)):
-                    yield 'Busy Error'
+                max_bed_height = self.device.bed_height * 39.3701
+                max_bed_width = self.device.bed_width * 39.3701
+                direction = command
+                amount = args[0]
+                if direction == 'right':
+                    self.dx += Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+                elif direction == 'left':
+                    self.dx -= Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+                elif direction == 'up':
+                    self.dy -= Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+                elif direction == 'down':
+                    self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+                self.queue_command('jog')
             else:
                 yield 'Syntax Error'
             return
-        elif command == 'position':
+        elif command == 'jog':
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
-            direction = args[0]
-            max_bed_height = self.device.bed_height * 39.3701
-            max_bed_width = self.device.bed_width * 39.3701
-            if direction == 'right':
-                self.dx += Length(args[1]).value(ppi=1000.0, relative_length=max_bed_width)
-            elif direction == 'left':
-                self.dx -= Length(args[1]).value(ppi=1000.0, relative_length=max_bed_width)
-            elif direction == 'up':
-                self.dy -= Length(args[1]).value(ppi=1000.0, relative_length=max_bed_height)
-            elif direction == 'down':
-                self.dy += Length(args[1]).value(ppi=1000.0, relative_length=max_bed_height)
-            elif direction == 'execute':
-                if spooler.job_if_idle(self.execute_relative_position(int(self.dx), int(self.dy))):
-                    yield 'Position moved: %d %d' % (int(self.dx), int(self.dy))
-                    self.dx -= int(self.dx)
-                    self.dy -= int(self.dy)
-                else:
-                    yield 'Busy Error'
+            if spooler.job_if_idle(self.execute_relative_position(int(self.dx), int(self.dy))):
+                yield 'Position moved: %d %d' % (int(self.dx), int(self.dy))
+                self.dx -= int(self.dx)
+                self.dy -= int(self.dy)
+            else:
+                yield 'Busy Error'
             return
         elif command == 'laser':
             if spooler is None:
