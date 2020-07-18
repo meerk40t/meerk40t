@@ -23,6 +23,7 @@ from Keymap import Keymap
 from LaserOperation import *
 from LaserRender import *
 from Navigation import Navigation
+from Notes import Notes
 from OperationPreprocessor import OperationPreprocessor
 from OperationProperty import OperationProperty
 from PathProperty import PathProperty
@@ -114,6 +115,7 @@ ID_MENU_DEVICE_MANAGER = idinc.new()
 ID_MENU_SETTINGS = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
+ID_MENU_NOTES = idinc.new()
 ID_MENU_OPERATIONS = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
 ID_MENU_CAMERA = idinc.new()
@@ -228,6 +230,7 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
+        wxglade_tmp_menu.Append(ID_MENU_NOTES, _("Notes"), "")
         wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
         wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
         wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
@@ -284,6 +287,8 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", self, -1, "", ), id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", self, -1, "", ),
                   id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Notes", self, -1, "", ),
+                  id=ID_MENU_NOTES)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", self, -1, "", ),
                   id=ID_MENU_CONTROLLER)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", self, -1, "", ), id=ID_MENU_USB)
@@ -681,11 +686,15 @@ class MeerK40t(wx.Frame, Module):
         self.Layout()
 
     def load(self, pathname):
+        self.device.setting(bool, 'auto_note', True)
         with wx.BusyInfo(_("Loading File...")):
+            n = self.device.device_root.elements.note
             results = self.device.load(pathname, channel=self.device.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
                 self.device.classify(elements)
+                if n != self.device.device_root.elements.note and self.device.auto_note:
+                    self.device.open('window', "Notes", self, -1, "", )
                 return True
             return False
 
@@ -2488,6 +2497,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "Keymap", Keymap)
         device.register('window', "UsbConnect", UsbConnect)
         device.register('window', "Navigation", Navigation)
+        device.register('window', "Notes", Notes)
         device.register('window', "Controller", Controller)
         device.register('window', "JobSpooler", JobSpooler)
         device.register('window', "JobInfo", JobInfo)
