@@ -212,10 +212,14 @@ class Console(Module, Pipe):
             if spooler is None:
                 yield 'Device has no spooler.'
                 return
-            if spooler.job_if_idle(self.execute_relative_position(int(self.dx), int(self.dy))):
-                yield 'Position moved: %d %d' % (int(self.dx), int(self.dy))
-                self.dx -= int(self.dx)
-                self.dy -= int(self.dy)
+            idx = int(self.dx)
+            idy = int(self.dy)
+            if idx == 0 and idy == 0:
+                return
+            if spooler.job_if_idle(self.execute_relative_position(idx, idy)):
+                yield 'Position moved: %d %d' % (idx, idy)
+                self.dx -= idx
+                self.dy -= idy
             else:
                 yield 'Busy Error'
             return
