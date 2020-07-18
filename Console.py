@@ -16,6 +16,8 @@ class Console(Module, Pipe):
         self.process = self.tick
         self.commands = []
         self.laser_on = False
+        self.dx = 0
+        self.dy = 0
 
     def initialize(self, channel=None):
         self.device.setting(int, "bed_width", 280)
@@ -133,6 +135,7 @@ class Console(Module, Pipe):
         if command == 'help':
             yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
+            yield 'position (right|left|up|down|execute) <length>'
             yield 'move <x> <y>'
             yield 'move_relative <dx> <dy>'
             yield 'home'
@@ -213,6 +216,29 @@ class Console(Module, Pipe):
                     yield 'Busy Error'
             else:
                 yield 'Syntax Error'
+            return
+        elif command == 'position':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            direction = args[0]
+            max_bed_height = self.device.bed_height * 39.3701
+            max_bed_width = self.device.bed_width * 39.3701
+            if direction == 'right':
+                self.dx += Length(args[1]).value(ppi=1000.0, relative_length=max_bed_width)
+            elif direction == 'left':
+                self.dx -= Length(args[1]).value(ppi=1000.0, relative_length=max_bed_width)
+            elif direction == 'up':
+                self.dy -= Length(args[1]).value(ppi=1000.0, relative_length=max_bed_height)
+            elif direction == 'down':
+                self.dy += Length(args[1]).value(ppi=1000.0, relative_length=max_bed_height)
+            elif direction == 'execute':
+                if spooler.job_if_idle(self.execute_relative_position(int(self.dx), int(self.dy))):
+                    yield 'Position moved: %d %d' % (int(self.dx), int(self.dy))
+                    self.dx -= int(self.dx)
+                    self.dy -= int(self.dy)
+                else:
+                    yield 'Busy Error'
             return
         elif command == 'laser':
             if spooler is None:
