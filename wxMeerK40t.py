@@ -85,9 +85,8 @@ ID_SPOOLER = idinc.new()
 ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
 
-ID_MENU_RECENT_PROJECT = idinc.new()
-
 ID_MENU_IMPORT = idinc.new()
+ID_MENU_RECENT = idinc.new()
 ID_MENU_ZOOM_OUT = idinc.new()
 ID_MENU_ZOOM_IN = idinc.new()
 ID_MENU_ZOOM_SIZE = idinc.new()
@@ -108,6 +107,18 @@ ID_MENU_PREVENT_CACHING = idinc.new()
 ID_MENU_HIDE_IMAGE = idinc.new()
 ID_MENU_HIDE_PATH = idinc.new()
 ID_MENU_HIDE_TEXT = idinc.new()
+
+ID_MENU_FILE0 = idinc.new()
+ID_MENU_FILE1 = idinc.new()
+ID_MENU_FILE2 = idinc.new()
+ID_MENU_FILE3 = idinc.new()
+ID_MENU_FILE4 = idinc.new()
+ID_MENU_FILE5 = idinc.new()
+ID_MENU_FILE6 = idinc.new()
+ID_MENU_FILE7 = idinc.new()
+ID_MENU_FILE8 = idinc.new()
+ID_MENU_FILE9 = idinc.new()
+ID_MENU_FILE_CLEAR = idinc.new()
 
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
@@ -187,12 +198,14 @@ class MeerK40t(wx.Frame, Module):
 
         wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
         wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
+        self.recent_file_menu = wx.Menu()
+        wxglade_tmp_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-
         wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save"), "")
         wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As"), "")
         wxglade_tmp_menu.AppendSeparator()
+
         wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
@@ -523,6 +536,19 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & DRAW_MODE_FLIPXY != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
         m.Check(self.device.draw_mode & DRAW_MODE_INVERT != 0)
+
+        device.setting(str, 'file0', None)
+        device.setting(str, 'file1', None)
+        device.setting(str, 'file2', None)
+        device.setting(str, 'file3', None)
+        device.setting(str, 'file4', None)
+        device.setting(str, 'file5', None)
+        device.setting(str, 'file6', None)
+        device.setting(str, 'file7', None)
+        device.setting(str, 'file8', None)
+        device.setting(str, 'file9', None)
+        self.populate_recent_menu()
+
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.space_changed()
@@ -685,6 +711,52 @@ class MeerK40t(wx.Frame, Module):
         self.SetSizer(main_sizer)
         self.Layout()
 
+    def populate_recent_menu(self):
+        for i in range(self.recent_file_menu.MenuItemCount):
+            self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+        device = self.device
+        if device.file0 is not None and len(device.file0):
+            self.recent_file_menu.Append(ID_MENU_FILE0, device.file0, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file0), id=ID_MENU_FILE0)
+        if device.file1 is not None and len(device.file1):
+            self.recent_file_menu.Append(ID_MENU_FILE1, device.file1, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file1), id=ID_MENU_FILE1)
+        if device.file2 is not None and len(device.file2):
+            self.recent_file_menu.Append(ID_MENU_FILE2, device.file2, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file2), id=ID_MENU_FILE2)
+        if device.file3 is not None and len(device.file3):
+            self.recent_file_menu.Append(ID_MENU_FILE3, device.file3, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file3), id=ID_MENU_FILE3)
+        if device.file4 is not None and len(device.file4):
+            self.recent_file_menu.Append(ID_MENU_FILE4, device.file4, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file4), id=ID_MENU_FILE4)
+        if device.file5 is not None and len(device.file5):
+            self.recent_file_menu.Append(ID_MENU_FILE5, device.file5, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file5), id=ID_MENU_FILE5)
+        if device.file6 is not None and len(device.file6):
+            self.recent_file_menu.Append(ID_MENU_FILE6, device.file6, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file6), id=ID_MENU_FILE6)
+        if device.file7 is not None and len(device.file7):
+            self.recent_file_menu.Append(ID_MENU_FILE7, device.file7, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file7), id=ID_MENU_FILE7)
+        if device.file8 is not None and len(device.file8):
+            self.recent_file_menu.Append(ID_MENU_FILE8, device.file8, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file8), id=ID_MENU_FILE8)
+        if device.file9 is not None and len(device.file9):
+            self.recent_file_menu.Append(ID_MENU_FILE9, device.file9, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file9), id=ID_MENU_FILE9)
+
+    def save_recent(self, pathname):
+        r = 8
+        w = 9
+        while 0 <= r <= 9 and 0 <= r <= 9:
+            path = getattr(self.device, 'file' + str(r))
+            r -= 1
+            setattr(self.device, 'file' + str(w), path)
+            w -= 1
+        self.device.file0 = pathname
+        self.populate_recent_menu()
+
     def load(self, pathname):
         self.device.setting(bool, 'auto_note', True)
         with wx.BusyInfo(_("Loading File...")):
@@ -692,6 +764,7 @@ class MeerK40t(wx.Frame, Module):
             results = self.device.load(pathname, channel=self.device.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
+                self.save_recent(pathname)
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self, -1, "", )
