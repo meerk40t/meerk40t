@@ -119,6 +119,7 @@ SVG_VALUE_CURRENT_COLOR = 'currentColor'
 
 PATTERN_WS = r'[\s\t\n]*'
 PATTERN_COMMA = r'(?:\s*,\s*|\s+|(?=-))'
+PATTERN_COMMAWSP = r'[ ,\t\n\x09\x0A\x0C\x0D]+'
 PATTERN_FLOAT = '[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?'
 PATTERN_LENGTH_UNITS = 'cm|mm|Q|in|pt|pc|px|em|cx|ch|rem|vw|vh|vmin|vmax'
 PATTERN_ANGLE_UNITS = 'deg|grad|rad|turn'
@@ -160,304 +161,273 @@ REGEX_CSS_STYLE = re.compile(r'([^{]+)\s*\{\s*([^}]+)\s*\}')
 REGEX_CSS_FONT = re.compile(
     r'(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?')
 
-
-class PathTokens:
-    """Path Tokens is the class for the general outline of how SVG Pathd objects
-    are stored. Namely, a single non-'e' character and a collection of floating
-    point numbers. While this is explicitly used for SVG pathd objects the method
-    for serializing command data in this fashion is also useful as a standalone
-    class."""
-
-    def __init__(self, command_elements):
-        self.command_elements = command_elements
-        self.command = None
-        self.last_command = None
-        self.path_operands = None
-        self.op_pos = 0
-
-    def get_float(self):
-        """Gets the element from the stack."""
-        if self.path_operands is None:
-            raise ValueError
-        match = REGEX_FLOAT.search(self.path_operands, pos=self.op_pos)
-        if match is None:
-            raise ValueError
-        self.op_pos = match.end()
-        return match.group(0)
-
-    def parse(self, pathdef):
-        self.command = None
-        self.path_operands = None
-        self.command = None
-        command_re = re.compile("([%s])" % (''.join([k for k in self.command_elements])))
-        for part in command_re.split(pathdef):
-            if len(part) == 0:
-                continue
-            if part in self.command_elements:
-                if self.command is not None:
-                    self.command_elements[self.command]()
-                    self.last_command = self.command
-                    self.command = None
-                self.command = part
-            else:
-                self.path_operands = part
-                self.op_pos = 0
-        if self.command is not None:
-            self.command_elements[self.command]()
+svg_parse = [
+    ('COMMAND', r'[MmZzLlHhVvCcSsQqTtAa]'),
+    ('SKIP', PATTERN_COMMAWSP)
+]
+svg_re = re.compile('|'.join('(?P<%s>%s)' % pair for pair in svg_parse))
+num_parse = [
+    ('FLOAT', PATTERN_FLOAT),
+    ('CLOSE', r'[Zz]'),
+    ('SKIP', PATTERN_COMMAWSP)
+]
+num_re = re.compile('|'.join('(?P<%s>%s)' % pair for pair in num_parse))
+flag_parse = [
+    ('FLAG', r'[01]'),
+    ('SKIP', PATTERN_COMMAWSP)
+]
+flag_re = re.compile('|'.join('(?P<%s>%s)' % pair for pair in flag_parse))
 
 
-# SVG Path Tokens.
-class SVGPathTokens(PathTokens):
-    """Utilizes the general PathTokens class to parse SVG pathd strings.
-    This class has been updated to account for SVG 2.0 version of the zZ command."""
-
+class SVGLexicalParser:
     def __init__(self):
-        PathTokens.__init__(self, {
-            'M': self.absolute_move_to,
-            'm': self.relative_move_to,
-            'L': self.absolute_line_to,
-            'l': self.relative_line_to,
-            "H": self.absolute_h_to,
-            "h": self.relative_h_to,
-            "V": self.absolute_v_to,
-            "v": self.relative_v_to,
-            "C": self.absolute_cubic_to,
-            "c": self.relative_cubic_to,
-            "S": self.absolute_smooth_cubic_to,
-            "s": self.relative_smooth_cubic_to,
-            "Q": self.absolute_quad_to,
-            "q": self.relative_quad_to,
-            "T": self.absolute_smooth_quad_to,
-            "t": self.relative_smooth_quad_to,
-            "A": self.absolute_arc_to,
-            "a": self.relative_arc_to,
-            "Z": self.absolute_close,
-            "z": self.relative_close
-        })
         self.parser = None
+        self.pathd = None
+        self.pos = 0
+        self.limit = 0
+        self.inline_close = None
 
-    def svg_parse(self, parser, pathdef):
-        self.parser = parser
-        self.parser.start()
-        self.parse(pathdef)
-        self.parser.end()
+    def _command(self):
+        while self.pos < self.limit:
+            match = svg_re.match(self.pathd, self.pos)
+            if match is None:
+                return None  # Did not match at command sequence.
+            self.pos = match.end()
+            kind = match.lastgroup
+            if kind == 'SKIP':
+                continue
+            return match.group()
+        return None
 
-    def get_rpos(self):
-        if self.command in ('Z', 'z'):
-            return self.command  # After Z, all further expected values are also Z.
-        coord0 = self.get_float()
-        if coord0 == 'z' or coord0 == 'Z':
-            self.command = coord0
-            return coord0
-        coord1 = self.get_float()
-        position = (float(coord0), float(coord1))
+    def _more(self):
+        while self.pos < self.limit:
+            match = num_re.match(self.pathd, self.pos)
+            if match is None:
+                return False
+            kind = match.lastgroup
+            if kind == 'CLOSE':
+                self.inline_close = match.group()
+                return False
+            if kind == 'SKIP':
+                # move skipped elements forward.
+                self.pos = match.end()
+                continue
+            return True
+        return None
+
+    def _number(self):
+        while self.pos < self.limit:
+            match = num_re.match(self.pathd, self.pos)
+            if match is None:
+                break  # No more matches.
+            kind = match.lastgroup
+            if kind == 'CLOSE':
+                # Inline Close
+                self.inline_close = match.group()
+                return None
+            self.pos = match.end()
+            if kind == 'SKIP':
+                continue
+            return float(match.group())
+        return None
+
+    def _flag(self):
+        while self.pos < self.limit:
+            match = flag_re.match(self.pathd, self.pos)
+            if match is None:
+                break  # No more matches.
+            self.pos = match.end()
+            kind = match.lastgroup
+            if kind == 'SKIP':
+                continue
+            return bool(int(match.group()))
+        return None
+
+    def _coord(self):
+        x = self._number()
+        if x is None:
+            return None
+        y = self._number()
+        if y is None:
+            raise ValueError
+        return x, y
+
+    def _rcoord(self):
+        position = self._coord()
+        if position is None:
+            return None
         current_pos = self.parser.current_point
         if current_pos is None:
             return position
-        return [position[0] + current_pos[0], position[1] + current_pos[1]]
+        return position[0] + current_pos[0], position[1] + current_pos[1]
 
-    def get_apos(self):
-        if self.command in ('Z', 'z'):
-            return self.command  # After Z, all further expected values are also Z.
-        coord0 = self.get_float()
-        if coord0 == 'z' or coord0 == 'Z':
-            self.command = coord0
-            return coord0
-        coord1 = self.get_float()
-        position = (float(coord0), float(coord1))
-        return position
-
-    def absolute_move_to(self):
-        # Moveto command.
-        self.command = 'L'
-        self.parser.move(self.get_apos(), relative=False)
-        try:
-            while True:
-                self.parser.line(self.get_apos(), relative=False)
-        except ValueError:
-            return
-
-    def absolute_line_to(self):
-        self.parser.line(self.get_apos(), relative=False)
-        try:
-            while True:
-                self.parser.line(self.get_apos(), relative=False)
-        except ValueError:
-            return
-
-    def absolute_h_to(self):
-        self.parser.horizontal(float(self.get_float()), relative=False)
-        try:
-            while True:
-                self.parser.horizontal(float(self.get_float()), relative=False)
-        except ValueError:
-            return
-
-    def absolute_v_to(self):
-        self.parser.vertical(float(self.get_float()), relative=False)
-        try:
-            while True:
-                self.parser.vertical(float(self.get_float()), relative=False)
-        except ValueError:
-            return
-
-    def absolute_cubic_to(self):
-        self.parser.cubic(self.get_apos(), self.get_apos(), self.get_apos(), relative=False)
-        try:
-            while True:
-                self.parser.cubic(self.get_apos(), self.get_apos(), self.get_apos(), relative=False)
-        except ValueError:
-            return
-
-    def absolute_smooth_cubic_to(self):
-        self.parser.smooth_cubic(self.get_apos(), self.get_apos(), relative=False)
-        try:
-            while True:
-                self.parser.smooth_cubic(self.get_apos(), self.get_apos(), relative=False)
-        except ValueError:
-            return
-
-    def absolute_quad_to(self):
-        self.parser.quad(self.get_apos(), self.get_apos(), relative=False)
-        try:
-            while True:
-                self.parser.quad(self.get_apos(), self.get_apos(), relative=False)
-        except ValueError:
-            return
-
-    def absolute_smooth_quad_to(self):
-        self.parser.smooth_quad(self.get_apos(), relative=False)
-        try:
-            while True:
-                self.parser.smooth_quad(self.get_apos(), relative=False)
-        except ValueError:
-            return
-
-    def absolute_arc_to(self):
-        rx = float(self.get_float())
-        ry = float(self.get_float())
-        rotation = float(self.get_float())
-        arc = float(self.get_float())
-        sweep = float(self.get_float())
-        end = self.get_apos()
-        self.parser.arc(rx, ry, rotation, arc, sweep, end, relative=False)
-        try:
-            while True:
-                rx = float(self.get_float())
-                ry = float(self.get_float())
-                rotation = float(self.get_float())
-                arc = float(self.get_float())
-                sweep = float(self.get_float())
-                end = self.get_apos()
-                self.parser.arc(rx, ry, rotation, arc, sweep, end, relative=False)
-        except ValueError:
-            return
-
-    def absolute_close(self):
-        # Close path
-        self.parser.closed(relative=False)
-        self.command = None
-        try:
-            self.get_float()
-        except ValueError:
-            return
-        raise ValueError
-
-    def relative_move_to(self):
-        # Moveto command.
-        self.command = 'l'
-        self.parser.move(self.get_rpos(), relative=True)
-        try:
-            while True:
-                self.parser.line(self.get_rpos(), relative=True)
-        except ValueError:
-            return
-
-    def relative_line_to(self):
-        self.parser.line(self.get_rpos(), relative=True)
-        try:
-            while True:
-                self.parser.line(self.get_rpos(), relative=True)
-        except ValueError:
-            return
-
-    def relative_h_to(self):
-        self.parser.horizontal(float(self.get_float()), relative=True)
-        try:
-            while True:
-                self.parser.horizontal(float(self.get_float()), relative=True)
-        except ValueError:
-            return
-
-    def relative_v_to(self):
-        self.parser.vertical(float(self.get_float()), relative=True)
-        try:
-            while True:
-                self.parser.vertical(float(self.get_float()), relative=True)
-        except ValueError:
-            return
-
-    def relative_cubic_to(self):
-        self.parser.cubic(self.get_rpos(), self.get_rpos(), self.get_rpos(), relative=True)
-        try:
-            while True:
-                self.parser.cubic(self.get_rpos(), self.get_rpos(), self.get_rpos(), relative=True)
-        except ValueError:
-            return
-
-    def relative_smooth_cubic_to(self):
-        self.parser.smooth_cubic(self.get_rpos(), self.get_rpos(), relative=True)
-        try:
-            while True:
-                self.parser.smooth_cubic(self.get_rpos(), self.get_rpos(), relative=True)
-        except ValueError:
-            return
-
-    def relative_quad_to(self):
-        self.parser.quad(self.get_rpos(), self.get_rpos(), relative=True)
-        try:
-            while True:
-                self.parser.quad(self.get_rpos(), self.get_rpos(), relative=True)
-        except ValueError:
-            return
-
-    def relative_smooth_quad_to(self):
-        self.parser.smooth_quad(self.get_rpos(), relative=True)
-        try:
-            while True:
-                self.parser.smooth_quad(self.get_rpos(), relative=True)
-        except ValueError:
-            return
-
-    def relative_arc_to(self):
-        rx = float(self.get_float())
-        ry = float(self.get_float())
-        rotation = float(self.get_float())
-        arc = float(self.get_float())
-        sweep = float(self.get_float())
-        end = self.get_rpos()
-        self.parser.arc(rx, ry, rotation, arc, sweep, end, relative=True)
-        try:
-            while True:
-                rx = float(self.get_float())
-                ry = float(self.get_float())
-                rotation = float(self.get_float())
-                arc = float(self.get_float())
-                sweep = float(self.get_float())
-                end = self.get_rpos()
-                self.parser.arc(rx, ry, rotation, arc, sweep, end, relative=True)
-        except ValueError:
-            return
-
-    def relative_close(self):
-        # Close path
-        self.parser.closed(relative=True)
-        self.command = None
-        try:
-            self.get_float()
-        except ValueError:
-            return
-        raise ValueError
+    def parse(self, parser, pathd):
+        self.parser = parser
+        self.parser.start()
+        self.pathd = pathd
+        self.pos = 0
+        self.limit = len(pathd)
+        while True:
+            cmd = self._command()
+            if cmd is None:
+                return
+            elif cmd == 'z' or cmd == 'Z':
+                if self._more():
+                    raise ValueError
+                self.parser.closed(relative=cmd.islower())
+                self.inline_close = None
+                continue
+            elif cmd == 'm':
+                if not self._more():
+                    raise ValueError
+                coord = self._rcoord()
+                self.parser.move(coord, relative=True)
+                while self._more():
+                    coord = self._rcoord()
+                    self.parser.line(coord, relative=True)
+            elif cmd == 'M':
+                if not self._more():
+                    raise ValueError
+                coord = self._coord()
+                self.parser.move(coord, relative=False)
+                while self._more():
+                    coord = self._coord()
+                    self.parser.line(coord, relative=False)
+            elif cmd == 'l':
+                while True:
+                    coord = self._rcoord()
+                    if coord is None:
+                        coord = self.inline_close
+                    self.parser.line(coord, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'L':
+                while True:
+                    coord = self._coord()
+                    if coord is None:
+                        coord = self.inline_close
+                    self.parser.line(coord, relative=False)
+                    if not self._more():
+                        break
+            elif cmd == 't':
+                while True:
+                    coord = self._rcoord()
+                    if coord is None:
+                        coord = self.inline_close
+                    self.parser.smooth_quad(coord, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'T':
+                while True:
+                    coord = self._coord()
+                    if coord is None:
+                        coord = self.inline_close
+                    self.parser.smooth_quad(coord, relative=False)
+                    if not self._more():
+                        break
+            elif cmd == 'h':
+                while True:
+                    value = self._number()
+                    self.parser.horizontal(value, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'H':
+                while True:
+                    value = self._number()
+                    self.parser.horizontal(value, relative=False)
+                    if not self._more():
+                        break
+            elif cmd == 'v':
+                while True:
+                    value = self._number()
+                    self.parser.vertical(value, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'V':
+                while self._more():
+                    value = self._number()
+                    self.parser.vertical(value, relative=False)
+            elif cmd == 'c':
+                while True:
+                    coord1, coord2, coord3 = self._rcoord(), self._rcoord(), self._rcoord()
+                    if coord1 is None:
+                        coord1 = self.inline_close
+                    if coord2 is None:
+                        coord2 = self.inline_close
+                    if coord3 is None:
+                        coord3 = self.inline_close
+                    self.parser.cubic(coord1, coord2, coord3, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'C':
+                while True:
+                    coord1, coord2, coord3 = self._coord(), self._coord(), self._coord()
+                    if coord1 is None:
+                        coord1 = self.inline_close
+                    if coord2 is None:
+                        coord2 = self.inline_close
+                    if coord3 is None:
+                        coord3 = self.inline_close
+                    self.parser.cubic(coord1, coord2, coord3, relative=False)
+                    if not self._more():
+                        break
+            elif cmd == 'q':
+                while True:
+                    coord1, coord2 = self._rcoord(), self._rcoord()
+                    if coord1 is None:
+                        coord1 = self.inline_close
+                    if coord2 is None:
+                        coord2 = self.inline_close
+                    self.parser.quad(coord1, coord2, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'Q':
+                while True:
+                    coord1, coord2 = self._coord(), self._coord()
+                    if coord1 is None:
+                        coord1 = self.inline_close
+                    if coord2 is None:
+                        coord2 = self.inline_close
+                    self.parser.quad(coord1, coord2, relative=False)
+                    if not self._more():
+                        break
+            elif cmd == 's':
+                while True:
+                    coord1, coord2 = self._rcoord(), self._rcoord()
+                    if coord1 is None:
+                        coord1 = self.inline_close
+                    if coord2 is None:
+                        coord2 = self.inline_close
+                    self.parser.smooth_cubic(coord1, coord2, relative=True)
+                    if not self._more():
+                        break
+            elif cmd == 'S':
+                while True:
+                    coord1, coord2 = self._coord(), self._coord()
+                    if coord1 is None:
+                        coord1 = self.inline_close
+                    if coord2 is None:
+                        coord2 = self.inline_close
+                    self.parser.smooth_cubic(coord1, coord2, relative=False)
+                    if not self._more():
+                        break
+            elif cmd == 'a':
+                while self._more():
+                    rx, ry, rotation, arc, sweep, coord = \
+                        self._number(), self._number(), self._number(), self._flag(), self._flag(), self._rcoord()
+                    if sweep is None:
+                        raise ValueError
+                    if coord is None:
+                        coord = self.inline_close
+                    self.parser.arc(rx, ry, rotation, arc, sweep, coord, relative=True)
+            elif cmd == 'A':
+                while self._more():
+                    rx, ry, rotation, arc, sweep, coord = \
+                        self._number(), self._number(), self._number(), self._flag(), self._flag(), self._coord()
+                    if coord is None:
+                        coord = self.inline_close
+                    self.parser.arc(rx, ry, rotation, arc, sweep, coord, relative=False)
+        self.parser.end()
 
 
 class Length(object):
@@ -3223,7 +3193,7 @@ class Move(PathSegment):
         else:
             raise IndexError
 
-    def d(self, current_point=None,  relative=None, smooth=None):
+    def d(self, current_point=None, relative=None, smooth=None):
         if current_point is None or (relative is None and self.relative) or (relative is not None and not relative):
             return 'M %s' % self.end
         return 'm %s' % (self.end - current_point)
@@ -3556,7 +3526,8 @@ class CubicBezier(PathSegment):
             repr(self.start), repr(self.control1), repr(self.control2), repr(self.end))
 
     def __copy__(self):
-        return CubicBezier(self.start, self.control1, self.control2, self.end, relative=self.relative, smooth=self.smooth)
+        return CubicBezier(self.start, self.control1, self.control2, self.end, relative=self.relative,
+                           smooth=self.smooth)
 
     def __eq__(self, other):
         if not isinstance(other, CubicBezier):
@@ -3636,8 +3607,6 @@ class CubicBezier(PathSegment):
         """
         local_extremizers = [0, 1]
         a = [c[v] for c in self]
-        if len(a) != 4:
-            return
         denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
         if abs(denom) >= 1e-12:
             delta = a[1] ** 2 - \
@@ -4605,8 +4574,8 @@ class Path(Shape, MutableSequence):
 
     def parse(self, pathdef):
         """Parses the SVG path."""
-        tokens = SVGPathTokens()
-        tokens.svg_parse(self, pathdef)
+        tokens = SVGLexicalParser()
+        tokens.parse(self, pathdef)
 
     def validate_connections(self):
         """
@@ -4698,28 +4667,28 @@ class Path(Shape, MutableSequence):
         pass
 
     def move(self, *points, relative=False):
-        end_pos = points[0]
         start_pos = self.current_point
+        end_pos = points[0]
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = Move(start_pos, end_pos)
         segment.relative = relative
         self.append(segment)
         if len(points) > 1:
             self.line(*points[1:], relative=relative)
+        return self
 
     def line(self, *points, relative=False):
         start_pos = self.current_point
         end_pos = points[0]
-        if end_pos == 'z':
-            segment = Line(start_pos, self.z_point)
-            segment.relative = relative
-            self.append(segment)
-            self.closed()
-            return
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = Line(start_pos, end_pos)
         segment.relative = relative
         self.append(segment)
         if len(points) > 1:
             self.line(*points[1:])
+        return self
 
     def vertical(self, *y_points, relative=False):
         start_pos = self.current_point
@@ -4731,6 +4700,7 @@ class Path(Shape, MutableSequence):
         self.append(segment)
         if len(y_points) > 1:
             self.vertical(*y_points[1:], relative=relative)
+        return self
 
     def horizontal(self, *x_points, relative=False):
         start_pos = self.current_point
@@ -4743,6 +4713,7 @@ class Path(Shape, MutableSequence):
         self.append(segment)
         if len(x_points) > 1:
             self.horizontal(*x_points[1:], relative=relative)
+        return self
 
     def smooth_quad(self, *points, relative=False):
         """Smooth curve. First control point is the "reflection" of
@@ -4750,44 +4721,31 @@ class Path(Shape, MutableSequence):
         start_pos = self.current_point
         control1 = self.smooth_point
         end_pos = points[0]
-        if end_pos == 'z':
-            segment = QuadraticBezier(start_pos, control1, self.z_point)
-            segment.relative = relative
-            segment.smooth = True
-            self.append(segment)
-            self.closed()
-            return
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = QuadraticBezier(start_pos, control1, end_pos)
         segment.relative = relative
         segment.smooth = True
         self.append(segment)
         if len(points) > 1:
             self.smooth_quad(*points[1:])
+        return self
 
     def quad(self, *points, relative=False):
         start_pos = self.current_point
         control = points[0]
-        if control == 'z':
-            segment = QuadraticBezier(start_pos, self.z_point, self.z_point)
-            segment.relative = relative
-            segment.smooth = False
-            self.append(segment)
-            self.closed()
-            return
+        if control in ('z', 'Z'):
+            control = self.z_point
         end_pos = points[1]
-        if end_pos == 'z':
-            segment = QuadraticBezier(start_pos, control, self.z_point)
-            segment.relative = relative
-            segment.smooth = False
-            self.append(segment)
-            self.closed()
-            return
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = QuadraticBezier(start_pos, control, end_pos)
         segment.relative = relative
         segment.smooth = False
         self.append(segment)
         if len(points) > 2:
             self.quad(*points[2:])
+        return self
 
     def smooth_cubic(self, *points, relative=False):
         """Smooth curve. First control point is the "reflection" of
@@ -4795,60 +4753,38 @@ class Path(Shape, MutableSequence):
         start_pos = self.current_point
         control1 = self.smooth_point
         control2 = points[0]
-        if control2 == 'z':
-            segment = CubicBezier(start_pos, control1, self.z_point, self.z_point)
-            segment.relative = relative
-            segment.smooth = True
-            self.append(segment)
-            self.closed()
-            return
+
+        if control2 in ('z', 'Z'):
+            control2 = self.z_point
         end_pos = points[1]
-        if end_pos == 'z':
-            segment = CubicBezier(start_pos, control1, control2, self.z_point)
-            segment.relative = relative
-            segment.smooth = True
-            self.append(segment)
-            self.closed()
-            return
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = CubicBezier(start_pos, control1, control2, end_pos)
         segment.relative = relative
         segment.smooth = True
         self.append(segment)
         if len(points) > 2:
             self.smooth_cubic(*points[2:])
+        return self
 
     def cubic(self, *points, relative=False):
         start_pos = self.current_point
         control1 = points[0]
-        if control1 == 'z':
-            segment = CubicBezier(start_pos, self.z_point, self.z_point, self.z_point)
-            segment.relative = relative
-            segment.smooth = False
-            self.append(segment)
-            self.closed()
-            return
+        if control1 in ('z', 'Z'):
+            control1 = self.z_point
         control2 = points[1]
-        if control2 == 'z':
-            segment = CubicBezier(start_pos, control1, self.z_point, self.z_point)
-            segment.relative = relative
-            segment.smooth = False
-            self.append(segment)
-            self.closed()
-            return
+        if control2 in ('z', 'Z'):
+            control2 = self.z_point
         end_pos = points[2]
-        if end_pos == 'z':
-            segment = CubicBezier(start_pos, control1, control2, self.z_point)
-            segment.relative = relative
-            segment.smooth = False
-            self.append(segment)
-            self.closed()
-            return
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = CubicBezier(start_pos, control1, control2, end_pos)
         segment.relative = relative
         segment.smooth = False
         self.append(segment)
         if len(points) > 3:
             self.cubic(*points[3:])
+        return self
 
     def arc(self, *arc_args, relative=False):
         start_pos = self.current_point
@@ -4858,17 +4794,14 @@ class Path(Shape, MutableSequence):
         arc = arc_args[3]
         sweep = arc_args[4]
         end_pos = arc_args[5]
-        if end_pos == 'z':
-            segment = Arc(start_pos, rx, ry, rotation, arc, sweep, self.z_point)
-            segment.relative = relative
-            self.append(segment)
-            self.closed()
-            return
+        if end_pos in ('z', 'Z'):
+            end_pos = self.z_point
         segment = Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos)
         segment.relative = relative
         self.append(segment)
         if len(arc_args) > 6:
             self.arc(*arc_args[6:])
+        return self
 
     def closed(self, relative=False):
         start_pos = self.current_point
@@ -4876,6 +4809,7 @@ class Path(Shape, MutableSequence):
         segment = Close(start_pos, end_pos)
         segment.relative = relative
         self.append(segment)
+        return self
 
     def _calc_lengths(self, error=ERROR, min_depth=MIN_DEPTH):
         if self._length is not None:
@@ -6974,10 +6908,10 @@ class SVG(Group):
                     context = s
                     continue
                 elif SVG_TAG_PATH == tag:
-                    # try:
-                    s = Path(values)
-                    # except ValueError:
-                    #     continue
+                    try:
+                        s = Path(values)
+                    except ValueError:
+                        continue
                 elif SVG_TAG_CIRCLE == tag:
                     s = Circle(values)
                 elif SVG_TAG_ELLIPSE == tag:

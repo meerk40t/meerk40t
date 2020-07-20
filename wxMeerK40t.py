@@ -745,16 +745,30 @@ class MeerK40t(wx.Frame, Module):
         if device.file9 is not None and len(device.file9):
             self.recent_file_menu.Append(ID_MENU_FILE9, device.file9, "")
             self.Bind(wx.EVT_MENU, lambda e: self.load(device.file9), id=ID_MENU_FILE9)
+        if self.recent_file_menu.MenuItemCount != 0:
+            self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
+            self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
+
+    def clear_recent(self):
+        for i in range(10):
+            try:
+                setattr(self.device, 'file' + str(i), '')
+            except IndexError:
+                break
+        self.populate_recent_menu()
+
 
     def save_recent(self, pathname):
-        r = 8
-        w = 9
-        while 0 <= r <= 9 and 0 <= r <= 9:
-            path = getattr(self.device, 'file' + str(r))
-            r -= 1
-            setattr(self.device, 'file' + str(w), path)
-            w -= 1
-        self.device.file0 = pathname
+        recent = list()
+        for i in range(10):
+            recent.append(getattr(self.device, 'file' + str(i)))
+        recent = [r for r in recent if r is not None and r != pathname and len(r) > 0]
+        recent.insert(0, pathname)
+        for i in range(10):
+            try:
+                setattr(self.device, 'file' + str(i), recent[i])
+            except IndexError:
+                break
         self.populate_recent_menu()
 
     def load(self, pathname):
