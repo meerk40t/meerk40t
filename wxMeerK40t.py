@@ -498,7 +498,7 @@ class MeerK40t(wx.Frame, Module):
             device.threaded(foo)
 
         device.control_instance_add("Crash Thread", test_crash_in_thread)
-
+        device.control_instance_add("Clear Laserpath", self.clear_laserpath)
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
         self.schedule()
@@ -758,7 +758,6 @@ class MeerK40t(wx.Frame, Module):
                 break
         self.populate_recent_menu()
 
-
     def save_recent(self, pathname):
         recent = list()
         for i in range(10):
@@ -849,10 +848,15 @@ class MeerK40t(wx.Frame, Module):
         self.on_size(None)
 
     def on_emphasized_elements_changed(self, *args):
+        self.clear_laserpath()
         self.request_refresh()
 
     def on_element_alteration(self, *args):
         self.device.signal('rebuild_tree')
+
+    def clear_laserpath(self):
+        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
+        self.laserpath_index = 0
 
     def on_erase(self, event):
         pass
@@ -992,8 +996,7 @@ class MeerK40t(wx.Frame, Module):
         kernel = self.device.device_root
         self.working_file = None
         kernel.elements.clear_all()
-        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
-        self.laserpath_index = 0
+        self.clear_laserpath()
         self.request_refresh()
         self.device.signal('rebuild_tree', 0)
 
