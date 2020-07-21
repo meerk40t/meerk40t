@@ -95,6 +95,7 @@ ID_MENU_ZOOM_SIZE = idinc.new()
 ID_MENU_HIDE_FILLS = idinc.new()
 ID_MENU_HIDE_GUIDES = idinc.new()
 ID_MENU_HIDE_GRID = idinc.new()
+ID_MENU_HIDE_BACKGROUND = idinc.new()
 ID_MENU_HIDE_STROKES = idinc.new()
 ID_MENU_HIDE_LASERPATH = idinc.new()
 ID_MENU_HIDE_RETICLE = idinc.new()
@@ -215,6 +216,7 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
@@ -270,6 +272,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
 
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_BACKGROUND), id=ID_MENU_HIDE_BACKGROUND)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GUIDES), id=ID_MENU_HIDE_GUIDES)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_PATH), id=ID_MENU_HIDE_PATH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_IMAGE), id=ID_MENU_HIDE_IMAGE)
@@ -385,8 +388,6 @@ class MeerK40t(wx.Frame, Module):
         self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.Bind(wx.EVT_KILL_FOCUS, self.on_focus_lost)
-
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.scene.SetFocus()
         self.process = self.refresh_scene
@@ -508,6 +509,8 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & DRAW_MODE_FILLS != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
         m.Check(self.device.draw_mode & DRAW_MODE_GUIDES != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_BACKGROUND)
+        m.Check(self.device.draw_mode & DRAW_MODE_BACKGROUND != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.device.draw_mode & DRAW_MODE_GRID != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LASERPATH)
@@ -962,7 +965,7 @@ class MeerK40t(wx.Frame, Module):
 
     def on_focus_lost(self, event):
         self.device.using('module', 'Console').write("-laser\nend\n")
-        event.Skip()
+        # event.Skip()
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
