@@ -21,10 +21,18 @@ class Console(Module, Pipe):
         self.dy = 0
 
     def initialize(self, channel=None):
+        self.device.listen('interpreter;mode', self.on_mode_change)
         self.device.setting(int, "bed_width", 280)
         self.device.setting(int, "bed_height", 200)
         self.channel = self.device.channel_open('console')
         self.active_device = self.device
+
+    def finalize(self, channel=None):
+        self.device.unlisten('interpreter;mode', self.on_mode_change)
+
+    def on_mode_change(self, *args):
+        self.dx = 0
+        self.dy = 0
 
     def write(self, data):
         if isinstance(data, bytes):
@@ -128,7 +136,7 @@ class Console(Module, Pipe):
             yield '-------------------'
             yield 'device [<value>]'
             yield 'set [<key> <value>]'
-            yield 'window [(open|close) <window_name>]'
+            yield 'window [(open|close|toggle) <window_name>]'
             yield 'control [<executive>]'
             yield 'module [(open|close) <module_name>]'
             yield 'schedule'
