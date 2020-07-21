@@ -121,7 +121,7 @@ class Console(Module, Pipe):
         except AttributeError:
             interpreter = None
         command = command.lower()
-        if command == 'help':
+        if command == 'help' or command == '?':
             yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
             yield 'move <x> <y>'

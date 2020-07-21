@@ -366,13 +366,12 @@ class Interpreter(Module):
                             winsound.Beep(2000, 100)
                     except:
                         pass
+                if os.name == 'posix':
+                    # Mac or linux.
+                    print('\a')  # Beep.
+                    os.system('say "Beep"')
                 else:
-                    try:
-                        from sys import stdout
-                        stdout.write('\a')
-                        stdout.flush()
-                    except:
-                        print('\a')  # Beep.
+                    print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]

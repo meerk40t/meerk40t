@@ -1,6 +1,5 @@
 from Kernel import *
-from LaserCommandConstants import *
-from zinglplotter import ZinglPlotter
+
 from CH341DriverBase import *
 
 """
@@ -75,13 +74,13 @@ class MoshiInterpreter(Interpreter):
 
     def convert(self, q):
         if q & 1:
-            return swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
+            return self.swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
         else:
-            return swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
+            return self.swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
 
     def reconvert(self, q):
         for m in range(5):
-            q = convert(q)
+            q = self.convert(q)
         return q
 
     def set_speed(self, new_speed):
@@ -133,115 +132,6 @@ class MoshiInterpreter(Interpreter):
 
     def unlock_rail(self):
         pass
-
-    def command(self, command, values=None):
-        if command == COMMAND_LASER_OFF:
-            self.laser_off()
-        elif command == COMMAND_LASER_ON:
-            self.laser_on()
-        elif command == COMMAND_MOVE:
-            x, y = values
-            self.move(x, y)
-        elif command == COMMAND_HOME:
-            self.home()
-        elif command == COMMAND_LOCK:
-            self.lock_rail()
-        elif command == COMMAND_UNLOCK:
-            self.unlock_rail()
-        elif command == COMMAND_PLOT:
-            path = values
-            if len(path) == 0:
-                return
-            first_point = path.first_point
-            self.move_absolute(first_point[0], first_point[1])
-            for x, y, on in ZinglPlotter.plot_path(path):
-                self.move_absolute(x, y)
-        elif command == COMMAND_RASTER:
-            raster = values
-            for x, y, on in raster.plot():
-                if on:
-                    self.laser_on()
-                else:
-                    self.laser_off()
-                self.move_absolute(x, y)
-        elif command == COMMAND_SET_SPEED:
-            speed = values
-            self.set_speed(speed)
-        elif command == COMMAND_SET_POWER:
-            power = values
-            self.set_power(power)
-        elif command == COMMAND_SET_STEP:
-            step = values
-            self.set_step(step)
-        elif command == COMMAND_SET_D_RATIO:
-            pass
-        elif command == COMMAND_SET_DIRECTION:
-            pass
-        elif command == COMMAND_SET_INCREMENTAL:
-            self.is_relative = True
-        elif command == COMMAND_SET_ABSOLUTE:
-            self.is_relative = False
-        elif command == COMMAND_SET_POSITION:
-            x, y = values
-            self.device.current_x = x
-            self.device.current_y = y
-        elif command == COMMAND_MODE_PROGRAM:
-            pass
-        elif command == COMMAND_MODE_RAPID:
-            self.default_mode()
-        elif command == COMMAND_MODE_RAPID:
-            pass
-        elif command == COMMAND_MODE_FINISHED:
-            pass
-        elif command == COMMAND_WAIT:
-            t = values
-            self.next_run = t
-        elif command == COMMAND_WAIT_FINISH:
-            self.extra_hold = lambda e: len(self.pipe) == 0
-        elif command == COMMAND_BEEP:
-            print('\a')  # Beep.
-        elif command == COMMAND_FUNCTION:
-            t = values
-            if callable(t):
-                t()
-        elif command == COMMAND_SIGNAL:
-            if isinstance(values, str):
-                self.device.signal(values, None)
-            elif len(values) >= 2:
-                self.device.signal(values[0], *values[1:])
-        elif command == REALTIME_RESET:
-            pass
-        elif command == REALTIME_PAUSE:
-            pass
-        elif command == REALTIME_STATUS:
-            pass
-        elif command == REALTIME_RESUME:
-            pass  # This command can't be processed since we should be paused.
-
-    def realtime_command(self, command, values=None):
-        if command == COMMAND_SET_SPEED:
-            speed = values
-            self.set_speed(speed)
-        elif command == COMMAND_SET_POWER:
-            power = values
-            self.set_power(power)
-        elif command == COMMAND_SET_STEP:
-            step = values
-            self.set_step(step)
-        elif command == COMMAND_SET_D_RATIO:
-            pass
-        elif command == COMMAND_SET_POSITION:
-            x, y = values
-            self.device.current_x = x
-            self.device.current_y = y
-        elif command == REALTIME_RESET:
-            pass
-        elif command == REALTIME_PAUSE:
-            pass
-        elif command == REALTIME_STATUS:
-            pass
-        elif command == REALTIME_RESUME:
-            pass
 
 
 class MoshiboardController(Module, Pipe):

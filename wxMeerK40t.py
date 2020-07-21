@@ -379,15 +379,13 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
 
-        # self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
-        # self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
-
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_KILL_FOCUS, self.on_focus_lost)
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.scene.SetFocus()
@@ -961,6 +959,10 @@ class MeerK40t(wx.Frame, Module):
 
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
+
+    def on_focus_lost(self, event):
+        self.device.using('module', 'Console').write("-laser\nend\n")
+        event.Skip()
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
