@@ -353,6 +353,12 @@ class Console(Module, Pipe):
                 yield '----------'
             else:
                 value = args[0]
+                if value == 'toggle':
+                    index = args[1]
+                    if index in active_device.instances['window']:
+                        value = 'close'
+                    else:
+                        value = 'open'
                 if value == 'open':
                     index = args[1]
                     name = index
