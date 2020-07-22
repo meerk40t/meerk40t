@@ -4,6 +4,7 @@
 #
 
 import sys
+import threading
 import traceback
 
 import wx.ribbon as RB
@@ -348,6 +349,7 @@ class MeerK40t(wx.Frame, Module):
         self._Buffer = None
         self.screen_refresh_is_requested = True
         self.screen_refresh_is_running = False
+        self.screen_refresh_lock = threading.Lock()
         self.background_brush = wx.Brush("Grey")
         self.renderer = None
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
@@ -574,6 +576,8 @@ class MeerK40t(wx.Frame, Module):
         device.stop()
 
         self.unschedule()
+        self.screen_refresh_lock.acquire()
+
         device = self.device
         kernel = device.device_root
 
@@ -875,12 +879,16 @@ class MeerK40t(wx.Frame, Module):
         """Called by the Scheduler at a given the specified framerate."""
         if self.screen_refresh_is_requested and not self.screen_refresh_is_running:
             self.screen_refresh_is_running = True
-            if not wx.IsMainThread():
-                wx.CallAfter(self.refresh_in_ui)
+            if self.screen_refresh_lock.acquire(timeout=1):
+                if not wx.IsMainThread():
+                    wx.CallAfter(self._refresh_in_ui)
+                else:
+                    self._refresh_in_ui()
             else:
-                self.refresh_in_ui()
+                self.screen_refresh_is_requested = False
+                self.screen_refresh_is_running = False
 
-    def refresh_in_ui(self):
+    def _refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
         if self.device is None:
             return
@@ -889,6 +897,7 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Update()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
+        self.screen_refresh_lock.release()
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
