@@ -369,7 +369,7 @@ class Interpreter(Module):
                 if os.name == 'posix':
                     # Mac or linux.
                     print('\a')  # Beep.
-                    os.system('say "Beep"')
+                    os.system('say "Ding"')
                 else:
                     print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:
