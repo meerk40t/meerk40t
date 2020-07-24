@@ -788,7 +788,6 @@ class MeerK40t(wx.Frame, Module):
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self, -1, "", )
-                print(elements[0].values)
                 if (self.device.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
                         (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
@@ -2680,7 +2679,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.3')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.4')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
