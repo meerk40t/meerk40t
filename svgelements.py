@@ -6719,13 +6719,13 @@ class SVG(Group):
         children = list()
         def_depth = 0
 
-        for event, elem in iterparse(source, events=('start', 'end')):
-            tag = elem.tag
-            if tag.startswith('{http://www.w3.org/2000/svg'):
-                tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                elem.tag = tag
-            attributes = elem.attrib
+        for event, elem in iterparse(source, events=('start', 'end', 'start-ns')):
             if event == 'start':
+                tag = elem.tag
+                if tag.startswith('{http://www.w3.org/2000/svg'):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                    elem.tag = tag
+                attributes = elem.attrib
                 # New node.
                 siblings = children  # Parent's children are now my siblings.
                 parent = (parent, children)  # parent is now previous node context
@@ -6771,12 +6771,20 @@ class SVG(Group):
                     defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
                 if tag == SVG_TAG_DEFS:
                     def_depth += 1
-            else:
+            elif event == 'end':
+                tag = elem.tag
+                if tag.startswith('{http://www.w3.org/2000/svg'):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                    elem.tag = tag
+                attributes = elem.attrib
                 # event is 'end', pop values.
                 parent, children = parent  # Pop off previous context.
                 if tag == SVG_TAG_DEFS:
                     def_depth -= 1
                     continue
+            elif event == "start-ns":
+                yield event, elem
+                continue
             if def_depth == 0:
                 yield event, elem
 
@@ -6937,7 +6945,7 @@ class SVG(Group):
                 if reify:
                     s.reify()
                 context.append(s)
-            else:  # End event.
+            elif event == 'end':  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
                 tag = elem.tag
                 if SVG_TAG_TEXT == tag:
@@ -6961,4 +6969,6 @@ class SVG(Group):
                         for selector in key.split(','):  # Can comma select subitems.
                             styles[selector.strip()] = value
                 context, values = stack.pop()
+            elif event == 'start-ns':
+                values[elem[0]] = elem[1]
         return root

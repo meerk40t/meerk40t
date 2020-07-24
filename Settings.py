@@ -26,6 +26,7 @@ class Settings(wx.Frame, Module):
                                                  choices=[
                                                      _("Invert Mouse Wheel Zoom"),
                                                      _("Print Shutdown"),
+                                                     _("SVG Uniform Save"),
                                                  ])
 
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),
@@ -60,6 +61,7 @@ class Settings(wx.Frame, Module):
 
         self.device.setting(bool, "mouse_zoom_invert", False)
         self.device.setting(bool, "print_shutdown", False)
+        self.device.setting(bool, "uniform_svg", False)
         self.device.setting(int, "language", 0)
         self.device.setting(str, "units_name", 'mm')
         self.device.setting(int, "units_marks", 10)
@@ -69,6 +71,8 @@ class Settings(wx.Frame, Module):
             self.checklist_options.Check(0, True)
         if self.device.print_shutdown:
             self.checklist_options.Check(1, True)
+        if self.device.uniform_svg:
+            self.checklist_options.Check(2, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
@@ -115,6 +119,7 @@ class Settings(wx.Frame, Module):
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
         self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
         self.device.print_shutdown = self.checklist_options.IsChecked(1)
+        self.device.uniform_svg = self.checklist_options.IsChecked(2)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()

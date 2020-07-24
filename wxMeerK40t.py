@@ -778,6 +778,7 @@ class MeerK40t(wx.Frame, Module):
 
     def load(self, pathname):
         self.device.setting(bool, 'auto_note', True)
+        self.device.device_root.setting(bool, 'uniform_svg', False)
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
             results = self.device.load(pathname, channel=self.device.channel_open('load'))
@@ -787,6 +788,10 @@ class MeerK40t(wx.Frame, Module):
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self, -1, "", )
+                print(elements[0].values)
+                if (self.device.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
+                        (len(elements) > 0 and 'meerK40t' in elements[0].values):
+                    self.working_file = pathname
                 return True
             return False
 
