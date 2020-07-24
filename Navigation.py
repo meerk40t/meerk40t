@@ -44,6 +44,7 @@ class Navigation(wx.Frame, Module):
         self.button_align_corner_bottom_left = wx.BitmapButton(self, wx.ID_ANY, icon_corner4.GetBitmap())
         self.button_align_drag_down = wx.BitmapButton(self, wx.ID_ANY, icons8_down.GetBitmap())
         self.button_align_corner_bottom_right = wx.BitmapButton(self, wx.ID_ANY, icon_corner3.GetBitmap())
+        self.button_align_first_position = wx.BitmapButton(self, wx.ID_ANY, icons8_level_1_50.GetBitmap())
         self.button_align_trace_hull = wx.BitmapButton(self, wx.ID_ANY, icons8_pentagon_50.GetBitmap())
         self.button_align_trace_quick = wx.BitmapButton(self, wx.ID_ANY, icons8_pentagon_square_50.GetBitmap())
         self.button_scale_down = wx.BitmapButton(self, wx.ID_ANY, icons8_compress_50.GetBitmap())
@@ -99,6 +100,7 @@ class Navigation(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_bl, self.button_align_corner_bottom_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_drag_down, self.button_align_drag_down)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_corner_br, self.button_align_corner_bottom_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align_first_position, self.button_align_first_position)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull)
         self.Bind(wx.EVT_BUTTON, self.on_button_align_trace_quick, self.button_align_trace_quick)
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_pulse, self.button_navigate_pulse)
@@ -179,6 +181,8 @@ class Navigation(wx.Frame, Module):
         self.button_align_drag_down.SetSize(self.button_align_drag_down.GetBestSize())
         self.button_align_corner_bottom_right.SetToolTip(_("Align laser with the lower right corner of the selection"))
         self.button_align_corner_bottom_right.SetSize(self.button_align_corner_bottom_right.GetBestSize())
+        self.button_align_first_position.SetToolTip(_("Align laser with the first position"))
+        self.button_align_first_position.SetSize(self.button_align_first_position.GetBestSize())
         self.button_align_trace_hull.SetToolTip(_("Perform a convex hull trace of the selection"))
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())
         self.button_align_trace_quick.SetToolTip(_("Perform a simple trace of the selection"))
@@ -289,7 +293,7 @@ class Navigation(wx.Frame, Module):
         align_sizer.Add(self.button_align_corner_bottom_left, 0, 0, 0)
         align_sizer.Add(self.button_align_drag_down, 0, 0, 0)
         align_sizer.Add(self.button_align_corner_bottom_right, 0, 0, 0)
-        align_sizer.Add((0, 0), 0, 0, 0)
+        align_sizer.Add(self.button_align_first_position, 0, 0, 0)
         align_sizer.Add(self.button_align_trace_hull, 0, 0, 0)
         align_sizer.Add(self.button_align_trace_quick, 0, 0, 0)
         sizer_11.Add(align_sizer, 1, wx.EXPAND, 0)
@@ -425,6 +429,7 @@ class Navigation(wx.Frame, Module):
         self.button_align_corner_top_right.Enable(v)
         self.button_align_corner_bottom_left.Enable(v)
         self.button_align_corner_bottom_right.Enable(v)
+        self.button_align_first_position.Enable(v)
         self.button_align_trace_hull.Enable(v)
         self.button_align_trace_quick.Enable(v)
         self.button_scale_down.Enable(v)
@@ -572,6 +577,18 @@ class Navigation(wx.Frame, Module):
     def on_button_align_drag_left(self, event):  # wxGlade: Navigation.<event_handler>
         self.drag_relative(-self.device.navigate_jog, 0)
         self.update_matrix_text()
+
+    def on_button_align_first_position(self, event):
+        elements = self.device.device_root.elements
+        e = list(elements.elems(emphasized=True))
+        try:
+            pos = e[0].first_point * e[0].transform
+        except (IndexError, AttributeError):
+            return
+        if pos is None:
+            return
+        self.console.write('move_absolute %f %f\n' % (pos[0], pos[1]))
+        self.drag_ready(True)
 
     def on_button_align_trace_hull(self, event):  # wxGlade: Navigation.<event_handler>
         self.console.write('trace_hull\n')
