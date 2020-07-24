@@ -34,6 +34,7 @@ from Settings import Settings
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
+from RasterWizard import RasterWizard
 from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
 from icons import *
@@ -777,6 +778,7 @@ class MeerK40t(wx.Frame, Module):
 
     def load(self, pathname):
         self.device.setting(bool, 'auto_note', True)
+        self.device.device_root.setting(bool, 'uniform_svg', False)
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
             results = self.device.load(pathname, channel=self.device.channel_open('load'))
@@ -786,6 +788,9 @@ class MeerK40t(wx.Frame, Module):
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self, -1, "", )
+                print(elements[0].values)
+                if self.device.device_root.uniform_svg or (len(elements) > 0 and 'meerK40t' in elements[0].values):
+                    self.working_file = pathname
                 return True
             return False
 
@@ -2607,6 +2612,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "JobInfo", JobInfo)
         device.register('window', "BufferView", BufferView)
         device.register('window', "Adjustments", Adjustments)
+        device.register('window', "RasterWizard", RasterWizard)
 
     def run_later(self, command, *args):
         if wx.IsMainThread():
