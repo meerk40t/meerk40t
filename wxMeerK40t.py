@@ -142,9 +142,9 @@ ID_MENU_TREE = idinc.new()
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('it', u'italiano', wx.LANGUAGE_ITALIAN),
-                       ('fr', u'français', wx.LANGUAGE_FRENCH),
+                       ('fr', u'franÃ§ais', wx.LANGUAGE_FRENCH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
-                       ('es', u'español', wx.LANGUAGE_SPANISH))
+                       ('es', u'espaÃ±ol', wx.LANGUAGE_SPANISH))
 
 
 def resource_path(relative_path):
@@ -778,7 +778,9 @@ class MeerK40t(wx.Frame, Module):
 
     def load(self, pathname):
         self.device.setting(bool, 'auto_note', True)
+
         self.device.device_root.setting(bool, 'uniform_svg', False)
+
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
             results = self.device.load(pathname, channel=self.device.channel_open('load'))
@@ -788,7 +790,7 @@ class MeerK40t(wx.Frame, Module):
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self, -1, "", )
-                print(elements[0].values)
+
                 if self.device.device_root.uniform_svg or (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
                 return True
@@ -1929,14 +1931,14 @@ class RootNode(list):
             for i in range(2, 13):
                 angle = Angle.turns(1.0 / float(i))
                 gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
+                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0fÂ°") % (i, angle.as_degrees),
                                                      "",
                                                      wx.ITEM_NORMAL))
             for i in range(2, 13):
                 angle = Angle.turns(1.0 / float(i))
                 gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
                          path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                     _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
+                                                     _(u"Rotate turn/%d, -%.0fÂ°") % (i, angle.as_degrees), "",
                                                      wx.ITEM_NORMAL))
             menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
             gui.Bind(wx.EVT_MENU, self.menu_reify(node),
