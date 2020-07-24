@@ -4,6 +4,7 @@
 #
 
 import sys
+import threading
 import traceback
 
 import wx.ribbon as RB
@@ -23,6 +24,7 @@ from Keymap import Keymap
 from LaserOperation import *
 from LaserRender import *
 from Navigation import Navigation
+from Notes import Notes
 from OperationPreprocessor import OperationPreprocessor
 from OperationProperty import OperationProperty
 from PathProperty import PathProperty
@@ -32,6 +34,7 @@ from Settings import Settings
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
+from RasterWizard import RasterWizard
 from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
 from icons import *
@@ -84,9 +87,8 @@ ID_SPOOLER = idinc.new()
 ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
 
-ID_MENU_RECENT_PROJECT = idinc.new()
-
 ID_MENU_IMPORT = idinc.new()
+ID_MENU_RECENT = idinc.new()
 ID_MENU_ZOOM_OUT = idinc.new()
 ID_MENU_ZOOM_IN = idinc.new()
 ID_MENU_ZOOM_SIZE = idinc.new()
@@ -95,6 +97,7 @@ ID_MENU_ZOOM_SIZE = idinc.new()
 ID_MENU_HIDE_FILLS = idinc.new()
 ID_MENU_HIDE_GUIDES = idinc.new()
 ID_MENU_HIDE_GRID = idinc.new()
+ID_MENU_HIDE_BACKGROUND = idinc.new()
 ID_MENU_HIDE_STROKES = idinc.new()
 ID_MENU_HIDE_LASERPATH = idinc.new()
 ID_MENU_HIDE_RETICLE = idinc.new()
@@ -108,12 +111,25 @@ ID_MENU_HIDE_IMAGE = idinc.new()
 ID_MENU_HIDE_PATH = idinc.new()
 ID_MENU_HIDE_TEXT = idinc.new()
 
+ID_MENU_FILE0 = idinc.new()
+ID_MENU_FILE1 = idinc.new()
+ID_MENU_FILE2 = idinc.new()
+ID_MENU_FILE3 = idinc.new()
+ID_MENU_FILE4 = idinc.new()
+ID_MENU_FILE5 = idinc.new()
+ID_MENU_FILE6 = idinc.new()
+ID_MENU_FILE7 = idinc.new()
+ID_MENU_FILE8 = idinc.new()
+ID_MENU_FILE9 = idinc.new()
+ID_MENU_FILE_CLEAR = idinc.new()
+
 ID_MENU_ALIGNMENT = idinc.new()
 ID_MENU_KEYMAP = idinc.new()
 ID_MENU_DEVICE_MANAGER = idinc.new()
 ID_MENU_SETTINGS = idinc.new()
 ID_MENU_ROTARY = idinc.new()
 ID_MENU_NAVIGATION = idinc.new()
+ID_MENU_NOTES = idinc.new()
 ID_MENU_OPERATIONS = idinc.new()
 ID_MENU_CONTROLLER = idinc.new()
 ID_MENU_CAMERA = idinc.new()
@@ -185,12 +201,14 @@ class MeerK40t(wx.Frame, Module):
 
         wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
         wxglade_tmp_menu.Append(wx.ID_OPEN, _("Open Project"), "")
+        self.recent_file_menu = wx.Menu()
+        wxglade_tmp_menu.AppendSubMenu(self.recent_file_menu, _("Recent"))
         wxglade_tmp_menu.Append(ID_MENU_IMPORT, _("Import File"), "")
         wxglade_tmp_menu.AppendSeparator()
-
         wxglade_tmp_menu.Append(wx.ID_SAVE, _("Save"), "")
         wxglade_tmp_menu.Append(wx.ID_SAVEAS, _("Save As"), "")
         wxglade_tmp_menu.AppendSeparator()
+
         wxglade_tmp_menu.Append(wx.ID_EXIT, _("Exit"), "")
         self.main_menubar.Append(wxglade_tmp_menu, _("File"))
         wxglade_tmp_menu = wx.Menu()
@@ -200,6 +218,7 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To Size"), "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
@@ -228,6 +247,7 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
         wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
         wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
+        wxglade_tmp_menu.Append(ID_MENU_NOTES, _("Notes"), "")
         wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
         wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
         wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
@@ -254,6 +274,7 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
 
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_BACKGROUND), id=ID_MENU_HIDE_BACKGROUND)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GUIDES), id=ID_MENU_HIDE_GUIDES)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_PATH), id=ID_MENU_HIDE_PATH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_IMAGE), id=ID_MENU_HIDE_IMAGE)
@@ -284,6 +305,8 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", self, -1, "", ), id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", self, -1, "", ),
                   id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Notes", self, -1, "", ),
+                  id=ID_MENU_NOTES)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", self, -1, "", ),
                   id=ID_MENU_CONTROLLER)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", self, -1, "", ), id=ID_MENU_USB)
@@ -327,6 +350,7 @@ class MeerK40t(wx.Frame, Module):
         self._Buffer = None
         self.screen_refresh_is_requested = True
         self.screen_refresh_is_running = False
+        self.screen_refresh_lock = threading.Lock()
         self.background_brush = wx.Brush("Grey")
         self.renderer = None
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
@@ -361,16 +385,12 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
         self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
 
-        # self.scene.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.scene.SetFocus())  # Focus follows mouse.
-        # self.tree.Bind(wx.EVT_ENTER_WINDOW, lambda event: self.tree.SetFocus())  # Focus follows mouse.
-
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.scene.SetFocus()
         self.process = self.refresh_scene
@@ -481,7 +501,7 @@ class MeerK40t(wx.Frame, Module):
             device.threaded(foo)
 
         device.control_instance_add("Crash Thread", test_crash_in_thread)
-
+        device.control_instance_add("Clear Laserpath", self.clear_laserpath)
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
         self.schedule()
@@ -492,6 +512,8 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & DRAW_MODE_FILLS != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
         m.Check(self.device.draw_mode & DRAW_MODE_GUIDES != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_BACKGROUND)
+        m.Check(self.device.draw_mode & DRAW_MODE_BACKGROUND != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
         m.Check(self.device.draw_mode & DRAW_MODE_GRID != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LASERPATH)
@@ -518,6 +540,19 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & DRAW_MODE_FLIPXY != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
         m.Check(self.device.draw_mode & DRAW_MODE_INVERT != 0)
+
+        device.setting(str, 'file0', None)
+        device.setting(str, 'file1', None)
+        device.setting(str, 'file2', None)
+        device.setting(str, 'file3', None)
+        device.setting(str, 'file4', None)
+        device.setting(str, 'file5', None)
+        device.setting(str, 'file6', None)
+        device.setting(str, 'file7', None)
+        device.setting(str, 'file8', None)
+        device.setting(str, 'file9', None)
+        self.populate_recent_menu()
+
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.space_changed()
@@ -542,6 +577,8 @@ class MeerK40t(wx.Frame, Module):
         device.stop()
 
         self.unschedule()
+        self.screen_refresh_lock.acquire()
+
         device = self.device
         kernel = device.device_root
 
@@ -680,12 +717,76 @@ class MeerK40t(wx.Frame, Module):
         self.SetSizer(main_sizer)
         self.Layout()
 
+    def populate_recent_menu(self):
+        for i in range(self.recent_file_menu.MenuItemCount):
+            self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+        device = self.device
+        if device.file0 is not None and len(device.file0):
+            self.recent_file_menu.Append(ID_MENU_FILE0, device.file0, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file0), id=ID_MENU_FILE0)
+        if device.file1 is not None and len(device.file1):
+            self.recent_file_menu.Append(ID_MENU_FILE1, device.file1, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file1), id=ID_MENU_FILE1)
+        if device.file2 is not None and len(device.file2):
+            self.recent_file_menu.Append(ID_MENU_FILE2, device.file2, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file2), id=ID_MENU_FILE2)
+        if device.file3 is not None and len(device.file3):
+            self.recent_file_menu.Append(ID_MENU_FILE3, device.file3, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file3), id=ID_MENU_FILE3)
+        if device.file4 is not None and len(device.file4):
+            self.recent_file_menu.Append(ID_MENU_FILE4, device.file4, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file4), id=ID_MENU_FILE4)
+        if device.file5 is not None and len(device.file5):
+            self.recent_file_menu.Append(ID_MENU_FILE5, device.file5, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file5), id=ID_MENU_FILE5)
+        if device.file6 is not None and len(device.file6):
+            self.recent_file_menu.Append(ID_MENU_FILE6, device.file6, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file6), id=ID_MENU_FILE6)
+        if device.file7 is not None and len(device.file7):
+            self.recent_file_menu.Append(ID_MENU_FILE7, device.file7, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file7), id=ID_MENU_FILE7)
+        if device.file8 is not None and len(device.file8):
+            self.recent_file_menu.Append(ID_MENU_FILE8, device.file8, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file8), id=ID_MENU_FILE8)
+        if device.file9 is not None and len(device.file9):
+            self.recent_file_menu.Append(ID_MENU_FILE9, device.file9, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file9), id=ID_MENU_FILE9)
+        if self.recent_file_menu.MenuItemCount != 0:
+            self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
+            self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
+
+    def clear_recent(self):
+        for i in range(10):
+            try:
+                setattr(self.device, 'file' + str(i), '')
+            except IndexError:
+                break
+        self.populate_recent_menu()
+
+    def save_recent(self, pathname):
+        recent = list()
+        for i in range(10):
+            recent.append(getattr(self.device, 'file' + str(i)))
+        recent = [r for r in recent if r is not None and r != pathname and len(r) > 0]
+        recent.insert(0, pathname)
+        for i in range(10):
+            try:
+                setattr(self.device, 'file' + str(i), recent[i])
+            except IndexError:
+                break
+        self.populate_recent_menu()
+
     def load(self, pathname):
+        self.device.setting(bool, 'auto_note', True)
         with wx.BusyInfo(_("Loading File...")):
+            n = self.device.device_root.elements.note
             results = self.device.load(pathname, channel=self.device.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
+                self.save_recent(pathname)
                 self.device.classify(elements)
+                if n != self.device.device_root.elements.note and self.device.auto_note:
+                    self.device.open('window', "Notes", self, -1, "", )
                 return True
             return False
 
@@ -752,10 +853,15 @@ class MeerK40t(wx.Frame, Module):
         self.on_size(None)
 
     def on_emphasized_elements_changed(self, *args):
+        self.clear_laserpath()
         self.request_refresh()
 
     def on_element_alteration(self, *args):
         self.device.signal('rebuild_tree')
+
+    def clear_laserpath(self):
+        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
+        self.laserpath_index = 0
 
     def on_erase(self, event):
         pass
@@ -774,12 +880,16 @@ class MeerK40t(wx.Frame, Module):
         """Called by the Scheduler at a given the specified framerate."""
         if self.screen_refresh_is_requested and not self.screen_refresh_is_running:
             self.screen_refresh_is_running = True
-            if not wx.IsMainThread():
-                wx.CallAfter(self.refresh_in_ui)
+            if self.screen_refresh_lock.acquire(timeout=1):
+                if not wx.IsMainThread():
+                    wx.CallAfter(self._refresh_in_ui)
+                else:
+                    self._refresh_in_ui()
             else:
-                self.refresh_in_ui()
+                self.screen_refresh_is_requested = False
+                self.screen_refresh_is_running = False
 
-    def refresh_in_ui(self):
+    def _refresh_in_ui(self):
         """Called by refresh_scene() in the UI thread."""
         if self.device is None:
             return
@@ -788,6 +898,7 @@ class MeerK40t(wx.Frame, Module):
         self.scene.Update()
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
+        self.screen_refresh_lock.release()
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
@@ -866,6 +977,10 @@ class MeerK40t(wx.Frame, Module):
     def on_right_mouse_up(self, event):
         self.widget_scene.event(event.GetPosition(), 'rightup')
 
+    def on_focus_lost(self, event):
+        self.device.using('module', 'Console').write("-laser\nend\n")
+        # event.Skip()
+
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
         keymap = self.device.device_root.keymap
@@ -891,8 +1006,7 @@ class MeerK40t(wx.Frame, Module):
         kernel = self.device.device_root
         self.working_file = None
         kernel.elements.clear_all()
-        self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
-        self.laserpath_index = 0
+        self.clear_laserpath()
         self.request_refresh()
         self.device.signal('rebuild_tree', 0)
 
@@ -2488,11 +2602,13 @@ class wxMeerK40t(wx.App, Module):
         device.register('window', "Keymap", Keymap)
         device.register('window', "UsbConnect", UsbConnect)
         device.register('window', "Navigation", Navigation)
+        device.register('window', "Notes", Notes)
         device.register('window', "Controller", Controller)
         device.register('window', "JobSpooler", JobSpooler)
         device.register('window', "JobInfo", JobInfo)
         device.register('window', "BufferView", BufferView)
         device.register('window', "Adjustments", Adjustments)
+        device.register('window', "RasterWizard", RasterWizard)
 
     def run_later(self, command, *args):
         if wx.IsMainThread():
@@ -2559,7 +2675,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.2')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.3')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

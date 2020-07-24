@@ -366,13 +366,12 @@ class Interpreter(Module):
                             winsound.Beep(2000, 100)
                     except:
                         pass
+                if os.name == 'posix':
+                    # Mac or linux.
+                    print('\a')  # Beep.
+                    os.system('say "Ding"')
                 else:
-                    try:
-                        from sys import stdout
-                        stdout.write('\a')
-                        stdout.flush()
-                    except:
-                        print('\a')  # Beep.
+                    print('\a')  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]
@@ -2036,7 +2035,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.2"
+        self.device_version = "0.6.3"
         self.device_root = self
 
         # Persistent storage if it exists.
@@ -2185,10 +2184,6 @@ class Kernel(Device):
         self.alias['+left'] = "loop left 1mm"
         self.alias['+up'] = "loop up 1mm"
         self.alias['+down'] = "loop down 1mm"
-        self.alias['+upright'] = "loop move_relative 1mm -1mm"
-        self.alias['+downright'] = "loop move_relative 1mm 1mm"
-        self.alias['+upleft'] = "loop move_relative -1mm -1mm"
-        self.alias['+downleft'] = "loop move_relative -1mm 1mm"
         self.alias['-scale_up'] = "end scale 1.02"
         self.alias['-scale_down'] = "end scale 0.98"
         self.alias['-rotate_cw'] = "end rotate 2"
@@ -2201,10 +2196,6 @@ class Kernel(Device):
         self.alias['-left'] = "end left 1mm"
         self.alias['-up'] = "end up 1mm"
         self.alias['-down'] = "end down 1mm"
-        self.alias['-upright'] = "end move_relative 1mm -1mm"
-        self.alias['-downright'] = "end move_relative 1mm 1mm"
-        self.alias['-upleft'] = "end move_relative -1mm -1mm"
-        self.alias['-downleft'] = "end move_relative -1mm 1mm"
         self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
         self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
 

@@ -18,7 +18,7 @@ class CH341Driver:
             self.state_listener = state_listener
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
-        except NameError:
+        except (NameError, OSError):
             raise ConnectionRefusedError
         self.driver_index = 0
         self.index = index

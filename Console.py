@@ -15,13 +15,24 @@ class Console(Module, Pipe):
         self.interval = 0.05
         self.process = self.tick
         self.commands = []
+        self.queue = []
         self.laser_on = False
+        self.dx = 0
+        self.dy = 0
 
     def initialize(self, channel=None):
+        self.device.listen('interpreter;mode', self.on_mode_change)
         self.device.setting(int, "bed_width", 280)
         self.device.setting(int, "bed_height", 200)
         self.channel = self.device.channel_open('console')
         self.active_device = self.device
+
+    def finalize(self, channel=None):
+        self.device.unlisten('interpreter;mode', self.on_mode_change)
+
+    def on_mode_change(self, *args):
+        self.dx = 0
+        self.dy = 0
 
     def write(self, data):
         if isinstance(data, bytes):
@@ -39,6 +50,19 @@ class Console(Module, Pipe):
             for e in self.interface(command):
                 if self.channel is not None:
                     self.channel(e)
+        if len(self.queue):
+            for command in self.queue:
+                for e in self.interface(command):
+                    if self.channel is not None:
+                        self.channel(e)
+            self.queue.clear()
+        if len(self.commands) == 0 and len(self.queue) == 0:
+            self.unschedule()
+
+    def queue_command(self, command):
+        self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
+        self.queue.append(command)
+        self.schedule()
 
     def tick_command(self, command):
         self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
@@ -73,39 +97,6 @@ class Console(Module, Pipe):
 
         return move
 
-    def execute_jog(self, direction, amount):
-        x = 0
-        y = 0
-        if direction == 'right':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            x = amount
-        elif direction == 'left':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            x = -amount
-        elif direction == 'up':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            y = -amount
-        elif direction == 'down':
-            amount = Length(amount).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            y = amount
-        if self.laser_on:
-            def cut():
-                yield COMMAND_SET_INCREMENTAL
-                yield COMMAND_MODE_PROGRAM
-                yield COMMAND_CUT, x, y
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_SET_ABSOLUTE
-
-            return cut
-        else:
-            def move():
-                yield COMMAND_SET_INCREMENTAL
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, x, y
-                yield COMMAND_SET_ABSOLUTE
-
-            return move
-
     def channel_file_write(self, v):
         if self.channel_file is not None:
             self.channel_file.write('%s\n' % v)
@@ -130,7 +121,7 @@ class Console(Module, Pipe):
         except AttributeError:
             interpreter = None
         command = command.lower()
-        if command == 'help':
+        if command == 'help' or command == '?':
             yield '(right|left|up|down) <length>'
             yield 'laser [(on|off)]'
             yield 'move <x> <y>'
@@ -145,7 +136,7 @@ class Console(Module, Pipe):
             yield '-------------------'
             yield 'device [<value>]'
             yield 'set [<key> <value>]'
-            yield 'window [(open|close) <window_name>]'
+            yield 'window [(open|close|toggle) <window_name>]'
             yield 'control [<executive>]'
             yield 'module [(open|close) <module_name>]'
             yield 'schedule'
@@ -209,10 +200,36 @@ class Console(Module, Pipe):
                 yield 'Device has no spooler.'
                 return
             if len(args) == 1:
-                if not spooler.job_if_idle(self.execute_jog(command, *args)):
-                    yield 'Busy Error'
+                max_bed_height = self.device.bed_height * 39.3701
+                max_bed_width = self.device.bed_width * 39.3701
+                direction = command
+                amount = args[0]
+                if direction == 'right':
+                    self.dx += Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+                elif direction == 'left':
+                    self.dx -= Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+                elif direction == 'up':
+                    self.dy -= Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+                elif direction == 'down':
+                    self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+                self.queue_command('jog')
             else:
                 yield 'Syntax Error'
+            return
+        elif command == 'jog':
+            if spooler is None:
+                yield 'Device has no spooler.'
+                return
+            idx = int(self.dx)
+            idy = int(self.dy)
+            if idx == 0 and idy == 0:
+                return
+            if spooler.job_if_idle(self.execute_relative_position(idx, idy)):
+                yield 'Position moved: %d %d' % (idx, idy)
+                self.dx -= idx
+                self.dy -= idy
+            else:
+                yield 'Busy Error'
             return
         elif command == 'laser':
             if spooler is None:
@@ -344,6 +361,12 @@ class Console(Module, Pipe):
                 yield '----------'
             else:
                 value = args[0]
+                if value == 'toggle':
+                    index = args[1]
+                    if index in active_device.instances['window']:
+                        value = 'close'
+                    else:
+                        value = 'open'
                 if value == 'open':
                     index = args[1]
                     name = index
@@ -625,10 +648,19 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'circle':
-            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            r_pos = Length(args[1]).value(ppi=1000.0,
-                                          relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+            if len(args) == 3:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                r_pos = Length(args[2]).value(ppi=1000.0,
+                                              relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+            elif len(args) == 1:
+                x_pos = 0
+                y_pos = 0
+                r_pos = Length(args[0]).value(ppi=1000.0,
+                                      relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+            else:
+                yield 'Circle <x> <y> <r> or circle <r>'
+                return
             element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             element = Path(element)
             self.add_element(element)
@@ -1064,7 +1096,28 @@ class Console(Module, Pipe):
             else:
                 yield 'Optimization not found.'
                 return
-
+        elif command == 'embroider':
+            yield "Embroidery Filling"
+            if len(args) >= 1:
+                angle = Angle.parse(args[0])
+            else:
+                angle = None
+            if len(args) >= 2:
+                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            else:
+                distance = 16
+            for element in elements.elems(emphasized=True):
+                if not isinstance(element, Path):
+                    continue
+                if angle is not None:
+                    element *= Matrix.rotate(angle)
+                e = CutPlanner.eulerian_fill([abs(element)], distance=distance)
+                element.transform.reset()
+                element.clear()
+                element += e
+                if angle is not None:
+                    element *= Matrix.rotate(-angle)
+                element.altered()
         # Operation Command Elements
         elif command == 'operation':
             if len(args) == 0:

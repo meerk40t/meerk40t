@@ -24,8 +24,8 @@ class Settings(wx.Frame, Module):
 
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
                                                  choices=[
-                                                     "Invert Mouse Wheel Zoom",
-                                                     "Print Shutdown",
+                                                     _("Invert Mouse Wheel Zoom"),
+                                                     _("Print Shutdown"),
                                                  ])
 
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),

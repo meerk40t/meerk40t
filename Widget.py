@@ -4,7 +4,7 @@ from math import tau
 import wx
 
 from Kernel import Module
-from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID
+from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID, DRAW_MODE_BACKGROUND
 from ZMatrix import ZMatrix
 from svgelements import Matrix, Point, Color, Rect
 
@@ -940,30 +940,30 @@ class GridWidget(Widget):
         self.grid = starts, ends
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & DRAW_MODE_GRID != 0:
-            return
-        device = self.scene.device
-        if device is not None:
-            wmils = device.bed_width * MILS_IN_MM
-            hmils = device.bed_height * MILS_IN_MM
-        else:
-            wmils = 320 * MILS_IN_MM
-            hmils = 220 * MILS_IN_MM
-        background = self.background
-        if background is None:
-            gc.SetBrush(wx.WHITE_BRUSH)
-            gc.DrawRectangle(0, 0, wmils, hmils)
-        elif isinstance(background, int):
-            gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-            gc.DrawRectangle(0, 0, wmils, hmils)
-        else:
-            gc.DrawBitmap(background, 0, 0, wmils, hmils)
+        if self.scene.device.draw_mode & DRAW_MODE_BACKGROUND == 0:
+            device = self.scene.device
+            if device is not None:
+                wmils = device.bed_width * MILS_IN_MM
+                hmils = device.bed_height * MILS_IN_MM
+            else:
+                wmils = 320 * MILS_IN_MM
+                hmils = 220 * MILS_IN_MM
+            background = self.background
+            if background is None:
+                gc.SetBrush(wx.WHITE_BRUSH)
+                gc.DrawRectangle(0, 0, wmils, hmils)
+            elif isinstance(background, int):
+                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
+                gc.DrawRectangle(0, 0, wmils, hmils)
+            else:
+                gc.DrawBitmap(background, 0, 0, wmils, hmils)
 
-        if self.grid is None:
-            self.calculate_grid()
-        starts, ends = self.grid
-        gc.SetPen(wx.BLACK_PEN)
-        gc.StrokeLineSegments(starts, ends)
+        if self.scene.device.draw_mode & DRAW_MODE_GRID == 0:
+            if self.grid is None:
+                self.calculate_grid()
+            starts, ends = self.grid
+            gc.SetPen(wx.BLACK_PEN)
+            gc.StrokeLineSegments(starts, ends)
 
     def signal(self, signal, *args, **kwargs):
         if signal == "grid":

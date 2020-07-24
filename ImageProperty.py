@@ -160,8 +160,9 @@ class ImageProperty(wx.Frame, Module):
         element.transform = Matrix.scale(float(step_value), float(step_value))
         element.transform.post_translate(tx, ty)
         element.modified()
-        self.device.signal('element_property_update', element)
-        self.device.signal('refresh_scene')
+        if self.device is not None:
+            self.device.signal('element_property_update', element)
+            self.device.signal('refresh_scene')
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()
