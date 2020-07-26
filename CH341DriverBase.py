@@ -13,6 +13,8 @@ STATE_DEVICE_NOT_FOUND = 50
 STATE_DEVICE_REJECTED = 60
 
 STATE_USB_SET_CONFIG = 100
+STATE_USB_SET_CONFIG_SUCCESS = 110
+STATE_USB_SET_CONFIG_FAIL = 120
 STATE_USB_DETACH_KERNEL = 200
 STATE_USB_DETACH_KERNEL_SUCCESS = 210
 STATE_USB_DETACH_KERNEL_FAIL = 220
@@ -81,6 +83,10 @@ def get_name_for_status(code, obj=None, translation=lambda e: e):
         return _("K40 devices were found but they were rejected.")
     elif code == STATE_USB_SET_CONFIG:
         return _("Config Set")
+    elif code == STATE_USB_SET_CONFIG_SUCCESS:
+        return _("Config Set: Success")
+    elif code == STATE_USB_SET_CONFIG_FAIL:
+        return _("Config Set: Fail\n(Hint: may recover if you change where the USB is plugged in.)")
     elif code == STATE_USB_DETACH_KERNEL:
         return _("Attempting to detach kernel.")
     elif code == STATE_USB_DETACH_KERNEL_SUCCESS:
