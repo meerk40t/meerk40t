@@ -7,8 +7,10 @@
 import wx
 
 from Kernel import Module
+from LaserRender import LaserRender
+from ZMatrix import ZMatrix
 from icons import icons8_gas_industry_50
-from svgelements import SVGImage
+from svgelements import SVGImage, Matrix
 
 _ = wx.GetTranslation
 
@@ -19,6 +21,11 @@ class RasterWizard(wx.Frame, Module):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
+        self._Buffer = None
+        self.matrix = Matrix()
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
         self.SetSize((605, 636))
         self.list_operation = wx.ListBox(self, wx.ID_ANY,
                                          choices=[_("Crop"), _("Resample"), _("Grayscale"), _("Tone"), _("Gamma"),
@@ -42,6 +49,7 @@ class RasterWizard(wx.Frame, Module):
                                                        "100"], style=wx.CB_DROPDOWN)
         self.grayscale_panel = wx.Panel(self, wx.ID_ANY)
         self.check_enable_grayscale = wx.CheckBox(self.grayscale_panel, wx.ID_ANY, _("Enable"))
+        self.check_invert_grayscale = wx.CheckBox(self.grayscale_panel, wx.ID_ANY, _("Invert"))
         self.tone_curve_panel = wx.Panel(self, wx.ID_ANY)
         self.check_enable_tone = wx.CheckBox(self.tone_curve_panel, wx.ID_ANY, _("Enable"))
         self.button_reset_tone = wx.Button(self.tone_curve_panel, wx.ID_ANY, _("Reset"))
@@ -49,19 +57,19 @@ class RasterWizard(wx.Frame, Module):
         self.gamma_panel = wx.Panel(self, wx.ID_ANY)
         self.check_enable_gamma = wx.CheckBox(self.gamma_panel, wx.ID_ANY, _("Enable"))
         self.button_reset_gamma = wx.Button(self.gamma_panel, wx.ID_ANY, _("Reset"))
-        self.slider_gamma_factor = wx.Slider(self.gamma_panel, wx.ID_ANY, 108, 0, 200,
+        self.slider_gamma_factor = wx.Slider(self.gamma_panel, wx.ID_ANY, 350, 0, 500,
                                              style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.text_gamma_factor = wx.TextCtrl(self.gamma_panel, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.sharpen_panel = wx.Panel(self, wx.ID_ANY)
         self.check_enable_sharpen = wx.CheckBox(self.sharpen_panel, wx.ID_ANY, _("Enable"))
         self.button_reset_sharpen = wx.Button(self.sharpen_panel, wx.ID_ANY, _("Reset"))
-        self.slider_sharpen_percent = wx.Slider(self.sharpen_panel, wx.ID_ANY, 108, 0, 200,
+        self.slider_sharpen_percent = wx.Slider(self.sharpen_panel, wx.ID_ANY, 500, 0, 1000,
                                                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.text_sharpen_percent = wx.TextCtrl(self.sharpen_panel, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.slider_sharpen_radius = wx.Slider(self.sharpen_panel, wx.ID_ANY, 108, 0, 200,
+        self.slider_sharpen_radius = wx.Slider(self.sharpen_panel, wx.ID_ANY, 20, 0, 50,
                                                style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.text_sharpen_radius = wx.TextCtrl(self.sharpen_panel, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.slider_sharpen_threshold = wx.Slider(self.sharpen_panel, wx.ID_ANY, 108, 0, 200,
+        self.slider_sharpen_threshold = wx.Slider(self.sharpen_panel, wx.ID_ANY, 6, 0, 50,
                                                   style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.text_sharpen_threshold = wx.TextCtrl(self.sharpen_panel, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.dither_panel = wx.Panel(self, wx.ID_ANY)
@@ -90,19 +98,69 @@ class RasterWizard(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_resample_height, self.text_resample_height)
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_resample_height, self.spin_resample_height)
         self.Bind(wx.EVT_TEXT, self.on_spin_resample_height, self.spin_resample_height)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_resample_step, self.combo_resample_step)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_resample_step, self.combo_resample_step)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_resample_dpi, self.combo_resample_dpi)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_resample_dpi, self.combo_resample_dpi)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_grayscale, self.check_enable_grayscale)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_tone, self.check_enable_tone)
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_tone, self.button_reset_tone)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_gamma, self.check_enable_gamma)
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_gamma, self.button_reset_gamma)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_gamma_factor, self.slider_gamma_factor)
+        self.Bind(wx.EVT_TEXT, self.on_text_gamma_factor, self.text_gamma_factor)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_sharpen, self.check_enable_sharpen)
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_sharpen, self.button_reset_sharpen)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_sharpen_percent, self.slider_sharpen_percent)
+        self.Bind(wx.EVT_TEXT, self.on_text_sharpen_percent, self.text_sharpen_percent)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_sharpen_radius, self.slider_sharpen_radius)
+        self.Bind(wx.EVT_TEXT, self.on_text_sharpen_radius, self.text_sharpen_radius)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_sharpen_threshold, self.slider_sharpen_threshold)
+        self.Bind(wx.EVT_TEXT, self.on_text_sharpen_threshold, self.text_sharpen_threshold)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_output)
         # end wxGlade
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.panel_preview.Bind(wx.EVT_PAINT, self.on_paint)
+        self.panel_preview.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+        self.panel_preview.Bind(wx.EVT_MOTION, self.on_mouse_move)
+        self.panel_preview.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
+        self.panel_preview.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+        self.panel_preview.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
 
-        self.image = None
+        self.panel_preview.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
+        self.panel_preview.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
+        self.panel_preview.Bind(wx.EVT_ENTER_WINDOW,
+                                lambda event: self.panel_preview.SetFocus())  # Focus follows mouse.
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.svg_image = None
+        self.pil_image = None
+        self.wx_bitmap_image = None
+        self.image_width, self.image_height = None, None
+        self.on_size(None)
+        self.Bind(wx.EVT_SIZE, self.on_size, self)
+        self.ops = dict()
+        self.ops['crop_enable'] = False
+        self.ops['crop_bounds'] = (0, 0, 100, 100)
+        self.ops['resample_enable'] = False
+        self.ops['resample_aspect'] = True
+        self.ops['resample_width_factor'] = 2.0
+        self.ops['resample_height_factor'] = 2.0
+        self.ops['resample_step'] = 2
+        self.ops['grayscale_enable'] = True
+        self.ops['grayscale_invert'] = False
+        self.ops['tone_enable'] = True
+        self.ops['tone_values'] = 100, 150
+        self.ops['gamma_enable'] = True
+        self.ops['gamma_factor'] = 3.5
+        self.ops['sharpen_enable'] = True
+        self.ops['sharpen_percent'] = 500
+        self.ops['sharpen_radius'] = 20
+        self.ops['sharpen_threshold'] = 6
+        self.ops['dither_enable'] = True
+        self.ops['dither_type'] = 0
 
     def on_close(self, event):
         if self.state == 5:
@@ -115,22 +173,33 @@ class RasterWizard(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        for e in self.device.device_root.elements.elems(emphasized=True):
-            if isinstance(e, SVGImage):
-                self.image = e
-                break
-        if self.image is None:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    value.Enable(False)
-            dlg = wx.MessageDialog(None, _(
-                "Selected Image Not Found."),
-                                   _("Window requires a working image."), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
+        self.device.listen('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
+        self.device.device_root.listen('emphasized', self.on_emphasis_change)
+        try:
+            self.check_enable_crop.SetValue(self.ops['crop_enable'])
+            self.check_enable_resample.SetValue(self.ops['resample_enable'])
+            self.check_enable_grayscale.SetValue(self.ops['grayscale_enable'])
+            self.check_invert_grayscale.SetValue(self.ops['grayscale_invert'])
+            self.check_enable_tone.SetValue(self.ops['tone_enable'])
+            self.check_enable_gamma.SetValue(self.ops['gamma_enable'])
+            self.text_gamma_factor.SetValue(str(self.ops['gamma_factor']))
+            self.slider_gamma_factor.SetValue(self.ops['gamma_factor'] * 100.0)
+            self.check_enable_sharpen.SetValue(self.ops['sharpen_enable'])
+            self.slider_sharpen_percent.SetValue(self.ops['sharpen_percent'])
+            self.slider_sharpen_radius.SetValue(self.ops['sharpen_radius'])
+            self.slider_sharpen_threshold.SetValue(self.ops['sharpen_threshold'])
+            self.text_sharpen_percent.SetValue(str(self.ops['sharpen_percent']))
+            self.text_sharpen_radius.SetValue(str(self.ops['sharpen_radius']))
+            self.text_sharpen_threshold.SetValue(str(self.ops['sharpen_threshold']))
+            self.check_enable_dither.SetValue(self.ops['dither_enable'])
+            self.combo_dither.SetSelection(self.ops['dither_type'])
+
+        except KeyError:
+            pass
 
     def finalize(self, channel=None):
+        self.device.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
+        self.device.device_root.unlisten('emphasized', self.on_emphasis_change)
         try:
             self.Close()
         except RuntimeError:
@@ -168,6 +237,7 @@ class RasterWizard(wx.Frame, Module):
         self.combo_resample_dpi.SetSelection(1)
         self.check_enable_grayscale.SetToolTip(_("Enable Grayscale Convert"))
         self.check_enable_grayscale.SetValue(1)
+        self.check_invert_grayscale.SetToolTip("Invert Grayscale")
         self.check_enable_tone.SetToolTip(_("Enable Tone Curve"))
         self.check_enable_tone.SetValue(1)
         self.button_reset_tone.SetToolTip(_("Reset Tone Curve"))
@@ -196,34 +266,6 @@ class RasterWizard(wx.Frame, Module):
         self.panel_preview.SetToolTip(_("Processed image preview"))
         self.list_operation.SetSelection(0)
         self.hide_by_list_op()
-
-    def hide_by_list_op(self):
-        self.crop_panel.Hide()
-        self.resample_panel.Hide()
-        self.grayscale_panel.Hide()
-        self.tone_curve_panel.Hide()
-        self.gamma_panel.Hide()
-        self.sharpen_panel.Hide()
-        self.dither_panel.Hide()
-        self.output_panel.Hide()
-        select = self.list_operation.GetSelection()
-        if select == 0:
-            self.crop_panel.Show()
-        elif select == 1:
-            self.resample_panel.Show()
-        elif select == 2:
-            self.grayscale_panel.Show()
-        elif select == 3:
-            self.tone_curve_panel.Show()
-        elif select == 4:
-            self.gamma_panel.Show()
-        elif select == 5:
-            self.sharpen_panel.Show()
-        elif select == 6:
-            self.dither_panel.Show()
-        elif select == 7:
-            self.output_panel.Show()
-        self.Layout()
 
     def __do_layout(self):
         # begin wxGlade: RasterWizard.__do_layout
@@ -281,6 +323,7 @@ class RasterWizard(wx.Frame, Module):
         self.resample_panel.SetSizer(sizer_resample)
         sizer_operation_panels.Add(self.resample_panel, 1, wx.EXPAND, 0)
         sizer_grayscale.Add(self.check_enable_grayscale, 0, 0, 0)
+        sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
         self.grayscale_panel.SetSizer(sizer_grayscale)
         sizer_operation_panels.Add(self.grayscale_panel, 1, wx.EXPAND, 0)
         sizer_tone_curve.Add(self.check_enable_tone, 0, 0, 0)
@@ -324,73 +367,378 @@ class RasterWizard(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
+    def wiz_img(self):
+        if self.svg_image is None:
+            return
+        self.pil_image = RasterWizard.wizard_image(self.svg_image.image, self.ops)
+        self.wx_bitmap_image = None
+        self.device.signal("RasterWizard-Refresh")
+
+    @staticmethod
+    def wizard_image(image, ops):
+        from PIL import ImageOps
+        from PIL import ImageFilter
+        try:
+            if ops['crop_enable'] and ops['crop_bounds'] is not None:
+                crop = ops['crop_bounds']
+                left = int(crop[0])
+                upper = int(crop[1])
+                right = int(crop[2])
+                lower = int(crop[3])
+                image = image.crop((left, upper, right, lower))
+        except KeyError:
+            pass
+
+        try:
+            if ops['resample_enable'] and \
+                    ops['resample_width_factor'] is not None and \
+                    ops['resample_height_factor'] is not None:
+                w, h = image.size
+                image = image.resize(
+                    size=(int(w * ops['resample_width_factor']), int(h * ops['resample_height_factor'])))
+        except KeyError:
+            pass
+
+        try:
+            if ops['grayscale_enable']:
+                image = ImageOps.grayscale(image)
+                try:
+                    if ops['grayscale_invert']:
+                        image = ImageOps.invert(image)
+                except (KeyError, OSError):
+                    pass
+        except KeyError:
+            pass
+
+        try:
+            if ops['tone_enable'] and ops['tone_values'] is not None:
+                pass  # I don't have tonal code.
+        except KeyError:
+            pass
+
+        try:
+            if ops['gamma_enable'] and ops['gamma_factor'] is not None:
+                from PIL import Image
+                if image.mode == 'L':
+                    gamma_factor = float(ops['gamma_factor'])
+
+                    def crimp(px):
+                        if px < 0:
+                            return 0
+                        if px > 255:
+                            return 255
+                        return int(round(px))
+
+                    gamma_lut = [crimp(pow(i / 255, (1 / gamma_factor)) * 255) for i in range(256)]
+                    image = image.remap_palette(gamma_lut)
+                    if image.mode != 'L':
+                        image = image.convert('L')
+        except KeyError:
+            pass
+
+        try:
+            if ops['sharpen_enable'] and \
+                    ops['sharpen_percent'] is not None and \
+                    ops['sharpen_radius'] is not None and \
+                    ops['sharpen_threshold'] is not None:
+                unsharp = ImageFilter.UnsharpMask(radius=ops['sharpen_radius'], percent=ops['sharpen_percent'],
+                                                  threshold=ops['sharpen_threshold'])
+                image = image.filter(unsharp)
+        except KeyError:
+            pass
+
+        try:
+            if ops['dither_enable'] and ops['dither_type'] is not None:
+                if image.mode == 'RGBA':
+                    pixel_data = image.load()
+                    width, height = image.size
+                    for y in range(height):
+                        for x in range(width):
+                            if pixel_data[x, y][3] == 0:
+                                pixel_data[x, y] = (255, 255, 255, 255)
+                image = image.convert("1")
+        except KeyError:
+            pass
+
+        return image
+
+    def on_emphasis_change(self, *args):
+        for e in self.device.device_root.elements.elems(emphasized=True):
+            if isinstance(e, SVGImage):
+                self.svg_image = e
+                self.wiz_img()
+                break
+
+    def hide_by_list_op(self):
+        self.crop_panel.Hide()
+        self.resample_panel.Hide()
+        self.grayscale_panel.Hide()
+        self.tone_curve_panel.Hide()
+        self.gamma_panel.Hide()
+        self.sharpen_panel.Hide()
+        self.dither_panel.Hide()
+        self.output_panel.Hide()
+        select = self.list_operation.GetSelection()
+        if select == 0:
+            self.crop_panel.Show()
+        elif select == 1:
+            self.resample_panel.Show()
+        elif select == 2:
+            self.grayscale_panel.Show()
+        elif select == 3:
+            self.tone_curve_panel.Show()
+        elif select == 4:
+            self.gamma_panel.Show()
+        elif select == 5:
+            self.sharpen_panel.Show()
+        elif select == 6:
+            self.dither_panel.Show()
+        elif select == 7:
+            self.output_panel.Show()
+        self.Layout()
+
+    def on_size(self, event):
+        self.Layout()
+        width, height = self.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+        self.update_in_gui_thread()
+
+    def on_erase(self, event):
+        pass
+
+    def on_paint(self, event):
+        try:
+            wx.BufferedPaintDC(self.panel_preview, self._Buffer)
+        except RuntimeError:
+            pass
+
+    def update_in_gui_thread(self):
+        self.on_update_buffer()
+        try:
+            self.Refresh(True)
+            self.Update()
+        except RuntimeError:
+            pass
+
+    def on_update_buffer(self, event=None):
+        if self.device is None:
+            return
+        if self.svg_image is None:
+            return
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.Clear()
+        dc.SetBackground(wx.WHITE_BRUSH)
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
+        gc.PushState()
+        wx_bitmap = self.wx_bitmap_image
+        if wx_bitmap is None:
+            renderer = LaserRender(self.device.device_root)
+            self.wx_bitmap_image = renderer.make_thumbnail(self.pil_image)
+        width, height = self.pil_image.size
+        gc.DrawBitmap(self.wx_bitmap_image, 0, 0, width, height)
+        gc.PopState()
+        gc.Destroy()
+        del dc
+
+    def convert_scene_to_window(self, position):
+        point = self.matrix.point_in_matrix_space(position)
+        return point[0], point[1]
+
+    def convert_window_to_scene(self, position):
+        point = self.matrix.point_in_inverse_space(position)
+        return point[0], point[1]
+
+    def on_mouse_move(self, event):
+        if self.previous_window_position is None:
+            return
+        pos = event.GetPosition()
+        window_position = pos.x, pos.y
+        scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
+        sdx = (scene_position[0] - self.previous_scene_position[0])
+        sdy = (scene_position[1] - self.previous_scene_position[1])
+        wdx = (window_position[0] - self.previous_window_position[0])
+        wdy = (window_position[1] - self.previous_window_position[1])
+        self.scene_post_pan(wdx, wdy)
+        self.previous_window_position = window_position
+        self.previous_scene_position = scene_position
+
+    def on_mousewheel(self, event):
+        rotation = event.GetWheelRotation()
+        mouse = event.GetPosition()
+        if self.device.device_root.mouse_zoom_invert:
+            rotation = -rotation
+        if rotation > 1:
+            self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
+        elif rotation < -1:
+            self.scene_post_scale(0.9, 0.9, mouse[0], mouse[1])
+
+    def on_mouse_left_down(self, event):
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+
+    def on_mouse_left_up(self, event):
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
+    def on_mouse_middle_down(self, event):
+        self.previous_window_position = event.GetPosition()
+        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+
+    def on_mouse_middle_up(self, event):
+        self.previous_window_position = None
+        self.previous_scene_position = None
+
+    def scene_post_pan(self, px, py):
+        self.matrix.post_translate(px, py)
+        self.device.signal("RasterWizard-Refresh")
+
+    def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
+        self.matrix.post_scale(sx, sy, ax, ay)
+        self.device.signal("RasterWizard-Refresh")
+
+    def on_raster_wizard_refresh_signal(self, *args):
+        """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
+        if wx.IsMainThread():
+            self.update_in_gui_thread()
+        else:
+            wx.CallAfter(self.update_in_gui_thread)
+
     def on_list_operation(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.hide_by_list_op()
 
     def on_check_enable_crop(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_crop' not implemented!")
-        event.Skip()
+        self.ops['crop_enable'] = self.check_enable_crop.GetValue()
+        self.wiz_img()
 
     def on_button_reset_crop(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_button_reset_crop' not implemented!")
-        event.Skip()
+        self.ops['crop_bounds'] = (0, 0, 100, 100)
+        self.wiz_img()
 
     def on_check_enable_resample(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_resample' not implemented!")
-        event.Skip()
+        self.ops['resample_enable'] = self.check_enable_resample.GetValue()
+        self.wiz_img()
 
     def on_check_resample_maintain_aspect(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_resample_maintain_aspect' not implemented!")
-        event.Skip()
+        self.ops['resample_aspect'] = self.check_resample_maintain_aspect.GetValue()
+        self.wiz_img()
 
     def on_text_resample_width(self, event):  # wxGlade: RasterWizard.<event_handler>
         print("Event handler 'on_text_resample_width' not implemented!")
         event.Skip()
 
     def on_spin_resample_width(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_spin_resample_width' not implemented!")
-        event.Skip()
+        self.ops['resample_width'] = self.spin_resample_width.GetValue()
+        self.wiz_img()
 
     def on_text_resample_height(self, event):  # wxGlade: RasterWizard.<event_handler>
         print("Event handler 'on_text_resample_height' not implemented!")
         event.Skip()
 
     def on_spin_resample_height(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_spin_resample_height' not implemented!")
+        self.ops['resample_height'] = self.spin_resample_height.GetValue()
+        self.wiz_img()
+
+    def on_combo_resample_step(self, event):  # wxGlade: RasterWizard.<event_handler>
+        print("Event handler 'on_combo_resample_step' not implemented!")
+        event.Skip()
+
+    def on_combo_resample_dpi(self, event):  # wxGlade: RasterWizard.<event_handler>
+        print("Event handler 'on_combo_resample_dpi' not implemented!")
         event.Skip()
 
     def on_check_enable_grayscale(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_grayscale' not implemented!")
-        event.Skip()
+        self.ops['grayscale_enable'] = self.check_enable_grayscale.GetValue()
+        self.wiz_img()
+
+    def on_check_invert_grayscale(self, event):  # wxGlade: RasterWizard.<event_handler>
+        self.ops['grayscale_invert'] = self.check_invert_grayscale.GetValue()
+        self.wiz_img()
 
     def on_check_enable_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_tone' not implemented!")
-        event.Skip()
+        self.ops['tone_enable'] = self.check_enable_tone.GetValue()
+        self.wiz_img()
 
     def on_button_reset_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_button_reset_tone' not implemented!")
-        event.Skip()
+        self.ops['tone_values'] = 100, 100
+        self.wiz_img()
 
     def on_check_enable_gamma(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_gamma' not implemented!")
-        event.Skip()
+        self.ops['gamma_enable'] = self.check_enable_gamma.GetValue()
+        self.wiz_img()
 
     def on_button_reset_gamma(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_button_reset_gamma' not implemented!")
-        event.Skip()
+        self.ops['gamma_factor'] = 3.5
+        self.slider_gamma_factor.SetValue(self.ops['gamma_factor'] * 100.0)
+        self.text_gamma_factor.SetValue(str(self.ops['gamma_factor']))
+        self.wiz_img()
+
+    def on_slider_gamma_factor(self, event):  # wxGlade: RasterWizard.<event_handler>
+        self.ops['gamma_factor'] = self.slider_gamma_factor.GetValue() / 100.0
+        self.text_gamma_factor.SetValue(str(self.ops['gamma_factor']))
+        self.wiz_img()
+
+    def on_text_gamma_factor(self, event):  # wxGlade: RasterWizard.<event_handler>
+        pass
 
     def on_check_enable_sharpen(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_sharpen' not implemented!")
-        event.Skip()
+        self.ops['sharpen_enable'] = self.check_enable_sharpen.GetValue()
+        self.wiz_img()
 
     def on_button_reset_sharpen(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_button_reset_sharpen' not implemented!")
-        event.Skip()
+        self.ops['sharpen_percent'] = 500
+        self.ops['sharpen_radius'] = 20
+        self.ops['sharpen_threshold'] = 6
+        self.slider_sharpen_percent.SetValue(self.ops['sharpen_percent'])
+        self.slider_sharpen_radius.SetValue(self.ops['sharpen_radius'])
+        self.slider_sharpen_threshold.SetValue(self.ops['sharpen_threshold'])
+        self.text_sharpen_percent.SetValue(str(self.ops['sharpen_percent']))
+        self.text_sharpen_radius.SetValue(str(self.ops['sharpen_radius']))
+        self.text_sharpen_threshold.SetValue(str(self.ops['sharpen_threshold']))
+        self.wiz_img()
+
+    def on_slider_sharpen_percent(self, event):  # wxGlade: RasterWizard.<event_handler>
+        self.ops['sharpen_percent'] = int(self.slider_sharpen_percent.GetValue())
+        self.text_sharpen_percent.SetValue(str(self.ops['sharpen_percent']))
+        self.wiz_img()
+
+    def on_text_sharpen_percent(self, event):  # wxGlade: RasterWizard.<event_handler>
+        pass
+
+    def on_slider_sharpen_radius(self, event):  # wxGlade: RasterWizard.<event_handler>
+        self.ops['sharpen_radius'] = int(self.slider_sharpen_radius.GetValue())
+        self.text_sharpen_radius.SetValue(str(self.ops['sharpen_radius']))
+        self.wiz_img()
+
+    def on_text_sharpen_radius(self, event):  # wxGlade: RasterWizard.<event_handler>
+        pass
+
+    def on_slider_sharpen_threshold(self, event):  # wxGlade: RasterWizard.<event_handler>
+        self.ops['sharpen_threshold'] = int(self.slider_sharpen_threshold.GetValue())
+        self.text_sharpen_threshold.SetValue(str(self.ops['sharpen_threshold']))
+        self.wiz_img()
+
+    def on_text_sharpen_threshold(self, event):  # wxGlade: RasterWizard.<event_handler>
+        pass
 
     def on_check_enable_dither(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_check_enable_dither' not implemented!")
+        self.ops['dither_enable'] = self.check_enable_dither.GetValue()
+        self.wiz_img()
+
+    def on_combo_dither_type(self, event):  # wxGlade: RasterWizard.<event_handler>
+        print("Event handler 'on_combo_dither_type' not implemented!")
         event.Skip()
 
     def on_button_update(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_button_update' not implemented!")
-        event.Skip()
+        self.svg_image.image = self.pil_image
+        self.svg_image.image_width, self.svg_image.image_height = self.pil_image.size
+        try:
+            self.svg_image.altered()
+        except AttributeError:
+            pass
+        self.Close()
