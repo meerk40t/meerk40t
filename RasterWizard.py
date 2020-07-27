@@ -21,7 +21,9 @@ class RasterWizard(wx.Frame, Module):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
-        self._Buffer = None
+        self._preview_panel_buffer = None
+        self._tone_panel_buffer = None
+        self._crop_panel_buffer = None
         self.matrix = Matrix()
         self.previous_window_position = None
         self.previous_scene_position = None
@@ -123,8 +125,10 @@ class RasterWizard(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_output)
         # end wxGlade
-        self.panel_preview.Bind(wx.EVT_PAINT, self.on_paint)
-        self.panel_preview.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+        self.curve_panel.Bind(wx.EVT_PAINT, self.on_tone_panel_paint)
+        self.curve_panel.Bind(wx.EVT_ERASE_BACKGROUND, lambda e: None)
+        self.panel_preview.Bind(wx.EVT_PAINT, self.on_preview_panel_paint)
+        self.panel_preview.Bind(wx.EVT_ERASE_BACKGROUND, lambda e: None)
         self.panel_preview.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.panel_preview.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         self.panel_preview.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
@@ -152,7 +156,15 @@ class RasterWizard(wx.Frame, Module):
         self.ops['grayscale_enable'] = True
         self.ops['grayscale_invert'] = False
         self.ops['tone_enable'] = True
-        self.ops['tone_values'] = 100, 150
+        tone_values = [i for i in range(256)]
+        for i in range(1, 255):
+            t = i / 255.0
+            tone_values[i] += int(200 * (1 - t) * t)
+            if tone_values[i] < 0:
+                tone_values[i] = 0
+            if tone_values[i] > 255:
+                tone_values = 255
+        self.ops['tone_values'] = tone_values
         self.ops['gamma_enable'] = True
         self.ops['gamma_factor'] = 3.5
         self.ops['sharpen_enable'] = True
@@ -241,8 +253,8 @@ class RasterWizard(wx.Frame, Module):
         self.check_enable_tone.SetToolTip(_("Enable Tone Curve"))
         self.check_enable_tone.SetValue(1)
         self.button_reset_tone.SetToolTip(_("Reset Tone Curve"))
-        self.curve_panel.SetMinSize((300, 300))
-        self.curve_panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.curve_panel.SetMaxSize((256, 256))
+        self.curve_panel.SetMinSize((256, 256))
         self.check_enable_gamma.SetToolTip(_("Enable Gamma Shift"))
         self.check_enable_gamma.SetValue(1)
         self.button_reset_gamma.SetToolTip(_("Reset Gamma Shift"))
@@ -412,25 +424,33 @@ class RasterWizard(wx.Frame, Module):
 
         try:
             if ops['tone_enable'] and ops['tone_values'] is not None:
-                pass  # I don't have tonal code.
+                if image.mode == 'L':
+                    image = image.convert('P')
+                    tone_values = ops['tone_values']
+                    image = image.point(tone_values)
+                    if image.mode != 'L':
+                        image = image.convert('L')
         except KeyError:
             pass
 
         try:
             if ops['gamma_enable'] and ops['gamma_factor'] is not None:
-                from PIL import Image
                 if image.mode == 'L':
                     gamma_factor = float(ops['gamma_factor'])
 
                     def crimp(px):
+                        px = int(round(px))
                         if px < 0:
                             return 0
                         if px > 255:
                             return 255
-                        return int(round(px))
+                        return px
 
-                    gamma_lut = [crimp(pow(i / 255, (1 / gamma_factor)) * 255) for i in range(256)]
-                    image = image.remap_palette(gamma_lut)
+                    if gamma_factor == 0:
+                        gamma_lut = [0] * 256
+                    else:
+                        gamma_lut = [crimp(pow(i / 255, (1.0 / gamma_factor)) * 255) for i in range(256)]
+                    image = image.point(gamma_lut)
                     if image.mode != 'L':
                         image = image.convert('L')
         except KeyError:
@@ -496,28 +516,67 @@ class RasterWizard(wx.Frame, Module):
         elif select == 7:
             self.output_panel.Show()
         self.Layout()
+        if select == 0:
+            width, height = self.image_view_panel.Size
+            if width <= 0:
+                width = 1
+            if height <= 0:
+                height = 1
+            self._crop_panel_buffer = wx.Bitmap(width, height)
+            self.update_in_gui_thread()
+        elif select == 3:
+            width, height = self.curve_panel.Size
+            if width <= 0:
+                width = 1
+            if height <= 0:
+                height = 1
+            self._tone_panel_buffer = wx.Bitmap(width, height)
+            self.update_in_gui_thread()
 
-    def on_size(self, event):
-        self.Layout()
-        width, height = self.ClientSize
+    def on_size(self, event=None):
+        width, height = self.panel_preview.Size
         if width <= 0:
             width = 1
         if height <= 0:
             height = 1
-        self._Buffer = wx.Bitmap(width, height)
+        self._preview_panel_buffer = wx.Bitmap(width, height)
         self.update_in_gui_thread()
 
-    def on_erase(self, event):
-        pass
-
-    def on_paint(self, event):
+    def on_tone_panel_paint(self, event):
         try:
-            wx.BufferedPaintDC(self.panel_preview, self._Buffer)
+            wx.BufferedPaintDC(self.curve_panel, self._tone_panel_buffer)
+        except RuntimeError:
+            pass
+
+    def on_update_tone(self, event=None):
+        if self.device is None:
+            return
+        if self._tone_panel_buffer is None:
+            return
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._tone_panel_buffer)
+        dc.Clear()
+        dc.SetBackground(wx.GREEN_BRUSH)
+        gc = wx.GraphicsContext.Create(dc)
+        gc.PushState()
+        gc.SetPen(wx.BLACK_PEN)
+        tone_values = self.ops['tone_values']
+        starts = [(i, 255 - tone_values[i]) for i in range(255)]
+        ends = [(i, 255 - tone_values[i]) for i in range(1,256)]
+        gc.StrokeLineSegments(starts, ends)
+        gc.PopState()
+        gc.Destroy()
+        del dc
+
+    def on_preview_panel_paint(self, event):
+        try:
+            wx.BufferedPaintDC(self.panel_preview, self._preview_panel_buffer)
         except RuntimeError:
             pass
 
     def update_in_gui_thread(self):
         self.on_update_buffer()
+        self.on_update_tone()
         try:
             self.Refresh(True)
             self.Update()
@@ -530,7 +589,7 @@ class RasterWizard(wx.Frame, Module):
         if self.svg_image is None:
             return
         dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
+        dc.SelectObject(self._preview_panel_buffer)
         dc.Clear()
         dc.SetBackground(wx.WHITE_BRUSH)
         gc = wx.GraphicsContext.Create(dc)
@@ -665,7 +724,15 @@ class RasterWizard(wx.Frame, Module):
         self.wiz_img()
 
     def on_button_reset_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
-        self.ops['tone_values'] = 100, 100
+        tone_values = [i for i in range(256)]
+        for i in range(1, 255):
+            t = i / 255.0
+            tone_values[i] += int(150 * (1 - t) * t)
+            if tone_values[i] < 0:
+                tone_values[i] = 0
+            if tone_values[i] > 255:
+                tone_values = 255
+        self.ops['tone_values'] = tone_values
         self.wiz_img()
 
     def on_check_enable_gamma(self, event):  # wxGlade: RasterWizard.<event_handler>
@@ -731,8 +798,8 @@ class RasterWizard(wx.Frame, Module):
         self.wiz_img()
 
     def on_combo_dither_type(self, event):  # wxGlade: RasterWizard.<event_handler>
-        print("Event handler 'on_combo_dither_type' not implemented!")
-        event.Skip()
+        self.ops['dither_type'] = self.combo_dither.GetSelection()
+        self.wiz_img()
 
     def on_button_update(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.svg_image.image = self.pil_image
