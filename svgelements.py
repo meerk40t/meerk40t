@@ -1,7 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
 
-from __future__ import division
-
 import re
 
 try:

@@ -1,7 +1,7 @@
 
 import wx
 
-from Kernel import Module, STATE_UNKNOWN
+from Kernel import Module
 from icons import icons8_comments_50
 
 

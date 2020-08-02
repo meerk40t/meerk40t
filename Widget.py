@@ -6,7 +6,7 @@ import wx
 from Kernel import Module
 from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID, DRAW_MODE_BACKGROUND
 from ZMatrix import ZMatrix
-from svgelements import Matrix, Point, Color, Rect
+from svgelements import Matrix, Point, Color
 
 MILS_IN_MM = 39.3701
 
