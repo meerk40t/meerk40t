@@ -483,12 +483,24 @@ class Interpreter(Module):
 
     def set_power(self, power=1000.0):
         self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def set_ppi(self, power=1000.0):
         self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def set_pwm(self, power=1000.0):
         self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def set_d_ratio(self, d_ratio=None):
         self.d_ratio = d_ratio
