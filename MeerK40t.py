@@ -6,6 +6,7 @@ from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
 from MoshiboardDevice import MoshiboardDevice
+from RasterScripts import RasterScripts
 from RuidaDevice import RuidaDevice
 from LaserServer import *
 
@@ -50,6 +51,7 @@ parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emula
 args = parser.parse_args(sys.argv[1:])
 
 kernel.register('module', 'Console', Console)
+kernel.register('module', 'RasterScripts', RasterScripts)
 kernel.register('module', 'LaserServer', LaserServer)
 kernel.register('load', 'SVGLoader', SVGLoader)
 kernel.register('load', 'ImageLoader', ImageLoader)

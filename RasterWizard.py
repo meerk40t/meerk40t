@@ -9,6 +9,7 @@ import wx
 
 from Kernel import Module
 from LaserRender import LaserRender
+from RasterScripts import RasterScripts
 from ZMatrix import ZMatrix
 from icons import icons8_gas_industry_50
 from svgelements import SVGImage, Matrix
@@ -71,112 +72,11 @@ class RasterWizard(wx.Frame, Module):
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
 
-    @staticmethod
-    def sub_register(device):
-        device.register('raster_script', "Gold", RasterWizard.raster_script_gold())
-        device.register('raster_script', "Stipo", RasterWizard.raster_script_stipo())
-
-    @staticmethod
-    def raster_script_gold():
-        ops = []
-        ops.append({
-            'name': 'crop',
-            'enable': False,
-            'bounds': (0, 0, 100, 100)
-        })
-        ops.append({
-            'name': 'grayscale',
-            'enable': True,
-            'invert': False,
-        })
-        ops.append({
-            'name': 'resample',
-            'enable': True,
-            'aspect': True,
-            'width_factor': 2.0,
-            'height_factor': 2.0,
-            'step': 2
-        })
-        ops.append({
-            'name': 'contrast',
-            'enable': True,
-            'contrast': 25,
-            'brightness': 25,
-        })
-        ops.append({
-            'name': 'unsharp_mask',
-            'enable': True,
-            'percent': 500,
-            'radius': 4,
-            'threshold': 0
-        })
-        ops.append({
-            'name': 'unsharp_mask',
-            'enable': False,
-            'percent': 150,
-            'radius': 1,
-            'threshold': 0
-        })
-        ops.append({
-            'name': 'dither',
-            'enable': True,
-            'type': 0
-        })
-        ops.append({
-            'name': 'output'
-        })
-        return ops
-
-    @staticmethod
-    def raster_script_stipo():
-        ops = []
-        ops.append({
-            'name': 'crop',
-            'enable': False,
-            'bounds': (0, 0, 100, 100)
-        })
-        ops.append({
-            'name': 'resample',
-            'enable': True,
-            'aspect': True,
-            'width_factor': 2.0,
-            'height_factor': 2.0,
-            'step': 2
-        })
-        ops.append({
-            'name': 'grayscale',
-            'enable': True,
-            'invert': False,
-        })
-        ops.append({
-            'name': 'tone',
-            'enable': True,
-            'values': [[0, 0], [100, 150], [255, 255]]
-        })
-        ops.append({
-            'name': 'gamma',
-            'enable': True,
-            'factor': 3.5
-        })
-        ops.append({
-            'name': 'unsharp_mask',
-            'enable': True,
-            'percent': 500,
-            'radius': 20,
-            'threshold': 6
-        })
-        ops.append({
-            'name': 'dither',
-            'enable': True,
-            'type': 0
-        })
-        ops.append({
-            'name': 'output'
-        })
-        return ops
-
-    def set_wizard_script(self, name):
-        self.ops = deepcopy(self.device.device_root.registered['raster_script'][name])
+    def set_wizard_script(self, name=None, ops=None):
+        if name is None:
+            self.ops = ops
+        if self.ops is None:
+            self.ops = deepcopy(self.device.device_root.registered['raster_script'][name])
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op['name']) for op in self.ops]
@@ -255,120 +155,9 @@ class RasterWizard(wx.Frame, Module):
         if self.ops is None:
             self.pil_image = self.svg_image.image
         else:
-            self.pil_image = RasterWizard.wizard_image(self.svg_image.image, self.ops)
+            self.pil_image = RasterScripts.wizard_image(self.svg_image.image, self.ops)
         self.wx_bitmap_image = None
         self.device.signal("RasterWizard-Refresh")
-
-    @staticmethod
-    def wizard_image(image, operations):
-        from PIL import ImageOps, ImageFilter, ImageEnhance
-        for op in operations:
-            name = op['name']
-            if name == 'crop':
-                try:
-                    if op['enable'] and op['bounds'] is not None:
-                        crop = op['bounds']
-                        left = int(crop[0])
-                        upper = int(crop[1])
-                        right = int(crop[2])
-                        lower = int(crop[3])
-                        image = image.crop((left, upper, right, lower))
-                except KeyError:
-                    pass
-            if name == 'resample':
-                try:
-                    if op['enable'] and \
-                            op['width_factor'] is not None and \
-                            op['height_factor'] is not None:
-                        w, h = image.size
-                        image = image.resize(
-                            size=(int(w * op['width_factor']), int(h * op['height_factor'])))
-                except KeyError:
-                    pass
-            if name == 'grayscale':
-                try:
-                    if op['enable']:
-                        image = ImageOps.grayscale(image)
-                        try:
-                            if op['invert']:
-                                image = ImageOps.invert(image)
-                        except (KeyError, OSError):
-                            pass
-                except KeyError:
-                    pass
-            if name == 'tone':
-                try:
-                    if op['enable'] and op['values'] is not None:
-                        if image.mode == 'L':
-                            image = image.convert('P')
-                            tone_values = op['values']
-                            spline = RasterWizard.spline(tone_values)
-                            image = image.point(spline)
-                            if image.mode != 'L':
-                                image = image.convert('L')
-                except KeyError:
-                    pass
-            if name == 'contrast':
-                try:
-                    if op['enable']:
-                        if op['contrast'] is not None and op['brightness'] is not None:
-                            contrast = ImageEnhance.Contrast(image)
-                            c = (op['contrast'] + 128.0) / 128.0
-                            image = contrast.enhance(c)
-
-                            brightness = ImageEnhance.Brightness(image)
-                            b = (op['brightness'] + 128.0) / 128.0
-                            image = brightness.enhance(b)
-                except KeyError:
-                    pass
-            if name == 'gamma':
-                try:
-                    if op['enable'] and op['factor'] is not None:
-                        if image.mode == 'L':
-                            gamma_factor = float(op['factor'])
-
-                            def crimp(px):
-                                px = int(round(px))
-                                if px < 0:
-                                    return 0
-                                if px > 255:
-                                    return 255
-                                return px
-
-                            if gamma_factor == 0:
-                                gamma_lut = [0] * 256
-                            else:
-                                gamma_lut = [crimp(pow(i / 255, (1.0 / gamma_factor)) * 255) for i in range(256)]
-                            image = image.point(gamma_lut)
-                            if image.mode != 'L':
-                                image = image.convert('L')
-                except KeyError:
-                    pass
-            if name == 'unsharp_mask':
-                try:
-                    if op['enable'] and \
-                            op['percent'] is not None and \
-                            op['radius'] is not None and \
-                            op['threshold'] is not None:
-                        unsharp = ImageFilter.UnsharpMask(radius=op['radius'], percent=op['percent'],
-                                                          threshold=op['threshold'])
-                        image = image.filter(unsharp)
-                except KeyError:
-                    pass
-            if name == 'dither':
-                try:
-                    if op['enable'] and op['type'] is not None:
-                        if image.mode == 'RGBA':
-                            pixel_data = image.load()
-                            width, height = image.size
-                            for y in range(height):
-                                for x in range(width):
-                                    if pixel_data[x, y][3] == 0:
-                                        pixel_data[x, y] = (255, 255, 255, 255)
-                        image = image.convert("1")
-                except KeyError:
-                    pass
-        return image
 
     def on_emphasis_change(self, *args):
         for e in self.device.device_root.elements.elems(emphasized=True):
@@ -566,32 +355,6 @@ class RasterWizard(wx.Frame, Module):
         except AttributeError:
             pass
         self.Close()
-
-    @staticmethod
-    def spline(p):
-        """
-        Spline interpreter.
-
-        Returns all integer locations between different spline interpolation values
-        :param p: points to be quad spline interpolated.
-        :return: integer y values for given spline points.
-        """
-        N = len(p) - 1
-        w = [(p[i + 1][0] - p[i][0]) for i in range(0, N)]
-        h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(0, N)]
-        ftt = [0] + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(0, N - 1)] + [0]
-        A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(0, N)]
-        B = [ftt[i] / 2 for i in range(0, N)]
-        C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(0, N)]
-        D = [p[i][1] for i in range(0, N)]
-        r = list()
-        for i in range(len(p) - 1):
-            a = p[i][0]
-            b = p[i + 1][0]
-            r.extend(int(round(A[i] * (x - a) ** 3 + B[i] * (x - a) ** 2 + C[i] * (x - a) + D[i])) for x in range(a, b))
-        r.append(round(int(p[-1][1])))
-        return r
-
 
 # end of class RasterWizard
 
@@ -1073,7 +836,7 @@ class ToneCurvePanel(wx.Panel):
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
         tone_values = self.op['values']
-        spline = RasterWizard.spline(tone_values)
+        spline = RasterScripts.spline(tone_values)
         starts = [(i, 255 - spline[i]) for i in range(255)]
         ends = [(i, 255 - spline[i]) for i in range(1, 256)]
 
@@ -1088,7 +851,7 @@ class ToneCurvePanel(wx.Panel):
 
     def on_button_reset_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
         tone_values = [[0, 0], [100, 150], [255, 255]]
-        tone_values = self.spline(tone_values)
+        tone_values = RasterScripts.spline(tone_values)
         self.op['values'] = tone_values
         self.device.signal("RasterWizard-Image")
 

@@ -1294,6 +1294,26 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected images."
                 return
+            elif args[0] == 'wizard':
+                if len(args) == 1:
+                    try:
+                        for script_name in kernel.registered['raster_script']:
+                            yield "Raster Script: %s" % script_name
+                    except KeyError:
+                        yield "No Raster Scripts Found."
+                    return
+                try:
+                    script = kernel.registered['raster_script'][args[1]]
+                except KeyError:
+                    yield "Raster Script %s is not registered." % args[1]
+                    return
+                from RasterScripts import RasterScripts
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        element.image = RasterScripts.wizard_image(element.image, script)
+                        element.image_width, element.image_height = element.image.size
+                        element.altered()
+                return
             elif args[0] == 'threshold':
                 try:
                     threshold_min = float(args[1])
