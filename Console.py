@@ -1310,7 +1310,9 @@ class Console(Module, Pipe):
                 from RasterScripts import RasterScripts
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
-                        element.image, element.transform = RasterScripts.wizard_image(element, script)
+                        element.image, element.transform, step = RasterScripts.wizard_image(element, script)
+                        if step is not None:
+                            element.values['raster_step'] = step
                         element.image_width, element.image_height = element.image.size
                         element.altered()
                 return

@@ -2178,6 +2178,7 @@ class Kernel(Device):
         self.keymap['f8'] = "control Path"
         self.keymap['f9'] = "control Transform"
         self.keymap['f12'] = "window open Terminal"
+        self.keymap['control+alt+g'] = "image wizard Gold"
         self.keymap['alt+f12'] = "terminal_ruida"
         self.keymap['alt+f13'] = 'terminal_watch'
         self.keymap['pause'] = "control Realtime Pause_Resume"

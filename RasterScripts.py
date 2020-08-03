@@ -1,6 +1,8 @@
 from Kernel import Module
 from math import ceil
 
+from svgelements import Matrix
+
 
 class RasterScripts(Module):
     """
@@ -41,8 +43,7 @@ class RasterScripts(Module):
             'name': 'resample',
             'enable': True,
             'aspect': True,
-            'width_factor': 2.0,
-            'height_factor': 2.0,
+            'units': 0,
             'step': 2
         })
         ops.append({
@@ -87,8 +88,7 @@ class RasterScripts(Module):
             'name': 'resample',
             'enable': True,
             'aspect': True,
-            'width_factor': 2.0,
-            'height_factor': 2.0,
+            'units': 0,
             'step': 2
         })
         ops.append({
@@ -176,10 +176,7 @@ class RasterScripts(Module):
     def wizard_image(svg_image, operations):
         image = svg_image.image
         matrix = svg_image.transform
-        try:
-            step = svg_image.values['raster_step']
-        except KeyError:
-            step = 1.0
+        step = None
 
         from PIL import ImageOps, ImageFilter, ImageEnhance
         for op in operations:
@@ -198,7 +195,8 @@ class RasterScripts(Module):
             if name == 'resample':
                 try:
                     if op['enable']:
-                        image, matrix = RasterScripts.actualize(image, matrix, step_level=step)
+                        image, matrix = RasterScripts.actualize(image, Matrix(matrix), step_level=op['step'])
+                        step = op['step']
                 except KeyError:
                     pass
             if name == 'grayscale':
@@ -284,7 +282,7 @@ class RasterScripts(Module):
                         image = image.convert("1")
                 except KeyError:
                     pass
-        return image, matrix
+        return image, matrix, step
 
     @staticmethod
     def spline(p):
