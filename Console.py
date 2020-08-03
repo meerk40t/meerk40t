@@ -1071,6 +1071,9 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected elements."
                 return
+            elif len(args) == 0:
+                yield 'Optimizations: cut_inner, travel, cut_travel'
+                return
             elif args[0] == 'cut_inner':
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_cut_inside(element)

@@ -580,7 +580,11 @@ class CameraInterface(wx.Frame, Module):
         if self.device is None:
             self.camera_lock.release()
             return
-        ret = self.capture.grab()
+        try:
+            ret = self.capture.grab()
+        except AttributeError:
+            print("Grab failed.")
+            return
         if not ret:
             wx.CallAfter(self.camera_error_webcam)
             self.capture = None
