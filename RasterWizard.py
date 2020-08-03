@@ -32,6 +32,7 @@ class RasterWizard(wx.Frame, Module):
         self.curve_down = False
         self.svg_image = None
         self.pil_image = None
+        self.matrix_image = None
         self.wx_bitmap_image = None
         self.image_width, self.image_height = None, None
         self.ops = None
@@ -155,7 +156,7 @@ class RasterWizard(wx.Frame, Module):
         if self.ops is None:
             self.pil_image = self.svg_image.image
         else:
-            self.pil_image = RasterScripts.wizard_image(self.svg_image.image, self.ops)
+            self.pil_image, self.matrix_image = RasterScripts.wizard_image(self.svg_image, self.ops)
         self.wx_bitmap_image = None
         self.device.signal("RasterWizard-Refresh")
 
@@ -349,6 +350,7 @@ class RasterWizard(wx.Frame, Module):
 
     def on_buttons_operations(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.svg_image.image = self.pil_image
+        self.svg_image.transform = self.matrix_image
         self.svg_image.image_width, self.svg_image.image_height = self.pil_image.size
         try:
             self.svg_image.altered()
