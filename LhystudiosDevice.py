@@ -42,8 +42,8 @@ class LhystudiosDevice(Device):
     LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
 
-    def __init__(self, root=None, uid=1):
-        Device.__init__(self, root, uid)
+    def __init__(self, root=None, uid=1, config=None):
+        Device.__init__(self, root=root, uid=uid, config=config)
         self.uid = uid
         self.device_name = "Lhystudios"
         self.device_location = "USB"

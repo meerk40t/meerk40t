@@ -354,7 +354,7 @@ class Console(Module, Pipe):
                 for i, name in enumerate(kernel.registered['window']):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Windows in Device %s:' % str(active_device.uid)
+                yield 'Loaded Windows in Device %s:' % str(active_device._uid)
                 for i, name in enumerate(active_device.instances['window']):
                     module = active_device.instances['window'][name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
@@ -437,7 +437,7 @@ class Console(Module, Pipe):
                 for i, name in enumerate(kernel.registered['module']):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Modules in Device %s:' % str(active_device.uid)
+                yield 'Loaded Modules in Device %s:' % str(active_device._uid)
                 for i, name in enumerate(active_device.instances['module']):
                     module = active_device.instances['module'][name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
@@ -526,9 +526,9 @@ class Console(Module, Pipe):
                 devices = kernel.setting(str, 'list_devices', '')
                 for device in devices.split(';'):
                     try:
-                        d = int(device)
-                        device_name = kernel.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
-                        autoboot = kernel.read_persistent(bool, 'autoboot', True, uid=d)
+                        settings = kernel.derive(device)
+                        device_name = settings.setting(str, 'device_name', 'Lhystudios')
+                        autoboot = settings.setting(bool, 'autoboot', True)
                         yield 'Device %d. "%s" -- Boots: %s' % (d, device_name, autoboot)
                     except ValueError:
                         break

@@ -83,8 +83,15 @@ else:
         pass
     else:
         # There is a gui but the device wasn't booted.
-        if hasattr(kernel, 'list_devices') or len(kernel.list_devices) == 0:
-            # List devices is either missing or empty. Create a default device.
+        devices = list(kernel.derivable())
+        device_entries = list()
+        for dev in devices:
+            try:
+                device_entries.append(int(dev))
+            except ValueError:
+                continue
+        if len(device_entries) == 0:
+            # There are no device entries in the kernel.
             kernel.device_add('Lhystudios', 1)
             kernel.device_boot()
             for key, d in kernel.instances['device'].items():
@@ -190,13 +197,13 @@ if args.console:
     console = device.using('module', 'Console')
     device.add_watcher('console', print)
     while True:
-        q = input('>')
-        if q == 'quit':
+        device_entries = input('>')
+        if device_entries == 'quit':
             break
-        if q == 'shutdown':
+        if device_entries == 'shutdown':
             device.shutdown(channel=print)
             break
-        console.write(q + '\n')
+        console.write(device_entries + '\n')
 
     device.remove_watcher('console', print)
 if not args.no_gui:

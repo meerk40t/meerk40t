@@ -689,7 +689,7 @@ class MeerK40t(wx.Frame, Module):
         device_name = ''
         device_version = ''
         if self.device is not None:
-            device_text = '- %s:%s' % (self.device.device_name, self.device.uid)
+            device_text = '- %s:%s' % (self.device.device_name, self.device._uid)
             device_version = self.device.device_root.device_version
             device_name = self.device.device_root.device_name
         self.SetTitle(_("%s v%s %s") % (device_name, device_version, device_text))
@@ -2448,13 +2448,13 @@ def get_key_name(event):
     elif key == wx.WXK_NUMPAD9:
         keyvalue += 'numpad9'
     elif key == wx.WXK_NUMPAD_ADD:
-        keyvalue += 'numpad+'
+        keyvalue += 'numpad_add'
     elif key == wx.WXK_NUMPAD_SUBTRACT:
-        keyvalue += 'numpad-'
+        keyvalue += 'numpad_subtract'
     elif key == wx.WXK_NUMPAD_MULTIPLY:
-        keyvalue += 'numpad*'
+        keyvalue += 'numpad_multiply'
     elif key == wx.WXK_NUMPAD_DIVIDE:
-        keyvalue += 'numpad/'
+        keyvalue += 'numpad_divide'
     elif key == wx.WXK_NUMPAD_DECIMAL:
         keyvalue += 'numpad.'
     elif key == wx.WXK_NUMPAD_ENTER:

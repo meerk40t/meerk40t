@@ -883,13 +883,10 @@ class Elemental(Module):
 
     def finalize(self, channel=None):
         kernel = self.device.device_root
-        config = kernel.config
-
-        config.SetPath('/')
-        config.DeleteGroup('operations')
-        config.SetPath('operations')
+        settings = kernel.derive('operations')
+        settings.clear_persistent()
         for i, op in enumerate(self.ops()):
-            config.SetPath(str(i))
+            op_set = settings.derive(str(i))
             for key in dir(op):
                 if key.startswith('_'):
                     continue
@@ -898,59 +895,24 @@ class Elemental(Module):
                     continue
                 if isinstance(value, Color):
                     value = value.value
-                if isinstance(value, (int, bool, str, float)):
-                    if isinstance(value, str):
-                        config.Write(key, value)
-                    elif isinstance(value, float):
-                        config.WriteFloat(key, value)
-                    elif isinstance(value, bool):
-                        config.WriteBool(key, value)
-                    elif isinstance(value, int):
-                        config.WriteInt(key, value)
-            config.SetPath('..')
-        config.SetPath('..')
+                op_set.write_persistent(key, value)
 
     def boot(self):
         kernel = self.device.device_root
-        config = kernel.config
-        if config is None:
-            self.load_default()
-            return
-        config.SetPath('operations')
-
-        more, value, index = config.GetFirstGroup()
-        if not more:
-            self.load_default()
-            config.SetPath('..')
-            return
-        ops = [None] * config.GetNumberOfGroups(bRecursive=False)
-        while more:
-            config.SetPath(value)
+        settings = kernel.derive('operations')
+        subitems = list(settings.derivable())
+        ops = [None] * len(subitems)
+        for i, v in enumerate(subitems):
+            op_set = settings.derive(v)
             op = LaserOperation()
+            op_set.load_persistent_object(op)
             try:
-                ops[int(value)] = op
+                ops[i] = op
             except (ValueError, IndexError):
                 ops.append(op)
-            m, value, i = config.GetFirstEntry()
-            while m:
-                t = getattr(op, value, None)
-                try:
-                    if isinstance(t, str):
-                        setattr(op, value, config.Read(value, t))
-                    elif isinstance(t, float):
-                        setattr(op, value, config.ReadFloat(value, t))
-                    elif isinstance(t, bool):
-                        setattr(op, value, config.ReadBool(value, t))
-                    elif isinstance(t, int):
-                        setattr(op, value, config.ReadInt(value, t))
-                    elif isinstance(t, Color):
-                        setattr(op, value, Color(config.ReadInt(value, t)))
-                except AttributeError:
-                    pass
-                m, value, i = config.GetNextEntry(i)
-            config.SetPath('..')
-            more, value, index = config.GetNextGroup(index)
-        config.SetPath('..')
+        if not len(ops):
+            self.load_default()
+            return
         self.add_ops([o for o in ops if o is not None])
         self.device.signal('rebuild_tree')
 
@@ -1370,52 +1332,21 @@ class Elemental(Module):
         return "|".join(filetypes)
 
 
-class Device:
+class Preferences:
     """
-    A Device is a specific module cluster that serves a unified purpose.
+    This class is expected to run even if there is no persistent storage.
 
-    The Kernel is a type of device which provides root functionality.
-
-    * Provides job scheduler
-    * Registers devices, modules, pipes, modifications, and effects.
-    * Stores instanced devices, modules, pipes, channels, controls and threads.
-    * Processes local channels.
-
-    Channels are a device object with specific uids that sends messages to watcher functions. These can be watched
-    even if the channels are not ever opened or used. The channels can opened and provided information without any
-    consideration of what might be watching.
+    Without an persistence object, attributes will be assigned by .settings() command, and the objects cannot flush().
+    If the config is not set, it will check the root for a non-None config until setting. So only the root objects
+    persistence object needs to be set.
     """
-
-    def __init__(self, root=None, uid=0):
-        self.thread = None
-        self.name = None
-        self.device_root = root
-        self.device_name = "Device"
-        self.device_version = "0.0.0"
-        self.device_location = "Kernel"
-        self.uid = uid
-
-        self.state = STATE_UNKNOWN
-        self.jobs = []
-
-        self.registered = {}
-        self.instances = {}
-
-        # Channel processing.
-        self.channels = {}
-        self.watchers = {}
-        self.buffer = {}
-        self.greet = {}
-        self.element = None
-
-    def __str__(self):
-        if self.uid == 0:
-            return "Project"
-        else:
-            return "%s:%d" % (self.device_name, self.uid)
-
-    def __call__(self, code, *message):
-        self.signal(code, *message)
+    def __init__(self, config=None, path=None, root=None):
+        self._root = root
+        if self._root is None:
+            self._root = self
+        self._path = path
+        self._config = config
+        self.set_config(config)
 
     def __setitem__(self, key, value):
         """
@@ -1446,6 +1377,255 @@ class Device:
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
+    def derive(self, subpath):
+        """
+        Create a sub-preferences object, at the given subpath.
+
+        :param subpath: subpath underwhich to have the object.
+        :return: Preferences object derived from this one.
+        """
+        if self._path is not None:
+            subpath = "%s/%s" % (self._path, subpath)
+        derive = Preferences(config=self._config, path=subpath, root=self._root)
+        return derive
+
+    def setting(self, setting_type, key, default=None):
+        """
+        Registers a setting to be used between modules.
+
+        If the setting exists, its value remains unchanged.
+        If the setting exists in the persistent storage that value is used.
+        If there is no settings value, the default will be used.
+
+        :param setting_type: int, float, str, or bool value
+        :param key: name of the setting
+        :param default: default value for the setting to have.
+        :return: load_value
+        """
+        if hasattr(self, key) and getattr(self, key) is not None:
+            return getattr(self, key)
+
+        # Key is not located in the attr. Load the value.
+        if not key.startswith('_'):
+            load_value = self.read_persistent(setting_type, key, default)
+        else:
+            load_value = default
+        setattr(self, key, load_value)
+        return load_value
+
+    def flush(self):
+        """
+        Commit any and all values currently stored as attr for this object to persistent storage.
+
+        :return:
+        """
+
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, str, float, Color)):
+                self.write_persistent(attr, value)
+
+    def read_item_persistent(self, key):
+        """Directly read from persistent storage the value of an item."""
+        if self._config is None:
+            self._config = self._root._config
+        if self._config is None:
+            return None
+        if self._path is not None:
+            key = '%s/%s' % (str(self._path), key)
+        return self._config.Read(key)
+
+    def read_persistent(self, t, key, default=None):
+        """
+        Directly read from persistent storage the value of an item.
+
+        :param t: datatype.
+        :param key: key used to reference item.
+        :param default: default value if item does not exist.
+        :return: value
+        """
+        if self._config is None:
+            self._config = self._root._config
+        if self._config is None:
+            return default
+        if self._path is not None:
+            key = '%s/%s' % (str(self._path), key)
+        if default is not None:
+            if t == str:
+                return self._config.Read(key, default)
+            elif t == int:
+                return self._config.ReadInt(key, default)
+            elif t == float:
+                return self._config.ReadFloat(key, default)
+            elif t == bool:
+                return self._config.ReadBool(key, default)
+            elif t == Color:
+                return self._config.ReadInt(key, default)
+        else:
+            if t == str:
+                return self._config.Read(key)
+            elif t == int:
+                return self._config.ReadInt(key)
+            elif t == float:
+                return self._config.ReadFloat(key)
+            elif t == bool:
+                return self._config.ReadBool(key)
+            elif t == Color:
+                return self._config.ReadInt(key)
+        return default
+
+    def write_persistent(self, key, value):
+        """
+        Directly write the value to persistent storage.
+
+        :param key: The item key being read.
+        :param value: the value of the item.
+        """
+        if self._config is None:
+            self._config = self._root._config
+        if self._config is None:
+            return
+        if self._path is not None:
+            key = '%s/%s' % (str(self._path), key)
+        if isinstance(value, str):
+            self._config.Write(key, value)
+        elif isinstance(value, int):
+            self._config.WriteInt(key, value)
+        elif isinstance(value, float):
+            self._config.WriteFloat(key, value)
+        elif isinstance(value, bool):
+            self._config.WriteBool(key, value)
+        elif isinstance(value, Color):
+            self._config.WriteInt(key, value)
+
+    def clear_persistent(self):
+        if self._config is None:
+            self._config = self._root._config
+        if self._config is None:
+            return
+        self._config.DeleteGroup(self._path)
+
+    def load_persistent_object(self, obj):
+        """
+        Loads values of the persistent attributes, and assigns them to the obj.
+        The type of the value depends on the obj value default values.
+
+        :param obj:
+        :return:
+        """
+        for attr in dir(obj):
+            if attr.startswith('_'):
+                continue
+            obj_value = getattr(obj, attr)
+
+            if not isinstance(obj_value, (int, float, str, bool, Color)):
+                continue
+            load_value = self.read_persistent(type(obj_value), attr)
+            setattr(obj, attr, load_value)
+            setattr(self, attr, load_value)
+
+    def load_persistent_string_dict(self, dictionary):
+        for k in list(self.keylist()):
+            dictionary[k] = self.read_item_persistent(k)
+
+    def keylist(self):
+        if self._config is None:
+            self._config = self._root._config
+        if self._path is not None:
+            self._config.SetPath(self._path)
+        more, value, index = self._config.GetFirstEntry()
+        while more:
+            yield value
+            more, value, index = self._config.GetNextEntry(index)
+        self._config.SetPath('/')
+
+    def derivable(self):
+        if self._config is None:
+            self._config = self._root._config
+        if self._path is not None:
+            self._config.SetPath(self._path)
+        more, value, index = self._config.GetFirstGroup()
+        while more:
+            yield value
+            more, value, index = self._config.GetNextGroup(index)
+        self._config.SetPath('/')
+
+    def set_attrib_keys(self):
+        """
+        Iterate all the entries for the registered config, adds a None attribute for keys.
+        """
+
+        for k in self.keylist():
+            if not hasattr(self, k):
+                setattr(self, k, None)
+
+    def set_config(self, config):
+        """
+        Set the config object.
+
+        :param config: Persistent storage object.
+        :return:
+        """
+        if config is None:
+            return
+        self._config = config
+
+
+class Device(Preferences):
+    """
+    A Device is a specific module cluster that serves a unified purpose.
+
+    The Kernel is a type of device which provides root functionality.
+
+    * Provides job scheduler
+    * Registers devices, modules, pipes, modifications, and effects.
+    * Stores instanced devices, modules, pipes, channels, controls and threads.
+    * Processes local channels.
+
+    Channels are a device object with specific uids that sends messages to watcher functions. These can be watched
+    even if the channels are not ever opened or used. The channels can opened and provided information without any
+    consideration of what might be watching.
+    """
+
+    def __init__(self, root=None, uid=0, config=None):
+        self.thread = None
+        self.name = None
+        self.device_root = root
+        self.device_name = "Device"
+        self.device_version = "0.0.0"
+        self.device_location = "Kernel"
+        self._uid = uid
+        if uid != 0:
+            Preferences.__init__(self, config=config, path=str(uid), root=root)
+        else:
+            Preferences.__init__(self, config=config, root=root)
+
+        self.state = STATE_UNKNOWN
+        self.jobs = []
+
+        self.registered = {}
+        self.instances = {}
+
+        # Channel processing.
+        self.channels = {}
+        self.watchers = {}
+        self.buffer = {}
+        self.greet = {}
+        self.element = None
+
+    def __str__(self):
+        if self._uid == 0:
+            return "Project"
+        else:
+            return "%s:%d" % (self.device_name, self._uid)
+
+    def __call__(self, code, *message):
+        self.signal(code, *message)
+
     def attach(self, device, name=None, channel=None):
         self.device_root = device
         self.name = name
@@ -1463,15 +1643,6 @@ class Device:
 
     def finalize(self, device, channel=None):
         pass
-
-    def read_item_persistent(self, item):
-        return self.device_root.read_item_persistent(item)
-
-    def write_persistent(self, key, value, uid=0):
-        self.device_root.write_persistent(key, value, uid=uid)
-
-    def read_persistent(self, t, key, default=None, uid=0):
-        return self.device_root.read_persistent(t, key, default, uid=uid)
 
     def threaded(self, func, thread_name=None):
         if thread_name is None:
@@ -1497,7 +1668,7 @@ class Device:
         :return:
         """
         if self.thread is None or not self.thread.is_alive():
-            self.thread = self.threaded(self.run, 'Device%d' % int(self.uid))
+            self.thread = self.threaded(self.run, 'Device%d' % int(self._uid))
         self.control_instance_add("Debug Device", self._start_debugging)
         try:
             for m in self.instances['module']:
@@ -1607,8 +1778,8 @@ class Device:
                 if root_devices is None:
                     shutdown_root = True
                 else:
-                    if str(self.uid) in root_devices:
-                        del root_devices[str(self.uid)]
+                    if str(self._uid) in root_devices:
+                        del root_devices[str(self._uid)]
                     if len(root_devices) == 0:
                         shutdown_root = True
             else:
@@ -1728,57 +1899,6 @@ class Device:
                     continue
                 setattr(obj, attr, debug(fn, obj))
 
-    def setting(self, setting_type, setting_name, default=None):
-        """
-        Registers a setting to be used between modules.
-
-        If the setting exists, its value remains unchanged.
-        If the setting exists in the persistent storage that value is used.
-        If there is no settings value, the default will be used.
-
-        :param setting_type: int, float, str, or bool value
-        :param setting_name: name of the setting
-        :param default: default value for the setting to have.
-        :return: load_value
-        """
-        if self.uid != 0:
-            setting_uid_name = '%s/%s' % (self.uid, setting_name)
-        else:
-            setting_uid_name = setting_name
-
-        if hasattr(self, setting_name) and getattr(self, setting_name) is not None:
-            return getattr(self, setting_name)
-        if not setting_name.startswith('_'):
-            load_value = self.read_persistent(setting_type, setting_uid_name, default)
-        else:
-            load_value = default
-        setattr(self, setting_name, load_value)
-        return load_value
-
-    def flush(self):
-        for attr in dir(self):
-            if attr.startswith('_'):
-                continue
-            if attr == 'uid':
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            if self.uid != 0:
-                uid_attr = '%d/%s' % (self.uid, attr)
-            else:
-                uid_attr = attr
-            if isinstance(value, (int, bool, str, float)):
-                self.write_persistent(uid_attr, value)
-
-    def update(self, setting_name, value):
-        if hasattr(self, setting_name):
-            old_value = getattr(self, setting_name)
-        else:
-            old_value = None
-        setattr(self, setting_name, value)
-        self(setting_name, (value, old_value))
-
     def execute(self, control_name, *args):
         try:
             self.instances['control'][control_name](*args)
@@ -1786,14 +1906,14 @@ class Device:
             pass
 
     def signal(self, code, *message):
-        if self.uid != 0:
-            code = '%d;%s' % (self.uid, code)
+        if self._uid != 0:
+            code = '%d;%s' % (self._uid, code)
         if self.device_root is not None and self.device_root is not self:
             self.device_root.signal(code, *message)
 
     def last_signal(self, signal):
-        if self.uid != 0:
-            signal = '%d;%s' % (self.uid, signal)
+        if self._uid != 0:
+            signal = '%d;%s' % (self._uid, signal)
         if self.device_root is not None and self.device_root is not self:
             try:
                 return self.device_root.last_signal(signal)
@@ -1802,14 +1922,14 @@ class Device:
         return None
 
     def listen(self, signal, funct):
-        if self.uid != 0:
-            signal = '%d;%s' % (self.uid, signal)
+        if self._uid != 0:
+            signal = '%d;%s' % (self._uid, signal)
         if self.device_root is not None and self.device_root is not self:
             self.device_root.listen(signal, funct)
 
     def unlisten(self, signal, funct):
-        if self.uid != 0:
-            signal = '%d;%s' % (self.uid, signal)
+        if self._uid != 0:
+            signal = '%d;%s' % (self._uid, signal)
         if self.device_root is not None and self.device_root is not self:
             self.device_root.unlisten(signal, funct)
 
@@ -2051,7 +2171,6 @@ class Kernel(Device):
         self.device_root = self
 
         # Persistent storage if it exists.
-        self.config = None
         if config is not None:
             self.set_config(config)
 
@@ -2084,58 +2203,36 @@ class Kernel(Device):
         """
         self.save_keymap_alias()
         Device.shutdown(self, channel)
-
-        if self.config is not None:
-            self.config.Flush()
+        self.flush()
 
     def save_keymap_alias(self):
-        config = self.config
-        if config is None:
-            return
-        config.DeleteGroup('keymap')
-        config.DeleteGroup('alias')
+        keys = self.derive('keymap')
+        alias = self.derive('alias')
 
-        config.SetPath('keymap')
+        keys.clear_persistent()
+        alias.clear_persistent()
+
         for key in self.keymap:
             if key is None or len(key) == 0:
                 continue
-            config.Write(key, self.keymap[key])
-        config.SetPath('..')
+            keys.write_persistent(key, self.keymap[key])
 
-        config.SetPath('alias')
         for key in self.alias:
             if key is None or len(key) == 0:
                 continue
-            config.Write(key, self.alias[key])
-        config.SetPath('..')
+            alias.write_persistent(key, self.alias[key])
 
     def boot_keymap(self):
         self.keymap = dict()
-        config = self.config
-        if config is None:
-            self.default_keymap()
-            return
-        config.SetPath('keymap')
-        m, value, i = config.GetFirstEntry()
-        while m:
-            self.keymap[value] = config.Read(value, '')
-            m, value, i = config.GetNextEntry(i)
-        config.SetPath('..')
+        prefs = self.derive('keymap')
+        prefs.load_persistent_string_dict(self.keymap)
         if not len(self.keymap):
             self.default_keymap()
 
     def boot_alias(self):
         self.alias = dict()
-        config = self.config
-        if config is None:
-            self.default_alias()
-            return
-        config.SetPath('alias')
-        m, value, i = config.GetFirstEntry()
-        while m:
-            self.alias[value] = config.Read(value, '')
-            m, value, i = config.GetNextEntry(i)
-        config.SetPath('..')
+        prefs = self.derive('alias')
+        prefs.load_persistent_string_dict(self.alias)
         if not len(self.alias):
             self.default_alias()
 
@@ -2149,10 +2246,10 @@ class Kernel(Device):
         self.keymap['numpad_up'] = '+translate_up'
         self.keymap['numpad_left'] = '+translate_left'
         self.keymap['numpad_right'] = '+translate_right'
-        self.keymap['numpad*'] = '+scale_up'
-        self.keymap['numpad/'] = '+scale_down'
-        self.keymap['numpad+'] = '+rotate_cw'
-        self.keymap['numpad-'] = '+rotate_ccw'
+        self.keymap['numpad_multiply'] = '+scale_up'
+        self.keymap['numpad_divide'] = '+scale_down'
+        self.keymap['numpad_add'] = '+rotate_cw'
+        self.keymap['numpad_subtract'] = '+rotate_ccw'
         self.keymap['control+a'] = 'element *'
         self.keymap['control+i'] = 'element ~'
         self.keymap['control+f'] = 'control Fill'
@@ -2212,94 +2309,29 @@ class Kernel(Device):
         self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
         self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
 
-    def read_item_persistent(self, item):
-        return self.config.Read(item)
-
-    def read_persistent(self, t, key, default=None, uid=0):
-        if self.config is None:
-            return default
-        if uid != 0:
-            key = '%s/%s' % (str(uid), key)
-        if default is not None:
-            if t == str:
-                return self.config.Read(key, default)
-            elif t == int:
-                return self.config.ReadInt(key, default)
-            elif t == float:
-                return self.config.ReadFloat(key, default)
-            elif t == bool:
-                return self.config.ReadBool(key, default)
-        if t == str:
-            return self.config.Read(key)
-        elif t == int:
-            return self.config.ReadInt(key)
-        elif t == float:
-            return self.config.ReadFloat(key)
-        elif t == bool:
-            return self.config.ReadBool(key)
-
-    def write_persistent(self, key, value, uid=0):
-        if self.config is None:
-            return
-        if uid != 0:
-            key = '%d/%s' % (uid, key)
-        if isinstance(value, str):
-            self.config.Write(key, value)
-        elif isinstance(value, int):
-            self.config.WriteInt(key, value)
-        elif isinstance(value, float):
-            self.config.WriteFloat(key, value)
-        elif isinstance(value, bool):
-            self.config.WriteBool(key, value)
-
-    def set_config(self, config):
-        self.config = config
-
-        # Write any data already set in the device before registering the config.
-        for attr in dir(self):
-            if attr.startswith('_'):
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, float, str)):
-                self.write_persistent(attr, value)
-
-        # Iterate all the root entries for the registered config.
-        more, value, index = config.GetFirstEntry()
-        while more:
-            if not value.startswith('_'):
-                if not hasattr(self, value):
-                    setattr(self, value, None)
-            more, value, index = config.GetNextEntry(index)
-
     def device_boot(self):
         """
         Boots any devices that are set to boot.
 
         :return:
         """
-        self.setting(str, 'list_devices', '')
-        devices = self.list_devices
-        for device in devices.split(';'):
+        for device in self.derivable():
             try:
                 d = int(device)
             except ValueError:
-                return
-            device_name = self.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
-            autoboot = self.read_persistent(bool, 'autoboot', True, uid=d)
+                continue
+            settings = self.derive(str(d))
+            device_name = settings.read_persistent(str, 'device_name', 'Lhystudios')
+            autoboot = settings.read_persistent(bool, 'autoboot', True)
             if autoboot:
-                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device))
+                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device), config=self._config)
                 dev.boot()
 
     def device_add(self, device_type, device_uid):
-        self.write_persistent('device_name', device_type, uid=device_uid)
-        self.write_persistent('autoboot', True, uid=device_uid)
-        self.setting(str, 'list_devices', '')
-        devices = [d for d in self.list_devices.split(';') if d != '']
-        devices.append(str(device_uid))
-        self.list_devices = ';'.join(devices)
-        self.write_persistent('list_devices', self.list_devices)
+        settings = self.derive(str(device_uid))
+        settings.setting(str, 'device_name', device_type)
+        settings.setting(bool, 'autoboot', True)
+        settings.flush()
 
     def register_loader(self, name, obj):
         self.registered['load'][name] = obj
