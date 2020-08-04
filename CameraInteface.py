@@ -158,50 +158,6 @@ class CameraInterface(wx.Frame, Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
-    def boot(self):
-        kernel = self.device.device_root
-        config = kernel._config
-        if config is None:
-            self.load_default()
-            return
-        config.SetPath('operations')
-
-        more, value, index = config.GetFirstGroup()
-        if not more:
-            self.load_default()
-            config.SetPath('..')
-            return
-        ops = [None] * config.GetNumberOfGroups(bRecursive=False)
-        while more:
-            config.SetPath(value)
-            op = LaserOperation()
-            try:
-                ops[int(value)] = op
-            except (ValueError, IndexError):
-                ops.append(op)
-            m, value, i = config.GetFirstEntry()
-            while m:
-                t = getattr(op, value, None)
-                try:
-                    if isinstance(t, str):
-                        setattr(op, value, config.Read(value, t))
-                    elif isinstance(t, float):
-                        setattr(op, value, config.ReadFloat(value, t))
-                    elif isinstance(t, bool):
-                        setattr(op, value, config.ReadBool(value, t))
-                    elif isinstance(t, int):
-                        setattr(op, value, config.ReadInt(value, t))
-                    elif isinstance(t, Color):
-                        setattr(op, value, Color(config.ReadInt(value, t)))
-                except AttributeError:
-                    pass
-                m, value, i = config.GetNextEntry(i)
-            config.SetPath('..')
-            more, value, index = config.GetNextGroup(index)
-        config.SetPath('..')
-        self.add_ops([o for o in ops if o is not None])
-        self.device.signal('rebuild_tree')
-
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
