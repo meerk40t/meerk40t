@@ -124,6 +124,57 @@ class RasterScripts(Module):
         return ops
 
     @staticmethod
+    def raster_script_xin():
+        ops = list()
+        ops.append({
+            'name': 'crop',
+            'enable': False,
+            'bounds': (0, 0, 100, 100)
+        })
+        ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+        })
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 2
+        })
+        ops.append({
+            'name': 'contrast',
+            'enable': True,
+            'contrast': 25,
+            'brightness': 25,
+        })
+        ops.append({
+            'name': 'unsharp_mask',
+            'enable': True,
+            'percent': 500,
+            'radius': 4,
+            'threshold': 0
+        })
+        ops.append({
+            'name': 'unsharp_mask',
+            'enable': False,
+            'percent': 150,
+            'radius': 1,
+            'threshold': 0
+        })
+        ops.append({
+            'name': 'dither',
+            'enable': True,
+            'type': 0
+        })
+        ops.append({
+            'name': 'output'
+        })
+        return ops
+
+
+    @staticmethod
     def actualize(image, matrix, step_level=1):
         from PIL import Image
 

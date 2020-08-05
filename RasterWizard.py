@@ -77,8 +77,10 @@ class RasterWizard(wx.Frame, Module):
 
     def set_wizard_script(self, name=None, ops=None):
         if name is None:
+            if ops is None:
+                return
             self.ops = ops
-        if self.ops is None:
+        else:
             self.ops = deepcopy(self.device.device_root.registered['raster_script'][name])
         self.list_operation.Clear()
         if self.ops is not None:
