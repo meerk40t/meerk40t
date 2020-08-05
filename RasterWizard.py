@@ -943,7 +943,7 @@ class ToneCurvePanel(wx.Panel):
 
     def on_button_reset_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
         tone_values = [[0, 0], [100, 150], [255, 255]]
-        tone_values = RasterScripts.spline(tone_values)
+
         self.op['values'] = tone_values
         self.device.signal("RasterWizard-Image")
 

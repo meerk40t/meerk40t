@@ -25,6 +25,7 @@ class RasterScripts(Module):
     def sub_register(device):
         device.register('raster_script', "Gold", RasterScripts.raster_script_gold())
         device.register('raster_script', "Stipo", RasterScripts.raster_script_stipo())
+        device.register('raster_script', "Xin", RasterScripts.raster_script_xin())
 
     @staticmethod
     def raster_script_gold():
@@ -44,7 +45,7 @@ class RasterScripts(Module):
             'enable': True,
             'aspect': True,
             'units': 0,
-            'step': 2
+            'step': 3
         })
         ops.append({
             'name': 'contrast',
@@ -126,16 +127,7 @@ class RasterScripts(Module):
     @staticmethod
     def raster_script_xin():
         ops = list()
-        ops.append({
-            'name': 'crop',
-            'enable': False,
-            'bounds': (0, 0, 100, 100)
-        })
-        ops.append({
-            'name': 'grayscale',
-            'enable': True,
-            'invert': False,
-        })
+
         ops.append({
             'name': 'resample',
             'enable': True,
@@ -144,25 +136,18 @@ class RasterScripts(Module):
             'step': 2
         })
         ops.append({
-            'name': 'contrast',
+            'name': 'tone',
             'enable': True,
-            'contrast': 25,
-            'brightness': 25,
+            'values': [[0, 0], [100, 125], [255, 255]]
         })
         ops.append({
             'name': 'unsharp_mask',
             'enable': True,
-            'percent': 500,
-            'radius': 4,
+            'percent': 100,
+            'radius': 8,
             'threshold': 0
         })
-        ops.append({
-            'name': 'unsharp_mask',
-            'enable': False,
-            'percent': 150,
-            'radius': 1,
-            'threshold': 0
-        })
+
         ops.append({
             'name': 'dither',
             'enable': True,
