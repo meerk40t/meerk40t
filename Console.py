@@ -1667,6 +1667,11 @@ class Console(Module, Pipe):
                 yield '----------'
             else:
                 key = args[0].lower()
+                if key == 'default':
+                    kernel.keymap = dict()
+                    kernel.default_keymap()
+                    yield 'Set default keymap.'
+                    return
                 command_line = ' '.join(args[1:])
                 f = command_line.find('bind')
                 if f == -1:  # If bind value has a bind, do not evaluate.
@@ -1700,6 +1705,12 @@ class Console(Module, Pipe):
                     yield '%d: %s -> %s' % (i, key, value)
                 yield '----------'
             else:
+                key = args[0].lower()
+                if key == 'default':
+                    kernel.alias = dict()
+                    kernel.default_alias()
+                    yield 'Set default keymap.'
+                    return
                 kernel.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements

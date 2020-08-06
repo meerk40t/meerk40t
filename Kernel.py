@@ -2274,12 +2274,16 @@ class Kernel(Device):
         self.keymap['f7'] = "window open Controller"
         self.keymap['f8'] = "control Path"
         self.keymap['f9'] = "control Transform"
+        self.keymap['control+f9'] = "control Flip"
         self.keymap['f12'] = "window open Terminal"
         self.keymap['control+alt+g'] = "image wizard Gold"
+        self.keymap['control+alt+x'] = "image wizard Xin"
+        self.keymap['control+alt+s'] = "image wizard Stipo"
         self.keymap['alt+f12'] = "terminal_ruida"
         self.keymap['alt+f13'] = 'terminal_watch'
         self.keymap['pause'] = "control Realtime Pause_Resume"
         self.keymap['home'] = "home"
+        self.keymap['control+z'] = "reset"
 
     def default_alias(self):
         self.alias['+scale_up'] = "loop scale 1.02"

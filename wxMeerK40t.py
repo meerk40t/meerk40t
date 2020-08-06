@@ -487,6 +487,7 @@ class MeerK40t(wx.Frame, Module):
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
         device.control_instance_add("Transform", self.open_transform_dialog)
+        device.control_instance_add("Flip", self.open_flip_dialog)
         device.control_instance_add("Path", self.open_path_dialog)
         device.control_instance_add("Fill", self.open_fill_dialog)
         device.control_instance_add("Stroke", self.open_stroke_dialog)
@@ -1140,6 +1141,7 @@ class MeerK40t(wx.Frame, Module):
                 for element in kernel.elements.elems():
                     try:
                         element *= mx
+                        element.modified()
                     except AttributeError:
                         pass
 
@@ -1182,6 +1184,26 @@ class MeerK40t(wx.Frame, Module):
             for elem in elements.elems(emphasized=True):
                 elem.stroke = color
                 elem.altered()
+
+    def open_flip_dialog(self):
+        dlg = wx.TextEntryDialog(self, _("Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"),
+                                 _("Double Side Flip"), '')
+        dlg.SetValue('')
+        if dlg.ShowModal() == wx.ID_OK:
+            p = self.device
+            kernel = p.device_root
+            wmils = p.bed_width * MILS_IN_MM
+            hmils = p.bed_height * MILS_IN_MM
+            length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
+            mx = Matrix()
+            mx.post_scale(-1.0, 1, length/2.0, 0)
+            for element in kernel.elements.elems(emphasized=True):
+                try:
+                    element *= mx
+                    element.modified()
+                except AttributeError:
+                    pass
+        dlg.Destroy()
 
     def open_path_dialog(self):
         dlg = wx.TextEntryDialog(self, _("Enter SVG Path Data"), _("Path Entry"), '')
