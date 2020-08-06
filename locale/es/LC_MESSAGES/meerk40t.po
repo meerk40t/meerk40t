@@ -3,10 +3,10 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-08-06 07:28-0700\n"
+"PO-Revision-Date: 2020-08-06 07:38-0700\n"
 "Last-Translator: tatarize\n"
-"Language-Team: Italian (Italy)\n"
-"Language: it_IT\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,91 +19,92 @@ msgstr ""
 #: About.py:32 loco:5ed2cbe74d3dd779ce269071
 #, python-format
 msgid "About %s v%s"
-msgstr "Circa %s v %s"
+msgstr "Acerca de %s v %s"
 
 #: About.py:50 wxMeerK40t.py:235 loco:5ed2cbe74d3dd779ce269072
 msgid "About"
-msgstr "Di"
+msgstr "Acerca de"
 
 #: Adjustments.py:31 OperationProperty.py:74 loco:5ed2cbe74d3dd779ce269073
 msgid "Group Pulses"
-msgstr "Impulsi di gruppo"
+msgstr "Pulsos grupales"
 
 #: Adjustments.py:76 loco:5ed2cbe74d3dd779ce269074
 msgid "Adjustments"
-msgstr "Regolazioni"
+msgstr "Ajustes"
 
 #: Adjustments.py:77 loco:5ed2cbe74d3dd779ce269075
 msgid "Override the Speed setting. Use this instead."
-msgstr "Sostituisci l'impostazione della velocità. Usa questo invece."
+msgstr "Anular la configuración de velocidad. Use esto en su lugar."
 
 #: Adjustments.py:79 loco:5ed2cbe74d3dd779ce269076
 msgid "Override the Power setting. Use this instead."
-msgstr "Sostituisci l'impostazione di Potenza. Usa questo invece."
+msgstr "Anule la configuración de Energía. Use esto en su lugar."
 
 #: Adjustments.py:81 loco:5ed2cbe74d3dd779ce269077
 msgid "Override the Overscan setting. Use this instead."
-msgstr "Ignora l'impostazione Overscan. Usa questo invece."
+msgstr "Anule la configuración de Overscan. Use esto en su lugar."
 
 #: Adjustments.py:83 loco:5ed2cbe74d3dd779ce269078
 msgid "Scale the desired speed settings by this percent."
-msgstr "Scala le impostazioni di velocità desiderate di questa percentuale."
+msgstr "Escale la configuración de velocidad deseada en este porcentaje."
 
 #: Adjustments.py:85 loco:5ed2cbe74d3dd779ce269079
 msgid "Scale the Power settings by this Percent. (Crimps to [0,1000])"
 msgstr ""
-"Ridimensiona le impostazioni di Potenza di questa percentuale. (Crolla a "
+"Escale la configuración de Potencia en este porcentaje. (Se engarza a "
 "[0,1000])"
 
 #: Adjustments.py:87 OperationProperty.py:187 loco:5ed2cbe74d3dd779ce26907a
 msgid "Attempts to adjust the pulse grouping for data efficiency."
 msgstr ""
-"Tenta di regolare il raggruppamento degli impulsi per l'efficienza dei dati."
+"Intenta ajustar la agrupación de pulsos para mejorar la eficiencia de los "
+"datos."
 
 #: Adjustments.py:89 loco:5ed2cbe74d3dd779ce26907b
 msgid "Move writer position towards top."
-msgstr "Sposta la posizione dello scrittore verso l'alto."
+msgstr "Mover la posición del escritor hacia la parte superior."
 
 #: Adjustments.py:91 loco:5ed2cbe74d3dd779ce26907c
 msgid "Move writer position towards left."
-msgstr "Spostare la posizione dello scrittore verso sinistra."
+msgstr "Mueva la posición del escritor hacia la izquierda."
 
 #: Adjustments.py:92 loco:5ed2cbe74d3dd779ce26907d
 msgid "Set writer position as origin (0,0)"
-msgstr "Imposta la posizione dello scrittore come origine (0,0)"
+msgstr "Establecer la posición del escritor como origen (0,0)"
 
 #: Adjustments.py:95 loco:5ed2cbe74d3dd779ce26907e
 msgid "Move writer position towards right."
-msgstr "Spostare la posizione dello scrittore verso destra."
+msgstr "Mover la posición del escritor hacia la derecha."
 
 #: Adjustments.py:97 loco:5ed2cbe74d3dd779ce26907f
 msgid "Move writer position towards bottom."
-msgstr "Sposta la posizione dello scrittore verso il basso."
+msgstr "Mueva la posición del escritor hacia abajo."
 
 #: Adjustments.py:99 loco:5ed2cbe74d3dd779ce269080
 msgid "Flush buffers to empty."
-msgstr "Lavare i buffer per svuotarli."
+msgstr "Lave los tampones para vaciarlos."
 
 #: Adjustments.py:100 loco:5ed2cbe74d3dd779ce269081
 msgid "Safely exit current job, purge the spooler."
-msgstr "Uscire in sicurezza dal lavoro corrente, eliminare lo spooler."
+msgstr "Salga de forma segura del trabajo actual, purgue la cola de impresión."
 
 #: Adjustments.py:103 loco:5ed2cbe74d3dd779ce269082
 msgid "Emergency Stop. Kill all buffers stop at this location."
 msgstr ""
-"Arresto di emergenza. Uccidi tutti i buffer fermati in questa posizione."
+"Parada de emergencia. Mata a todos los buffers que se detienen en este lugar."
 
 #: Adjustments.py:104 loco:5ed2cbe74d3dd779ce269083
 msgid "Status Information"
-msgstr "Informazioni sullo stato"
+msgstr "Informacion de estado"
 
 #: Adjustments.py:113 loco:5ed2cbe74d3dd779ce269084
 msgid "Power Ratio"
-msgstr "Rapporto di potenza"
+msgstr "Relación de potencia"
 
 #: Adjustments.py:114 loco:5ed2cbe74d3dd779ce269085
 msgid "Speed Ratio"
-msgstr "Rapporto di velocità"
+msgstr "Relación de velocidad"
 
 #: Adjustments.py:115 loco:5ed2cbe74d3dd779ce269086
 msgid "Overscan Override"
@@ -111,79 +112,79 @@ msgstr "Overscan Override"
 
 #: Adjustments.py:116 loco:5ed2cbe74d3dd779ce269087
 msgid "Power Override"
-msgstr "Power Override"
+msgstr "Anulación de energía"
 
 #: Adjustments.py:117 loco:5ed2cbe74d3dd779ce269088
 msgid "Speed Override"
-msgstr "Sostituzione velocità"
+msgstr "Anulación de velocidad"
 
 #: Adjustments.py:169 Alignment.py:73 BufferView.py:37 Controller.py:82
 #: JobInfo.py:127 JobSpooler.py:59 Navigation.py:344 Preferences.py:96
 #: RotarySettings.py:70 loco:5ed2cbe74d3dd779ce269089
 msgid "You do not have a selected device."
-msgstr "Non hai un dispositivo selezionato."
+msgstr "No tienes un dispositivo seleccionado."
 
 #: Adjustments.py:170 Alignment.py:74 BufferView.py:38 Controller.py:83
 #: JobInfo.py:128 JobSpooler.py:60 Navigation.py:345 Preferences.py:97
 #: RotarySettings.py:71 loco:5ed2cbe74d3dd779ce26908a
 msgid "No Device Selected."
-msgstr "Nessun dispositivo selezionato."
+msgstr "Ningún dispositivo seleccionado."
 
 #: Alignment.py:20 loco:5ed2cbe74d3dd779ce26908b
 msgid "Vertical Alignment Finished"
-msgstr "Allineamento verticale finito"
+msgstr "Alineación vertical terminada"
 
 #: Alignment.py:23 loco:5ed2cbe74d3dd779ce26908c
 msgid "Horizontal Alignment Finished"
-msgstr "Allineamento orizzontale finito"
+msgstr "Alineación horizontal terminada"
 
 #: Alignment.py:83 loco:5ed2cbe74d3dd779ce26908d
 msgid "Alignment."
-msgstr "Allineamento."
+msgstr "Alineación."
 
 #: Alignment.py:84 loco:5ed2cbe74d3dd779ce26908e
 msgid "Perform vertical near-far alignment test"
-msgstr "Eseguire il test di allineamento verticale vicino-lontano"
+msgstr "Realizar una prueba de alineación vertical cerca-lejos vertical"
 
 #: Alignment.py:87 loco:5ed2cbe74d3dd779ce26908f
 msgid "Perform a vertical line alignment test"
-msgstr "Eseguire un test di allineamento della linea verticale"
+msgstr "Realizar una prueba de alineación de línea vertical"
 
 #: Alignment.py:90 loco:5ed2cbe74d3dd779ce269090
 msgid "How far down should we move to test?"
-msgstr "Fino a che punto dovremmo spostarci per testare?"
+msgstr "¿Qué tan abajo debemos movernos para probar?"
 
 #: Alignment.py:93 Alignment.py:108 loco:5ed2cbe74d3dd779ce269091
 msgid ""
 "Heavily misaligned mirrors will need more power to see the line. Once you "
 "can see the line. Turn this down."
 msgstr ""
-"Gli specchi fortemente disallineati avranno bisogno di più potere per vedere "
-"la linea. Una volta che puoi vedere la linea. Abbassa questo."
+"Los espejos muy desalineados necesitarán más potencia para ver la línea. Una "
+"vez que puedas ver la línea. Baja esto."
 
 #: Alignment.py:95 loco:5ed2cbe74d3dd779ce269092
 msgid "We are done with vertical alignment."
-msgstr "Abbiamo finito con l'allineamento verticale."
+msgstr "Hemos terminado con la alineación vertical."
 
 #: Alignment.py:96 loco:5ed2cbe74d3dd779ce269093
 msgid "Perform horizontal near-far alignment test"
-msgstr "Eseguire un test di allineamento orizzontale ravvicinato"
+msgstr "Realizar una prueba de alineación horizontal cerca-lejos"
 
 #: Alignment.py:100 loco:5ed2cbe74d3dd779ce269094
 msgid "Perform horizontal line alignment test"
-msgstr "Eseguire il test di allineamento della linea orizzontale"
+msgstr "Realizar prueba de alineación de línea horizontal"
 
 #: Alignment.py:104 loco:5ed2cbe74d3dd779ce269095
 msgid "How far right should we move to test?"
-msgstr "Quanto a destra dovremmo muoverci per testare?"
+msgstr "¿Qué tan a la derecha debemos movernos para probar?"
 
 #: Alignment.py:112 loco:5ed2cbe74d3dd779ce269096
 msgid "Perform 4 corners confirmation test"
-msgstr "Eseguire un test di conferma dei 4 angoli"
+msgstr "Realizar la prueba de confirmación de 4 esquinas"
 
 #: Alignment.py:116 loco:5ed2cbe74d3dd779ce269097
 msgid "Perform square confirmation test"
-msgstr "Eseguire il test di conferma del quadrato"
+msgstr "Realizar prueba de confirmación cuadrada"
 
 #: Alignment.py:131 loco:5ed2cbe74d3dd779ce269098
 msgid ""
@@ -205,23 +206,23 @@ msgstr ""
 
 #: Alignment.py:140 loco:5ed2cbe74d3dd779ce269099
 msgid "Testing width in mm"
-msgstr "Larghezza di prova in mm"
+msgstr "Ancho de prueba en mm"
 
 #: Alignment.py:146 Alignment.py:163 loco:5ed2cbe74d3dd779ce26909a
 msgid "Testing power"
-msgstr "Testare la potenza"
+msgstr "Prueba de potencia"
 
 #: Alignment.py:152 loco:5ed2cbe74d3dd779ce26909b
 msgid "Get the movement of the beam going right to overlap. "
-msgstr "Ottieni il movimento del raggio andando a sovrapporsi. "
+msgstr "Haga que el movimiento de la viga se superponga correctamente. "
 
 #: Alignment.py:158 loco:5ed2cbe74d3dd779ce26909c
 msgid "Testing height in mm"
-msgstr "Altezza di prova in mm"
+msgstr "Altura de prueba en mm"
 
 #: BufferView.py:39 loco:5ed2cbe74d3dd779ce26909d
 msgid "Could not find buffer.\n"
-msgstr "Impossibile trovare il buffer.\n"
+msgstr "No se pudo encontrar el búfer.\n"
 
 #: BufferView.py:65 loco:5ed2cbe74d3dd779ce26909e
 msgid "BufferView"
@@ -233,328 +234,327 @@ msgstr "Buffer"
 
 #: CH341DriverBase.py:61 loco:5ed2cbe74d3dd779ce2690a0
 msgid "Attempting connection to USB."
-msgstr "Tentativo di connessione a USB."
+msgstr "Intentando conexión a USB."
 
 #: CH341DriverBase.py:63 loco:5ed2cbe74d3dd779ce2690a1
 msgid "Connection to USB failed.\n"
-msgstr "Connessione a USB non riuscita.\n"
+msgstr "La conexión al USB falló.\n"
 
 #: CH341DriverBase.py:65 loco:5ed2cbe74d3dd779ce2690a2
 msgid "Using LibUSB to connect."
-msgstr "Utilizzo di LibUSB per la connessione."
+msgstr "Usando LibUSB para conectar."
 
 #: CH341DriverBase.py:67 loco:5ed2cbe74d3dd779ce2690a3
 msgid "Using CH341 Driver to connect."
-msgstr "Utilizzo del driver CH341 per la connessione."
+msgstr "Usando el controlador CH341 para conectar."
 
 #: CH341DriverBase.py:69 loco:5ed2cbe74d3dd779ce2690a4
 msgid "Using Mock Driver."
-msgstr "Utilizzando Mock Driver."
+msgstr "Usando Mock Driver."
 
 #: CH341DriverBase.py:71 loco:5ed2cbe74d3dd779ce2690a5
 msgid "Finding devices."
-msgstr "Trovare dispositivi."
+msgstr "Encontrar dispositivos."
 
 #: CH341DriverBase.py:73 loco:5ed2cbe74d3dd779ce2690a6
 msgid "PyUsb detected no backend LibUSB driver."
-msgstr "PyUsb non ha rilevato driver LibUSB back-end."
+msgstr "PyUsb no detectó ningún controlador LibUSB de fondo."
 
 #: CH341DriverBase.py:75 loco:5ed2cbe74d3dd779ce2690a7
 msgid "PyUsb is not installed. Skipping."
-msgstr "PyUsb non è installato. Saltare."
+msgstr "PyUsb no está instalado. Salto a la comba."
 
 #: CH341DriverBase.py:77 loco:5ed2cbe74d3dd779ce2690a8
 msgid "K40 device detected:"
-msgstr "Dispositivo K40 rilevato:"
+msgstr "Dispositivo K40 detectado:"
 
 #: CH341DriverBase.py:79 loco:5ed2cbe74d3dd779ce2690a9
 msgid "Devices Not Found."
-msgstr "Dispositivi non trovati."
+msgstr "Dispositivos no encontrados."
 
 #: CH341DriverBase.py:81 loco:5ed2cbe74d3dd779ce2690aa
 msgid "K40 devices were found but they were rejected."
-msgstr "I dispositivi K40 sono stati trovati ma sono stati respinti."
+msgstr "Se encontraron dispositivos K40 pero fueron rechazados."
 
 #: CH341DriverBase.py:83 loco:5ed2cbe74d3dd779ce2690ab
 msgid "Config Set"
-msgstr "Set di configurazione"
+msgstr "Conjunto de configuración"
 
 #: CH341DriverBase.py:85 loco:5ed2cbe74d3dd779ce2690ac
 msgid "Attempting to detach kernel."
-msgstr "Tentativo di scollegare il kernel."
+msgstr "Intentando separar el núcleo."
 
 #: CH341DriverBase.py:87 loco:5ed2cbe74d3dd779ce2690ad
 msgid "Kernel detach: Success."
-msgstr "Scollegamento del kernel: successo."
+msgstr "Separación del grano: éxito."
 
 #: CH341DriverBase.py:89 loco:5ed2cbe74d3dd779ce2690ae
 msgid "Kernel detach: Failed."
-msgstr "Scollegamento del kernel: non riuscito."
+msgstr "Separación del grano: falló."
 
 #: CH341DriverBase.py:91 loco:5ed2cbe74d3dd779ce2690af
 msgid "Kernel detach: Not Implemented."
-msgstr "Scollegamento del kernel: non implementato."
+msgstr "Separación de kernel: no implementado."
 
 #: CH341DriverBase.py:93 loco:5ed2cbe74d3dd779ce2690b0
 msgid "Setting Active Config"
-msgstr "Impostazione della configurazione attiva"
+msgstr "Configuración de configuración activa"
 
 #: CH341DriverBase.py:95 loco:5ed2cbe74d3dd779ce2690b1
 msgid "Active Config: Success."
-msgstr "Configurazione attiva: successo."
+msgstr "Configuración activa: éxito."
 
 #: CH341DriverBase.py:97 loco:5ed2cbe74d3dd779ce2690b2
 msgid "Active Config: Failed."
-msgstr "Configurazione attiva: non riuscita."
+msgstr "Configuración activa: fallida."
 
 #: CH341DriverBase.py:99 loco:5ed2cbe74d3dd779ce2690b3
 msgid "Attempting to claim interface."
-msgstr "Tentativo di rivendicare l'interfaccia."
+msgstr "Intentando reclamar la interfaz."
 
 #: CH341DriverBase.py:101 loco:5ed2cbe74d3dd779ce2690b4
 msgid "Interface claim: Success"
-msgstr "Affermazione dell'interfaccia: successo"
+msgstr "Reclamación de interfaz: éxito"
 
 #: CH341DriverBase.py:103 loco:5ed2cbe74d3dd779ce2690b5
 msgid "Interface claim: Failed. (Interface is in use.)"
-msgstr "Richiesta interfaccia: non riuscita. (L'interfaccia è in uso.)"
+msgstr "Reclamación de interfaz: fallida. (La interfaz está en uso)."
 
 #: CH341DriverBase.py:105 loco:5ed2cbe74d3dd779ce2690b6
 msgid "USB Connected."
-msgstr "USB collegato."
+msgstr "Usb conectado."
 
 #: CH341DriverBase.py:107 loco:5ed2cbe74d3dd779ce2690b7
 msgid "Sending CH341 mode change to EPP1.9."
-msgstr "L'invio della modalità CH341 cambia in EPP1.9."
+msgstr "El envío del modo CH341 cambia a EPP1.9."
 
 #: CH341DriverBase.py:109 loco:5ed2cbe74d3dd779ce2690b8
 msgid "CH341 mode change to EPP1.9: Success."
-msgstr "Cambio modalità CH341 in EPP1.9: successo."
+msgstr "Cambio de modo CH341 a EPP1.9: Éxito."
 
 #: CH341DriverBase.py:111 loco:5ed2cbe74d3dd779ce2690b9
 msgid "CH341 mode change to EPP1.9: Fail."
-msgstr "Cambio della modalità CH341 in EPP1.9: Fallito."
+msgstr "Cambio de modo CH341 a EPP1.9: Error."
 
 #: CH341DriverBase.py:113 loco:5ed2cbe74d3dd779ce2690ba
 msgid "Device Connected.\n"
-msgstr "Dispositivo collegato.\n"
+msgstr "Dispositivo conectado\n"
 
 #: CH341DriverBase.py:115 loco:5ed2cbe74d3dd779ce2690bb
 msgid "Attempting disconnection from USB."
-msgstr "Tentativo di disconnessione dall'USB."
+msgstr "Intentando desconectarse del USB."
 
 #: CH341DriverBase.py:117 loco:5ed2cbe74d3dd779ce2690bc
 msgid "Attempting kernel attach"
-msgstr "Tentativo di allegare il kernel"
+msgstr "Intentando kernel attach"
 
 #: CH341DriverBase.py:119 loco:5ed2cbe74d3dd779ce2690bd
 msgid "Kernel attach: Success."
-msgstr "Collegamento del kernel: successo."
+msgstr "Kernel adjuntar: éxito."
 
 #: CH341DriverBase.py:121 loco:5ed2cbe74d3dd779ce2690be
 msgid "Kernel attach: Fail."
-msgstr "Kernel attach: Fallito."
+msgstr "Kernel adjuntar: falla."
 
 #: CH341DriverBase.py:123 loco:5ed2cbe74d3dd779ce2690bf
 msgid "Attempting to release interface."
-msgstr "Tentativo di rilascio dell'interfaccia."
+msgstr "Intentando liberar la interfaz."
 
 #: CH341DriverBase.py:125 loco:5ed2cbe74d3dd779ce2690c0
 msgid "Interface released."
-msgstr "Interfaccia rilasciata."
+msgstr "Interfaz lanzada."
 
 #: CH341DriverBase.py:127 loco:5ed2cbe74d3dd779ce2690c1
 msgid "Interface did not exist."
-msgstr "L'interfaccia non esisteva."
+msgstr "La interfaz no existía."
 
 #: CH341DriverBase.py:129 loco:5ed2cbe74d3dd779ce2690c2
 msgid "Attempting to dispose resources."
-msgstr "Tentativo di smaltire risorse."
+msgstr "Intentar disponer de recursos."
 
 #: CH341DriverBase.py:131 loco:5ed2cbe74d3dd779ce2690c3
 msgid "Dispose Resources: Success"
-msgstr "Smaltisci risorse: successo"
+msgstr "Desechar recursos: éxito"
 
 #: CH341DriverBase.py:133 loco:5ed2cbe74d3dd779ce2690c4
 msgid "Dispose Resources: Fail"
-msgstr "Smaltisci risorse: errore"
+msgstr "Desechar recursos: fallar"
 
 #: CH341DriverBase.py:135 loco:5ed2cbe74d3dd779ce2690c5
 msgid "Attempting USB reset."
-msgstr "Tentativo di ripristino USB."
+msgstr "Intentando restablecer USB."
 
 #: CH341DriverBase.py:137 loco:5ed2cbe74d3dd779ce2690c6
 msgid "USB connection did not exist."
-msgstr "La connessione USB non esisteva."
+msgstr "La conexión USB no existía."
 
 #: CH341DriverBase.py:139 loco:5ed2cbe74d3dd779ce2690c7
 msgid "USB connection reset."
-msgstr "Ripristino connessione USB."
+msgstr "Restablecimiento de la conexión USB."
 
 #: CH341DriverBase.py:141 loco:5ed2cbe74d3dd779ce2690c8
 msgid "USB Disconnection Successful.\n"
-msgstr "Disconnessione USB riuscita.\n"
+msgstr "Desconexión USB exitosa.\n"
 
 #: CH341DriverBase.py:143 loco:5ed2cbe74d3dd779ce2690c9
 #, python-format
 msgid "CH341 Chip Version: %d"
-msgstr "Versione chip CH341: %d"
+msgstr "Versión del chip CH341: %d"
 
 #: CH341DriverBase.py:145 loco:5ed2cbe74d3dd779ce2690ca
 msgid "Driver Detected: LibUsb"
-msgstr "Driver rilevato: LibUsb"
+msgstr "Controlador detectado: LibUsb"
 
 #: CH341DriverBase.py:147 loco:5ed2cbe74d3dd779ce2690cb
 msgid "Driver Detected: CH341"
-msgstr "Driver rilevato: CH341"
+msgstr "Controlador detectado: CH341"
 
 #: CH341DriverBase.py:148 Kernel.py:1968 loco:5ed2cbe74d3dd779ce2690cc
 msgid "Unknown"
-msgstr "Sconosciuto"
+msgstr "Desconocido"
 
 #: CameraInteface.py:25 loco:5ed2cbe74d3dd779ce2690cd
 msgid "Reset Perspective"
-msgstr "Ripristina prospettiva"
+msgstr "Restablecer perspectiva"
 
 #: CameraInteface.py:27 loco:5ed2cbe74d3dd779ce2690ce
 msgid "Reset Fisheye"
-msgstr "Reimposta Fisheye"
+msgstr "Restablecer ojo de pez"
 
 #: CameraInteface.py:40 loco:5ed2cbe74d3dd779ce2690cf
 msgid "Set Camera 0"
-msgstr "Imposta telecamera 0"
+msgstr "Establecer cámara 0"
 
 #: CameraInteface.py:43 loco:5ed2cbe74d3dd779ce2690d0
 msgid "Set Camera 1"
-msgstr "Imposta telecamera 1"
+msgstr "Establecer cámara 1"
 
 #: CameraInteface.py:46 loco:5ed2cbe74d3dd779ce2690d1
 msgid "Set Camera 2"
-msgstr "Imposta telecamera 2"
+msgstr "Establecer cámara 2"
 
 #: CameraInteface.py:49 loco:5ed2cbe74d3dd779ce2690d2
 msgid "Set Camera 3"
-msgstr "Imposta telecamera 3"
+msgstr "Establecer cámara 3"
 
 #: CameraInteface.py:52 loco:5ed2cbe74d3dd779ce2690d3
 msgid "Set Camera 4"
-msgstr "Imposta telecamera 4"
+msgstr "Establecer cámara 4"
 
 #: CameraInteface.py:55 wxMeerK40t.py:172 wxMeerK40t.py:222
 #: loco:5ed2cbe74d3dd779ce2690d4
 msgid "Camera"
-msgstr "telecamera "
+msgstr "Cámara"
 
 #: CameraInteface.py:61 loco:5ed2cbe74d3dd779ce2690d5
 msgid "Correct Fisheye"
-msgstr "Fisheye corretto"
+msgstr "Corregir ojo de pez"
 
 #: CameraInteface.py:62 loco:5ed2cbe74d3dd779ce2690d6
 msgid "Correct Perspective"
-msgstr "Prospettiva corretta"
+msgstr "Perspectiva correcta"
 
 #: CameraInteface.py:141 loco:5ed2cbe74d3dd779ce2690d7
 msgid "Update Image"
-msgstr "Aggiorna immagine"
+msgstr "Actualizar imagen"
 
 #: CameraInteface.py:143 loco:5ed2cbe74d3dd779ce2690d8
 msgid "Export Snapsnot"
-msgstr "Esporta Snapnot"
+msgstr "Exportar snapsnot"
 
 #: CameraInteface.py:145 loco:5ed2cbe74d3dd779ce2690d9
 msgid "Detect Distortions/Calibration"
-msgstr "Rileva distorsioni / calibrazione"
+msgstr "Detectar distorsiones / calibración"
 
 #: CameraInteface.py:256 loco:5ed2cbe74d3dd779ce2690da
 msgid "Could not import Camera requirements"
-msgstr "Impossibile importare i requisiti della fotocamera"
+msgstr "No se pudieron importar los requisitos de la cámara"
 
 #: CameraInteface.py:257 loco:5ed2cbe74d3dd779ce2690db
 msgid "Imports Failed"
-msgstr "Importazioni non riuscite"
+msgstr "Importaciones fallidas"
 
 #: CameraInteface.py:278 loco:5ed2cbe74d3dd779ce2690dc
 msgid "Checkerboard 6x9 pattern not found."
-msgstr "Motivo a scacchiera 6x9 non trovato."
+msgstr "Patrón de tablero de ajedrez 6x9 no encontrado."
 
 #: CameraInteface.py:279 loco:5ed2cbe74d3dd779ce2690dd
 msgid "Pattern not found."
-msgstr "Pattern non trovato."
+msgstr "Patrón no encontrado."
 
 #: CameraInteface.py:305 loco:5ed2cbe74d3dd779ce2690de
 msgid "Ill-conditioned Matrix. Keep trying."
-msgstr "Matrice mal condizionata. Continua a provare."
+msgstr "Matriz mal condicionada. Sigue intentándolo."
 
 #: CameraInteface.py:306 loco:5ed2cbe74d3dd779ce2690df
 msgid "Matrix."
-msgstr "Matrice."
+msgstr "Matriz."
 
 #: CameraInteface.py:310 loco:5ed2cbe74d3dd779ce2690e0
 #, python-format
 msgid "Success. %d images so far."
-msgstr "Successo. %d immagini finora."
+msgstr "Éxito. % d imágenes hasta ahora."
 
 #: CameraInteface.py:311 loco:5ed2cbe74d3dd779ce2690e1
 msgid "Image Captured"
-msgstr "Immagine acquisita"
+msgstr "Imagen capturada"
 
 #: CameraInteface.py:345 loco:5ed2cbe74d3dd779ce2690e2
 msgid ""
 "If using a precompiled binary, this was requirement was not included.\n"
 "If using pure Python, add it with: pip install opencv-python-headless"
 msgstr ""
-"Se si utilizzava un binario precompilato, questo requisito non era incluso.\n"
-"Se si utilizza Python puro, aggiungerlo con: pip install opencv-python-"
-"headless"
+"Si utiliza un binario precompilado, este requisito no se incluyó. \n"
+"Si usa Python puro, agréguelo con: pip install opencv-python-headless"
 
 #: CameraInteface.py:347 loco:5ed2cbe74d3dd779ce2690e3
 msgid "Interface Requires OpenCV."
-msgstr "L'interfaccia richiede OpenCV."
+msgstr "La interfaz requiere OpenCV."
 
 #: CameraInteface.py:359 loco:5ed2cbe74d3dd779ce2690e4
 msgid "No Webcam found."
-msgstr "Nessuna webcam trovata."
+msgstr "No se encontró la cámara web."
 
 #: CameraInteface.py:360 loco:5ed2cbe74d3dd779ce2690e5
 msgid "Error"
-msgstr "Errore"
+msgstr "Error"
 
 #: Controller.py:23 loco:5ed2cbe74d3dd779ce2690e6
 msgid "Start Controller"
-msgstr "Avvia controller"
+msgstr "Iniciar controlador"
 
 #: Controller.py:28 loco:5ed2cbe74d3dd779ce2690e7
 msgid "Connect Usb"
-msgstr "Connetti Usb"
+msgstr "Conectar usb"
 
 #: Controller.py:116 loco:5ed2cbe74d3dd779ce2690e8
 msgid "Kernel Force Event"
-msgstr "Evento Kernel Force"
+msgstr "Kernel Force Event"
 
 #: Controller.py:123 wxMeerK40t.py:169 wxMeerK40t.py:225
 #: loco:5ed2cbe74d3dd779ce2690e9
 msgid "Controller"
-msgstr "Controllore"
+msgstr "Controlador"
 
 #: Controller.py:191 loco:5ed2cbe74d3dd779ce2690ea
 msgid "Usb Status"
-msgstr "Stato USB"
+msgstr "Estado del usb"
 
 #: Controller.py:207 loco:5ed2cbe74d3dd779ce2690eb
 msgid "Packet Count  "
-msgstr "Conteggio pacchetti "
+msgstr "Recuento de paquetes "
 
 #: Controller.py:224 loco:5ed2cbe74d3dd779ce2690ec
 msgid "Rejected Packets"
-msgstr "Pacchetti rifiutati"
+msgstr "Paquetes rechazados"
 
 #: Controller.py:216 loco:5ed2cbe74d3dd779ce2690ed
 msgid "Packet Text  "
-msgstr "Testo del pacchetto "
+msgstr "Paquete de texto "
 
 #: Controller.py:220 loco:5ed2cbe74d3dd779ce2690ee
 msgid "Last Packet  "
-msgstr "Ultimo pacchetto "
+msgstr "Último paquete "
 
 #: Controller.py:233 loco:5ed2cbe74d3dd779ce2690ef
 msgid "Byte 0"
@@ -583,72 +583,73 @@ msgstr "Byte 5"
 #: Controller.py:342 loco:5ed2cbe74d3dd779ce2690f5
 msgid "Connection Refused. See USB Log for detailed information."
 msgstr ""
-"Connessione rifiutata. Vedere Registro USB per informazioni dettagliate."
+"Conexión denegada. Consulte el Registro USB para obtener información "
+"detallada."
 
 #: Controller.py:343 loco:5ed2cbe74d3dd779ce2690f6
 msgid "Manual Connection"
-msgstr "Connessione manuale"
+msgstr "Conexión manual"
 
 #: Controller.py:387 loco:5ed2cbe74d3dd779ce2690f7
 msgid "Resume Controller"
-msgstr "Riprendi controller"
+msgstr "Reanudar controlador"
 
 #: Controller.py:396 loco:5ed2cbe74d3dd779ce2690f8
 msgid "Pause Controller"
-msgstr "Pausa controller"
+msgstr "Controlador de pausa"
 
 #: Controller.py:405 loco:5ed2cbe74d3dd779ce2690f9
 msgid "Manual Reset"
-msgstr "Pausa controller"
+msgstr "Restablecimiento manual"
 
 #: OperationProperty.py:68 loco:5ed2cbe74d3dd779ce2690fa
 msgid "Custom D-Ratio"
-msgstr "Rapporto D personalizzato"
+msgstr "Relación D personalizada"
 
 #: CutProperty.py:20 EngraveProperty.py:20 loco:5ed2cbe74d3dd779ce2690fb
 msgid "Acceleration Override"
-msgstr "Sostituzione accelerazione"
+msgstr "Anulación de aceleración"
 
 #: CutProperty.py:82 loco:5ed2cbe74d3dd779ce2690fc
 msgid "Cut Properties"
-msgstr "Proprietà di taglio"
+msgstr "Propiedades de corte"
 
 #: OperationProperty.py:172 loco:5ed2cbe74d3dd779ce2690fd
 msgid "Speed at which to perform the action in mm/s."
-msgstr "Velocità alla quale eseguire l'azione in mm/s."
+msgstr "Velocidad a la que realizar la acción en mm / s."
 
 #: OperationProperty.py:173 loco:5ed2cbe74d3dd779ce2690fe
 msgid ""
 "1000 always on. 500 it's half power (fire every other step). This is "
 "software PPI control."
 msgstr ""
-"1000 sempre acceso. 500 è metà potenza (spara ogni due passi). Questo è il "
-"controllo PPI del software."
+"1000 siempre encendido. 500 es la mitad de potencia (dispara cada dos "
+"pasos). Este es el software de control PPI."
 
 #: OperationProperty.py:181 loco:5ed2cbe74d3dd779ce2690ff
 msgid "Enables the ability to modify the diagonal ratio."
-msgstr "Abilita la possibilità di modificare il rapporto diagonale."
+msgstr "Permite la capacidad de modificar la relación diagonal."
 
 #: CutProperty.py:89 EngraveProperty.py:89 loco:5ed2cbe74d3dd779ce269100
 msgid ""
 "Diagonal ratio is the ratio of additional time needed to perform a diagonal "
 "step rather than an orthogonal step."
 msgstr ""
-"Il rapporto diagonale è il rapporto del tempo aggiuntivo necessario per "
-"eseguire un passo diagonale anziché un passo ortogonale."
+"La proporción diagonal es la proporción de tiempo adicional necesario para "
+"realizar un paso diagonal en lugar de un paso ortogonal."
 
 #: OperationProperty.py:183 loco:5ed2cbe74d3dd779ce269101
 msgid "Enables the ability to modify the acceleration factor."
-msgstr "Abilita la possibilità di modificare il fattore di accelerazione."
+msgstr "Permite la capacidad de modificar el factor de aceleración."
 
 #: OperationProperty.py:184 loco:5ed2cbe74d3dd779ce269102
 msgid "Acceleration Factor Override"
-msgstr "Sostituzione del fattore di accelerazione"
+msgstr "Anulación del factor de aceleración"
 
 #: CutProperty.py:103 EngraveProperty.py:103 JobSpooler.py:95
 #: RasterProperty.py:130 loco:5ed2cbe74d3dd779ce269103
 msgid "Speed"
-msgstr "Velocità"
+msgstr "Velocidad"
 
 #: CutProperty.py:106 EngraveProperty.py:106 RasterProperty.py:133
 #: loco:5ed2cbe74d3dd779ce269104
@@ -658,7 +659,7 @@ msgstr "mm/s"
 #: CutProperty.py:109 EngraveProperty.py:109 RasterProperty.py:136
 #: loco:5ed2cbe74d3dd779ce269105
 msgid "Power"
-msgstr "Energia"
+msgstr "Poder"
 
 #: CutProperty.py:112 EngraveProperty.py:112 RasterProperty.py:139
 #: loco:5ed2cbe74d3dd779ce269106
@@ -667,79 +668,79 @@ msgstr "ppi"
 
 #: DeviceManager.py:74 loco:5ed2cbe74d3dd779ce269107
 msgid "Id"
-msgstr "Id"
+msgstr "Carné de identidad"
 
 #: DeviceManager.py:75 loco:5ed2cbe74d3dd779ce269108
 msgid "Driver"
-msgstr "autista "
+msgstr "Conductor"
 
 #: DeviceManager.py:76 loco:5ed2cbe74d3dd779ce269109
 msgid "State"
-msgstr "Stato"
+msgstr "Estado"
 
 #: Controller.py:202 DeviceManager.py:77 loco:5ed2cbe74d3dd779ce26910a
 msgid "Location"
-msgstr "Posizione"
+msgstr "Ubicación"
 
 #: DeviceManager.py:78 loco:5ed2cbe74d3dd779ce26910b
 msgid "Boot"
-msgstr "Stivale"
+msgstr "Bota"
 
 #: DeviceManager.py:79 loco:5ed2cbe74d3dd779ce26910c
 msgid "Add a new device"
-msgstr "Aggiungi un nuovo dispositivo"
+msgstr "Agregar un nuevo dispositivo"
 
 #: DeviceManager.py:81 loco:5ed2cbe74d3dd779ce26910d
 msgid "Remove selected device"
-msgstr "Rimuovi il dispositivo selezionato"
+msgstr "Quitar dispositivo seleccionado"
 
 #: DeviceManager.py:83 loco:5ed2cbe74d3dd779ce26910e
 msgid "View Device Properties"
-msgstr "Visualizza le proprietà del dispositivo"
+msgstr "Ver propiedades del dispositivo"
 
 #: DeviceManager.py:85 loco:5ed2cbe74d3dd779ce26910f
 msgid "Move device up"
-msgstr "Sposta il dispositivo verso l'alto"
+msgstr "Mover el dispositivo hacia arriba"
 
 #: DeviceManager.py:87 loco:5ed2cbe74d3dd779ce269110
 msgid "Move device down"
-msgstr "Sposta il dispositivo verso il basso"
+msgstr "Mover dispositivo hacia abajo"
 
 #: DeviceManager.py:168 loco:5ed2cbe74d3dd779ce269111
 msgid "What type of device is being added?"
-msgstr "Che tipo di dispositivo viene aggiunto?"
+msgstr "¿Qué tipo de dispositivo se está agregando?"
 
 #: DeviceManager.py:168 loco:5ed2cbe74d3dd779ce269112
 msgid "Device Type"
-msgstr "Tipo di dispositivo"
+msgstr "Tipo de dispositivo"
 
 #: EngraveProperty.py:82 loco:5ed2cbe74d3dd779ce269113
 msgid "Engrave Properties"
-msgstr "Proprietà dell'incisione"
+msgstr "Grabar propiedades"
 
 #: ImageProperty.py:85 loco:5ed2cbe74d3dd779ce269114
 msgid "Image Properties"
-msgstr "Proprietà dell'immagine"
+msgstr "Propiedades de imagen"
 
 #: ImageProperty.py:87 loco:5ed2cbe74d3dd779ce269115
 msgid "Scan gap / step size image native value."
-msgstr "Scansione valore nativo dell'immagine spazio / passo."
+msgstr "Valor nativo de la imagen de tamaño de espacio / paso de escaneo."
 
 #: ImageProperty.py:89 loco:5ed2cbe74d3dd779ce269116
 msgid "X property of image"
-msgstr "Proprietà X dell'immagine"
+msgstr "Propiedad X de la imagen"
 
 #: ImageProperty.py:91 loco:5ed2cbe74d3dd779ce269117
 msgid "Y property of image"
-msgstr "Y proprietà dell'immagine"
+msgstr "Propiedad Y de imagen"
 
 #: ImageProperty.py:93 loco:5ed2cbe74d3dd779ce269118
 msgid "Width property of image"
-msgstr "Proprietà larghezza dell'immagine"
+msgstr "Ancho de propiedad de la imagen"
 
 #: ImageProperty.py:95 loco:5ed2cbe74d3dd779ce269119
 msgid "Height property of image"
-msgstr "Proprietà altezza dell'immagine"
+msgstr "Propiedad de altura de la imagen"
 
 #: ImageProperty.py:108 loco:5ed2cbe74d3dd779ce26911a
 msgid "DPP"
@@ -747,7 +748,7 @@ msgstr "DPP"
 
 #: ImageProperty.py:109 loco:5ed2cbe74d3dd779ce26911b
 msgid "Dots Per Pixel"
-msgstr "Punti per pixel"
+msgstr "Puntos por píxel"
 
 #: ImageProperty.py:113 loco:5ed2cbe74d3dd779ce26911c
 msgid "DPI:"
@@ -755,7 +756,7 @@ msgstr "DPI:"
 
 #: ImageProperty.py:114 loco:5ed2cbe74d3dd779ce26911d
 msgid "Dots Per Inch"
-msgstr "Punti per pollice"
+msgstr "Puntos por pulgada"
 
 #: ImageProperty.py:118 Navigation.py:321 loco:5ed2cbe74d3dd779ce26911e
 msgid "X:"
@@ -767,39 +768,39 @@ msgstr "Y:"
 
 #: ImageProperty.py:126 loco:5ed2cbe74d3dd779ce269120
 msgid "Width:"
-msgstr "Larghezza:"
+msgstr "Anchura:"
 
 #: ImageProperty.py:130 loco:5ed2cbe74d3dd779ce269121
 msgid "Height:"
-msgstr "Altezza:"
+msgstr "Altura:"
 
 #: JobInfo.py:22 JobInfo.py:247 loco:5ed2cbe74d3dd779ce269122
 msgid "Start Job"
-msgstr "Avvia lavoro"
+msgstr "Comenzar trabajo"
 
 #: JobInfo.py:30 loco:5ed2cbe74d3dd779ce269123
 msgid "Start Spooler"
-msgstr "Avvia Spooler"
+msgstr "Iniciar cola de impresión"
 
 #: JobInfo.py:34 loco:5ed2cbe74d3dd779ce269124
 msgid "Home After"
-msgstr "Home After"
+msgstr "Inicio despues"
 
 #: JobInfo.py:36 loco:5ed2cbe74d3dd779ce269125
 msgid "Beep After"
-msgstr "Beep After"
+msgstr "Bip después"
 
 #: JobInfo.py:38 loco:5ed2cbe74d3dd779ce269126
 msgid "Automatic"
-msgstr "Automatico"
+msgstr "Automático"
 
 #: JobInfo.py:41 loco:5ed2cbe74d3dd779ce269127
 msgid "Home"
-msgstr "Casa"
+msgstr "Hogar"
 
 #: JobInfo.py:43 loco:5ed2cbe74d3dd779ce269128
 msgid "Wait"
-msgstr "Aspettare"
+msgstr "Espere"
 
 #: JobInfo.py:45 loco:5ed2cbe74d3dd779ce269129
 msgid "Beep"
@@ -807,43 +808,43 @@ msgstr "Bip"
 
 #: JobInfo.py:47 JobInfo.py:92 loco:5ed2cbe74d3dd779ce26912a
 msgid "Interrupt"
-msgstr "Interrompere"
+msgstr "Interrumpir"
 
 #: JobInfo.py:49 loco:5ed2cbe74d3dd779ce26912b
 msgid "Add"
-msgstr "Inserisci"
+msgstr "Añadir"
 
 #: JobInfo.py:91 loco:5ed2cbe74d3dd779ce26912c
 msgid "Spooling Interrupted. Press OK to Continue."
-msgstr "Spooling interrotto. Premi OK per continuare."
+msgstr "Spooling interrumpido. Presione OK para continuar."
 
 #: JobInfo.py:157 loco:5ed2cbe74d3dd779ce26912d
 msgid "operation List"
-msgstr "elenco operazioni"
+msgstr "lista de operaciones"
 
 #: JobInfo.py:158 loco:5ed2cbe74d3dd779ce26912e
 msgid "Command List"
-msgstr "Elenco dei comandi"
+msgstr "Lista de comandos"
 
 #: JobInfo.py:159 loco:5ed2cbe74d3dd779ce26912f
 msgid "Start the Job"
-msgstr "Elenco dei comandi"
+msgstr "Comience el trabajo"
 
 #: JobInfo.py:162 loco:5ed2cbe74d3dd779ce269130
 msgid "View Spooler"
-msgstr "Visualizza Spooler"
+msgstr "Ver cola de impresión"
 
 #: JobInfo.py:169 loco:5ed2cbe74d3dd779ce269131
 msgid "Operations and Commands"
-msgstr "Operazioni e comandi"
+msgstr "Operaciones y comandos"
 
 #: JobInfo.py:244 loco:5ed2cbe74d3dd779ce269132
 msgid "Execute Commands"
-msgstr "Esegui comandi"
+msgstr "Ejecutar comandos"
 
 #: Controller.py:30 loco:5ed2cbe74d3dd779ce269133
 msgid "Limit Write Buffer"
-msgstr "Buffer di scrittura limite"
+msgstr "Limitar la memoria intermedia de escritura"
 
 #: JobSpooler.py:90 loco:5ed2cbe74d3dd779ce269134
 msgid "#"
@@ -851,11 +852,11 @@ msgstr "#"
 
 #: JobSpooler.py:91 loco:5ed2cbe74d3dd779ce269135
 msgid "Name"
-msgstr "Nome"
+msgstr "Nombre"
 
 #: Controller.py:194 loco:5ed2cbe74d3dd779ce269136
 msgid "Status"
-msgstr "Stato"
+msgstr "Estado"
 
 #: Controller.py:198 loco:5ed2cbe74d3dd779ce269137
 msgid "Device"
@@ -863,46 +864,46 @@ msgstr "Dispositivo"
 
 #: JobSpooler.py:94 loco:5ed2cbe74d3dd779ce269138
 msgid "Type"
-msgstr "Genere"
+msgstr "Tipo"
 
 #: Settings.py:84 wxMeerK40t.py:217 loco:5ed2cbe74d3dd779ce269139
 msgid "Settings"
-msgstr "Impostazioni"
+msgstr "Configuraciones"
 
 #: JobSpooler.py:97 loco:5ed2cbe74d3dd779ce26913a
 msgid "Submitted"
-msgstr "Inserito"
+msgstr "Presentada"
 
 #: JobSpooler.py:98 loco:5ed2cbe74d3dd779ce26913b
 msgid "Time Estimate"
-msgstr "Stima del tempo"
+msgstr "Tiempo estimado"
 
 #: JobSpooler.py:147 loco:5ed2cbe74d3dd779ce26913c
 msgid "Executing"
-msgstr "Esecuzione"
+msgstr "Ejecutando"
 
 #: JobSpooler.py:149 loco:5ed2cbe74d3dd779ce26913d
 msgid "Queued"
-msgstr "In coda"
+msgstr "Puesto en cola"
 
 #: JobSpooler.py:153 loco:5ed2cbe74d3dd779ce26913e
 msgid "Path"
-msgstr "Sentiero"
+msgstr "Camino"
 
 #: JobSpooler.py:154 loco:5ed2cbe74d3dd779ce26913f
 #, python-format
 msgid "power=%.0f"
-msgstr "potenza=%.0f"
+msgstr "potencia=%.0f"
 
 #: OperationProperty.py:46 OperationProperty.py:220
 #: loco:5ed2cbe74d3dd779ce269140
 msgid "Raster"
-msgstr "Raster"
+msgstr "Trama"
 
 #: JobSpooler.py:126 loco:5ed2cbe74d3dd779ce269141
 #, python-format
 msgid "step=%d"
-msgstr "step=%d"
+msgstr "paso=%d"
 
 #: JobSpooler.py:130 loco:5ed2cbe74d3dd779ce269142
 #, python-format
@@ -920,293 +921,294 @@ msgstr "n/a"
 
 #: JobSpooler.py:168 loco:5ed2cbe74d3dd779ce269145
 msgid "unknown"
-msgstr "sconosciuto"
+msgstr "desconocido"
 
 #: JobSpooler.py:184 loco:5ed2cbe74d3dd779ce269146
 #, python-format
 msgid "Remove %s"
-msgstr "Rimuovi %s"
+msgstr "Elimina %s"
 
 #: wxMeerK40t.py:1706 wxMeerK40t.py:1709 wxMeerK40t.py:1712 wxMeerK40t.py:1715
 #: loco:5ed2cbe74d3dd779ce269147
 msgid "Clear All"
-msgstr "Cancella tutto"
+msgstr "Limpiar todo"
 
 #: Kernel.py:572 loco:5ed2cbe74d3dd779ce269148
 #, python-format
 msgid "WARNING: Listener '%s' still registered to %s.\n"
-msgstr "ATTENZIONE: il listener '%s' è ancora registrato su %s.\n"
+msgstr "ADVERTENCIA: El oyente '%s' todavía está registrado en %s.\n"
 
 #: Kernel.py:800 loco:5ed2cbe74d3dd779ce269149
 msgid "Shutting down.\n"
-msgstr "Chiudere.\n"
+msgstr "Apagando.\n"
 
 #: Kernel.py:807 loco:5ed2cbe74d3dd779ce26914a
 #, python-format
 msgid "Device Shutdown Started: '%s'\n"
-msgstr "Arresto dispositivo avviato: '%s'\n"
+msgstr "Apagado del dispositivo iniciado: '%s'\n"
 
 #: Kernel.py:809 loco:5ed2cbe74d3dd779ce26914b
 #, python-format
 msgid "Device Shutdown Finished: '%s'\n"
-msgstr "Arresto dispositivo terminato: '%s'\n"
+msgstr "Apagado del dispositivo terminado: '%s'\n"
 
 #: Kernel.py:810 loco:5ed2cbe74d3dd779ce26914c
 #, python-format
 msgid "Saving Device State: '%s'\n"
-msgstr "Salvataggio dello stato del dispositivo: '%s'\n"
+msgstr "Guardando estado del dispositivo: '%s'\n"
 
 #: Kernel.py:817 loco:5ed2cbe74d3dd779ce26914d
 #, python-format
 msgid "Shutting down %s %s: %s\n"
-msgstr "Chiusura di %s %s: %s\n"
+msgstr "Apagando %s %s: %s\n"
 
 #: Kernel.py:826 loco:5ed2cbe74d3dd779ce26914e
 #, python-format
 msgid "WARNING: %s %s was not closed.\n"
-msgstr "ATTENZIONE: %s %s non è stato chiuso.\n"
+msgstr "ADVERTENCIA: %s %s no se cerró.\n"
 
 #: Kernel.py:831 loco:5ed2cbe74d3dd779ce26914f
 #, python-format
 msgid "WARNING: Dead thread %s still registered to %s.\n"
-msgstr "ATTENZIONE: il thread morto %s è ancora registrato su %s.\n"
+msgstr "ADVERTENCIA: El hilo muerto %s todavía está registrado en %s.\n"
 
 #: Kernel.py:833 loco:5ed2cbe74d3dd779ce269150
 #, python-format
 msgid "Finishing Thread %s for %s\n"
-msgstr "Filo di finitura %s per %s\n"
+msgstr "Hilo de acabado %s para %s\n"
 
 #: Kernel.py:842 loco:5ed2cbe74d3dd779ce269151
 #, python-format
 msgid "Waiting for thread %s: %s\n"
-msgstr "In attesa del thread %s: %s\n"
+msgstr "Esperando hilo %s: %s\n"
 
 #: Kernel.py:845 loco:5ed2cbe74d3dd779ce269152
 #, python-format
 msgid "Thread %s finished. %s\n"
-msgstr "Discussione %s terminata. %s\n"
+msgstr "Hilo %s terminado. %s\n"
 
 #: Kernel.py:847 loco:5ed2cbe74d3dd779ce269153
 msgid "No threads required halting.\n"
-msgstr "Nessun thread ha richiesto l'arresto.\n"
+msgstr "No hay hilos necesarios para detenerse.\n"
 
 #: Kernel.py:848 loco:5ed2cbe74d3dd779ce269154
 msgid ""
 "Shutdown.\n"
 "\n"
 msgstr ""
-"Spegnimento.\n"
+"Apagar.\n"
 "\n"
 
 #: Kernel.py:863 loco:5ed2cbe74d3dd779ce269155
 msgid "All Devices are shutdown. Stopping Kernel.\n"
-msgstr "Tutti i dispositivi vengono arrestati. Arresto del kernel.\n"
+msgstr "Todos los dispositivos están apagados. Deteniendo Kernel.\n"
 
 #: Kernel.py:1954 loco:5ed2cbe74d3dd779ce269156
 msgid "Unstarted"
-msgstr "Unstarted"
+msgstr "No iniciado"
 
 #: Kernel.py:1220 loco:5ed2cbe74d3dd779ce269157
 msgid "Aborted"
-msgstr "Abortito"
+msgstr "Abortado"
 
 #: Kernel.py:1958 loco:5ed2cbe74d3dd779ce269158
 msgid "Finished"
-msgstr "Finito"
+msgstr "Terminado"
 
 #: Kernel.py:1224 loco:5ed2cbe74d3dd779ce269159
 msgid "Paused"
-msgstr "In pausa"
+msgstr "Pausado"
 
 #: Kernel.py:1226 loco:5ed2cbe74d3dd779ce26915a
 msgid "Started"
-msgstr "Iniziato"
+msgstr "Empezado"
 
 #: Keymap.py:16 loco:5ed2cbe74d3dd779ce26915b
 msgid "Add Hotkey"
-msgstr "Aggiungi tasto di scelta rapida"
+msgstr "Agregar tecla de acceso rápido"
 
 #: Keymap.py:52 wxMeerK40t.py:219 loco:5ed2cbe74d3dd779ce26915c
 msgid "Keymap Settings"
-msgstr "Impostazioni keymap"
+msgstr "Configuración del mapa de teclas"
 
 #: Keymap.py:53 loco:5ed2cbe74d3dd779ce26915d
 msgid "What keys are bound to which actions?"
-msgstr "Quali chiavi sono legate a quali azioni?"
+msgstr "¿Qué claves están vinculadas a qué acciones?"
 
 #: Keymap.py:54 loco:5ed2cbe74d3dd779ce26915e
 msgid "Key"
-msgstr "Chiave"
+msgstr "Llave"
 
 #: Keymap.py:55 loco:5ed2cbe74d3dd779ce26915f
 msgid "Command"
-msgstr "Comando"
+msgstr "Mando"
 
 #: Keymap.py:56 loco:5ed2cbe74d3dd779ce269160
 msgid "Add a new hotkey"
-msgstr "Aggiungi un nuovo tasto di scelta rapida"
+msgstr "Agregar una nueva tecla de acceso rápido"
 
 #: Keymap.py:84 loco:5ed2cbe74d3dd779ce269161
 msgid "Missing Keystroke"
-msgstr "Sequenza di tasti mancante"
+msgstr "Falta pulsación de tecla"
 
 #: Keymap.py:85 loco:5ed2cbe74d3dd779ce269162
 msgid "No Keystroke for binding."
-msgstr "Nessun tasto per l'associazione."
+msgstr "Sin pulsaciones de teclas para encuadernar."
 
 #: Keymap.py:90 loco:5ed2cbe74d3dd779ce269163
 msgid "Missing Command"
-msgstr "Comando mancante"
+msgstr "Comando perdido"
 
 #: Keymap.py:91 loco:5ed2cbe74d3dd779ce269164
 msgid "No Command for binding."
-msgstr "Nessun comando per l'associazione."
+msgstr "Sin comando para atar."
 
 #: Navigation.py:135 wxMeerK40t.py:166 wxMeerK40t.py:224
 #: loco:5ed2cbe74d3dd779ce269165
 msgid "Navigation"
-msgstr "Navigazione"
+msgstr "Navegación"
 
 #: Navigation.py:137 loco:5ed2cbe74d3dd779ce269166
 msgid "Set Jog Distance in mils (1/1000th of an inch)"
-msgstr "Imposta la distanza jog in mil (1/1000 di pollice)"
+msgstr ""
+"Establecer la distancia de desplazamiento en milésimas de pulgada (1/1000 de "
+"pulgada)"
 
 #: Navigation.py:139 loco:5ed2cbe74d3dd779ce269167
 msgid "Set Jog Distance in mm"
-msgstr "Imposta distanza jog in mm"
+msgstr "Establecer la distancia de jog en mm"
 
 #: Navigation.py:141 loco:5ed2cbe74d3dd779ce269168
 msgid "Set Jog Distance in cm"
-msgstr "Impostare la distanza jog in cm"
+msgstr "Establecer la distancia de desplazamiento en cm"
 
 #: Navigation.py:143 loco:5ed2cbe74d3dd779ce269169
 msgid "Set Jog Distance in inch"
-msgstr "Impostare la distanza jog in pollici"
+msgstr "Establecer la distancia de desplazamiento en pulgadas"
 
 #: Navigation.py:144 loco:5ed2cbe74d3dd779ce26916a
 msgid "Move laser diagonally in the up and left direction"
-msgstr "Muovi il laser in diagonale verso l'alto e verso sinistra"
+msgstr "Mueva el láser en diagonal hacia arriba y hacia la izquierda"
 
 #: Navigation.py:146 loco:5ed2cbe74d3dd779ce26916b
 msgid "Move laser in the up direction"
-msgstr "Muovi il laser verso l'alto"
+msgstr "Mueva el láser hacia arriba"
 
 #: Navigation.py:148 loco:5ed2cbe74d3dd779ce26916c
 msgid "Move laser diagonally in the up and right direction"
-msgstr "Muovi il laser in diagonale verso l'alto e verso destra"
+msgstr "Mueva el láser en diagonal hacia arriba y hacia la derecha"
 
 #: Navigation.py:150 loco:5ed2cbe74d3dd779ce26916d
 msgid "Move laser in the left direction"
-msgstr "Spostare il laser nella direzione sinistra"
+msgstr "Mueva el láser en la dirección izquierda"
 
 #: Navigation.py:153 loco:5ed2cbe74d3dd779ce26916e
 msgid "Move laser in the right direction"
-msgstr "Spostare il laser nella giusta direzione"
+msgstr "Mueve el láser en la dirección correcta"
 
 #: Navigation.py:155 loco:5ed2cbe74d3dd779ce26916f
 msgid "Move laser diagonally in the down and left direction"
-msgstr "Muovi il laser in diagonale verso il basso e verso sinistra"
+msgstr "Mueva el láser en diagonal hacia abajo y hacia la izquierda"
 
 #: Navigation.py:157 loco:5ed2cbe74d3dd779ce269170
 msgid "Move laser in the down direction"
-msgstr "Spostare il laser verso il basso"
+msgstr "Mueva el láser hacia abajo"
 
 #: Navigation.py:159 loco:5ed2cbe74d3dd779ce269171
 msgid "Move laser diagonally in the down and right direction"
-msgstr ""
-"Spostare il laser in diagonale nella direzione verso il basso e verso destra"
+msgstr "Mueva el láser en diagonal hacia abajo y hacia la derecha"
 
 #: Navigation.py:161 loco:5ed2cbe74d3dd779ce269172
 msgid "Unlock the laser rail"
-msgstr "Sblocca la guida laser"
+msgstr "Desbloquee el riel láser"
 
 #: Navigation.py:163 loco:5ed2cbe74d3dd779ce269173
 msgid "Lock the laser rail"
-msgstr "Blocca la guida laser"
+msgstr "Bloquear el raíl láser"
 
 #: Navigation.py:165 loco:5ed2cbe74d3dd779ce269174
 msgid "Align laser with the upper left corner of the selection"
-msgstr "Allineare il laser con l'angolo in alto a sinistra della selezione"
+msgstr "Alinear el láser con la esquina superior izquierda de la selección"
 
 #: Navigation.py:168 loco:5ed2cbe74d3dd779ce269175
 msgid "Align laser with the upper right corner of the selection"
-msgstr "Allineare il laser con l'angolo in alto a destra della selezione"
+msgstr "Alinee el láser con la esquina superior derecha de la selección"
 
 #: Navigation.py:171 loco:5ed2cbe74d3dd779ce269176
 msgid "Align laser with the center of the selection"
-msgstr "Allineare il laser con il centro della selezione"
+msgstr "Alinear el láser con el centro de la selección"
 
 #: Navigation.py:174 loco:5ed2cbe74d3dd779ce269177
 msgid "Align laser with the lower left corner of the selection"
-msgstr "Allineare il laser con l'angolo inferiore sinistro della selezione"
+msgstr "Alinear el láser con la esquina inferior izquierda de la selección"
 
 #: Navigation.py:177 loco:5ed2cbe74d3dd779ce269178
 msgid "Align laser with the lower right corner of the selection"
-msgstr "Allinea il laser con l'angolo inferiore destro della selezione"
+msgstr "Alinear el láser con la esquina inferior derecha de la selección"
 
 #: Navigation.py:179 loco:5ed2cbe74d3dd779ce269179
 msgid "Perform a convex hull trace of the selection"
-msgstr "Eseguire una traccia dello scafo convesso della selezione"
+msgstr "Realice un trazado convexo del casco de la selección"
 
 #: Navigation.py:181 loco:5ed2cbe74d3dd779ce26917a
 msgid "Perform a simple trace of the selection"
-msgstr "Eseguire una semplice traccia della selezione"
+msgstr "Realizar un seguimiento simple de la selección"
 
 #: Navigation.py:205 loco:5ed2cbe74d3dd779ce26917b
 msgid "Transform: Scale X"
-msgstr "Trasforma: scala X"
+msgstr "Transformar: Escala X"
 
 #: Navigation.py:207 loco:5ed2cbe74d3dd779ce26917c
 msgid "Transform: Skew Y"
-msgstr "Trasforma: Skew Y"
+msgstr "Transformar: sesgar Y"
 
 #: Navigation.py:209 loco:5ed2cbe74d3dd779ce26917d
 msgid "Transform: Translate X"
-msgstr "Trasforma: Traduci X"
+msgstr "Transformar: Traducir X"
 
 #: Navigation.py:211 loco:5ed2cbe74d3dd779ce26917e
 msgid "Transform: Skew X"
-msgstr "Trasforma: Skew X"
+msgstr "Transformar: sesgar X"
 
 #: Navigation.py:213 loco:5ed2cbe74d3dd779ce26917f
 msgid "Transform: Scale Y"
-msgstr "Trasforma: scala Y"
+msgstr "Transformar: escala Y"
 
 #: Navigation.py:215 loco:5ed2cbe74d3dd779ce269180
 msgid "Transform: Translate Y"
-msgstr "Trasforma: Traduci Y"
+msgstr "Transformar: Traducir Y"
 
 #: Navigation.py:217 loco:5ed2cbe74d3dd779ce269181
 msgid "Fire a short laser pulse"
-msgstr "Lancia un breve impulso laser"
+msgstr "Dispara un pulso láser corto"
 
 #: Navigation.py:220 loco:5ed2cbe74d3dd779ce269182
 msgid "Set the duration of the laser pulse"
-msgstr "Imposta la durata dell'impulso laser"
+msgstr "Establecer la duración del pulso láser"
 
 #: Navigation.py:221 loco:5ed2cbe74d3dd779ce269183
 msgid "Move to the set position"
-msgstr "Spostarsi nella posizione impostata"
+msgstr "Mover a la posición establecida"
 
 #: Navigation.py:223 loco:5ed2cbe74d3dd779ce269184
 msgid "Set X value for the Move To"
-msgstr "Imposta il valore X per Sposta in"
+msgstr "Establecer el valor X para Mover a"
 
 #: Navigation.py:224 loco:5ed2cbe74d3dd779ce269185
 msgid "Set Y value for the Move To"
-msgstr "Imposta il valore Y per Sposta in"
+msgstr "Establecer el valor Y para Mover a"
 
 #: Navigation.py:231 loco:5ed2cbe74d3dd779ce269186
 msgid "Move To"
-msgstr "Sposta in"
+msgstr "Mover a"
 
 #: Navigation.py:235 loco:5ed2cbe74d3dd779ce269187
 msgid "Short Pulse"
-msgstr "Impulso corto"
+msgstr "Pulso corto"
 
 #: Navigation.py:245 loco:5ed2cbe74d3dd779ce269188
 msgid "Jog Distance"
-msgstr "Jog Distance"
+msgstr "Distancia de jogging"
 
 #: Navigation.py:251 Settings.py:31 loco:5ed2cbe74d3dd779ce269189
 msgid "mils"
@@ -1222,7 +1224,7 @@ msgstr "cm"
 
 #: Navigation.py:263 Settings.py:31 loco:5ed2cbe74d3dd779ce26918c
 msgid "inch"
-msgstr "pollice"
+msgstr "pulgada"
 
 #: Navigation.py:317 loco:5ed2cbe74d3dd779ce26918d
 msgid " ms"
@@ -1230,213 +1232,213 @@ msgstr " ms"
 
 #: PathProperty.py:18 PathProperty.py:35 loco:5ed2cbe74d3dd779ce26918e
 msgid "None"
-msgstr "Nessuna"
+msgstr "Ninguna"
 
 #: PathProperty.py:108 loco:5ed2cbe74d3dd779ce26918f
 msgid "Path Properties"
-msgstr "Proprietà del percorso"
+msgstr "Propiedades de ruta"
 
 #: PathProperty.py:109 PathProperty.py:124 TextProperty.py:121
 #: TextProperty.py:136 loco:5ed2cbe74d3dd779ce269190
 msgid "\"none\" defined value"
-msgstr "valore definito \"nessuno\""
+msgstr "valor definido \"ninguno\""
 
 #: PathProperty.py:111 PathProperty.py:126 TextProperty.py:123
 #: TextProperty.py:138 loco:5ed2cbe74d3dd779ce269191
 msgid "#FF0000 defined values."
-msgstr "#FF0000 valori definiti."
+msgstr "#FF0000 valores definidos."
 
 #: PathProperty.py:113 PathProperty.py:115 PathProperty.py:128
 #: PathProperty.py:130 TextProperty.py:125 TextProperty.py:127
 #: TextProperty.py:140 TextProperty.py:142 loco:5ed2cbe74d3dd779ce269192
 msgid "#00FF00 defined values."
-msgstr "#00FF00 valori definiti."
+msgstr "#00FF00 valores definidos."
 
 #: PathProperty.py:117 PathProperty.py:132 TextProperty.py:129
 #: TextProperty.py:144 loco:5ed2cbe74d3dd779ce269193
 msgid "#FF00FF defined values."
-msgstr "#FF00FF valori definiti."
+msgstr "#FF00FF valores definidos."
 
 #: PathProperty.py:119 PathProperty.py:134 TextProperty.py:131
 #: TextProperty.py:146 loco:5ed2cbe74d3dd779ce269194
 msgid "#00FFFF defined values."
-msgstr "#00FFFF valori definiti."
+msgstr "#00FFFF valores definidos."
 
 #: PathProperty.py:121 PathProperty.py:136 TextProperty.py:133
 #: TextProperty.py:148 loco:5ed2cbe74d3dd779ce269195
 msgid "#FFFF00 defined values."
-msgstr "#FFFF00 valori definiti."
+msgstr "#FFFF00 valores definidos."
 
 #: PathProperty.py:123 PathProperty.py:138 TextProperty.py:135
 #: TextProperty.py:150 loco:5ed2cbe74d3dd779ce269196
 msgid "#000000 defined values."
-msgstr "#000000 valori definiti."
+msgstr "#000000 valores definidos."
 
 #: PathProperty.py:145 TextProperty.py:157 loco:5ed2cbe74d3dd779ce269197
 msgid "Fill Color"
-msgstr "Colore di riempimento"
+msgstr "Color de relleno"
 
 #: PathProperty.py:146 TextProperty.py:158 loco:5ed2cbe74d3dd779ce269198
 msgid "Stroke Color"
-msgstr "Colore tratto"
+msgstr "Color del trazo"
 
 #: Preferences.py:24 loco:5ed2cbe74d3dd779ce269199
 msgid "Flip X"
-msgstr "Capovolgi X"
+msgstr "Voltear X"
 
 #: Preferences.py:25 loco:5ed2cbe74d3dd779ce26919a
 msgid "Homes Right"
-msgstr "Case a destra"
+msgstr "Casas a la derecha"
 
 #: Preferences.py:26 loco:5ed2cbe74d3dd779ce26919b
 msgid "Flip Y"
-msgstr "Capovolgi Y"
+msgstr "Voltear Y"
 
 #: Preferences.py:27 loco:5ed2cbe74d3dd779ce26919c
 msgid "Homes Bottom"
-msgstr "Case in basso"
+msgstr "Fondo de casas"
 
 #: Preferences.py:28 loco:5ed2cbe74d3dd779ce26919d
 msgid "Swap X and Y"
-msgstr "Scambia X e Y"
+msgstr "Intercambiar X e Y"
 
 #: Preferences.py:29 loco:5ed2cbe74d3dd779ce26919e
 msgid "Mock USB Connection Mode"
-msgstr "Modalità di connessione USB finta"
+msgstr "Modo de conexión USB simulado"
 
 #: Preferences.py:36 loco:5ed2cbe74d3dd779ce26919f
 msgid "Set Current"
-msgstr "Imposta corrente"
+msgstr "Actual conjunto"
 
 #: Preferences.py:39 loco:5ed2cbe74d3dd779ce2691a0
 msgid "Automatically lock rail"
-msgstr "Blocca automaticamente la guida"
+msgstr "Bloquear automáticamente el riel"
 
 #: Preferences.py:40 loco:5ed2cbe74d3dd779ce2691a1
 msgid "Home after job complete"
-msgstr "Casa dopo lavoro completata"
+msgstr "Inicio después de completar el trabajo"
 
 #: Preferences.py:41 loco:5ed2cbe74d3dd779ce2691a2
 msgid "Beep after job complete"
-msgstr "Segnale acustico al termine del lavoro"
+msgstr "Pitido después de completar el trabajo"
 
 #: Preferences.py:146 wxMeerK40t.py:170 wxMeerK40t.py:216
 #: loco:5ed2cbe74d3dd779ce2691a3
 msgid "Preferences"
-msgstr "Preferenze"
+msgstr "Preferencias"
 
 #: Preferences.py:147 loco:5ed2cbe74d3dd779ce2691a4
 msgid "Select the board to use. This has affects the speedcodes used."
 msgstr ""
-"Seleziona la scheda da usare. Ciò ha effetto sui codici di velocità "
-"utilizzati."
+"Seleccione el tablero a usar. Esto ha afectado a los códigos de velocidad "
+"utilizados."
 
 #: Preferences.py:149 loco:5ed2cbe74d3dd779ce2691a5
 msgid "Swaps the X and Y axis. This happens before the FlipX and FlipY."
-msgstr "Scambia gli assi X e Y. Questo accade prima di FlipX e FlipY."
+msgstr "Intercambia los ejes X e Y. Esto sucede antes de FlipX y FlipY."
 
 #: Preferences.py:150 loco:5ed2cbe74d3dd779ce2691a6
 msgid "Flip the Right and Left commands sent to the controller"
-msgstr "Capovolgi i comandi destro e sinistro inviati al controller"
+msgstr "Voltea los comandos de derecha e izquierda enviados al controlador"
 
 #: Preferences.py:151 loco:5ed2cbe74d3dd779ce2691a7
 msgid "Indicates the device Home is on the right"
-msgstr "Indica che il dispositivo Home è sulla destra"
+msgstr "Indica que el dispositivo Inicio está a la derecha"
 
 #: Preferences.py:152 loco:5ed2cbe74d3dd779ce2691a8
 msgid "Flip the Top and Bottom commands sent to the controller"
-msgstr "Capovolgi i comandi superiore e inferiore inviati al controller"
+msgstr "Invertir los comandos superior e inferior enviados al controlador"
 
 #: Preferences.py:153 loco:5ed2cbe74d3dd779ce2691a9
 msgid "Indicates the device Home is on the bottom"
-msgstr "Indica che il dispositivo Home si trova in basso"
+msgstr "Indica que el dispositivo Inicio está en la parte inferior"
 
 #: Preferences.py:155 loco:5ed2cbe74d3dd779ce2691aa
 msgid ""
 "DEBUG. Without a K40 connected continue to process things as if there was "
 "one."
 msgstr ""
-"DEBUG. Senza un K40 collegato continua a elaborare le cose come se ce ne "
-"fosse una."
+"DEPURAR. Sin un K40 conectado, continúe procesando las cosas como si lo "
+"hubiera."
 
 #: Preferences.py:156 Preferences.py:157 Preferences.py:158
 #: loco:5ed2cbe74d3dd779ce2691ab
 msgid "-1 match anything. 0-5 match exactly that value."
 msgstr ""
-"-1 corrisponde a qualsiasi cosa. 0-5 corrisponde esattamente a quel valore."
+"-1 coincide con cualquier cosa. 0-5 coincide exactamente con ese valor."
 
 #: Preferences.py:159 loco:5ed2cbe74d3dd779ce2691ac
 msgid "-1 match anything. 0-255 match exactly that value."
 msgstr ""
-"-1 corrisponde a qualsiasi cosa. 0-255 corrisponde esattamente a quel valore."
+"-1 coincide con cualquier cosa. 0-255 coinciden exactamente con ese valor."
 
 #: Preferences.py:161 loco:5ed2cbe74d3dd779ce2691ad
 msgid "Translate Home X"
-msgstr "Traduci Home X"
+msgstr "Traducir Inicio X"
 
 #: Preferences.py:163 loco:5ed2cbe74d3dd779ce2691ae
 msgid "Translate Home Y"
-msgstr "Traduci Home Y"
+msgstr "Traducir Inicio Y"
 
 #: Preferences.py:164 loco:5ed2cbe74d3dd779ce2691af
 msgid "Set Home Position based on the current position"
-msgstr "Imposta la posizione iniziale in base alla posizione corrente"
+msgstr "Establecer la posición de inicio según la posición actual"
 
 #: Preferences.py:166 loco:5ed2cbe74d3dd779ce2691b0
 msgid "Width of the laser bed."
-msgstr "Larghezza del letto laser."
+msgstr "Ancho de la cama láser."
 
 #: Preferences.py:168 loco:5ed2cbe74d3dd779ce2691b1
 msgid "Height of the laser bed."
-msgstr "Altezza del letto laser."
+msgstr "Altura de la cama láser."
 
 #: Preferences.py:169 loco:5ed2cbe74d3dd779ce2691b2
 msgid "Lock rail after operations are finished."
-msgstr "Bloccare il binario al termine delle operazioni."
+msgstr "Bloquee el riel una vez finalizadas las operaciones."
 
 #: Preferences.py:171 loco:5ed2cbe74d3dd779ce2691b3
 msgid "Home the machine after job is finished"
-msgstr "A casa la macchina al termine del lavoro"
+msgstr "Dirija la máquina una vez que finalice el trabajo"
 
 #: Preferences.py:172 loco:5ed2cbe74d3dd779ce2691b4
 msgid "Beep after the job is finished."
-msgstr "Emetti un segnale acustico al termine del lavoro."
+msgstr "Pitido después de que termine el trabajo."
 
 #: Preferences.py:179 loco:5ed2cbe74d3dd779ce2691b5
 msgid "General Options"
-msgstr "Opzioni generali"
+msgstr "Opciones generales"
 
 #: Preferences.py:180 loco:5ed2cbe74d3dd779ce2691b6
 msgid "Bed Dimensions"
-msgstr "Dimensioni del letto"
+msgstr "Dimensiones de la cama"
 
 #: Preferences.py:181 loco:5ed2cbe74d3dd779ce2691b7
 msgid "Shift Home Position"
-msgstr "Cambia posizione iniziale"
+msgstr "Cambiar posición de inicio"
 
 #: Preferences.py:182 loco:5ed2cbe74d3dd779ce2691b8
 msgid "USB Settings"
-msgstr "Impostazioni USB"
+msgstr "Configuraciones USB"
 
 #: Preferences.py:187 loco:5ed2cbe74d3dd779ce2691b9
 msgid "Board Setup"
-msgstr "Impostazione della scheda"
+msgstr "Configuración de la placa"
 
 #: Preferences.py:201 loco:5ed2cbe74d3dd779ce2691ba
 msgid "Device Index:"
-msgstr "Indice del dispositivo:"
+msgstr "Índice de dispositivo:"
 
 #: Preferences.py:205 loco:5ed2cbe74d3dd779ce2691bb
 msgid "Device Address:"
-msgstr "Indirizzo dispositivo:"
+msgstr "Dirección del dispositivo:"
 
 #: Preferences.py:209 loco:5ed2cbe74d3dd779ce2691bc
 msgid "Device Bus:"
-msgstr "Bus dispositivo:"
+msgstr "Bus de dispositivo:"
 
 #: Preferences.py:213 loco:5ed2cbe74d3dd779ce2691bd
 msgid "Chip Version:"
-msgstr "Versione Chip:"
+msgstr "Versión de chip:"
 
 #: Preferences.py:218 loco:5ed2cbe74d3dd779ce2691be
 msgid "X"
@@ -1444,7 +1446,7 @@ msgstr "X"
 
 #: Preferences.py:221 Preferences.py:227 loco:5ed2cbe74d3dd779ce2691bf
 msgid "mil"
-msgstr "millesimo di pollice"
+msgstr "mil"
 
 #: Preferences.py:224 loco:5ed2cbe74d3dd779ce2691c0
 msgid "Y"
@@ -1452,7 +1454,7 @@ msgstr "Y"
 
 #: Preferences.py:232 loco:5ed2cbe74d3dd779ce2691c1
 msgid "Width"
-msgstr "Larghezza"
+msgstr "Anchura"
 
 #: Preferences.py:235 Preferences.py:241 RotarySettings.py:137
 #: RotarySettings.py:141 Settings.py:31 loco:5ed2cbe74d3dd779ce2691c2
@@ -1461,75 +1463,75 @@ msgstr "mm"
 
 #: Preferences.py:238 loco:5ed2cbe74d3dd779ce2691c3
 msgid "Height"
-msgstr "Altezza"
+msgstr "Altura"
 
 #: OperationProperty.py:56 loco:5ed2cbe74d3dd779ce2691c4
 msgid "Top To Bottom"
-msgstr "Dall'alto al basso"
+msgstr "De arriba hacia abajo"
 
 #: OperationProperty.py:56 loco:5ed2cbe74d3dd779ce2691c5
 msgid "Bottom To Top"
-msgstr "Dal basso verso l'alto"
+msgstr "Abajo hacia arriba"
 
 #: OperationProperty.py:56 loco:5ed2cbe74d3dd779ce2691c6
 msgid "Right To Left"
-msgstr "Da destra a sinistra"
+msgstr "De derecha a izquierda"
 
 #: OperationProperty.py:57 loco:5ed2cbe74d3dd779ce2691c7
 msgid "Left To Right"
-msgstr "Da sinistra a destra"
+msgstr "De izquierda a derecha"
 
 #: OperationProperty.py:58 loco:5ed2cbe74d3dd779ce2691c8
 msgid "Directional Raster"
-msgstr "Raster direzionale"
+msgstr "Ráster direccional"
 
 #: OperationProperty.py:59 loco:5ed2cbe74d3dd779ce2691c9
 msgid "Bidirectional"
-msgstr "Bidirezionale"
+msgstr "Bidireccional"
 
 #: OperationProperty.py:59 loco:5ed2cbe74d3dd779ce2691ca
 msgid "Unidirectional"
-msgstr "Unidirezionale"
+msgstr "Unidireccional"
 
 #: RasterProperty.py:21 loco:5ed2cbe74d3dd779ce2691cb
 msgid "Start Corner"
-msgstr "Start Corner"
+msgstr "Esquina de inicio"
 
 #: RasterProperty.py:102 loco:5ed2cbe74d3dd779ce2691cc
 msgid "Raster Properties"
-msgstr "Proprietà raster"
+msgstr "Propiedades de ráster"
 
 #: OperationProperty.py:174 loco:5ed2cbe74d3dd779ce2691cd
 msgid ""
 "Scan gap / step size, is the distance between scanlines in a raster engrave. "
 "Distance here is in 1/1000th of an inch."
 msgstr ""
-"Spazio di scansione / dimensione del passo, è la distanza tra le linee di "
-"scansione in un'incisione raster. La distanza qui è in 1/1000 di pollice."
+"Tamaño de espacio / paso de escaneo, es la distancia entre líneas de escaneo "
+"en un grabado ráster. La distancia aquí es de 1/1000 de pulgada."
 
 #: OperationProperty.py:176 loco:5ed2cbe74d3dd779ce2691ce
 msgid "Direction to perform a raster"
-msgstr "Direzione per eseguire un raster"
+msgstr "Dirección para realizar una trama"
 
 #: OperationProperty.py:175 loco:5ed2cbe74d3dd779ce2691cf
 msgid "Overscan amount"
-msgstr "Importo overscan"
+msgstr "Cantidad de sobreexploración"
 
 #: OperationProperty.py:178 loco:5ed2cbe74d3dd779ce2691d0
 msgid "Rastering on forward and backswing or only forward swing?"
-msgstr "Rastering su forward e backswing o solo forward swing?"
+msgstr "¿Desplazamiento hacia adelante y hacia atrás o solo hacia adelante?"
 
 #: RasterProperty.py:116 loco:5ed2cbe74d3dd779ce2691d1
 msgid "Which corner should we start in?"
-msgstr "In quale curva dovremmo iniziare?"
+msgstr "¿En qué esquina deberíamos comenzar?"
 
 #: RasterProperty.py:142 loco:5ed2cbe74d3dd779ce2691d2
 msgid "Raster Step"
-msgstr "Passaggio raster"
+msgstr "Paso de trama"
 
 #: OperationProperty.py:253 loco:5ed2cbe74d3dd779ce2691d3
 msgid "Raster Direction"
-msgstr "Direzione raster"
+msgstr "Dirección de trama"
 
 #: RasterProperty.py:154 loco:5ed2cbe74d3dd779ce2691d4
 msgid "Overscan"
@@ -1537,83 +1539,83 @@ msgstr "Overscan"
 
 #: RotarySettings.py:28 loco:5ed2cbe74d3dd779ce2691d5
 msgid "Rotary"
-msgstr "Rotante"
+msgstr "Giratorio"
 
 #: RotarySettings.py:31 loco:5ed2cbe74d3dd779ce2691d6
 msgid "Field Loop"
-msgstr "Field Loop"
+msgstr "Bucle de campo"
 
 #: RotarySettings.py:33 loco:5ed2cbe74d3dd779ce2691d7
 msgid "Uses Roller"
-msgstr "Usa il rullo"
+msgstr "Utiliza rodillo"
 
 #: RotarySettings.py:91 RotarySettings.py:102 loco:5ed2cbe74d3dd779ce2691d8
 msgid "Use Rotary Settings"
-msgstr "Utilizzare le impostazioni del Rotary"
+msgstr "Usar configuración giratoria"
 
 #: RotarySettings.py:93 RotarySettings.py:97 loco:5ed2cbe74d3dd779ce2691d9
 msgid "Rotary Scale Factor X"
-msgstr "Fattore di scala rotativa X"
+msgstr "Factor de escala giratoria X"
 
 #: RotarySettings.py:104 loco:5ed2cbe74d3dd779ce2691da
 msgid "Steps required for a full rotation"
-msgstr "Passaggi necessari per una rotazione completa"
+msgstr "Pasos necesarios para una rotación completa"
 
 #: RotarySettings.py:107 loco:5ed2cbe74d3dd779ce2691db
 msgid "Circumference of roller"
-msgstr "Circonferenza del rullo"
+msgstr "Circunferencia del rodillo"
 
 #: RotarySettings.py:111 loco:5ed2cbe74d3dd779ce2691dc
 msgid "Circumference of object in rotary"
-msgstr "Circonferenza dell'oggetto in rotazione"
+msgstr "Circunferencia del objeto en rotativo"
 
 #: RotarySettings.py:119 loco:5ed2cbe74d3dd779ce2691dd
 msgid "Object Circumference"
-msgstr "Circonferenza dell'oggetto"
+msgstr "Circunferencia de objeto"
 
 #: RotarySettings.py:120 loco:5ed2cbe74d3dd779ce2691de
 msgid "Roller Circumference"
-msgstr "Circonferenza del rullo"
+msgstr "Circunferencia del rodillo"
 
 #: RotarySettings.py:121 loco:5ed2cbe74d3dd779ce2691df
 msgid "Rotation Steps"
-msgstr "Passaggi di rotazione"
+msgstr "Pasos de rotación"
 
 #: RotarySettings.py:122 loco:5ed2cbe74d3dd779ce2691e0
 msgid "Scale X"
-msgstr "Scala X"
+msgstr "Escala X"
 
 #: RotarySettings.py:123 loco:5ed2cbe74d3dd779ce2691e1
 msgid "Scale Y"
-msgstr "Scala Y"
+msgstr "Escala Y"
 
 #: RotarySettings.py:132 loco:5ed2cbe74d3dd779ce2691e2
 msgid "steps"
-msgstr "passaggi"
+msgstr "pasos"
 
 #: Settings.py:30 loco:5ed2cbe74d3dd779ce2691e3
 msgid "Units"
-msgstr "Unità"
+msgstr "Unidades"
 
 #: Settings.py:86 loco:5ed2cbe74d3dd779ce2691e4
 msgid "Set default units for guides"
-msgstr "Imposta le unità predefinite per le guide"
+msgstr "Establecer unidades predeterminadas para guías"
 
 #: Settings.py:88 loco:5ed2cbe74d3dd779ce2691e5
 msgid "Select the desired language to use."
-msgstr "Seleziona la lingua che desideri utilizzare."
+msgstr "Seleccione el idioma que desee utilizar."
 
 #: Settings.py:96 loco:5ed2cbe74d3dd779ce2691e6
 msgid "Language"
-msgstr "Linguaggio"
+msgstr "Idioma"
 
 #: Shutdown.py:63 loco:5ed2cbe74d3dd779ce2691e7
 msgid "Shutdown"
-msgstr "Spegnimento"
+msgstr "Apagar"
 
 #: Terminal.py:69 wxMeerK40t.py:223 loco:5ed2cbe74d3dd779ce2691e8
 msgid "Terminal"
-msgstr "Terminale"
+msgstr "Terminal"
 
 #: UsbConnect.py:59 loco:5ed2cbe74d3dd779ce2691e9
 msgid "UsbConnect"
@@ -1621,15 +1623,15 @@ msgstr "UsbConnect"
 
 #: wxMeerK40t.py:153 loco:5ed2cbe74d3dd779ce2691ea
 msgid "Examples"
-msgstr "Esempi"
+msgstr "Ejemplos"
 
 #: wxMeerK40t.py:154 loco:5ed2cbe74d3dd779ce2691eb
 msgid "Toolbar"
-msgstr "Toolbar"
+msgstr "Barra de herramientas"
 
 #: wxMeerK40t.py:164 wxMeerK40t.py:231 loco:5ed2cbe74d3dd779ce2691ec
 msgid "Windows"
-msgstr "Finestre"
+msgstr "Ventanas"
 
 #: wxMeerK40t.py:167 loco:5ed2cbe74d3dd779ce2691ed
 msgid "Usb"
@@ -1641,111 +1643,111 @@ msgstr "Spooler"
 
 #: wxMeerK40t.py:171 loco:5ed2cbe74d3dd779ce2691ef
 msgid "Devices"
-msgstr "Dispositivi"
+msgstr "Dispositivos"
 
 #: wxMeerK40t.py:181 loco:5ed2cbe74d3dd779ce2691f0
 msgid "New"
-msgstr "Nuovo"
+msgstr "Nuevo"
 
 #: wxMeerK40t.py:182 loco:5ed2cbe74d3dd779ce2691f1
 msgid "Open Project"
-msgstr "Progetto aperto"
+msgstr "Proyecto abierto"
 
 #: wxMeerK40t.py:183 loco:5ed2cbe74d3dd779ce2691f2
 msgid "Import File"
-msgstr "Importare file"
+msgstr "Importar archivo"
 
 #: wxMeerK40t.py:186 loco:5ed2cbe74d3dd779ce2691f3
 msgid "Save"
-msgstr "Salva"
+msgstr "Salvar"
 
 #: wxMeerK40t.py:187 loco:5ed2cbe74d3dd779ce2691f4
 msgid "Save As"
-msgstr "Salva come"
+msgstr "Guardar como"
 
 #: wxMeerK40t.py:189 loco:5ed2cbe74d3dd779ce2691f5
 msgid "Exit"
-msgstr "Uscita"
+msgstr "Salida"
 
 #: wxMeerK40t.py:190 loco:5ed2cbe74d3dd779ce2691f6
 msgid "File"
-msgstr "File"
+msgstr "Expediente"
 
 #: wxMeerK40t.py:193 loco:5ed2cbe74d3dd779ce2691f7
 msgid "Zoom Out"
-msgstr "Zoom indietro"
+msgstr "Disminuir el zoom"
 
 #: wxMeerK40t.py:194 loco:5ed2cbe74d3dd779ce2691f8
 msgid "Zoom In"
-msgstr "Ingrandire"
+msgstr "Acercarse"
 
 #: wxMeerK40t.py:195 loco:5ed2cbe74d3dd779ce2691f9
 msgid "Zoom To Size"
-msgstr "Zoom su dimensione"
+msgstr "Zoom a tamaño"
 
 #: wxMeerK40t.py:197 loco:5ed2cbe74d3dd779ce2691fa
 msgid "Hide Grid"
-msgstr "Nascondi griglia"
+msgstr "Ocultar cuadrícula"
 
 #: wxMeerK40t.py:198 loco:5ed2cbe74d3dd779ce2691fb
 msgid "Hide Guides"
-msgstr "Nascondi guide"
+msgstr "Ocultar guías"
 
 #: wxMeerK40t.py:199 loco:5ed2cbe74d3dd779ce2691fc
 msgid "Hide Paths"
-msgstr "Nascondi percorsi"
+msgstr "Ocultar caminos"
 
 #: wxMeerK40t.py:200 loco:5ed2cbe74d3dd779ce2691fd
 msgid "Hide Images"
-msgstr "Nascondi percorsi"
+msgstr "Ocultar imágenes"
 
 #: wxMeerK40t.py:201 loco:5ed2cbe74d3dd779ce2691fe
 msgid "Hide Text"
-msgstr "Nascondi testo"
+msgstr "Ocultar texto"
 
 #: wxMeerK40t.py:202 loco:5ed2cbe74d3dd779ce2691ff
 msgid "Hide Fills"
-msgstr "Nascondi riempimenti"
+msgstr "Ocultar rellenos"
 
 #: wxMeerK40t.py:203 loco:5ed2cbe74d3dd779ce269200
 msgid "Hide Strokes"
-msgstr "Nascondi tratti"
+msgstr "Ocultar trazos"
 
 #: wxMeerK40t.py:204 loco:5ed2cbe74d3dd779ce269201
 msgid "Hide Laserpath"
-msgstr "Nascondi Laserpath"
+msgstr "Ocultar ruta láser"
 
 #: wxMeerK40t.py:205 loco:5ed2cbe74d3dd779ce269202
 msgid "Hide Reticle"
-msgstr "Nascondi reticolo"
+msgstr "Ocultar retícula"
 
 #: wxMeerK40t.py:206 loco:5ed2cbe74d3dd779ce269203
 msgid "Hide Selection"
-msgstr "Nascondi selezione"
+msgstr "Esconder selección"
 
 #: wxMeerK40t.py:208 loco:5ed2cbe74d3dd779ce269204
 msgid "Do Not Refresh"
-msgstr "Non aggiornare"
+msgstr "No actualizar"
 
 #: wxMeerK40t.py:209 loco:5ed2cbe74d3dd779ce269205
 msgid "Do Not Animate"
-msgstr "Non animare"
+msgstr "No animar"
 
 #: wxMeerK40t.py:213 loco:5ed2cbe74d3dd779ce269206
 msgid "View"
-msgstr "Visualizza"
+msgstr "Ver"
 
 #: wxMeerK40t.py:218 loco:5ed2cbe74d3dd779ce269207
 msgid "Rotary Settings"
-msgstr "Impostazioni Rotary"
+msgstr "Configuraciones rotativas"
 
 #: wxMeerK40t.py:220 loco:5ed2cbe74d3dd779ce269208
 msgid "Device Manager"
-msgstr "Gestore dispositivi"
+msgstr "Administrador de dispositivos"
 
 #: wxMeerK40t.py:221 loco:5ed2cbe74d3dd779ce269209
 msgid "Alignment Ally"
-msgstr "Alleato di allineamento"
+msgstr "Alineamiento Aliado"
 
 #: wxMeerK40t.py:226 loco:5ed2cbe74d3dd779ce26920a
 msgid "USB"
@@ -1757,27 +1759,27 @@ msgstr "Job Spooler"
 
 #: wxMeerK40t.py:228 wxMeerK40t.py:1703 loco:5ed2cbe74d3dd779ce26920c
 msgid "Execute Job"
-msgstr "Esegui lavoro"
+msgstr "Ejecutar trabajo"
 
 #: wxMeerK40t.py:234 loco:5ed2cbe74d3dd779ce26920d
 msgid "Webpage"
-msgstr "Pagina web"
+msgstr "Página web"
 
 #: wxMeerK40t.py:236 loco:5ed2cbe74d3dd779ce26920e
 msgid "Help"
-msgstr "Aiuto"
+msgstr "Ayuda"
 
 #: wxMeerK40t.py:396 loco:5ed2cbe74d3dd779ce26920f
 msgid "Languages"
-msgstr "Le lingue"
+msgstr "Idiomas"
 
 #: wxMeerK40t.py:619 loco:5ed2cbe74d3dd779ce269210
 msgid "All attempts to connect to USB have failed."
-msgstr "Tutti i tentativi di connessione a USB non sono riusciti."
+msgstr "Todos los intentos de conexión a USB han fallado."
 
 #: wxMeerK40t.py:620 loco:5ed2cbe74d3dd779ce269211
 msgid "Usb Connection Problem."
-msgstr "Problema di connessione USB."
+msgstr "Problema de conexión USB."
 
 #: wxMeerK40t.py:625 loco:5ed2cbe74d3dd779ce269212
 #, python-format
@@ -1787,12 +1789,12 @@ msgstr "Usb: %s"
 #: wxMeerK40t.py:628 loco:5ed2cbe74d3dd779ce269213
 #, python-format
 msgid "Controller: %s"
-msgstr "Controller: %s"
+msgstr "Controlador: %s"
 
 #: wxMeerK40t.py:631 loco:5ed2cbe74d3dd779ce269214
 #, python-format
 msgid "Spooler: %s"
-msgstr "Spooler: %s"
+msgstr "Cola de impresión: %s"
 
 #: wxMeerK40t.py:652 loco:5ed2cbe74d3dd779ce269215
 #, python-format
@@ -1804,178 +1806,178 @@ msgstr "%s v%s %s"
 msgid ""
 "Some files were unrecognized:\n"
 "%s"
-msgstr "Alcuni file non sono stati riconosciuti: %s"
+msgstr "Algunos archivos no se reconocieron: %s"
 
 #: wxMeerK40t.py:704 wxMeerK40t.py:2532 loco:5ed2cbe74d3dd779ce269217
 msgid "Error encountered"
-msgstr "Si è verificato un errore"
+msgstr "Error encontrado"
 
 #: wxMeerK40t.py:893 loco:5ed2cbe74d3dd779ce269218
 msgid "Open"
-msgstr "Aperto"
+msgstr "Abierto"
 
 #: wxMeerK40t.py:967 loco:5ed2cbe74d3dd779ce269219
 msgid "Enter Forced Gear"
-msgstr "Inserisci ingranaggio forzato"
+msgstr "Entrar en equipo forzado"
 
 #: wxMeerK40t.py:967 loco:5ed2cbe74d3dd779ce26921a
 msgid "Gear Entry"
-msgstr "Ingranaggio"
+msgstr "Entrada de engranajes"
 
 #: wxMeerK40t.py:979 loco:5ed2cbe74d3dd779ce26921b
 msgid "Enter FPS Limit"
-msgstr "Immettere il limite FPS"
+msgstr "Ingrese el límite de FPS"
 
 #: wxMeerK40t.py:979 loco:5ed2cbe74d3dd779ce26921c
 msgid "FPS Limit Entry"
-msgstr "Immissione limite FPS"
+msgstr "Entrada de límite de FPS"
 
 #: wxMeerK40t.py:991 loco:5ed2cbe74d3dd779ce26921d
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
 msgstr ""
-"Immettere l'istruzione di trasformazione SVG, ad esempio \"scale (1,49, 1, "
-"$x, $y)\", rotate, translate,, ecc ..."
+"Ingrese la instrucción de transformación SVG, por ejemplo, 'scale(1.49, 1, "
+"$x, $y)', rotate, translate, etc."
 
 #: wxMeerK40t.py:993 loco:5ed2cbe74d3dd779ce26921e
 msgid "Transform Entry"
-msgstr "Trasforma voce"
+msgstr "Transformar entrada"
 
 #: wxMeerK40t.py:1008 loco:5ed2cbe74d3dd779ce26921f
 msgid "The entered command does nothing."
-msgstr "Il comando immesso non fa nulla."
+msgstr "El comando introducido no hace nada."
 
 #: wxMeerK40t.py:1009 loco:5ed2cbe74d3dd779ce269220
 msgid "Non-Useful Matrix."
-msgstr "Matrice non utile."
+msgstr "Matriz no útil."
 
 #: wxMeerK40t.py:1060 loco:5ed2cbe74d3dd779ce269221
 msgid "Enter SVG Path Data"
-msgstr "Immettere i dati del percorso SVG"
+msgstr "Ingresar datos de ruta SVG"
 
 #: wxMeerK40t.py:1060 loco:5ed2cbe74d3dd779ce269222
 msgid "Path Entry"
-msgstr "Immissione percorso"
+msgstr "Entrada de ruta"
 
 #: wxMeerK40t.py:229 wxMeerK40t.py:1369 loco:5ed2cbe74d3dd779ce269223
 msgid "Operations"
-msgstr "Operazioni"
+msgstr "Operaciones"
 
 #: wxMeerK40t.py:1383 loco:5ed2cbe74d3dd779ce269224
 msgid "Elements"
-msgstr "Elementi"
+msgstr "Elementos"
 
 #: wxMeerK40t.py:1387 loco:5ed2cbe74d3dd779ce269225
 msgid "Files"
-msgstr "File"
+msgstr "Archivos"
 
 #: wxMeerK40t.py:1718 loco:5ed2cbe74d3dd779ce269226
 #, python-format
 msgid "Remove: %s"
-msgstr "Rimuovi: %s"
+msgstr "Elimina: %s"
 
 #: wxMeerK40t.py:1721 loco:5ed2cbe74d3dd779ce269227
 #, python-format
 msgid "Remove: %d objects"
-msgstr "Rimuovi: %d oggetti"
+msgstr "Eliminar: %d objetos"
 
 #: wxMeerK40t.py:1724 loco:5ed2cbe74d3dd779ce269228
 msgid "Reverse Layer Order"
-msgstr "Ordine degli strati inversi"
+msgstr "Orden de capa inversa"
 
 #: wxMeerK40t.py:1739 loco:5ed2cbe74d3dd779ce269229
 msgid "Reclassify Operations"
-msgstr "Riclassificare le operazioni"
+msgstr "Reclasificar operaciones"
 
 #: wxMeerK40t.py:1745 loco:5ed2cbe74d3dd779ce26922a
 #, python-format
 msgid "Convert %s"
-msgstr "Converti %s"
+msgstr "Convertir %s"
 
 #: wxMeerK40t.py:1747 loco:5ed2cbe74d3dd779ce26922b
 msgid "Convert Operation"
-msgstr "Operazione di conversione"
+msgstr "Operación de conversión"
 
 #: wxMeerK40t.py:1752 loco:5ed2cbe74d3dd779ce26922c
 msgid "Add 1 pass."
-msgstr "Aggiungi 1 passaggio."
+msgstr "Agrega 1 pasada."
 
 #: wxMeerK40t.py:1755 loco:5ed2cbe74d3dd779ce26922d
 #, python-format
 msgid "Add %d passes."
-msgstr "Aggiungi %d passaggi."
+msgstr "Agregue %d pases."
 
 #: OperationProperty.py:75 OperationProperty.py:211 wxMeerK40t.py:1756
 #: loco:5ed2cbe74d3dd779ce26922e
 msgid "Passes"
-msgstr "I pass"
+msgstr "Pases"
 
 #: wxMeerK40t.py:1760 wxMeerK40t.py:1813 loco:5ed2cbe74d3dd779ce26922f
 #, python-format
 msgid "Step %d"
-msgstr "Passaggio %d"
+msgstr "Paso %d"
 
 #: wxMeerK40t.py:1765 wxMeerK40t.py:1823 loco:5ed2cbe74d3dd779ce269230
 msgid "Step"
-msgstr "Passo"
+msgstr "Paso"
 
 #: wxMeerK40t.py:1767 loco:5ed2cbe74d3dd779ce269231
 msgid "Make Raster Image"
-msgstr "Crea un'immagine raster"
+msgstr "Hacer imagen ráster"
 
 #: wxMeerK40t.py:1772 loco:5ed2cbe74d3dd779ce269232
 #, python-format
 msgid "Reload %s"
-msgstr "Ricarica %s"
+msgstr "Recargar %s"
 
 #: wxMeerK40t.py:1777 loco:5ed2cbe74d3dd779ce269233
 #, python-format
 msgid "Make %d copies."
-msgstr "Crea %d copie."
+msgstr "Haga %d copias."
 
 #: wxMeerK40t.py:1778 loco:5ed2cbe74d3dd779ce269234
 msgid "Duplicate"
-msgstr "Duplicare"
+msgstr "Duplicar"
 
 #: wxMeerK40t.py:1781 loco:5ed2cbe74d3dd779ce269235
 msgid "Reset User Changes"
-msgstr "Ripristina modifiche utente"
+msgstr "Restablecer cambios de usuario"
 
 #: wxMeerK40t.py:1786 loco:5ed2cbe74d3dd779ce269236
 #, python-format
 msgid "Scale %.0f%%"
-msgstr "Scala %.0f %%"
+msgstr "Escala %.0f %%"
 
 #: wxMeerK40t.py:1788 loco:5ed2cbe74d3dd779ce269237
 msgid "Scale"
-msgstr "Scala"
+msgstr "Escala"
 
 #: wxMeerK40t.py:1794 loco:5ed2cbe74d3dd779ce269238
 #, python-format
 msgid "Rotate turn/%d, %.0f°"
-msgstr "Ruota giro /%d,%.0f °"
+msgstr "Girar giro /%d,%.0f °"
 
 #: wxMeerK40t.py:1801 loco:5ed2cbe74d3dd779ce269239
 #, python-format
 msgid "Rotate turn/%d, -%.0f°"
-msgstr "Ruota giro /%d, -%.0f °"
+msgstr "Girar giro /%d, -%.0f °"
 
 #: wxMeerK40t.py:1803 loco:5ed2cbe74d3dd779ce26923a
 msgid "Rotate"
-msgstr "Ruotare"
+msgstr "Girar"
 
 #: wxMeerK40t.py:1805 loco:5ed2cbe74d3dd779ce26923b
 msgid "Reify User Changes"
-msgstr "Modifica modifiche utente"
+msgstr "Reificar cambios de usuario"
 
 #: wxMeerK40t.py:1808 loco:5ed2cbe74d3dd779ce26923c
 msgid "Break Subpaths"
-msgstr "Rompere i sottotracciati"
+msgstr "Romper subpaths"
 
 #: wxMeerK40t.py:1825 loco:5ed2cbe74d3dd779ce26923d
 msgid "Actualize Pixels"
-msgstr "Attualizza pixel"
+msgstr "Actualizar píxeles"
 
 #: wxMeerK40t.py:1827 loco:5ed2cbe74d3dd779ce26923e
 msgid "Dither to 1 bit"
@@ -1984,7 +1986,7 @@ msgstr "Dither a 1 bit"
 #: wxMeerK40t.py:1831 loco:5ed2cbe74d3dd779ce26923f
 #, python-format
 msgid "Divide Into %d Images"
-msgstr "Dividi in% d immagini"
+msgstr "Dividir en %d imágenes"
 
 #: wxMeerK40t.py:1833 loco:5ed2cbe74d3dd779ce269240
 msgid "ZDepth Divide"
@@ -1992,256 +1994,256 @@ msgstr "ZDepth Divide"
 
 #: wxMeerK40t.py:1837 loco:5ed2cbe74d3dd779ce269241
 msgid "Convert to Raster"
-msgstr "Converti in raster"
+msgstr "Convertir a ráster"
 
 #: wxMeerK40t.py:2525 loco:5ed2cbe74d3dd779ce269242
 #, python-format
 msgid "Saving Log: %s"
-msgstr "Registro di salvataggio: %s"
+msgstr "Guardar registro: %s"
 
 #: CH341DriverBase.py:59 loco:5f08f12237a3667371235562
 msgid "Uninitialized."
-msgstr "Non inizializzata."
+msgstr "Sin inicializar."
 
 #: CameraInteface.py:31 loco:5f08f12237a3667371235563
 msgid "Set IP Camera 1"
-msgstr "Imposta IP Camera 1"
+msgstr "Establecer cámara IP 1"
 
 #: CameraInteface.py:34 loco:5f08f12237a3667371235564
 msgid "Set IP Camera 2"
-msgstr "Imposta IP Camera 2"
+msgstr "Establecer cámara IP 2"
 
 #: CameraInteface.py:37 loco:5f08f12237a3667371235565
 msgid "Set IP Camera 3"
-msgstr "Imposta IP Camera 3"
+msgstr "Configurar cámara IP 3"
 
 #: CameraInteface.py:370 loco:5f08f12237a3667371235566
 #, python-format
 msgid "Enter the HTTP or RTSP uri for the webcam #%d"
-msgstr "Immettere HTTP o RTSP uri per la webcam #% d"
+msgstr "Ingrese el URL HTTP o RTSP para la cámara web #%d"
 
 #: CameraInteface.py:372 loco:5f08f12237a3667371235567
 msgid "Webcam URI Update"
-msgstr "Aggiornamento URI Webcam"
+msgstr "Actualización de URI de cámara web"
 
 #: Controller.py:25 loco:5f08f12237a3667371235568
 msgid "Connection"
-msgstr "Connessione"
+msgstr "Conección"
 
 #: Controller.py:127 loco:5f08f12237a3667371235569
 msgid "Change the currently performed operation."
-msgstr "Modifica l'operazione attualmente eseguita."
+msgstr "Cambiar la operación realizada actualmente."
 
 #: Controller.py:129 loco:5f08f12237a366737123556a
 msgid "Displays the controller's current process."
-msgstr "Visualizza il processo in corso del controller."
+msgstr "Muestra el proceso actual del controlador."
 
 #: Controller.py:133 loco:5f08f12237a366737123556b
 msgid "Force connection/disconnection from the device."
-msgstr "Forza la connessione / disconnessione dal dispositivo."
+msgstr "Conectar/desconectar del dispositivo."
 
 #: Controller.py:135 loco:5f08f12237a366737123556c
 msgid "Connection status"
-msgstr "Stato della connessione"
+msgstr "Estado de la conección"
 
 #: Controller.py:136 loco:5f08f12237a366737123556d
 msgid "Device being used"
-msgstr "Dispositivo in uso"
+msgstr "Dispositivo utilizado"
 
 #: Controller.py:137 loco:5f08f12237a366737123556e
 msgid "Connection location"
-msgstr "Posizione della connessione"
+msgstr "Ubicación de la conección"
 
 #: Controller.py:139 loco:5f08f12237a366737123556f
 msgid ""
 "Limit the write buffer to a certain amount. Permits on-the-fly command "
 "production."
 msgstr ""
-"Limitare il buffer di scrittura a un determinato punto. Consente la "
-"produzione di comandi al volo."
+"Limite el búfer de escritura a una cierta cantidad. Permite la producción de "
+"comandos sobre la marcha."
 
 #: Controller.py:142 loco:5f08f12237a3667371235570
 msgid "Current number of bytes in the write buffer."
-msgstr "Numero corrente di byte nel buffer di scrittura."
+msgstr "Número actual de bytes en el búfer de escritura."
 
 #: Controller.py:143 loco:5f08f12237a3667371235571
 msgid "Current maximum write buffer limit."
-msgstr "Limite massimo del buffer di scrittura corrente."
+msgstr "Límite actual máximo de búfer de escritura."
 
 #: Controller.py:145 loco:5f08f12237a3667371235572
 msgid "View a snapshot of the current buffer"
-msgstr "Visualizza un'istantanea del buffer corrente"
+msgstr "Ver una instantánea del búfer actual"
 
 #: Controller.py:147 loco:5f08f12237a3667371235573
 msgid "Total number of packets sent"
-msgstr "Numero totale di pacchetti inviati"
+msgstr "Total paquetes enviados"
 
 #: Controller.py:149 loco:5f08f12237a3667371235574
 msgid "Total number of packets rejected"
-msgstr "Numero totale di pacchetti rifiutati"
+msgstr "Total paquetes rechazados"
 
 #: Controller.py:150 loco:5f08f12237a3667371235575
 msgid "Last packet information sent"
-msgstr "Informazioni sull'ultimo pacchetto inviato"
+msgstr "Última información de paquete enviada"
 
 #: Controller.py:154 loco:5f08f12237a3667371235576
 msgid "The meaning of Byte 1"
-msgstr "Il significato di Byte 1"
+msgstr "El significado del Byte 1"
 
 #: Controller.py:160 loco:5f08f12237a3667371235577
 msgid "Pause/Resume the controller"
-msgstr "Pausa / Riprendi il controller"
+msgstr "Pausar / reanudar el controlador"
 
 #: Controller.py:163 loco:5f08f12237a3667371235578
 msgid "Emergency stop/reset the controller."
-msgstr "Arresto di emergenza / ripristino del controller."
+msgstr "Parada de emergencia / reinicio del controlador."
 
 #: Controller.py:186 loco:5f08f12237a3667371235579
 msgid "Process"
-msgstr "Processi"
+msgstr "Proceso"
 
 #: Controller.py:220 loco:5f08f12237a366737123557a
 msgid "Packet Count"
-msgstr "Conteggio pacchetti"
+msgstr "Total paquetes"
 
 #: Controller.py:228 loco:5f08f12237a366737123557b
 msgid "Packet Info"
-msgstr "Informazioni sul pacchetto"
+msgstr "Información del paquete"
 
 #: Controller.py:315 loco:5f08f12237a366737123557c
 msgid "Connect"
-msgstr "Collegare"
+msgstr "Conectar"
 
 #: Controller.py:320 loco:5f08f12237a366737123557d
 msgid "Disconnecting..."
-msgstr "Disconnessione ..."
+msgstr "Desconectando..."
 
 #: Controller.py:325 loco:5f08f12237a366737123557e
 msgid "Disconnect"
-msgstr "Scollegare"
+msgstr "Desconectar"
 
 #: Controller.py:330 loco:5f08f12237a366737123557f
 msgid "Connecting..."
-msgstr "Connessione in corso ..."
+msgstr "Conectando..."
 
 #: Controller.py:373 loco:5f08f12237a3667371235580
 msgid "Hold Controller"
-msgstr "Hold Controller"
+msgstr "Mantenga el controlador"
 
 #: Controller.py:378 loco:5f08f12237a3667371235581
 msgid "LOCKED"
-msgstr "BLOCCATO"
+msgstr "BLOQUEADO"
 
 #: DeviceManager.py:161 loco:5f08f12237a3667371235582
 msgid "That device already booted."
-msgstr "Quel dispositivo è già stato avviato."
+msgstr "Ese dispositivo ya arrancó."
 
 #: DeviceManager.py:162 loco:5f08f12237a3667371235583
 msgid "Cannot Boot Selected Device"
-msgstr "Impossibile avviare il dispositivo selezionato"
+msgstr "No se puede iniciar el dispositivo seleccionado"
 
 #: JobInfo.py:32 loco:5f08f12237a3667371235584
 msgid "Home Before"
-msgstr "Home Before"
+msgstr "Inicio antes"
 
 #: JobSpooler.py:122 loco:5f08f12237a3667371235585
 #, python-format
 msgid "power=%g"
-msgstr "potenza =% g"
+msgstr "potencia=%g"
 
 #: Kernel.py:611 loco:5f08f12237a3667371235586
 #, python-format
 msgid "WARNING: Listener '%s' still registered to %s."
-msgstr "ATTENZIONE: il listener '%s' è ancora registrato su%s."
+msgstr "ADVERTENCIA: El oyente '%s' todavía está registrado en %s."
 
 #: Kernel.py:1487 loco:5f08f12237a3667371235587
 msgid "Shutting down."
-msgstr "Chiudere."
+msgstr "Apagando."
 
 #: Kernel.py:1489 loco:5f08f12237a3667371235588
 #, python-format
 msgid "Saving Device State: '%s'"
-msgstr "Salvataggio dello stato del dispositivo: '%s'"
+msgstr "Guardando estado del dispositivo: '%s'"
 
 #: Kernel.py:1499 loco:5f08f12237a3667371235589
 #, python-format
 msgid "Device Shutdown Started: '%s'"
-msgstr "Arresto dispositivo avviato: '%s'"
+msgstr "Apagado del dispositivo iniciado: '%s'"
 
 #: Kernel.py:1504 loco:5f08f12237a366737123558a
 #, python-format
 msgid "Device Shutdown Finished: '%s'"
-msgstr "Arresto dispositivo terminato: '%s'"
+msgstr "Apagado del dispositivo terminado: '%s'"
 
 #: Kernel.py:1514 loco:5f08f12237a366737123558b
 #, python-format
 msgid "Stopping %s %s: %s"
-msgstr "Arresto %s %s: %s"
+msgstr "Deteniendo %s %s: %s"
 
 #: Kernel.py:1518 loco:5f08f12237a366737123558c
 #, python-format
 msgid "Closing %s %s: %s"
-msgstr "Chiusura %s %s: %s"
+msgstr "Cierre %s %s: %s"
 
 #: Kernel.py:1527 loco:5f08f12237a366737123558d
 #, python-format
 msgid "Thread %s exited safely %s"
-msgstr "Il thread %s è uscito in modo sicuro %s"
+msgstr "El hilo %s salió con seguridad %s"
 
 #: Kernel.py:1530 loco:5f08f12237a366737123558e
 #, python-format
 msgid "WARNING: Dead thread %s still registered to %s."
-msgstr "ATTENZIONE: il thread morto %s è ancora registrato su %s."
+msgstr "ADVERTENCIA: El hilo muerto %s todavía está registrado en %s."
 
 #: Kernel.py:1532 loco:5f08f12237a366737123558f
 #, python-format
 msgid "Finishing Thread %s for %s"
-msgstr "Filo di finitura %s per %s"
+msgstr "Hilo de acabado %s para %s"
 
 #: Kernel.py:1534 loco:5f08f12237a3667371235590
 #, python-format
 msgid "%s is the current shutdown thread"
-msgstr "%s è il thread di arresto corrente"
+msgstr "%s es el hilo de apagado actual"
 
 #: Kernel.py:1538 loco:5f08f12237a3667371235591
 msgid "Asking thread to stop."
-msgstr "Chiedere al thread di fermarsi."
+msgstr "Pidiendo hilo para parar."
 
 #: Kernel.py:1542 loco:5f08f12237a3667371235592
 #, python-format
 msgid "Waiting for thread %s: %s"
-msgstr "In attesa del thread %s: %s"
+msgstr "Esperando hilo %s: %s"
 
 #: Kernel.py:1544 loco:5f08f12237a3667371235593
 #, python-format
 msgid "Thread %s finished. %s"
-msgstr "Discussione %s terminata. %s"
+msgstr "Hilo %s terminado. %s"
 
 #: Kernel.py:1546 loco:5f08f12237a3667371235594
 msgid "No threads required halting."
-msgstr "Nessun thread ha richiesto l'arresto."
+msgstr "No hay hilos necesarios para detenerse."
 
 #: Kernel.py:1556 loco:5f08f12237a3667371235595
 #, python-format
 msgid "Shutting down %s %s: %s"
-msgstr "Chiusura di %s %s: %s"
+msgstr "Apagando %s %s: %s"
 
 #: Kernel.py:1568 loco:5f08f12237a3667371235596
 #, python-format
 msgid "WARNING: %s %s was not closed."
-msgstr "ATTENZIONE: %s %s non è stato chiuso."
+msgstr "ADVERTENCIA: %s %s no se cerró."
 
 #: Kernel.py:1570 loco:5f08f12237a3667371235597
 msgid "Shutdown."
-msgstr "Spegnimento."
+msgstr "Apagar."
 
 #: Kernel.py:1586 loco:5f08f12237a3667371235598
 msgid "All Devices are shutdown. Stopping Kernel."
-msgstr "Tutti i dispositivi vengono arrestati. Arresto del kernel."
+msgstr "Todos los dispositivos están apagados. Deteniendo Kernel."
 
 #: Kernel.py:1956 loco:5f08f12237a3667371235599
 msgid "Abort"
-msgstr "Abortire"
+msgstr "Abortar"
 
 #: Kernel.py:1960 loco:5f08f12237a366737123559a
 msgid "Pause"
@@ -2249,71 +2251,71 @@ msgstr "Pausa"
 
 #: Kernel.py:1962 loco:5f08f12237a366737123559b
 msgid "Busy"
-msgstr "Occupato"
+msgstr "Ocupado"
 
 #: Kernel.py:1964 loco:5f08f12237a366737123559c
 msgid "Active"
-msgstr "Occupato"
+msgstr "Activo"
 
 #: Kernel.py:1966 loco:5f08f12237a366737123559d
 msgid "Idle"
-msgstr "Inattivo"
+msgstr "Ocioso"
 
 #: Navigation.py:194 loco:5f08f12237a366737123559e
 msgid "Scale Down"
-msgstr "Rimpicciolire"
+msgstr "Reducir proporcionalmente"
 
 #: Navigation.py:195 loco:5f08f12237a366737123559f
 msgid "Translate Top"
-msgstr "Traduci in alto"
+msgstr "Traducir arriba"
 
 #: Navigation.py:196 loco:5f08f12237a36673712355a0
 msgid "Scale Up"
-msgstr "Scalare"
+msgstr "Aumentar proporcionalmente"
 
 #: Navigation.py:197 loco:5f08f12237a36673712355a1
 msgid "Translate Left"
-msgstr "Traduci a sinistra"
+msgstr "Traducir a la izquierda"
 
 #: Navigation.py:198 loco:5f08f12237a36673712355a2
 msgid "Reset Matrix"
-msgstr "Reimposta matrice"
+msgstr "Restablecer matriz"
 
 #: Navigation.py:199 loco:5f08f12237a36673712355a3
 msgid "Translate Right"
-msgstr "Traduci bene"
+msgstr "Traducir a la derecha"
 
 #: Navigation.py:200 loco:5f08f12237a36673712355a4
 msgid "Rotate Counterclockwise"
-msgstr "Ruotare in senso antiorario"
+msgstr "Girar en sentido antihorario"
 
 #: Navigation.py:201 loco:5f08f12237a36673712355a5
 msgid "Translate Bottom"
-msgstr "Traduci in basso"
+msgstr "Traducir abajo"
 
 #: Navigation.py:202 loco:5f08f12237a36673712355a6
 msgid "Rotate Clockwise"
-msgstr "Ruotare in senso orario"
+msgstr "Rotar las agujas del reloj"
 
 #: OperationProperty.py:46 loco:5f08f12237a36673712355a7
 msgid "Engrave"
-msgstr "Incidere"
+msgstr "Grabar"
 
 #: OperationProperty.py:46 loco:5f08f12237a36673712355a8
 msgid "Cut"
-msgstr "Tagliare"
+msgstr "Cortar"
 
 #: OperationProperty.py:46 loco:5f08f12237a36673712355a9
 msgid "Image"
-msgstr "Immagine"
+msgstr "Imagen"
 
 #: OperationProperty.py:48 loco:5f08f12237a36673712355aa
 msgid "Output"
-msgstr "Produzione"
+msgstr "Salida"
 
 #: OperationProperty.py:49 loco:5f08f12237a36673712355ab
 msgid "Show"
-msgstr "Mostrare"
+msgstr "Mostrar"
 
 #: OperationProperty.py:57 loco:5f08f12237a36673712355ac
 msgid "Crosshatch"
@@ -2321,133 +2323,133 @@ msgstr "Crosshatch"
 
 #: OperationProperty.py:66 loco:5f08f12237a36673712355ad
 msgid "Advanced"
-msgstr "Avanzate"
+msgstr "Avanzado"
 
 #: OperationProperty.py:70 loco:5f08f12237a36673712355ae
 msgid "Acceleration"
-msgstr "Avanzate"
+msgstr "Aceleración"
 
 #: OperationProperty.py:72 loco:5f08f12237a36673712355af
 msgid "Dot Length (mils)"
-msgstr "Lunghezza punto (mils)"
+msgstr "Longitud de punto (mils)"
 
 #: OperationProperty.py:160 loco:5f08f12237a36673712355b0
 msgid "Operation Properties"
-msgstr "Proprietà dell'operazione"
+msgstr "Propiedades de operación"
 
 #: OperationProperty.py:165 loco:5f08f12237a36673712355b1
 msgid "Change/View color of this layer"
-msgstr "Cambia / Visualizza colore di questo livello"
+msgstr "Cambiar/Ver el color de esta capa"
 
 #: OperationProperty.py:166 loco:5f08f12237a36673712355b2
 msgid "Default Operation Mode Type"
-msgstr "Cambia / Visualizza colore di questo livello"
+msgstr "Tipo de modo de operación predeterminado"
 
 #: OperationProperty.py:168 loco:5f08f12237a36673712355b3
 msgid "Output This Layer"
-msgstr "Produci questo livello"
+msgstr "Salida de esta capa"
 
 #: OperationProperty.py:170 loco:5f08f12237a36673712355b4
 msgid "Show This Layer"
-msgstr "Mostra questo livello"
+msgstr "Mostrar esta capa"
 
 #: OperationProperty.py:180 loco:5f08f12237a36673712355b5
 msgid "Turn on advanced options?"
-msgstr "Attiva le opzioni avanzate?"
+msgstr "¿Activar opciones avanzadas?"
 
 #: OperationProperty.py:182 loco:5f08f12237a36673712355b6
 msgid ""
 "Diagonal ratio is the ratio of additional time needed to perform a diagonal "
 "step rather than an orthogonal step. (0.261 default)"
 msgstr ""
-"Il rapporto diagonale è il rapporto del tempo aggiuntivo necessario per "
-"eseguire un passo diagonale anziché un passo ortogonale. (Impostazione "
-"predefinita 0.261)"
+"La proporción diagonal es la proporción de tiempo adicional necesario para "
+"realizar un paso diagonal en lugar de un paso ortogonal. (0,261 "
+"predeterminado)"
 
 #: OperationProperty.py:185 loco:5f08f12237a36673712355b7
 msgid "Enable Dot Length Feature"
-msgstr "Abilita funzione Lunghezza punto"
+msgstr "Habilitar característica de longitud de punto"
 
 #: OperationProperty.py:186 loco:5f08f12237a36673712355b8
 msgid "PPI minimum on length for making dash patterns"
-msgstr "PPI minimo sulla lunghezza per la creazione di modelli di trattini"
+msgstr "PPI mínimo en longitud para hacer patrones de guiones"
 
 #: OperationProperty.py:188 loco:5f08f12237a36673712355b9
 msgid "Enable Passes"
-msgstr "Abilita passaggi"
+msgstr "Habilitar pases"
 
 #: OperationProperty.py:189 loco:5f08f12237a36673712355ba
 msgid "Run operation how many times?"
-msgstr "Quante volte eseguire l'operazione?"
+msgstr "Ejecute la operación ¿cuántas veces?"
 
 #: OperationProperty.py:213 loco:5f08f12237a36673712355bb
 msgid "PPI Advanced"
-msgstr "PPI Advanced"
+msgstr "PPI avanzado"
 
 #: OperationProperty.py:216 loco:5f08f12237a36673712355bc
 msgid "Speedcode Advanced"
-msgstr "Speedcode Advanced"
+msgstr "Speedcode avanzado"
 
 #: OperationProperty.py:221 loco:5f08f12237a36673712355bd
 msgid "Start Preference"
-msgstr "Inizia preferenza"
+msgstr "Preferencia de inicio"
 
 #: OperationProperty.py:227 loco:5f08f12237a36673712355be
 msgid "Power (ppi)"
-msgstr "Potenza (ppi)"
+msgstr "Poder (ppi)"
 
 #: OperationProperty.py:228 loco:5f08f12237a36673712355bf
 msgid "Speed (mm/s)"
-msgstr "Velocità (mm / s)"
+msgstr "Velocidad (mm / s)"
 
 #: OperationProperty.py:229 loco:5f08f12237a36673712355c0
 msgid "Layer"
-msgstr "Strato"
+msgstr "Capa"
 
 #: OperationProperty.py:245 loco:5f08f12237a36673712355c1
 msgid "Raster Step (mils)"
-msgstr "Raster Step (mils)"
+msgstr "Paso de trama (mils)"
 
 #: OperationProperty.py:249 loco:5f08f12237a36673712355c2
 msgid "Overscan (mils/%)"
-msgstr "Overscan (mils/%)"
+msgstr "Sobreexploración (mils /%)"
 
 #: OperationProperty.py:512 loco:5f08f12237a36673712355c3
 msgid "Pass Through"
-msgstr "Passa attraverso"
+msgstr "Pasar por"
 
 #: wxMeerK40t.py:207 loco:5f08f12237a36673712355c4
 msgid "Do Not Cache Image"
-msgstr "Non memorizzare nella cache immagine"
+msgstr "Imagen de no almacenar en caché"
 
 #: wxMeerK40t.py:210 loco:5f08f12237a36673712355c5
 msgid "Invert"
-msgstr "Invertire"
+msgstr "Invertir"
 
 #: wxMeerK40t.py:211 loco:5f08f12237a36673712355c6
 msgid "Flip XY"
-msgstr "Capovolgi XY"
+msgstr "Flip XY"
 
 #: wxMeerK40t.py:678 loco:5f08f12237a36673712355c7
 msgid "Loading File..."
-msgstr "Caricamento file in corso ..."
+msgstr "Cargando archivo ..."
 
 #: wxMeerK40t.py:1729 loco:5f08f12237a36673712355c8
 msgid "Refresh Classification"
-msgstr "Aggiorna classificazione"
+msgstr "Actualizar clasificación"
 
 #: wxMeerK40t.py:1731 loco:5f08f12237a36673712355c9
 msgid "Set Other/Blue/Red Classify"
-msgstr "Imposta la classificazione Altro / Blu / Rosso"
+msgstr "Establecer Otro / Azul / Rojo Clasificar"
 
 #: wxMeerK40t.py:1733 loco:5f08f12237a36673712355ca
 msgid "Set Basic Classification"
-msgstr "Imposta la classificazione di base"
+msgstr "Establecer clasificación básica"
 
 #: wxMeerK40t.py:1735 loco:5f08f12237a36673712355cb
 msgid "Add Operation"
-msgstr "Aggiungi operazione"
+msgstr "Agregar operación"
 
 #: wxMeerK40t.py:1749 loco:5f08f12237a36673712355cc
 msgid "Duplicate Operation"
-msgstr "Operazione Duplicata"
+msgstr "Operación Duplicada"
