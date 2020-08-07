@@ -144,7 +144,8 @@ supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('it', u'italiano', wx.LANGUAGE_ITALIAN),
                        ('fr', u'français', wx.LANGUAGE_FRENCH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
-                       ('es', u'español', wx.LANGUAGE_SPANISH))
+                       ('es', u'español', wx.LANGUAGE_SPANISH),
+                       ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
 
 
 def resource_path(relative_path):
@@ -1991,7 +1992,22 @@ class RootNode(list):
                     menu_item = raster_zdepth_menu.Append(wx.ID_ANY, _("Divide Into %d Images") % i, "", wx.ITEM_NORMAL)
                     gui.Bind(wx.EVT_MENU, self.menu_raster_zdepth(node, i), menu_item)
                 menu.AppendSubMenu(raster_zdepth_menu, _("ZDepth Divide"))
-
+                try:
+                    raster_wizard_menu = wx.Menu()
+                    for script in self.device.device_root.registered['raster_script']:
+                        menu_item = raster_wizard_menu.Append(wx.ID_ANY, _("RasterWizard: %s") % script, "", wx.ITEM_NORMAL)
+                        gui.Bind(wx.EVT_MENU, self.menu_raster_wizard(script), menu_item)
+                    menu.AppendSubMenu(raster_wizard_menu, _("RasterWizard"))
+                except KeyError:
+                    pass
+                try:
+                    raster_wizard_apply_menu = wx.Menu()
+                    for script in self.device.device_root.registered['raster_script']:
+                        menu_item = raster_wizard_apply_menu.Append(wx.ID_ANY, _("Apply: %s") % script, "", wx.ITEM_NORMAL)
+                        gui.Bind(wx.EVT_MENU, self.menu_raster_wizard_apply(script), menu_item)
+                    menu.AppendSubMenu(raster_wizard_apply_menu, _("Apply Raster Script"))
+                except KeyError:
+                    pass
             if isinstance(node.object, SVGText):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
                          menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
@@ -2064,6 +2080,34 @@ class RootNode(list):
             self.device.using('module', 'Console').write('image dither\n')
 
         return specific
+
+    def menu_raster_wizard(self, script):
+        """
+        Starts RasterWizard for the given script.
+
+        :param node:
+        :return:
+        """
+
+        def specific(event):
+            self.device.using('module', 'Console').write('window open RasterWizard %s\n' % script)
+
+        return specific
+
+
+    def menu_raster_wizard_apply(self, script):
+        """
+        Starts RasterWizard for the given script.
+
+        :param node:
+        :return:
+        """
+
+        def specific(event):
+            self.device.using('module', 'Console').write('image wizard %s\n' % script)
+
+        return specific
+
 
     def menu_raster_zdepth(self, node, divide=7):
         """

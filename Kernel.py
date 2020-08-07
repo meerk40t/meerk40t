@@ -2284,6 +2284,7 @@ class Kernel(Device):
         self.keymap['pause'] = "control Realtime Pause_Resume"
         self.keymap['home'] = "home"
         self.keymap['control+z'] = "reset"
+        self.keymap['control+alt+shift+escape'] = 'reset_bind_alias'
 
     def default_alias(self):
         self.alias['+scale_up'] = "loop scale 1.02"
@@ -2312,6 +2313,7 @@ class Kernel(Device):
         self.alias['-down'] = "end down 1mm"
         self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
         self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
+        self.alias['reset_bind_alias'] = "bind default;alias default"
 
     def device_boot(self):
         """

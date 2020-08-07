@@ -368,26 +368,26 @@ class Console(Module, Pipe):
                     else:
                         value = 'open'
                 if value == 'open':
-                    index = args[1]
-                    name = index
-                    if len(args) >= 3:
-                        name = args[2]
-                    if index in kernel.registered['window']:
+                    window_name = args[1]
+                    if window_name in kernel.registered['window']:
                         parent_window = None
                         try:
                             parent_window = active_device.gui
                         except AttributeError:
                             pass
-                        active_device.open('window', name, parent_window, -1, "")
-                        yield 'Window %s opened.' % name
+                        if len(args) >= 3:
+                            active_device.open('window', window_name, parent_window, -1, "", param=args[2])
+                        else:
+                            active_device.open('window', window_name, parent_window, -1, "")
+                        yield 'Window %s opened.' % window_name
                     else:
-                        yield "Window '%s' not found." % index
+                        yield "Window '%s' not found." % window_name
                 elif value == 'close':
-                    index = args[1]
+                    window_name = args[1]
                     if index in active_device.instances['window']:
-                        active_device.close('window', index)
+                        active_device.close('window', window_name)
                     else:
-                        yield "Window '%s' not found." % index
+                        yield "Window '%s' not found." % window_name
         elif command == 'set':
             if len(args) == 0:
                 for attr in dir(active_device):

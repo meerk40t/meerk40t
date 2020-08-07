@@ -22,6 +22,10 @@ class RasterWizard(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: RasterWizard.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
+        param = None
+        if 'param' in kwds:
+            param = kwds['param']
+            del kwds['param']
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self._preview_panel_buffer = None
@@ -39,6 +43,7 @@ class RasterWizard(wx.Frame, Module):
         self.image_width, self.image_height = None, None
         self.ops = RasterScripts.raster_script_gold()
         self.selected_op = None
+        self.param = param
 
         self.SetSize((605, 636))
 
@@ -107,6 +112,8 @@ class RasterWizard(wx.Frame, Module):
         self.device.listen('RasterWizard-Image', self.on_raster_wizard_image_signal)
         self.device.device_root.listen('emphasized', self.on_emphasis_change)
         self.device.signal("RasterWizard-Image")
+        if self.param is not None:
+            self.set_wizard_script(self.param)
 
     def finalize(self, channel=None):
         self.device.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
@@ -212,6 +219,8 @@ class RasterWizard(wx.Frame, Module):
             panel = OutputPanel(self, wx.ID_ANY)
         elif name_op == 'contrast':
             panel = ContrastPanel(self, wx.ID_ANY)
+        else:
+            panel = BasicPanel(self, wx.ID_ANY)
         if panel is None:
             return
         self.sizer_operation_panels.Add(panel, 1, wx.EXPAND, 0)
@@ -849,6 +858,7 @@ class ToneCurvePanel(wx.Panel):
         self.curve_panel.Bind(wx.EVT_LEFT_UP, self.on_curve_mouse_left_up)
         self.device = None
         self.op = None
+        self.point = -1
 
     def __set_properties(self):
         # begin wxGlade: ToneCurvePanel.__set_properties
@@ -903,7 +913,8 @@ class ToneCurvePanel(wx.Panel):
         if self.curve_panel.HasCapture():
             pos = event.GetPosition()
             try:
-                self.op['values'][1] = (pos[0], 255 - pos[1])
+                self.op['values'][self.point] = (pos[0], 255 - pos[1])
+                print((pos[0], 255 - pos[1]))
                 self.device.signal("RasterWizard-Image")
                 self.update_in_gui_thread()
             except (KeyError, IndexError):
@@ -912,6 +923,15 @@ class ToneCurvePanel(wx.Panel):
     def on_curve_mouse_left_down(self, event):
         if not self.curve_panel.HasCapture():
             self.curve_panel.CaptureMouse()
+        distance = float('inf')
+        pos = event.GetPosition()
+        for i, q in enumerate(self.op['values']):
+            dx = pos[0] - q[0]
+            dy = (255 - pos[1]) - q[1]
+            d = dx * dx + dy * dy
+            if d < distance:
+                distance = d
+                self.point = i
 
     def on_curve_mouse_left_up(self, event):
         if self.curve_panel.HasCapture():
@@ -1110,6 +1130,12 @@ class OutputPanel(wx.Panel):
     def set_operation(self, device, op, svg_image=None):
         self.device = device
         self.op = op
+        try:
+            self.check_enable_output.SetValue(self.op['enable'])
+            self.check_replace_output.SetValue(self.op['replace'])
+        except KeyError:
+            pass
+
 
     def on_check_enable_output(self, event):  # wxGlade: OutputPanel.<event_handler>
         print("Event handler 'on_check_enable_output' not implemented!")
@@ -1121,6 +1147,49 @@ class OutputPanel(wx.Panel):
 
 
 # end of class OutputPanel
+
+class BasicPanel(wx.Panel):
+    def __init__(self, *args, **kwds):
+        # begin wxGlade: OutputPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.check_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_enable, self.check_enable)
+        # end wxGlade
+        self.device = None
+        self.op = None
+
+    def __set_properties(self):
+        # begin wxGlade: OutputPanel.__set_properties
+        self.check_enable.SetToolTip(_("Enable Operation"))
+        self.check_enable.SetValue(1)
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: OutputPanel.__do_layout
+        sizer_output = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Enable")), wx.VERTICAL)
+        sizer_output.Add(self.check_enable, 0, 0, 0)
+        self.SetSizer(sizer_output)
+        sizer_output.Fit(self)
+        self.Layout()
+        # end wxGlade
+
+    def set_operation(self, device, op, svg_image=None):
+        self.check_enable.SetLabel(_("Enable %s") % op['name'])
+        self.check_enable.SetValue(op['enable'])
+        self.device = device
+        self.op = op
+
+    def on_check_enable(self, event):
+        self.op['enable'] = self.check_enable.GetValue()
+        self.device.signal("RasterWizard-Image")
+
+# end of class OutputPanel
+
 
 class ContrastPanel(wx.Panel):
     def __init__(self, *args, **kwds):
@@ -1182,6 +1251,7 @@ class ContrastPanel(wx.Panel):
     def set_operation(self, device, op, svg_image=None):
         self.device = device
         self.op = op
+        self.check_enable_contrast.SetValue(self.op['enable'])
         self.text_contrast_contrast.SetValue(str(self.op['contrast']))
         self.text_contrast_brightness.SetValue(str(self.op['brightness']))
         self.slider_contrast_contrast.SetValue(self.op['contrast'])

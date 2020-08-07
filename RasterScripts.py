@@ -25,6 +25,7 @@ class RasterScripts(Module):
     def sub_register(device):
         device.register('raster_script', "Gold", RasterScripts.raster_script_gold())
         device.register('raster_script', "Stipo", RasterScripts.raster_script_stipo())
+        device.register('raster_script', "Gravy", RasterScripts.raster_script_gravy())
         device.register('raster_script', "Xin", RasterScripts.raster_script_xin())
 
     @staticmethod
@@ -125,6 +126,58 @@ class RasterScripts(Module):
         return ops
 
     @staticmethod
+    def raster_script_gravy():
+        ops = list()
+        ops.append({
+            'name': 'edge_enhance',
+            'enable': False
+        })
+        ops.append({
+            'name': 'auto_contrast',
+            'enable': True,
+            'cutoff': 3
+        })
+        ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+        })
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 3
+        })
+        ops.append({
+            'name': 'contrast',
+            'enable': True,
+            'contrast': 10,
+            'brightness': 0,
+        })
+        ops.append({
+            'name': 'tone',
+            'enable': True,
+            'values': [[0, 50], [255, 255]]
+        })
+        ops.append({
+            'name': 'unsharp_mask',
+            'enable': True,
+            'percent': 500,
+            'radius': 4,
+            'threshold': 0
+        })
+        ops.append({
+            'name': 'dither',
+            'enable': True,
+            'type': 0
+        })
+        ops.append({
+            'name': 'output'
+        })
+        return ops
+
+    @staticmethod
     def raster_script_xin():
         ops = list()
 
@@ -157,7 +210,6 @@ class RasterScripts(Module):
             'name': 'output'
         })
         return ops
-
 
     @staticmethod
     def actualize(image, matrix, step_level=1):
@@ -246,6 +298,22 @@ class RasterScripts(Module):
                             pass
                 except KeyError:
                     pass
+            if name == 'edge_enhance':
+                try:
+                    if image.mode == 'P':
+                        image = image.convert('L')
+                    if op['enable']:
+                        image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
+                except KeyError:
+                    pass
+            if name == 'auto_contrast':
+                try:
+                    if image.mode == 'P':
+                        image = image.convert('L')
+                    if op['enable']:
+                        image = ImageOps.autocontrast(image, cutoff=op['cutoff'])
+                except KeyError:
+                    pass
             if name == 'tone':
                 try:
                     if op['enable'] and op['values'] is not None:
@@ -253,6 +321,10 @@ class RasterScripts(Module):
                             image = image.convert('P')
                             tone_values = op['values']
                             spline = RasterScripts.spline(tone_values)
+                            if len(spline) < 256:
+                                spline.extend([255] * (256-len(spline)))
+                            if len(spline) > 256:
+                                spline = spline[:256]
                             image = image.point(spline)
                             if image.mode != 'L':
                                 image = image.convert('L')
@@ -303,7 +375,7 @@ class RasterScripts(Module):
                         unsharp = ImageFilter.UnsharpMask(radius=op['radius'], percent=op['percent'],
                                                           threshold=op['threshold'])
                         image = image.filter(unsharp)
-                except KeyError:
+                except (KeyError, ValueError):  # Value error if wrong type of image.
                     pass
             if name == 'dither':
                 try:
@@ -329,18 +401,25 @@ class RasterScripts(Module):
         :param p: points to be quad spline interpolated.
         :return: integer y values for given spline points.
         """
-        N = len(p) - 1
-        w = [(p[i + 1][0] - p[i][0]) for i in range(0, N)]
-        h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(0, N)]
-        ftt = [0] + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(0, N - 1)] + [0]
-        A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(0, N)]
-        B = [ftt[i] / 2 for i in range(0, N)]
-        C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(0, N)]
-        D = [p[i][1] for i in range(0, N)]
+        try:
+            N = len(p) - 1
+            w = [(p[i + 1][0] - p[i][0]) for i in range(0, N)]
+            h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(0, N)]
+            ftt = [0] + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(0, N - 1)] + [0]
+            A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(0, N)]
+            B = [ftt[i] / 2 for i in range(0, N)]
+            C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(0, N)]
+            D = [p[i][1] for i in range(0, N)]
+        except ZeroDivisionError:
+            return list(range(256))
         r = list()
+        for i in range(0, p[0][0]):
+            r.append(0)
         for i in range(len(p) - 1):
             a = p[i][0]
             b = p[i + 1][0]
             r.extend(int(round(A[i] * (x - a) ** 3 + B[i] * (x - a) ** 2 + C[i] * (x - a) + D[i])) for x in range(a, b))
+        for i in range(p[-1][0], 256):
+            r.append(255)
         r.append(round(int(p[-1][1])))
         return r
