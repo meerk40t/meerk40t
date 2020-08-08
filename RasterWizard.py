@@ -730,6 +730,7 @@ class GammaPanel(wx.Panel):
         # end wxGlade
         self.device = None
         self.op = None
+        self.last_x = None
 
     def __set_properties(self):
         # begin wxGlade: GammaPanel.__set_properties
@@ -913,8 +914,14 @@ class ToneCurvePanel(wx.Panel):
         if self.curve_panel.HasCapture():
             pos = event.GetPosition()
             try:
-                self.op['values'][self.point] = (pos[0], 255 - pos[1])
-                print((pos[0], 255 - pos[1]))
+                v = 255 - pos[1]
+                if self.op['type'] == 'point':
+                    current_x = pos[0]
+                    if 0 <= current_x <= 255:
+                        self.op['values'][pos[0]] = (pos[0], v)
+                else:
+                    self.op['values'][self.point] = (pos[0], v)
+                print(self.op['values'])  # TODO: REMOVE.
                 self.device.signal("RasterWizard-Image")
                 self.update_in_gui_thread()
             except (KeyError, IndexError):
@@ -925,13 +932,19 @@ class ToneCurvePanel(wx.Panel):
             self.curve_panel.CaptureMouse()
         distance = float('inf')
         pos = event.GetPosition()
-        for i, q in enumerate(self.op['values']):
-            dx = pos[0] - q[0]
-            dy = (255 - pos[1]) - q[1]
-            d = dx * dx + dy * dy
-            if d < distance:
-                distance = d
-                self.point = i
+        if self.op['type'] == 'point':
+            v = 255 - pos[1]
+            self.point = pos[0]
+            self.op['values'][pos[0]] = (pos[0], v)
+            self.update_in_gui_thread()
+        else:
+            for i, q in enumerate(self.op['values']):
+                dx = pos[0] - q[0]
+                dy = (255 - pos[1]) - q[1]
+                d = dx * dx + dy * dy
+                if d < distance:
+                    distance = d
+                    self.point = i
 
     def on_curve_mouse_left_up(self, event):
         if self.curve_panel.HasCapture():
@@ -948,10 +961,15 @@ class ToneCurvePanel(wx.Panel):
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
         tone_values = self.op['values']
-        spline = RasterScripts.spline(tone_values)
-        starts = [(i, 255 - spline[i]) for i in range(255)]
-        ends = [(i, 255 - spline[i]) for i in range(1, 256)]
-
+        if self.op['type'] == 'spline':
+            spline = RasterScripts.spline(tone_values)
+            starts = [(i, 255 - spline[i]) for i in range(255)]
+            ends = [(i, 255 - spline[i]) for i in range(1, 256)]
+        else:
+            tone_values = [q for q in tone_values if q is not None]
+            spline = RasterScripts.line(tone_values)
+            starts = [(i, 255 - spline[i]) for i in range(255)]
+            ends = [(i, 255 - spline[i]) for i in range(1, 256)]
         gc.StrokeLineSegments(starts, ends)
         gc.PopState()
         gc.Destroy()
@@ -963,9 +981,10 @@ class ToneCurvePanel(wx.Panel):
 
     def on_button_reset_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
         tone_values = [[0, 0], [100, 150], [255, 255]]
-
         self.op['values'] = tone_values
-        self.device.signal("RasterWizard-Image")
+        self.op['type'] = 'spline'
+        self.device.signal('RasterWizard-Image')
+        self.update_in_gui_thread()
 
 
 # end of class ToneCurvePanel

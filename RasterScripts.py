@@ -100,6 +100,7 @@ class RasterScripts(Module):
         })
         ops.append({
             'name': 'tone',
+            'type': 'spline',
             'enable': True,
             'values': [[0, 0], [100, 150], [255, 255]]
         })
@@ -133,11 +134,6 @@ class RasterScripts(Module):
             'enable': False
         })
         ops.append({
-            'name': 'auto_contrast',
-            'enable': True,
-            'cutoff': 3
-        })
-        ops.append({
             'name': 'grayscale',
             'enable': True,
             'invert': False,
@@ -150,15 +146,16 @@ class RasterScripts(Module):
             'step': 3
         })
         ops.append({
-            'name': 'contrast',
+            'name': 'auto_contrast',
             'enable': True,
-            'contrast': 10,
-            'brightness': 0,
+            'cutoff': 3
         })
         ops.append({
             'name': 'tone',
+            'type': 'line',
             'enable': True,
-            'values': [[0, 50], [255, 255]]
+            'values': [(1, 31), (9, 50), (30, 84), (40, 99), (75, 140), (99, 161),
+                       (148, 197), (170, 213), (181, 221), (197, 231), (253, 254)]
         })
         ops.append({
             'name': 'unsharp_mask',
@@ -190,6 +187,7 @@ class RasterScripts(Module):
         })
         ops.append({
             'name': 'tone',
+            'type': 'spline',
             'enable': True,
             'values': [[0, 0], [100, 125], [255, 255]]
         })
@@ -290,12 +288,13 @@ class RasterScripts(Module):
             if name == 'grayscale':
                 try:
                     if op['enable']:
-                        image = ImageOps.grayscale(image)
                         try:
+                            image = ImageOps.grayscale(image)
                             if op['invert']:
                                 image = ImageOps.invert(image)
                         except (KeyError, OSError):
                             pass
+
                 except KeyError:
                     pass
             if name == 'edge_enhance':
@@ -320,7 +319,11 @@ class RasterScripts(Module):
                         if image.mode == 'L':
                             image = image.convert('P')
                             tone_values = op['values']
-                            spline = RasterScripts.spline(tone_values)
+                            if op['type'] == 'spline':
+                                spline = RasterScripts.spline(tone_values)
+                            else:
+                                tone_values = [q for q in tone_values if q is not None]
+                                spline = RasterScripts.line(tone_values)
                             if len(spline) < 256:
                                 spline.extend([255] * (256-len(spline)))
                             if len(spline) > 256:
@@ -391,6 +394,28 @@ class RasterScripts(Module):
                 except KeyError:
                     pass
         return image, matrix, step
+
+    @staticmethod
+    def line(p):
+        N = len(p) - 1
+        try:
+            m = [(p[i + 1][1] - p[i][1]) / (p[i + 1][0] - p[i][0]) for i in range(0, N)]
+        except ZeroDivisionError:
+            m = [1] * N
+        # b = y - mx
+        b = [p[i][1] - (m[i] * p[i][0]) for i in range(0, N)]
+        r = list()
+        for i in range(0, p[0][0]):
+            r.append(0)
+        for i in range(len(p) - 1):
+            x0 = p[i][0]
+            x1 = p[i + 1][0]
+            range_list = [int(round((m[i] * x) + b[i])) for x in range(x0, x1)]
+            r.extend(range_list)
+        for i in range(p[-1][0], 256):
+            r.append(255)
+        r.append(round(int(p[-1][1])))
+        return r
 
     @staticmethod
     def spline(p):

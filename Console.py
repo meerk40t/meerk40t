@@ -1370,7 +1370,33 @@ class Console(Module, Pipe):
                                         pixel_data[x, y] = (255, 255, 255, 255)
                         element.image = img.convert("1")
                         element.altered()
-            elif args[0] == 'white_remove':
+            elif args[0] == 'remove':
+                if len(args) == 1:
+                    yield "Must specify a color, and optionally a distance."
+                    return
+                distance = 50.0
+                color = "White"
+                if len(args) >= 2:
+                    color = args[1]
+                try:
+                    color = Color(color)
+                except ValueError:
+                    yield "Color Invalid."
+                    return
+                if len(args) >= 3:
+                    try:
+                        distance = float(args[2])
+                    except ValueError:
+                        yield "Color distance is invalid."
+                        return
+                distance_sq = distance * distance
+
+                def dist(pixel):
+                    r = color.red - pixel[0]
+                    g = color.green - pixel[1]
+                    b = color.blue - pixel[2]
+                    return r * r + g * g + b * b <= distance_sq
+
                 for element in elements.elems(emphasized=True):
                     if not isinstance(element, SVGImage):
                         continue
@@ -1382,8 +1408,37 @@ class Console(Module, Pipe):
                     for y in range(height):
                         for x in range(width):
                             pixel = new_data[x, y]
-                            if pixel[0] >= 240 and pixel[1] >= 240 and pixel[2] >= 240:
+                            if dist(pixel):
                                 new_data[x, y] = (255, 255, 255, 0)
+                                continue
+                    element.image = img
+                    element.altered()
+            elif args[0] == 'add':
+                if len(args) == 1:
+                    yield "Must specify a color, to add."
+                    return
+                color = "White"
+                if len(args) >= 2:
+                    color = args[1]
+                try:
+                    color = Color(color)
+                except ValueError:
+                    yield "Color Invalid."
+                    return
+                pix = (color.red, color.green, color.blue, color.alpha)
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    img = element.image
+                    if img.mode != "RGBA":
+                        img = img.convert('RGBA')
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if pixel[3] == 0:
+                                new_data[x, y] = pix
                                 continue
                     element.image = img
                     element.altered()
@@ -1563,11 +1618,14 @@ class Console(Module, Pipe):
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         img = element.image
-                        if img.mode == 'P':
+                        if img.mode == 'P' or img.mode == 'RGBA':
                             img = img.convert('RGB')
-                        element.image = ImageOps.invert(img)
-                        element.altered()
-                        yield "Image Inverted."
+                        try:
+                            element.image = ImageOps.invert(img)
+                            element.altered()
+                            yield "Image Inverted."
+                        except OSError:
+                            yield "Image type cannot be converted. %s" % img.mode
                 return
             elif args[0] == 'flip':
                 from PIL import ImageOps
@@ -1656,6 +1714,9 @@ class Console(Module, Pipe):
                                                      mesh,
                                                      Image.BILINEAR)
                         element.altered()
+            else:
+                yield "Image command unrecognized."
+                return
         # Alias / Bind Command Elements.
         elif command == 'bind':
             if len(args) == 0:
