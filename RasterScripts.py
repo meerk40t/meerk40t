@@ -134,9 +134,21 @@ class RasterScripts(Module):
             'enable': False
         })
         ops.append({
+            'name': 'auto_contrast',
+            'enable': True,
+            'cutoff': 3
+        })
+        ops.append({
             'name': 'grayscale',
             'enable': True,
             'invert': False,
+        })
+        ops.append({
+            'name': 'unsharp_mask',
+            'enable': True,
+            'percent': 500,
+            'radius': 4,
+            'threshold': 0
         })
         ops.append({
             'name': 'resample',
@@ -146,23 +158,12 @@ class RasterScripts(Module):
             'step': 3
         })
         ops.append({
-            'name': 'auto_contrast',
-            'enable': True,
-            'cutoff': 3
-        })
-        ops.append({
             'name': 'tone',
             'type': 'line',
             'enable': True,
-            'values': [(1, 31), (9, 50), (30, 84), (40, 99), (75, 140), (99, 161),
-                       (148, 197), (170, 213), (181, 221), (197, 231), (253, 254)]
-        })
-        ops.append({
-            'name': 'unsharp_mask',
-            'enable': True,
-            'percent': 500,
-            'radius': 4,
-            'threshold': 0
+            'values': [(2, 32), (9, 50), (30, 84), (40, 99), (76, 144), (101, 170),
+                       (126, 193), (156, 214), (181, 230), (206, 246), (256, 254)]
+
         })
         ops.append({
             'name': 'dither',
