@@ -130,6 +130,13 @@ class RasterScripts(Module):
     def raster_script_gravy():
         ops = list()
         ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 3
+        })
+        ops.append({
             'name': 'edge_enhance',
             'enable': False
         })
@@ -149,13 +156,6 @@ class RasterScripts(Module):
             'percent': 500,
             'radius': 4,
             'threshold': 0
-        })
-        ops.append({
-            'name': 'resample',
-            'enable': True,
-            'aspect': True,
-            'units': 0,
-            'step': 3
         })
         ops.append({
             'name': 'tone',
