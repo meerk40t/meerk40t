@@ -208,6 +208,14 @@ class ImageLoader:
 
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
+        try:
+            kernel.setting(bool, 'image_dpi', True)
+            if kernel.image_dpi:
+                dpi = image.image.info['dpi']
+                if isinstance(dpi, tuple):
+                    image *= 'scale(%f,%f)' % (1000.0/dpi[0], 1000.0/dpi[1])
+        except (KeyError, IndexError):
+            pass
         return [image], None, None, pathname, basename
 
 
