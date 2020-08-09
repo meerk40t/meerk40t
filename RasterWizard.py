@@ -1029,7 +1029,7 @@ class SharpenPanel(wx.Panel):
         self.text_sharpen_radius.SetToolTip(_("Sharpen radius amount"))
         self.slider_sharpen_threshold.SetToolTip(
             _("Threshold controls the minimum brighteness change to be sharpened."))
-        self.text_sharpen_threshold.SetToolTip(_("Shapen Threshold Amount"))
+        self.text_sharpen_threshold.SetToolTip(_("Sharpen Threshold Amount"))
         # end wxGlade
 
     def __do_layout(self):

@@ -67,15 +67,15 @@ class JobSpooler(wx.Frame, Module):
         self.SetIcon(_icon)
         # begin wxGlade: JobSpooler.__set_properties
         self.SetTitle("Spooler")
-        self.list_job_spool.SetToolTip("List and modify the queued operations")
+        self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
         self.list_job_spool.AppendColumn("#", format=wx.LIST_FORMAT_LEFT, width=29)
-        self.list_job_spool.AppendColumn("Name", format=wx.LIST_FORMAT_LEFT, width=90)
-        self.list_job_spool.AppendColumn("Status", format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_spool.AppendColumn("Device", format=wx.LIST_FORMAT_LEFT, width=53)
-        self.list_job_spool.AppendColumn("Type", format=wx.LIST_FORMAT_LEFT, width=41)
-        self.list_job_spool.AppendColumn("Speed", format=wx.LIST_FORMAT_LEFT, width=77)
-        self.list_job_spool.AppendColumn("Settings", format=wx.LIST_FORMAT_LEFT, width=82+70)
-        self.list_job_spool.AppendColumn("Time Estimate", format=wx.LIST_FORMAT_LEFT, width=123)
+        self.list_job_spool.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=90)
+        self.list_job_spool.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
+        self.list_job_spool.AppendColumn(_("Device"), format=wx.LIST_FORMAT_LEFT, width=53)
+        self.list_job_spool.AppendColumn(_("Type"), format=wx.LIST_FORMAT_LEFT, width=41)
+        self.list_job_spool.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=77)
+        self.list_job_spool.AppendColumn(_("Settings"), format=wx.LIST_FORMAT_LEFT, width=82+70)
+        self.list_job_spool.AppendColumn(_("Time Estimate"), format=wx.LIST_FORMAT_LEFT, width=123)
         # end wxGlade
 
     def __do_layout(self):

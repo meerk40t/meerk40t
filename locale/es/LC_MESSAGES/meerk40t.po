@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-08-09 10:27-0700\n"
+"PO-Revision-Date: 2020-08-09 10:47-0700\n"
 "Last-Translator: tatarize\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -646,8 +646,7 @@ msgstr "Permite la capacidad de modificar el factor de aceleración."
 msgid "Acceleration Factor Override"
 msgstr "Anulación del factor de aceleración"
 
-#: CutProperty.py:103 EngraveProperty.py:103 JobSpooler.py:95
-#: RasterProperty.py:130 loco:5ed2cbe74d3dd779ce269103
+#: JobSpooler.py:76 loco:5ed2cbe74d3dd779ce269103
 msgid "Speed"
 msgstr "Velocidad"
 
@@ -850,23 +849,24 @@ msgstr "Limitar la memoria intermedia de escritura"
 msgid "#"
 msgstr "#"
 
-#: JobSpooler.py:91 loco:5ed2cbe74d3dd779ce269135
+#: JobSpooler.py:72 loco:5ed2cbe74d3dd779ce269135
 msgid "Name"
 msgstr "Nombre"
 
-#: Controller.py:201 loco:5ed2cbe74d3dd779ce269136
+#: Controller.py:201 JobSpooler.py:73 loco:5ed2cbe74d3dd779ce269136
 msgid "Status"
 msgstr "Estado"
 
-#: Controller.py:205 loco:5ed2cbe74d3dd779ce269137
+#: Controller.py:205 JobSpooler.py:74 loco:5ed2cbe74d3dd779ce269137
 msgid "Device"
 msgstr "Dispositivo"
 
-#: JobSpooler.py:94 loco:5ed2cbe74d3dd779ce269138
+#: JobSpooler.py:75 loco:5ed2cbe74d3dd779ce269138
 msgid "Type"
 msgstr "Tipo"
 
-#: Settings.py:100 wxMeerK40t.py:242 loco:5ed2cbe74d3dd779ce269139
+#: JobSpooler.py:77 Settings.py:100 wxMeerK40t.py:242
+#: loco:5ed2cbe74d3dd779ce269139
 msgid "Settings"
 msgstr "Configuraciones"
 
@@ -874,7 +874,7 @@ msgstr "Configuraciones"
 msgid "Submitted"
 msgstr "Presentada"
 
-#: JobSpooler.py:98 loco:5ed2cbe74d3dd779ce26913b
+#: JobSpooler.py:78 loco:5ed2cbe74d3dd779ce26913b
 msgid "Time Estimate"
 msgstr "Tiempo estimado"
 
@@ -2819,3 +2819,15 @@ msgstr "Aplicar: %s"
 #: wxMeerK40t.py:2008 loco:5f30290bc57dd46b3924f437
 msgid "Apply Raster Script"
 msgstr "Aplicar secuencia de comandos ráster"
+
+#: JobSpooler.py:70 loco:5f3035ea24cd3c7f6b572002
+msgid "List and modify the queued operations"
+msgstr "Enumerar y modificar las operaciones en cola"
+
+#: Notes.py:17 loco:5f3035ea24cd3c7f6b572003
+msgid "Automatically Open Notes"
+msgstr "Abrir notas automáticamente"
+
+#: Notes.py:63 loco:5f3035ea24cd3c7f6b572004
+msgid "Automatically open notes if they exist when file is opened."
+msgstr "Abrir notas automáticamente si existen cuando se abre el archivo."

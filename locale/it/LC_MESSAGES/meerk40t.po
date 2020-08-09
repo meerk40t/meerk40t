@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-08-09 10:31-0700\n"
+"PO-Revision-Date: 2020-08-09 10:50-0700\n"
 "Last-Translator: tatarize\n"
 "Language-Team: Italian (Italy)\n"
 "Language: it_IT\n"
@@ -213,7 +213,7 @@ msgstr "Testare la potenza"
 
 #: Alignment.py:161 loco:5ed2cbe74d3dd779ce26909b
 msgid "Get the movement of the beam going right to overlap. "
-msgstr "Ottieni il movimento del raggio andando a sovrapporsi"
+msgstr "Ottieni il movimento del raggio andando a sovrapporsi "
 
 #: Alignment.py:167 loco:5ed2cbe74d3dd779ce26909c
 msgid "Testing height in mm"
@@ -645,8 +645,7 @@ msgstr "Abilita la possibilità di modificare il fattore di accelerazione."
 msgid "Acceleration Factor Override"
 msgstr "Sostituzione del fattore di accelerazione"
 
-#: CutProperty.py:103 EngraveProperty.py:103 JobSpooler.py:95
-#: RasterProperty.py:130 loco:5ed2cbe74d3dd779ce269103
+#: JobSpooler.py:76 loco:5ed2cbe74d3dd779ce269103
 msgid "Speed"
 msgstr "Velocità"
 
@@ -849,23 +848,24 @@ msgstr "Buffer di scrittura limite"
 msgid "#"
 msgstr "#"
 
-#: JobSpooler.py:91 loco:5ed2cbe74d3dd779ce269135
+#: JobSpooler.py:72 loco:5ed2cbe74d3dd779ce269135
 msgid "Name"
 msgstr "Nome"
 
-#: Controller.py:201 loco:5ed2cbe74d3dd779ce269136
+#: Controller.py:201 JobSpooler.py:73 loco:5ed2cbe74d3dd779ce269136
 msgid "Status"
 msgstr "Stato"
 
-#: Controller.py:205 loco:5ed2cbe74d3dd779ce269137
+#: Controller.py:205 JobSpooler.py:74 loco:5ed2cbe74d3dd779ce269137
 msgid "Device"
 msgstr "Dispositivo"
 
-#: JobSpooler.py:94 loco:5ed2cbe74d3dd779ce269138
+#: JobSpooler.py:75 loco:5ed2cbe74d3dd779ce269138
 msgid "Type"
 msgstr "Genere"
 
-#: Settings.py:100 wxMeerK40t.py:242 loco:5ed2cbe74d3dd779ce269139
+#: JobSpooler.py:77 Settings.py:100 wxMeerK40t.py:242
+#: loco:5ed2cbe74d3dd779ce269139
 msgid "Settings"
 msgstr "Impostazioni"
 
@@ -873,7 +873,7 @@ msgstr "Impostazioni"
 msgid "Submitted"
 msgstr "Inserito"
 
-#: JobSpooler.py:98 loco:5ed2cbe74d3dd779ce26913b
+#: JobSpooler.py:78 loco:5ed2cbe74d3dd779ce26913b
 msgid "Time Estimate"
 msgstr "Stima del tempo"
 
@@ -2817,3 +2817,15 @@ msgstr "Applica: %s"
 #: wxMeerK40t.py:2008 loco:5f30290bc57dd46b3924f437
 msgid "Apply Raster Script"
 msgstr "Applica script raster"
+
+#: JobSpooler.py:70 loco:5f3035ea24cd3c7f6b572002
+msgid "List and modify the queued operations"
+msgstr "Elenca e modifica le operazioni in coda"
+
+#: Notes.py:17 loco:5f3035ea24cd3c7f6b572003
+msgid "Automatically Open Notes"
+msgstr "Apri note automaticamente"
+
+#: Notes.py:63 loco:5f3035ea24cd3c7f6b572004
+msgid "Automatically open notes if they exist when file is opened."
+msgstr "Apri automaticamente le note se esistono quando il file viene aperto."

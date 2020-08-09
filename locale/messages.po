@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-08-09 09:47-0700\n"
+"POT-Creation-Date: 2020-08-09 10:43-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -616,11 +616,11 @@ msgstr ""
 msgid "Process"
 msgstr ""
 
-#: Controller.py:201
+#: Controller.py:201 JobSpooler.py:73
 msgid "Status"
 msgstr ""
 
-#: Controller.py:205
+#: Controller.py:205 JobSpooler.py:74
 msgid "Device"
 msgstr ""
 
@@ -886,6 +886,30 @@ msgstr ""
 
 #: JobInfo.py:251
 msgid "Execute Commands"
+msgstr ""
+
+#: JobSpooler.py:70
+msgid "List and modify the queued operations"
+msgstr ""
+
+#: JobSpooler.py:72
+msgid "Name"
+msgstr ""
+
+#: JobSpooler.py:75
+msgid "Type"
+msgstr ""
+
+#: JobSpooler.py:76
+msgid "Speed"
+msgstr ""
+
+#: JobSpooler.py:77 Settings.py:100 wxMeerK40t.py:242
+msgid "Settings"
+msgstr ""
+
+#: JobSpooler.py:78
+msgid "Time Estimate"
 msgstr ""
 
 #: JobSpooler.py:99 Keymap.py:90
@@ -1287,6 +1311,14 @@ msgstr ""
 
 #: Navigation.py:324
 msgid " ms"
+msgstr ""
+
+#: Notes.py:17
+msgid "Automatically Open Notes"
+msgstr ""
+
+#: Notes.py:63
+msgid "Automatically open notes if they exist when file is opened."
 msgstr ""
 
 #: OperationProperty.py:27
@@ -1915,7 +1947,7 @@ msgid "Threshold controls the minimum brighteness change to be sharpened."
 msgstr ""
 
 #: RasterWizard.py:1032
-msgid "Shapen Threshold Amount"
+msgid "Sharpen Threshold Amount"
 msgstr ""
 
 #: RasterWizard.py:1037
@@ -2065,10 +2097,6 @@ msgstr ""
 
 #: Settings.py:33
 msgid "Units"
-msgstr ""
-
-#: Settings.py:100 wxMeerK40t.py:242
-msgid "Settings"
 msgstr ""
 
 #: Settings.py:102
