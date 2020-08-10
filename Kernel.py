@@ -1509,6 +1509,15 @@ class Preferences:
             return
         self._config.DeleteGroup(self._path)
 
+    def delete_persistent(self, key):
+        if self._config is None:
+            self._config = self._root._config
+        if self._config is None:
+            return
+        if self._path is not None:
+            key = '%s/%s' % (str(self._path), key)
+        self._config.DeleteEntry(key)
+
     def load_persistent_object(self, obj):
         """
         Loads values of the persistent attributes, and assigns them to the obj.
@@ -1528,9 +1537,12 @@ class Preferences:
             setattr(obj, attr, load_value)
             setattr(self, attr, load_value)
 
-    def load_persistent_string_dict(self, dictionary):
+    def load_persistent_string_dict(self, dictionary=None):
+        if dictionary is None:
+            dictionary = dict()
         for k in list(self.keylist()):
             dictionary[k] = self.read_item_persistent(k)
+        return dictionary
 
     def keylist(self):
         if self._config is None:
