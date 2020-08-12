@@ -62,7 +62,7 @@ class Module:
 
     def schedule(self):
         """Schedule this as a job."""
-        if self not in self.device.jobs:
+        if self.device is not None and self not in self.device.jobs:
             self.device.jobs.append(self)
 
     def unschedule(self):
