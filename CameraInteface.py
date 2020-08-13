@@ -133,7 +133,8 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_SIZE, self.on_size, self)
         self.camera_lock = threading.Lock()
         self.process = self.update_view
-        self.failed_frames = 0
+        self.connection_attempts = 0
+        self.frame_attempts = 0
         self.last_frame_index = -1
         self.frame_index = 0
         self.quit_thread = False
@@ -575,6 +576,36 @@ class CameraInterface(wx.Frame, Module):
             # URI is not a number.
             return uri
 
+    def attempt_recovery(self):
+        try:
+            import cv2
+        except ImportError:
+            return False
+        if self.quit_thread:
+            return False
+        if self.device is None:
+            return False
+        self.frame_attempts += 1
+        if self.frame_attempts < 5:
+            return True
+        self.frame_attempts = 0
+
+        if self.capture is not None:
+            self.capture.release()
+            self.capture = None
+        uri = self.get_camera_uri()
+        if uri is None:
+            return False
+
+        self.device.signal("camera_initialize")
+        with self.camera_lock:
+            self.capture = cv2.VideoCapture(uri)
+
+        if self.capture is None:
+            return False
+        self.connection_attempts += 1
+        return True
+
     def threaded_image_fetcher(self):
         self.quit_thread = False
         try:
@@ -588,45 +619,35 @@ class CameraInterface(wx.Frame, Module):
         if uri is None:
             return
         self.device.signal("camera_initialize")
-        self.capture = cv2.VideoCapture(uri)
-        while not self.quit_thread:
-            if self.capture is None:
-                # No capture the thread dies.
-                return
-            try:
-                ret = self.capture.grab()
-            except AttributeError:
-                continue
-            if not ret:
-                continue
-            ret, frame = self.capture.retrieve()
-            if not ret or frame is None:
-                # wx.CallAfter(self.camera_error_webcam)
-                if self.quit_thread:
-                    return
-                if self.device is None:
-                    return
-                print("Frame Failed.")
-                self.failed_frames += 1
-                if self.failed_frames < 5:
-                    continue
-                if self.capture is not None:
-                    self.capture.release()
-                    self.capture = None
-                    print("Frame Capture Reset.")
-                uri = self.get_camera_uri()
-                if uri is None:
-                    print("URL Bad.")
-                    return
+        with self.camera_lock:
+            self.capture = cv2.VideoCapture(uri)
 
-                self.device.signal("camera_initialize")
-                self.capture = cv2.VideoCapture(uri)
+        while not self.quit_thread:
+            if self.connection_attempts > 50:
+                wx.CallAfter(self.camera_error_webcam)
+            with self.camera_lock:
                 if self.capture is None:
-                    print("Capture Define Failed.")
+                    # No capture the thread dies.
                     return
-                print("Good to go again.")
-                continue
-            self.failed_frames = 0
+                try:
+                    ret = self.capture.grab()
+                except AttributeError:
+                    continue
+
+                if not ret:
+                    if self.attempt_recovery():
+                        continue
+                    else:
+                        return
+
+                ret, frame = self.capture.retrieve()
+                if not ret or frame is None:
+                    if self.attempt_recovery():
+                        continue
+                    else:
+                        return
+            self.frame_attempts = 0
+            self.connection_attempts = 0
             self.last_raw = self.current_raw
             self.current_raw = frame
 
@@ -666,10 +687,6 @@ class CameraInterface(wx.Frame, Module):
                 frame = cv2.warpPerspective(frame, M, (bed_width, bed_height))
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            if frame is None:
-                print("No frame captured.")
-                continue
-            print("Frame Captured.")
             self.last_frame = self.current_frame
             self.current_frame = frame
             self.frame_index += 1
@@ -906,7 +923,6 @@ class CameraInterface(wx.Frame, Module):
         :param ay:
         :return:
         """
-
         self.matrix.post_scale(sx, sy, ax, ay)
         self.on_update_buffer()
 
