@@ -79,6 +79,8 @@ class RasterWizard(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
+        self.wizard_thread = None
+        self.needs_centering = True
 
     def set_wizard_script(self, name=None, ops=None):
         if name is None:
@@ -171,7 +173,13 @@ class RasterWizard(wx.Frame, Module):
             if step is not None:
                 self.step_image = step
         self.wx_bitmap_image = None
+        if self.device is None:
+            return
         self.device.signal("RasterWizard-Refresh")
+        self.wizard_thread = None
+        if self.pil_image is not None and self.needs_centering:
+            self.focus_viewport_scene(self.pil_image.getbbox(), self._preview_panel_buffer.Size)
+            self.needs_centering = False
 
     def on_emphasis_change(self, *args):
         for e in self.device.device_root.elements.elems(emphasized=True):
@@ -186,6 +194,7 @@ class RasterWizard(wx.Frame, Module):
                 self.device.signal("RasterWizard-Image")
                 if self.ops is not None:
                     self.panel_select_op()
+                self.needs_centering = True
                 break
 
     def panel_select_op(self):
@@ -264,10 +273,9 @@ class RasterWizard(wx.Frame, Module):
         dc = wx.MemoryDC()
         dc.SelectObject(self._preview_panel_buffer)
         dc.Clear()
-        dc.SetBackground(wx.WHITE_BRUSH)
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         gc.PushState()
+        gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         wx_bitmap = self.wx_bitmap_image
         if wx_bitmap is None:
             renderer = LaserRender(self.device.device_root)
@@ -275,6 +283,10 @@ class RasterWizard(wx.Frame, Module):
         width, height = self.pil_image.size
         gc.DrawBitmap(self.wx_bitmap_image, 0, 0, width, height)
         gc.PopState()
+        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        gc.SetFont(font, wx.BLACK)
+        if self.wizard_thread is not None:
+            gc.DrawText(_("Processing..."), 0, 0)
         gc.Destroy()
         del dc
 
@@ -347,6 +359,51 @@ class RasterWizard(wx.Frame, Module):
         self.previous_window_position = None
         self.previous_scene_position = None
 
+    def focus_viewport_scene(self, new_scene_viewport, scene_size, buffer=0.0, lock=True):
+        """
+        Focus on the given viewport in the scene.
+
+        :param new_scene_viewport: Viewport to have after this process within the scene.
+        :param scene_size: Size of the scene in which this viewport is active.
+        :param buffer: Amount of buffer around the edge of the new viewport.
+        :param lock: lock the scalex, scaley.
+        :return:
+        """
+        window_width, window_height = scene_size
+        left = new_scene_viewport[0]
+        top = new_scene_viewport[1]
+        right = new_scene_viewport[2]
+        bottom = new_scene_viewport[3]
+        viewport_width = right - left
+        viewport_height = bottom - top
+
+        left -= viewport_width * buffer
+        right += viewport_width * buffer
+        top -= viewport_height * buffer
+        bottom += viewport_height * buffer
+
+        if right == left:
+            scale_x = 100
+        else:
+            scale_x = window_width / float(right - left)
+        if bottom == top:
+            scale_y = 100
+        else:
+            scale_y = window_height / float(bottom - top)
+
+        cx = ((right + left) / 2)
+        cy = ((top + bottom) / 2)
+        self.matrix.reset()
+        self.matrix.post_translate(-cx, -cy)
+        if lock:
+            scale = min(scale_x, scale_y)
+            if scale != 0:
+                self.matrix.post_scale(scale)
+        else:
+            if scale_x != 0 and scale_y != 0:
+                self.matrix.post_scale(scale_x, scale_y)
+        self.matrix.post_translate(window_width / 2.0, window_height / 2.0)
+
     def scene_post_pan(self, px, py):
         self.matrix.post_translate(px, py)
         self.device.signal("RasterWizard-Refresh")
@@ -357,7 +414,9 @@ class RasterWizard(wx.Frame, Module):
 
     def on_raster_wizard_image_signal(self, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
-        self.wiz_img()
+        if self.wizard_thread is None:
+            self.wizard_thread = self.device.threaded(self.wiz_img)
+            self.device.signal("RasterWizard-Refresh")
 
     def on_raster_wizard_refresh_signal(self, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
@@ -370,6 +429,8 @@ class RasterWizard(wx.Frame, Module):
         self.panel_select_op()
 
     def on_buttons_operations(self, event):  # wxGlade: RasterWizard.<event_handler>
+        if self.wizard_thread is not None:
+            return
         self.svg_image.image = self.pil_image
         self.svg_image.values['raster_step'] = self.step_image
         self.svg_image.transform = self.matrix_image
@@ -921,7 +982,6 @@ class ToneCurvePanel(wx.Panel):
                         self.op['values'][pos[0]] = (pos[0], v)
                 else:
                     self.op['values'][self.point] = (pos[0], v)
-                print(self.op['values'])  # TODO: REMOVE.
                 self.device.signal("RasterWizard-Image")
                 self.update_in_gui_thread()
             except (KeyError, IndexError):
@@ -1155,14 +1215,11 @@ class OutputPanel(wx.Panel):
         except KeyError:
             pass
 
-
     def on_check_enable_output(self, event):  # wxGlade: OutputPanel.<event_handler>
-        print("Event handler 'on_check_enable_output' not implemented!")
-        event.Skip()
+        self.op['enable'] = self.check_enable_output.GetValue()
 
     def on_check_replace_output(self, event):  # wxGlade: OutputPanel.<event_handler>
-        print("Event handler 'on_check_replace_output' not implemented!")
-        event.Skip()
+        self.op['replace'] = self.check_replace_output.GetValue()
 
 
 # end of class OutputPanel

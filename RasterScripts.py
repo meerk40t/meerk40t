@@ -73,9 +73,6 @@ class RasterScripts(Module):
             'enable': True,
             'type': 0
         })
-        ops.append({
-            'name': 'output'
-        })
         return ops
 
     @staticmethod
@@ -120,9 +117,6 @@ class RasterScripts(Module):
             'name': 'dither',
             'enable': True,
             'type': 0
-        })
-        ops.append({
-            'name': 'output'
         })
         return ops
 
@@ -170,9 +164,6 @@ class RasterScripts(Module):
             'enable': True,
             'type': 0
         })
-        ops.append({
-            'name': 'output'
-        })
         return ops
 
     @staticmethod
@@ -204,9 +195,6 @@ class RasterScripts(Module):
             'name': 'dither',
             'enable': True,
             'type': 0
-        })
-        ops.append({
-            'name': 'output'
         })
         return ops
 

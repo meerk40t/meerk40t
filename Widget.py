@@ -1078,6 +1078,15 @@ class SceneSpaceWidget(Widget):
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
     def focus_viewport_scene(self, new_scene_viewport, scene_size, buffer=0.0, lock=True):
+        """
+        Focus on the given viewport in the scene.
+
+        :param new_scene_viewport: Viewport to have after this process within the scene.
+        :param scene_size: Size of the scene in which this viewport is active.
+        :param buffer: Amount of buffer around the edge of the new viewport.
+        :param lock: lock the scalex, scaley.
+        :return:
+        """
         window_width, window_height = scene_size
         left = new_scene_viewport[0]
         top = new_scene_viewport[1]

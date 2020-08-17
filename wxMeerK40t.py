@@ -99,6 +99,8 @@ ID_MENU_HIDE_GUIDES = idinc.new()
 ID_MENU_HIDE_GRID = idinc.new()
 ID_MENU_HIDE_BACKGROUND = idinc.new()
 ID_MENU_HIDE_STROKES = idinc.new()
+ID_MENU_HIDE_ICONS = idinc.new()
+ID_MENU_HIDE_TREE = idinc.new()
 ID_MENU_HIDE_LASERPATH = idinc.new()
 ID_MENU_HIDE_RETICLE = idinc.new()
 ID_MENU_HIDE_SELECTION = idinc.new()
@@ -229,6 +231,8 @@ class MeerK40t(wx.Frame, Module):
         wxglade_tmp_menu.Append(ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
+        wxglade_tmp_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK)
         wxglade_tmp_menu.Append(ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK)
@@ -285,6 +289,8 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_RETICLE), id=ID_MENU_HIDE_RETICLE)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_SELECTION), id=ID_MENU_HIDE_SELECTION)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_STROKES), id=ID_MENU_HIDE_STROKES)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_ICONS), id=ID_MENU_HIDE_ICONS)
+        self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_TREE), id=ID_MENU_HIDE_TREE)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_CACHE), id=ID_MENU_PREVENT_CACHING)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_REFRESH), id=ID_MENU_SCREEN_REFRESH)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_ANIMATE), id=ID_MENU_SCREEN_ANIMATE)
@@ -526,6 +532,10 @@ class MeerK40t(wx.Frame, Module):
         m.Check(self.device.draw_mode & DRAW_MODE_SELECTION != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_STROKES)
         m.Check(self.device.draw_mode & DRAW_MODE_STROKES != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_ICONS)
+        m.Check(self.device.draw_mode & DRAW_MODE_ICONS != 0)
+        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TREE)
+        m.Check(self.device.draw_mode & DRAW_MODE_TREE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_CACHING)
         m.Check(self.device.draw_mode & DRAW_MODE_CACHE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_REFRESH)
@@ -648,6 +658,11 @@ class MeerK40t(wx.Frame, Module):
         :param args:
         :return:
         """
+        if self.root.device.draw_mode & DRAW_MODE_TREE != 0:
+            self.root.gui.tree.Hide()
+            return
+        else:
+            self.root.gui.tree.Show()
         self.root.rebuild_tree()
         self.request_refresh()
 
@@ -1380,6 +1395,9 @@ class Node(list):
 
     def set_icon(self, icon=None):
         root = self.root
+        drawmode = root.device.draw_mode
+        if drawmode & DRAW_MODE_ICONS != 0:
+            return
         item = self.item
         data_object = self.object
         tree = root.tree
@@ -1801,7 +1819,7 @@ class RootNode(list):
                 for n in nodes:
                     if n.type == NODE_ELEMENT:
                         self.tree.SelectItem(n.item, e.selected)
-            except KeyError:
+            except (KeyError, TypeError):
                 self.device.signal('rebuild_tree', 0)
                 break
         self.refresh_tree()
