@@ -797,6 +797,12 @@ class Console(Module, Pipe):
             matrix = Matrix('rotate(%f,%f,%f)' % (rot, center_x, center_y))
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     element *= matrix
                     element.modified()
             except ValueError:
@@ -844,6 +850,12 @@ class Console(Module, Pipe):
             matrix = Matrix('scale(%f,%f,%f,%f)' % (sx, sy, center_x, center_y))
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     element *= matrix
                     element.modified()
             except ValueError:
@@ -918,6 +930,12 @@ class Console(Module, Pipe):
 
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     start_angle = element.rotation
                     amount = end_angle - start_angle
                     matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
@@ -963,6 +981,12 @@ class Console(Module, Pipe):
                 center_y = (bounds[3] + bounds[1]) / 2.0
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
                     if sx == 0 or sy == 0:
@@ -1041,6 +1065,12 @@ class Console(Module, Pipe):
                                 Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701),
                                 Length(args[5]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     element.transform = Matrix(matrix)
                     element.modified()
             except ValueError:
@@ -1049,6 +1079,12 @@ class Console(Module, Pipe):
             return
         elif command == 'reset':
             for element in elements.elems(emphasized=True):
+                try:
+                    if element.lock:
+                        continue
+                except AttributeError:
+                    pass
+
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
@@ -1059,6 +1095,12 @@ class Console(Module, Pipe):
             return
         elif command == 'reify':
             for element in elements.elems(emphasized=True):
+                try:
+                    if element.lock:
+                        continue
+                except AttributeError:
+                    pass
+
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
@@ -1314,7 +1356,20 @@ class Console(Module, Pipe):
                         if step is not None:
                             element.values['raster_step'] = step
                         element.image_width, element.image_height = element.image.size
+                        element.lock = True
                         element.altered()
+                return
+            elif args[0] == 'unlock':
+                yield 'Unlocking Elements...'
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            yield "Unlocked: %s" % str(element)
+                            element.lock = False
+                        else:
+                            yield "Element was not locked: %s" % str(element)
+                    except AttributeError:
+                        yield "Element was not locked: %s" % str(element)
                 return
             elif args[0] == 'threshold':
                 try:
@@ -1644,6 +1699,26 @@ class Console(Module, Pipe):
                         element.image = ImageOps.mirror(img)
                         element.altered()
                         yield "Image Mirrored."
+                return
+            elif args[0] == 'ccw':
+                from PIL import Image
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.transpose(Image.ROTATE_90)
+                        element.image_height, element.image_width = element.image_width, element.image_height
+                        element.altered()
+                        yield "Rotated image counterclockwise."
+                return
+            elif args[0] == 'cw':
+                from PIL import Image
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.transpose(Image.ROTATE_270)
+                        element.image_height, element.image_width = element.image_width, element.image_height
+                        element.altered()
+                        yield "Rotated image clockwise."
                 return
             elif args[0] == 'autocontrast':
                 from PIL import ImageOps

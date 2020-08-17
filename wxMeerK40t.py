@@ -1859,7 +1859,12 @@ class RootNode(list):
 
         t = node.type
         selections = [self.tree_lookup[id(e)] for e in elements.elems(emphasized=True)]
-
+        locked = False
+        try:
+            if node.object.lock:
+                locked = True
+        except (AttributeError, ValueError):
+            pass
         def combined(*args):
             for listv in args:
                 for itemv in listv:
@@ -1870,13 +1875,13 @@ class RootNode(list):
             gui.Bind(wx.EVT_MENU, self.menu_execute(node),
                      menu.Append(wx.ID_ANY, _("Execute Job"), "", wx.ITEM_NORMAL))
         if t == NODE_OPERATION_BRANCH:
-            gui.Bind(wx.EVT_MENU, self.menu_clear_all_operations_branch(node),
+            gui.Bind(wx.EVT_MENU, self.menu_console("operation * delete"),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
         if t == NODE_FILES_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_clear_all_files_branch(node),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
         if t == NODE_ELEMENTS_BRANCH:
-            gui.Bind(wx.EVT_MENU, self.menu_clear_all_elements_branch(node),
+            gui.Bind(wx.EVT_MENU, self.menu_console('element * delete'),
                      menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL))
         if t == NODE_OPERATION:
             gui.Bind(wx.EVT_MENU, self.menu_clear_all_operation(node),
@@ -1885,7 +1890,7 @@ class RootNode(list):
             gui.Bind(wx.EVT_MENU, self.menu_remove(node),
                      menu.Append(wx.ID_ANY, _("Remove: %s") % str(node.name)[:10], "", wx.ITEM_NORMAL))
         if t in (NODE_ELEMENT, NODE_OPERATION_ELEMENT) and len(selections) > 1:
-            gui.Bind(wx.EVT_MENU, self.menu_remove_multi(node),
+            gui.Bind(wx.EVT_MENU, self.menu_console('element delete'),
                      menu.Append(wx.ID_ANY, _("Remove: %d objects") % len(selections), "", wx.ITEM_NORMAL))
         if t == NODE_OPERATION_ELEMENT:
             duplicate_menu_eop = wx.Menu()
@@ -1956,15 +1961,17 @@ class RootNode(list):
                          duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
         if t in (NODE_ELEMENTS_BRANCH, NODE_ELEMENT):
-            gui.Bind(wx.EVT_MENU, self.menu_reset(node),
-                     menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+            if not locked:
+                gui.Bind(wx.EVT_MENU, self.menu_console('reset'),
+                         menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
         if t == NODE_ELEMENT:
             path_scale_sub_menu = wx.Menu()
             for i in range(1, 25):
                 gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
                          path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%") % (600.0 / float(i)), "",
                                                     wx.ITEM_NORMAL))
-            menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
+            if not locked:
+                menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
 
             path_rotate_sub_menu = wx.Menu()
             for i in range(2, 13):
@@ -1979,15 +1986,16 @@ class RootNode(list):
                          path_rotate_sub_menu.Append(wx.ID_ANY,
                                                      _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
                                                      wx.ITEM_NORMAL))
-            menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-            gui.Bind(wx.EVT_MENU, self.menu_reify(node),
-                     menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
+            if not locked:
+                menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
+            if not locked:
+                gui.Bind(wx.EVT_MENU, self.menu_console('reify'),
+                         menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
             if isinstance(node.object, Path):
-                gui.Bind(wx.EVT_MENU, self.menu_subpath(node),
+                gui.Bind(wx.EVT_MENU, self.menu_console('element subpath'),
                          menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))
             if isinstance(node.object, SVGImage):
                 raster_step_menu = wx.Menu()
-
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
                     gui.Bind(wx.EVT_MENU, self.menu_raster_step_image(node, i), menu_item)
@@ -2000,21 +2008,43 @@ class RootNode(list):
                         if m.a == step or m.b == 0.0 or m.c == 0.0 or m.d == step:
                             menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))
-                gui.Bind(wx.EVT_MENU, self.menu_raster_actualize(node),
+                gui.Bind(wx.EVT_MENU, self.menu_console('image resample'),
                          menu.Append(wx.ID_ANY, _("Actualize Pixels"), "", wx.ITEM_NORMAL))
-                gui.Bind(wx.EVT_MENU, self.menu_dither(node),
-                         menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
                 raster_zdepth_menu = wx.Menu()
 
                 for i in range(2, 10):
                     menu_item = raster_zdepth_menu.Append(wx.ID_ANY, _("Divide Into %d Images") % i, "", wx.ITEM_NORMAL)
                     gui.Bind(wx.EVT_MENU, self.menu_raster_zdepth(node, i), menu_item)
-                menu.AppendSubMenu(raster_zdepth_menu, _("ZDepth Divide"))
+                if not locked:
+                    menu.AppendSubMenu(raster_zdepth_menu, _("ZDepth Divide"))
+
+                image_menu = wx.Menu()
+                try:
+                    if locked:
+                        gui.Bind(wx.EVT_MENU, self.menu_console('image unlock'),
+                                 image_menu.Append(wx.ID_ANY, _("Unlock Manipulations"), "", wx.ITEM_NORMAL))
+                except (ValueError, AttributeError):
+                    pass
+                gui.Bind(wx.EVT_MENU, self.menu_console('image dither'),
+                         image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_console('image mirror'),
+                         image_menu.Append(wx.ID_ANY, _("Mirror Horizontal"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_console('image flip'),
+                         image_menu.Append(wx.ID_ANY, _("Flip Vertical"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_console('image cw'),
+                         image_menu.Append(wx.ID_ANY, _("Rotate CW"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_console('image ccw'),
+                         image_menu.Append(wx.ID_ANY, _("Rotate CCW"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_console('image save output.png'),
+                         image_menu.Append(wx.ID_ANY, _("Save output.png"), "", wx.ITEM_NORMAL))
+                if image_menu.MenuItemCount != 0:
+                    menu.AppendSubMenu(image_menu, _("Image"))
+
                 try:
                     raster_wizard_menu = wx.Menu()
                     for script in self.device.device_root.registered['raster_script']:
                         menu_item = raster_wizard_menu.Append(wx.ID_ANY, _("RasterWizard: %s") % script, "", wx.ITEM_NORMAL)
-                        gui.Bind(wx.EVT_MENU, self.menu_raster_wizard(script), menu_item)
+                        gui.Bind(wx.EVT_MENU, self.menu_console('window open RasterWizard %s' % script), menu_item)
                     menu.AppendSubMenu(raster_wizard_menu, _("RasterWizard"))
                 except KeyError:
                     pass
@@ -2022,7 +2052,7 @@ class RootNode(list):
                     raster_wizard_apply_menu = wx.Menu()
                     for script in self.device.device_root.registered['raster_script']:
                         menu_item = raster_wizard_apply_menu.Append(wx.ID_ANY, _("Apply: %s") % script, "", wx.ITEM_NORMAL)
-                        gui.Bind(wx.EVT_MENU, self.menu_raster_wizard_apply(script), menu_item)
+                        gui.Bind(wx.EVT_MENU, self.menu_console('image wizard %s\n' % script), menu_item)
                     menu.AppendSubMenu(raster_wizard_apply_menu, _("Apply Raster Script"))
                 except KeyError:
                     pass
@@ -2033,6 +2063,21 @@ class RootNode(list):
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
+
+    def menu_console(self, console_command):
+        """
+        Default menu item to send a console command.
+
+        Automatically adds '\n'.
+
+        :param console_command: command to send to console.
+        :return: function that executes the provided command.
+        """
+
+        def specific(event):
+            self.device.using('module', 'Console').write('%s\n' % console_command)
+
+        return specific
 
     def menu_raster_step_operation(self, node, step_value):
         """
@@ -2072,60 +2117,6 @@ class RootNode(list):
             self.root.gui.request_refresh()
 
         return specific
-
-    def menu_raster_actualize(self, node):
-        """
-        Causes the raster image to be native at the current scale by rotating, scaling, skewing etc.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('image resample\n')
-
-        return specific
-
-    def menu_dither(self, node):
-        """
-        Change raster dither forcing raster elements to 1 bit.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('image dither\n')
-
-        return specific
-
-    def menu_raster_wizard(self, script):
-        """
-        Starts RasterWizard for the given script.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('window open RasterWizard %s\n' % script)
-
-        return specific
-
-
-    def menu_raster_wizard_apply(self, script):
-        """
-        Starts RasterWizard for the given script.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('image wizard %s\n' % script)
-
-        return specific
-
 
     def menu_raster_zdepth(self, node, divide=7):
         """
@@ -2183,32 +2174,6 @@ class RootNode(list):
 
         return specific
 
-    def menu_reify(self, node):
-        """
-        Reify elements so that the translations apply direct to the object.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('reify\n')
-
-        return specific
-
-    def menu_reset(self, node):
-        """
-        Menu to reset transformations applied to elements.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('reset\n')
-
-        return specific
-
     def menu_rotate(self, node, value):
         """
         Menu to rotate an element.
@@ -2258,19 +2223,6 @@ class RootNode(list):
 
         return specific
 
-    def menu_remove_multi(self, remove_node):
-        """
-        Menu to remove an element from the scene.
-
-        :param remove_node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('element delete\n')
-
-        return specific
-
     def menu_remove(self, remove_node):
         """
         Menu to remove an element from the scene.
@@ -2313,24 +2265,12 @@ class RootNode(list):
 
         return specific
 
-    def menu_clear_all_operations_branch(self, node):
-        def specific(event):
-            self.device.using('module', 'Console').write('operation * delete\n')
-
-        return specific
-
     def menu_clear_all_files_branch(self, node):
         def specific(event):
             kernel = self.device.device_root
             elements = kernel.elements
             elements.clear_files()
             self.device.signal('rebuild_tree', 0)
-
-        return specific
-
-    def menu_clear_all_elements_branch(self, node):
-        def specific(event):
-            self.device.using('module', 'Console').write('element * delete\n')
 
         return specific
 
@@ -2373,19 +2313,6 @@ class RootNode(list):
             adding_elements = list(op) * copies
             op.extend(adding_elements)
             self.device.signal('rebuild_tree', 0)
-
-        return specific
-
-    def menu_subpath(self, node):
-        """
-        Menu to break element into subpath.
-
-        :param node:
-        :return:
-        """
-
-        def specific(event):
-            self.device.using('module', 'Console').write('element subpath\n')
 
         return specific
 

@@ -560,6 +560,14 @@ class SelectionWidget(Widget):
             self.tool = self.tool_translate
             cursor = self.cursor
             self.cursor = wx.CURSOR_SIZING
+            first = elements.first_element(selected=True)
+            try:
+                if first.lock:
+                    if self.cursor != cursor:
+                        self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+                    return RESPONSE_CHAIN
+            except (ValueError, AttributeError):
+                pass
             if xin <= xmin:
                 self.cursor = wx.CURSOR_SIZEWE
                 self.tool = self.tool_scalex_w
@@ -594,7 +602,7 @@ class SelectionWidget(Widget):
             elements.set_selected_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            self.root.create_menu(self.scene.device.gui, elements.first_element(selected=True))
+            self.root.create_menu(self.scene.device.gui, elements.first_element(emphasized=True))
             return RESPONSE_CONSUME
         if event_type == 'doubleclick':
             elements.set_selected_by_position(space_pos)
@@ -631,6 +639,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], position[1]])
@@ -648,6 +661,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
@@ -665,6 +683,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
@@ -682,6 +705,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
@@ -699,6 +727,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
@@ -710,6 +743,11 @@ class SelectionWidget(Widget):
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, 1, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], b[3]])
@@ -721,6 +759,11 @@ class SelectionWidget(Widget):
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, 1, self.right, self.top)
             obj.modified()
         # elements.update_bounds([position[0], b[1], b[2], b[3]])
@@ -732,6 +775,11 @@ class SelectionWidget(Widget):
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(1, scaley, self.left, self.top)
             obj.modified()
 
@@ -744,6 +792,11 @@ class SelectionWidget(Widget):
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], position[1], b[2], b[3]])
