@@ -2573,7 +2573,6 @@ class Matrix:
         r1 = s.b * m.a + s.d * m.b + s.f * 0, \
              s.b * m.c + s.d * m.d + s.f * 0, \
              s.b * m.e + s.d * m.f + s.f * 1
-
         return float(r0[0]), float(r1[0]), float(r0[1]), float(r1[1]), r0[2], r1[2]
 
 

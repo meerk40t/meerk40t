@@ -250,9 +250,8 @@ class RasterScripts(Module):
     @staticmethod
     def wizard_image(svg_image, operations):
         image = svg_image.image
-        matrix = svg_image.transform
+        matrix = Matrix(svg_image.transform)
         step = None
-
         from PIL import ImageOps, ImageFilter, ImageEnhance
         for op in operations:
             name = op['name']
@@ -270,7 +269,8 @@ class RasterScripts(Module):
             if name == 'resample':
                 try:
                     if op['enable']:
-                        image, matrix = RasterScripts.actualize(image, Matrix(matrix), step_level=op['step'])
+                        image, matrix = RasterScripts.actualize(image, matrix, step_level=op['step'])
+
                         step = op['step']
                 except KeyError:
                     pass
