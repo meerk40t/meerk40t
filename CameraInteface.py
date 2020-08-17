@@ -215,9 +215,7 @@ class CameraInterface(wx.Frame, Module):
         self.setting.flush()
         self.camera_setting.flush()
         self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
-        self.camera_lock.acquire()
-        self.close_camera()
-        self.camera_lock.release()
+        self.quit_thread = True
         if self.camera_job is not None:
             self.camera_job.cancel()
         if self.fetch_job is not None:
@@ -230,6 +228,7 @@ class CameraInterface(wx.Frame, Module):
     def shutdown(self, channel=None):
         try:
             self.Close()
+            self.quit_thread = True
         except RuntimeError:
             pass
 
@@ -591,8 +590,9 @@ class CameraInterface(wx.Frame, Module):
         self.frame_attempts = 0
 
         if self.capture is not None:
-            self.capture.release()
-            self.capture = None
+            with self.camera_lock:
+                self.capture.release()
+                self.capture = None
         uri = self.get_camera_uri()
         if uri is None:
             return False
@@ -991,9 +991,6 @@ class CameraInterface(wx.Frame, Module):
 
     def on_button_reconnect(self, event):  # wxGlade: CameraInterface.<event_handler>
         self.quit_thread = True
-        # with self.camera_lock:
-        #     self.close_camera()
-        #     self.open_camera(self.setting.index)
 
     def on_slider_fps(self, event):  # wxGlade: CameraInterface.<event_handler>
         """

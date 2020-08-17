@@ -259,6 +259,9 @@ class Interpreter(Module):
             self.fetch_next_item()
         if self.spooled_item is not None:
             self.execute()
+        else:
+            if self.device.quit:
+                self.device.stop()
 
     def execute(self):
         """
@@ -1547,6 +1550,8 @@ class Preferences:
     def keylist(self):
         if self._config is None:
             self._config = self._root._config
+        if self._config is None:
+            return
         if self._path is not None:
             self._config.SetPath(self._path)
         more, value, index = self._config.GetFirstEntry()
@@ -1558,6 +1563,8 @@ class Preferences:
     def derivable(self):
         if self._config is None:
             self._config = self._root._config
+        if self._config is None:
+            return
         if self._path is not None:
             self._config.SetPath(self._path)
         more, value, index = self._config.GetFirstGroup()
@@ -1641,6 +1648,8 @@ class Device(Preferences):
     def attach(self, device, name=None, channel=None):
         self.device_root = device
         self.name = name
+        self.setting(bool, 'quit', False)
+        self.quit = False
         self.initialize(device, channel=channel)
 
     def detach(self, device, channel=None):

@@ -48,6 +48,7 @@ parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
 parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x position')
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
+
 args = parser.parse_args(sys.argv[1:])
 
 kernel.register('module', 'Console', Console)
@@ -158,7 +159,7 @@ if device is not kernel:  # We can process this stuff only with a real device.
         # Automatically classify and start the job.
         elements = kernel.elements
         elements.classify(list(elements.elems()))
-        device.spooler.jobs(elements.ops())
+        device.spooler.jobs(list(elements.ops()))
         device.setting(bool, 'quit', True)
         device.quit = True
 
@@ -196,18 +197,19 @@ if args.batch:
 if args.console:
     console = device.using('module', 'Console')
     device.add_watcher('console', print)
+    kernel.add_watcher('shutdown', print)
     while True:
         device_entries = input('>')
-        if device_entries == 'quit':
+        if device.state == STATE_TERMINATE:
             break
-        if device_entries == 'shutdown':
-            device.shutdown(channel=print)
+        if device_entries == 'quit':
             break
         console.write(device_entries + '\n')
 
     device.remove_watcher('console', print)
 if not args.no_gui:
-    if 'device' in kernel.instances:
-        for key, device in kernel.instances['device'].items():
-            device.open('window', 'MeerK40t', None, -1, "")
-    meerk40tgui.MainLoop()
+    if device.state != STATE_TERMINATE:
+        if 'device' in kernel.instances:
+            for key, device in kernel.instances['device'].items():
+                device.open('window', 'MeerK40t', None, -1, "")
+        meerk40tgui.MainLoop()
