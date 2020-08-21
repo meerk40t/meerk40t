@@ -1299,6 +1299,7 @@ class LhystudioController(Module, Pipe):
         * : tells the system to clear the buffers, and abort the thread.
         ! : tells the system to pause.
         & : tells the system to resume.
+        $ : tells the system to quit.
 
         :return: queue process success.
         """
@@ -1336,7 +1337,7 @@ class LhystudioController(Module, Pipe):
         packet = buffer[:length]
 
         # edge condition of catching only pipe command without '\n'
-        if packet.endswith((b'-', b'*', b'&', b'!', b'#')):
+        if packet.endswith((b'-', b'*', b'&', b'!', b'#', b'$')):
             packet += buffer[length:length + 1]
             length += 1
         post_send_command = None
@@ -1355,6 +1356,9 @@ class LhystudioController(Module, Pipe):
                 packet = packet[:-1]
             elif packet.endswith(b'!'):  # pause
                 self._pause_busy()
+                packet = packet[:-1]
+            elif packet.endswith(b'$'):
+                self.state = STATE_TERMINATE
                 packet = packet[:-1]
             if len(packet) != 0:
                 if packet.endswith(b'#'):

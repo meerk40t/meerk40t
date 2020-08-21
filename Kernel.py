@@ -2055,6 +2055,14 @@ class Device(Preferences):
         if name in self.instances['device']:
             del self.instances['device'][name]
 
+    def find(self, type_name, object_name, instance_name=None):
+        if instance_name is None:
+            instance_name = object_name
+        if type_name in self.instances:
+            if instance_name in self.instances[type_name]:
+                return self.instances[type_name][instance_name]
+        return None
+
     def using(self, type_name, object_name, *args, instance_name=None, **kwargs):
         if instance_name is None:
             instance_name = object_name
@@ -2066,6 +2074,10 @@ class Device(Preferences):
     def open(self, type_name, object_name, *args, instance_name=None, **kwargs):
         if instance_name is None:
             instance_name = object_name
+        if 'sub' in kwargs:
+            s = kwargs['sub']
+            del kwargs['sub']
+
         if self.device_root is None or self.device_root is self:
             module_object = self.registered[type_name][object_name]
         else:

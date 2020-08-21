@@ -376,7 +376,7 @@ class Console(Module, Pipe):
                         except AttributeError:
                             pass
                         if len(args) >= 3:
-                            active_device.open('window', window_name, parent_window, -1, "", param=args[2])
+                            active_device.open('window', window_name, parent_window, -1, "", param=args[2:])
                         else:
                             active_device.open('window', window_name, parent_window, -1, "")
                         yield 'Window %s opened.' % window_name

@@ -33,9 +33,10 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
-        self.ip_menu = wx.Menu()
-
-        wxglade_tmp_menu.AppendSubMenu(self.ip_menu, _("Camera URI"))
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("New URI"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_new(), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_edit(), id=item.GetId())
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera"), "", wx.ITEM_RADIO)
         self.ip_camera_menu = item
@@ -211,13 +212,14 @@ class CameraInterface(wx.Frame, Module):
         if self.camera_job is not None:
             self.camera_job.cancel()
         self.open_camera(self.setting.index)
+        self.device.listen('camera_uri_changed', self.on_camera_uri_change)
         self.device.listen('camera_frame_raw', self.on_camera_frame_raw)
-        self.populate_ip_menu()
         self.set_camera_checks()
 
     def finalize(self, channel=None):
         self.setting.flush()
         self.camera_setting.flush()
+        self.device.unlisten('camera_uri_changed', self.on_camera_uri_change)
         self.device.unlisten('camera_frame_raw', self.on_camera_frame_raw)
         self.quit_thread = True
         if self.camera_job is not None:
@@ -246,34 +248,8 @@ class CameraInterface(wx.Frame, Module):
         self._Buffer = wx.Bitmap(width, height)
         self.update_in_gui_thread()
 
-    def populate_ip_menu(self):
-        """
-        Populates the IP URI Menu.
-
-        :return:
-        """
-        for i in range(self.ip_menu.MenuItemCount):
-            self.ip_menu.Remove(self.ip_menu.FindItemByPosition(0))
-        camera = self.camera_setting
-        for c in list(camera.keylist()):
-            camera_item = camera.setting(str, c, '')
-            if camera_item == '':
-                continue
-
-            item = self.ip_menu.Append(wx.ID_ANY, "URI: %s" % str(camera_item), "", wx.ITEM_RADIO)
-            if self.setting.uri == camera_item:
-                item.Check(True)
-            self.Bind(wx.EVT_MENU, self.ip_menu_uri_change(camera_item), id=item.GetId())
-        count = self.ip_menu.MenuItemCount
-
-        item = self.ip_menu.Append(wx.ID_ANY, _("New URI"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_new(), id=item.GetId())
-
-        if count != 0:
-            item = self.ip_menu.Append(wx.ID_ANY, _("Clear URIs"), "")
-            self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_clear(), id=item.GetId())
-        item = self.ip_menu.Append(wx.ID_ANY, _("Edit URIs"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_edit(), id=item.GetId())
+    def on_camera_uri_change(self, *args):
+        pass
 
     def ip_menu_edit(self):
         """
@@ -281,23 +257,7 @@ class CameraInterface(wx.Frame, Module):
         :param uri:
         :return:
         """
-        self.device.using('module', 'Console').write('window open CameraURI\n')
-
-    def ip_menu_clear(self):
-        """
-        Clears the IP Connection URIs.
-
-        :return:
-        """
-        camera = self.camera_setting
-        for c in list(camera.keylist()):
-            try:
-                delattr(self.camera_setting, c)
-                self.camera_setting.delete_persistent(c)
-            except IndexError:
-                break
-        self.populate_ip_menu()
-        self.set_camera_checks()
+        self.device.using('module', 'Console').write('window open CameraURI %s %s\n' % (self.settings_value, self.setting.uri))
 
     def ip_menu_uri_change(self, uri):
         def function(event=None):
@@ -445,7 +405,6 @@ class CameraInterface(wx.Frame, Module):
         with self.camera_lock:
             self.close_camera()
             self.open_camera(camera_index)
-        self.populate_ip_menu()
         self.set_camera_checks()
 
     def init_camera(self):
@@ -566,7 +525,6 @@ class CameraInterface(wx.Frame, Module):
             self.setting.uri = uri
             self.ip_menu_uri(uri)
             self.swap_camera(-1)
-            self.populate_ip_menu()
             self.set_camera_checks()
 
     def get_camera_uri(self):
@@ -1034,19 +992,26 @@ class CameraInterface(wx.Frame, Module):
             self.fetch_job.cancel()
         # TODO: This won't work anymore.
         self.device.signal('camera_frame_raw', None)
-        # self.fetch_job = self.device.add_job(self.fetch_image, args=True, times=1, interval=0)
+
+        self.fetch_job = self.device.add_job(self.on_camera_frame_raw, args=True, times=1, interval=0)
 
 
 class CameraURI(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: CameraURI.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT
+        if 'param' in kwds:
+            self.set_name, self.set_uri = kwds['param']
+            del kwds['param']
+        else:
+            self.set_name = None
+            self.set_uri = ''
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((437, 530))
         self.list_uri = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.button_add = wx.Button(self, wx.ID_ANY, "Add URI")
-        self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_uri = wx.TextCtrl(self, wx.ID_ANY, self.set_uri)
 
         self.__set_properties()
         self.__do_layout()
@@ -1058,6 +1023,8 @@ class CameraURI(wx.Frame, Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.camera_setting = None
+        self.camera_dict = dict()
+        self.changed = False
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -1069,7 +1036,6 @@ class CameraURI(wx.Frame, Module):
         self.list_uri.AppendColumn("Index", format=wx.LIST_FORMAT_LEFT, width=69)
         self.list_uri.AppendColumn("URI", format=wx.LIST_FORMAT_LEFT, width=348)
         self.button_add.SetToolTip("Add a new URL")
-        self.button_add.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
@@ -1096,10 +1062,11 @@ class CameraURI(wx.Frame, Module):
         self.device.close('window', self.name)
         self.Show()
         self.camera_setting = self.device.device_root.derive('camera')
+        self.camera_dict = self.camera_setting.load_persistent_string_dict()
         self.on_list_refresh()
 
     def finalize(self, channel=None):
-        self.camera_setting.flush()
+        self.commit()
         try:
             self.Close()
         except RuntimeError:
@@ -1111,29 +1078,86 @@ class CameraURI(wx.Frame, Module):
         except RuntimeError:
             pass
 
-    def on_list_refresh(self):
+    def commit(self):
+        if not self.changed:
+            return
         camera = self.camera_setting
-        for i, c in enumerate(list(camera.keylist())):
-            camera_item = camera.setting(str, c, '')
+        for c in list(camera.keylist()):
+            try:
+                print(self.camera_setting)
+                setattr(self.camera_setting, c, None)
+                self.camera_setting.delete_persistent(c)
+            except (IndexError, AttributeError):
+                break
+
+        for key in self.camera_dict:
+            value = self.camera_dict[key]
+            if isinstance(value, str):
+                setattr(self.camera_setting, key, value)
+        self.camera_setting.flush()
+        self.device.signal('camera_uri_changed', True)
+
+    def on_list_refresh(self):
+        self.list_uri.DeleteAllItems()
+        for i, c in enumerate(self.camera_dict):
+            camera_item = self.camera_dict[c]
             if camera_item == '':
                 continue
-            m = self.list_uri.InsertItem(i, str(i))
-            i += 1
+            m = self.list_uri.InsertItem(i, c)
             if m != -1:
+                if camera_item == self.set_uri:
+                    self.list_uri.Select(i)
                 self.list_uri.SetItem(m, 1, str(camera_item))
 
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
-        print("Event handler 'on_list_activated' not implemented!")
-        event.Skip()
+        index = event.GetIndex()
+        element = event.Text
+        new_url = self.camera_dict[element]
+        self.device.using('window', 'CameraInterface:%s' % self.set_name)
+        self.device.signal('camera_uri_set', self.set_uri, new_url)
+        self.Close()
 
     def on_list_right_clicked(self, event):  # wxGlade: CameraURI.<event_handler>
-        print("Event handler 'on_list_right_clicked' not implemented!")
-        event.Skip()
+        index = event.GetIndex()
+        element = event.Text
+        menu = wx.Menu()
+        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_tree_popup_delete(self, element):
+        def delete(event):
+            try:
+                del self.camera_dict[element]
+            except KeyError:
+                pass
+            self.changed = True
+            self.on_list_refresh()
+
+        return delete
+
+    def on_tree_popup_clear(self, element):
+        def delete(event):
+            self.camera_dict = dict()
+            self.changed = True
+            self.on_list_refresh()
+
+        return delete
 
     def on_button_add_uri(self, event):  # wxGlade: CameraURI.<event_handler>
-        print("Event handler 'on_button_add_uri' not implemented!")
-        event.Skip()
+        uri = self.text_uri.GetValue()
+        if uri is None or uri == '':
+            return
+        next_index = 1
+        while ('uri%d' % next_index) in self.camera_dict:
+            next_index += 1
+        self.camera_dict['uri%d' % next_index] = uri
+        self.text_uri.SetValue('')
+        self.changed = True
+        self.on_list_refresh()
 
     def on_text_uri(self, event):  # wxGlade: CameraURI.<event_handler>
-        print("Event handler 'on_text_uri' not implemented!")
-        event.Skip()
+        pass

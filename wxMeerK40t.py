@@ -176,19 +176,23 @@ class MeerK40t(wx.Frame, Module):
                                                 | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
 
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Examples"), icons8_opened_folder_50.GetBitmap())
-        toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Toolbar"),
-                                       style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_EXT_BUTTON)
 
-        toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
-        self.toolbar = toolbar
+        toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Toolbar"), style=RB.RIBBON_PANEL_FLEXIBLE)
+        toolbar = RB.RibbonButtonBar(toolbar_panel)
+        toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
+        toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
+        toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
 
-        toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap(), "")  # "Open",
-        toolbar.AddTool(ID_SAVE, icons8_save_50.GetBitmap(), "")
-        toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
+        # toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
+        # self.toolbar = toolbar
+        #
+        # toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap(), "")  # "Open",
+        # toolbar.AddTool(ID_SAVE, icons8_save_50.GetBitmap(), "")
+        # toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
 
-        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap())
+        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap(), style=RB.RIBBON_PANEL_FLEXIBLE)
         windows = RB.RibbonButtonBar(windows_panel)
-        windows.AddButton(ID_NAV, _("Navigation"), icons8_move_32.GetBitmap(), "")
+        windows.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
         windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
@@ -835,6 +839,9 @@ class MeerK40t(wx.Frame, Module):
 
     def on_paint(self, event):
         try:
+            if not self._Buffer.IsOk():
+                event.Skip()
+                return
             wx.BufferedPaintDC(self.scene, self._Buffer)
         except RuntimeError:
             pass
