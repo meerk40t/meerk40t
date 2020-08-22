@@ -74,6 +74,7 @@ idinc = IdInc()
 ID_MAIN_TOOLBAR = idinc.new()
 ID_ADD_FILE = idinc.new()
 ID_OPEN = idinc.new()
+
 ID_SAVE = idinc.new()
 ID_NAV = idinc.new()
 ID_USB = idinc.new()
@@ -82,7 +83,15 @@ ID_PREFERENCES = idinc.new()
 ID_DEVICES = idinc.new()
 ID_CAMERA = idinc.new()
 ID_JOB = idinc.new()
+ID_PAUSE = idinc.new()
+
 ID_SPOOLER = idinc.new()
+ID_KEYMAP = idinc.new()
+ID_NOTES = idinc.new()
+ID_OPERATIONS= idinc.new()
+ID_TERMINAL = idinc.new()
+ID_ROTARY = idinc.new()
+ID_RASTER = idinc.new()
 
 ID_CUT_CONFIGURATION = idinc.new()
 ID_SELECT = idinc.new()
@@ -172,25 +181,20 @@ class MeerK40t(wx.Frame, Module):
         self.scene = wx.Panel(self, style=wx.EXPAND | wx.WANTS_CHARS)
         self.scene.SetDoubleBuffered(True)
 
-        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE
-                                                | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS)
+        self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
 
-        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Examples"), icons8_opened_folder_50.GetBitmap())
+        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Home"), icons8_opened_folder_50.GetBitmap(), )
 
-        toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Toolbar"), style=RB.RIBBON_PANEL_FLEXIBLE)
+        toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Main"),
+                                       style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE)
         toolbar = RB.RibbonButtonBar(toolbar_panel)
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
+        toolbar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
 
-        # toolbar = RB.RibbonToolBar(toolbar_panel, ID_MAIN_TOOLBAR)
-        # self.toolbar = toolbar
-        #
-        # toolbar.AddTool(ID_OPEN, icons8_opened_folder_50.GetBitmap(), "")  # "Open",
-        # toolbar.AddTool(ID_SAVE, icons8_save_50.GetBitmap(), "")
-        # toolbar.AddTool(ID_JOB, icons8_laser_beam_52.GetBitmap(), "")
-
-        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap(), style=RB.RIBBON_PANEL_FLEXIBLE)
+        windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap(),
+                                       style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         windows = RB.RibbonButtonBar(windows_panel)
         windows.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
@@ -199,6 +203,43 @@ class MeerK40t(wx.Frame, Module):
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
         windows.AddButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
+        windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
+        windows.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
+        windows.AddButton(ID_TERMINAL, _("Terminal"), icons8_console_50.GetBitmap(), "")
+        windows.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
+        windows.AddButton(ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), "")
+
+        align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
+                                       style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        align = RB.RibbonButtonBar(align_panel)
+        align.AddButton(ID_DEVICES, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
+        align.AddButton(ID_DEVICES, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
+        align.AddButton(ID_DEVICES, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
+        align.AddButton(ID_DEVICES, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
+
+        flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
+                                       style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        flip = RB.RibbonButtonBar(flip_panel)
+        flip.AddButton(ID_DEVICES, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
+        flip.AddButton(ID_DEVICES, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
+
+        group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
+                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        group = RB.RibbonButtonBar(group_panel)
+        group.AddButton(ID_DEVICES, _("Group"), icons8_group_objects_50.GetBitmap(), "")
+        group.AddButton(ID_DEVICES, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
+
+        tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
+                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        tool = RB.RibbonButtonBar(tool_panel)
+        tool.AddButton(ID_DEVICES, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
+        tool.AddButton(ID_DEVICES, _("Oval"), icons8_oval_50.GetBitmap(), "")
+        tool.AddButton(ID_DEVICES, _("Circle"), icons8_circle_50.GetBitmap(), "")
+        tool.AddButton(ID_DEVICES, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
+        tool.AddButton(ID_DEVICES, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
+        tool.AddButton(ID_DEVICES, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
+        tool.AddButton(ID_DEVICES, _("Text"), icons8_type_50.GetBitmap(), "")
+
         self._ribbon.Realize()
 
         self.CenterOnScreen()
@@ -326,11 +367,13 @@ class MeerK40t(wx.Frame, Module):
                   .set_operations(list(self.device.device_root.elements.ops())), id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
-        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED, self.on_click_save, id=ID_SAVE)
-        toolbar.Bind(RB.EVT_RIBBONTOOLBAR_CLICKED,
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('window', "JobInfo", self, -1, "")
                      .set_operations(list(self.device.device_root.elements.ops())), id=ID_JOB)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
+
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('window', "UsbConnect", self, -1, ""), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -345,6 +388,18 @@ class MeerK40t(wx.Frame, Module):
                      lambda v: self.device.open('window', "CameraInterface", self, -1, ""), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.device.open('window', "JobSpooler", self, -1, ""), id=ID_SPOOLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Keymap", self, -1, ""), id=ID_KEYMAP)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Notes", self, -1, ""), id=ID_NOTES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Terminal", self, -1, ""), id=ID_TERMINAL)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Operations", self, -1, ""), id=ID_OPERATIONS)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "Rotary", self, -1, ""), id=ID_ROTARY)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.device.open('window', "RasterWizard", self, -1, ""), id=ID_RASTER)
         self.main_statusbar = self.CreateStatusBar(3)
 
         # end wxGlade
@@ -359,7 +414,7 @@ class MeerK40t(wx.Frame, Module):
         self.popup_window_position = None
         self.popup_scene_position = None
         self._Buffer = None
-        self.screen_refresh_is_requested = True
+        self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
         self.screen_refresh_lock = threading.Lock()
         self.background_brush = wx.Brush("Grey")
@@ -370,8 +425,6 @@ class MeerK40t(wx.Frame, Module):
 
         self.__set_properties()
         self.__do_layout()
-
-        self.set_buffer()
 
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.BLUE)
@@ -398,6 +451,7 @@ class MeerK40t(wx.Frame, Module):
 
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
         self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -569,9 +623,7 @@ class MeerK40t(wx.Frame, Module):
         device.setting(str, 'file9', None)
         self.populate_recent_menu()
 
-        self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size)
-        self.space_changed()
 
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
         self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
@@ -730,11 +782,11 @@ class MeerK40t(wx.Frame, Module):
 
     def __do_layout(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self._ribbon, 1, wx.EXPAND, 0)
+        main_sizer.Add(self._ribbon, 0, wx.EXPAND, 0)
         widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
         widget_sizer.Add(self.tree, 1, wx.EXPAND, 0)
         widget_sizer.Add(self.scene, 5, wx.EXPAND, 0)
-        main_sizer.Add(widget_sizer, 5, wx.EXPAND, 0)
+        main_sizer.Add(widget_sizer, 8, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
 
@@ -839,9 +891,8 @@ class MeerK40t(wx.Frame, Module):
 
     def on_paint(self, event):
         try:
-            if not self._Buffer.IsOk():
-                event.Skip()
-                return
+            if self._Buffer is None:
+                self.update_buffer_ui_thread()
             wx.BufferedPaintDC(self.scene, self._Buffer)
         except RuntimeError:
             pass
@@ -858,7 +909,6 @@ class MeerK40t(wx.Frame, Module):
         if self.device is None:
             return
         self.Layout()
-        self.set_buffer()
         self.device.window_width, self.device.window_height = self.Size
         self.widget_scene.signal('guide')
         self.request_refresh()
@@ -874,11 +924,13 @@ class MeerK40t(wx.Frame, Module):
 
     def space_changed(self, *args):
         self.widget_scene.signal('grid')
-        self.on_size(None)
+        self.widget_scene.signal('guide')
+        self.request_refresh()
 
     def bed_changed(self, *args):
         self.widget_scene.signal('grid')
-        self.on_size(None)
+        # self.widget_scene.signal('guide')
+        self.request_refresh()
 
     def on_emphasized_elements_changed(self, *args):
         self.clear_laserpath()
@@ -930,7 +982,10 @@ class MeerK40t(wx.Frame, Module):
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
+
         dm = self.device.draw_mode
+        if self._Buffer is None or self._Buffer.GetSize() != self.scene.ClientSize:
+            self.set_buffer()
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(self.background_brush)
@@ -1047,6 +1102,9 @@ class MeerK40t(wx.Frame, Module):
                 return  # the user changed their mind
             pathname = fileDialog.GetPath()
             self.load(pathname)
+
+    def on_click_pause(self, event):
+        self.device.using("module", "Console").write("control Realtime Pause_Resume\n")
 
     def on_click_save(self, event):
         if self.working_file is None:

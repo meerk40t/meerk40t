@@ -190,6 +190,8 @@ class CameraInterface(wx.Frame, Module):
         self.Show()
         self.device.setting(bool, 'mouse_zoom_invert', False)
         self.device.setting(int, 'draw_mode', 0)
+        self.device.setting(int, "bed_width", 320)  # Default Value
+        self.device.setting(int, "bed_height", 220)  # Default Value
 
         self.camera_setting = self.device.device_root.derive('camera')
         self.setting = self.camera_setting.derive(str(self.settings_value))

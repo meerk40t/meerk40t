@@ -119,7 +119,7 @@ class RasterWizard(wx.Frame, Module):
         self.device.device_root.listen('emphasized', self.on_emphasis_change)
         self.device.signal("RasterWizard-Image")
         if self.param is not None:
-            self.set_wizard_script(self.param)
+            self.set_wizard_script(self.param[0])
 
     def finalize(self, channel=None):
         self.device.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
