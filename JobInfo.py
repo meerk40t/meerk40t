@@ -128,6 +128,7 @@ class JobInfo(wx.Frame, Module):
         self.device.close('window', self.name)
         self.Show()
         self.operations = []
+        self.device.device_root.setting(bool, "auto_spooler", True)
         self.device.setting(bool, "rotary", False)
         self.device.setting(float, "scale_x", 1.0)
         self.device.setting(float, "scale_y", 1.0)
@@ -198,7 +199,8 @@ class JobInfo(wx.Frame, Module):
         self.device.autobeep = self.menu_autobeep.IsChecked()
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
-        self.device.open('window', "JobSpooler", self.GetParent(), -1, "")
+        if self.device.device_root.auto_spooler:
+            self.device.open('window', "JobSpooler", self.GetParent(), -1, "")
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:

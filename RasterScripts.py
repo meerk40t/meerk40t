@@ -296,7 +296,7 @@ class RasterScripts(Module):
                     pass
             if name == 'auto_contrast':
                 try:
-                    if image.mode == 'P':
+                    if image.mode != 'P':
                         image = image.convert('L')
                     if op['enable']:
                         image = ImageOps.autocontrast(image, cutoff=op['cutoff'])

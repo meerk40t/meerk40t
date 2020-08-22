@@ -33,8 +33,6 @@ class CameraInterface(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("New URI"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_new(), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_edit(), id=item.GetId())
 
