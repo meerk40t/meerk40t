@@ -45,6 +45,9 @@ class RasterWizard(wx.Frame, Module):
         self.ops = RasterScripts.raster_script_gold()
         self.selected_op = None
         self.param = param
+        self.wizard_thread = None
+        self.needs_centering = True
+        self.needs_update = True
 
         self.SetSize((605, 636))
 
@@ -80,9 +83,6 @@ class RasterWizard(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
-        self.wizard_thread = None
-        self.needs_centering = True
-        self.needs_update = True
         self.thread_update_lock = threading.Lock()
 
     def set_wizard_script(self, name=None, ops=None):
@@ -169,6 +169,8 @@ class RasterWizard(wx.Frame, Module):
 
     def wiz_img(self):
         if self.svg_image is None:
+            with self.thread_update_lock:
+                self.wizard_thread = None
             return
         while self.needs_update:
             self.needs_update = False
@@ -180,6 +182,8 @@ class RasterWizard(wx.Frame, Module):
                     self.step_image = step
             self.wx_bitmap_image = None
             if self.device is None:
+                with self.thread_update_lock:
+                    self.wizard_thread = None
                 return
             self.device.signal("RasterWizard-Refresh")
         if self.pil_image is not None and self.needs_centering:
@@ -271,11 +275,21 @@ class RasterWizard(wx.Frame, Module):
             pass
 
     def on_update_buffer(self, event=None):
-        if self.device is None:
-            return
-        if self.svg_image is None:
-            return
-        if self.pil_image is None:
+        if self.device is None or self.svg_image is None or self.pil_image is None:
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._preview_panel_buffer)
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.SetBrush(wx.WHITE_BRUSH)
+            w, h = self._preview_panel_buffer.GetSize()
+            gc.DrawRectangle(0,0,w, h)
+            font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+            gc.SetFont(font, wx.BLACK)
+            if self.wizard_thread is not None and self.wizard_thread.is_alive():
+                gc.DrawText(_("Processing..."), 0, 0)
+            else:
+                gc.DrawText(_("No image..."), 0, 0)
+            gc.Destroy()
             return
         dc = wx.MemoryDC()
         dc.SelectObject(self._preview_panel_buffer)
