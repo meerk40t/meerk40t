@@ -192,7 +192,6 @@ class MeerK40t(wx.Frame, Module):
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
         toolbar.AddToggleButton(ID_PAUSE, _("Pause"), icons8_pause_50.GetBitmap(), "")
-        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap(), )
 
         windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap(),
                                        style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
