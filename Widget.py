@@ -1015,7 +1015,7 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
-            gc.SetPen(wx.BLACK_PEN)
+            gc.SetPen(wx.GREY_PEN)
             gc.StrokeLineSegments(starts, ends)
 
     def signal(self, signal, *args, **kwargs):
@@ -1028,6 +1028,7 @@ class GridWidget(Widget):
 class GuideWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+        self.scene.device.device_root.setting(bool, "show_negative_guide", True)
 
     def process_draw(self, gc):
         if self.scene.device.draw_mode & DRAW_MODE_GUIDES != 0:
@@ -1054,34 +1055,41 @@ class GuideWidget(Widget):
         starts = []
         ends = []
         x = offset_x
-        length = 50
+        length = 20
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
+        gc.DrawText(p.units_name, 0, 0)
         while x < w:
-            starts.append((x, 0))
-            ends.append((x, length))
+            if x >= 45:
+                mark_point = (x - sx) / scaled_conversion
+                if round(mark_point * 1000) == 0:
+                    mark_point = 0.0  # prevents -0
+                if mark_point >= 0 or p.show_negative_guide:
+                    starts.append((x, 0))
+                    ends.append((x, length))
 
-            starts.append((x, h))
-            ends.append((x, h - length))
+                    starts.append((x, h))
+                    ends.append((x, h - length))
 
-            mark_point = (x - sx) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
+                    # gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
+                    gc.DrawText("%g" % mark_point, x, 0, -tau / 4)
             x += points
 
         y = offset_y
         while y < h:
-            starts.append((0, y))
-            ends.append((length, y))
+            if y >= 20:
+                mark_point = (y - sy) / scaled_conversion
+                if round(mark_point * 1000) == 0:
+                    mark_point = 0.0  # prevents -0
+                if mark_point >= 0 or p.show_negative_guide:
+                    starts.append((0, y))
+                    ends.append((length, y))
 
-            starts.append((w, y))
-            ends.append((w - length, y))
+                    starts.append((w, y))
+                    ends.append((w - length, y))
 
-            mark_point = (y - sy) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
+                    # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
+                    gc.DrawText("%g" % (mark_point + 0), 0, y + 0)
             y += points
         gc.StrokeLineSegments(starts, ends)
 

@@ -28,6 +28,7 @@ class Settings(wx.Frame, Module):
                                                      _("Print Shutdown"),
                                                      _("SVG Uniform Save"),
                                                      _("Image DPI Scaling"),
+                                                     _("Show Negative Guide")
                                                  ])
 
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),
@@ -64,6 +65,7 @@ class Settings(wx.Frame, Module):
         self.device.setting(bool, "print_shutdown", False)
         self.device.setting(bool, "uniform_svg", False)
         self.device.setting(bool, 'image_dpi', True)
+        self.device.setting(bool, "show_negative_guide", True)
         self.device.setting(int, "language", 0)
         self.device.setting(str, "units_name", 'mm')
         self.device.setting(int, "units_marks", 10)
@@ -77,6 +79,8 @@ class Settings(wx.Frame, Module):
             self.checklist_options.Check(2, True)
         if self.device.image_dpi:
             self.checklist_options.Check(3, True)
+        if self.device.show_negative_guide:
+            self.checklist_options.Check(4, True)
         self.radio_units.SetSelection(self.device.units_index)
         self.combo_language.SetSelection(self.device.language)
 
@@ -125,6 +129,7 @@ class Settings(wx.Frame, Module):
         self.device.print_shutdown = self.checklist_options.IsChecked(1)
         self.device.uniform_svg = self.checklist_options.IsChecked(2)
         self.device.image_dpi = self.checklist_options.IsChecked(3)
+        self.device.show_negative_guide = self.checklist_options.IsChecked(4)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
