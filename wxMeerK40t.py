@@ -29,12 +29,12 @@ from OperationPreprocessor import OperationPreprocessor
 from OperationProperty import OperationProperty
 from PathProperty import PathProperty
 from Preferences import Preferences
+from RasterWizard import RasterWizard
 from RotarySettings import RotarySettings
 from Settings import Settings
 from Terminal import Terminal
 from TextProperty import TextProperty
 from UsbConnect import UsbConnect
-from RasterWizard import RasterWizard
 from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
 from icons import *
@@ -88,7 +88,7 @@ ID_PAUSE = idinc.new()
 ID_SPOOLER = idinc.new()
 ID_KEYMAP = idinc.new()
 ID_NOTES = idinc.new()
-ID_OPERATIONS= idinc.new()
+ID_OPERATIONS = idinc.new()
 ID_TERMINAL = idinc.new()
 ID_ROTARY = idinc.new()
 ID_RASTER = idinc.new()
@@ -211,7 +211,7 @@ class MeerK40t(wx.Frame, Module):
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(), )
 
         align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
-                                       style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         align = RB.RibbonButtonBar(align_panel)
         align.AddButton(ID_DEVICES, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
         align.AddButton(ID_DEVICES, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
@@ -219,19 +219,19 @@ class MeerK40t(wx.Frame, Module):
         align.AddButton(ID_DEVICES, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
 
         flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
-                                       style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         flip = RB.RibbonButtonBar(flip_panel)
         flip.AddButton(ID_DEVICES, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
         flip.AddButton(ID_DEVICES, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
 
         group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
-                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         group = RB.RibbonButtonBar(group_panel)
         group.AddButton(ID_DEVICES, _("Group"), icons8_group_objects_50.GetBitmap(), "")
         group.AddButton(ID_DEVICES, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
 
         tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
-                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         tool = RB.RibbonButtonBar(tool_panel)
         tool.AddButton(ID_DEVICES, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
         tool.AddButton(ID_DEVICES, _("Oval"), icons8_oval_50.GetBitmap(), "")
@@ -240,8 +240,60 @@ class MeerK40t(wx.Frame, Module):
         tool.AddButton(ID_DEVICES, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
         tool.AddButton(ID_DEVICES, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
         tool.AddButton(ID_DEVICES, _("Text"), icons8_type_50.GetBitmap(), "")
+        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Position"), icons8_opened_folder_50.GetBitmap(), )
+        position_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Position"), icons8_opened_folder_50.GetBitmap(),
+                                        style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
 
+        self.text_x = wx.TextCtrl(position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_y = wx.TextCtrl(position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_w = wx.TextCtrl(position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.button_aspect_ratio = wx.BitmapButton(position_panel, wx.ID_ANY, icons8_lock_50.GetBitmap())
+        self.text_h = wx.TextCtrl(position_panel, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.combo_box_units = wx.ComboBox(position_panel, wx.ID_ANY, choices=["mm", "cm", "inch", "mil", "%"],
+                                           style=wx.CB_DROPDOWN | wx.CB_READONLY)
+
+        self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
+        self.combo_box_units.SetSelection(0)
+
+        sizer_panel = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_units = wx.StaticBoxSizer(wx.StaticBox(position_panel, wx.ID_ANY, "Units:"),
+                                        wx.HORIZONTAL)
+        sizer_h = wx.StaticBoxSizer(wx.StaticBox(position_panel, wx.ID_ANY, "H:"), wx.HORIZONTAL)
+        sizer_w = wx.StaticBoxSizer(wx.StaticBox(position_panel, wx.ID_ANY, "W:"), wx.HORIZONTAL)
+        sizer_y = wx.StaticBoxSizer(wx.StaticBox(position_panel, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
+        sizer_x = wx.StaticBoxSizer(wx.StaticBox(position_panel, wx.ID_ANY, "X:"), wx.HORIZONTAL)
+        sizer_x.Add(self.text_x, 1, 0, 0)
+        sizer_panel.Add(sizer_x, 0, 0, 0)
+        sizer_y.Add(self.text_y, 1, 0, 0)
+        sizer_panel.Add(sizer_y, 0, 0, 0)
+        sizer_w.Add(self.text_w, 1, 0, 0)
+        sizer_panel.Add(sizer_w, 0, 0, 0)
+        sizer_panel.Add(self.button_aspect_ratio, 0, 0, 0)
+        sizer_h.Add(self.text_h, 1, 0, 0)
+        sizer_panel.Add(sizer_h, 0, 0, 0)
+        sizer_units.Add(self.combo_box_units, 0, 0, 0)
+        sizer_panel.Add(sizer_units, 0, 0, 0)
+        position_panel.SetSizer(sizer_panel)
         self._ribbon.Realize()
+
+        self.ribbon_position_aspect_ratio = True
+        self.ribbon_position_ignore_update = False
+        self.ribbon_position_x = 0.0
+        self.ribbon_position_y = 0.0
+        self.ribbon_position_h = 0.0
+        self.ribbon_position_w = 0.0
+        self.ribbon_position_units = 0
+        self.ribbon_position_name = None
+        self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
+        self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_y)
+        self.Bind(wx.EVT_TEXT, self.on_text_w, self.text_w)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_w)
+        self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
+        self.Bind(wx.EVT_TEXT, self.on_text_h, self.text_h)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
 
         self.CenterOnScreen()
         # Menu Bar
@@ -519,6 +571,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.listen('operation_removed', self.on_rebuild_tree_request)
         kernel.listen('units', self.space_changed)
         kernel.listen('emphasized', self.on_emphasized_elements_changed)
+        kernel.listen('modified', self.on_element_modified)
         kernel.listen('altered', self.on_element_alteration)
 
         device.listen('background', self.on_background_signal)
@@ -637,6 +690,8 @@ class MeerK40t(wx.Frame, Module):
             bedheight = device.bed_height
             bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
             self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
+            self.ribbon_position_units = kernel.units_index
+            self.update_ribbon_position()
 
     def finalize(self, channel=None):
         device = self.device
@@ -657,6 +712,7 @@ class MeerK40t(wx.Frame, Module):
         kernel.unlisten('operation_removed', self.on_rebuild_tree_request)
         kernel.unlisten('units', self.space_changed)
         kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
+        kernel.unlisten('modified', self.on_element_modified)
         kernel.unlisten('altered', self.on_element_alteration)
 
         device.unlisten('background', self.on_background_signal)
@@ -924,6 +980,8 @@ class MeerK40t(wx.Frame, Module):
         self.request_refresh_for_animation()
 
     def space_changed(self, *args):
+        self.ribbon_position_units = self.device.device_root.units_index
+        self.update_ribbon_position()
         self.widget_scene.signal('grid')
         self.widget_scene.signal('guide')
         self.request_refresh()
@@ -934,11 +992,15 @@ class MeerK40t(wx.Frame, Module):
         self.request_refresh()
 
     def on_emphasized_elements_changed(self, *args):
+        self.update_ribbon_position()
         self.clear_laserpath()
         self.request_refresh()
 
     def on_element_alteration(self, *args):
         self.device.signal('rebuild_tree')
+
+    def on_element_modified(self, *args):
+        self.update_ribbon_position()
 
     def clear_laserpath(self):
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
@@ -1085,6 +1147,213 @@ class MeerK40t(wx.Frame, Module):
                 self.device.using('module', 'Console').write(action + "\n")
         else:
             event.Skip()
+
+    def update_ribbon_position(self):
+        p = self.device.device_root
+        elements = p.elements
+        bounds = elements.bounds()
+        self.text_w.Enable(bounds is not None)
+        self.text_h.Enable(bounds is not None)
+        self.text_x.Enable(bounds is not None)
+        self.text_y.Enable(bounds is not None)
+        self.button_aspect_ratio.Enable(bounds is not None)
+        if bounds is None:
+            self.ribbon_position_ignore_update = True
+            self.combo_box_units.SetSelection(self.ribbon_position_units)
+            self.ribbon_position_ignore_update = False
+            return
+        x0, y0, x1, y1 = bounds
+        conversion, name, marks, index = (39.37, "mm", 10, 0)
+        if self.ribbon_position_units == 2:
+            conversion, name, marks, index = (1000.0, "inch", 1, 2)
+        elif self.ribbon_position_units == 3:
+            conversion, name, marks, index = (1.0, "mil", 1000, 3)
+        elif self.ribbon_position_units == 1:
+            conversion, name, marks, index = (393.7, "cm", 1, 1)
+        elif self.ribbon_position_units == 0:
+            conversion, name, marks, index = (39.37, "mm", 10, 0)
+        self.ribbon_position_name = name
+        self.ribbon_position_x = (x0 / conversion)
+        self.ribbon_position_y = (y0 / conversion)
+        self.ribbon_position_w = ((x1 - x0) / conversion)
+        self.ribbon_position_h = ((y1 - y0) / conversion)
+        self.ribbon_position_ignore_update = True
+        if self.ribbon_position_units != 4:
+            self.text_x.SetValue("%.2f" % self.ribbon_position_x)
+            self.text_y.SetValue("%.2f" % self.ribbon_position_y)
+            self.text_w.SetValue("%.2f" % self.ribbon_position_w)
+            self.text_h.SetValue("%.2f" % self.ribbon_position_h)
+        else:
+            self.text_x.SetValue("%.2f" % 100)
+            self.text_y.SetValue("%.2f" % 100)
+            self.text_w.SetValue("%.2f" % 100)
+            self.text_h.SetValue("%.2f" % 100)
+        self.combo_box_units.SetSelection(self.ribbon_position_units)
+        self.ribbon_position_ignore_update = False
+
+    def on_text_x(self, event):  # wxGlade: MyFrame.<event_handler>
+        if self.ribbon_position_ignore_update:
+            return
+        try:
+            new = float(self.text_x.GetValue())
+            if self.ribbon_position_units == 4:
+                return
+            else:
+                self.ribbon_position_x = new
+            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_y,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_w,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_h,
+                                                                                          self.ribbon_position_name))
+        except ValueError:
+            pass
+
+    def on_text_y(self, event):  # wxGlade: MyFrame.<event_handler>
+        if self.ribbon_position_ignore_update:
+            return
+        try:
+            new = float(self.text_y.GetValue())
+            if self.ribbon_position_units == 4:
+                return
+            else:
+                self.ribbon_position_y = new
+            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_y,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_w,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_h,
+                                                                                          self.ribbon_position_name))
+        except ValueError:
+            pass
+
+    def on_text_w(self, event):  # wxGlade: MyFrame.<event_handler>
+        if self.ribbon_position_ignore_update:
+            return
+        try:
+            new = float(self.text_w.GetValue())
+            old = self.ribbon_position_w
+            if self.ribbon_position_units == 4:
+                if not self.ribbon_position_aspect_ratio:
+                    return
+                ratio = float(self.text_w.GetValue()) / 100.0
+                if ratio == 0:
+                    return
+                self.ribbon_position_ignore_update = True
+                self.text_h.SetValue("%.2f" % (ratio * 100))
+                self.ribbon_position_ignore_update = False
+                return
+            else:
+                ratio = new / old
+                if ratio == 0:
+                    return
+                self.ribbon_position_w = new
+                if self.ribbon_position_aspect_ratio:
+                    self.ribbon_position_h *= ratio
+                self.ribbon_position_ignore_update = True
+                self.text_h.SetValue("%.2f" % self.ribbon_position_h)
+                self.ribbon_position_ignore_update = False
+            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_y,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_w,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_h,
+                                                                                          self.ribbon_position_name))
+        except (ValueError, ZeroDivisionError):
+            pass
+
+    def on_button_aspect_ratio(self, event):  # wxGlade: MyFrame.<event_handler>
+        if self.ribbon_position_ignore_update:
+            return
+        if self.ribbon_position_aspect_ratio:
+            self.button_aspect_ratio.SetBitmap(icons8_padlock_50.GetBitmap())
+        else:
+            self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap())
+        self.ribbon_position_aspect_ratio = not self.ribbon_position_aspect_ratio
+
+    def on_text_h(self, event):  # wxGlade: MyFrame.<event_handler>
+        if self.ribbon_position_ignore_update:
+            return
+        try:
+            new = float(self.text_w.GetValue())
+            old = self.ribbon_position_h
+            if self.ribbon_position_units == 4:
+                if not self.ribbon_position_aspect_ratio:
+                    return
+                ratio = new / 100.0
+                if ratio == 0:
+                    return
+                self.ribbon_position_ignore_update = True
+                self.text_w.SetValue("%.2f" % (ratio * 100))
+                self.ribbon_position_ignore_update = False
+                return
+            else:
+                ratio = new / old
+                if ratio == 0:
+                    return
+                self.ribbon_position_h = new
+                if self.ribbon_position_aspect_ratio:
+                    self.ribbon_position_w *= ratio
+                self.ribbon_position_ignore_update = True
+                self.text_w.SetValue("%.2f" % self.ribbon_position_w)
+                self.ribbon_position_ignore_update = False
+
+            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_y,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_w,
+                                                                                          self.ribbon_position_name,
+                                                                                          self.ribbon_position_h,
+                                                                                          self.ribbon_position_name))
+        except (ValueError, ZeroDivisionError):
+            pass
+
+    def on_text_dim_enter(self, event):
+        if self.ribbon_position_units != 4:
+            return
+        ratio_w = float(self.text_w.GetValue()) / 100.0
+        ratio_h = float(self.text_h.GetValue()) / 100.0
+        self.ribbon_position_w *= ratio_w
+        self.ribbon_position_h *= ratio_h
+        self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                                      self.ribbon_position_name,
+                                                                                      self.ribbon_position_y,
+                                                                                      self.ribbon_position_name,
+                                                                                      self.ribbon_position_w,
+                                                                                      self.ribbon_position_name,
+                                                                                      self.ribbon_position_h,
+                                                                                      self.ribbon_position_name))
+        self.update_ribbon_position()
+
+    def on_text_pos_enter(self, event):
+        if self.ribbon_position_units != 4:
+            return
+        ratio_x = float(self.text_x.GetValue()) / 100.0
+        ratio_y = float(self.text_y.GetValue()) / 100.0
+        self.ribbon_position_x *= ratio_x
+        self.ribbon_position_y *= ratio_y
+        self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                                      self.ribbon_position_name,
+                                                                                      self.ribbon_position_y,
+                                                                                      self.ribbon_position_name,
+                                                                                      self.ribbon_position_w,
+                                                                                      self.ribbon_position_name,
+                                                                                      self.ribbon_position_h,
+                                                                                      self.ribbon_position_name))
+        self.update_ribbon_position()
+
+    def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
+        if self.ribbon_position_ignore_update:
+            return
+        self.ribbon_position_units = self.combo_box_units.GetSelection()
+        self.update_ribbon_position()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
         kernel = self.device.device_root
@@ -1268,7 +1537,8 @@ class MeerK40t(wx.Frame, Module):
                 elem.altered()
 
     def open_flip_dialog(self):
-        dlg = wx.TextEntryDialog(self, _("Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"),
+        dlg = wx.TextEntryDialog(self, _(
+            "Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"),
                                  _("Double Side Flip"), '')
         dlg.SetValue('')
         if dlg.ShowModal() == wx.ID_OK:
@@ -1278,7 +1548,7 @@ class MeerK40t(wx.Frame, Module):
             hmils = p.bed_height * MILS_IN_MM
             length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
             mx = Matrix()
-            mx.post_scale(-1.0, 1, length/2.0, 0)
+            mx.post_scale(-1.0, 1, length / 2.0, 0)
             for element in kernel.elements.elems(emphasized=True):
                 try:
                     element *= mx
@@ -1931,6 +2201,7 @@ class RootNode(list):
                 locked = True
         except (AttributeError, ValueError):
             pass
+
         def combined(*args):
             for listv in args:
                 for itemv in listv:
@@ -2109,7 +2380,8 @@ class RootNode(list):
                 try:
                     raster_wizard_menu = wx.Menu()
                     for script in self.device.device_root.registered['raster_script']:
-                        menu_item = raster_wizard_menu.Append(wx.ID_ANY, _("RasterWizard: %s") % script, "", wx.ITEM_NORMAL)
+                        menu_item = raster_wizard_menu.Append(wx.ID_ANY, _("RasterWizard: %s") % script, "",
+                                                              wx.ITEM_NORMAL)
                         gui.Bind(wx.EVT_MENU, self.menu_console('window open RasterWizard %s' % script), menu_item)
                     menu.AppendSubMenu(raster_wizard_menu, _("RasterWizard"))
                 except KeyError:
@@ -2117,7 +2389,8 @@ class RootNode(list):
                 try:
                     raster_wizard_apply_menu = wx.Menu()
                     for script in self.device.device_root.registered['raster_script']:
-                        menu_item = raster_wizard_apply_menu.Append(wx.ID_ANY, _("Apply: %s") % script, "", wx.ITEM_NORMAL)
+                        menu_item = raster_wizard_apply_menu.Append(wx.ID_ANY, _("Apply: %s") % script, "",
+                                                                    wx.ITEM_NORMAL)
                         gui.Bind(wx.EVT_MENU, self.menu_console('image wizard %s\n' % script), menu_item)
                     menu.AppendSubMenu(raster_wizard_apply_menu, _("Apply Raster Script"))
                 except KeyError:
@@ -2391,7 +2664,8 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window', "JobInfo", self.gui, -1, "").set_operations(list(self.elements.ops(selected=True)))
+            self.device.open('window', "JobInfo", self.gui, -1, "").set_operations(
+                list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 

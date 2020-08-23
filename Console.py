@@ -526,8 +526,12 @@ class Console(Module, Pipe):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
-                devices = kernel.setting(str, 'list_devices', '')
-                for device in devices.split(';'):
+
+                for device in list(kernel.derivable()):
+                    try:
+                        d = int(device)
+                    except ValueError:
+                        continue
                     try:
                         settings = kernel.derive(device)
                         device_name = settings.setting(str, 'device_name', 'Lhystudios')
@@ -1043,6 +1047,29 @@ class Console(Module, Pipe):
                 yield "Invalid value"
             active_device.signal('refresh_scene')
             return
+        elif command == 'resize':
+            if len(args) < 4:
+                yield "Too few arguments (needs 4)"
+                return
+            try:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                w_dim = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                h_dim = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                x, y, w, h = elements.bounds()
+                dx = x_pos - x
+                dy = y_pos - y
+                sx = w_dim / w
+                sy = h_dim / h
+                # scale(%f, %f, %f, %f)?
+                matrix = Matrix('translate(%f,%f)' % (dx, dy))
+                for element in elements.elems(emphasized=True):
+                    element *= matrix
+                    element.modified()
+                active_device.signal('refresh_scene')
+            except (ValueError, ZeroDivisionError):
+                return
+
         elif command == 'matrix':
             if len(args) == 0:
                 yield '----------'
