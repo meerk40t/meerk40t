@@ -178,6 +178,11 @@ class RasterScripts(Module):
             'step': 2
         })
         ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+        })
+        ops.append({
             'name': 'tone',
             'type': 'spline',
             'enable': True,
