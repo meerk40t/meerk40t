@@ -23,10 +23,9 @@ class RasterWizard(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: RasterWizard.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        script = None
-        if 'script' in kwds:
-            script = kwds['script']
-            del kwds['script']
+        if 'param' in kwds:
+            script = kwds['param']
+            del kwds['param']
         else:
             script = ("Gold",)
         wx.Frame.__init__(self, *args, **kwds)
