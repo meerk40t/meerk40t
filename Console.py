@@ -446,11 +446,14 @@ class Console(Module, Pipe):
                 value = args[0]
                 if value == 'open':
                     index = args[1]
-                    name = index
+                    name = None
                     if len(args) >= 3:
                         name = args[2]
                     if index in kernel.registered['module']:
-                        active_device.open('module', index, instance_name=name)
+                        if name is not None:
+                            active_device.open('module', index, instance_name=None)
+                        else:
+                            active_device.open('module', index)
                     else:
                         yield "Module '%s' not found." % index
                 elif value == 'close':

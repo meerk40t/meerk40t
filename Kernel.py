@@ -28,12 +28,15 @@ class Module:
     and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
     them.
 
-    A module always has an understanding of it's current state within the device, and is notified of any changes in this
+    If a device is attempted to be open() a second time while the device is still registered. The device restore()
+    function is called for the device, with the same args and kwargs that would have been called on __init__().
+
+    A module always has an understanding of its current state within the device, and is notified of any changes in this
     state.
 
     Modules are also qualified jobs that can be scheduled in the kernel to run at a particular time and a given number
-    of times. This is done calling schedule() and unschedule() and setting the parameters for process, args, times,
-    paused and executing.
+    of times. This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
+    and times.
 
     All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
     any relevant information. Attach and initialize are given the channel 'open', detach and finalize are given the
@@ -45,13 +48,12 @@ class Module:
         self.device = device
         self.state = STATE_INITIALIZE
 
-        self.interval = interval
-        self.last_run = None
-        self.next_run = time.time() + self.interval
-
         self.process = process
         self.args = args
+        self.interval = interval
         self.times = times
+        self.last_run = None
+        self.next_run = time.time() + self.interval
 
     @property
     def scheduled(self):
@@ -70,10 +72,17 @@ class Module:
         if self in self.device.jobs:
             self.device.jobs.remove(self)
 
+    def restore(self, *args, **kwargs):
+        """Called if a second open attempt is made for this module."""
+        pass
+
     def attach(self, device, name=None, channel=None):
         """
         Called by open to attach module to device.
-        This should be overloaded if making a specific module type for reuse and registering that on the device.
+
+        This should be overloaded when making a specific module type for reuse, where using init would require specific
+        subclassing, or for modules that are intended to expand the functionality of a device rather than compliment
+        that functionality.
         """
         self.device = device
         self.name = name
@@ -130,9 +139,8 @@ class Spooler(Module):
 
     def attach(self, device, name=None, channel=None):
         """Overloaded attach to demand .spooler attribute."""
+        device.spooler = self
         Module.attach(self, device, name)
-        self.device.spooler = self
-        self.initialize(channel=channel)
 
     def peek(self):
         if len(self._queue) == 0:
@@ -240,11 +248,10 @@ class Interpreter(Module):
         self.acceleration = None  # None means to use speedcode default
 
     def attach(self, device, name=None, channel=None):
+        device.interpreter = self
         Module.attach(self, device, name)
-        self.device.interpreter = self
         self.device.setting(int, 'current_x', 0)
         self.device.setting(int, 'current_y', 0)
-        self.initialize(channel=channel)
         self.schedule()
 
     def process_spool(self, *args):
@@ -623,11 +630,11 @@ class Signaler(Module):
         self.args = ()
 
     def attach(self, device, name=None, channel=None):
+        device.signal = self.signal
+        device.listen = self.listen
+        device.unlisten = self.unlisten
+        device.last_signal = self.last_signal
         Module.attach(self, device, name)
-        self.device.signal = self.signal
-        self.device.listen = self.listen
-        self.device.unlisten = self.unlisten
-        self.device.last_signal = self.last_signal
         self.schedule()
 
     def detach(self, device, channel=None):
@@ -759,13 +766,13 @@ class Elemental(Module):
         self._bounds = None
 
     def attach(self, device, name=None, channel=None):
+        device.elements = self
+        device.classify = self.classify
+        device.save = self.save
+        device.save_types = self.save_types
+        device.load = self.load
+        device.load_types = self.load_types
         Module.attach(self, device, name)
-        self.device.elements = self
-        self.device.classify = self.classify
-        self.device.save = self.save
-        self.device.save_types = self.save_types
-        self.device.load = self.load
-        self.device.load_types = self.load_types
 
     def register(self, obj):
         obj.wx_bitmap_image = None
@@ -2055,28 +2062,58 @@ class Device(Preferences):
         if name in self.instances['device']:
             del self.instances['device'][name]
 
-    def find(self, type_name, object_name, instance_name=None):
-        if instance_name is None:
-            instance_name = object_name
+    def find(self, type_name, name):
+        """
+        Finds a loaded instance. Or returns None if not such instance.
+
+        Note name is not necessarily the type of instance. It could be the named value of the instance.
+
+        :param type_name: The type of instance to find.
+        :param name: The name of this instance.
+        :return: The instance if found, otherwise none.
+        """
         if type_name in self.instances:
-            if instance_name in self.instances[type_name]:
-                return self.instances[type_name][instance_name]
+            if name in self.instances[type_name]:
+                return self.instances[type_name][name]
         return None
 
-    def using(self, type_name, object_name, *args, instance_name=None, **kwargs):
-        if instance_name is None:
-            instance_name = object_name
-        if type_name in self.instances:
-            if instance_name in self.instances[type_name]:
-                return self.instances[type_name][instance_name]
-        return self.open(type_name, object_name, *args, instance_name=instance_name, **kwargs)
+    def using(self, type_name, object_name, *args, **kwargs):
+        return self.open(type_name, object_name, *args, **kwargs)
 
-    def open(self, type_name, object_name, *args, instance_name=None, **kwargs):
-        if instance_name is None:
+    def open(self, type_name, object_name, *args, **kwargs):
+        """
+        Opens a registered module. If that module already exists it returns the already open module.
+
+        Two special kwargs are passed to this. 'instance_name' and 'sub'. These control the name under which
+        the module is registered. Instance_name replaces the default, which registers the instance under the object_name
+        whereas sub provides a suffixed name 'object_name:sub'.
+
+        If the module already exists, the restore function is called on that object if it exists with the same args and
+        kwargs that were intended for the init() routine.
+
+        :param type_name: Type of object being opened.
+        :param object_name: Name of object being opened.
+        :param args: Args to pass to newly opened module.
+        :param kwargs: Kwargs to pass to newly opened module.
+        :return: Opened module.
+        """
+        if 'instance_name' in kwargs:
+            instance_name = kwargs['instance_name']
+            del kwargs['instance_name']
+        else:
             instance_name = object_name
+
         if 'sub' in kwargs:
-            s = kwargs['sub']
+            instance_name = "%s:%s" % (instance_name, kwargs['sub'])
             del kwargs['sub']
+
+        find = self.find(type_name, instance_name)
+        if find is not None:
+            try:
+                find.restore(*args, **kwargs)
+            except AttributeError:
+                pass
+            return find
 
         if self.device_root is None or self.device_root is self:
             module_object = self.registered[type_name][object_name]
@@ -2087,8 +2124,13 @@ class Device(Preferences):
         self.add(type_name, instance_name, instance)
         return instance
 
-    def close(self, type_name, instance_name):
+    def add(self, type_name, instance_name, instance):
+        if type_name not in self.instances:
+            self.instances[type_name] = {}
+        self.instances[type_name][instance_name] = instance
 
+
+    def close(self, type_name, instance_name):
         if type_name in self.instances and instance_name in self.instances[type_name]:
             instance = self.instances[type_name][instance_name]
             try:
@@ -2097,11 +2139,6 @@ class Device(Preferences):
                 pass
             self.remove(type_name, instance_name)
             instance.detach(self, channel=self.channel_open('close'))
-
-    def add(self, type_name, instance_name, instance):
-        if type_name not in self.instances:
-            self.instances[type_name] = {}
-        self.instances[type_name][instance_name] = instance
 
     def remove(self, type_name, instance_name):
         if instance_name in self.instances[type_name]:

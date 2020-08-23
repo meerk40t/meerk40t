@@ -510,9 +510,8 @@ class SelectionWidget(Widget):
         self.root = root
         self.elements = scene.device.device_root.elements
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.BLUE)
-        self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
+        self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
         self.save_width = None
         self.save_height = None
         self.tool = self.tool_translate
@@ -821,10 +820,10 @@ class SelectionWidget(Widget):
         bounds = elements.bounds()
         matrix = self.parent.matrix
         if bounds is not None:
-            linewidth = 3.0 / matrix.value_scale_x()
+            linewidth = 2.0 / matrix.value_scale_x()
             self.selection_pen.SetWidth(linewidth)
             font = wx.Font(14.0 / matrix.value_scale_x(), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, wx.BLACK)
+            gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
@@ -838,8 +837,8 @@ class SelectionWidget(Widget):
             if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.device.device_root
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
-                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
-                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
+                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
+                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
@@ -955,6 +954,9 @@ class GridWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.grid = None
         self.background = None
+        self.grid_line_pen = wx.Pen()
+        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
+        self.grid_line_pen.SetWidth(1)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
@@ -1015,7 +1017,7 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
-            gc.SetPen(wx.GREY_PEN)
+            gc.SetPen(self.grid_line_pen)
             gc.StrokeLineSegments(starts, ends)
 
     def signal(self, signal, *args, **kwargs):
@@ -1039,7 +1041,7 @@ class GuideWidget(Widget):
         scaled_conversion = p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         if scaled_conversion == 0:
             return
-
+        edge_gap = 5
         wpoints = w / 15.0
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
@@ -1058,21 +1060,21 @@ class GuideWidget(Widget):
         length = 20
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
-        gc.DrawText(p.units_name, 0, 0)
+        gc.DrawText(p.units_name, edge_gap, edge_gap)
         while x < w:
             if x >= 45:
                 mark_point = (x - sx) / scaled_conversion
                 if round(mark_point * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if mark_point >= 0 or p.show_negative_guide:
-                    starts.append((x, 0))
-                    ends.append((x, length))
+                    starts.append((x, edge_gap))
+                    ends.append((x, length+edge_gap))
 
-                    starts.append((x, h))
-                    ends.append((x, h - length))
+                    starts.append((x, h - edge_gap))
+                    ends.append((x, h - length - edge_gap))
 
                     # gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
-                    gc.DrawText("%g" % mark_point, x, 0, -tau / 4)
+                    gc.DrawText("%g" % mark_point, x, edge_gap, -tau / 4)
             x += points
 
         y = offset_y
@@ -1082,14 +1084,14 @@ class GuideWidget(Widget):
                 if round(mark_point * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if mark_point >= 0 or p.show_negative_guide:
-                    starts.append((0, y))
-                    ends.append((length, y))
+                    starts.append((edge_gap, y))
+                    ends.append((length+edge_gap, y))
 
-                    starts.append((w, y))
-                    ends.append((w - length, y))
+                    starts.append((w-edge_gap, y))
+                    ends.append((w - length - edge_gap, y))
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
-                    gc.DrawText("%g" % (mark_point + 0), 0, y + 0)
+                    gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
             y += points
         gc.StrokeLineSegments(starts, ends)
 

@@ -1113,9 +1113,10 @@ class CameraURI(wx.Frame, Module):
         index = event.GetIndex()
         element = event.Text
         new_url = self.camera_dict[element]
-        self.device.using('window', 'CameraInterface:%s' % self.set_name)
-        self.device.signal('camera_uri_set', self.set_uri, new_url)
-        self.Close()
+        interface = self.device.find('window', 'CameraInterface:%s' % self.set_name)
+        if interface is not None:
+            self.device.signal('camera_uri_set', self.set_uri, new_url)
+            self.Close()
 
     def on_list_right_clicked(self, event):  # wxGlade: CameraURI.<event_handler>
         index = event.GetIndex()

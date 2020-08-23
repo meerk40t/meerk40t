@@ -23,10 +23,12 @@ class RasterWizard(wx.Frame, Module):
     def __init__(self, *args, **kwds):
         # begin wxGlade: RasterWizard.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        param = None
-        if 'param' in kwds:
-            param = kwds['param']
-            del kwds['param']
+        script = None
+        if 'script' in kwds:
+            script = kwds['script']
+            del kwds['script']
+        else:
+            script = ("Gold",)
         wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self._preview_panel_buffer = None
@@ -42,9 +44,9 @@ class RasterWizard(wx.Frame, Module):
 
         self.wx_bitmap_image = None
         self.image_width, self.image_height = None, None
-        self.ops = RasterScripts.raster_script_gold()
+        self.ops = dict()
+        self.script = script
         self.selected_op = None
-        self.param = param
         self.wizard_thread = None
         self.needs_centering = True
         self.needs_update = True
@@ -113,13 +115,14 @@ class RasterWizard(wx.Frame, Module):
 
     def initialize(self, channel=None):
         self.device.close('window', self.name)
+        if self.script is not None:
+            self.set_wizard_script(self.script[0])
         self.Show()
+
         self.device.listen('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
         self.device.listen('RasterWizard-Image', self.on_raster_wizard_image_signal)
         self.device.device_root.listen('emphasized', self.on_emphasis_change)
         self.device.signal("RasterWizard-Image")
-        if self.param is not None:
-            self.set_wizard_script(self.param[0])
 
     def finalize(self, channel=None):
         self.device.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
