@@ -1163,15 +1163,15 @@ class MeerK40t(wx.Frame, Module):
             self.ribbon_position_ignore_update = False
             return
         x0, y0, x1, y1 = bounds
-        conversion, name, marks, index = (39.37, "mm", 10, 0)
+        conversion, name, index = (39.37, "mm", 0)
         if self.ribbon_position_units == 2:
-            conversion, name, marks, index = (1000.0, "inch", 1, 2)
+            conversion, name, index = (1000.0, "in", 2)
         elif self.ribbon_position_units == 3:
-            conversion, name, marks, index = (1.0, "mil", 1000, 3)
+            conversion, name, index = (1.0, "mil", 3)
         elif self.ribbon_position_units == 1:
-            conversion, name, marks, index = (393.7, "cm", 1, 1)
+            conversion, name, index = (393.7, "cm",  1)
         elif self.ribbon_position_units == 0:
-            conversion, name, marks, index = (39.37, "mm", 10, 0)
+            conversion, name, index = (39.37, "mm",  0)
         self.ribbon_position_name = name
         self.ribbon_position_x = (x0 / conversion)
         self.ribbon_position_y = (y0 / conversion)
@@ -1195,19 +1195,8 @@ class MeerK40t(wx.Frame, Module):
         if self.ribbon_position_ignore_update:
             return
         try:
-            new = float(self.text_x.GetValue())
-            if self.ribbon_position_units == 4:
-                return
-            else:
-                self.ribbon_position_x = new
-            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_y,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_w,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_h,
-                                                                                          self.ribbon_position_name))
+            if self.ribbon_position_units != 4:
+                self.ribbon_position_x = float(self.text_x.GetValue())
         except ValueError:
             pass
 
@@ -1215,19 +1204,8 @@ class MeerK40t(wx.Frame, Module):
         if self.ribbon_position_ignore_update:
             return
         try:
-            new = float(self.text_y.GetValue())
-            if self.ribbon_position_units == 4:
-                return
-            else:
-                self.ribbon_position_y = new
-            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_y,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_w,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_h,
-                                                                                          self.ribbon_position_name))
+            if self.ribbon_position_units != 4:
+                self.ribbon_position_y = float(self.text_y.GetValue())
         except ValueError:
             pass
 
@@ -1238,33 +1216,17 @@ class MeerK40t(wx.Frame, Module):
             new = float(self.text_w.GetValue())
             old = self.ribbon_position_w
             if self.ribbon_position_units == 4:
-                if not self.ribbon_position_aspect_ratio:
-                    return
-                ratio = float(self.text_w.GetValue()) / 100.0
-                if ratio == 0:
-                    return
-                self.ribbon_position_ignore_update = True
-                self.text_h.SetValue("%.2f" % (ratio * 100))
-                self.ribbon_position_ignore_update = False
-                return
+                ratio = new / 100.0
+                if self.ribbon_position_aspect_ratio:
+                    self.ribbon_position_ignore_update = True
+                    self.text_h.SetValue("%.2f" % (ratio * 100))
+                    self.ribbon_position_ignore_update = False
             else:
                 ratio = new / old
-                if ratio == 0:
-                    return
-                self.ribbon_position_w = new
                 if self.ribbon_position_aspect_ratio:
-                    self.ribbon_position_h *= ratio
-                self.ribbon_position_ignore_update = True
-                self.text_h.SetValue("%.2f" % self.ribbon_position_h)
-                self.ribbon_position_ignore_update = False
-            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_y,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_w,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_h,
-                                                                                          self.ribbon_position_name))
+                    self.ribbon_position_ignore_update = True
+                    self.text_h.SetValue("%.2f" % (self.ribbon_position_h * ratio))
+                    self.ribbon_position_ignore_update = False
         except (ValueError, ZeroDivisionError):
             pass
 
@@ -1281,47 +1243,32 @@ class MeerK40t(wx.Frame, Module):
         if self.ribbon_position_ignore_update:
             return
         try:
-            new = float(self.text_w.GetValue())
+            new = float(self.text_h.GetValue())
             old = self.ribbon_position_h
             if self.ribbon_position_units == 4:
-                if not self.ribbon_position_aspect_ratio:
-                    return
-                ratio = new / 100.0
-                if ratio == 0:
-                    return
-                self.ribbon_position_ignore_update = True
-                self.text_w.SetValue("%.2f" % (ratio * 100))
-                self.ribbon_position_ignore_update = False
-                return
-            else:
-                ratio = new / old
-                if ratio == 0:
-                    return
-                self.ribbon_position_h = new
                 if self.ribbon_position_aspect_ratio:
-                    self.ribbon_position_w *= ratio
-                self.ribbon_position_ignore_update = True
-                self.text_w.SetValue("%.2f" % self.ribbon_position_w)
-                self.ribbon_position_ignore_update = False
-
-            self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_y,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_w,
-                                                                                          self.ribbon_position_name,
-                                                                                          self.ribbon_position_h,
-                                                                                          self.ribbon_position_name))
+                    self.ribbon_position_ignore_update = True
+                    self.text_w.SetValue("%.2f" % (new))
+                    self.ribbon_position_ignore_update = False
+            else:
+                if self.ribbon_position_aspect_ratio:
+                    self.ribbon_position_ignore_update = True
+                    self.text_w.SetValue("%.2f" % (self.ribbon_position_w * (new / old)))
+                    self.ribbon_position_ignore_update = False
         except (ValueError, ZeroDivisionError):
             pass
 
     def on_text_dim_enter(self, event):
-        if self.ribbon_position_units != 4:
-            return
-        ratio_w = float(self.text_w.GetValue()) / 100.0
-        ratio_h = float(self.text_h.GetValue()) / 100.0
-        self.ribbon_position_w *= ratio_w
-        self.ribbon_position_h *= ratio_h
+        if self.ribbon_position_units == 4:
+            ratio_w = float(self.text_w.GetValue()) / 100.0
+            ratio_h = float(self.text_h.GetValue()) / 100.0
+            self.ribbon_position_w *= ratio_w
+            self.ribbon_position_h *= ratio_h
+        else:
+            w = float(self.text_w.GetValue())
+            h = float(self.text_h.GetValue())
+            self.ribbon_position_w = w
+            self.ribbon_position_h = h
         self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
                                                                                       self.ribbon_position_name,
                                                                                       self.ribbon_position_y,
@@ -1333,12 +1280,16 @@ class MeerK40t(wx.Frame, Module):
         self.update_ribbon_position()
 
     def on_text_pos_enter(self, event):
-        if self.ribbon_position_units != 4:
-            return
-        ratio_x = float(self.text_x.GetValue()) / 100.0
-        ratio_y = float(self.text_y.GetValue()) / 100.0
-        self.ribbon_position_x *= ratio_x
-        self.ribbon_position_y *= ratio_y
+        if self.ribbon_position_units == 4:
+            ratio_x = float(self.text_x.GetValue()) / 100.0
+            ratio_y = float(self.text_y.GetValue()) / 100.0
+            self.ribbon_position_x *= ratio_x
+            self.ribbon_position_y *= ratio_y
+        else:
+            x = float(self.text_x.GetValue())
+            y = float(self.text_y.GetValue())
+            self.ribbon_position_x = x
+            self.ribbon_position_y = y
         self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
                                                                                       self.ribbon_position_name,
                                                                                       self.ribbon_position_y,

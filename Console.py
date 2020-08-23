@@ -1049,21 +1049,24 @@ class Console(Module, Pipe):
             return
         elif command == 'resize':
             if len(args) < 4:
-                yield "Too few arguments (needs 4)"
+                yield "Too few arguments (needs x, y, width, height)"
                 return
             try:
                 x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
                 y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
                 w_dim = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
                 h_dim = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-                x, y, w, h = elements.bounds()
-                dx = x_pos - x
-                dy = y_pos - y
+                x, y, x1, y1 = elements.bounds()
+                w, h = x1 - x, y1 - y
                 sx = w_dim / w
                 sy = h_dim / h
-                # scale(%f, %f, %f, %f)?
-                matrix = Matrix('translate(%f,%f)' % (dx, dy))
+                matrix = Matrix('translate(%f,%f) scale(%f,%f) translate(%f,%f)' % (x_pos, y_pos, sx, sy, -x, -y))
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
                     element *= matrix
                     element.modified()
                 active_device.signal('refresh_scene')
@@ -1118,7 +1121,7 @@ class Console(Module, Pipe):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield 'reset - %s' % (name)
+                yield 'reset - %s' % name
                 element.transform.reset()
                 element.modified()
             active_device.signal('refresh_scene')
@@ -1134,7 +1137,7 @@ class Console(Module, Pipe):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield 'reified - %s' % (name)
+                yield 'reified - %s' % name
                 element.reify()
                 element.altered()
             active_device.signal('refresh_scene')
