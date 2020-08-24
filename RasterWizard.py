@@ -149,6 +149,7 @@ class RasterWizard(wx.Frame, Module):
         self.button_operations.SetBackgroundColour(wx.Colour(0, 255, 0))
         self.button_operations.SetToolTip(_("Process Image and Export"))
         self.button_operations.SetSize(self.button_operations.GetBestSize())
+
         self.panel_select_op()
         # end wxGlade
 
@@ -161,6 +162,9 @@ class RasterWizard(wx.Frame, Module):
         sizer_frame.Add(self.panel_preview, 2, wx.EXPAND, 0)
         sizer_list.Add(self.list_operation, 1, wx.EXPAND, 0)
         sizer_list.Add(self.button_operations, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        w, h = self.button_operations.Size
+        self.list_operation.SetMinSize((-1, 301 - h)) # 301 is the height of Tone Panel.
+        self.list_operation.SetMaxSize((-1, 301 - h))
         sizer_main.Add(sizer_list, 0, wx.EXPAND, 0)
 
         sizer_main.Add(self.sizer_operation_panels, 1, wx.EXPAND, 0)

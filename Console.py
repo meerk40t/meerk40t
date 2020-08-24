@@ -673,6 +673,9 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'ellipse':
+            if len(args) < 4:
+                yield "Too few arguments (needs center_x, center_y, radius_x, radius_y)"
+                return
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
@@ -682,6 +685,9 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'rect':
+            if len(args) < 4:
+                yield "Too few arguments (needs x, y, width, height)"
+                return
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             width = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
