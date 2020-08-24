@@ -2129,7 +2129,6 @@ class Device(Preferences):
             self.instances[type_name] = {}
         self.instances[type_name][instance_name] = instance
 
-
     def close(self, type_name, instance_name):
         if type_name in self.instances and instance_name in self.instances[type_name]:
             instance = self.instances[type_name][instance_name]

@@ -195,7 +195,6 @@ class RasterScripts(Module):
             'radius': 8,
             'threshold': 0
         })
-
         ops.append({
             'name': 'dither',
             'enable': True,

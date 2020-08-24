@@ -2315,6 +2315,8 @@ class RootNode(list):
                     pass
                 gui.Bind(wx.EVT_MENU, self.menu_console('image dither'),
                          image_menu.Append(wx.ID_ANY, _("Dither to 1 bit"), "", wx.ITEM_NORMAL))
+                gui.Bind(wx.EVT_MENU, self.menu_console('image invert'),
+                         image_menu.Append(wx.ID_ANY, _("Invert Image"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_console('image mirror'),
                          image_menu.Append(wx.ID_ANY, _("Mirror Horizontal"), "", wx.ITEM_NORMAL))
                 gui.Bind(wx.EVT_MENU, self.menu_console('image flip'),

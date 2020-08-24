@@ -1706,10 +1706,13 @@ class Console(Module, Pipe):
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         img = element.image
-                        if img.mode == 'P' or img.mode == 'RGBA':
+                        original_mode = img.mode
+                        if img.mode == 'P' or img.mode == 'RGBA' or img.mode == '1':
                             img = img.convert('RGB')
                         try:
                             element.image = ImageOps.invert(img)
+                            if original_mode == '1':
+                                element.image = element.image.convert('1')
                             element.altered()
                             yield "Image Inverted."
                         except OSError:
