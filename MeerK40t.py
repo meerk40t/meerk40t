@@ -101,7 +101,7 @@ else:
         if device is None:
             #  Set device to kernel and start the DeviceManager
             device = kernel
-            kernel.open('window', "DeviceManager", None, -1, "")
+            kernel.open('window', "DeviceManager", None)
 
 
 if args.verbose:
@@ -211,5 +211,5 @@ if not args.no_gui:
     if device.state != STATE_TERMINATE:
         if 'device' in kernel.instances:
             for key, device in kernel.instances['device'].items():
-                device.open('window', 'MeerK40t', None, -1, "")
+                device.open('window', 'MeerK40t', None)
         meerk40tgui.MainLoop()

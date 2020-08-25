@@ -7,10 +7,10 @@ _ = wx.GetTranslation
 
 
 class ImageProperty(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, element, *args, **kwds):
         # begin wxGlade: ImageProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
@@ -37,13 +37,23 @@ class ImageProperty(wx.Frame, Module):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
         # end wxGlade
-        self.image_element = None
+        self.image_element = element
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_element(self, element):
-        self.image_element = element
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+            return
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
+
+    def initialize(self, channel=None):
+        self.device.close('window', self.name)
+        self.Show()
         try:
-            self.spin_step_size.SetValue(element.values['raster_step'])
+            self.spin_step_size.SetValue(self.image_element.values['raster_step'])
             self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
         except KeyError:
             self.spin_step_size.SetValue(1)  # Default value
@@ -60,19 +70,6 @@ class ImageProperty(wx.Frame, Module):
             self.text_height.SetValue("%f" % (bounds[3] - bounds[1]))
         except AttributeError:
             pass
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-            return
-        else:
-            self.state = 5
-            self.device.close('window', self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, channel=None):
-        self.device.close('window', self.name)
-        self.Show()
 
     def finalize(self, channel=None):
         try:

@@ -14,13 +14,13 @@ _ = wx.GetTranslation
 
 
 class DeviceManager(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: DeviceManager.__init__
-        if args[0] is None:
-            kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
+        if parent is None:
+            wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         else:
-            kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+            wx.Frame.__init__(self, parent, -1, "",
+                              style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((707, 337))
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
@@ -168,7 +168,7 @@ class DeviceManager(wx.Frame, Module):
             device_name = settings.setting(str, 'device_name', 'Lhystudios')
             device = self.device.open('device', device_name, root=self.device, uid=int(uid), instance_name=str(uid))
         if device.state == STATE_UNKNOWN:
-            device.open('window', "MeerK40t", None, -1, "")
+            device.open('window', "MeerK40t", None)
             device.boot()
             try:
                 self.Close()
@@ -227,7 +227,7 @@ class DeviceManager(wx.Frame, Module):
             dev = self.device.device_root.instances['device'][uid]
         except KeyError:
             return
-        dev.open('window', "Preferences", self, -1, "")
+        dev.open('window', "Preferences", self)
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")

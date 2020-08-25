@@ -20,18 +20,14 @@ _ = wx.GetTranslation
 
 
 class RasterWizard(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: RasterWizard.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        if 'param' in kwds:
-            script = kwds['param']
-            del kwds['param']
-        else:
-            script = ("Gold",)
-        wx.Frame.__init__(self, *args, **kwds)
+    def __init__(self, parent, *args, **kwds):
+        wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self._preview_panel_buffer = None
-
+        if 'param' in kwds:
+            script = kwds['param']
+        else:
+            script = ("Gold",)
         self.matrix = Matrix()
         self.previous_window_position = None
         self.previous_scene_position = None

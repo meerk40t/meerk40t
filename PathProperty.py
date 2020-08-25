@@ -9,10 +9,10 @@ _ = wx.GetTranslation
 
 
 class PathProperty(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, element, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -72,17 +72,9 @@ class PathProperty(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
         # end wxGlade
-        self.path_element = None
+        self.path_element = element
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_element(self, element):
-        self.path_element = element
-        try:
-            if element.stroke is not None and element.stroke != "none":
-                color = wx.Colour(swizzlecolor(element.stroke))
-                self.text_name.SetBackgroundColour(color)
-        except AttributeError:
-            pass
 
     def on_close(self, event):
         if self.state == 5:
@@ -95,6 +87,12 @@ class PathProperty(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+        try:
+            if self.path_element.stroke is not None and self.path_element.stroke != "none":
+                color = wx.Colour(swizzlecolor(self.path_element.stroke))
+                self.text_name.SetBackgroundColour(color)
+        except AttributeError:
+            pass
 
     def finalize(self, channel=None):
         try:

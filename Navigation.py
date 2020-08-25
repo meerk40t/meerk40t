@@ -14,10 +14,10 @@ MILS_IN_MM = 39.3701
 
 
 class Navigation(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: Navigation.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((598, 429))
         self.spin_jog_mils = wx.SpinCtrlDouble(self, wx.ID_ANY, "394.0", min=0.0, max=10000.0)

@@ -14,10 +14,10 @@ _ = wx.GetTranslation
 
 
 class Controller(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: Controller.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((499, 505))
         self.button_controller_control = wx.Button(self, wx.ID_ANY, _("Start Controller"))
@@ -52,7 +52,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", self, -1, ""), self.button_buffer_viewer)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", self), self.button_buffer_viewer)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
         # end wxGlade

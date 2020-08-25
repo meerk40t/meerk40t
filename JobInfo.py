@@ -10,10 +10,9 @@ _ = wx.GetTranslation
 
 class JobInfo(wx.Frame, Module):
 
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: JobInfo.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+    def __init__(self, parent, ops, *args, **kwds):
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((659, 612))
         self.operations_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
@@ -65,7 +64,9 @@ class JobInfo(wx.Frame, Module):
 
         # TODO: Move this to Elements
         self.preprocessor = OperationPreprocessor()
-        self.operations = []
+        if not isinstance(ops, list):
+            ops = [ops]
+        self.operations = ops
 
     def jobadd_home(self, event):
         self.operations.append(OperationPreprocessor.home)
@@ -93,11 +94,33 @@ class JobInfo(wx.Frame, Module):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def set_operations(self, operations):
-        self.preprocessor.device = self.device
+    def on_close(self, event):
+        if self.state == 5:
+            event.Veto()
+        else:
+            self.state = 5
+            self.device.close('window', self.name)
+            event.Skip()  # Call destroy as regular.
 
-        if not isinstance(operations, list):
-            operations = [operations]
+    def initialize(self, channel=None):
+        self.device.close('window', self.name)
+        self.Show()
+        self.device.device_root.setting(bool, "auto_spooler", True)
+        self.device.setting(bool, "rotary", False)
+        self.device.setting(float, "scale_x", 1.0)
+        self.device.setting(float, "scale_y", 1.0)
+        self.device.setting(bool, "prehome", False)
+        self.device.setting(bool, "autohome", False)
+        self.device.setting(bool, "autobeep", True)
+        self.device.setting(bool, "autostart", True)
+        self.device.listen('element_property_update', self.on_element_property_update)
+
+        self.menu_prehome.Check(self.device.prehome)
+        self.menu_autohome.Check(self.device.autohome)
+        self.menu_autobeep.Check(self.device.autobeep)
+        self.menu_autostart.Check(self.device.autostart)
+        self.preprocessor.device = self.device
+        operations = list(self.operations)
         self.operations.clear()
         if self.device.prehome:
             self.jobadd_home(None)
@@ -115,33 +138,6 @@ class JobInfo(wx.Frame, Module):
 
         self.preprocessor.process(self.operations)
         self.update_gui()
-
-    def on_close(self, event):
-        if self.state == 5:
-            event.Veto()
-        else:
-            self.state = 5
-            self.device.close('window', self.name)
-            event.Skip()  # Call destroy as regular.
-
-    def initialize(self, channel=None):
-        self.device.close('window', self.name)
-        self.Show()
-        self.operations = []
-        self.device.device_root.setting(bool, "auto_spooler", True)
-        self.device.setting(bool, "rotary", False)
-        self.device.setting(float, "scale_x", 1.0)
-        self.device.setting(float, "scale_y", 1.0)
-        self.device.setting(bool, "prehome", False)
-        self.device.setting(bool, "autohome", False)
-        self.device.setting(bool, "autobeep", True)
-        self.device.setting(bool, "autostart", True)
-        self.device.listen('element_property_update', self.on_element_property_update)
-
-        self.menu_prehome.Check(self.device.prehome)
-        self.menu_autohome.Check(self.device.autohome)
-        self.menu_autobeep.Check(self.device.autobeep)
-        self.menu_autostart.Check(self.device.autostart)
 
     def finalize(self, channel=None):
         self.device.unlisten('element_property_update', self.on_element_property_update)
@@ -200,7 +196,7 @@ class JobInfo(wx.Frame, Module):
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         if self.device.device_root.auto_spooler:
-            self.device.open('window', "JobSpooler", self.GetParent(), -1, "")
+            self.device.open('window', "JobSpooler", self.GetParent())
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
@@ -219,8 +215,8 @@ class JobInfo(wx.Frame, Module):
         if node_index == -1:
             return
         obj = self.operations[node_index]
-
-        self.device.open('window', "OperationProperty", self, -1, "").set_operation(obj)
+        if isinstance(obj, LaserOperation):
+            self.device.open('window', "OperationProperty", self, obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

@@ -7,10 +7,9 @@ _ = wx.GetTranslation
 
 
 class About(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: About.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((699, 442))
         self.bitmap_button_1 = wx.BitmapButton(self, wx.ID_ANY, icon_meerk40t.GetBitmap())

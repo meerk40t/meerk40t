@@ -8,10 +8,10 @@ _ = wx.GetTranslation
 
 
 class Notes(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: Notes.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((730, 621))
         self.check_auto_open_notes = wx.CheckBox(self, wx.ID_ANY, _("Automatically Open Notes"))

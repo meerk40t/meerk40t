@@ -128,7 +128,6 @@ class ZinglPlotter:
             p_start = Point(p_end)
             current_t = next_t
 
-
     @staticmethod
     def plot_line(x0, y0, x1, y1):
         """
@@ -583,7 +582,7 @@ class ZinglPlotter:
     @staticmethod
     def shift(generate):
         """
-        Modulates pixel groups to simply them into more coherent subsections.
+        Modulates pixel groups to simplify them into more coherent subsections.
         """
         buffer = []
         pixels = 0
@@ -692,7 +691,6 @@ class ZinglPlotter:
             else:
                 x, y = event
             yield x, y, 0
-
 
     @staticmethod
     def on(generate):

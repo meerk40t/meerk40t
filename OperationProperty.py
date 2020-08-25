@@ -12,10 +12,10 @@ _advanced_width = 612
 
 
 class OperationProperty(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, operation, *args, **kwds):
         # begin wxGlade: OperationProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((_simple_width, 500))
 
@@ -61,7 +61,7 @@ class OperationProperty(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.combo_type.SetFocus()
-        self.operation = None
+        self.operation = operation
 
         self.raster_pen = wx.Pen()
         self.raster_pen.SetColour(wx.BLACK)
@@ -85,6 +85,100 @@ class OperationProperty(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+        if self.operation.operation is not None:
+            op = self.operation.operation
+            if op == "Engrave":
+                self.combo_type.SetSelection(0)
+            elif op == "Cut":
+                self.combo_type.SetSelection(1)
+            elif op == "Raster":
+                self.combo_type.SetSelection(2)
+            elif op == "Image":
+                self.combo_type.SetSelection(3)
+        self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
+        if self.operation.speed is not None:
+            self.text_speed.SetValue(str(self.operation.speed))
+        if self.operation.power is not None:
+            self.text_power.SetValue(str(self.operation.power))
+        if self.operation.dratio is not None:
+            self.text_dratio.SetValue(str(self.operation.dratio))
+        if self.operation.dratio_custom is not None:
+            self.check_dratio_custom.SetValue(self.operation.dratio_custom)
+        if self.operation.acceleration is not None:
+            self.slider_accel.SetValue(self.operation.acceleration)
+        if self.operation.acceleration_custom is not None:
+            self.checkbox_custom_accel.SetValue(self.operation.acceleration_custom)
+            self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
+        if self.operation.raster_step is not None:
+            self.text_raster_step.SetValue(str(self.operation.raster_step))
+        if self.operation.overscan is not None:
+            self.text_overscan.SetValue(str(self.operation.overscan))
+        if self.operation.raster_direction is not None:
+            self.combo_raster_direction.SetSelection(self.operation.raster_direction)
+        if self.operation.raster_swing is not None:
+            self.radio_directional_raster.SetSelection(self.operation.raster_swing)
+        if self.operation.raster_preference_top is not None:
+            self.slider_top.SetValue(self.operation.raster_preference_top + 1)
+        if self.operation.raster_preference_left is not None:
+            self.slider_left.SetValue(self.operation.raster_preference_left + 1)
+        if self.operation.raster_preference_right is not None:
+            self.slider_right.SetValue(self.operation.raster_preference_right + 1)
+        if self.operation.raster_preference_bottom is not None:
+            self.slider_bottom.SetValue(self.operation.raster_preference_bottom + 1)
+        if self.operation.advanced is not None:
+            self.checkbox_advanced.SetValue(self.operation.advanced)
+        if self.operation.dot_length_custom is not None:
+            self.check_dot_length_custom.SetValue(self.operation.dot_length_custom)
+        if self.operation.dot_length is not None:
+            self.text_dot_length.SetValue(str(self.operation.dot_length))
+        if self.operation.group_pulses is not None:
+            self.check_group_pulse.SetValue(self.operation.group_pulses)
+        if self.operation.passes_custom is not None:
+            self.check_passes.SetValue(self.operation.passes_custom)
+        if self.operation.passes is not None:
+            self.text_passes.SetValue(str(self.operation.passes))
+        if self.operation.output is not None:
+            self.checkbox_output.SetValue(self.operation.output)
+        if self.operation.show is not None:
+            self.checkbox_show.SetValue(self.operation.show)
+        self.on_check_advanced()
+        self.on_combo_operation()
+        self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
+        self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_layer_dclick, self.listbox_layer)
+        self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.button_remove_layer)
+        self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_show, self.checkbox_show)
+        self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
+        self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
+        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
+        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_advanced, self.checkbox_advanced)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
+        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
+        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
+        self.on_size(None)
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
     def finalize(self, channel=None):
         try:
@@ -240,105 +334,6 @@ class OperationProperty(wx.Frame, Module):
         self.Layout()
         self.Centre()
         # end wxGlade
-
-    def set_operation(self, operation):
-        self.operation = operation
-        if operation.operation is not None:
-            op = operation.operation
-            if op == "Engrave":
-                self.combo_type.SetSelection(0)
-            elif op == "Cut":
-                self.combo_type.SetSelection(1)
-            elif op == "Raster":
-                self.combo_type.SetSelection(2)
-            elif op == "Image":
-                self.combo_type.SetSelection(3)
-        self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(operation.color)))
-        if operation.speed is not None:
-            self.text_speed.SetValue(str(operation.speed))
-        if operation.power is not None:
-            self.text_power.SetValue(str(operation.power))
-        if operation.dratio is not None:
-            self.text_dratio.SetValue(str(operation.dratio))
-        if operation.dratio_custom is not None:
-            self.check_dratio_custom.SetValue(operation.dratio_custom)
-        if operation.acceleration is not None:
-            self.slider_accel.SetValue(operation.acceleration)
-        if operation.acceleration_custom is not None:
-            self.checkbox_custom_accel.SetValue(operation.acceleration_custom)
-            self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
-        if operation.raster_step is not None:
-            self.text_raster_step.SetValue(str(operation.raster_step))
-        if operation.overscan is not None:
-            self.text_overscan.SetValue(str(operation.overscan))
-        if operation.raster_direction is not None:
-            self.combo_raster_direction.SetSelection(operation.raster_direction)
-        if operation.raster_swing is not None:
-            self.radio_directional_raster.SetSelection(operation.raster_swing)
-        if operation.raster_preference_top is not None:
-            self.slider_top.SetValue(operation.raster_preference_top + 1)
-        if operation.raster_preference_left is not None:
-            self.slider_left.SetValue(operation.raster_preference_left + 1)
-        if operation.raster_preference_right is not None:
-            self.slider_right.SetValue(operation.raster_preference_right + 1)
-        if operation.raster_preference_bottom is not None:
-            self.slider_bottom.SetValue(operation.raster_preference_bottom + 1)
-        if operation.advanced is not None:
-            self.checkbox_advanced.SetValue(operation.advanced)
-        if operation.dot_length_custom is not None:
-            self.check_dot_length_custom.SetValue(operation.dot_length_custom)
-        if operation.dot_length is not None:
-            self.text_dot_length.SetValue(str(operation.dot_length))
-        if operation.group_pulses is not None:
-            self.check_group_pulse.SetValue(operation.group_pulses)
-        if operation.passes_custom is not None:
-            self.check_passes.SetValue(operation.passes_custom)
-        if operation.passes is not None:
-            self.text_passes.SetValue(str(operation.passes))
-        if operation.output is not None:
-            self.checkbox_output.SetValue(operation.output)
-        if operation.show is not None:
-            self.checkbox_show.SetValue(operation.show)
-        self.on_check_advanced()
-        self.on_combo_operation()
-
-        self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
-        self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
-        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_layer_dclick, self.listbox_layer)
-        self.Bind(wx.EVT_BUTTON, self.on_button_remove, self.button_remove_layer)
-        self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_show, self.checkbox_show)
-        self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
-        self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
-        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
-        self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
-        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_advanced, self.checkbox_advanced)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
-        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
-        self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
-        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
-        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
-        self.on_size(None)
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        return self
 
     def on_display_paint(self, event):
         try:

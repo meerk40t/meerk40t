@@ -375,10 +375,7 @@ class Console(Module, Pipe):
                             parent_window = active_device.gui
                         except AttributeError:
                             pass
-                        if len(args) >= 3:
-                            active_device.open('window', window_name, parent_window, -1, "", param=args[2:])
-                        else:
-                            active_device.open('window', window_name, parent_window, -1, "")
+                        active_device.open('window', window_name, parent_window, *args[2:])
                         yield 'Window %s opened.' % window_name
                     else:
                         yield "Window '%s' not found." % window_name

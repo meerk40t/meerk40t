@@ -23,8 +23,8 @@ class Module:
     Modules are a generic lifecycle object. When open() is called for a module registered with the device the device is
     attached. When attached the module is initialized to that device. When close() is called for a module initialized
     on the device. The device is detached. When detached the module is finalized. When that device controlling the
-    initialized module is shutdown the the shutdown() event is called. By default shutdown() calls the close for the
-    device. During device shutdown initialized modules will be notified by a call to shutdown() that it is shutting down
+    initialized module is shutdown the shutdown() event is called. By default shutdown() calls the close for the
+    device. During device shutdown, initialized modules will be notified by a shutdown() call that it is shutting down
     and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
     them.
 

@@ -14,16 +14,15 @@ CORNER_SIZE = 25
 
 
 class CameraInterface(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
-        # begin wxGlade: CameraInterface.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
+    def __init__(self, parent, *args, **kwds):
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        Module.__init__(self)
         if 'param' in kwds:
             self.settings_value = kwds['param']
             del kwds['param']
         else:
             self.settings_value = 0
-        wx.Frame.__init__(self, *args, **kwds)
-        Module.__init__(self)
         self.SetSize((600, 600))
         self.CameraInterface_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
@@ -997,16 +996,15 @@ class CameraInterface(wx.Frame, Module):
 
 
 class CameraURI(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: CameraURI.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         if 'param' in kwds:
             self.set_name, self.set_uri = kwds['param']
-            del kwds['param']
         else:
             self.set_name = None
             self.set_uri = ''
-        wx.Frame.__init__(self, *args, **kwds)
         Module.__init__(self)
         self.SetSize((437, 530))
         self.list_uri = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)

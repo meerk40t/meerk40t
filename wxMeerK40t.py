@@ -170,10 +170,9 @@ class MeerK40t(wx.Frame, Module):
     MeerK40t main window
     """
 
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: MeerK40t.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         Module.__init__(self)
         self.DragAcceptFiles(True)
 
@@ -395,64 +394,66 @@ class MeerK40t(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_INVERT), id=ID_MENU_SCREEN_INVERT)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_FLIPXY), id=ID_MENU_SCREEN_FLIPXY)
 
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", self, -1, ""), id=wx.ID_ABOUT)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", self, -1, ""), id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "CameraInterface", self, -1, ""), id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Terminal", self, -1, ""), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "DeviceManager", self, -1, ""),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "About", self), id=wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Alignment", self), id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "CameraInterface", self), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Terminal", self), id=ID_MENU_TERMINAL)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "DeviceManager", self),
                   id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", self, -1, ""),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Keymap", self),
                   id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", self, -1, ""),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Preferences", self),
                   id=wx.ID_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", self, -1, "", ),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window', "Settings", self),
                   id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", self, -1, "", ), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", self, -1, "", ),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Rotary", self), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Navigation", self),
                   id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Notes", self, -1, "", ),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Notes", self),
                   id=ID_MENU_NOTES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", self, -1, "", ),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "Controller", self),
                   id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", self, -1, "", ), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", self, -1, "", ), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobInfo", self, -1, "", )
-                  .set_operations(list(self.device.device_root.elements.ops())), id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "UsbConnect", self), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window', "JobSpooler", self), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU,
+                  lambda v: self.device.open('window', "JobInfo", self, list(self.device.device_root.elements.ops())),
+                  id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "JobInfo", self, -1, "")
-                     .set_operations(list(self.device.device_root.elements.ops())), id=ID_JOB)
+                     lambda v: self.device.open('window', "JobInfo", self,
+                                                list(self.device.device_root.elements.ops())),
+                     id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "UsbConnect", self, -1, ""), id=ID_USB)
+                     lambda v: self.device.open('window', "UsbConnect", self), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Navigation", self, -1, ""), id=ID_NAV)
+                     lambda v: self.device.open('window', "Navigation", self), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Controller", self, -1, ""), id=ID_CONTROLLER)
+                     lambda v: self.device.open('window', "Controller", self), id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Preferences", self, -1, ""), id=ID_PREFERENCES)
+                     lambda v: self.device.open('window', "Preferences", self), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.device_root.open('window', "DeviceManager", self, -1, ""), id=ID_DEVICES)
+                     lambda v: self.device.device_root.open('window', "DeviceManager", self), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "CameraInterface", self, -1, ""), id=ID_CAMERA)
+                     lambda v: self.device.open('window', "CameraInterface", self), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "JobSpooler", self, -1, ""), id=ID_SPOOLER)
+                     lambda v: self.device.open('window', "JobSpooler", self), id=ID_SPOOLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Keymap", self, -1, ""), id=ID_KEYMAP)
+                     lambda v: self.device.open('window', "Keymap", self), id=ID_KEYMAP)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Notes", self, -1, ""), id=ID_NOTES)
+                     lambda v: self.device.open('window', "Notes", self), id=ID_NOTES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Terminal", self, -1, ""), id=ID_TERMINAL)
+                     lambda v: self.device.open('window', "Terminal", self), id=ID_TERMINAL)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Operations", self, -1, ""), id=ID_OPERATIONS)
+                     lambda v: self.device.open('window', "Operations", self), id=ID_OPERATIONS)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "Rotary", self, -1, ""), id=ID_ROTARY)
+                     lambda v: self.device.open('window', "Rotary", self), id=ID_ROTARY)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window', "RasterWizard", self, -1, ""), id=ID_RASTER)
+                     lambda v: self.device.open('window', "RasterWizard", self), id=ID_RASTER)
         self.main_statusbar = self.CreateStatusBar(3)
 
         # end wxGlade
@@ -917,7 +918,7 @@ class MeerK40t(wx.Frame, Module):
                 self.save_recent(pathname)
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
-                    self.device.open('window', "Notes", self, -1, "", )
+                    self.device.open('window', "Notes", self)
                 if (self.device.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
                         (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
@@ -2070,15 +2071,15 @@ class RootNode(list):
         if obj is None:
             return
         if isinstance(obj, LaserOperation):
-            self.device.open('window', "OperationProperty", self.gui, -1, "").set_operation(obj)
+            self.device.open('window', "OperationProperty", self.gui, obj)
         elif isinstance(obj, Path):
-            self.device.open('window', "PathProperty", self.gui, -1, "").set_element(obj)
+            self.device.open('window', "PathProperty", self.gui, obj)
         elif isinstance(obj, SVGText):
-            self.device.open('window', "TextProperty", self.gui, -1, "").set_element(obj)
+            self.device.open('window', "TextProperty", self.gui, obj)
         elif isinstance(obj, SVGImage):
-            self.device.open('window', "ImageProperty", self.gui, -1, "").set_element(obj)
+            self.device.open('window', "ImageProperty", self.gui, obj)
         elif isinstance(obj, SVGElement):
-            self.device.open('window', "PathProperty", self.gui, -1, "").set_element(obj)
+            self.device.open('window', "PathProperty", self.gui, obj)
 
     def on_item_selection_changed(self, event):
         """
@@ -2617,8 +2618,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window', "JobInfo", self.gui, -1, "").set_operations(
-                list(self.elements.ops(selected=True)))
+            self.device.open('window', "JobInfo", self.gui, list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 
