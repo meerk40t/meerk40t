@@ -42,7 +42,8 @@ class RasterScripts(Module):
             'invert': False,
             'red': 1.0,
             'green': 1.0,
-            'blue': 1.0
+            'blue': 1.0,
+            'lightness': 1.0
         })
         ops.append({
             'name': 'resample',
@@ -99,7 +100,8 @@ class RasterScripts(Module):
             'invert': False,
             'red': 1.0,
             'green': 1.0,
-            'blue': 1.0
+            'blue': 1.0,
+            'lightness': 1.0
         })
         ops.append({
             'name': 'tone',
@@ -151,7 +153,8 @@ class RasterScripts(Module):
             'invert': False,
             'red': 1.0,
             'green': 1.0,
-            'blue': 1.0
+            'blue': 1.0,
+            'lightness': 1.0
         })
         ops.append({
             'name': 'unsharp_mask',
@@ -192,7 +195,8 @@ class RasterScripts(Module):
             'invert': False,
             'red': 1.0,
             'green': 1.0,
-            'blue': 1.0
+            'blue': 1.0,
+            'lightness': 1.0
         })
         ops.append({
             'name': 'tone',
@@ -297,14 +301,18 @@ class RasterScripts(Module):
                             r = op['red'] * 0.299
                             g = op['green'] * 0.587
                             b = op['blue'] * 0.114
+                            v = op['lightness']
                             c = r + g + b
                             try:
+                                c /= v
                                 r = r/c
                                 g = g/c
                                 b = b/c
                             except ZeroDivisionError:
                                 pass
                             m = [r,g,b,1.0]
+                            if image.mode == 'RGBA':
+                                image = image.convert('RGB')
                             image = image.convert("L", matrix=m)
                             if op['invert']:
                                 image = ImageOps.invert(image)

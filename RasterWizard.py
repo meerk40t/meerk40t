@@ -883,12 +883,15 @@ class GrayscalePanel(wx.Panel):
         self.text_grayscale_green = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_grayscale_blue = wx.Slider(self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.text_grayscale_blue = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.slider_grayscale_lightness = wx.Slider(self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_grayscale_lightness = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_grayscale, self.check_enable_grayscale)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_lightness)
         self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_red)
         self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_green)
         self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_blue)
@@ -911,6 +914,7 @@ class GrayscalePanel(wx.Panel):
 
     def __do_layout(self):
         sizer_grayscale = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Grayscale")), wx.VERTICAL)
+        sizer_grayscale_lightness = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Lightness")), wx.HORIZONTAL)
         sizer_grayscale_blue = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Blue")), wx.HORIZONTAL)
         sizer_grayscale_green = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Green")), wx.HORIZONTAL)
         sizer_grayscale_red = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Red")), wx.HORIZONTAL)
@@ -925,6 +929,9 @@ class GrayscalePanel(wx.Panel):
         sizer_grayscale_blue.Add(self.slider_grayscale_blue, 5, wx.EXPAND, 0)
         sizer_grayscale_blue.Add(self.text_grayscale_blue, 1, 0, 0)
         sizer_grayscale.Add(sizer_grayscale_blue, 0, wx.EXPAND, 0)
+        sizer_grayscale_lightness.Add(self.slider_grayscale_lightness, 5, wx.EXPAND, 0)
+        sizer_grayscale_lightness.Add(self.text_grayscale_lightness, 1, 0, 0)
+        sizer_grayscale.Add(sizer_grayscale_lightness, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_grayscale)
         sizer_grayscale.Fit(self)
         self.Layout()
@@ -944,6 +951,9 @@ class GrayscalePanel(wx.Panel):
         self.slider_grayscale_blue.SetValue(int(op['blue'] * 500.0))
         self.text_grayscale_blue.SetValue(str(self.op['blue']))
 
+        self.slider_grayscale_lightness.SetValue(int(op['lightness'] * 500.0))
+        self.text_grayscale_lightness.SetValue(str(self.op['lightness']))
+
     def on_check_enable_grayscale(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_grayscale.GetValue()
         self.device.signal("RasterWizard-Image")
@@ -961,6 +971,9 @@ class GrayscalePanel(wx.Panel):
 
         self.op['blue'] = float(int(self.slider_grayscale_blue.GetValue()) / 500.0)
         self.text_grayscale_blue.SetValue(str(self.op['blue']))
+
+        self.op['lightness'] = float(int(self.slider_grayscale_lightness.GetValue()) / 500.0)
+        self.text_grayscale_lightness.SetValue(str(self.op['lightness']))
 
         self.device.signal("RasterWizard-Image")
 
