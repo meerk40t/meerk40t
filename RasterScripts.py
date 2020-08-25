@@ -294,7 +294,17 @@ class RasterScripts(Module):
                 try:
                     if op['enable']:
                         try:
-                            m = [op['red'] / 3.0, op['green'] / 3.0, op['blue'] / 3.0, 1.0]
+                            r = op['red'] * 0.299
+                            g = op['green'] * 0.587
+                            b = op['blue'] * 0.114
+                            c = r + g + b
+                            try:
+                                r = r/c
+                                g = g/c
+                                b = b/c
+                            except ZeroDivisionError:
+                                pass
+                            m = [r,g,b,1.0]
                             image = image.convert("L", matrix=m)
                             if op['invert']:
                                 image = ImageOps.invert(image)
