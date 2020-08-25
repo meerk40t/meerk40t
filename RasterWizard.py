@@ -867,8 +867,8 @@ class GammaPanel(wx.Panel):
     def on_text_gamma_factor(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
 
-
 # end of class GammaPanel
+
 
 class GrayscalePanel(wx.Panel):
     def __init__(self, *args, **kwds):
@@ -877,12 +877,21 @@ class GrayscalePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.check_enable_grayscale = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.check_invert_grayscale = wx.CheckBox(self, wx.ID_ANY, _("Invert"))
+        self.slider_grayscale_red = wx.Slider(self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_grayscale_red = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.slider_grayscale_green = wx.Slider(self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_grayscale_green = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.slider_grayscale_blue = wx.Slider(self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_grayscale_blue = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_grayscale, self.check_enable_grayscale)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_red)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_green)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_blue)
         # end wxGlade
         self.device = None
         self.op = None
@@ -892,23 +901,48 @@ class GrayscalePanel(wx.Panel):
         self.check_enable_grayscale.SetToolTip(_("Enable Grayscale Convert"))
         self.check_enable_grayscale.SetValue(1)
         self.check_invert_grayscale.SetToolTip(_("Invert Grayscale"))
+        self.slider_grayscale_red.SetToolTip(_("Red component amount"))
+        self.text_grayscale_red.SetToolTip(_("Red Factor"))
+        self.slider_grayscale_green.SetToolTip(_("Green component control"))
+        self.text_grayscale_green.SetToolTip(_("Green Factor"))
+        self.slider_grayscale_blue.SetToolTip(_("Blue component control"))
+        self.text_grayscale_blue.SetToolTip(_("Blue Factor"))
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: GrayscalePanel.__do_layout
         sizer_grayscale = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Grayscale")), wx.VERTICAL)
+        sizer_grayscale_blue = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Blue")), wx.HORIZONTAL)
+        sizer_grayscale_green = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Green")), wx.HORIZONTAL)
+        sizer_grayscale_red = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Red")), wx.HORIZONTAL)
         sizer_grayscale.Add(self.check_enable_grayscale, 0, 0, 0)
         sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
+        sizer_grayscale_red.Add(self.slider_grayscale_red, 5, wx.EXPAND, 0)
+        sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)
+        sizer_grayscale.Add(sizer_grayscale_red, 0, wx.EXPAND, 0)
+        sizer_grayscale_green.Add(self.slider_grayscale_green, 5, wx.EXPAND, 0)
+        sizer_grayscale_green.Add(self.text_grayscale_green, 1, 0, 0)
+        sizer_grayscale.Add(sizer_grayscale_green, 0, wx.EXPAND, 0)
+        sizer_grayscale_blue.Add(self.slider_grayscale_blue, 5, wx.EXPAND, 0)
+        sizer_grayscale_blue.Add(self.text_grayscale_blue, 1, 0, 0)
+        sizer_grayscale.Add(sizer_grayscale_blue, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_grayscale)
         sizer_grayscale.Fit(self)
         self.Layout()
-        # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
         self.device = device
         self.op = op
         self.check_enable_grayscale.SetValue(op['enable'])
         self.check_invert_grayscale.SetValue(op['invert'])
+
+        self.slider_grayscale_red.SetValue(int(op['red'] * 500.0))
+        self.text_grayscale_red.SetValue(str(self.op['red']))
+
+        self.slider_grayscale_green.SetValue(int(op['green'] * 500.0))
+        self.text_grayscale_green.SetValue(str(self.op['green']))
+
+        self.slider_grayscale_blue.SetValue(int(op['blue'] * 500.0))
+        self.text_grayscale_blue.SetValue(str(self.op['blue']))
 
     def on_check_enable_grayscale(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_grayscale.GetValue()
@@ -918,6 +952,17 @@ class GrayscalePanel(wx.Panel):
         self.op['invert'] = self.check_invert_grayscale.GetValue()
         self.device.signal("RasterWizard-Image")
 
+    def on_slider_grayscale_component(self, event):  # wxGlade: GrayscalePanel.<event_handler>
+        self.op['red'] = float(int(self.slider_grayscale_red.GetValue()) / 500.0)
+        self.text_grayscale_red.SetValue(str(self.op['red']))
+
+        self.op['green'] = float(int(self.slider_grayscale_green.GetValue()) / 500.0)
+        self.text_grayscale_green.SetValue(str(self.op['green']))
+
+        self.op['blue'] = float(int(self.slider_grayscale_blue.GetValue()) / 500.0)
+        self.text_grayscale_blue.SetValue(str(self.op['blue']))
+
+        self.device.signal("RasterWizard-Image")
 
 # end of class GrayscalePanel
 

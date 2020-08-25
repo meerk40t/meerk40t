@@ -31,15 +31,18 @@ class RasterScripts(Module):
     @staticmethod
     def raster_script_gold():
         ops = list()
-        ops.append({
-            'name': 'crop',
-            'enable': False,
-            'bounds': (0, 0, 100, 100)
-        })
+        # ops.append({
+        #     'name': 'crop',
+        #     'enable': False,
+        #     'bounds': (0, 0, 100, 100)
+        # })
         ops.append({
             'name': 'grayscale',
             'enable': True,
             'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0
         })
         ops.append({
             'name': 'resample',
@@ -78,11 +81,11 @@ class RasterScripts(Module):
     @staticmethod
     def raster_script_stipo():
         ops = list()
-        ops.append({
-            'name': 'crop',
-            'enable': False,
-            'bounds': (0, 0, 100, 100)
-        })
+        # ops.append({
+        #     'name': 'crop',
+        #     'enable': False,
+        #     'bounds': (0, 0, 100, 100)
+        # })
         ops.append({
             'name': 'resample',
             'enable': True,
@@ -94,6 +97,9 @@ class RasterScripts(Module):
             'name': 'grayscale',
             'enable': True,
             'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0
         })
         ops.append({
             'name': 'tone',
@@ -143,6 +149,9 @@ class RasterScripts(Module):
             'name': 'grayscale',
             'enable': True,
             'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0
         })
         ops.append({
             'name': 'unsharp_mask',
@@ -181,6 +190,9 @@ class RasterScripts(Module):
             'name': 'grayscale',
             'enable': True,
             'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0
         })
         ops.append({
             'name': 'tone',
@@ -282,7 +294,8 @@ class RasterScripts(Module):
                 try:
                     if op['enable']:
                         try:
-                            image = ImageOps.grayscale(image)
+                            m = [op['red'] / 3.0, op['green'] / 3.0, op['blue'] / 3.0, 1.0]
+                            image = image.convert("L", matrix=m)
                             if op['invert']:
                                 image = ImageOps.invert(image)
                         except (KeyError, OSError):

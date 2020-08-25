@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 
 
 class PathProperty(wx.Frame, Module):
-    def __init__(self, parent, element, *args, **kwds):
+    def __init__(self, parent, element=None, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
@@ -74,7 +74,6 @@ class PathProperty(wx.Frame, Module):
         # end wxGlade
         self.path_element = element
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
 
     def on_close(self, event):
         if self.state == 5:
