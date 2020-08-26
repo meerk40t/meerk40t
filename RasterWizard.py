@@ -24,10 +24,10 @@ class RasterWizard(wx.Frame, Module):
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self._preview_panel_buffer = None
-        if 'param' in kwds:
-            script = kwds['param']
+        if len(args) >= 1:
+            script = args[0]
         else:
-            script = ("Gold",)
+            script = 'Gold'
         self.matrix = Matrix()
         self.previous_window_position = None
         self.previous_scene_position = None
@@ -108,10 +108,14 @@ class RasterWizard(wx.Frame, Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
+    def restore(self, *args, **kwargs):
+        if len(args) >= 2:
+            self.set_wizard_script(args[1])
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         if self.script is not None:
-            self.set_wizard_script(self.script[0])
+            self.set_wizard_script(self.script)
         self.Show()
 
         self.device.listen('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)

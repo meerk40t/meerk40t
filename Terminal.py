@@ -115,9 +115,10 @@ class Terminal(wx.Frame, Module):
                 else:
                     self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
+            else:
+                event.Skip()
         except IndexError:
             pass
-        event.Skip()
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         if self.pipe is not None:
