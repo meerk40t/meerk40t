@@ -140,6 +140,7 @@ class OperationPreprocessor:
     @staticmethod
     def origin():
         yield COMMAND_WAIT_FINISH
+        yield COMMAND_MODE_RAPID
         yield COMMAND_SET_ABSOLUTE
         yield COMMAND_MOVE, 0, 0
 

@@ -18,9 +18,8 @@ class CameraInterface(wx.Frame, Module):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
-        if 'param' in kwds:
-            self.settings_value = kwds['param']
-            del kwds['param']
+        if args >= 1:
+            self.settings_value = args[0]
         else:
             self.settings_value = 0
         self.SetSize((600, 600))

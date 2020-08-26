@@ -4,7 +4,7 @@ from math import ceil
 from svgelements import Matrix
 
 
-class RasterScripts(Module):
+class RasterScripts:
     """
     This module serves as the raster scripting routine. It registers raster-scripts and
     processes the known items in known ways. This should be made accessible to the CLI.
@@ -18,8 +18,6 @@ class RasterScripts(Module):
     I'm happy to take anybody's recipes for raster-preprocessing, while texts of scripts may be copyrighted
     the thing they do cannot be.
     """
-    def __init__(self):
-        Module.__init__(self)
 
     @staticmethod
     def sub_register(device):
@@ -311,9 +309,11 @@ class RasterScripts(Module):
                             except ZeroDivisionError:
                                 pass
                             m = [r, g, b, 1.0]
-                            if image.mode in ('RGBA', 'P'):
-                                image = image.convert('RGB')
-                            image = image.convert("L", matrix=m)
+                            if image.mode != "L":
+                                if image.mode in ('RGBA', 'P'):
+                                    image = image.convert('RGB')
+                                print(image.mode)
+                                image = image.convert("L", matrix=m)
                             if op['invert']:
                                 image = ImageOps.invert(image)
                         except (KeyError, OSError):

@@ -2092,8 +2092,8 @@ class Device(Preferences):
         the module is registered. Instance_name replaces the default, which registers the instance under the object_name
         whereas sub provides a suffixed name 'object_name:sub'.
 
-        If the module already exists, the restore function is called on that object if it exists with the same args and
-        kwargs that were intended for the init() routine.
+        If the module already exists, the restore function is called on that object, if it exists, with the same args
+        and kwargs that were intended for the init() routine.
 
         :param type_name: Type of object being opened.
         :param object_name: Name of object being opened.
