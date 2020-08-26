@@ -310,8 +310,8 @@ class RasterScripts(Module):
                                 b = b/c
                             except ZeroDivisionError:
                                 pass
-                            m = [r,g,b,1.0]
-                            if image.mode == 'RGBA':
+                            m = [r, g, b, 1.0]
+                            if image.mode in ('RGBA', 'P'):
                                 image = image.convert('RGB')
                             image = image.convert("L", matrix=m)
                             if op['invert']:

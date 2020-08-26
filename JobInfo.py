@@ -32,6 +32,10 @@ class JobInfo(wx.Frame, Module):
         self.Bind(wx.EVT_MENU, self.on_check_home_before, id=self.menu_prehome.GetId())
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_home_after, id=self.menu_autohome.GetId())
+
+        self.menu_autoorigin = wxglade_tmp_menu.Append(wx.ID_ANY, _("Return to Origin After"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_origin_after, id=self.menu_autoorigin.GetId())
+
         self.menu_autobeep = wxglade_tmp_menu.Append(wx.ID_ANY, _("Beep After"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_beep_after, id=self.menu_autobeep.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Automatic"))
@@ -68,19 +72,23 @@ class JobInfo(wx.Frame, Module):
             ops = [ops]
         self.operations = ops
 
-    def jobadd_home(self, event):
+    def jobadd_home(self, event=None):
         self.operations.append(OperationPreprocessor.home)
         self.update_gui()
 
-    def jobadd_wait(self, event):
+    def jobadd_origin(self, event=None):
+        self.operations.append(OperationPreprocessor.origin)
+        self.update_gui()
+
+    def jobadd_wait(self, event=None):
         self.operations.append(OperationPreprocessor.wait)
         self.update_gui()
 
-    def jobadd_beep(self, event):
+    def jobadd_beep(self, event=None):
         self.operations.append(OperationPreprocessor.beep)
         self.update_gui()
 
-    def jobadd_interrupt(self, event):
+    def jobadd_interrupt(self, event=None):
         self.operations.append(self.interrupt)
         self.update_gui()
 
@@ -111,19 +119,24 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(float, "scale_y", 1.0)
         self.device.setting(bool, "prehome", False)
         self.device.setting(bool, "autohome", False)
+        self.device.setting(bool, "autoorigin", False)
         self.device.setting(bool, "autobeep", True)
         self.device.setting(bool, "autostart", True)
         self.device.listen('element_property_update', self.on_element_property_update)
 
         self.menu_prehome.Check(self.device.prehome)
         self.menu_autohome.Check(self.device.autohome)
+        self.menu_autoorigin.Check(self.device.autoorigin)
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
         self.preprocessor.device = self.device
         operations = list(self.operations)
         self.operations.clear()
         if self.device.prehome:
-            self.jobadd_home(None)
+            if not self.device.rotary:
+                self.jobadd_home()
+            else:
+                self.operations.append(_("Home Before: Disabled (Rotary On)"))
         for op in operations:
             if len(op) == 0:
                 continue
@@ -131,10 +144,15 @@ class JobInfo(wx.Frame, Module):
                 continue
             self.operations.append(copy(op))
         if self.device.autobeep:
-            self.jobadd_beep(None)
+            self.jobadd_beep()
 
         if self.device.autohome:
-            self.jobadd_home(None)
+            if not self.device.rotary:
+                self.jobadd_home()
+            else:
+                self.operations.append(_("Home After: Disabled (Rotary On)"))
+        if self.device.autoorigin:
+            self.jobadd_origin()
 
         self.preprocessor.process(self.operations)
         self.update_gui()
@@ -190,6 +208,9 @@ class JobInfo(wx.Frame, Module):
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autohome = self.menu_autohome.IsChecked()
+
+    def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
+        self.device.autoorigin = self.menu_autoorigin.IsChecked()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autobeep = self.menu_autobeep.IsChecked()

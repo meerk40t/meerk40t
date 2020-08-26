@@ -305,7 +305,11 @@ class Interpreter(Module):
             try:
                 self.spooled_item = element.generate()
             except AttributeError:
-                self.spooled_item = element()
+                try:
+                    self.spooled_item = element()
+                except TypeError:
+                    # This could be a text element, some unrecognized type.
+                    return
 
     def command(self, command, *values):
         """Commands are middle language LaserCommandConstants there values are given."""

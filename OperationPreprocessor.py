@@ -138,6 +138,12 @@ class OperationPreprocessor:
         self.commands.append(scale_for_rotary)
 
     @staticmethod
+    def origin():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MOVE, 0, 0
+
+    @staticmethod
     def home():
         yield COMMAND_WAIT_FINISH
         yield COMMAND_HOME
