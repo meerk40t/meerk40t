@@ -1078,6 +1078,7 @@ class Elemental(Module):
                     self.device.signal('element_removed', elem)
                     self._elements[i] = None
         self.remove_elements_from_operations(elements_list)
+        self.validate_bounds()
 
     def remove_operations(self, operations_list):
         for op in operations_list:
