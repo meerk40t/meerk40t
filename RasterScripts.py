@@ -25,6 +25,7 @@ class RasterScripts:
         device.register('raster_script', "Stipo", RasterScripts.raster_script_stipo())
         device.register('raster_script', "Gravy", RasterScripts.raster_script_gravy())
         device.register('raster_script', "Xin", RasterScripts.raster_script_xin())
+        device.register('raster_script', "Simple", RasterScripts.raster_script_simple())
 
     @staticmethod
     def raster_script_gold():
@@ -86,13 +87,6 @@ class RasterScripts:
         #     'bounds': (0, 0, 100, 100)
         # })
         ops.append({
-            'name': 'resample',
-            'enable': True,
-            'aspect': True,
-            'units': 0,
-            'step': 2
-        })
-        ops.append({
             'name': 'grayscale',
             'enable': True,
             'invert': False,
@@ -100,6 +94,13 @@ class RasterScripts:
             'green': 1.0,
             'blue': 1.0,
             'lightness': 1.0
+        })
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 2
         })
         ops.append({
             'name': 'tone',
@@ -130,6 +131,15 @@ class RasterScripts:
     def raster_script_gravy():
         ops = list()
         ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0,
+            'lightness': 1.0
+        })
+        ops.append({
             'name': 'resample',
             'enable': True,
             'aspect': True,
@@ -144,15 +154,6 @@ class RasterScripts:
             'name': 'auto_contrast',
             'enable': True,
             'cutoff': 3
-        })
-        ops.append({
-            'name': 'grayscale',
-            'enable': True,
-            'invert': False,
-            'red': 1.0,
-            'green': 1.0,
-            'blue': 1.0,
-            'lightness': 1.0
         })
         ops.append({
             'name': 'unsharp_mask',
@@ -179,14 +180,6 @@ class RasterScripts:
     @staticmethod
     def raster_script_xin():
         ops = list()
-
-        ops.append({
-            'name': 'resample',
-            'enable': True,
-            'aspect': True,
-            'units': 0,
-            'step': 2
-        })
         ops.append({
             'name': 'grayscale',
             'enable': True,
@@ -195,6 +188,13 @@ class RasterScripts:
             'green': 1.0,
             'blue': 1.0,
             'lightness': 1.0
+        })
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 2
         })
         ops.append({
             'name': 'tone',
@@ -208,6 +208,32 @@ class RasterScripts:
             'percent': 100,
             'radius': 8,
             'threshold': 0
+        })
+        ops.append({
+            'name': 'dither',
+            'enable': True,
+            'type': 0
+        })
+        return ops
+
+    @staticmethod
+    def raster_script_simple():
+        ops = list()
+        ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0,
+            'lightness': 1.0
+        })
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 3
         })
         ops.append({
             'name': 'dither',
@@ -245,12 +271,21 @@ class RasterScripts:
         step_scale = 1 / float(step_level)
         matrix.pre_scale(step_scale, step_scale)
         matrix.inverse()
-        if (matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0) and image.mode != 'RGBA':
+        invert = False
+        if matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0:
+            from PIL import ImageOps
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-            image = image.convert('RGBA')
-        image = image.transform((element_width, element_height), Image.AFFINE,
-                                        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                                        resample=Image.BICUBIC)
+            if image.mode == 'RGBA':
+                image = image.convert('RGB')
+            image = ImageOps.invert(image)
+            image = image.transform((element_width, element_height), Image.AFFINE,
+                                    (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                                    resample=Image.BICUBIC)
+            invert = True
+        else:
+            image = image.transform((element_width, element_height), Image.AFFINE,
+                                            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                                            resample=Image.BICUBIC)
         matrix.reset()
 
         box = image.getbbox()
@@ -263,6 +298,8 @@ class RasterScripts:
         # step level requires the new actualized matrix be scaled up.
         matrix.post_scale(step_level, step_level)
         matrix.post_translate(tx, ty)
+        if invert:
+            image = ImageOps.invert(image)
         return image, matrix
 
     @staticmethod
@@ -271,8 +308,10 @@ class RasterScripts:
         matrix = Matrix(svg_image.transform)
         step = None
         from PIL import ImageOps, ImageFilter, ImageEnhance
+        print('\n')
         for op in operations:
             name = op['name']
+            print("Name: %s, type: %s" % (name,image.mode))
             if name == 'crop':
                 try:
                     if op['enable'] and op['bounds'] is not None:
@@ -312,7 +351,6 @@ class RasterScripts:
                             if image.mode != "L":
                                 if image.mode in ('RGBA', 'P'):
                                     image = image.convert('RGB')
-                                print(image.mode)
                                 image = image.convert("L", matrix=m)
                             if op['invert']:
                                 image = ImageOps.invert(image)
@@ -323,17 +361,17 @@ class RasterScripts:
                     pass
             if name == 'edge_enhance':
                 try:
-                    if image.mode == 'P':
-                        image = image.convert('L')
                     if op['enable']:
+                        if image.mode == 'P':
+                            image = image.convert('L')
                         image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
                 except KeyError:
                     pass
             if name == 'auto_contrast':
                 try:
-                    if image.mode != 'P':
-                        image = image.convert('L')
                     if op['enable']:
+                        if image.mode != 'P':
+                            image = image.convert('L')
                         image = ImageOps.autocontrast(image, cutoff=op['cutoff'])
                 except KeyError:
                     pass
