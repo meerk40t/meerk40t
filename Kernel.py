@@ -2499,7 +2499,7 @@ class Kernel(Device):
         self.keymap['control+alt+x'] = "image wizard Xin"
         self.keymap['control+alt+s'] = "image wizard Stipo"
         self.keymap['alt+f12'] = "terminal_ruida"
-        self.keymap['alt+f13'] = 'terminal_watch'
+        self.keymap['alt+f11'] = 'terminal_watch'
         self.keymap['pause'] = "control Realtime Pause_Resume"
         self.keymap['home'] = "home"
         self.keymap['control+z'] = "reset"
