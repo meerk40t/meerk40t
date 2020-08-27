@@ -1093,7 +1093,8 @@ class GuideWidget(Widget):
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
                     gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
             y += points
-        gc.StrokeLineSegments(starts, ends)
+        if len(starts) > 0:
+            gc.StrokeLineSegments(starts, ends)
 
     def signal(self, signal, *args, **kwargs):
         if signal == "guide":
