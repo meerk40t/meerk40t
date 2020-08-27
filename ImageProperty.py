@@ -49,9 +49,16 @@ class ImageProperty(wx.Frame, Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
+    def restore(self, parent, element, *args, **kwds):
+        self.image_element = element
+        self.set_widgets()
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+        self.set_widgets()
+
+    def set_widgets(self):
         try:
             self.spin_step_size.SetValue(self.image_element.values['raster_step'])
             self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)

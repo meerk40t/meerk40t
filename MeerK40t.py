@@ -49,7 +49,9 @@ parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x posi
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
+
 args = parser.parse_args(sys.argv[1:])
+# args = parser.parse_args(["-zc"])
 
 kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)

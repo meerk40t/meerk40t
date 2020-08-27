@@ -83,15 +83,22 @@ class PathProperty(wx.Frame, Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
+    def restore(self, parent, element=None, *args, **kwargs):
+        self.path_element = element
+        self.set_widgets()
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+
+    def set_widgets(self):
         try:
             if self.path_element.stroke is not None and self.path_element.stroke != "none":
                 color = wx.Colour(swizzlecolor(self.path_element.stroke))
                 self.text_name.SetBackgroundColour(color)
         except AttributeError:
             pass
+        self.Refresh()
 
     def finalize(self, channel=None):
         try:
@@ -194,10 +201,13 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.stroke = color
                 self.path_element.values[SVG_ATTR_STROKE] = color.hex
                 self.path_element.altered()
+                color = wx.Colour(swizzlecolor(self.path_element.stroke))
+                self.text_name.SetBackgroundColour(color)
             else:
                 self.path_element.stroke = Color('none')
                 self.path_element.values[SVG_ATTR_STROKE] = 'none'
                 self.path_element.altered()
+                self.text_name.SetBackgroundColour(wx.WHITE)
         elif 'fill' in button.name:
             if color is not None:
                 self.path_element.fill = color
@@ -208,7 +218,7 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.values[SVG_ATTR_FILL] = 'none'
                 self.path_element.altered()
         self.path_element.emphasize()
-
+        self.Refresh()
         self.device.using('module', 'Console').write('declassify\nclassify\n')
         self.device.signal('element_property_update', self.path_element)
         self.device.signal('refresh_scene', 0)

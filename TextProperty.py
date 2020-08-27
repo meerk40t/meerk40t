@@ -88,9 +88,16 @@ class TextProperty(wx.Frame,  Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
+    def restore(self, parent, element, *args, **kwds):
+        self.element = element
+        self.set_widgets()
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+        self.set_widgets()
+
+    def set_widgets(self):
         try:
             if self.element.text is not None:
                 self.text_text.SetValue(self.element.text)

@@ -599,6 +599,7 @@ class Console(Module, Pipe):
                         elif value == "delete":
                             yield "deleting."
                             elements.remove_elements(list(elements.elems(emphasized=True)))
+                            self.device.signal('refresh_scene', 0)
                             continue
                         elif value == "copy":
                             add_elem = list(map(copy, elements.elems(emphasized=True)))
