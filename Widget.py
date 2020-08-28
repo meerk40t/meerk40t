@@ -879,15 +879,16 @@ class RectSelectWidget(Widget):
                 ymin = q[1]
                 xmax = q[2]
                 ymax = q[3]
-                if (
-                        sx <= xmin <= ex and
-                        sy <= ymin <= ey and
-                        sx <= xmax <= ex and
-                        sy <= ymax <= ey
-                    ):
-                    obj.emphasize()
+                if right_drag:
+                    if sx <= xmin <= ex and sy <= ymin <= ey and sx <= xmax <= ex and sy <= ymax <= ey:
+                        obj.emphasize()
+                    else:
+                        obj.unemphasize()
                 else:
-                    obj.unemphasize()
+                    if (sx <= xmin <= ex or sx <= xmax <= ex) and (sy <= ymin <= ey or sy <= ymax <= ey):
+                        obj.emphasize()
+                    else:
+                        obj.unemphasize()
             self.scene.device.signal('refresh_scene', 0)
             self.start_location = None
             self.end_location = None
