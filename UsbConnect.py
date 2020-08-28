@@ -42,7 +42,6 @@ class UsbConnect(wx.Frame, Module):
         try:
             self.Close()
         except RuntimeError:
-            print("runtimeerror %s %s")
             pass
 
     def shutdown(self, channel=None):

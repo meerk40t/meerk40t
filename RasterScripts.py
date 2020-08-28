@@ -293,10 +293,8 @@ class RasterScripts:
         matrix = Matrix(svg_image.transform)
         step = None
         from PIL import ImageOps, ImageFilter, ImageEnhance
-        print('\n')
         for op in operations:
             name = op['name']
-            print("Name: %s, type: %s" % (name,image.mode))
             if name == 'crop':
                 try:
                     if op['enable'] and op['bounds'] is not None:
