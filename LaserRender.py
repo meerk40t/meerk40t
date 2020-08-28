@@ -22,6 +22,8 @@ DRAW_MODE_PATH = 0x000400
 DRAW_MODE_IMAGE = 0x000800
 DRAW_MODE_TEXT = 0x001000
 DRAW_MODE_BACKGROUND = 0x002000
+DRAW_MODE_ICONS = 0x0040000
+DRAW_MODE_TREE = 0x0080000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 
@@ -147,17 +149,17 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
-        if not hasattr(element, 'cache') or element.cache is None:
+        if not hasattr(element, 'cache') or element.wx_bitmap_image is None:
             cache = self.make_path(gc, element)
-            element.cache = cache
+            element.wx_bitmap_image = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, element)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
-            gc.FillPath(element.cache)
+            gc.FillPath(element.wx_bitmap_image)
         if draw_mode & DRAW_MODE_STROKES == 0 and element.stroke is not None:
-            gc.StrokePath(element.cache)
+            gc.StrokePath(element.wx_bitmap_image)
         gc.PopState()
 
     def draw_text(self, element, gc, draw_mode):
@@ -214,7 +216,7 @@ class LaserRender:
         if draw_mode & DRAW_MODE_CACHE == 0:
             cache = None
             try:
-                cache = node.cache
+                cache = node.wx_bitmap_image
             except AttributeError:
                 pass
             if cache is None:
@@ -223,8 +225,8 @@ class LaserRender:
                 except AttributeError:
                     max_allowed = 2048
                 node.c_width, node.c_height = node.image.size
-                node.cache = self.make_thumbnail(node.image, maximum=max_allowed)
-            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+                node.wx_bitmap_image = self.make_thumbnail(node.image, maximum=max_allowed)
+            gc.DrawBitmap(node.wx_bitmap_image, 0, 0, node.c_width, node.c_height)
         else:
             node.c_width, node.c_height = node.image.size
             cache = self.make_thumbnail(node.image)

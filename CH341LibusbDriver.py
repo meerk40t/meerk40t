@@ -97,7 +97,12 @@ class CH341LibusbDriver:
 
     def connect_interface(self, device):
         self.set_status(STATE_USB_SET_CONFIG)
-        device.set_configuration()
+        try:
+            device.set_configuration()
+            self.set_status(STATE_USB_SET_CONFIG_SUCCESS)
+        except usb.core.USBError:
+            self.set_status(STATE_USB_SET_CONFIG_FAIL)
+            raise ConnectionRefusedError
         self.set_status(STATE_USB_SET_ACTIVE_CONFIG)
         try:
             interface = device.get_active_configuration()[(0, 0)]

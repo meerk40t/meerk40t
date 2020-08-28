@@ -42,8 +42,8 @@ class LhystudiosDevice(Device):
     LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
 
-    def __init__(self, root=None, uid=1):
-        Device.__init__(self, root, uid)
+    def __init__(self, root=None, uid=1, config=None):
+        Device.__init__(self, root=root, uid=uid, config=config)
         self.uid = uid
         self.device_name = "Lhystudios"
         self.device_location = "USB"
@@ -278,6 +278,14 @@ class LhymicroInterpreter(Interpreter):
         Interpreter.execute(self)
 
     def plot_path(self, path):
+        """
+        Set the self.plot object with the given path.
+
+        If path is an SVGImage the path is the outline.
+
+        :param path: svg object
+        :return:
+        """
         if isinstance(path, SVGImage):
             bounds = path.bbox()
             p = Path()
@@ -285,16 +293,16 @@ class LhymicroInterpreter(Interpreter):
                             (bounds[0], bounds[3]),
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3])])
-            self.plot = self.convert_to_absolute_plot(ZinglPlotter.plot_path(p), True)
+            self.plot = self.convert_to_wrapped_plot(ZinglPlotter.plot_path(p), True, self.device.current_x, self.device.current_y)
             return
         if len(path) == 0:
             return
         first_point = path.first_point
         self.move_absolute(first_point[0], first_point[1])
-        self.plot = self.convert_to_absolute_plot(ZinglPlotter.plot_path(path), True)
+        self.plot = self.convert_to_wrapped_plot(ZinglPlotter.plot_path(path), True, self.device.current_x, self.device.current_y)
 
     def plot_raster(self, raster):
-        self.plot = self.convert_to_absolute_plot(ZinglPlotter.singles(raster.plot()), True)
+        self.plot = self.convert_to_wrapped_plot(ZinglPlotter.singles(raster.plot()), True, self.device.current_x, self.device.current_y)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -354,15 +362,41 @@ class LhymicroInterpreter(Interpreter):
         self.goto_relative(x, y, False)
 
     def goto(self, x, y, cut):
+        """
+        Goto a position within a cut.
+
+        This depends on whether is_relative is set.
+
+        :param x:
+        :param y:
+        :param cut:
+        :return:
+        """
         if self.is_relative:
             self.goto_relative(x, y, cut)
         else:
             self.goto_absolute(x, y, cut)
 
     def goto_absolute(self, x, y, cut):
+        """
+        Goto absolute x and y. With cut set or not set.
+
+        :param x:
+        :param y:
+        :param cut:
+        :return:
+        """
         self.goto_relative(x - self.device.current_x, y - self.device.current_y, cut)
 
     def goto_relative(self, dx, dy, cut):
+        """
+        Goto relative dx, dy. With cut set or not set.
+
+        :param dx:
+        :param dy:
+        :param cut:
+        :return:
+        """
         if abs(dx) == 0 and abs(dy) == 0:
             return
         dx = int(round(dx))
@@ -379,7 +413,7 @@ class LhymicroInterpreter(Interpreter):
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
-            for x, y, on in self.convert_to_relative_plot(ZinglPlotter.plot_line(0, 0, dx, dy), cut):
+            for x, y, on in self.convert_to_wrapped_plot(ZinglPlotter.plot_line(0, 0, dx, dy), cut, 0, 0):
                 self.goto_octent(x - mx, y - my, on)
                 mx = x
                 my = y
@@ -801,9 +835,16 @@ class LhymicroInterpreter(Interpreter):
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
-    def convert_to_absolute_plot(self, generate, cut):
-        sx = self.device.current_x
-        sy = self.device.current_y
+    def convert_to_wrapped_plot(self, generate, cut, sx, sy):
+        """
+        Apply ppi, shift, and grouping. Relative to current_x and current_y.
+
+        :param generate:
+        :param cut:
+        :param sx:
+        :param sy:
+        :return: Wrapped generator.
+        """
         if cut:
             generate = self.apply_ppi(generate)
             if self.group_modulation:
@@ -812,18 +853,11 @@ class LhymicroInterpreter(Interpreter):
             generate = ZinglPlotter.off(generate)
         return ZinglPlotter.groups(sx, sy, generate)
 
-    def convert_to_relative_plot(self, generate, cut):
-        if cut:
-            generate = self.apply_ppi(generate)
-            if self.group_modulation:
-                generate = ZinglPlotter.shift(generate)
-        else:
-            generate = ZinglPlotter.off(generate)
-        return ZinglPlotter.groups(0, 0, generate)
-
     def current_ppi(self):
-        """This is recalculated repeatedly because there is a change the value of the power
-        can change on the fly and it should reflect this in the current work."""
+        """
+        This is recalculated repeatedly because there is a change the value of the power
+        can change on the fly and it should reflect this in the current work.
+        """
         ppi = 0
         if self.laser_enabled:
             if self.pulse_modulation:
@@ -854,64 +888,6 @@ class LhymicroInterpreter(Interpreter):
             else:
                 on = 0
             yield x, y, on
-
-    def group_plots(self, start_x, start_y, generate):
-        """
-        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
-
-        Implements PPI power modulation
-
-        :param start_x: Start x position
-        :param start_y: Start y position
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        last_x = start_x
-        last_y = start_y
-        last_on = 0
-        dx = 0
-        dy = 0
-        x = None
-        y = None
-        for event in generate:
-            try:
-                x = event[0]
-                y = event[1]
-                plot_on = event[2]
-            except IndexError:
-                plot_on = int(self.laser)
-            if self.pulse_modulation:
-                self.pulse_total += self.power * plot_on
-                if self.group_modulation and last_on == 1:
-                    # If we are group modulating and currently on, the threshold for additional on triggers is 500.
-                    if self.pulse_total > 0.0:
-                        on = 1
-                        self.pulse_total -= 1000.0
-                    else:
-                        on = 0
-                else:
-                    if self.pulse_total >= 1000.0:
-                        on = 1
-                        self.pulse_total -= 1000.0
-                    else:
-                        on = 0
-            else:
-                on = int(round(plot_on))
-            if x == last_x + dx and y == last_y + dy and on == last_on:
-                last_x = x
-                last_y = y
-                continue
-            yield last_x, last_y, last_on
-            dx = x - last_x
-            dy = y - last_y
-            if abs(dx) > 1 or abs(dy) > 1:
-                # An error here means the plotting routines are flawed and plotted data more than a pixel apart.
-                # The bug is in the code that wrongly plotted the data, not here.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
-            last_x = x
-            last_y = y
-            last_on = on
-        yield last_x, last_y, last_on
 
 
 def convert_to_list_bytes(data):
@@ -1299,6 +1275,7 @@ class LhystudioController(Module, Pipe):
         * : tells the system to clear the buffers, and abort the thread.
         ! : tells the system to pause.
         & : tells the system to resume.
+        \x18 : tells the system to quit.
 
         :return: queue process success.
         """
@@ -1336,7 +1313,7 @@ class LhystudioController(Module, Pipe):
         packet = buffer[:length]
 
         # edge condition of catching only pipe command without '\n'
-        if packet.endswith((b'-', b'*', b'&', b'!', b'#')):
+        if packet.endswith((b'-', b'*', b'&', b'!', b'#', b'\x18')):
             packet += buffer[length:length + 1]
             length += 1
         post_send_command = None
@@ -1355,6 +1332,9 @@ class LhystudioController(Module, Pipe):
                 packet = packet[:-1]
             elif packet.endswith(b'!'):  # pause
                 self._pause_busy()
+                packet = packet[:-1]
+            elif packet.endswith(b'\x18'):
+                self.state = STATE_TERMINATE
                 packet = packet[:-1]
             if len(packet) != 0:
                 if packet.endswith(b'#'):

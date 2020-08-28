@@ -1,0 +1,5 @@
+Pillow
+pyusb
+wxPython
+ezdxf
+opencv-python-headless

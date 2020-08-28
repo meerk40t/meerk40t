@@ -9,10 +9,10 @@ _ = wx.GetTranslation
 
 
 class PathProperty(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, element=None, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -72,17 +72,8 @@ class PathProperty(wx.Frame, Module):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
         # end wxGlade
-        self.path_element = None
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-
-    def set_element(self, element):
         self.path_element = element
-        try:
-            if element.stroke is not None and element.stroke != "none":
-                color = wx.Colour(swizzlecolor(element.stroke))
-                self.text_name.SetBackgroundColour(color)
-        except AttributeError:
-            pass
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
     def on_close(self, event):
         if self.state == 5:
@@ -92,9 +83,22 @@ class PathProperty(wx.Frame, Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
+    def restore(self, parent, element=None, *args, **kwargs):
+        self.path_element = element
+        self.set_widgets()
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+
+    def set_widgets(self):
+        try:
+            if self.path_element.stroke is not None and self.path_element.stroke != "none":
+                color = wx.Colour(swizzlecolor(self.path_element.stroke))
+                self.text_name.SetBackgroundColour(color)
+        except AttributeError:
+            pass
+        self.Refresh()
 
     def finalize(self, channel=None):
         try:
@@ -197,10 +201,13 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.stroke = color
                 self.path_element.values[SVG_ATTR_STROKE] = color.hex
                 self.path_element.altered()
+                color = wx.Colour(swizzlecolor(self.path_element.stroke))
+                self.text_name.SetBackgroundColour(color)
             else:
                 self.path_element.stroke = Color('none')
                 self.path_element.values[SVG_ATTR_STROKE] = 'none'
                 self.path_element.altered()
+                self.text_name.SetBackgroundColour(wx.WHITE)
         elif 'fill' in button.name:
             if color is not None:
                 self.path_element.fill = color
@@ -211,7 +218,7 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.values[SVG_ATTR_FILL] = 'none'
                 self.path_element.altered()
         self.path_element.emphasize()
-
+        self.Refresh()
         self.device.using('module', 'Console').write('declassify\nclassify\n')
         self.device.signal('element_property_update', self.path_element)
         self.device.signal('refresh_scene', 0)

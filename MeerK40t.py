@@ -6,6 +6,7 @@ from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
 from MoshiboardDevice import MoshiboardDevice
+from RasterScripts import RasterScripts
 from RuidaDevice import RuidaDevice
 from LaserServer import *
 
@@ -47,8 +48,12 @@ parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
 parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x position')
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
-args = parser.parse_args(sys.argv[1:])
 
+
+args = parser.parse_args(sys.argv[1:])
+# args = parser.parse_args(["-zc"])
+
+kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)
 kernel.register('module', 'LaserServer', LaserServer)
 kernel.register('load', 'SVGLoader', SVGLoader)
@@ -76,13 +81,20 @@ if 'device' in kernel.instances:
 else:
     if args.no_gui:
         # Without a booted device, if also no gui, just start a default device.
-        device = kernel.open('device', 'Lhystudios')
+        device = kernel.open('device', 'Lhystudios', instance_name='1', uid=1)
         device.boot()
         pass
     else:
         # There is a gui but the device wasn't booted.
-        if hasattr(kernel, 'list_devices') or len(kernel.list_devices) == 0:
-            # List devices is either missing or empty. Create a default device.
+        devices = list(kernel.derivable())
+        device_entries = list()
+        for dev in devices:
+            try:
+                device_entries.append(int(dev))
+            except ValueError:
+                continue
+        if len(device_entries) == 0:
+            # There are no device entries in the kernel.
             kernel.device_add('Lhystudios', 1)
             kernel.device_boot()
             for key, d in kernel.instances['device'].items():
@@ -91,7 +103,7 @@ else:
         if device is None:
             #  Set device to kernel and start the DeviceManager
             device = kernel
-            kernel.open('window', "DeviceManager", None, -1, "")
+            kernel.open('window', "DeviceManager", None)
 
 
 if args.verbose:
@@ -149,7 +161,7 @@ if device is not kernel:  # We can process this stuff only with a real device.
         # Automatically classify and start the job.
         elements = kernel.elements
         elements.classify(list(elements.elems()))
-        device.spooler.jobs(elements.ops())
+        device.spooler.jobs(list(elements.ops()))
         device.setting(bool, 'quit', True)
         device.quit = True
 
@@ -187,18 +199,19 @@ if args.batch:
 if args.console:
     console = device.using('module', 'Console')
     device.add_watcher('console', print)
+    kernel.add_watcher('shutdown', print)
     while True:
-        q = input('>')
-        if q == 'quit':
+        device_entries = input('>')
+        if device.state == STATE_TERMINATE:
             break
-        if q == 'shutdown':
-            device.shutdown(channel=print)
+        if device_entries == 'quit':
             break
-        console.write(q + '\n')
+        console.write(device_entries + '\n')
 
     device.remove_watcher('console', print)
 if not args.no_gui:
-    if 'device' in kernel.instances:
-        for key, device in kernel.instances['device'].items():
-            device.open('window', 'MeerK40t', None, -1, "")
-    meerk40tgui.MainLoop()
+    if device.state != STATE_TERMINATE:
+        if 'device' in kernel.instances:
+            for key, device in kernel.instances['device'].items():
+                device.open('window', 'MeerK40t', None)
+        meerk40tgui.MainLoop()

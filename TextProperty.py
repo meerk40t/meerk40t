@@ -9,14 +9,14 @@ _ = wx.GetTranslation
 
 
 class TextProperty(wx.Frame,  Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, element, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((317, 360))
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.element = None
+        self.element = element
         self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "")
         self.label_fonttest.SetFont(
             wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
@@ -80,20 +80,6 @@ class TextProperty(wx.Frame,  Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-    def set_element(self, element):
-        self.element = element
-        try:
-            if element.text is not None:
-                self.text_text.SetValue(element.text)
-                self.label_fonttest.SetLabelText(element.text)
-                try:
-                    self.label_fonttest.SetFont(element.wxfont)
-                except AttributeError:
-                    pass
-                self.device.signal('refresh_scene', 0)
-        except AttributeError:
-            pass
-
     def on_close(self, event):
         if self.state == 5:
             event.Veto()
@@ -102,9 +88,27 @@ class TextProperty(wx.Frame,  Module):
             self.device.close('window', self.name)
             event.Skip()  # Call destroy as regular.
 
+    def restore(self, parent, element, *args, **kwds):
+        self.element = element
+        self.set_widgets()
+
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+        self.set_widgets()
+
+    def set_widgets(self):
+        try:
+            if self.element.text is not None:
+                self.text_text.SetValue(self.element.text)
+                self.label_fonttest.SetLabelText(self.element.text)
+                try:
+                    self.label_fonttest.SetFont(self.element.wxfont)
+                except AttributeError:
+                    pass
+                self.device.signal('refresh_scene', 0)
+        except AttributeError:
+            pass
 
     def finalize(self, channel=None):
         try:

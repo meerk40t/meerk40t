@@ -2,7 +2,7 @@ from copy import copy
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import SVGImage, SVGElement, Shape, Color, Matrix, Path, Polygon
+from svgelements import SVGImage, SVGElement, Shape, Color, Path, Polygon
 
 
 class LaserOperation(list):

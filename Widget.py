@@ -6,7 +6,7 @@ import wx
 from Kernel import Module
 from LaserRender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID, DRAW_MODE_BACKGROUND
 from ZMatrix import ZMatrix
-from svgelements import Matrix, Point, Color, Rect
+from svgelements import Matrix, Point, Color
 
 MILS_IN_MM = 39.3701
 
@@ -510,9 +510,8 @@ class SelectionWidget(Widget):
         self.root = root
         self.elements = scene.device.device_root.elements
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.BLUE)
-        self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
+        self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
         self.save_width = None
         self.save_height = None
         self.tool = self.tool_translate
@@ -560,6 +559,14 @@ class SelectionWidget(Widget):
             self.tool = self.tool_translate
             cursor = self.cursor
             self.cursor = wx.CURSOR_SIZING
+            first = elements.first_element(selected=True)
+            try:
+                if first.lock:
+                    if self.cursor != cursor:
+                        self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+                    return RESPONSE_CHAIN
+            except (ValueError, AttributeError):
+                pass
             if xin <= xmin:
                 self.cursor = wx.CURSOR_SIZEWE
                 self.tool = self.tool_scalex_w
@@ -594,7 +601,7 @@ class SelectionWidget(Widget):
             elements.set_selected_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            self.root.create_menu(self.scene.device.gui, elements.first_element(selected=True))
+            self.root.create_menu(self.scene.device.gui, elements.first_element(emphasized=True))
             return RESPONSE_CONSUME
         if event_type == 'doubleclick':
             elements.set_selected_by_position(space_pos)
@@ -631,6 +638,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], position[1]])
@@ -648,6 +660,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
@@ -665,6 +682,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
@@ -682,6 +704,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
@@ -699,6 +726,11 @@ class SelectionWidget(Widget):
         self.save_width *= scalex
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
@@ -710,6 +742,11 @@ class SelectionWidget(Widget):
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, 1, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], b[3]])
@@ -721,6 +758,11 @@ class SelectionWidget(Widget):
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(scalex, 1, self.right, self.top)
             obj.modified()
         # elements.update_bounds([position[0], b[1], b[2], b[3]])
@@ -732,6 +774,11 @@ class SelectionWidget(Widget):
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(1, scaley, self.left, self.top)
             obj.modified()
 
@@ -744,6 +791,11 @@ class SelectionWidget(Widget):
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
         for obj in elements.elems(emphasized=True):
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], position[1], b[2], b[3]])
@@ -768,10 +820,10 @@ class SelectionWidget(Widget):
         bounds = elements.bounds()
         matrix = self.parent.matrix
         if bounds is not None:
-            linewidth = 3.0 / matrix.value_scale_x()
+            linewidth = 2.0 / matrix.value_scale_x()
             self.selection_pen.SetWidth(linewidth)
             font = wx.Font(14.0 / matrix.value_scale_x(), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, wx.BLACK)
+            gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
@@ -785,8 +837,8 @@ class SelectionWidget(Widget):
             if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.device.device_root
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
-                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0)
-                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0, center_y)
+                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
+                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
@@ -817,26 +869,26 @@ class RectSelectWidget(Widget):
                 sy = self.start_location[1]
                 ex = self.end_location[0]
                 ey = self.end_location[1]
-                right_drag = sx <= ex and ey <= ey
-                if not right_drag:
-                    ex = self.start_location[0]
-                    ey = self.start_location[1]
-                    sx = self.end_location[0]
-                    sy = self.end_location[1]
+                right_drag = sx <= ex and sy <= ey
+                sx = min(self.start_location[0], self.end_location[0])
+                sy = min(self.start_location[1], self.end_location[1])
+                ex = max(self.start_location[0], self.end_location[0])
+                ey = max(self.start_location[1], self.end_location[1])
                 q = obj.bbox(True)
                 xmin = q[0]
                 ymin = q[1]
                 xmax = q[2]
                 ymax = q[3]
-                if (
-                        sx <= xmin <= ex and
-                        sy <= ymin <= ey and
-                        sx <= xmax <= ex and
-                        sy <= ymax <= ey
-                    ):
-                    obj.emphasize()
+                if right_drag:
+                    if sx <= xmin <= ex and sy <= ymin <= ey and sx <= xmax <= ex and sy <= ymax <= ey:
+                        obj.emphasize()
+                    else:
+                        obj.unemphasize()
                 else:
-                    obj.unemphasize()
+                    if (sx <= xmin <= ex or sx <= xmax <= ex) and (sy <= ymin <= ey or sy <= ymax <= ey):
+                        obj.emphasize()
+                    else:
+                        obj.unemphasize()
             self.scene.device.signal('refresh_scene', 0)
             self.start_location = None
             self.end_location = None
@@ -902,6 +954,9 @@ class GridWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.grid = None
         self.background = None
+        self.grid_line_pen = wx.Pen()
+        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
+        self.grid_line_pen.SetWidth(1)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
@@ -962,7 +1017,7 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
-            gc.SetPen(wx.BLACK_PEN)
+            gc.SetPen(self.grid_line_pen)
             gc.StrokeLineSegments(starts, ends)
 
     def signal(self, signal, *args, **kwargs):
@@ -975,6 +1030,7 @@ class GridWidget(Widget):
 class GuideWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+        self.scene.device.device_root.setting(bool, "show_negative_guide", True)
 
     def process_draw(self, gc):
         if self.scene.device.draw_mode & DRAW_MODE_GUIDES != 0:
@@ -985,7 +1041,7 @@ class GuideWidget(Widget):
         scaled_conversion = p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         if scaled_conversion == 0:
             return
-
+        edge_gap = 5
         wpoints = w / 15.0
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
@@ -1001,36 +1057,44 @@ class GuideWidget(Widget):
         starts = []
         ends = []
         x = offset_x
-        length = 50
+        length = 20
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
+        gc.DrawText(p.units_name, edge_gap, edge_gap)
         while x < w:
-            starts.append((x, 0))
-            ends.append((x, length))
+            if x >= 45:
+                mark_point = (x - sx) / scaled_conversion
+                if round(mark_point * 1000) == 0:
+                    mark_point = 0.0  # prevents -0
+                if mark_point >= 0 or p.show_negative_guide:
+                    starts.append((x, edge_gap))
+                    ends.append((x, length+edge_gap))
 
-            starts.append((x, h))
-            ends.append((x, h - length))
+                    starts.append((x, h - edge_gap))
+                    ends.append((x, h - length - edge_gap))
 
-            mark_point = (x - sx) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
+                    # gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
+                    gc.DrawText("%g" % mark_point, x, edge_gap, -tau / 4)
             x += points
 
         y = offset_y
         while y < h:
-            starts.append((0, y))
-            ends.append((length, y))
+            if y >= 20:
+                mark_point = (y - sy) / scaled_conversion
+                if round(mark_point * 1000) == 0:
+                    mark_point = 0.0  # prevents -0
+                if mark_point >= 0 or p.show_negative_guide:
+                    starts.append((edge_gap, y))
+                    ends.append((length+edge_gap, y))
 
-            starts.append((w, y))
-            ends.append((w - length, y))
+                    starts.append((w-edge_gap, y))
+                    ends.append((w - length - edge_gap, y))
 
-            mark_point = (y - sy) / scaled_conversion
-            if round(mark_point * 1000) == 0:
-                mark_point = 0.0  # prevents -0
-            gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
+                    # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
+                    gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
             y += points
-        gc.StrokeLineSegments(starts, ends)
+        if len(starts) > 0:
+            gc.StrokeLineSegments(starts, ends)
 
     def signal(self, signal, *args, **kwargs):
         if signal == "guide":
@@ -1078,6 +1142,15 @@ class SceneSpaceWidget(Widget):
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
     def focus_viewport_scene(self, new_scene_viewport, scene_size, buffer=0.0, lock=True):
+        """
+        Focus on the given viewport in the scene.
+
+        :param new_scene_viewport: Viewport to have after this process within the scene.
+        :param scene_size: Size of the scene in which this viewport is active.
+        :param buffer: Amount of buffer around the edge of the new viewport.
+        :param lock: lock the scalex, scaley.
+        :return:
+        """
         window_width, window_height = scene_size
         left = new_scene_viewport[0]
         top = new_scene_viewport[1]

@@ -177,11 +177,13 @@ class SVGLoader:
                             v = getattr(op, key)
                             if key in element.values:
                                 type_v = type(v)
-                                if type_v in (bool, str, int, float, Color):
+                                if type_v in (str, int, float, Color):
                                     try:
                                         setattr(op, key, type_v(element.values[key]))
                                     except (ValueError, KeyError):
                                         pass
+                                elif type_v == bool:
+                                    setattr(op, key, str(element.values[key]).lower() in ("true", "1"))
                         if ops is None:
                             ops = list()
                         ops.append(op)
@@ -208,6 +210,14 @@ class ImageLoader:
 
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
+        try:
+            kernel.setting(bool, 'image_dpi', True)
+            if kernel.image_dpi:
+                dpi = image.image.info['dpi']
+                if isinstance(dpi, tuple):
+                    image *= 'scale(%f,%f)' % (1000.0/dpi[0], 1000.0/dpi[1])
+        except (KeyError, IndexError):
+            pass
         return [image], None, None, pathname, basename
 
 

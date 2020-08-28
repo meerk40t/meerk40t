@@ -8,10 +8,10 @@ _ = wx.GetTranslation
 
 
 class Terminal(wx.Frame, Module):
-    def __init__(self, *args, **kwds):
+    def __init__(self, parent, *args, **kwds):
         # begin wxGlade: Terminal.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, *args, **kwds)
+        wx.Frame.__init__(self, parent, -1, "",
+                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self)
         self.SetSize((581, 410))
         self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
@@ -19,10 +19,10 @@ class Terminal(wx.Frame, Module):
 
         self.__set_properties()
         self.__do_layout()
-        # self.Bind(wx.EVT_TEXT, self.on_key_down, self.text_entry)
+        # self.Bind(wx.EVT_TEXT, self.on_key_down, self.text_entry))
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
-        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_main)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.pipe = None
@@ -90,11 +90,16 @@ class Terminal(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
+    def on_key_down_main(self, event):
+        key = event.GetKeyCode()
+        if key != wx.WXK_CONTROL and (key != ord('C') or not event.ControlDown()):
+            if self.FindFocus() is not self.text_entry:
+                self.text_entry.SetFocus()
+                self.text_entry.AppendText(str(chr(key)).lower())
+        event.Skip()
+
     def on_key_down(self, event):
         key = event.GetKeyCode()
-        if self.FindFocus() is not self.text_entry:
-            self.text_entry.SetFocus()
-            self.text_entry.AppendText(str(chr(key)).lower())
         try:
             if key == wx.WXK_DOWN:
                 self.text_entry.SetValue(self.command_log[self.command_position + 1])
@@ -110,9 +115,10 @@ class Terminal(wx.Frame, Module):
                 else:
                     self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
+            else:
+                event.Skip()
         except IndexError:
             pass
-        event.Skip()
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         if self.pipe is not None:

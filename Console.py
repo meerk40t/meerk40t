@@ -354,7 +354,7 @@ class Console(Module, Pipe):
                 for i, name in enumerate(kernel.registered['window']):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Windows in Device %s:' % str(active_device.uid)
+                yield 'Loaded Windows in Device %s:' % str(active_device._uid)
                 for i, name in enumerate(active_device.instances['window']):
                     module = active_device.instances['window'][name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
@@ -368,26 +368,23 @@ class Console(Module, Pipe):
                     else:
                         value = 'open'
                 if value == 'open':
-                    index = args[1]
-                    name = index
-                    if len(args) >= 3:
-                        name = args[2]
-                    if index in kernel.registered['window']:
+                    window_name = args[1]
+                    if window_name in kernel.registered['window']:
                         parent_window = None
                         try:
                             parent_window = active_device.gui
                         except AttributeError:
                             pass
-                        active_device.open('window', name, parent_window, -1, "")
-                        yield 'Window %s opened.' % name
+                        active_device.open('window', window_name, parent_window, *args[2:])
+                        yield 'Window %s opened.' % window_name
                     else:
-                        yield "Window '%s' not found." % index
+                        yield "Window '%s' not found." % window_name
                 elif value == 'close':
-                    index = args[1]
+                    window_name = args[1]
                     if index in active_device.instances['window']:
-                        active_device.close('window', index)
+                        active_device.close('window', window_name)
                     else:
-                        yield "Window '%s' not found." % index
+                        yield "Window '%s' not found." % window_name
         elif command == 'set':
             if len(args) == 0:
                 for attr in dir(active_device):
@@ -437,7 +434,7 @@ class Console(Module, Pipe):
                 for i, name in enumerate(kernel.registered['module']):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Modules in Device %s:' % str(active_device.uid)
+                yield 'Loaded Modules in Device %s:' % str(active_device._uid)
                 for i, name in enumerate(active_device.instances['module']):
                     module = active_device.instances['module'][name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
@@ -446,11 +443,14 @@ class Console(Module, Pipe):
                 value = args[0]
                 if value == 'open':
                     index = args[1]
-                    name = index
+                    name = None
                     if len(args) >= 3:
                         name = args[2]
                     if index in kernel.registered['module']:
-                        active_device.open('module', index, instance_name=name)
+                        if name is not None:
+                            active_device.open('module', index, instance_name=None)
+                        else:
+                            active_device.open('module', index)
                     else:
                         yield "Module '%s' not found." % index
                 elif value == 'close':
@@ -523,12 +523,16 @@ class Console(Module, Pipe):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
-                devices = kernel.setting(str, 'list_devices', '')
-                for device in devices.split(';'):
+
+                for device in list(kernel.derivable()):
                     try:
                         d = int(device)
-                        device_name = kernel.read_persistent(str, 'device_name', 'Lhystudios', uid=d)
-                        autoboot = kernel.read_persistent(bool, 'autoboot', True, uid=d)
+                    except ValueError:
+                        continue
+                    try:
+                        settings = kernel.derive(device)
+                        device_name = settings.setting(str, 'device_name', 'Lhystudios')
+                        autoboot = settings.setting(bool, 'autoboot', True)
                         yield 'Device %d. "%s" -- Boots: %s' % (d, device_name, autoboot)
                     except ValueError:
                         break
@@ -595,6 +599,7 @@ class Console(Module, Pipe):
                         elif value == "delete":
                             yield "deleting."
                             elements.remove_elements(list(elements.elems(emphasized=True)))
+                            self.device.signal('refresh_scene', 0)
                             continue
                         elif value == "copy":
                             add_elem = list(map(copy, elements.elems(emphasized=True)))
@@ -666,6 +671,9 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'ellipse':
+            if len(args) < 4:
+                yield "Too few arguments (needs center_x, center_y, radius_x, radius_y)"
+                return
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
@@ -675,6 +683,9 @@ class Console(Module, Pipe):
             self.add_element(element)
             return
         elif command == 'rect':
+            if len(args) < 4:
+                yield "Too few arguments (needs x, y, width, height)"
+                return
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             width = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
@@ -797,6 +808,12 @@ class Console(Module, Pipe):
             matrix = Matrix('rotate(%f,%f,%f)' % (rot, center_x, center_y))
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     element *= matrix
                     element.modified()
             except ValueError:
@@ -844,6 +861,12 @@ class Console(Module, Pipe):
             matrix = Matrix('scale(%f,%f,%f,%f)' % (sx, sy, center_x, center_y))
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     element *= matrix
                     element.modified()
             except ValueError:
@@ -918,6 +941,12 @@ class Console(Module, Pipe):
 
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     start_angle = element.rotation
                     amount = end_angle - start_angle
                     matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
@@ -963,6 +992,12 @@ class Console(Module, Pipe):
                 center_y = (bounds[3] + bounds[1]) / 2.0
             try:
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
                     if sx == 0 or sy == 0:
@@ -1016,6 +1051,32 @@ class Console(Module, Pipe):
                 yield "Invalid value"
             active_device.signal('refresh_scene')
             return
+        elif command == 'resize':
+            if len(args) < 4:
+                yield "Too few arguments (needs x, y, width, height)"
+                return
+            try:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                w_dim = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                h_dim = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                x, y, x1, y1 = elements.bounds()
+                w, h = x1 - x, y1 - y
+                sx = w_dim / w
+                sy = h_dim / h
+                matrix = Matrix('translate(%f,%f) scale(%f,%f) translate(%f,%f)' % (x_pos, y_pos, sx, sy, -x, -y))
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    element *= matrix
+                    element.modified()
+                active_device.signal('refresh_scene')
+            except (ValueError, ZeroDivisionError):
+                return
+
         elif command == 'matrix':
             if len(args) == 0:
                 yield '----------'
@@ -1041,6 +1102,12 @@ class Console(Module, Pipe):
                                 Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701),
                                 Length(args[5]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
                 for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
                     element.transform = Matrix(matrix)
                     element.modified()
             except ValueError:
@@ -1049,20 +1116,32 @@ class Console(Module, Pipe):
             return
         elif command == 'reset':
             for element in elements.elems(emphasized=True):
+                try:
+                    if element.lock:
+                        continue
+                except AttributeError:
+                    pass
+
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield 'reset - %s' % (name)
+                yield 'reset - %s' % name
                 element.transform.reset()
                 element.modified()
             active_device.signal('refresh_scene')
             return
         elif command == 'reify':
             for element in elements.elems(emphasized=True):
+                try:
+                    if element.lock:
+                        continue
+                except AttributeError:
+                    pass
+
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield 'reified - %s' % (name)
+                yield 'reified - %s' % name
                 element.reify()
                 element.altered()
             active_device.signal('refresh_scene')
@@ -1070,6 +1149,9 @@ class Console(Module, Pipe):
         elif command == 'optimize':
             if not elements.has_emphasis():
                 yield "No selected elements."
+                return
+            elif len(args) == 0:
+                yield 'Optimizations: cut_inner, travel, cut_travel'
                 return
             elif args[0] == 'cut_inner':
                 for element in elements.elems(emphasized=True):
@@ -1291,6 +1373,41 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected images."
                 return
+            elif args[0] == 'wizard':
+                if len(args) == 1:
+                    try:
+                        for script_name in kernel.registered['raster_script']:
+                            yield "Raster Script: %s" % script_name
+                    except KeyError:
+                        yield "No Raster Scripts Found."
+                    return
+                try:
+                    script = kernel.registered['raster_script'][args[1]]
+                except KeyError:
+                    yield "Raster Script %s is not registered." % args[1]
+                    return
+                from RasterScripts import RasterScripts
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        element.image, element.transform, step = RasterScripts.wizard_image(element, script)
+                        if step is not None:
+                            element.values['raster_step'] = step
+                        element.image_width, element.image_height = element.image.size
+                        element.lock = True
+                        element.altered()
+                return
+            elif args[0] == 'unlock':
+                yield 'Unlocking Elements...'
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            yield "Unlocked: %s" % str(element)
+                            element.lock = False
+                        else:
+                            yield "Element was not locked: %s" % str(element)
+                    except AttributeError:
+                        yield "Element was not locked: %s" % str(element)
+                return
             elif args[0] == 'threshold':
                 try:
                     threshold_min = float(args[1])
@@ -1345,7 +1462,33 @@ class Console(Module, Pipe):
                                         pixel_data[x, y] = (255, 255, 255, 255)
                         element.image = img.convert("1")
                         element.altered()
-            elif args[0] == 'white_remove':
+            elif args[0] == 'remove':
+                if len(args) == 1:
+                    yield "Must specify a color, and optionally a distance."
+                    return
+                distance = 50.0
+                color = "White"
+                if len(args) >= 2:
+                    color = args[1]
+                try:
+                    color = Color(color)
+                except ValueError:
+                    yield "Color Invalid."
+                    return
+                if len(args) >= 3:
+                    try:
+                        distance = float(args[2])
+                    except ValueError:
+                        yield "Color distance is invalid."
+                        return
+                distance_sq = distance * distance
+
+                def dist(pixel):
+                    r = color.red - pixel[0]
+                    g = color.green - pixel[1]
+                    b = color.blue - pixel[2]
+                    return r * r + g * g + b * b <= distance_sq
+
                 for element in elements.elems(emphasized=True):
                     if not isinstance(element, SVGImage):
                         continue
@@ -1357,8 +1500,37 @@ class Console(Module, Pipe):
                     for y in range(height):
                         for x in range(width):
                             pixel = new_data[x, y]
-                            if pixel[0] >= 240 and pixel[1] >= 240 and pixel[2] >= 240:
+                            if dist(pixel):
                                 new_data[x, y] = (255, 255, 255, 0)
+                                continue
+                    element.image = img
+                    element.altered()
+            elif args[0] == 'add':
+                if len(args) == 1:
+                    yield "Must specify a color, to add."
+                    return
+                color = "White"
+                if len(args) >= 2:
+                    color = args[1]
+                try:
+                    color = Color(color)
+                except ValueError:
+                    yield "Color Invalid."
+                    return
+                pix = (color.red, color.green, color.blue, color.alpha)
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    img = element.image
+                    if img.mode != "RGBA":
+                        img = img.convert('RGBA')
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if pixel[3] == 0:
+                                new_data[x, y] = pix
                                 continue
                     element.image = img
                     element.altered()
@@ -1538,11 +1710,17 @@ class Console(Module, Pipe):
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         img = element.image
-                        if img.mode == 'P':
+                        original_mode = img.mode
+                        if img.mode == 'P' or img.mode == 'RGBA' or img.mode == '1':
                             img = img.convert('RGB')
-                        element.image = ImageOps.invert(img)
-                        element.altered()
-                        yield "Image Inverted."
+                        try:
+                            element.image = ImageOps.invert(img)
+                            if original_mode == '1':
+                                element.image = element.image.convert('1')
+                            element.altered()
+                            yield "Image Inverted."
+                        except OSError:
+                            yield "Image type cannot be converted. %s" % img.mode
                 return
             elif args[0] == 'flip':
                 from PIL import ImageOps
@@ -1561,6 +1739,26 @@ class Console(Module, Pipe):
                         element.image = ImageOps.mirror(img)
                         element.altered()
                         yield "Image Mirrored."
+                return
+            elif args[0] == 'ccw':
+                from PIL import Image
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.transpose(Image.ROTATE_90)
+                        element.image_height, element.image_width = element.image_width, element.image_height
+                        element.altered()
+                        yield "Rotated image counterclockwise."
+                return
+            elif args[0] == 'cw':
+                from PIL import Image
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.transpose(Image.ROTATE_270)
+                        element.image_height, element.image_width = element.image_width, element.image_height
+                        element.altered()
+                        yield "Rotated image clockwise."
                 return
             elif args[0] == 'autocontrast':
                 from PIL import ImageOps
@@ -1631,6 +1829,9 @@ class Console(Module, Pipe):
                                                      mesh,
                                                      Image.BILINEAR)
                         element.altered()
+            else:
+                yield "Image command unrecognized."
+                return
         # Alias / Bind Command Elements.
         elif command == 'bind':
             if len(args) == 0:
@@ -1642,6 +1843,11 @@ class Console(Module, Pipe):
                 yield '----------'
             else:
                 key = args[0].lower()
+                if key == 'default':
+                    kernel.keymap = dict()
+                    kernel.default_keymap()
+                    yield 'Set default keymap.'
+                    return
                 command_line = ' '.join(args[1:])
                 f = command_line.find('bind')
                 if f == -1:  # If bind value has a bind, do not evaluate.
@@ -1675,6 +1881,12 @@ class Console(Module, Pipe):
                     yield '%d: %s -> %s' % (i, key, value)
                 yield '----------'
             else:
+                key = args[0].lower()
+                if key == 'default':
+                    kernel.alias = dict()
+                    kernel.default_alias()
+                    yield 'Set default keymap.'
+                    return
                 kernel.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements
