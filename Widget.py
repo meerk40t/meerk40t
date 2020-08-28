@@ -869,12 +869,11 @@ class RectSelectWidget(Widget):
                 sy = self.start_location[1]
                 ex = self.end_location[0]
                 ey = self.end_location[1]
-                right_drag = sx <= ex and ey <= ey
-                if not right_drag:
-                    ex = self.start_location[0]
-                    ey = self.start_location[1]
-                    sx = self.end_location[0]
-                    sy = self.end_location[1]
+                right_drag = sx <= ex and sy <= ey
+                sx = min(self.start_location[0], self.end_location[0])
+                sy = min(self.start_location[1], self.end_location[1])
+                ex = max(self.start_location[0], self.end_location[0])
+                ey = max(self.start_location[1], self.end_location[1])
                 q = obj.bbox(True)
                 xmin = q[0]
                 ymin = q[1]
