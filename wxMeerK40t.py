@@ -187,6 +187,7 @@ class MeerK40t(wx.Frame, Module):
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Main"),
                                        style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE)
         toolbar = RB.RibbonButtonBar(toolbar_panel)
+        self.toolbar_button_bar = toolbar
         toolbar.AddButton(ID_OPEN, _("Open"), icons8_opened_folder_50.GetBitmap(), "")
         toolbar.AddButton(ID_SAVE, _("Save"), icons8_save_50.GetBitmap(), "")
         toolbar.AddButton(ID_JOB, _("Start Job"), icons8_laser_beam_52.GetBitmap(), "")
@@ -517,6 +518,7 @@ class MeerK40t(wx.Frame, Module):
         self.fps_job = None
         self.root = None
         self.widget_scene = None
+        self.pipe_state = None
 
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
@@ -799,8 +801,13 @@ class MeerK40t(wx.Frame, Module):
     def on_usb_state_text(self, value):
         self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
 
-    def on_pipe_state(self, value):
-        self.main_statusbar.SetStatusText(_("Controller: %s") % self.device.get_text_thread_state(value), 1)
+    def on_pipe_state(self, state):
+        if state == self.pipe_state:
+            return
+        self.pipe_state = state
+
+        self.main_statusbar.SetStatusText(_("Controller: %s") % self.device.get_text_thread_state(state), 1)
+        self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
     def on_spooler_state(self, value):
         self.main_statusbar.SetStatusText(_("Spooler: %s") % self.device.get_text_thread_state(value), 2)

@@ -332,7 +332,7 @@ class RasterScripts:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode in 'RGBA':
+                                if image.mode == 'RGBA':
                                     from PIL import Image
                                     if op['invert']:
                                         color = 0, 0, 0
