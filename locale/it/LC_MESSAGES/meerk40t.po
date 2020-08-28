@@ -3,18 +3,18 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-08-09 10:50-0700\n"
+"PO-Revision-Date: 2020-08-27 18:57-0700\n"
 "Last-Translator: tatarize\n"
-"Language-Team: Italian (Italy)\n"
-"Language: it_IT\n"
+"Language-Team: Italian\n"
+"Language: it\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.3.1\n"
-"X-Loco-Source-Locale: en-US\n"
+"X-Loco-Source-Locale: en\n"
 "X-Loco-Project-Id: 91657\n"
-"X-Loco-Api-Version: 1.0.24 20200805-1\n"
+"X-Loco-Api-Version: 1.0.24 20200814-1\n"
 
 #: About.py:35 loco:5ed2cbe74d3dd779ce269071
 #, python-format
@@ -2829,3 +2829,135 @@ msgstr "Apri note automaticamente"
 #: Notes.py:63 loco:5f3035ea24cd3c7f6b572004
 msgid "Automatically open notes if they exist when file is opened."
 msgstr "Apri automaticamente le note se esistono quando il file viene aperto."
+
+#: CameraInteface-New.py:34 loco:5f485e022b1acf03fa49f282
+msgid "Set URI"
+msgstr "Imposta URI"
+
+#: CameraInteface-New.py:37 loco:5f485e022b1acf03fa49f283
+msgid "Set IP Camera"
+msgstr "Imposta telecamera IP"
+
+#: CameraInteface-New.py:166 loco:5f485e022b1acf03fa49f284
+msgid "Reconnect Camera"
+msgstr "Ricollega fotocamera"
+
+#: CameraInteface-New.py:514 loco:5f485e022b1acf03fa49f285
+msgid "Enter the HTTP or RTSP uri"
+msgstr "Immettere l'uri HTTP o RTSP"
+
+#: JobInfo.py:36 loco:5f485e022b1acf03fa49f286
+msgid "Return to Origin After"
+msgstr "Torna all'origine dopo"
+
+#: JobInfo.py:139 loco:5f485e022b1acf03fa49f287
+msgid "Home Before: Disabled (Rotary On)"
+msgstr "A casa prima: disabilitato (Rotary attivato)"
+
+#: JobInfo.py:153 loco:5f485e022b1acf03fa49f288
+msgid "Home After: Disabled (Rotary On)"
+msgstr "A casa dopo: disabilitato (Rotary attivato)"
+
+#: RasterWizard.py:295 RasterWizard.py:316 loco:5f485e022b1acf03fa49f289
+msgid "Processing..."
+msgstr "In lavorazione..."
+
+#: RasterWizard.py:297 loco:5f485e022b1acf03fa49f28a
+msgid "No image..."
+msgstr "Nessuna immagine..."
+
+#: RasterWizard.py:911 loco:5f485e022b1acf03fa49f28b
+msgid "Red component amount"
+msgstr "Quantità componente rossa"
+
+#: RasterWizard.py:912 loco:5f485e022b1acf03fa49f28c
+msgid "Red Factor"
+msgstr "Fattore rosso"
+
+#: RasterWizard.py:913 loco:5f485e022b1acf03fa49f28d
+msgid "Green component control"
+msgstr "Controllo dei componenti verdi"
+
+#: RasterWizard.py:914 loco:5f485e022b1acf03fa49f28e
+msgid "Green Factor"
+msgstr "Fattore verde"
+
+#: RasterWizard.py:915 loco:5f485e022b1acf03fa49f28f
+msgid "Blue component control"
+msgstr "Controllo componente blu"
+
+#: RasterWizard.py:916 loco:5f48613cd5809f444e2df932
+msgid "Blue Factor"
+msgstr "Fattore blu"
+
+#: RasterWizard.py:921 loco:5f48613cd5809f444e2df933
+msgid "Lightness"
+msgstr "Leggerezza"
+
+#: RasterWizard.py:922 loco:5f48613cd5809f444e2df934
+msgid "Blue"
+msgstr "Blu"
+
+#: RasterWizard.py:923 loco:5f48613cd5809f444e2df935
+msgid "Green"
+msgstr "Verde"
+
+#: RasterWizard.py:924 loco:5f48613cd5809f444e2df936
+msgid "Red"
+msgstr "Rosso"
+
+#: Settings.py:31 loco:5f48613cd5809f444e2df937
+msgid "Show Negative Guide"
+msgstr "Mostra guida negativa"
+
+#: Settings.py:32 loco:5f48613cd5809f444e2df938
+msgid "Launch Spooler JobStart"
+msgstr "Avvia Spooler JobStart"
+
+#: wxMeerK40t.py:187 loco:5f48613cd5809f444e2df939
+msgid "Main"
+msgstr "Avvia Spooler JobStart"
+
+#: wxMeerK40t.py:206 loco:5f48613cd5809f444e2df93a
+msgid "Keymap"
+msgstr "Keymap"
+
+#: wxMeerK40t.py:244 wxMeerK40t.py:245 loco:5f48613cd5809f444e2df93b
+msgid "Position"
+msgstr "Posizione"
+
+#: wxMeerK40t.py:333 loco:5f48613cd5809f444e2df93c
+msgid "Hide Icons"
+msgstr "Nascondi icone"
+
+#: wxMeerK40t.py:334 loco:5f48613cd5809f444e2df93d
+msgid "Hide Tree"
+msgstr "Nascondi albero"
+
+#: wxMeerK40t.py:2322 loco:5f48613cd5809f444e2df93e
+msgid "Unlock Manipulations"
+msgstr "Sblocca le manipolazioni"
+
+#: wxMeerK40t.py:2328 loco:5f48613cd5809f444e2df93f
+msgid "Invert Image"
+msgstr "Inverti immagine"
+
+#: wxMeerK40t.py:2330 loco:5f48613cd5809f444e2df940
+msgid "Mirror Horizontal"
+msgstr "Specchio orizzontale"
+
+#: wxMeerK40t.py:2332 loco:5f48613cd5809f444e2df941
+msgid "Flip Vertical"
+msgstr "Capovolgi verticalmente"
+
+#: wxMeerK40t.py:2334 loco:5f48613cd5809f444e2df942
+msgid "Rotate CW"
+msgstr "Ruota in senso orario"
+
+#: wxMeerK40t.py:2336 loco:5f48613cd5809f444e2df943
+msgid "Rotate CCW"
+msgstr "Ruota in senso antiorario"
+
+#: wxMeerK40t.py:2338 loco:5f48613cd5809f444e2df944
+msgid "Save output.png"
+msgstr "Salva output.png"
