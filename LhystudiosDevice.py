@@ -293,16 +293,16 @@ class LhymicroInterpreter(Interpreter):
                             (bounds[0], bounds[3]),
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3])])
-            self.plot = self.convert_to_wrapped_plot(ZinglPlotter.plot_path(p), True, self.device.current_x, self.device.current_y)
+            self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(p), True, self.device.current_x, self.device.current_y)
             return
         if len(path) == 0:
             return
         first_point = path.first_point
         self.move_absolute(first_point[0], first_point[1])
-        self.plot = self.convert_to_wrapped_plot(ZinglPlotter.plot_path(path), True, self.device.current_x, self.device.current_y)
+        self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(path), True, self.device.current_x, self.device.current_y)
 
     def plot_raster(self, raster):
-        self.plot = self.convert_to_wrapped_plot(ZinglPlotter.singles(raster.plot()), True, self.device.current_x, self.device.current_y)
+        self.plot = self.plot_planner.plot_cut(raster.plot(), True, self.device.current_x, self.device.current_y)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -413,7 +413,7 @@ class LhymicroInterpreter(Interpreter):
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
-            for x, y, on in self.convert_to_wrapped_plot(ZinglPlotter.plot_line(0, 0, dx, dy), cut, 0, 0):
+            for x, y, on in self.plot_planner.plot_cut(ZinglPlotter.plot_line(0, 0, dx, dy), cut, 0, 0):
                 self.goto_octent(x - mx, y - my, on)
                 mx = x
                 my = y
@@ -834,61 +834,6 @@ class LhymicroInterpreter(Interpreter):
         if dy != 0:
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
-
-    def convert_to_wrapped_plot(self, generate, cut, sx, sy):
-        """
-        Apply ppi, shift, and grouping. Relative to current_x and current_y.
-
-        :param generate:
-        :param cut:
-        :param sx:
-        :param sy:
-        :return: Wrapped generator.
-        """
-        if cut:
-            generate = self.apply_ppi(generate)
-            if self.group_modulation:
-                generate = ZinglPlotter.shift(generate)
-        else:
-            generate = ZinglPlotter.off(generate)
-        return ZinglPlotter.groups(sx, sy, generate)
-
-    def current_ppi(self):
-        """
-        This is recalculated repeatedly because there is a change the value of the power
-        can change on the fly and it should reflect this in the current work.
-        """
-        ppi = 0
-        if self.laser_enabled:
-            if self.pulse_modulation:
-                ppi = self.power
-            else:
-                ppi = 1000.0
-        return ppi
-
-    def apply_ppi(self, generate):
-        """
-        Converts single stepped plots, to apply PPI.
-
-        Implements PPI power modulation.
-
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        for event in generate:
-            if len(event) == 3:
-                x, y, on = event
-            else:
-                x, y = event
-                on = 1
-            self.pulse_total += self.current_ppi() * on
-            if self.pulse_total >= 1000.0:
-                on = 1
-                self.pulse_total -= 1000.0
-            else:
-                on = 0
-            yield x, y, on
-
 
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2

@@ -3,6 +3,7 @@ import time
 from threading import Thread, Lock
 
 from LaserOperation import *
+from zinglplotter import ZinglPlotter
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -234,12 +235,10 @@ class Interpreter(Module):
         self.extra_hold = None
 
         self.state = INTERPRETER_STATE_RAPID
-        self.pulse_total = 0.0
-        self.pulse_modulation = True
+        self.plot_planner = ZinglPlotter()
         self.properties = 0
         self.is_relative = False
         self.laser = False
-        self.laser_enabled = True
         self.raster_step = 0
         self.overscan = 20
         self.speed = 30
@@ -457,10 +456,10 @@ class Interpreter(Module):
         self.laser = True
 
     def laser_disable(self, *values):
-        self.laser_enabled = False
+        self.plot_planner.laser_enabled = False
 
     def laser_enable(self, *values):
-        self.laser_enabled = True
+        self.plot_planner.laser_enabled = True
 
     def move(self, x, y):
         self.device.current_x = x

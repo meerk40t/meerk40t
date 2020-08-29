@@ -7,15 +7,245 @@ The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Br
  
 In the case of Zingl's work this isn't explicit from his website, however from personal
 correspondence "'Free and open source' means you can do anything with it like the MIT licence."
+
+These algorithms are provided in a static fashion and generate x and y location.
+
+The Main ZinglPlotter simplifies the plotting modifications routines. This works by providing iterables with
+plotted coordinates. The input plots can be gapped-positions or adjacent-positions. And the generated output is
+controlled by a number of attributes that can be switched on the fly.
+
+* PPI does pulses per inch carry forward with the given power.
+* Shift moves isolated single pulses to be adjacent to other pulses.
+* Singles gives the output as single positional shifts. Where each position is explicitly generated.
+* Groups gives the output as max-length changeless orthogonal/diagonal positions.
+* Dot Length requires any train of on values must be of at least the proscribed length.
 """
 
 
 class ZinglPlotter:
+    def __init__(self):
+        self.single_default = True
+        self.single_x = None
+        self.single_y = None
+
+        self.ppi_total = 0
+        self.ppi_enabled = True
+        self.ppi = 1000.0
+
+        self.laser_enabled = True
+        self.laser_disabled = False
+
+        self.group_enabled = True
+        self.group_x = None
+        self.group_y = None
+        self.group_on = None
+        self.group_dx = 0
+        self.group_dy = 0
+
+        self.shift_enabled = False
+        self.shift_buffer = []
+        self.shift_pixels = 0
+
+        self.dot_length = 1
+
+    def plot(self, plot):
+        """
+        Process plot values. Iterable plot values
+
+        :param plot:
+        :return:
+        """
+        if plot is None:
+            plot = [None]
+        for event in plot:
+            event = self.process(event)
+            for p in event:
+                yield p
+
+    def plot_cut(self, plot, cut, x, y):
+        """
+        :param plot: plot
+        :param cut: whether this plot is cut.
+        :param x: start x
+        :param y: start y
+        :return:
+        """
+        self.single_default = cut
+        self.single_x = x
+        self.single_y = y
+        if plot is None:
+            plot = [None]
+        for event in plot:
+            event = self.process(event)
+            for p in event:
+                yield p
+
+    def process(self, event):
+        """
+        Process converts a series of inputs into a series of outputs. There is not a 1:1 input to output conversion.
+        Processes can buffer data and return None. Any processes are required to surrender any buffer they have if the
+        given sequence ends with, or is None.
+
+        Input sequence are (x, y, on) positions.
+        Output sequences are iterables of x, y, on positions.
+
+        :param input: process inputs are started
+        :return: output sequences of iterable x, y, on values.
+        """
+        plot = self.single(event)
+        if self.ppi_enabled:
+            plot = self.apply_ppi(plot)
+        if self.shift_enabled:
+            plot = self.shift(plot)
+        if self.group_enabled:
+            plot = self.group(plot)
+        return plot
+
+    def single(self, event):
+        """
+        Convert a sequence set of positions into single unit plotted sequences.
+
+        :param event:
+        :return:
+        """
+        if event is None:
+            return None
+        if len(event) == 3:
+            x, y, on = event
+        else:
+            x, y = event
+            on = self.single_default
+        index = 1
+        if self.single_x is None:
+            self.single_x = x
+            index = 0
+        if self.single_y is None:
+            self.single_y = y
+            index = 0
+        if x > self.single_x:
+            dx = 1
+        elif x < self.single_x:
+            dx = -1
+        else:
+            dx = 0
+        if y > self.single_y:
+            dy = 1
+        elif y < self.single_y:
+            dy = -1
+        else:
+            dy = 0
+        total_dx = x - self.single_x
+        total_dy = y - self.single_y
+        if total_dy * dx != total_dx * dy:
+            # TODO: Add in a line draw algorithm here.
+            raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
+        count = max(abs(total_dx), abs(total_dy)) + 1
+        plot = [(self.single_x + (i * dx), self.single_y + (i * dy), on) for i in range(index, count)]
+        self.single_x = x
+        self.single_y = y
+        return plot
+
+    def group(self, plot):
+        """
+        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+
+        :param plot: single stepped plots to be grouped into orth/diag sequences.
+        :return:
+        """
+        for event in plot:
+            if event is None:
+                yield self.group_x, self.group_y, self.group_on
+                self.group_dx = 0
+                self.group_dy = 0
+                return
+            x, y, on = event
+            if self.group_x is None:
+                self.group_x = x
+            if self.group_y is None:
+                self.group_y = y
+            if self.group_on is None:
+                self.group_on = on
+            if self.group_dx == 0 and self.group_dy == 0:
+                self.group_dx = x - self.group_x
+                self.group_dy = y - self.group_y
+            if self.group_dx != 0 or self.group_dy != 0:
+                if x == self.group_x + self.group_dx and y == self.group_y + self.group_dy and on == self.group_on:
+                    # This is an orthogonal/diagonal step along the same path.
+                    self.group_x = x
+                    self.group_y = y
+                    continue
+            yield self.group_x, self.group_y, self.group_on
+            self.group_dx = x - self.group_x
+            self.group_dy = y - self.group_y
+            if abs(self.group_dx) > 1 or abs(self.group_dy) > 1:
+                # The last step was not valid.
+                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (self.group_dx, self.group_dy))
+            self.group_x = x
+            self.group_y = y
+            self.group_on = on
+
+    def apply_ppi(self, plot):
+        """
+        Converts single stepped plots, to apply PPI.
+
+        Implements PPI power modulation.
+
+        :param plot: generator of single stepped plots
+        :return:
+        """
+        if plot is None:
+            yield None
+            return
+        for event in plot:
+            if event is None:
+                yield None
+                return
+            x, y, on = event
+            self.ppi_total += self.ppi * int(on)
+            if self.ppi_total >= 1000.0:
+                on = True
+                self.ppi_total -= 1000.0
+            else:
+                on = False
+            yield x, y, on
+
+    def shift(self, plot):
+        """
+        Modulates pixel groups to simplify them into more coherent subsections.
+        """
+        for event in plot:
+            if event is None:
+                while len(self.shift_buffer) > 0:
+                    self.shift_pixels <<= 1
+                    bx, by = self.shift_buffer.pop()
+                    bon = (self.shift_pixels >> 3) & 1
+                    yield bx, by, bon
+                yield None
+                return
+            x, y, on = event
+            self.shift_pixels <<= 1
+            if on:
+                self.shift_pixels |= 1
+            self.shift_pixels &= 0b1111
+
+            self.shift_buffer.insert(0, (x, y))
+            if self.shift_pixels == 0b0101:
+                self.shift_pixels = 0b0011
+            elif self.shift_pixels == 0b1010:
+                self.shift_pixels = 0b1100
+            if len(self.shift_buffer) >= 4:
+                bx, by = self.shift_buffer.pop()
+                bon = (self.shift_pixels >> 3) & 1
+                yield bx, by, bon
 
     @staticmethod
     def plot_path(path):
         """
-        Default plot routine.
+        Default plot routine for svgelements plot objects
+
+        yields x, y, (1/0)
+
+        The 1 and 0 indicates whether that segment is drawn or undrawn within the path.
 
         :param obj: path or segment to plot.
         :return:
@@ -31,10 +261,11 @@ class ZinglPlotter:
     @staticmethod
     def plot_segment(seg):
         """
-        Plots a given segment. If the segment is a move which is undrawn it returns x, y, 0 if a drawn part of the
-        path it:
+        Plots a given path segment.
 
-        yields x, y, 1
+        yields x, y, (1/0)
+
+        The 1 and 0 indicates whether that segment is drawn or undrawn within the path.
 
         :param seg:
         :return:
@@ -71,7 +302,7 @@ class ZinglPlotter:
     @staticmethod
     def plot_arc(arc):
         """
-        Plots an arc by converting it into a series of cubic bezier curves and plotting those.
+        Plots an arc by converting it into a series of cubic bezier curves and plotting those instead.
 
         :param arc:
         :return:
@@ -133,7 +364,7 @@ class ZinglPlotter:
         """
         Zingl-Bresenham line draw algorithm
 
-        Yields x and y for the line.
+        yields x, y
         """
         x0 = int(x0)
         y0 = int(y0)
@@ -171,7 +402,10 @@ class ZinglPlotter:
 
         This algorithm can plot curves that do not inflect.
 
-        It is used as part of the general algorithm, which breaks at the infection point."""
+        This is used as part of the general algorithm, which breaks at the inflection point.
+
+        yields x, y
+        """
         sx = x2 - x1
         sy = y2 - y1
         xx = x0 - x1
@@ -254,9 +488,13 @@ class ZinglPlotter:
 
     @staticmethod
     def plot_quad_bezier(x0, y0, x1, y1, x2, y2):
-        """Zingl-Bresenham quad bezier draw algorithm.
+        """
+        Zingl-Bresenham quad bezier draw algorithm.
 
-        plot any quadratic Bezier curve"""
+        Plot any quadratic Bezier curve
+
+        yields x, y
+        """
 
         x0 = int(x0)
         y0 = int(y0)
@@ -321,9 +559,15 @@ class ZinglPlotter:
 
     @staticmethod
     def plot_cubic_bezier_seg(x0, y0, x1, y1, x2, y2, x3, y3):
-        """plot limited cubic Bezier segment
+        """
+        Plot limited cubic Bezier segment
+
         This algorithm can plot curves that do not inflect.
-        It is used as part of the general algorithm, which breaks at the infection point(s)"""
+
+        It is used as part of the general algorithm, which breaks at the infection point(s)
+
+        yields x, y
+        """
         second_leg = []
         f = 0
         fx = 0
@@ -480,9 +724,13 @@ class ZinglPlotter:
 
     @staticmethod
     def plot_cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3):
-        """Zingl-Bresenham cubic bezier draw algorithm
+        """
+        Zingl-Bresenham cubic bezier draw algorithm
 
-        plot any quadratic Bezier curve"""
+        Plot any quadratic Bezier curve
+
+        yields x, y
+        """
         x0 = int(x0)
         y0 = int(y0)
         # control points are permitted fractional elements.
@@ -578,131 +826,3 @@ class ZinglPlotter:
             fx0 = fx3
             fy0 = fy3
             t1 = t2
-
-    @staticmethod
-    def shift(generate):
-        """
-        Modulates pixel groups to simplify them into more coherent subsections.
-        """
-        buffer = []
-        pixels = 0
-        for x, y, on in generate:
-            pixels <<= 1
-            pixels |= (int(on) & 1)
-            pixels &= 0b1111
-            buffer.insert(0, (x, y))
-            if pixels == 0b0101:
-                pixels = 0b0011
-            elif pixels == 0b1010:
-                pixels = 0b1100
-            if len(buffer) >= 4:
-                bx, by = buffer.pop()
-                bon = (pixels >> 3) & 1
-                yield bx, by, bon
-        while len(buffer) > 0:
-            pixels <<= 1
-            bx, by = buffer.pop()
-            bon = (pixels >> 3) & 1
-            yield bx, by, bon
-
-    @staticmethod
-    def singles(generate):
-        """
-        Converts generated x,y,on with long orthogonal steps into a generation of single steps.
-
-        :param generate: generator creating long orthogonal steps.
-        :return:
-        """
-        current_x = None
-        current_y = None
-        for next_x, next_y, on in generate:
-            if current_x is None or current_y is None:
-                current_x = next_x
-                current_y = next_y
-                yield current_x, current_y, on
-                continue
-            if next_x > current_x:
-                dx = 1
-            elif next_x < current_x:
-                dx = -1
-            else:
-                dx = 0
-            if next_y > current_y:
-                dy = 1
-            elif next_y < current_y:
-                dy = -1
-            else:
-                dy = 0
-            total_dx = next_x - current_x
-            total_dy = next_y - current_y
-            if total_dy * dx != total_dx * dy:
-                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
-            while current_x != next_x or current_y != next_y:
-                current_x += dx
-                current_y += dy
-                yield current_x, current_y, on
-
-    @staticmethod
-    def groups(start_x, start_y, generate):
-        """
-        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
-
-        :param start_x: Start x position
-        :param start_y: Start y position
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        last_x = start_x
-        last_y = start_y
-        last_on = 0
-        dx = 0
-        dy = 0
-        for event in generate:
-            x = event[0]
-            y = event[1]
-            on = event[2]
-            if x == last_x + dx and y == last_y + dy and on == last_on:
-                # This is an orthogonal/diagonal step along the same path.
-                last_x = x
-                last_y = y
-                continue
-            yield last_x, last_y, last_on
-            dx = x - last_x
-            dy = y - last_y
-            if abs(dx) > 1 or abs(dy) > 1:
-                # The last step was not valid.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
-            last_x = x
-            last_y = y
-            last_on = on
-        yield last_x, last_y, last_on
-
-    @staticmethod
-    def off(generate):
-        """
-        Converts plots, to plots with laser off.
-
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        for event in generate:
-            if len(event) == 3:
-                x, y, on = event
-            else:
-                x, y = event
-            yield x, y, 0
-
-    @staticmethod
-    def on(generate):
-        """
-        Converts plots, to plots with laser off.
-
-        :param generate: generator of single stepped plots
-        :return:
-        """
-        for event in generate:
-            if len(event) == 3:
-                x, y, on = event
-            else:
-                x, y = event
-            yield x, y, 1
