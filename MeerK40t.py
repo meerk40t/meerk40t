@@ -27,8 +27,13 @@ for full details.
 """
 
 kernel = Kernel()
-kernel.open('module', 'Signaler')
-kernel.open('module', 'Elemental')
+kernel.device_version = "0.6.5"
+kernel.device_name = "MeerK40t"
+
+Kernel.sub_register(kernel)
+kernel.activate('module/Scheduler')
+kernel.activate('module/Signaler', kernel)
+kernel.activate('module/Elemental')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input', nargs='?', type=argparse.FileType('r'), help='input file')
@@ -49,39 +54,36 @@ parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x posi
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
-
 args = parser.parse_args(sys.argv[1:])
-# args = parser.parse_args(["-zc"])
 
-kernel.register('static', 'RasterScripts', RasterScripts)
-kernel.register('module', 'Console', Console)
-kernel.register('module', 'LaserServer', LaserServer)
-kernel.register('load', 'SVGLoader', SVGLoader)
-kernel.register('load', 'ImageLoader', ImageLoader)
-kernel.register('load', "DxfLoader", DxfLoader)
-kernel.register('save', 'SVGWriter', SVGWriter)
-kernel.register('device', 'Lhystudios', LhystudiosDevice)
-kernel.register('disabled-device', 'Moshiboard', MoshiboardDevice)
-kernel.register('disabled-device', 'Ruida', RuidaDevice)
-kernel.register('disabled-device', 'GRBL', GrblDevice)
+kernel.register('static/RasterScripts', RasterScripts)
+kernel.register('module/Console', Console)
+kernel.register('module/LaserServer', LaserServer)
+kernel.register('load/SVGLoader', SVGLoader)
+kernel.register('load/ImageLoader', ImageLoader)
+kernel.register('load/DxfLoader', DxfLoader)
+kernel.register('save/SVGWriter', SVGWriter)
+kernel.register('device/Lhystudios', LhystudiosDevice)
+kernel.register('disabled-device/Moshiboard', MoshiboardDevice)
+kernel.register('disabled-device/Ruida', RuidaDevice)
+kernel.register('disabled-device/GRBL', GrblDevice)
 
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
-    kernel.register_module('wxMeerK40t', wxMeerK40t)
-    meerk40tgui = kernel.open('module', 'wxMeerK40t', device=kernel)
+    kernel.register('module/wxMeerK40t', wxMeerK40t)
+    meerk40tgui = kernel.open('module/wxMeerK40t', 'gui')
 
 kernel.boot()
 device = None
 
-if 'device' in kernel.instances:
-    # Device was booted by kernel boot.
-    for key, d in kernel.instances['device'].items():
-        device = d
-        break
-else:
+for key in kernel.kernels:
+    device = kernel.kernels[key]
+    break
+
+if device is None:
     if args.no_gui:
         # Without a booted device, if also no gui, just start a default device.
-        device = kernel.open('device', 'Lhystudios', instance_name='1', uid=1)
+        device = kernel.open('device/Lhystudios', '1')
         device.boot()
         pass
     else:
@@ -103,7 +105,7 @@ else:
         if device is None:
             #  Set device to kernel and start the DeviceManager
             device = kernel
-            kernel.open('window', "DeviceManager", None)
+            kernel.open('window/DeviceManager', 'DeviceManager', None)
 
 
 if args.verbose:
@@ -152,10 +154,10 @@ if device is not kernel:  # We can process this stuff only with a real device.
             device.grbl_home_y = args.adjust_y
         if args.adjust_x is not None:
             device.grbl_home_x = args.adjust_x
-        console = device.using('module', 'Console').write('grblserver\n')
+        console = device.open('module/Console', 'Console').write('grblserver\n')
 
     if args.ruida:
-        console = device.using('module', 'Console').write('ruidaserver\n')
+        console = device.open('module/Console', 'Console').write('ruidaserver\n')
 
     if args.auto:
         # Automatically classify and start the job.
@@ -191,13 +193,13 @@ if args.output is not None:
     kernel.save(os.path.realpath(args.output.name))
 if args.batch:
     device.add_watcher('console', print)
-    console = device.using('module', 'Console')
+    console = device.open('module/Console', 'Console')
     with args.batch as batch:
         for line in batch:
             console.write(line.strip() + '\n')
     device.remove_watcher('console', print)
 if args.console:
-    console = device.using('module', 'Console')
+    console = device.open('module/Console', 'Console')
     device.add_watcher('console', print)
     kernel.add_watcher('shutdown', print)
     while True:
@@ -211,7 +213,11 @@ if args.console:
     device.remove_watcher('console', print)
 if not args.no_gui:
     if device.state != STATE_TERMINATE:
-        if 'device' in kernel.instances:
-            for key, device in kernel.instances['device'].items():
-                device.open('window', 'MeerK40t', None)
+        for key in kernel.kernels:
+            device = kernel.kernels[key]
+            try:
+                if device.autoboot:
+                    device.open('window/MeerK40t', 'MeerK40t', None)
+            except AttributeError:
+                pass
         meerk40tgui.MainLoop()

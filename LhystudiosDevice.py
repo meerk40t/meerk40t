@@ -37,14 +37,13 @@ DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
 DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
 
 
-class LhystudiosDevice(Device):
+class LhystudiosDevice(Modifier):
     """
     LhystudiosDevice instance. Serves as a device instance for a lhymicro-gl based device.
     """
 
-    def __init__(self, root=None, uid=1, config=None):
-        Device.__init__(self, root=root, uid=uid, config=config)
-        self.uid = uid
+    def __init__(self):
+        self.device = None
         self.device_name = "Lhystudios"
         self.device_location = "USB"
         self.current_x = 0
@@ -53,51 +52,51 @@ class LhystudiosDevice(Device):
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
         self.interpreter = None
         self.spooler = None
+        self.state = STATE_UNKNOWN
 
     def __repr__(self):
-        return "LhystudiosDevice(uid='%s')" % str(self.uid)
+        return "LhystudiosDevice()"
 
     @staticmethod
     def sub_register(device):
-        device.register('module', 'LhymicroInterpreter', LhymicroInterpreter)
-        device.register('module', 'LhystudioController', LhystudioController)
-        device.register('load', 'EgvLoader', EgvLoader)
+        device.register('module/LhymicroInterpreter', LhymicroInterpreter)
+        device.register('module/LhystudioController', LhystudioController)
+        device.register('load/EgvLoader', EgvLoader)
 
-    def initialize(self, device, channel=None):
-        """
-        Device initialize.
+    def attach(self, device, name=None, channel=None):
+        self.device = device
+        device.activate('module/Scheduler')
+        device.activate('module/Signaler', device)
+        device.activate('module/LhystudioController')
+        device.activate('module/LhymicroInterpreter', device)
+        device.activate('module/Spooler')
 
-        :param device:
-        :param name:
-        :return:
-        """
-        self.setting(int, 'usb_index', -1)
-        self.setting(int, 'usb_bus', -1)
-        self.setting(int, 'usb_address', -1)
-        self.setting(int, 'usb_serial', -1)
-        self.setting(int, 'usb_version', -1)
+        device.setting(bool, 'quit', False)
+        device.quit = False
 
-        self.setting(bool, 'mock', False)
-        self.setting(bool, 'quit', False)
-        self.setting(int, 'packet_count', 0)
-        self.setting(int, 'rejected_count', 0)
-        self.setting(bool, "autolock", True)
-        self.setting(bool, "autohome", False)
-        self.setting(bool, "autobeep", True)
-        self.setting(bool, "autostart", True)
+        device.setting(int, 'usb_index', -1)
+        device.setting(int, 'usb_bus', -1)
+        device.setting(int, 'usb_address', -1)
+        device.setting(int, 'usb_serial', -1)
+        device.setting(int, 'usb_version', -1)
 
-        self.setting(str, "board", 'M2')
-        self.setting(bool, "rotary", False)
-        self.setting(float, "scale_x", 1.0)
-        self.setting(float, "scale_y", 1.0)
-        self.setting(int, "bed_width", 320)
-        self.setting(int, "bed_height", 220)
+        device.setting(bool, 'mock', False)
+        device.setting(bool, 'quit', False)
+        device.setting(int, 'packet_count', 0)
+        device.setting(int, 'rejected_count', 0)
+        device.setting(bool, "autolock", True)
+        device.setting(bool, "autohome", False)
+        device.setting(bool, "autobeep", True)
+        device.setting(bool, "autostart", True)
 
-        self.signal('bed_size', (self.bed_width, self.bed_height))
+        device.setting(str, "board", 'M2')
+        device.setting(bool, "rotary", False)
+        device.setting(float, "scale_x", 1.0)
+        device.setting(float, "scale_y", 1.0)
+        device.setting(int, "bed_width", 320)
+        device.setting(int, "bed_height", 220)
 
-        pipe = self.open('module', "LhystudioController", instance_name='pipe')
-        self.open('module', "LhymicroInterpreter", instance_name='interpreter', pipe=pipe)
-        self.open('module', "Spooler", instance_name='spooler')
+        device.signal('bed_size', (device.bed_width, device.bed_height))
 
 
 distance_lookup = [
@@ -120,14 +119,17 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
-class LhymicroInterpreter(Interpreter):
+class LhymicroInterpreter(Interpreter, Job, Modifier):
     """
     LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend
     to write to the usb.
     """
 
-    def __init__(self, pipe):
-        Interpreter.__init__(self, pipe=pipe)
+    def __init__(self, device):
+        Modifier.__init__(self)
+        Interpreter.__init__(self, device=device)
+        Job.__init__(self, device=device, process=self.process_spool, interval=0.01)
+        self.device = device
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
         self.CODE_TOP = b'L'
@@ -149,7 +151,11 @@ class LhymicroInterpreter(Interpreter):
         self.start_y = None
         self.is_paused = False
 
-    def initialize(self, channel=None):
+    def attach(self, device, name=None, channel=None):
+        device.interpreter = self
+        self.device.setting(int, 'current_x', 0)
+        self.device.setting(int, 'current_y', 0)
+
         self.device.setting(bool, "swap_xy", False)
         self.device.setting(bool, "flip_x", False)
         self.device.setting(bool, "flip_y", False)
@@ -175,16 +181,18 @@ class LhymicroInterpreter(Interpreter):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.device.add('control', "Realtime Pause_Resume", self.pause_resume)
-        self.device.add('control', "Realtime Pause", self.pause)
-        self.device.add('control', "Realtime Resume", self.resume)
-        self.device.add('control', "Update Codes", self.update_codes)
+        self.device.register('control/Realtime Pause_Resume', self.pause_resume)
+        self.device.register('control/Realtime Pause', self.pause)
+        self.device.register('control/Realtime Resume', self.resume)
+        self.device.register('control/Update Codes', self.update_codes)
 
     def finalize(self, channel=None):
-        self.device.remove('control', "Realtime Pause_Resume")
-        self.device.remove('control', "Realtime Pause")
-        self.device.remove('control', "Realtime Resume")
-        self.device.remove('control', "Update Codes")
+        pass
+        # TODO: Unregister this stuff.
+        # self.device.remove('control', "Realtime Pause_Resume")
+        # self.device.remove('control', "Realtime Pause")
+        # self.device.remove('control', "Realtime Resume")
+        # self.device.remove('control', "Update Codes")
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -835,6 +843,7 @@ class LhymicroInterpreter(Interpreter):
             controller.write(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
+
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2
         packet = [0] * 30
@@ -890,7 +899,7 @@ def onewire_crc_lookup(line):
     return crc
 
 
-class LhystudioController(Module, Pipe):
+class LhystudioController(Modifier, Pipe):
     """
     K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
 
@@ -903,11 +912,12 @@ class LhystudioController(Module, Pipe):
     information about the connecting and error status of the USB device.
     """
 
-    def __init__(self, device=None, uid=''):
-        Module.__init__(self, device=device)
+    def __init__(self):
+        Modifier.__init__(self)
         Pipe.__init__(self)
         self.usb_log = None
         self.state = STATE_UNKNOWN
+        self.device = None
 
         self._thread = None
         self._buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -932,38 +942,41 @@ class LhystudioController(Module, Pipe):
         self.recv_channel = None
         self.pipe_channel = None
 
-    def initialize(self, channel=None):
-        self.device.setting(int, 'packet_count', 0)
-        self.device.setting(int, 'rejected_count', 0)
+    def attach(self, device, name=None, channel=None):
+        self.device = device
+        device.pipe = self
+        device.setting(int, 'packet_count', 0)
+        device.setting(int, 'rejected_count', 0)
 
-        self.device.control_instance_add("Connect_USB", self.open)
-        self.device.control_instance_add("Disconnect_USB", self.close)
-        self.device.control_instance_add("Status Update", self.update_status)
-        self.usb_log = self.device.channel_open("usb", buffer=20)
-        self.send_channel = self.device.channel_open('send')
-        self.recv_channel = self.device.channel_open('recv')
-        self.pipe_channel = self.device.channel_open('pipe')
+        device.register("control/Connect_USB", self.open)
+        device.register("control/Disconnect_USB", self.close)
+        device.register("control/Status Update", self.update_status)
+        self.usb_log = device.channel_open("usb", buffer=20)
+        self.send_channel = device.channel_open('send')
+        self.recv_channel = device.channel_open('recv')
+        self.pipe_channel = device.channel_open('pipe')
         self.reset()
 
         def abort_wait():
             self.abort_waiting = True
 
-        self.device.control_instance_add("Wait Abort", abort_wait)
+        device.register("control/Wait Abort", abort_wait)
 
         def pause_k40():
             self.update_state(STATE_PAUSE)
             self.start()
 
-        self.device.control_instance_add("Pause", pause_k40)
+        device.register("control/Pause", pause_k40)
 
         def resume_k40():
             self.update_state(STATE_ACTIVE)
             self.start()
 
-        self.device.control_instance_add("Resume", resume_k40)
+        device.register("control/Resume", resume_k40)
 
     def shutdown(self, channel=None):
-        Module.shutdown(channel=channel)
+        # Module.shutdown(channel=channel)
+        pass
 
     def __repr__(self):
         return "LhystudioController()"

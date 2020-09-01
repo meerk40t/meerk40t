@@ -12,11 +12,11 @@ _advanced_width = 612
 
 
 class OperationProperty(wx.Frame, Module):
-    def __init__(self, parent, operation, *args, **kwds):
+    def __init__(self, device, path, parent, operation, *args, **kwds):
         # begin wxGlade: OperationProperty.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((_simple_width, 500))
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
@@ -79,7 +79,7 @@ class OperationProperty(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, operation, *args, **kwargs):
@@ -88,7 +88,7 @@ class OperationProperty(wx.Frame, Module):
         self.on_size()
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         if self.operation.operation is not None:
             op = self.operation.operation

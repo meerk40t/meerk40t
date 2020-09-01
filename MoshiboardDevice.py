@@ -14,12 +14,11 @@ The device is primary composed of three main modules.
 """
 
 
-class MoshiboardDevice(Device):
+class MoshiboardDevice:
     """
     MoshiboardDevice instance. Connects the MeerK40t frontend to the Moshiboard backend.
     """
     def __init__(self, root, uid=''):
-        Device.__init__(self, root, uid)
         self.uid = uid
         self.device_name = "Moshiboard"
         self.location_name = "USB"
@@ -39,8 +38,8 @@ class MoshiboardDevice(Device):
 
     @staticmethod
     def sub_register(device):
-        device.register('module', 'MoshiInterpreter', MoshiInterpreter)
-        device.register('module', 'MoshiboardController', MoshiboardController)
+        device.register('module/MoshiInterpreter', MoshiInterpreter)
+        device.register('module/MoshiboardController', MoshiboardController)
 
     def initialize(self, device, channel=None):
         """
@@ -50,9 +49,9 @@ class MoshiboardDevice(Device):
         :param name:
         :return:
         """
-        pipe = self.open('module', "MoshiboardController", instance_name='pipe')
-        self.open('module', "MoshiInterpreter", instance_name='interpreter', pipe=pipe)
-        self.open('module', "Spooler", instance_name='spooler')
+        pipe = device.open('module/MoshiboardController', 'pipe')
+        device.open('module/MoshiInterpreter', 'interpreter')
+        device.open('module/Spooler', 'spooler')
 
 
 class MoshiInterpreter(Interpreter):
@@ -135,8 +134,8 @@ class MoshiInterpreter(Interpreter):
 
 
 class MoshiboardController(Module, Pipe):
-    def __init__(self, device=None, uid=''):
-        Module.__init__(self, device=device)
+    def __init__(self, device, path, uid=''):
+        Module.__init__(self, device, path)
         Pipe.__init__(self)
         self.usb_log = None
         self.driver = None

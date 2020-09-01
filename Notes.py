@@ -8,11 +8,11 @@ _ = wx.GetTranslation
 
 
 class Notes(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: Notes.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((730, 621))
         self.check_auto_open_notes = wx.CheckBox(self, wx.ID_ANY, _("Automatically Open Notes"))
         self.text_notes = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP)
@@ -32,12 +32,12 @@ class Notes(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
         self.device.setting(bool, 'auto_note', True)
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.check_auto_open_notes.SetValue(self.device.auto_note)
         if self.device.device_root.elements.note is not None:
             self.text_notes.SetValue(self.device.device_root.elements.note)

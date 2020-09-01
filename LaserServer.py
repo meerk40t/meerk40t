@@ -7,8 +7,8 @@ class LaserServer(Module):
     """
     Laser Server opens up a localhost server and waits, sends whatever data received to the pipe
     """
-    def __init__(self, tcp=True, port=23, pipe=None, name='', greet=None):  # port 1040
-        Module.__init__(self)
+    def __init__(self, device, path, tcp=True, port=23, pipe=None, name='', greet=None):  # port 1040
+        Module.__init__(self, device, path)
         self.tcp = tcp
         self.pipe = pipe
         self.port = port
