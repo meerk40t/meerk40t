@@ -9,11 +9,11 @@ _ = wx.GetTranslation
 
 
 class Alignment(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: Alignment.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((631, 365))
 
         self.spin_vertical_distance = wx.SpinCtrl(self, wx.ID_ANY, "180", min=10, max=400)
@@ -65,11 +65,11 @@ class Alignment(wx.Frame, Module):
             return
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
 
     def finalize(self, channel=None):

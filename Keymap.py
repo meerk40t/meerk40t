@@ -7,11 +7,11 @@ _ = wx.GetTranslation
 
 
 class Keymap(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: Keymap.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((500, 530))
         self.list_keymap = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
@@ -34,11 +34,11 @@ class Keymap(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.reload_keymap()
 

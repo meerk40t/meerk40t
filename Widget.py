@@ -42,8 +42,9 @@ def swizzlecolor(c):
 
 
 class Scene(Module):
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, device, path):
+        Module.__init__(self, device, path)
+        self.device = device
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)

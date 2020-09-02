@@ -5,8 +5,8 @@ from svgelements import *
 
 
 class Console(Module, Pipe):
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, device, path):
+        Module.__init__(self, device, path)
         Pipe.__init__(self)
         self.channel_file = None
         self.channel = None
@@ -369,13 +369,14 @@ class Console(Module, Pipe):
                         value = 'open'
                 if value == 'open':
                     window_name = args[1]
-                    if window_name in kernel.registered['window']:
+                    window_path = 'window/%s' % str(window_name)
+                    if window_path in kernel.registered:
                         parent_window = None
                         try:
                             parent_window = active_device.gui
                         except AttributeError:
                             pass
-                        active_device.open('window', window_name, parent_window, *args[2:])
+                        active_device.open(window_path, window_name, parent_window, *args[2:])
                         yield 'Window %s opened.' % window_name
                     else:
                         yield "Window '%s' not found." % window_name
@@ -417,11 +418,11 @@ class Console(Module, Pipe):
             return
         elif command == 'control':
             if len(args) == 0:
-                for control_name in active_device.instances['control']:
+                for control_name in active_device.register_match('\d+/control'):
                     yield control_name
             else:
                 control_name = ' '.join(args)
-                if control_name in active_device.instances['control']:
+                if control_name in active_device.register_match('\d+/control'):
                     active_device.execute(control_name)
                     yield "Executed '%s'" % control_name
                 else:
@@ -431,12 +432,12 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Modules Registered:'
-                for i, name in enumerate(kernel.registered['module']):
+                for i, name in enumerate(kernel.match('module')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Modules in Device %s:' % str(active_device._uid)
-                for i, name in enumerate(active_device.instances['module']):
-                    module = active_device.instances['module'][name]
+                yield 'Loaded Modules in Device %s:' % str(active_device._path)
+                for i, name in enumerate(active_device.opened):
+                    module = active_device.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
                 yield '----------'
             else:
@@ -519,7 +520,7 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Backends permitted:'
-                for i, name in enumerate(kernel.registered['device']):
+                for i, name in enumerate(kernel.register_match('device/')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
@@ -540,9 +541,11 @@ class Console(Module, Pipe):
                         break
                 yield '----------'
                 yield 'Devices Instances:'
+                kernel.setting(str, 'device_name', 'Unknown')
+                kernel.setting(str, 'device_location', 'Unknown')
                 yield '%d: %s on %s' % (0, kernel.device_name, kernel.device_location)
-                for i, name in enumerate(kernel.instances['device']):
-                    device = kernel.instances['device'][name]
+                for i, name in enumerate(kernel.instance_match('device')):
+                    device = kernel.instances[name]
                     yield '%d: %s on %s' % (i + 1, device.device_name, device.device_location)
                 yield '----------'
             else:
@@ -556,9 +559,10 @@ class Console(Module, Pipe):
                     yield 'Device set: %s on %s' % \
                           (self.active_device.device_name, self.active_device.device_location)
                 else:
-                    for i, name in enumerate(kernel.instances['device']):
+                    for i, name in enumerate(kernel.instance_match('^\d+$')):
                         if i + 1 == value:
-                            self.active_device = kernel.instances['device'][name]
+                            self.active_device = kernel.instances[name]
+                            self.active_device.setting(str, 'device_location', 'unknown')
                             yield 'Device set: %s on %s' % \
                                   (self.active_device.device_name, self.active_device.device_location)
                             break
@@ -1910,7 +1914,7 @@ class Console(Module, Pipe):
                 chan = 'server'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.using('module', 'GRBLEmulator'))
+                server.set_pipe(active_device.open('module/GRBLEmulator', 'GRBLEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
@@ -1927,8 +1931,8 @@ class Console(Module, Pipe):
                 chan = 'server'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.using('module', 'RuidaEmulator'))
-                jog.set_pipe(active_device.using('module', 'RuidaEmulator'))
+                server.set_pipe(active_device.open('module/RuidaEmulator', 'RuidaEmulator'))
+                jog.set_pipe(active_device.open('module/RuidaEmulator', 'RuidaEmulator'))
             except OSError:
                 yield 'Server failed.'
             return

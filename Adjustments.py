@@ -7,10 +7,10 @@ _ = wx.GetTranslation
 
 
 class Adjustments(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((424, 417))
         self.check_speed_override = wx.CheckBox(self, wx.ID_ANY, "")
         self.slider_speed_override = wx.Slider(self, wx.ID_ANY, 100, 0, 500,
@@ -156,11 +156,11 @@ class Adjustments(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.device.execute("Realtime Pause")
         try:

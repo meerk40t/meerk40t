@@ -10,10 +10,10 @@ _ = wx.GetTranslation
 
 class JobInfo(wx.Frame, Module):
 
-    def __init__(self, parent, ops, *args, **kwds):
+    def __init__(self, device, path,  parent, ops, *args, **kwds):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((659, 612))
         self.operations_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
         self.commands_listbox = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB | wx.LB_SINGLE)
@@ -107,11 +107,11 @@ class JobInfo(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.device.device_root.setting(bool, "auto_spooler", True)
         self.device.setting(bool, "rotary", False)
@@ -217,13 +217,13 @@ class JobInfo(wx.Frame, Module):
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         if self.device.device_root.auto_spooler:
-            self.device.open('window', "JobSpooler", self.GetParent())
+            self.device.open('window/JobSpooler', 'JobSpooler', self.GetParent())
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
             self.device.spooler.jobs(self.operations)
             self.on_button_job_spooler()
-            self.device.close('window', "JobInfo")
+            self.device.close(self.name)
         else:
             self.preprocessor.execute()
             self.update_gui()
@@ -237,7 +237,7 @@ class JobInfo(wx.Frame, Module):
             return
         obj = self.operations[node_index]
         if isinstance(obj, LaserOperation):
-            self.device.open('window', "OperationProperty", self, obj)
+            self.device.open('window/OperationProperty', 'OperationProperty', self, obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

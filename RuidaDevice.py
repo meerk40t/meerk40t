@@ -1,7 +1,7 @@
 import os
 from io import BytesIO
 
-from Kernel import Device, Interpreter, Module
+from Kernel import Kernel, Interpreter, Module
 from LaserCommandConstants import *
 from svgelements import Color, Path
 from zinglplotter import ZinglPlotter
@@ -16,12 +16,11 @@ Ruida device is a stub-backend. It doesn't work as of yet, but should be able to
 """
 
 
-class RuidaDevice(Device):
+class RuidaDevice:
     """
 
     """
     def __init__(self, root, uid=''):
-        Device.__init__(self, root, uid)
         self.uid = uid
         self.device_name = "Ruida-STUB"
         self.location_name = "UDP"
@@ -39,9 +38,9 @@ class RuidaDevice(Device):
 
     @staticmethod
     def sub_register(device):
-        device.register('module', 'RuidaInterpreter', RuidaInterpreter)
-        device.register('load', 'RDLoader', RDLoader)
-        device.register('module', 'RuidaEmulator', RuidaEmulator)
+        device.register('module/RuidaInterpreter', RuidaInterpreter)
+        device.register('load/RDLoader', RDLoader)
+        device.register('module/RuidaEmulator', RuidaEmulator)
 
     def initialize(self, device, channel=None):
         """
@@ -233,8 +232,8 @@ class RuidaInterpreter(Interpreter):
 
 class RuidaEmulator(Module):
 
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, device, path):
+        Module.__init__(self, device, path)
         self.channel = lambda e: e
         self.path_d = list()
         self.x = 0.0

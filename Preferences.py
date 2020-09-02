@@ -15,11 +15,11 @@ _ = wx.GetTranslation
 # end wxGlade
 
 class Preferences(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: Preferences.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((395, 424))
         self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
@@ -87,11 +87,11 @@ class Preferences(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
 
         self.device.setting(bool, "swap_xy", False)

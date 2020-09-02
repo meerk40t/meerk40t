@@ -2,7 +2,7 @@ import threading
 
 import wx
 
-from Kernel import Module
+from Kernel import Module, Job
 from LaserRender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from ZMatrix import ZMatrix
 from icons import *
@@ -13,12 +13,13 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
-class CameraInterface(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+class CameraInterface(wx.Frame, Module, Job):
+    def __init__(self, device, path, parent, *args, **kwds):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
-        if args >= 1:
+        Module.__init__(self, device, path)
+        Job.__init__(self, device=device)
+        if len(args) > 0 and args[0] >= 1:
             self.settings_value = args[0]
         else:
             self.settings_value = 0
@@ -171,18 +172,18 @@ class CameraInterface(wx.Frame, Module):
 
     @staticmethod
     def sub_register(device):
-        device.register('window', "CameraURI", CameraURI)
+        device.register('window/CameraURI', CameraURI)
 
     def on_close(self, event):
         if self.state == 5:
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.device.setting(bool, 'mouse_zoom_invert', False)
         self.device.setting(int, 'draw_mode', 0)
@@ -255,7 +256,7 @@ class CameraInterface(wx.Frame, Module):
         :param uri:
         :return:
         """
-        self.device.using('module', 'Console').write('window open CameraURI %s %s\n' % (self.settings_value, self.setting.uri))
+        self.device.open('module/Console', 'Console').write('window open CameraURI %s %s\n' % (self.settings_value, self.setting.uri))
 
     def ip_menu_uri_change(self, uri):
         def function(event=None):
@@ -995,7 +996,7 @@ class CameraInterface(wx.Frame, Module):
 
 
 class CameraURI(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: CameraURI.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
@@ -1004,7 +1005,7 @@ class CameraURI(wx.Frame, Module):
         else:
             self.set_name = None
             self.set_uri = ''
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((437, 530))
         self.list_uri = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.button_add = wx.Button(self, wx.ID_ANY, "Add URI")
@@ -1052,11 +1053,11 @@ class CameraURI(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.camera_setting = self.device.device_root.derive('camera')
         self.camera_dict = self.camera_setting.load_persistent_string_dict()

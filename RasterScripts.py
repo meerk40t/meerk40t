@@ -21,11 +21,11 @@ class RasterScripts:
 
     @staticmethod
     def sub_register(device):
-        device.register('raster_script', "Gold", RasterScripts.raster_script_gold())
-        device.register('raster_script', "Stipo", RasterScripts.raster_script_stipo())
-        device.register('raster_script', "Gravy", RasterScripts.raster_script_gravy())
-        device.register('raster_script', "Xin", RasterScripts.raster_script_xin())
-        device.register('raster_script', "Simple", RasterScripts.raster_script_simple())
+        device.register('raster_script/Gold', RasterScripts.raster_script_gold())
+        device.register('raster_script/Stipo', RasterScripts.raster_script_stipo())
+        device.register('raster_script/Gravy', RasterScripts.raster_script_gravy())
+        device.register('raster_script/Xin', RasterScripts.raster_script_xin())
+        device.register('raster_script/Simple', RasterScripts.raster_script_simple())
 
     @staticmethod
     def raster_script_gold():

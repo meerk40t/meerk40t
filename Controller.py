@@ -14,11 +14,11 @@ _ = wx.GetTranslation
 
 
 class Controller(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: Controller.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((499, 505))
         self.button_controller_control = wx.Button(self, wx.ID_ANY, _("Start Controller"))
         self.text_controller_status = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -52,7 +52,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window', "BufferView", self), self.button_buffer_viewer)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window/BufferView', 'BufferView', self), self.button_buffer_viewer)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
         # end wxGlade
@@ -68,15 +68,17 @@ class Controller(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
 
         self.device.setting(int, "buffer_max", 1500)
         self.device.setting(bool, "buffer_limit", True)
+        self.device.setting(str, "device_location", "Unknown")
+        self.device.setting(str, "device_name", "Unknown")
         self.device.listen('pipe;status', self.update_status)
         self.device.listen('pipe;packet_text', self.update_packet_text)
         self.device.listen('pipe;buffer', self.on_buffer_update)

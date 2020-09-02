@@ -7,11 +7,11 @@ _ = wx.GetTranslation
 
 
 class ImageProperty(wx.Frame, Module):
-    def __init__(self, parent, element, *args, **kwds):
+    def __init__(self, device, path, parent, element, *args, **kwds):
         # begin wxGlade: ImageProperty.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
         self.combo_dpi = wx.ComboBox(self, wx.ID_ANY,
@@ -46,7 +46,7 @@ class ImageProperty(wx.Frame, Module):
             return
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, element, *args, **kwds):
@@ -54,7 +54,7 @@ class ImageProperty(wx.Frame, Module):
         self.set_widgets()
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.set_widgets()
 

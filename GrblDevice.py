@@ -1,21 +1,18 @@
-from Kernel import Device, Interpreter, INTERPRETER_STATE_PROGRAM
+from Kernel import Kernel, Interpreter, INTERPRETER_STATE_PROGRAM
 from Kernel import Module, Pipe
 from LaserCommandConstants import *
 from svgelements import *
 
 MILS_PER_MM = 39.3701
 
-
 """
 GRBL device is a stub device. Serving as a placeholder. 
 """
 
-
-class GrblDevice(Device):
+class GrblDevice:
     """
     """
     def __init__(self, root, uid=''):
-        Device.__init__(self, root, uid)
         self.uid = uid
         self.device_name = "GRBL"
         self.location_name = "Print"
@@ -35,8 +32,8 @@ class GrblDevice(Device):
 
     @staticmethod
     def sub_register(device):
-        device.register('module', 'GRBLInterpreter', GRBLInterpreter)
-        device.register('module', 'GRBLEmulator', GRBLEmulator)
+        device.register('module/GRBLInterpreter', GRBLInterpreter)
+        device.register('module/GRBLEmulator', GRBLEmulator)
 
     def initialize(self, device, channel=None):
         """
@@ -46,9 +43,9 @@ class GrblDevice(Device):
         :param name:
         :return:
         """
-        self.open('module', 'Spooler')
         self.write = print
-        self.open('module', 'GRBLInterpreter', pipe=self)
+        device.open('module/Spooler', 'spooler')
+        device.open('module/GRBLInterpreter', 'interpreter')
 
     def __len__(self):
         return 0
@@ -154,8 +151,8 @@ class GRBLInterpreter(Interpreter):
 
 class GRBLEmulator(Module, Pipe):
 
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, device, path):
+        Module.__init__(self, device, path)
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal

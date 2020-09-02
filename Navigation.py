@@ -524,7 +524,7 @@ class Navigation(wx.Frame, Module):
             return
         px = (bbox[0] + bbox[2]) / 2.0
         py = (bbox[3] + bbox[1]) / 2.0
-        self.console.write('move_absolute %f %f\n' % (px,py))
+        self.console.write('move_absolute %f %f\n' % (px, py))
         self.drag_ready(True)
 
     def on_button_align_corner_tl(self, event):  # wxGlade: Navigation.<event_handler>

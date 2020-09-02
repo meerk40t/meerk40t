@@ -20,9 +20,9 @@ _ = wx.GetTranslation
 
 
 class RasterWizard(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self._preview_panel_buffer = None
         if len(args) >= 1:
             script = args[0]
@@ -88,7 +88,7 @@ class RasterWizard(wx.Frame, Module):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(self.device.device_root.registered['raster_script'][name])
+            self.ops = deepcopy(self.device.device_root.registered['raster_script/%s' % name])
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op['name']) for op in self.ops]
@@ -105,7 +105,7 @@ class RasterWizard(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, *args, **kwargs):
@@ -113,7 +113,7 @@ class RasterWizard(wx.Frame, Module):
             self.set_wizard_script(args[1])
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         if self.script is not None:
             self.set_wizard_script(self.script)
         self.Show()

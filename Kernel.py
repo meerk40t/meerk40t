@@ -1,5 +1,7 @@
 import os
 import time
+import re
+
 from threading import Thread, Lock
 
 from LaserOperation import *
@@ -19,31 +21,14 @@ INTERPRETER_STATE_FINISH = 1
 INTERPRETER_STATE_PROGRAM = 2
 
 
-class Module:
+class Job:
     """
-    Modules are a generic lifecycle object. When open() is called for a module registered with the device the device is
-    attached. When attached the module is initialized to that device. When close() is called for a module initialized
-    on the device. The device is detached. When detached the module is finalized. When that device controlling the
-    initialized module is shutdown the shutdown() event is called. By default shutdown() calls the close for the
-    device. During device shutdown, initialized modules will be notified by a shutdown() call that it is shutting down
-    and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
-    them.
+    Generic job for the scheduler.
 
-    If a device is attempted to be open() a second time while the device is still registered. The device restore()
-    function is called for the device, with the same args and kwargs that would have been called on __init__().
-
-    A module always has an understanding of its current state within the device, and is notified of any changes in this
-    state.
-
-    Modules are also qualified jobs that can be scheduled in the kernel to run at a particular time and a given number
-    of times. This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
-    and times.
-
-    All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
-    any relevant information. Attach and initialize are given the channel 'open', detach and finalize are given the
-    channel 'close' and shutdown is given the channel 'shutdown'.
+    Jobs that can be scheduled in the scheduler-kernel to run at a particular time and a given number of times.
+    This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
+    and times. This is usually extended directly by a module requiring that functionality.
     """
-
     def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
         self.name = name
         self.device = device
@@ -73,9 +58,11 @@ class Module:
         if self in self.device.jobs:
             self.device.jobs.remove(self)
 
-    def restore(self, *args, **kwargs):
-        """Called if a second open attempt is made for this module."""
-        pass
+
+class Modifier:
+    """
+    A modifier alters a given kernel object with some additional functionality, set during attachment and detachment.
+    """
 
     def attach(self, device, name=None, channel=None):
         """
@@ -85,9 +72,7 @@ class Module:
         subclassing, or for modules that are intended to expand the functionality of a device rather than compliment
         that functionality.
         """
-        self.device = device
-        self.name = name
-        self.initialize(channel=channel)
+        pass
 
     def detach(self, device, channel=None):
         """
@@ -97,9 +82,38 @@ class Module:
         :param channel:
         :return:
         """
-        self.finalize(channel=channel)
-        self.device = None
-        self.state = STATE_END
+        pass
+
+
+class Module:
+    """
+    Modules are a generic lifecycle object. When open() is called for a module registered with the device the device is
+    attached. When attached the module is initialized to that device. When close() is called for a module initialized
+    on the device. The device is detached. When detached the module is finalized. When that device controlling the
+    initialized module is shutdown the shutdown() event is called. By default shutdown() calls the close for the
+    device. During device shutdown, initialized modules will be notified by a shutdown() call that it is shutting down
+    and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
+    them.
+
+    If a device is attempted to be open() a second time while the device is still registered. The device restore()
+    function is called for the device, with the same args and kwargs that would have been called on __init__().
+
+    A module always has an understanding of its current state within the device, and is notified of any changes in this
+    state.
+
+    All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
+    any relevant information. Attach and initialize are given the channel 'open', detach and finalize are given the
+    channel 'close' and shutdown is given the channel 'shutdown'.
+    """
+
+    def __init__(self, device, name=None, channel=None):
+        self.device = device
+        self.name = name
+        self.state = STATE_INITIALIZE
+
+    def restore(self, *args, **kwargs):
+        """Called if a second open attempt is made for this module."""
+        pass
 
     def initialize(self, channel=None):
         """Called when device is registered and module is named. On a freshly opened module."""
@@ -114,106 +128,7 @@ class Module:
         pass
 
 
-class Spooler(Module):
-    """
-    The spooler module stores spoolable lasercode events, as a synchronous queue.
-
-    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown
-    device.
-
-    * peek()
-    * pop()
-    * job(job)
-    * jobs(iterable<job>)
-    * job_if_idle(job) -- Will enqueue the job if the device is currently idle.
-    * clear_queue()
-    * remove(job)
-    """
-
-    def __init__(self):
-        Module.__init__(self)
-        self.queue_lock = Lock()
-        self._queue = []
-
-    def __repr__(self):
-        return "Spooler()"
-
-    def attach(self, device, name=None, channel=None):
-        """Overloaded attach to demand .spooler attribute."""
-        device.spooler = self
-        Module.attach(self, device, name)
-
-    def peek(self):
-        if len(self._queue) == 0:
-            return None
-        return self._queue[0]
-
-    def pop(self):
-        if len(self._queue) == 0:
-            return None
-        self.queue_lock.acquire(True)
-        queue_head = self._queue[0]
-        del self._queue[0]
-        self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
-        return queue_head
-
-    def job(self, *job):
-        """
-        Send a single job event with parameters as needed.
-
-        The job can be a single command with (COMMAND_MOVE 20 20) or without parameters (COMMAND_HOME), or a generator
-        which can yield many lasercode commands.
-
-        :param job: job to send to the spooler.
-        :return:
-        """
-        self.queue_lock.acquire(True)
-
-        if len(job) == 1:
-            self._queue.extend(job)
-        else:
-            self._queue.append(job)
-        self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
-
-    def jobs(self, jobs):
-        """
-        Send several jobs generators to be appended to the end of the queue.
-
-        The jobs parameter must be suitable to be .extended to the end of the queue list.
-        :param jobs: jobs to extend
-        :return:
-        """
-        self.queue_lock.acquire(True)
-        if isinstance(jobs, (list, tuple)):
-            self._queue.extend(jobs)
-        else:
-            self._queue.append(jobs)
-        self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
-
-    def job_if_idle(self, element):
-        if len(self._queue) == 0:
-            self.job(element)
-            return True
-        else:
-            return False
-
-    def clear_queue(self):
-        self.queue_lock.acquire(True)
-        self._queue = []
-        self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
-
-    def remove(self, element):
-        self.queue_lock.acquire(True)
-        self._queue.remove(element)
-        self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
-
-
-class Interpreter(Module):
+class Interpreter:
     """
     An Interpreter Module takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
@@ -225,13 +140,11 @@ class Interpreter(Module):
     objects that may also be common within devices.
     """
 
-    def __init__(self, pipe=None):
-        Module.__init__(self)
+    def __init__(self, device):
+        self.device = device
         self.process_item = None
         self.spooled_item = None
-        self.process = self.process_spool
-        self.interval = 0.01
-        self.pipe = pipe
+        self.pipe = device.pipe
         self.extra_hold = None
 
         self.state = INTERPRETER_STATE_RAPID
@@ -245,13 +158,6 @@ class Interpreter(Module):
         self.power = 1000.0
         self.d_ratio = None  # None means to use speedcode default.
         self.acceleration = None  # None means to use speedcode default
-
-    def attach(self, device, name=None, channel=None):
-        device.interpreter = self
-        Module.attach(self, device, name)
-        self.device.setting(int, 'current_x', 0)
-        self.device.setting(int, 'current_y', 0)
-        self.schedule()
 
     def process_spool(self, *args):
         """
@@ -613,14 +519,115 @@ class Pipe:
         self.write(bytes_to_write)
 
 
-class Signaler(Module):
+class Spooler(Modifier):
+    """
+    The spooler module stores spoolable lasercode events, as a synchronous queue.
+
+    Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown
+    device.
+
+    * peek()
+    * pop()
+    * job(job)
+    * jobs(iterable<job>)
+    * job_if_idle(job) -- Will enqueue the job if the device is currently idle.
+    * clear_queue()
+    * remove(job)
+    """
+
+    def __init__(self):
+        Modifier.__init__(self)
+        self.queue_lock = Lock()
+        self._queue = []
+        self.device = None
+
+    def __repr__(self):
+        return "Spooler()"
+
+    def attach(self, device, name=None, channel=None):
+        """Overloaded attach to demand .spooler attribute."""
+        device.spooler = self
+        self.device = device
+
+    def peek(self):
+        if len(self._queue) == 0:
+            return None
+        return self._queue[0]
+
+    def pop(self):
+        if len(self._queue) == 0:
+            return None
+        self.queue_lock.acquire(True)
+        queue_head = self._queue[0]
+        del self._queue[0]
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
+        return queue_head
+
+    def job(self, *job):
+        """
+        Send a single job event with parameters as needed.
+
+        The job can be a single command with (COMMAND_MOVE 20 20) or without parameters (COMMAND_HOME), or a generator
+        which can yield many lasercode commands.
+
+        :param job: job to send to the spooler.
+        :return:
+        """
+        self.queue_lock.acquire(True)
+
+        if len(job) == 1:
+            self._queue.extend(job)
+        else:
+            self._queue.append(job)
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
+
+    def jobs(self, jobs):
+        """
+        Send several jobs generators to be appended to the end of the queue.
+
+        The jobs parameter must be suitable to be .extended to the end of the queue list.
+        :param jobs: jobs to extend
+        :return:
+        """
+        self.queue_lock.acquire(True)
+        if isinstance(jobs, (list, tuple)):
+            self._queue.extend(jobs)
+        else:
+            self._queue.append(jobs)
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
+
+    def job_if_idle(self, element):
+        if len(self._queue) == 0:
+            self.job(element)
+            return True
+        else:
+            return False
+
+    def clear_queue(self):
+        self.queue_lock.acquire(True)
+        self._queue = []
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
+
+    def remove(self, element):
+        self.queue_lock.acquire(True)
+        self._queue.remove(element)
+        self.queue_lock.release()
+        self.device.signal('spooler;queue', len(self._queue))
+
+
+class Signaler(Modifier, Job):
     """
     Signaler provides the signals functionality for a device. It replaces the functions for .signal(), .listen(),
     .unlisten(), .last_signal().
     """
 
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, device):
+        Modifier.__init__(self)
+        Job.__init__(self, device=device, name='signaler', process=self.delegate_messages, args=(), interval=0.05)
         self.listeners = {}
         self.adding_listeners = []
         self.removing_listeners = []
@@ -628,21 +635,21 @@ class Signaler(Module):
         self.queue_lock = Lock()
         self.message_queue = {}
         self._is_queue_processing = False
-        self.process = self.delegate_messages
-        self.interval = 0.05
-        self.args = ()
 
     def attach(self, device, name=None, channel=None):
         device.signal = self.signal
         device.listen = self.listen
         device.unlisten = self.unlisten
         device.last_signal = self.last_signal
-        Module.attach(self, device, name)
         self.schedule()
 
     def detach(self, device, channel=None):
         self.unschedule()
-        Module.detach(self, device, channel=channel)
+
+        def signal(code, *message):
+            _ = self.device_root.translation
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
+        device.signal = signal
 
     def shutdown(self, channel=None):
         _ = self.device.device_root.translation
@@ -750,7 +757,7 @@ class Signaler(Module):
         self.queue_lock.release()
 
 
-class Elemental(Module):
+class Elemental(Modifier):
     """
     The elemental module is governs all the interactions with the various elements,
     operations, and filenodes. Handling structure change and selection, emphasis, and
@@ -761,7 +768,8 @@ class Elemental(Module):
     """
 
     def __init__(self):
-        Module.__init__(self)
+        Modifier.__init__(self)
+        self.device = None
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
@@ -769,13 +777,13 @@ class Elemental(Module):
         self._bounds = None
 
     def attach(self, device, name=None, channel=None):
+        self.device = device
         device.elements = self
         device.classify = self.classify
         device.save = self.save
         device.save_types = self.save_types
         device.load = self.load
         device.load_types = self.load_types
-        Module.attach(self, device, name)
 
     def register(self, obj):
         obj.wx_bitmap_image = None
@@ -895,7 +903,7 @@ class Elemental(Module):
         self.classify(self.elems())
 
     def finalize(self, channel=None):
-        kernel = self.device.device_root
+        kernel = self.device
         settings = kernel.derive('operations')
         settings.clear_persistent()
         for i, op in enumerate(self.ops()):
@@ -911,7 +919,7 @@ class Elemental(Module):
                 op_set.write_persistent(key, value)
 
     def boot(self):
-        kernel = self.device.device_root
+        kernel = self.device
         settings = kernel.derive('operations')
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
@@ -1292,7 +1300,8 @@ class Elemental(Module):
                     self.add_op(op)
 
     def load(self, pathname, **kwargs):
-        for loader_name, loader in self.device.registered['load'].items():
+        for loader_name in self.device.match('load'):
+            loader = self.device.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
                     results = loader.load(self.device, pathname, **kwargs)
@@ -1346,167 +1355,158 @@ class Elemental(Module):
         return "|".join(filetypes)
 
 
-class Kern:
+class Scheduler(Modifier):
     """
-    TODO: Transition.
-
-    The Kernel defines a specific location for functional elements. These are registered and in turn those are
-    subregistered. Every Kernel has a path. These can be derived from one another. Derived paths are stored as specific
-    implemented objects. Kernels can have functionality added to them dynamically. For example calling on the Spooler
-    object will set the .spooler when the spooler is attached. Every opened item has a source and an attached
-    destination. This permits registration of multiple objects to different locations.
+    Provides a scheduler for a specific kernel location. This will allow jobs to be run at this specific path location.
     """
-    def __init__(self, parent=None, path=None):
-        self._parent = parent
-        self._path = path
-        if parent is not None:
-            self.registered = parent.registered
-            self.instances = parent.instances
-        else:
-            self.registered = {}
-            self.instances = {}
+    def __init__(self):
+        self.state = STATE_INITIALIZE
+        self.device = None
+        self.jobs = []
 
-    def __str__(self):
-        return "Kern('%s')" % self._path
+    def attach(self, kernel, name=None, channel=None):
+        self.device = kernel
+        kernel.jobs = self.jobs
+        kernel.add_job = self.add_job
+        kernel.thread = kernel.threaded(self.run, 'Device%s' % str(kernel))
 
-    __repr__ = __str__
+    def detach(self, kernel, channel=None):
+        self.state = STATE_TERMINATE
+        kernel.thread.join()
 
-    def abs_path(self, subpath):
-        subpath = str(subpath)
-        current = self
-        if subpath.startswith('../'):
-            if self._parent is None:
-                raise ValueError()
-            current = self._parent
-            subpath = subpath[3:]
-        if subpath.startswith('/') or self._path is None:
-            return subpath
-        else:
-            return "%s/%s" % (current._path, subpath)
-
-    def derive(self, subpath):
+    def run(self):
         """
-        Create a sub-object derived from this object.
+        Scheduler main loop.
 
-        :param subpath: subpath underwhich to have the object.
-        :return: Derived Object.
-        """
-        derive = Kern(parent=self, path=self.abs_path(subpath))
-        return derive
-
-    def register(self, path, obj):
-        """
-        Register an element at a given subpath. If this Kern is not root. Then
-        it is registered relative to this location.
-
-        :param path:
-        :param obj:
+        Check the Scheduler thread state, and whether it should abort or pause.
+        Check each job, and if that job is scheduled to run. Executes that job.
         :return:
         """
-        self.registered[path] = obj
-        try:
-            obj.sub_register(self)
-        except AttributeError:
-            pass
+        self.state = STATE_ACTIVE
+        while self.state != STATE_END:
+            time.sleep(0.005)  # 200 ticks a second.
+            if self.state == STATE_TERMINATE:
+                break
+            while self.state == STATE_PAUSE:
+                # The scheduler is paused.
+                time.sleep(0.1)
+            if self.state == STATE_TERMINATE:
+                break
+            jobs = self.device.jobs
+            jobs_update = False
+            for job in jobs:
+                # Checking if jobs should run.
+                if job.scheduled:
+                    job.next_run = 0  # Set to zero while running.
+                    if job.times is not None:
+                        job.times = job.times - 1
+                        if job.times <= 0:
+                            jobs_update = True
+                        if job.times < 0:
+                            continue
+                    try:
+                        if isinstance(jobs, int):
+                            job.process(job.args[0])
+                        elif isinstance(job.args, tuple):
+                            job.process(*job.args)
+                        else:
+                            job.process(job.args)
+                    except:
+                        import sys
+                        sys.excepthook(*sys.exc_info())
+                    job.last_run = time.time()
+                    job.next_run += job.last_run + job.interval
+            if jobs_update:
+                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
+        self.state = STATE_END
 
-    def find(self, path):
+        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
+        self.device.shutdown(self.device.channel_open('shutdown'))
+
+    def add_job(self, run, args=(), interval=1.0, times=None):
         """
-        Finds a loaded instance. Or returns None if not such instance.
+        Adds a job to the scheduler.
 
-        Note name is not necessarily the type of instance. It could be the named value of the instance.
-
-        :param path: The type of instance to find.
-        :return: The instance if found, otherwise none.
+        :param run: function to run
+        :param args: arguments to give to that function.
+        :param interval: in seconds, how often should the job be run.
+        :param times: limit on number of executions.
+        :return: Reference to the job added.
         """
-        try:
-            return self.instances[self.abs_path(path)]
-        except KeyError:
-            return None
-
-    def open(self, registered_path, instance_path, *args, **kwargs):
-        """
-        Opens a registered module. If that module already exists it returns the already open module.
-
-        Two special kwargs are passed to this. 'instance_name' and 'sub'. These control the name under which
-        the module is registered. Instance_name replaces the default, which registers the instance under the object_name
-        whereas sub provides a suffixed name 'object_name:sub'.
-
-        If the module already exists, the restore function is called on that object, if it exists, with the same args
-        and kwargs that were intended for the init() routine.
-
-        :param registered_path: path of object being opened.
-        :param instance_path: path of object should be attached.
-        :param args: Args to pass to newly opened module.
-        :param kwargs: Kwargs to pass to newly opened module.
-        :return: Opened module.
-        """
-        instance_path = self.abs_path(instance_path)
-        try:
-            find = self.instances[instance_path]
-            try:
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-        except KeyError:
-            pass
-
-        try:
-            open_object = self.registered[registered_path]
-        except KeyError:
-            raise ValueError
-
-        instance = open_object(*args, **kwargs)
-        try:
-            channel = self.channel_open('open')
-        except AttributeError:
-            channel = None
-
-        try:
-            instance.attach(self, name=instance_path, channel=channel)
-        except AttributeError:
-            pass
-
-        self.instances[instance_path] = instance
-        return instance
-
-    def close(self, instance_path):
-        instance_path = self.abs_path(instance_path)
-        try:
-            instance = self.instances[instance_path]
-        except KeyError:
-            raise ValueError
-        try:
-            instance.close()
-        except AttributeError:
-            pass
-        del self.instances[instance_path]
-        try:
-            channel = self.channel_open('close')
-        except AttributeError:
-            channel = None
-
-        try:
-            instance.detach(self, channel=channel)
-        except AttributeError:
-            pass
+        job = Job(self, process=run, args=args, interval=interval, times=times)
+        self.jobs.append(job)
+        return job
 
 
-class Preferences:
+class Kernel:
     """
-    This class is expected to run even if there is no persistent storage.
+    The Kernel defines a specific location for functional elements. The elements themselves are registered within the
+    kernel and availible to all derived subkernel elements. Kernels can have functionality added to them dynamically.
+    For example, activating 'Spooler' attaches a .spooler function to the kernel at that path location. The Modifiers
+    are activated by attaching and detaching to the kernel at a particular path location. The Modules are opened at a
+    specific kernel path locations. Specific settings can be set on a Kernel by calling the .setting() function to
+    assign a persistent value. Modifiers are called with .activate() at a kernel location. Modules are opened with the
+    open() function.
 
-    Without an persistence object, attributes will be assigned by .settings() command, and the objects cannot flush().
-    If the config is not set, it will check the root for a non-None config until setting. So only the root objects
-    persistence object needs to be set.
+    * Shared location of loaded elements data
+    * The translation function
+    * The run later function
+    * The keymap/alias object
+
+    Channels send messages to watcher functions. These can be watched even if the channels are not ever opened or used.
+    The channels can opened and provided information without any consideration of what might be watching.
     """
-    def __init__(self, config=None, path=None, root=None):
-        self._root = root
-        if self._root is None:
-            self._root = self
+
+    def __init__(self, root=None, path=None, config=None):
+        self._root = self
         self._path = path
+        self.opened = {}
+        self.attached = {}
+        if root is not None:
+            self.registered = root.registered
+            self.kernels = {}
+            self._root = root._root
+        else:
+            self.registered = {}
+            self.kernels = {}
+            self._root = self
+        self.device_root = self._root
+        self.state = STATE_UNKNOWN
+
+        # Channel processing.
+        self.channels = {}
+        self.watchers = {}
+        self.buffer = {}
+        self.greet = {}
+
         self._config = config
-        self.set_config(config)
+
+        # Persistent storage if it exists.
+        if config is not None:
+            self.set_config(config)
+
+        # Translation function if exists.
+        self.translation = lambda e: e  # Default for this code is do nothing.
+
+        # Keymap/alias values
+        self.keymap = {}
+        self.alias = {}
+
+        self.run_later = lambda listener, message: listener(message)
+
+    @staticmethod
+    def sub_register(device):
+        device.register('module/Scheduler', Scheduler)
+        device.register('module/Signaler', Signaler)
+        device.register('module/Elemental', Elemental)
+        device.register('module/Spooler', Spooler)
+
+    def __str__(self):
+        if self._path is None:
+            return "Kernel('/')"
+        return "Kernel('%s')" % self._path
+
+    __repr__ = __str__
 
     def __setitem__(self, key, value):
         """
@@ -1537,16 +1537,78 @@ class Preferences:
                 return self.read_persistent(t, key, default)
         return self.read_item_persistent(item)
 
+    def _start_debugging(self):
+        """
+        Debug function hooks all functions within the device with a debug call that saves the data to the disk and
+        prints that information.
+
+        :return:
+        """
+        import functools
+        import datetime
+        import types
+        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+        debug_file = open(filename, "a")
+        debug_file.write("\n\n\n")
+
+        def debug(func, obj):
+            @functools.wraps(func)
+            def wrapper_debug(*args, **kwargs):
+                args_repr = [repr(a) for a in args]
+
+                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
+                signature = ", ".join(args_repr + kwargs_repr)
+                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
+                debug_file.write(start + '\n')
+                print(start)
+                t = time.time()
+                value = func(*args, **kwargs)
+                t = time.time() - t
+                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
+                print(finish)
+                debug_file.write(finish + '\n')
+                debug_file.flush()
+                return value
+
+            return wrapper_debug
+
+        attach_list = [modules for modules, module_name in self.instances['module'].items()]
+        attach_list.append(self)
+        for obj in attach_list:
+            for attr in dir(obj):
+                if attr.startswith('_'):
+                    continue
+                fn = getattr(obj, attr)
+                if not isinstance(fn, types.FunctionType) and \
+                        not isinstance(fn, types.MethodType):
+                    continue
+                setattr(obj, attr, debug(fn, obj))
+
+    def abs_path(self, subpath):
+        subpath = str(subpath)
+        current = self
+        if subpath.startswith('/'):
+            return subpath[1:]
+        if self._path is None:
+            return subpath
+        return "%s/%s" % (current._path, subpath)
+
     def derive(self, subpath):
         """
-        Create a sub-preferences object, at the given subpath.
+        Create a sub-kernel derived from this kernel, at the given path.
+
+        If this has been created previously, then return the previous object.
 
         :param subpath: subpath underwhich to have the object.
-        :return: Preferences object derived from this one.
+        :return: Derived Object.
         """
-        if self._path is not None:
-            subpath = "%s/%s" % (self._path, subpath)
-        derive = Preferences(config=self._config, path=subpath, root=self._root)
+        path = self.abs_path(subpath)
+        try:
+            return self.kernels[path]
+        except KeyError:
+            pass
+        derive = Kernel(root=self._root, path=path, config=self._config)
+        self.kernels[path] = derive
         return derive
 
     def setting(self, setting_type, key, default=None):
@@ -1573,11 +1635,28 @@ class Preferences:
         setattr(self, key, load_value)
         return load_value
 
+    def execute(self, control):
+        try:
+            funct= self.registered[self.abs_path("control/%s" % control)]
+        except KeyError:
+            return
+        funct()
+
+    def match(self, matchtext):
+        """
+        Lists all registered paths that regex match the given matchtext
+
+        :param matchtext: match text to match.
+        :return:
+        """
+        match = re.compile(matchtext)
+        for r in self.registered:
+            if match.match(r):
+                yield r
+
     def flush(self):
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
-
-        :return:
         """
 
         for attr in dir(self):
@@ -1750,77 +1829,121 @@ class Preferences:
             return
         self._config = config
 
+    def register(self, path, obj):
+        """
+        Register an element at a given subpath. If this Kernel is not root. Then
+        it is registered relative to this location.
 
-class Device(Preferences):
-    """
-    A Device is a specific module cluster that serves a unified purpose.
+        :param path:
+        :param obj:
+        :return:
+        """
+        self.registered[self.abs_path(path)] = obj
+        try:
+            obj.sub_register(self)
+        except AttributeError:
+            pass
 
-    The Kernel is a type of device which provides root functionality.
+    def activate(self, registered_path, *args, **kwargs):
+        """
+        Activates a registered modifier.
+        """
+        try:
+            open_object = self.registered[registered_path]
+        except KeyError:
+            raise ValueError
 
-    * Provides job scheduler
-    * Registers devices, modules, pipes, modifications, and effects.
-    * Stores instanced devices, modules, pipes, channels, controls and threads.
-    * Processes local channels.
+        try:
+            instance = open_object(*args, **kwargs)
+            self.attached[registered_path] = instance
+            instance.attach(self)
+        except AttributeError:
+            pass
 
-    Channels are a device object with specific uids that sends messages to watcher functions. These can be watched
-    even if the channels are not ever opened or used. The channels can opened and provided information without any
-    consideration of what might be watching.
-    """
+        return instance
 
-    def __init__(self, root=None, uid=0, config=None):
-        self.thread = None
-        self.name = None
-        self.device_root = root
-        self.device_name = "Device"
-        self.device_version = "0.0.0"
-        self.device_location = "Kernel"
-        self._uid = uid
-        if uid != 0:
-            Preferences.__init__(self, config=config, path=str(uid), root=root)
-        else:
-            Preferences.__init__(self, config=config, root=root)
+    def deactivate(self, registered_path):
+        try:
+            instance = self.attached[registered_path]
+            del self.attached[registered_path]
+            instance.detach(self)
+        except (KeyError, AttributeError):
+            pass
 
-        self.state = STATE_UNKNOWN
-        self.jobs = []
+    def find(self, path):
+        """
+        Finds a loaded instance. Or returns None if not such instance.
 
-        self.registered = {}
-        self.instances = {}
+        Note name is not necessarily the type of instance. It could be the named value of the instance.
 
-        # Channel processing.
-        self.channels = {}
-        self.watchers = {}
-        self.buffer = {}
-        self.greet = {}
-        self.element = None
+        :param path: The type of instance to find.
+        :return: The instance if found, otherwise none.
+        """
+        try:
+            return self.opened[self.abs_path(path)]
+        except KeyError:
+            return None
 
-    def __str__(self):
-        if self._uid == 0:
-            return "Project"
-        else:
-            return "%s:%d" % (self.device_name, self._uid)
+    def open(self, registered_path, instance_path, *args, **kwargs):
+        """
+        Opens a registered module. If that module already exists it returns the already open module.
 
-    def __call__(self, code, *message):
-        self.signal(code, *message)
+        Two special kwargs are passed to this. 'instance_name' and 'sub'. These control the name under which
+        the module is registered. Instance_name replaces the default, which registers the instance under the object_name
+        whereas sub provides a suffixed name 'object_name:sub'.
 
-    def attach(self, device, name=None, channel=None):
-        self.device_root = device
-        self.name = name
-        self.setting(bool, 'quit', False)
-        self.quit = False
-        self.initialize(device, channel=channel)
+        If the module already exists, the restore function is called on that object, if it exists, with the same args
+        and kwargs that were intended for the init() routine.
 
-    def detach(self, device, channel=None):
-        def signal(code, *message):
-            _ = self.device_root.translation
-            channel(_("Suspended Signal: %s for %s" % (code, message)))
-        self.signal = signal
-        self.finalize(device, channel=channel)
+        :param registered_path: path of object being opened.
+        :param instance_path: path of object should be attached.
+        :param args: Args to pass to newly opened module.
+        :param kwargs: Kwargs to pass to newly opened module.
+        :return: Opened module.
+        """
+        try:
+            find = self.opened[instance_path]
+            try:
+                find.restore(*args, **kwargs)
+            except AttributeError:
+                pass
+            return find
+        except KeyError:
+            pass
 
-    def initialize(self, device, channel=None):
-        pass
+        try:
+            open_object = self.registered[registered_path]
+        except KeyError:
+            raise ValueError
 
-    def finalize(self, device, channel=None):
-        pass
+        instance = open_object(self, instance_path, *args, **kwargs)
+        try:
+            channel = self.channel_open('open')
+        except AttributeError:
+            channel = None
+        instance.initialize(channel=channel)
+
+        self.opened[instance_path] = instance
+        return instance
+
+    def close(self, instance_path):
+        try:
+            instance = self.opened[instance_path]
+        except KeyError:
+            return  # Nothing to close. Return.
+        try:
+            instance.close()
+        except AttributeError:
+            pass
+        try:
+            instance.finalize(self.channel_open('close'))
+        except AttributeError:
+            pass
+        del self.opened[instance_path]
+        # try:
+        #     channel = self.channel_open('close')
+        # except AttributeError:
+        #     channel = None
 
     def threaded(self, func, thread_name=None):
         if thread_name is None:
@@ -1828,37 +1951,74 @@ class Device(Preferences):
         thread = Thread(name=thread_name)
 
         def run():
-            self.thread_instance_add(thread_name, thread)
+            self.opened[thread_name] = thread
             try:
                 func()
             except:
                 import sys
                 sys.excepthook(*sys.exc_info())
-            self.thread_instance_remove(thread_name)
+            del self.opened[thread_name]
 
         thread.run = run
         thread.start()
         return thread
 
+    # Channel processing
+
+    def add_greet(self, channel, greet):
+        self.greet[channel] = greet
+        if channel in self.channels:
+            self.channels[channel](greet)
+
+    def add_watcher(self, channel, monitor_function):
+        if channel not in self.watchers:
+            self.watchers[channel] = [monitor_function]
+        else:
+            for q in self.watchers[channel]:
+                if q is monitor_function:
+                    return  # This is already being watched by that.
+            self.watchers[channel].append(monitor_function)
+        if channel in self.greet:
+            monitor_function(self.greet[channel])
+        if channel in self.buffer:
+            for line in self.buffer[channel]:
+                monitor_function(line)
+
+    def remove_watcher(self, channel, monitor_function):
+        self.watchers[channel].remove(monitor_function)
+
+    def channel_open(self, channel, buffer=0):
+        if channel not in self.channels:
+            def chan(message):
+                if channel in self.watchers:
+                    for w in self.watchers[channel]:
+                        w(message)
+                if buffer <= 0:
+                    return
+                try:
+                    buff = self.buffer[channel]
+                except KeyError:
+                    buff = list()
+                    self.buffer[channel] = buff
+                buff.append(message)
+                if len(buff) + 10 > buffer:
+                    self.buffer[channel] = buff[-buffer:]
+
+            self.channels[channel] = chan
+            if channel in self.greet:
+                chan(self.greet[channel])
+        return self.channels[channel]
+
     def boot(self):
         """
-        Device boot sequence. This should be called after all the registered devices are established.
+        Kernel boot sequence. This should be called after all the registered devices are established.
         :return:
         """
-        if self.thread is None or not self.thread.is_alive():
-            self.thread = self.threaded(self.run, 'Device%d' % int(self._uid))
-        self.control_instance_add("Debug Device", self._start_debugging)
-        try:
-            for m in self.instances['module']:
-                m = self.instances['module'][m]
-                try:
-                    m.boot()
-                except AttributeError:
-                    pass
-        except KeyError:
-            pass
+        self.boot_keymap()
+        self.boot_alias()
+        self.device_boot()
 
-    def shutdown(self, channel=None):
+    def d_shutdown(self, channel=None):
         """
         Begins device shutdown procedure.
         """
@@ -1968,460 +2128,12 @@ class Device(Preferences):
         else:
             self.device_root.resume()
 
-    def add_job(self, run, args=(), interval=1.0, times=None):
-        """
-        Adds a job to the scheduler.
-
-        :param run: function to run
-        :param args: arguments to give to that function.
-        :param interval: in seconds, how often should the job be run.
-        :param times: limit on number of executions.
-        :return: Reference to the job added.
-        """
-        job = Module(self, process=run, args=args, interval=interval, times=times)
-        self.jobs.append(job)
-        return job
-
-    def run(self):
-        """
-        Scheduler main loop.
-        Check the Scheduler thread state, and whether it should abort or pause.
-        Check each job, and if that job is scheduled to run. Executes that job.
-        :return:
-        """
-        self.state = STATE_ACTIVE
-        while self.state != STATE_END:
-            time.sleep(0.005)  # 200 ticks a second.
-            if self.state == STATE_TERMINATE:
-                break
-            while self.state == STATE_PAUSE:
-                # The scheduler is paused.
-                time.sleep(0.1)
-            if self.state == STATE_TERMINATE:
-                break
-            jobs = self.jobs
-            jobs_update = False
-            for job in jobs:
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job.next_run = 0  # Set to zero while running.
-                    if job.times is not None:
-                        job.times = job.times - 1
-                        if job.times <= 0:
-                            jobs_update = True
-                        if job.times < 0:
-                            continue
-                    try:
-                        if isinstance(jobs, int):
-                            job.process(job.args[0])
-                        elif isinstance(job.args, tuple):
-                            job.process(*job.args)
-                        else:
-                            job.process(job.args)
-                    except:
-                        import sys
-                        sys.excepthook(*sys.exc_info())
-                    job.last_run = time.time()
-                    job.next_run += job.last_run + job.interval
-            if jobs_update:
-                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
-        self.state = STATE_END
-
-        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
-        self.shutdown(self.device_root.channel_open('shutdown'))
-
-    def _start_debugging(self):
-        """
-        Debug function hooks all functions within the device with a debug call that saves the data to the disk and
-        prints that information.
-
-        :return:
-        """
-        import functools
-        import datetime
-        import types
-        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
-        debug_file = open(filename, "a")
-        debug_file.write("\n\n\n")
-
-        def debug(func, obj):
-            @functools.wraps(func)
-            def wrapper_debug(*args, **kwargs):
-                args_repr = [repr(a) for a in args]
-
-                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
-                signature = ", ".join(args_repr + kwargs_repr)
-                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
-                debug_file.write(start + '\n')
-                print(start)
-                t = time.time()
-                value = func(*args, **kwargs)
-                t = time.time() - t
-                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
-                print(finish)
-                debug_file.write(finish + '\n')
-                debug_file.flush()
-                return value
-
-            return wrapper_debug
-
-        attach_list = [modules for modules, module_name in self.instances['module'].items()]
-        attach_list.append(self)
-        for obj in attach_list:
-            for attr in dir(obj):
-                if attr.startswith('_'):
-                    continue
-                fn = getattr(obj, attr)
-                if not isinstance(fn, types.FunctionType) and \
-                        not isinstance(fn, types.MethodType):
-                    continue
-                setattr(obj, attr, debug(fn, obj))
-
-    def execute(self, control_name, *args):
-        try:
-            self.instances['control'][control_name](*args)
-        except KeyError:
-            pass
-
-    def signal(self, code, *message):
-        if self._uid != 0:
-            code = '%d;%s' % (self._uid, code)
-        if self.device_root is not None and self.device_root is not self:
-            self.device_root.signal(code, *message)
-
-    def last_signal(self, signal):
-        if self._uid != 0:
-            signal = '%d;%s' % (self._uid, signal)
-        if self.device_root is not None and self.device_root is not self:
-            try:
-                return self.device_root.last_signal(signal)
-            except AttributeError:
-                pass
-        return None
-
-    def listen(self, signal, funct):
-        if self._uid != 0:
-            signal = '%d;%s' % (self._uid, signal)
-        if self.device_root is not None and self.device_root is not self:
-            self.device_root.listen(signal, funct)
-
-    def unlisten(self, signal, funct):
-        if self._uid != 0:
-            signal = '%d;%s' % (self._uid, signal)
-        if self.device_root is not None and self.device_root is not self:
-            self.device_root.unlisten(signal, funct)
-
-    def state(self):
-        return self.state
-
-    def resume(self):
-        self.state = STATE_ACTIVE
-
-    def pause(self):
-        self.state = STATE_PAUSE
-
-    def stop(self):
-        self.state = STATE_TERMINATE
-
-    # Channel processing
-
-    def add_greet(self, channel, greet):
-        self.greet[channel] = greet
-        if channel in self.channels:
-            self.channels[channel](greet)
-
-    def add_watcher(self, channel, monitor_function):
-        if channel not in self.watchers:
-            self.watchers[channel] = [monitor_function]
-        else:
-            for q in self.watchers[channel]:
-                if q is monitor_function:
-                    return  # This is already being watched by that.
-            self.watchers[channel].append(monitor_function)
-        if channel in self.greet:
-            monitor_function(self.greet[channel])
-        if channel in self.buffer:
-            for line in self.buffer[channel]:
-                monitor_function(line)
-
-    def remove_watcher(self, channel, monitor_function):
-        self.watchers[channel].remove(monitor_function)
-
-    def channel_open(self, channel, buffer=0):
-        if channel not in self.channels:
-            def chan(message):
-                if channel in self.watchers:
-                    for w in self.watchers[channel]:
-                        w(message)
-                if buffer <= 0:
-                    return
-                try:
-                    buff = self.buffer[channel]
-                except KeyError:
-                    buff = list()
-                    self.buffer[channel] = buff
-                buff.append(message)
-                if len(buff) + 10 > buffer:
-                    self.buffer[channel] = buff[-buffer:]
-
-            self.channels[channel] = chan
-            if channel in self.greet:
-                chan(self.greet[channel])
-        return self.channels[channel]
-
-    # Kernel object registration
-
-    def register(self, object_type, name, obj):
-        if object_type not in self.registered:
-            self.registered[object_type] = {}
-        self.registered[object_type][name] = obj
-        try:
-            obj.sub_register(self)
-        except AttributeError:
-            pass
-
-    def register_module(self, name, obj):
-        self.register('module', name, obj)
-
-    def register_device(self, name, obj):
-        self.register('device', name, obj)
-
-    def register_pipe(self, name, obj):
-        self.register('pipe', name, obj)
-
-    def register_modification(self, name, obj):
-        self.register('modification', name, obj)
-
-    def register_effect(self, name, obj):
-        self.register('effect', name, obj)
-
-    # Device kernel object
-
-    def is_root(self):
-        return self.device_root is None or self.device_root is self
-
-    def device_instance_open(self, device_name, instance_name=None, **kwargs):
-        if instance_name is None:
-            instance_name = device_name
-        return self.open('device', device_name, self, instance_name=instance_name, **kwargs)
-
-    def device_instance_close(self, name):
-        self.close('device', name)
-
-    def device_instance_remove(self, name):
-        if name in self.instances['device']:
-            del self.instances['device'][name]
-
-    def find(self, type_name, name):
-        """
-        Finds a loaded instance. Or returns None if not such instance.
-
-        Note name is not necessarily the type of instance. It could be the named value of the instance.
-
-        :param type_name: The type of instance to find.
-        :param name: The name of this instance.
-        :return: The instance if found, otherwise none.
-        """
-        if type_name in self.instances:
-            if name in self.instances[type_name]:
-                return self.instances[type_name][name]
-        return None
-
-    def using(self, type_name, object_name, *args, **kwargs):
-        return self.open(type_name, object_name, *args, **kwargs)
-
-    def open(self, type_name, object_name, *args, **kwargs):
-        """
-        Opens a registered module. If that module already exists it returns the already open module.
-
-        Two special kwargs are passed to this. 'instance_name' and 'sub'. These control the name under which
-        the module is registered. Instance_name replaces the default, which registers the instance under the object_name
-        whereas sub provides a suffixed name 'object_name:sub'.
-
-        If the module already exists, the restore function is called on that object, if it exists, with the same args
-        and kwargs that were intended for the init() routine.
-
-        :param type_name: Type of object being opened.
-        :param object_name: Name of object being opened.
-        :param args: Args to pass to newly opened module.
-        :param kwargs: Kwargs to pass to newly opened module.
-        :return: Opened module.
-        """
-        if 'instance_name' in kwargs:
-            instance_name = kwargs['instance_name']
-            del kwargs['instance_name']
-        else:
-            instance_name = object_name
-
-        if 'sub' in kwargs:
-            instance_name = "%s:%s" % (instance_name, kwargs['sub'])
-            del kwargs['sub']
-
-        find = self.find(type_name, instance_name)
-        if find is not None:
-            try:
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-
-        if self.device_root is None or self.device_root is self:
-            module_object = self.registered[type_name][object_name]
-        else:
-            module_object = self.device_root.registered[type_name][object_name]
-        instance = module_object(*args, **kwargs)
-        instance.attach(self, name=instance_name, channel=self.channel_open('open'))
-        self.add(type_name, instance_name, instance)
-        return instance
-
-    def add(self, type_name, instance_name, instance):
-        if type_name not in self.instances:
-            self.instances[type_name] = {}
-        self.instances[type_name][instance_name] = instance
-
-    def close(self, type_name, instance_name):
-        if type_name in self.instances and instance_name in self.instances[type_name]:
-            instance = self.instances[type_name][instance_name]
-            try:
-                instance.close()
-            except AttributeError:
-                pass
-            self.remove(type_name, instance_name)
-            instance.detach(self, channel=self.channel_open('close'))
-
-    def remove(self, type_name, instance_name):
-        if instance_name in self.instances[type_name]:
-            del self.instances[type_name][instance_name]
-
-    def module_instance_open(self, module_name, *args, instance_name=None, **kwargs):
-        return self.open('module', module_name, *args, instance_name=instance_name, **kwargs)
-
-    def module_instance_close(self, name):
-        self.close('module', name)
-
-    def module_instance_remove(self, name):
-        self.remove('module', name)
-
-    # Pipe kernel object
-
-    def pipe_instance_open(self, pipe_name, instance_name=None, **kwargs):
-        self.open('pipe', pipe_name, instance_name=instance_name, **kwargs)
-
-    # Control kernel object. Registered function calls.
-
-    def control_instance_add(self, control_name, function):
-        self.add('control', control_name, function)
-
-    def control_instance_remove(self, control_name):
-        self.remove('control', control_name)
-
-    # Thread kernel object. Registered Threads.
-
-    def thread_instance_add(self, thread_name, obj):
-        self.add('thread', thread_name, obj)
-
-    def thread_instance_remove(self, thread_name):
-        self.remove('thread', thread_name)
-
-    def get_text_thread_state(self, state):
-        _ = self.device_root.translation
-        if state == STATE_INITIALIZE:
-            return _("Unstarted")
-        elif state == STATE_TERMINATE:
-            return _("Abort")
-        elif state == STATE_END:
-            return _("Finished")
-        elif state == STATE_PAUSE:
-            return _("Pause")
-        elif state == STATE_BUSY:
-            return _("Busy")
-        elif state == STATE_ACTIVE:
-            return _("Active")
-        elif state == STATE_IDLE:
-            return _("Idle")
-        elif state == STATE_UNKNOWN:
-            return _("Unknown")
-
-    def get_state(self, thread_name):
-        try:
-            return self.instances['thread'][thread_name].state()
-        except AttributeError:
-            return STATE_UNKNOWN
-
-    def classify(self, elements):
-        if self.device_root is not None and self.device_root is not self:
-            return self.device_root.classify(elements)
-
-    def load(self, pathname, **kwargs):
-        if self.device_root is not None and self.device_root is not self:
-            return self.device_root.load(pathname, **kwargs)
-
-    def load_types(self, all=True):
-        if self.device_root is not None and self.device_root is not self:
-            return self.device_root.load_types(all)
-
-    def save(self, pathname):
-        if self.device_root is not None and self.device_root is not self:
-            return self.device_root.save(pathname)
-
-    def save_types(self):
-        if self.device_root is not None and self.device_root is not self:
-            return self.device_root.save_types()
-
-
-class Kernel(Device):
-    """
-    The Kernel is the device root object. It stores device independent settings, values, and functions.
-
-    * It is itself a type of device. It has no root, and should be the DeviceRoot.
-    * Shared location of loaded elements data
-    * Registered loaders and savers.
-    * The persistent storage object
-    * The translation function
-    * The run later function
-    * The keymap object
-    """
-
-    def __init__(self, config=None):
-        Device.__init__(self, self, 0)
-        # Current Project.
-        self.device_name = "MeerK40t"
-        self.device_version = "0.6.5"
-        self.device_root = self
-
-        # Persistent storage if it exists.
-        if config is not None:
-            self.set_config(config)
-
-        # Translation function if exists.
-        self.translation = lambda e: e  # Default for this code is do nothing.
-
-        # Keymap/alias values
-        self.keymap = {}
-        self.alias = {}
-
-        self.run_later = lambda listener, message: listener(message)
-
-        self.register_module('Signaler', Signaler)
-        self.register_module('Elemental', Elemental)
-        self.register_module('Spooler', Spooler)
-
-    def boot(self):
-        """
-        Kernel boot sequence. This should be called after all the registered devices are established.
-        :return:
-        """
-        Device.boot(self)
-        self.boot_keymap()
-        self.boot_alias()
-        self.device_boot()
-
     def shutdown(self, channel=None):
         """
         Begins kernel shutdown procedure.
         """
         self.save_keymap_alias()
-        Device.shutdown(self, channel)
+        self.d_shutdown(self, channel)
         self.flush()
 
     def save_keymap_alias(self):
@@ -2544,13 +2256,14 @@ class Kernel(Device):
             try:
                 d = int(device)
             except ValueError:
+                # device is not integer and thus not a boot device.
                 continue
-            settings = self.derive(str(d))
-            device_name = settings.read_persistent(str, 'device_name', 'Lhystudios')
-            autoboot = settings.read_persistent(bool, 'autoboot', True)
-            if autoboot:
-                dev = self.device_instance_open(device_name, uid=d, instance_name=str(device), config=self._config)
-                dev.boot()
+            boot_device = self.derive(str(d))
+            boot_device.setting(str, 'device_name', 'Lhystudios')
+            boot_device.setting(bool, 'autoboot', True)
+            if boot_device.autoboot:
+                boot_device.activate("device/%s" % boot_device.device_name)
+                boot_device.boot()
 
     def device_add(self, device_type, device_uid):
         settings = self.derive(str(device_uid))
@@ -2563,3 +2276,22 @@ class Kernel(Device):
 
     def register_saver(self, name, obj):
         self.registered['save'][name] = obj
+
+    def get_text_thread_state(self, state):
+        _ = self.device_root.translation
+        if state == STATE_INITIALIZE:
+            return _("Unstarted")
+        elif state == STATE_TERMINATE:
+            return _("Abort")
+        elif state == STATE_END:
+            return _("Finished")
+        elif state == STATE_PAUSE:
+            return _("Pause")
+        elif state == STATE_BUSY:
+            return _("Busy")
+        elif state == STATE_ACTIVE:
+            return _("Active")
+        elif state == STATE_IDLE:
+            return _("Idle")
+        elif state == STATE_UNKNOWN:
+            return _("Unknown")

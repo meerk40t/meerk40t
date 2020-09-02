@@ -14,14 +14,15 @@ _ = wx.GetTranslation
 
 
 class DeviceManager(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, device, path, parent, *args, **kwds):
         # begin wxGlade: DeviceManager.__init__
+        self.device = device
         if parent is None:
             wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         else:
             wx.Frame.__init__(self, parent, -1, "",
                               style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((707, 337))
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
@@ -45,6 +46,11 @@ class DeviceManager(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        self.device.close(self.name)
+        self.Show()
+        self.device.setting(str, 'list_devices', '')
+        self.refresh_device_list()
+
     def on_close(self, event):
         item = self.devices_list.GetFirstSelected()
         if item != -1:
@@ -55,14 +61,9 @@ class DeviceManager(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
-        self.device.close('window', self.name)
-        self.Show()
-        self.device.setting(str, 'list_devices', '')
-        self.refresh_device_list()
 
     def finalize(self, channel=None):
         try:
@@ -162,13 +163,13 @@ class DeviceManager(wx.Frame, Module):
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
         try:
-            device = self.device.instances['device'][uid]
+            device = self.device.instances[uid]
         except KeyError:
             settings = self.device.derive(str(uid))
             device_name = settings.setting(str, 'device_name', 'Lhystudios')
-            device = self.device.open('device', device_name, root=self.device, uid=int(uid), instance_name=str(uid))
+            device = self.device.open('%s/device' % device_name)
         if device.state == STATE_UNKNOWN:
-            device.open('window', "MeerK40t", None)
+            device.open('window/MeerK40t', 'MeerK40t', None)
             device.boot()
             try:
                 self.Close()
@@ -181,7 +182,7 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        names = [name for name in self.device.registered['device']]
+        names = [name[7:] for name in self.device.register_match('device')]
         dlg = wx.SingleChoiceDialog(None, _('What type of device is being added?'), _('Device Type'), names)
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
@@ -227,7 +228,7 @@ class DeviceManager(wx.Frame, Module):
             dev = self.device.device_root.instances['device'][uid]
         except KeyError:
             return
-        dev.open('window', "Preferences", self)
+        dev.open('window/Preferences', 'Preferences', self)
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")

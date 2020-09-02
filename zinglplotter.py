@@ -79,6 +79,11 @@ class ZinglPlotter:
             event = self.process(event)
             for p in event:
                 yield p
+        event = self.process(None)
+        for p in event:
+            if p[0] is None:
+                break
+            yield p
 
     def process(self, event):
         """
@@ -154,7 +159,8 @@ class ZinglPlotter:
         """
         for event in plot:
             if event is None:
-                yield self.group_x, self.group_y, self.group_on
+                if self.group_x is not None and self.group_y is not None:
+                    yield self.group_x, self.group_y, self.group_on
                 self.group_dx = 0
                 self.group_dy = 0
                 return

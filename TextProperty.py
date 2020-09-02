@@ -9,11 +9,11 @@ _ = wx.GetTranslation
 
 
 class TextProperty(wx.Frame,  Module):
-    def __init__(self, parent, element, *args, **kwds):
+    def __init__(self, device, path, parent, element, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
-        wx.Frame.__init__(self, parent, -1, "",
+        wx.Frame.__init__(self, device, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, device, path)
         self.SetSize((317, 360))
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.element = element
@@ -85,7 +85,7 @@ class TextProperty(wx.Frame,  Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.device.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, element, *args, **kwds):
@@ -93,7 +93,7 @@ class TextProperty(wx.Frame,  Module):
         self.set_widgets()
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.device.close(self.name)
         self.Show()
         self.set_widgets()
 
