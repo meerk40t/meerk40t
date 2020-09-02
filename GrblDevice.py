@@ -44,8 +44,8 @@ class GrblDevice:
         :return:
         """
         self.write = print
-        device.open('module/Spooler', 'spooler')
-        device.open('module/GRBLInterpreter', 'interpreter')
+        device.activate('module/Spooler')
+        device.activate('module/GRBLInterpreter')
 
     def __len__(self):
         return 0

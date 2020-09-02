@@ -256,7 +256,7 @@ class CameraInterface(wx.Frame, Module, Job):
         :param uri:
         :return:
         """
-        self.device.open('module/Console', 'Console').write('window open CameraURI %s %s\n' % (self.settings_value, self.setting.uri))
+        self.device.open('module/Console').write('window open CameraURI %s %s\n' % (self.settings_value, self.setting.uri))
 
     def ip_menu_uri_change(self, uri):
         def function(event=None):

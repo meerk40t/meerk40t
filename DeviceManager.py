@@ -129,7 +129,7 @@ class DeviceManager(wx.Frame, Module):
             autoboot = settings.setting(bool, 'autoboot', True)
             location_name = settings.setting(str, 'location_name', 'Unknown')
             try:
-                device_obj = self.device.instances['device'][device]
+                device_obj = self.device.kernels[device]
                 state = device_obj.state
             except KeyError:
                 state = -1
@@ -148,7 +148,7 @@ class DeviceManager(wx.Frame, Module):
         uid = event.GetLabel()
         try:
             # If the device is booted change the autoboot settings.
-            device_obj = self.device.instances['device'][str(uid)]
+            device_obj = self.device.kernels[str(uid)]
             device_obj.setting(bool, 'autoboot', True)
             device_obj.autoboot = not device_obj.autoboot
             device_obj.write_persistent('autoboot', device_obj.autoboot)
@@ -163,13 +163,13 @@ class DeviceManager(wx.Frame, Module):
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
         try:
-            device = self.device.instances[uid]
+            device = self.device.kernels[uid]
         except KeyError:
             settings = self.device.derive(str(uid))
             device_name = settings.setting(str, 'device_name', 'Lhystudios')
-            device = self.device.open('%s/device' % device_name)
+            device = self.device.open('device/%s' % device_name)
         if device.state == STATE_UNKNOWN:
-            device.open('window/MeerK40t', 'MeerK40t', None)
+            device.open('window/MeerK40t', None)
             device.boot()
             try:
                 self.Close()
@@ -213,9 +213,9 @@ class DeviceManager(wx.Frame, Module):
         settings = self.device.derive(str(uid))
         settings.clear_persistent()
         try:
-            device = self.device.instances['device'][uid]
-            del self.device.instances['device'][uid]
-            device.instances['module']['MeerK40t'].Close()
+            device = self.device.kernels[uid]
+            del self.device.kernels[uid]
+            device.opened['window/MeerK40t'].Close()
         except (KeyError, AttributeError):
             pass
 
@@ -225,10 +225,10 @@ class DeviceManager(wx.Frame, Module):
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
         try:
-            dev = self.device.device_root.instances['device'][uid]
+            dev = self.device.device_root.kernels[uid]
         except KeyError:
             return
-        dev.open('window/Preferences', 'Preferences', self)
+        dev.open('window/Preferences', self)
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")

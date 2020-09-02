@@ -351,25 +351,27 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Windows Registered:'
-                for i, name in enumerate(kernel.registered['window']):
+                for i, name in enumerate(kernel.match('window')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Windows in Device %s:' % str(active_device._uid)
-                for i, name in enumerate(active_device.instances['window']):
-                    module = active_device.instances['window'][name]
+                yield 'Loaded Windows in Device %s:' % str(active_device._path)
+                for i, name in enumerate(active_device.opened):
+                    if not name.startswith('window'):
+                        continue
+                    module = active_device.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
                 yield '----------'
             else:
                 value = args[0]
+                window_name = args[1]
+                window_path = 'window/%s' % str(window_name)
                 if value == 'toggle':
                     index = args[1]
-                    if index in active_device.instances['window']:
+                    if window_path in active_device.opened:
                         value = 'close'
                     else:
                         value = 'open'
                 if value == 'open':
-                    window_name = args[1]
-                    window_path = 'window/%s' % str(window_name)
                     if window_path in kernel.registered:
                         parent_window = None
                         try:
@@ -381,9 +383,8 @@ class Console(Module, Pipe):
                     else:
                         yield "Window '%s' not found." % window_name
                 elif value == 'close':
-                    window_name = args[1]
-                    if index in active_device.instances['window']:
-                        active_device.close('window', window_name)
+                    if window_name in active_device.opened:
+                        active_device.close(window_name)
                     else:
                         yield "Window '%s' not found." % window_name
         elif command == 'set':
@@ -447,17 +448,17 @@ class Console(Module, Pipe):
                     name = None
                     if len(args) >= 3:
                         name = args[2]
-                    if index in kernel.registered['module']:
+                    if index in kernel.registered:
                         if name is not None:
-                            active_device.open('module', index, instance_name=None)
+                            active_device.open_as(index, name)
                         else:
-                            active_device.open('module', index)
+                            active_device.open(index)
                     else:
                         yield "Module '%s' not found." % index
                 elif value == 'close':
                     index = args[1]
-                    if index in active_device.instances['module']:
-                        active_device.close('module', index)
+                    if index in active_device.opened:
+                        active_device.close(index)
                     else:
                         yield "Module '%s' not found." % index
             return
@@ -544,8 +545,8 @@ class Console(Module, Pipe):
                 kernel.setting(str, 'device_name', 'Unknown')
                 kernel.setting(str, 'device_location', 'Unknown')
                 yield '%d: %s on %s' % (0, kernel.device_name, kernel.device_location)
-                for i, name in enumerate(kernel.instance_match('device')):
-                    device = kernel.instances[name]
+                for i, name in enumerate(kernel.kernels):
+                    device = kernel.kernels[name]
                     yield '%d: %s on %s' % (i + 1, device.device_name, device.device_location)
                 yield '----------'
             else:
@@ -559,9 +560,9 @@ class Console(Module, Pipe):
                     yield 'Device set: %s on %s' % \
                           (self.active_device.device_name, self.active_device.device_location)
                 else:
-                    for i, name in enumerate(kernel.instance_match('^\d+$')):
+                    for i, name in enumerate(kernel.kernels):
                         if i + 1 == value:
-                            self.active_device = kernel.instances[name]
+                            self.active_device = kernel.kernels[name]
                             self.active_device.setting(str, 'device_location', 'unknown')
                             yield 'Device set: %s on %s' % \
                                   (self.active_device.device_name, self.active_device.device_location)
@@ -1903,7 +1904,7 @@ class Console(Module, Pipe):
             port = 23
             tcp = True
             try:
-                server = active_device.open('module', 'LaserServer',
+                server = active_device.open('module/LaserServer',
                                             port=port,
                                             tcp=tcp,
                                             greet="Grbl 1.1e ['$' for help]\r\n")
@@ -1914,15 +1915,15 @@ class Console(Module, Pipe):
                 chan = 'server'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.open('module/GRBLEmulator', 'GRBLEmulator'))
+                server.set_pipe(active_device.open('module/GRBLEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
 
         elif command == "ruidaserver":
             try:
-                server = active_device.open('module', 'LaserServer', instance_name='ruidaserver', port=50200, tcp=False)
-                jog = active_device.open('module', 'LaserServer', instance_name='ruidajog', port=50207, tcp=False)
+                server = active_device.open_as('module/LaserServer', 'ruidaserver', port=50200, tcp=False)
+                jog = active_device.open_as('module/LaserServer', 'ruidajog', port=50207, tcp=False)
                 yield 'Ruida Data Server opened on port %d.' % 50200
                 yield 'Ruida Jog Server opened on port %d.' % 50207
                 chan = 'ruida'
@@ -1931,8 +1932,8 @@ class Console(Module, Pipe):
                 chan = 'server'
                 active_device.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.open('module/RuidaEmulator', 'RuidaEmulator'))
-                jog.set_pipe(active_device.open('module/RuidaEmulator', 'RuidaEmulator'))
+                server.set_pipe(active_device.open('module/RuidaEmulator'))
+                jog.set_pipe(active_device.open('module/RuidaEmulator'))
             except OSError:
                 yield 'Server failed.'
             return

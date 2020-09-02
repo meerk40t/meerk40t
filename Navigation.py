@@ -363,7 +363,7 @@ class Navigation(wx.Frame, Module):
 
         kernel.listen('emphasized', self.on_emphasized_elements_changed)
         device.listen('interpreter;position', self.on_position_update)
-        self.console = self.device.open('module/Console', 'Console')
+        self.console = self.device.open('module/Console')
         self.update_matrix_text()
         self.SetFocus()
 

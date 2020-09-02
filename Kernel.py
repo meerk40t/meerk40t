@@ -1572,7 +1572,7 @@ class Kernel:
 
             return wrapper_debug
 
-        attach_list = [modules for modules, module_name in self.instances['module'].items()]
+        attach_list = [modules for modules, module_name in self.opened.items()]
         attach_list.append(self)
         for obj in attach_list:
             for attr in dir(obj):
@@ -1884,16 +1884,26 @@ class Kernel:
         except KeyError:
             return None
 
-    def open(self, registered_path, instance_path, *args, **kwargs):
+    def open(self, registered_path, *args, **kwargs):
+        """
+        Opens a registered module with the same instance path as the registered path. This is fairly standard but should
+        not be used if the goal would be to open the same module several times.
+
+        :param registered_path: registered path of the given module.
+        :param args: args to open the module with.
+        :param kwargs: kwargs to open the module with.
+        :return:
+        """
+        return self.open_as(registered_path, registered_path, *args, **kwargs)
+
+    def open_as(self, registered_path, instance_path, *args, **kwargs):
         """
         Opens a registered module. If that module already exists it returns the already open module.
 
-        Two special kwargs are passed to this. 'instance_name' and 'sub'. These control the name under which
-        the module is registered. Instance_name replaces the default, which registers the instance under the object_name
-        whereas sub provides a suffixed name 'object_name:sub'.
+        Instance_name is the name under which this given module is opened under.
 
-        If the module already exists, the restore function is called on that object, if it exists, with the same args
-        and kwargs that were intended for the init() routine.
+        If the module already exists, the restore function is called on that object, if restore() exists, with the same
+        args and kwargs that were intended for the init() routine.
 
         :param registered_path: path of object being opened.
         :param instance_path: path of object should be attached.
@@ -1940,10 +1950,6 @@ class Kernel:
         except AttributeError:
             pass
         del self.opened[instance_path]
-        # try:
-        #     channel = self.channel_open('close')
-        # except AttributeError:
-        #     channel = None
 
     def threaded(self, func, thread_name=None):
         if thread_name is None:
@@ -2028,91 +2034,89 @@ class Kernel:
         self.detach(self, channel=channel)
         channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
-
-        # Stop all devices.
-        if 'device' in self.instances:
-            # Join and shutdown any child devices.
-            devices = self.instances['device']
-            del self.instances['device']
-            for device_name in devices:
-                device = devices[device_name]
-                channel(_("Device Shutdown Started: '%s'") % str(device))
-                device_thread = device.thread
-                device.stop()
-                if device_thread is not None:
-                    device_thread.join()
-                channel(_("Device Shutdown Finished: '%s'") % str(device))
+        #
+        # # Stop all devices.
+        # if device_name in self.kernels:
+        #     # Join and shutdown any child devices.
+        #     device = self.kernels[device_name]
+        #     del self.kernels[device_name]
+        #     channel(_("Device Shutdown Started: '%s'") % str(device))
+        #     # TODO: This may have fundamentally changed. Since not all devices have threads anymore.
+        #     device_thread = device.thread
+        #     device.stop()
+        #     if device_thread is not None:
+        #         device_thread.join()
+        #     channel(_("Device Shutdown Finished: '%s'") % str(device))
 
         # Stop all instances.
-        for type_name in list(self.instances):
-            if type_name in ('control', 'thread'):
+        for opened_name in list(self.opened):
+            if opened_name.startswith('thread'):
                 continue
-            for module_name in list(self.instances[type_name]):
-                obj = self.instances[type_name][module_name]
-                try:
-                    obj.stop()
-                    channel(_("Stopping %s %s: %s") % (module_name, type_name, str(obj)))
-                except AttributeError:
-                    pass
-                channel(_("Closing %s %s: %s") % (module_name, type_name, str(obj)))
-                self.close(type_name, module_name)
+            obj = self.opened[opened_name]
+            try:
+                obj.stop()
+                channel(_("Stopping %s: %s") % (opened_name, str(obj)))
+            except AttributeError:
+                pass
+            channel(_("Closing %s: %s") % (opened_name, str(obj)))
+            self.close(opened_name)
 
         # Stop/Wait for all threads.
-        if 'thread' in self.instances:
-            for thread_name in list(self.instances['thread']):
-                thread = None
-                try:
-                    thread = self.instances['thread'][thread_name]
-                except KeyError:
-                    channel(_("Thread %s exited safely %s") % (thread_name, str(thread)))
-                    continue
-                if not thread.is_alive:
-                    channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
-                    continue
-                channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+        threads = 0
+        for thread_name in list(self.opened):
+            if not thread_name.startswith('thread'):
+                continue
+            threads += 1
+            try:
+                thread = self.opened[thread_name]
+            except KeyError:
+                channel(_("Thread %s exited safely") % (thread_name))
+                continue
+            if not thread.is_alive:
+                channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
+                continue
+            channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+            try:
                 if thread is self.thread:
                     channel(_("%s is the current shutdown thread") % (thread_name))
                     continue
                     # Do not sleep thread waiting for that thread to die. This is that thread.
-                try:
-                    channel(_("Asking thread to stop."))
-                    thread.stop()
-                except AttributeError:
-                    pass
-                channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
-                thread.join()
-                channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
-        else:
+                channel(_("Asking thread to stop."))
+                thread.stop()
+            except AttributeError:
+                pass
+            channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+            thread.join()
+            channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
+        if threads == 0:
             channel(_("No threads required halting."))
 
         # Detach all instances.
-        for type_name in list(self.instances):
-            if type_name in ('control'):
-                continue
-            for module_name in list(self.instances[type_name]):
-                obj = self.instances[type_name][module_name]
-                try:
-                    obj.detach(self, channel=channel)
-                    channel(_("Shutting down %s %s: %s") % (module_name, type_name, str(obj)))
-                except AttributeError:
-                    pass
+        for opened_name in list(self.opened):
+            # TODO: This may require finding the attached and detaching them.
+            obj = self.opened[opened_name]
+            try:
+                obj.detach(self, channel=channel)
+                channel(_("Shutting down %s: %s") % (opened_name, str(obj)))
+            except AttributeError:
+                pass
 
         # Check for failures.
-        for type_name in list(self.instances):
-            if type_name in ('control'):
-                continue
-            for module_name in self.instances[type_name]:
-                obj = self.instances[type_name][module_name]
+        for opened_name in list(self.opened):
+            obj = self.opened[opened_name]
+            try:
                 if obj is self.thread:
                     continue  # Don't warn about failure to close current thread.
-                channel(_("WARNING: %s %s was not closed.") % (type_name, module_name))
+            except AttributeError:
+                pass
+            channel(_("WARNING: %s was not closed.") % (opened_name))
 
         channel(_("Shutdown."))
 
         shutdown_root = False
-        if not self.is_root():
+        if self != self._root:
             if 'device' in self.device_root.instances:
-                root_devices = self.device_root.instances['device']
+                root_devices = self.device_root.i['device']
                 if root_devices is None:
                     shutdown_root = True
                 else:

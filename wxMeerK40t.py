@@ -397,66 +397,66 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_INVERT), id=ID_MENU_SCREEN_INVERT)
         self.Bind(wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_FLIPXY), id=ID_MENU_SCREEN_FLIPXY)
 
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/About', 'About', self), id=wx.ID_ABOUT)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Alignment', 'Alignment', self), id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/CameraInterface', 'CameraInterface', self), id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Terminal', 'Terminal', self), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window/DeviceManager', 'DeviceManager', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/About', self), id=wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Alignment', self), id=ID_MENU_ALIGNMENT)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/CameraInterface', self), id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Terminal', self), id=ID_MENU_TERMINAL)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window/DeviceManager', self),
                   id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window/Keymap', 'Keymap', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window/Keymap', self),
                   id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Preferences', 'Preferences', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Preferences', self),
                   id=wx.ID_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window/Settings', 'Settings', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.device_root.open('window/Settings', self),
                   id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Rotary', 'Rotary', self), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Navigation', 'Navigation', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Rotary', self), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Navigation', self),
                   id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Notes', 'Notes', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Notes', self),
                   id=ID_MENU_NOTES)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Controller', 'Controller', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/Controller', self),
                   id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/UsbConnect', 'UsbConnect', self), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/JobSpooler', 'JobSpooler', self), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/UsbConnect', self), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU,
-                  lambda v: self.device.open('window/JobInfo', 'JobInfo', self, list(self.device.device_root.elements.ops())),
+                  lambda v: self.device.open('window/JobInfo', self, list(self.device.device_root.elements.ops())),
                   id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/JobInfo', 'JobInfo', self,
+                     lambda v: self.device.open('window/JobInfo', self,
                                                 list(self.device.device_root.elements.ops())),
                      id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
 
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/UsbConnect', 'UsbConnect', self), id=ID_USB)
+                     lambda v: self.device.open('window/UsbConnect', self), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Navigation', 'Navigation', self), id=ID_NAV)
+                     lambda v: self.device.open('window/Navigation', self), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Controller', 'Controller', self), id=ID_CONTROLLER)
+                     lambda v: self.device.open('window/Controller', self), id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Preferences', 'Preferences', self), id=ID_PREFERENCES)
+                     lambda v: self.device.open('window/Preferences', self), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.device_root.open('window/DeviceManager', 'DeviceManager', self), id=ID_DEVICES)
+                     lambda v: self.device.device_root.open('window/DeviceManager', self), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/CameraInterface', 'CameraInterface', self), id=ID_CAMERA)
+                     lambda v: self.device.open('window/CameraInterface', self), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/JobSpooler', 'JobSpooler', self), id=ID_SPOOLER)
+                     lambda v: self.device.open('window/JobSpooler', self), id=ID_SPOOLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Keymap', 'Keymap', self), id=ID_KEYMAP)
+                     lambda v: self.device.open('window/Keymap', self), id=ID_KEYMAP)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Notes', 'Notes', self), id=ID_NOTES)
+                     lambda v: self.device.open('window/Notes', self), id=ID_NOTES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Terminal', 'Terminal', self), id=ID_TERMINAL)
+                     lambda v: self.device.open('window/Terminal', self), id=ID_TERMINAL)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Operations', 'Operations', self), id=ID_OPERATIONS)
+                     lambda v: self.device.open('window/Operations', self), id=ID_OPERATIONS)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/Rotary', 'Rotary', self), id=ID_ROTARY)
+                     lambda v: self.device.open('window/Rotary', self), id=ID_ROTARY)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/RasterWizard', 'RasterWizard', self), id=ID_RASTER)
+                     lambda v: self.device.open('window/RasterWizard', self), id=ID_RASTER)
         self.main_statusbar = self.CreateStatusBar(3)
 
         # end wxGlade
@@ -571,7 +571,7 @@ class MeerK40t(wx.Frame, Module, Job):
             device.window_width = 300
         if device.window_height < 300:
             device.window_height = 300
-        self.widget_scene = device.open('module/Scene', 'scene')
+        self.widget_scene = device.open('module/Scene')
 
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
@@ -924,7 +924,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 self.save_recent(pathname)
                 self.device.device_root.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
-                    self.device.open('window/Notes', 'Notes', self)
+                    self.device.open('window/Notes', self)
                 if (self.device.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
                         (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
@@ -1131,7 +1131,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.widget_scene.event(event.GetPosition(), 'rightup')
 
     def on_focus_lost(self, event):
-        self.device.open('module/Console', 'Console').write("-laser\nend\n")
+        self.device.open('module/Console').write("-laser\nend\n")
         # event.Skip()
 
     def on_key_down(self, event):
@@ -1139,7 +1139,7 @@ class MeerK40t(wx.Frame, Module, Job):
         keymap = self.device.device_root.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
-            self.device.open('module/Console', 'Console').write(action + "\n")
+            self.device.open('module/Console').write(action + "\n")
         else:
             event.Skip()
 
@@ -1151,7 +1151,7 @@ class MeerK40t(wx.Frame, Module, Job):
             if action.startswith('+'):
                 # Keyup commands only trigger if the down command started with +
                 action = '-' + action[1:]
-                self.device.open('module/Console', 'Console').write(action + "\n")
+                self.device.open('module/Console').write(action + "\n")
         else:
             event.Skip()
 
@@ -1176,9 +1176,9 @@ class MeerK40t(wx.Frame, Module, Job):
         elif self.ribbon_position_units == 3:
             conversion, name, index = (1.0, "mil", 3)
         elif self.ribbon_position_units == 1:
-            conversion, name, index = (393.7, "cm",  1)
+            conversion, name, index = (393.7, "cm", 1)
         elif self.ribbon_position_units == 0:
-            conversion, name, index = (39.37, "mm",  0)
+            conversion, name, index = (39.37, "mm", 0)
         self.ribbon_position_name = name
         self.ribbon_position_x = (x0 / conversion)
         self.ribbon_position_y = (y0 / conversion)
@@ -1276,14 +1276,14 @@ class MeerK40t(wx.Frame, Module, Job):
             h = float(self.text_h.GetValue())
             self.ribbon_position_w = w
             self.ribbon_position_h = h
-        self.device.open('module', 'Console').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
-                                                                                      self.ribbon_position_name,
-                                                                                      self.ribbon_position_y,
-                                                                                      self.ribbon_position_name,
-                                                                                      self.ribbon_position_w,
-                                                                                      self.ribbon_position_name,
-                                                                                      self.ribbon_position_h,
-                                                                                      self.ribbon_position_name))
+        self.device.open('module').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                                           self.ribbon_position_name,
+                                                                           self.ribbon_position_y,
+                                                                           self.ribbon_position_name,
+                                                                           self.ribbon_position_w,
+                                                                           self.ribbon_position_name,
+                                                                           self.ribbon_position_h,
+                                                                           self.ribbon_position_name))
         self.update_ribbon_position()
 
     def on_text_pos_enter(self, event):
@@ -1332,7 +1332,7 @@ class MeerK40t(wx.Frame, Module, Job):
             self.load(pathname)
 
     def on_click_pause(self, event):
-        self.device.open("module/Console", "Console").write("control Realtime Pause_Resume\n")
+        self.device.open('module/Console').write("control Realtime Pause_Resume\n")
 
     def on_click_save(self, event):
         if self.working_file is None:
@@ -2077,15 +2077,15 @@ class RootNode(list):
         if obj is None:
             return
         if isinstance(obj, LaserOperation):
-            self.device.open('window/OperationProperty', 'OperationProperty', self.gui, obj)
+            self.device.open('window/OperationProperty', self.gui, obj)
         elif isinstance(obj, Path):
-            self.device.open('window/PathProperty', 'PathProperty', self.gui, obj)
+            self.device.open('window/PathProperty', self.gui, obj)
         elif isinstance(obj, SVGText):
-            self.device.open('window/TextProperty', 'TextProperty', self.gui, obj)
+            self.device.open('window/TextProperty', self.gui, obj)
         elif isinstance(obj, SVGImage):
-            self.device.open('window/ImageProperty', 'ImageProperty', self.gui, obj)
+            self.device.open('window/ImageProperty', self.gui, obj)
         elif isinstance(obj, SVGElement):
-            self.device.open('window/PathProperty', 'PathProperty', self.gui, obj)
+            self.device.open('window/PathProperty', self.gui, obj)
 
     def on_item_selection_changed(self, event):
         """
@@ -2374,7 +2374,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            self.device.open('module/Console', 'Console').write('%s\n' % console_command)
+            self.device.open('module/Console').write('%s\n' % console_command)
 
         return specific
 
@@ -2436,7 +2436,8 @@ class RootNode(list):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self.device.open('module/Console', 'Console').write('image threshold %f %f\n' % (threshold_min, threshold_max))
+                self.device.open('module/Console').write(
+                    'image threshold %f %f\n' % (threshold_min, threshold_max))
 
         return specific
 
@@ -2488,7 +2489,7 @@ class RootNode(list):
             bounds = OperationPreprocessor.bounding_box(node.parent)
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.device.open('module/Console', 'Console').write('rotate %frad %f %f\n' % (value, center_x, center_y))
+            self.device.open('module/Console').write('rotate %frad %f %f\n' % (value, center_x, center_y))
 
         return specific
 
@@ -2503,7 +2504,8 @@ class RootNode(list):
 
         def specific(event):
             center_x, center_y = self.elements.center()
-            self.device.open('module/Console', 'Console').write('scale %f %f %f %f\n' % (value, value, center_x, center_y))
+            self.device.open('module/Console').write(
+                'scale %f %f %f %f\n' % (value, value, center_x, center_y))
 
         return specific
 
@@ -2535,9 +2537,9 @@ class RootNode(list):
             elements = kernel.elements
             node = remove_node
             if node.type == NODE_ELEMENT:
-                self.device.open('module/Console', 'Console').write('element delete\n')
+                self.device.open('module/Console').write('element delete\n')
             elif node.type == NODE_OPERATION:
-                self.device.open('module/Console', 'Console').write('operation delete\n')
+                self.device.open('module/Console').write('operation delete\n')
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
                 elements.remove_files([node.filepath])
@@ -2624,7 +2626,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window/JobInfo', 'JobInfo', self.gui, list(self.elements.ops(selected=True)))
+            self.device.open('window/JobInfo', self.gui, list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 
@@ -2988,7 +2990,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.5')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.7.0')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

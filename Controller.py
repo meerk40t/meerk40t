@@ -52,7 +52,7 @@ class Controller(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRL, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window/BufferView', 'BufferView', self), self.button_buffer_viewer)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.device.open('window/BufferView', self), self.button_buffer_viewer)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause_resume, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_emergency_stop, self.button_stop)
         # end wxGlade
@@ -116,7 +116,7 @@ class Controller(wx.Frame, Module):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
-        for control_name, control in self.device.instances['control'].items():
+        for control_name, control in self.device.match('control'):
             gui.Bind(wx.EVT_MENU, self.device_execute(control_name),
                      path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)

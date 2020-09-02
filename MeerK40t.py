@@ -27,7 +27,7 @@ for full details.
 """
 
 kernel = Kernel()
-kernel.device_version = "0.6.5"
+kernel.device_version = "0.7.0"
 kernel.device_name = "MeerK40t"
 
 Kernel.sub_register(kernel)
@@ -71,7 +71,7 @@ kernel.register('disabled-device/GRBL', GrblDevice)
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
     kernel.register('module/wxMeerK40t', wxMeerK40t)
-    meerk40tgui = kernel.open('module/wxMeerK40t', 'gui')
+    meerk40tgui = kernel.open('module/wxMeerK40t')
 
 kernel.boot()
 device = None
@@ -83,7 +83,8 @@ for key in kernel.kernels:
 if device is None:
     if args.no_gui:
         # Without a booted device, if also no gui, just start a default device.
-        device = kernel.open('device/Lhystudios', '1')
+        device = kernel.derive('1')
+        device.activate('device/Lhystudios')
         device.boot()
         pass
     else:
@@ -99,13 +100,13 @@ if device is None:
             # There are no device entries in the kernel.
             kernel.device_add('Lhystudios', 1)
             kernel.device_boot()
-            for key, d in kernel.instances['device'].items():
+            for key, d in kernel.kernels.items():
                 device = d
                 break
         if device is None:
             #  Set device to kernel and start the DeviceManager
             device = kernel
-            kernel.open('window/DeviceManager', 'DeviceManager', None)
+            kernel.open('window/DeviceManager', None)
 
 
 if args.verbose:
@@ -154,10 +155,10 @@ if device is not kernel:  # We can process this stuff only with a real device.
             device.grbl_home_y = args.adjust_y
         if args.adjust_x is not None:
             device.grbl_home_x = args.adjust_x
-        console = device.open('module/Console', 'Console').write('grblserver\n')
+        console = device.open('module/Console').write('grblserver\n')
 
     if args.ruida:
-        console = device.open('module/Console', 'Console').write('ruidaserver\n')
+        console = device.open('module/Console').write('ruidaserver\n')
 
     if args.auto:
         # Automatically classify and start the job.
@@ -193,13 +194,13 @@ if args.output is not None:
     kernel.save(os.path.realpath(args.output.name))
 if args.batch:
     device.add_watcher('console', print)
-    console = device.open('module/Console', 'Console')
+    console = device.open('module/Console')
     with args.batch as batch:
         for line in batch:
             console.write(line.strip() + '\n')
     device.remove_watcher('console', print)
 if args.console:
-    console = device.open('module/Console', 'Console')
+    console = device.open('module/Console')
     device.add_watcher('console', print)
     kernel.add_watcher('shutdown', print)
     while True:
@@ -217,7 +218,7 @@ if not args.no_gui:
             device = kernel.kernels[key]
             try:
                 if device.autoboot:
-                    device.open('window/MeerK40t', 'MeerK40t', None)
+                    device.open('window/MeerK40t', None)
             except AttributeError:
                 pass
         meerk40tgui.MainLoop()

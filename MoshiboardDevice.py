@@ -49,9 +49,9 @@ class MoshiboardDevice:
         :param name:
         :return:
         """
-        pipe = device.open('module/MoshiboardController', 'pipe')
-        device.open('module/MoshiInterpreter', 'interpreter')
-        device.open('module/Spooler', 'spooler')
+        device.activate('module/MoshiboardController')
+        device.activate('module/MoshiInterpreter')
+        device.activate('module/Spooler')
 
 
 class MoshiInterpreter(Interpreter):

@@ -217,7 +217,7 @@ class JobInfo(wx.Frame, Module):
 
     def on_button_job_spooler(self, event=None):  # wxGlade: JobInfo.<event_handler>
         if self.device.device_root.auto_spooler:
-            self.device.open('window/JobSpooler', 'JobSpooler', self.GetParent())
+            self.device.open('window/JobSpooler', self.GetParent())
 
     def on_button_start_job(self, event):  # wxGlade: JobInfo.<event_handler>
         if len(self.preprocessor.commands) == 0:
@@ -237,7 +237,7 @@ class JobInfo(wx.Frame, Module):
             return
         obj = self.operations[node_index]
         if isinstance(obj, LaserOperation):
-            self.device.open('window/OperationProperty', 'OperationProperty', self, obj)
+            self.device.open('window/OperationProperty', self, obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>
