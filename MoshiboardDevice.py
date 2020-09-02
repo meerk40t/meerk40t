@@ -38,8 +38,8 @@ class MoshiboardDevice:
 
     @staticmethod
     def sub_register(device):
-        device.register('module/MoshiInterpreter', MoshiInterpreter)
-        device.register('module/MoshiboardController', MoshiboardController)
+        device.register('modifier/MoshiInterpreter', MoshiInterpreter)
+        device.register('modifier/MoshiboardController', MoshiboardController)
 
     def initialize(self, device, channel=None):
         """
@@ -49,9 +49,9 @@ class MoshiboardDevice:
         :param name:
         :return:
         """
-        device.activate('module/MoshiboardController')
-        device.activate('module/MoshiInterpreter')
-        device.activate('module/Spooler')
+        device.activate('modifier/MoshiboardController')
+        device.activate('modifier/MoshiInterpreter')
+        device.activate('modifier/Spooler')
 
 
 class MoshiInterpreter(Interpreter):

@@ -38,7 +38,7 @@ class RuidaDevice:
 
     @staticmethod
     def sub_register(device):
-        device.register('module/RuidaInterpreter', RuidaInterpreter)
+        device.register('modifier/RuidaInterpreter', RuidaInterpreter)
         device.register('load/RDLoader', RDLoader)
         device.register('module/RuidaEmulator', RuidaEmulator)
 

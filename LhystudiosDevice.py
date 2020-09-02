@@ -59,17 +59,18 @@ class LhystudiosDevice(Modifier):
 
     @staticmethod
     def sub_register(device):
-        device.register('module/LhymicroInterpreter', LhymicroInterpreter)
-        device.register('module/LhystudioController', LhystudioController)
+        device.register('modifier/LhymicroInterpreter', LhymicroInterpreter)
+        device.register('modifier/LhystudioController', LhystudioController)
         device.register('load/EgvLoader', EgvLoader)
 
     def attach(self, device, name=None, channel=None):
         self.device = device
-        device.activate('module/Scheduler')
-        device.activate('module/Signaler', device)
-        device.activate('module/LhystudioController')
-        device.activate('module/LhymicroInterpreter', device)
-        device.activate('module/Spooler')
+        device.activate('modifier/Channels')
+        device.activate('modifier/Scheduler')
+        device.activate('modifier/Signaler', device)
+        device.activate('modifier/LhystudioController')
+        device.activate('modifier/LhymicroInterpreter', device)
+        device.activate('modifier/Spooler')
 
         device.setting(bool, 'quit', False)
         device.quit = False

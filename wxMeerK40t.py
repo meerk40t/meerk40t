@@ -17,7 +17,7 @@ from CameraInteface import CameraInterface
 from Controller import Controller
 from DeviceManager import DeviceManager
 from ImageProperty import ImageProperty
-from JobInfo import JobInfo
+from JobPreview import JobPreview
 from JobSpooler import JobSpooler
 from Kernel import *
 from Keymap import Keymap
@@ -419,14 +419,14 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/UsbConnect', self), id=ID_MENU_USB)
         self.Bind(wx.EVT_MENU, lambda v: self.device.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU,
-                  lambda v: self.device.open('window/JobInfo', self, list(self.device.device_root.elements.ops())),
+                  lambda v: self.device.open('window/JobPreview', self, list(self.device.device_root.elements.ops())),
                   id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.device.open('window/JobInfo', self,
+                     lambda v: self.device.open('window/JobPreview', self,
                                                 list(self.device.device_root.elements.ops())),
                      id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
@@ -693,7 +693,11 @@ class MeerK40t(wx.Frame, Module, Job):
             event.Veto()
         else:
             self.state = 5
-            self.device.close(self.name)
+            try:
+                channel = self.device.open_channel('shutdown')
+            except AttributeError:
+                channel = print
+            self.device.shutdown(channel)
             event.Skip()  # Call destroy as regular.
 
     def finalize(self, channel=None):
@@ -918,7 +922,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.device.device_root.setting(bool, 'uniform_svg', False)
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
-            results = self.device.device_root.load(pathname, channel=self.device.channel_open('load'))
+            results = self.device.device_root.load(pathname, channel=self.device.device_root.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
                 self.save_recent(pathname)
@@ -2626,7 +2630,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.device.open('window/JobInfo', self.gui, list(self.elements.ops(selected=True)))
+            self.device.open('window/JobPreview', self.gui, list(self.elements.ops(selected=True)))
 
         return open_jobinfo_window
 
@@ -2920,7 +2924,7 @@ class wxMeerK40t(wx.App, Module):
         device.register('window/Notes', Notes)
         device.register('window/Controller', Controller)
         device.register('window/JobSpooler', JobSpooler)
-        device.register('window/JobInfo', JobInfo)
+        device.register('window/JobPreview', JobPreview)
         device.register('window/BufferView', BufferView)
         device.register('window/Adjustments', Adjustments)
         device.register('window/RasterWizard', RasterWizard)

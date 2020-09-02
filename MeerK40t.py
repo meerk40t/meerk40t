@@ -31,9 +31,6 @@ kernel.device_version = "0.7.0"
 kernel.device_name = "MeerK40t"
 
 Kernel.sub_register(kernel)
-kernel.activate('module/Scheduler')
-kernel.activate('module/Signaler', kernel)
-kernel.activate('module/Elemental')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input', nargs='?', type=argparse.FileType('r'), help='input file')
@@ -68,12 +65,20 @@ kernel.register('disabled-device/Moshiboard', MoshiboardDevice)
 kernel.register('disabled-device/Ruida', RuidaDevice)
 kernel.register('disabled-device/GRBL', GrblDevice)
 
+kernel.activate('modifier/Channels')
+kernel.activate('modifier/Scheduler')
+kernel.activate('modifier/Signaler', kernel)
+kernel.activate('modifier/Elemental')
+kernel.activate('modifier/BindAlias')
+kernel.activate('modifier/Devices')
+
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
     kernel.register('module/wxMeerK40t', wxMeerK40t)
     meerk40tgui = kernel.open('module/wxMeerK40t')
 
 kernel.boot()
+
 device = None
 
 for key in kernel.kernels:

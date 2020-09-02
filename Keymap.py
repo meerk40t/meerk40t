@@ -96,7 +96,7 @@ class Keymap(wx.Frame, Module):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            self.device.default_keymap()
+            self.device.device_root.default_keymap()
             self.list_keymap.DeleteAllItems()
             self.reload_keymap()
 
@@ -105,7 +105,7 @@ class Keymap(wx.Frame, Module):
     def on_tree_popup_delete(self, element):
         def delete(event):
             try:
-                del self.device.keymap[element]
+                del self.device.device_root.keymap[element]
                 self.list_keymap.DeleteAllItems()
                 self.reload_keymap()
             except KeyError:

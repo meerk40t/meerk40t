@@ -62,7 +62,17 @@ class Job:
 class Modifier:
     """
     A modifier alters a given kernel object with some additional functionality, set during attachment and detachment.
+
+    These are also booted and shutdown with the kernel. However the modifications to the kernel are not expected to be
+    undone.
     """
+
+    def boot(self, channel=None):
+        """
+        Called when a kernel is booted, to boot the respective modifiers.
+        :return:
+        """
+        pass
 
     def attach(self, device, name=None, channel=None):
         """
@@ -71,6 +81,13 @@ class Modifier:
         This should be overloaded when making a specific module type for reuse, where using init would require specific
         subclassing, or for modules that are intended to expand the functionality of a device rather than compliment
         that functionality.
+        """
+        pass
+
+    def shutdown(self, channel=None):
+        """
+        Called when a kernel is shutdown, to shutdown the respective modifiers.
+        :return:
         """
         pass
 
@@ -655,7 +672,8 @@ class Signaler(Modifier, Job):
         _ = self.device.device_root.translation
         for key, listener in self.listeners.items():
             if len(listener):
-                channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
+                if channel is not None:
+                    channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
         self.last_message = {}
         self.listeners = {}
 
@@ -918,7 +936,7 @@ class Elemental(Modifier):
                     value = value.value
                 op_set.write_persistent(key, value)
 
-    def boot(self):
+    def boot(self, channel=None):
         kernel = self.device
         settings = kernel.derive('operations')
         subitems = list(settings.derivable())
@@ -1374,6 +1392,9 @@ class Scheduler(Modifier):
         self.state = STATE_TERMINATE
         kernel.thread.join()
 
+    def shutdown(self, channel=None):
+        self.state = STATE_TERMINATE
+
     def run(self):
         """
         Scheduler main loop.
@@ -1420,9 +1441,6 @@ class Scheduler(Modifier):
                 self.jobs = [job for job in jobs if job.times is None or job.times > 0]
         self.state = STATE_END
 
-        # If we aborted the thread, we trigger Kernel Shutdown in this thread.
-        self.device.shutdown(self.device.channel_open('shutdown'))
-
     def add_job(self, run, args=(), interval=1.0, times=None):
         """
         Adds a job to the scheduler.
@@ -1438,17 +1456,260 @@ class Scheduler(Modifier):
         return job
 
 
+class Channels(Modifier):
+    """
+    Functionality to add Channels to a Kernel.
+    """
+    def __init__(self):
+        Modifier.__init__(self)
+        self.device = None
+        self.channels = {}
+        self.watchers = {}
+        self.buffer = {}
+        self.greet = {}
+
+    def attach(self, kernel, name=None, channel=None):
+        self.device = kernel
+        kernel.add_greet = self.add_greet
+        kernel.add_watcher = self.add_watcher
+        kernel.remove_watcher = self.remove_watcher
+        kernel.channel_open = self.channel_open
+
+    def detach(self, device, channel=None):
+        pass
+
+    def add_greet(self, channel, greet):
+        self.greet[channel] = greet
+        if channel in self.channels:
+            self.channels[channel](greet)
+
+    def add_watcher(self, channel, monitor_function):
+        if channel not in self.watchers:
+            self.watchers[channel] = [monitor_function]
+        else:
+            for q in self.watchers[channel]:
+                if q is monitor_function:
+                    return  # This is already being watched by that.
+            self.watchers[channel].append(monitor_function)
+        if channel in self.greet:
+            monitor_function(self.greet[channel])
+        if channel in self.buffer:
+            for line in self.buffer[channel]:
+                monitor_function(line)
+
+    def remove_watcher(self, channel, monitor_function):
+        self.watchers[channel].remove(monitor_function)
+
+    def channel_open(self, channel, buffer=0):
+        if channel not in self.channels:
+            def chan(message):
+                if channel in self.watchers:
+                    for w in self.watchers[channel]:
+                        w(message)
+                if buffer <= 0:
+                    return
+                try:
+                    buff = self.buffer[channel]
+                except KeyError:
+                    buff = list()
+                    self.buffer[channel] = buff
+                buff.append(message)
+                if len(buff) + 10 > buffer:
+                    self.buffer[channel] = buff[-buffer:]
+
+            self.channels[channel] = chan
+            if channel in self.greet:
+                chan(self.greet[channel])
+        return self.channels[channel]
+
+
+class BindAlias(Modifier):
+    """
+    Functionality to add BindAlias commands.
+
+    Stub.
+    """
+    def __init__(self):
+        Modifier.__init__(self)
+        self.device = None
+        # Keymap/alias values
+        self.keymap = {}
+        self.alias = {}
+
+    def attach(self, device, name=None, channel=None):
+        self.device = device
+        device.keymap = self.keymap
+        device.alias = self.alias
+        device.default_keymap = self.default_keymap
+        device.default_alias = self.default_alias
+
+    def boot(self, channel=None):
+        self.boot_keymap()
+        self.boot_alias()
+
+    def shutdown(self, channel=None):
+        self.save_keymap_alias()
+
+    def save_keymap_alias(self):
+        keys = self.device.derive('keymap')
+        alias = self.device.derive('alias')
+
+        keys.clear_persistent()
+        alias.clear_persistent()
+
+        for key in self.keymap:
+            if key is None or len(key) == 0:
+                continue
+            keys.write_persistent(key, self.keymap[key])
+
+        for key in self.alias:
+            if key is None or len(key) == 0:
+                continue
+            alias.write_persistent(key, self.alias[key])
+
+    def boot_keymap(self):
+        self.keymap.clear()
+        prefs = self.device.derive('keymap')
+        prefs.load_persistent_string_dict(self.keymap)
+        if not len(self.keymap):
+            self.default_keymap()
+
+    def boot_alias(self):
+        self.alias.clear()
+        prefs = self.device.derive('alias')
+        prefs.load_persistent_string_dict(self.alias)
+        if not len(self.alias):
+            self.default_alias()
+
+    def default_keymap(self):
+        self.keymap["escape"] = "window open Adjustments"
+        self.keymap["d"] = "+right"
+        self.keymap["a"] = "+left"
+        self.keymap["w"] = "+up"
+        self.keymap["s"] = "+down"
+        self.keymap['numpad_down'] = '+translate_down'
+        self.keymap['numpad_up'] = '+translate_up'
+        self.keymap['numpad_left'] = '+translate_left'
+        self.keymap['numpad_right'] = '+translate_right'
+        self.keymap['numpad_multiply'] = '+scale_up'
+        self.keymap['numpad_divide'] = '+scale_down'
+        self.keymap['numpad_add'] = '+rotate_cw'
+        self.keymap['numpad_subtract'] = '+rotate_ccw'
+        self.keymap['control+a'] = 'element *'
+        self.keymap['control+i'] = 'element ~'
+        self.keymap['control+f'] = 'control Fill'
+        self.keymap['control+s'] = 'control Stroke'
+        self.keymap['control+r'] = 'rect 0 0 1000 1000'
+        self.keymap['control+e'] = 'circle 500 500 500'
+        self.keymap['control+d'] = 'element copy'
+        self.keymap['control+shift+h'] = 'scale -1 1'
+        self.keymap['control+shift+v'] = 'scale 1 -1'
+        self.keymap['control+1'] = "bind 1 move $x $y"
+        self.keymap['control+2'] = "bind 2 move $x $y"
+        self.keymap['control+3'] = "bind 3 move $x $y"
+        self.keymap['control+4'] = "bind 4 move $x $y"
+        self.keymap['control+5'] = "bind 5 move $x $y"
+        self.keymap['alt+r'] = 'raster'
+        self.keymap['alt+e'] = 'engrave'
+        self.keymap['alt+c'] = 'cut'
+        self.keymap['delete'] = 'element delete'
+        self.keymap['f4'] = "window open CameraInterface"
+        self.keymap['f5'] = "refresh"
+        self.keymap['f6'] = "window open JobSpooler"
+        self.keymap['f7'] = "window open Controller"
+        self.keymap['f8'] = "control Path"
+        self.keymap['f9'] = "control Transform"
+        self.keymap['control+f9'] = "control Flip"
+        self.keymap['f12'] = "window open Terminal"
+        self.keymap['control+alt+g'] = "image wizard Gold"
+        self.keymap['control+alt+x'] = "image wizard Xin"
+        self.keymap['control+alt+s'] = "image wizard Stipo"
+        self.keymap['alt+f12'] = "terminal_ruida"
+        self.keymap['alt+f11'] = 'terminal_watch'
+        self.keymap['pause'] = "control Realtime Pause_Resume"
+        self.keymap['home'] = "home"
+        self.keymap['control+z'] = "reset"
+        self.keymap['control+alt+shift+escape'] = 'reset_bind_alias'
+
+    def default_alias(self):
+        self.alias['+scale_up'] = "loop scale 1.02"
+        self.alias['+scale_down'] = "loop scale 0.98"
+        self.alias['+rotate_cw'] = "loop rotate 2"
+        self.alias['+rotate_ccw'] = "loop rotate -2"
+        self.alias['+translate_right'] = "loop translate 1mm 0"
+        self.alias['+translate_left'] = "loop translate -1mm 0"
+        self.alias['+translate_down'] = "loop translate 0 1mm"
+        self.alias['+translate_up'] = "loop translate 0 -1mm"
+        self.alias['+right'] = "loop right 1mm"
+        self.alias['+left'] = "loop left 1mm"
+        self.alias['+up'] = "loop up 1mm"
+        self.alias['+down'] = "loop down 1mm"
+        self.alias['-scale_up'] = "end scale 1.02"
+        self.alias['-scale_down'] = "end scale 0.98"
+        self.alias['-rotate_cw'] = "end rotate 2"
+        self.alias['-rotate_ccw'] = "end rotate -2"
+        self.alias['-translate_right'] = "end translate 1mm 0"
+        self.alias['-translate_left'] = "end translate -1mm 0"
+        self.alias['-translate_down'] = "end translate 0 1mm"
+        self.alias['-translate_up'] = "end translate 0 -1mm"
+        self.alias['-right'] = "end right 1mm"
+        self.alias['-left'] = "end left 1mm"
+        self.alias['-up'] = "end up 1mm"
+        self.alias['-down'] = "end down 1mm"
+        self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
+        self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
+        self.alias['reset_bind_alias'] = "bind default;alias default"
+
+
+class Devices(Modifier):
+    def __init__(self):
+        Modifier.__init__(self)
+        self.device = None
+
+    def attach(self, device, name=None, channel=None):
+        self.device = device
+        device.device_add = self.device_add
+
+    def boot(self, channel=None):
+        """
+        Boots any devices that are set to boot.
+
+        :return:
+        """
+        for device in self.device.derivable():
+            try:
+                d = int(device)
+            except ValueError:
+                # device is not integer and thus not a boot device.
+                continue
+            boot_device = self.device.derive(str(d))
+            boot_device.setting(str, 'device_name', 'Lhystudios')
+            boot_device.setting(bool, 'autoboot', True)
+            if boot_device.autoboot:
+                boot_device.activate("device/%s" % boot_device.device_name)
+                boot_device.boot()
+
+    def shutdown(self, channel=None):
+        pass
+
+    def device_add(self, device_type, device_uid):
+        settings = self.device.derive(str(device_uid))
+        settings.setting(str, 'device_name', device_type)
+        settings.setting(bool, 'autoboot', True)
+        settings.flush()
+
+
 class Kernel:
     """
     The Kernel defines a specific location for functional elements. The elements themselves are registered within the
     kernel and availible to all derived subkernel elements. Kernels can have functionality added to them dynamically.
     For example, activating 'Spooler' attaches a .spooler function to the kernel at that path location. The Modifiers
-    are activated by attaching and detaching to the kernel at a particular path location. The Modules are opened at a
+    are activated by attaching and detaching to the kernel at a particular path location. The Modules are opened at
     specific kernel path locations. Specific settings can be set on a Kernel by calling the .setting() function to
     assign a persistent value. Modifiers are called with .activate() at a kernel location. Modules are opened with the
     open() function.
 
-    * Shared location of loaded elements data
+    * Shared location of loaded elements data.
     * The translation function
     * The run later function
     * The keymap/alias object
@@ -1462,44 +1723,35 @@ class Kernel:
         self._path = path
         self.opened = {}
         self.attached = {}
+        self.translation = lambda e: e
+        self.run_later = lambda listener, message: listener(message)
+        self.state = STATE_UNKNOWN
+
         if root is not None:
             self.registered = root.registered
-            self.kernels = {}
+            self.kernels = root.kernels
             self._root = root._root
+            self.translation = root.translation
+            self.run_later = root.run_later
+            self.set_config(root._config)
         else:
             self.registered = {}
             self.kernels = {}
-            self._root = self
+            if config is not None:
+                self.set_config(config)
+            else:
+                self._config = None
         self.device_root = self._root
-        self.state = STATE_UNKNOWN
-
-        # Channel processing.
-        self.channels = {}
-        self.watchers = {}
-        self.buffer = {}
-        self.greet = {}
-
-        self._config = config
-
-        # Persistent storage if it exists.
-        if config is not None:
-            self.set_config(config)
-
-        # Translation function if exists.
-        self.translation = lambda e: e  # Default for this code is do nothing.
-
-        # Keymap/alias values
-        self.keymap = {}
-        self.alias = {}
-
-        self.run_later = lambda listener, message: listener(message)
 
     @staticmethod
     def sub_register(device):
-        device.register('module/Scheduler', Scheduler)
-        device.register('module/Signaler', Signaler)
-        device.register('module/Elemental', Elemental)
-        device.register('module/Spooler', Spooler)
+        device.register('modifier/Scheduler', Scheduler)
+        device.register('modifier/Signaler', Signaler)
+        device.register('modifier/Elemental', Elemental)
+        device.register('modifier/Spooler', Spooler)
+        device.register('modifier/BindAlias', BindAlias)
+        device.register('modifier/Channels', Channels)
+        device.register('modifier/Devices', Devices)
 
     def __str__(self):
         if self._path is None:
@@ -1954,6 +2206,7 @@ class Kernel:
     def threaded(self, func, thread_name=None):
         if thread_name is None:
             thread_name = func.__name__
+        thread_name = 'thread/%s' % thread_name
         thread = Thread(name=thread_name)
 
         def run():
@@ -1969,86 +2222,66 @@ class Kernel:
         thread.start()
         return thread
 
-    # Channel processing
-
-    def add_greet(self, channel, greet):
-        self.greet[channel] = greet
-        if channel in self.channels:
-            self.channels[channel](greet)
-
-    def add_watcher(self, channel, monitor_function):
-        if channel not in self.watchers:
-            self.watchers[channel] = [monitor_function]
-        else:
-            for q in self.watchers[channel]:
-                if q is monitor_function:
-                    return  # This is already being watched by that.
-            self.watchers[channel].append(monitor_function)
-        if channel in self.greet:
-            monitor_function(self.greet[channel])
-        if channel in self.buffer:
-            for line in self.buffer[channel]:
-                monitor_function(line)
-
-    def remove_watcher(self, channel, monitor_function):
-        self.watchers[channel].remove(monitor_function)
-
-    def channel_open(self, channel, buffer=0):
-        if channel not in self.channels:
-            def chan(message):
-                if channel in self.watchers:
-                    for w in self.watchers[channel]:
-                        w(message)
-                if buffer <= 0:
-                    return
-                try:
-                    buff = self.buffer[channel]
-                except KeyError:
-                    buff = list()
-                    self.buffer[channel] = buff
-                buff.append(message)
-                if len(buff) + 10 > buffer:
-                    self.buffer[channel] = buff[-buffer:]
-
-            self.channels[channel] = chan
-            if channel in self.greet:
-                chan(self.greet[channel])
-        return self.channels[channel]
-
     def boot(self):
         """
         Kernel boot sequence. This should be called after all the registered devices are established.
         :return:
         """
-        self.boot_keymap()
-        self.boot_alias()
-        self.device_boot()
+        for attached_name in list(self.attached):
+            attached = self.attached[attached_name]
+            attached.boot()
 
-    def d_shutdown(self, channel=None):
+    def shutdown(self, channel=None):
         """
-        Begins device shutdown procedure.
+        Starts full shutdown procedure. Each registered kernel is shutdown_kernel
+
+        :param channel:
+        :return:
         """
-        self.state = STATE_TERMINATE
-        _ = self.device_root.translation
+        _ = self.translation
+        for kernel_name in list(self.kernels):
+            kernel = self.kernels[kernel_name]
+            channel(_("Device Shutdown Started: '%s'") % str(kernel))
+            try:
+                kernel.shutdown_kernel(channel=channel)
+            except AttributeError:
+                pass
+            del self.kernels[kernel_name]
+            channel(_("Device Shutdown Finished: '%s'") % str(kernel))
+
+    def shutdown_kernel(self, channel=None):
+        """
+        Begins single kernel shutdown procedure.
+
+        Each attached modifier is detached and shutdown.
+        Each attached module is closed and finalized.
+
+        Each thread object is joined and waited on.
+        """
+        _ = self.translation
         channel(_("Shutting down."))
-        self.detach(self, channel=channel)
+
         channel(_("Saving Device State: '%s'") % str(self))
         self.flush()
-        #
-        # # Stop all devices.
-        # if device_name in self.kernels:
-        #     # Join and shutdown any child devices.
-        #     device = self.kernels[device_name]
-        #     del self.kernels[device_name]
-        #     channel(_("Device Shutdown Started: '%s'") % str(device))
-        #     # TODO: This may have fundamentally changed. Since not all devices have threads anymore.
-        #     device_thread = device.thread
-        #     device.stop()
-        #     if device_thread is not None:
-        #         device_thread.join()
-        #     channel(_("Device Shutdown Finished: '%s'") % str(device))
 
-        # Stop all instances.
+        # Shutdown all attached.
+        for attached_name in list(self.attached):
+            obj = self.attached[attached_name]
+            try:
+                obj.detach(self, channel=channel)
+                channel(_("Detaching modifier %s: %s") % (attached_name, str(obj)))
+            except AttributeError:
+                pass
+
+        for attached_name in list(self.attached):
+            obj = self.attached[attached_name]
+            try:
+                obj.shutdown(channel=channel)
+                channel(_("Shutting down %s: %s") % (attached_name, str(obj)))
+            except AttributeError:
+                pass
+
+        # Stop all instances
         for opened_name in list(self.opened):
             if opened_name.startswith('thread'):
                 continue
@@ -2059,14 +2292,14 @@ class Kernel:
             except AttributeError:
                 pass
             channel(_("Closing %s: %s") % (opened_name, str(obj)))
-            self.close(opened_name)
+            self.close(opened_name)  # Calls kernel's close. Detach and Close.
 
-        # Stop/Wait for all threads.
-        threads = 0
+        # Stop/Wait for all threads
+        thread_count = 0
         for thread_name in list(self.opened):
             if not thread_name.startswith('thread'):
                 continue
-            threads += 1
+            thread_count += 1
             try:
                 thread = self.opened[thread_name]
             except KeyError:
@@ -2080,7 +2313,6 @@ class Kernel:
                 if thread is self.thread:
                     channel(_("%s is the current shutdown thread") % (thread_name))
                     continue
-                    # Do not sleep thread waiting for that thread to die. This is that thread.
                 channel(_("Asking thread to stop."))
                 thread.stop()
             except AttributeError:
@@ -2088,18 +2320,8 @@ class Kernel:
             channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
             thread.join()
             channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
-        if threads == 0:
+        if thread_count == 0:
             channel(_("No threads required halting."))
-
-        # Detach all instances.
-        for opened_name in list(self.opened):
-            # TODO: This may require finding the attached and detaching them.
-            obj = self.opened[opened_name]
-            try:
-                obj.detach(self, channel=channel)
-                channel(_("Shutting down %s: %s") % (opened_name, str(obj)))
-            except AttributeError:
-                pass
 
         # Check for failures.
         for opened_name in list(self.opened):
@@ -2115,8 +2337,8 @@ class Kernel:
 
         shutdown_root = False
         if self != self._root:
-            if 'device' in self.device_root.instances:
-                root_devices = self.device_root.i['device']
+            for kernel_name in self.device_root.kernels:
+                root_devices = self.device_root.kernels[kernel_name]
                 if root_devices is None:
                     shutdown_root = True
                 else:
@@ -2131,155 +2353,6 @@ class Kernel:
             self.device_root.stop()
         else:
             self.device_root.resume()
-
-    def shutdown(self, channel=None):
-        """
-        Begins kernel shutdown procedure.
-        """
-        self.save_keymap_alias()
-        self.d_shutdown(self, channel)
-        self.flush()
-
-    def save_keymap_alias(self):
-        keys = self.derive('keymap')
-        alias = self.derive('alias')
-
-        keys.clear_persistent()
-        alias.clear_persistent()
-
-        for key in self.keymap:
-            if key is None or len(key) == 0:
-                continue
-            keys.write_persistent(key, self.keymap[key])
-
-        for key in self.alias:
-            if key is None or len(key) == 0:
-                continue
-            alias.write_persistent(key, self.alias[key])
-
-    def boot_keymap(self):
-        self.keymap = dict()
-        prefs = self.derive('keymap')
-        prefs.load_persistent_string_dict(self.keymap)
-        if not len(self.keymap):
-            self.default_keymap()
-
-    def boot_alias(self):
-        self.alias = dict()
-        prefs = self.derive('alias')
-        prefs.load_persistent_string_dict(self.alias)
-        if not len(self.alias):
-            self.default_alias()
-
-    def default_keymap(self):
-        self.keymap["escape"] = "window open Adjustments"
-        self.keymap["d"] = "+right"
-        self.keymap["a"] = "+left"
-        self.keymap["w"] = "+up"
-        self.keymap["s"] = "+down"
-        self.keymap['numpad_down'] = '+translate_down'
-        self.keymap['numpad_up'] = '+translate_up'
-        self.keymap['numpad_left'] = '+translate_left'
-        self.keymap['numpad_right'] = '+translate_right'
-        self.keymap['numpad_multiply'] = '+scale_up'
-        self.keymap['numpad_divide'] = '+scale_down'
-        self.keymap['numpad_add'] = '+rotate_cw'
-        self.keymap['numpad_subtract'] = '+rotate_ccw'
-        self.keymap['control+a'] = 'element *'
-        self.keymap['control+i'] = 'element ~'
-        self.keymap['control+f'] = 'control Fill'
-        self.keymap['control+s'] = 'control Stroke'
-        self.keymap['control+r'] = 'rect 0 0 1000 1000'
-        self.keymap['control+e'] = 'circle 500 500 500'
-        self.keymap['control+d'] = 'element copy'
-        self.keymap['control+shift+h'] = 'scale -1 1'
-        self.keymap['control+shift+v'] = 'scale 1 -1'
-        self.keymap['control+1'] = "bind 1 move $x $y"
-        self.keymap['control+2'] = "bind 2 move $x $y"
-        self.keymap['control+3'] = "bind 3 move $x $y"
-        self.keymap['control+4'] = "bind 4 move $x $y"
-        self.keymap['control+5'] = "bind 5 move $x $y"
-        self.keymap['alt+r'] = 'raster'
-        self.keymap['alt+e'] = 'engrave'
-        self.keymap['alt+c'] = 'cut'
-        self.keymap['delete'] = 'element delete'
-        self.keymap['f4'] = "window open CameraInterface"
-        self.keymap['f5'] = "refresh"
-        self.keymap['f6'] = "window open JobSpooler"
-        self.keymap['f7'] = "window open Controller"
-        self.keymap['f8'] = "control Path"
-        self.keymap['f9'] = "control Transform"
-        self.keymap['control+f9'] = "control Flip"
-        self.keymap['f12'] = "window open Terminal"
-        self.keymap['control+alt+g'] = "image wizard Gold"
-        self.keymap['control+alt+x'] = "image wizard Xin"
-        self.keymap['control+alt+s'] = "image wizard Stipo"
-        self.keymap['alt+f12'] = "terminal_ruida"
-        self.keymap['alt+f11'] = 'terminal_watch'
-        self.keymap['pause'] = "control Realtime Pause_Resume"
-        self.keymap['home'] = "home"
-        self.keymap['control+z'] = "reset"
-        self.keymap['control+alt+shift+escape'] = 'reset_bind_alias'
-
-    def default_alias(self):
-        self.alias['+scale_up'] = "loop scale 1.02"
-        self.alias['+scale_down'] = "loop scale 0.98"
-        self.alias['+rotate_cw'] = "loop rotate 2"
-        self.alias['+rotate_ccw'] = "loop rotate -2"
-        self.alias['+translate_right'] = "loop translate 1mm 0"
-        self.alias['+translate_left'] = "loop translate -1mm 0"
-        self.alias['+translate_down'] = "loop translate 0 1mm"
-        self.alias['+translate_up'] = "loop translate 0 -1mm"
-        self.alias['+right'] = "loop right 1mm"
-        self.alias['+left'] = "loop left 1mm"
-        self.alias['+up'] = "loop up 1mm"
-        self.alias['+down'] = "loop down 1mm"
-        self.alias['-scale_up'] = "end scale 1.02"
-        self.alias['-scale_down'] = "end scale 0.98"
-        self.alias['-rotate_cw'] = "end rotate 2"
-        self.alias['-rotate_ccw'] = "end rotate -2"
-        self.alias['-translate_right'] = "end translate 1mm 0"
-        self.alias['-translate_left'] = "end translate -1mm 0"
-        self.alias['-translate_down'] = "end translate 0 1mm"
-        self.alias['-translate_up'] = "end translate 0 -1mm"
-        self.alias['-right'] = "end right 1mm"
-        self.alias['-left'] = "end left 1mm"
-        self.alias['-up'] = "end up 1mm"
-        self.alias['-down'] = "end down 1mm"
-        self.alias['terminal_ruida'] = "window open Terminal;ruidaserver"
-        self.alias['terminal_watch'] = "window open Terminal;channel save usb;channel save send;channel save recv"
-        self.alias['reset_bind_alias'] = "bind default;alias default"
-
-    def device_boot(self):
-        """
-        Boots any devices that are set to boot.
-
-        :return:
-        """
-        for device in self.derivable():
-            try:
-                d = int(device)
-            except ValueError:
-                # device is not integer and thus not a boot device.
-                continue
-            boot_device = self.derive(str(d))
-            boot_device.setting(str, 'device_name', 'Lhystudios')
-            boot_device.setting(bool, 'autoboot', True)
-            if boot_device.autoboot:
-                boot_device.activate("device/%s" % boot_device.device_name)
-                boot_device.boot()
-
-    def device_add(self, device_type, device_uid):
-        settings = self.derive(str(device_uid))
-        settings.setting(str, 'device_name', device_type)
-        settings.setting(bool, 'autoboot', True)
-        settings.flush()
-
-    def register_loader(self, name, obj):
-        self.registered['load'][name] = obj
-
-    def register_saver(self, name, obj):
-        self.registered['save'][name] = obj
 
     def get_text_thread_state(self, state):
         _ = self.device_root.translation

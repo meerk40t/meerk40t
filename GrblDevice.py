@@ -32,7 +32,7 @@ class GrblDevice:
 
     @staticmethod
     def sub_register(device):
-        device.register('module/GRBLInterpreter', GRBLInterpreter)
+        device.register('modifier/GRBLInterpreter', GRBLInterpreter)
         device.register('module/GRBLEmulator', GRBLEmulator)
 
     def initialize(self, device, channel=None):
@@ -44,8 +44,8 @@ class GrblDevice:
         :return:
         """
         self.write = print
-        device.activate('module/Spooler')
-        device.activate('module/GRBLInterpreter')
+        device.activate('modifier/Spooler')
+        device.activate('modifier/GRBLInterpreter')
 
     def __len__(self):
         return 0
