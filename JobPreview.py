@@ -2,7 +2,7 @@ import wx
 
 from Kernel import Module
 from LaserOperation import *
-from icons import icons8_laser_beam_52, icons8_route_50
+from icons import icons8_laser_beam_52
 from OperationPreprocessor import OperationPreprocessor
 
 _ = wx.GetTranslation
@@ -15,6 +15,7 @@ class JobPreview(wx.Frame, Module):
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, device, path)
         self.SetSize((711, 629))
+        self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.panel_simulation = wx.Panel(self, wx.ID_ANY)
         self.slider_progress = wx.Slider(self, wx.ID_ANY, 10000, 0, 10000)
@@ -76,6 +77,7 @@ class JobPreview(wx.Frame, Module):
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_reduce_travel, self.check_reduce_travel_time)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_inner_first, self.check_cut_inner_first)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_reduce_directions, self.check_reduce_direction_changes)
@@ -97,6 +99,7 @@ class JobPreview(wx.Frame, Module):
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Preview Job")
+        self.combo_device.SetToolTip("Select the device to which to send the current job")
         self.list_operations.SetToolTip("Operations being added to the current job")
         self.panel_simulation.SetToolTip("Job Simulation")
         self.slider_progress.SetToolTip("Preview slider to set progress position")
@@ -135,7 +138,10 @@ class JobPreview(wx.Frame, Module):
         sizer_laser_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL)
         sizer_operation = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
+        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_1.Add(self.combo_device, 0, wx.EXPAND, 0)
+        sizer_1.Add(self.list_operations, 2, wx.EXPAND, 0)
+        sizer_main.Add(sizer_1, 2, wx.EXPAND, 0)
         sizer_main.Add(self.panel_simulation, 7, wx.EXPAND, 0)
         sizer_frame.Add(sizer_main, 1, wx.EXPAND, 0)
         sizer_frame.Add(self.slider_progress, 0, wx.EXPAND, 0)
@@ -264,6 +270,10 @@ class JobPreview(wx.Frame, Module):
             self.Close()
         except RuntimeError:
             pass
+
+    def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
+        print("Event handler 'on_combo_device' not implemented!")
+        event.Skip()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autostart = self.preview_menu.menu_autostart.IsChecked()
