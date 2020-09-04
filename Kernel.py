@@ -162,11 +162,11 @@ class Interpreter:
     objects that may also be common within devices.
     """
 
-    def __init__(self, kernel):
-        self.kernel = kernel
+    def __init__(self, context):
+        self.context = context
         self.process_item = None
         self.spooled_item = None
-        self.pipe = kernel.pipe
+        self.pipe = context.pipe
         self.extra_hold = None
 
         self.state = INTERPRETER_STATE_RAPID
@@ -194,8 +194,8 @@ class Interpreter:
         if self.spooled_item is not None:
             self.execute()
         else:
-            if self.kernel.quit:
-                self.kernel.stop()
+            if self.context.quit:
+                self.context.stop()
 
     def execute(self):
         """
@@ -219,11 +219,11 @@ class Interpreter:
             self.spooled_item = None
 
     def fetch_next_item(self):
-        element = self.kernel.spooler.peek()
+        element = self.context.spooler.peek()
         if element is None:
             return  # Spooler is empty.
 
-        self.kernel.spooler.pop()
+        self.context.spooler.pop()
         if isinstance(element, int):
             self.spooled_item = (element,)
         elif isinstance(element, tuple):
@@ -320,9 +320,9 @@ class Interpreter:
                         t()
             elif command == COMMAND_SIGNAL:
                 if isinstance(values, str):
-                    self.kernel.signal(values, None)
+                    self.context.signal(values, None)
                 elif len(values) >= 2:
-                    self.kernel.signal(values[0], *values[1:])
+                    self.context.signal(values[0], *values[1:])
         except AttributeError:
             pass
 
@@ -390,34 +390,34 @@ class Interpreter:
         self.plot_planner.laser_enabled = True
 
     def move(self, x, y):
-        self.kernel.current_x = x
-        self.kernel.current_y = y
+        self.context.current_x = x
+        self.context.current_y = y
 
     def cut(self, x, y):
-        self.kernel.current_x = x
-        self.kernel.current_y = y
+        self.context.current_x = x
+        self.context.current_y = y
 
     def home(self, *values):
-        self.kernel.current_x = 0
-        self.kernel.current_y = 0
+        self.context.current_x = 0
+        self.context.current_y = 0
 
     def ensure_rapid_mode(self, *values):
         if self.state == INTERPRETER_STATE_RAPID:
             return
         self.state = INTERPRETER_STATE_RAPID
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def ensure_finished_mode(self, *values):
         if self.state == INTERPRETER_STATE_FINISH:
             return
         self.state = INTERPRETER_STATE_FINISH
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def ensure_program_mode(self, *values):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
         self.state = INTERPRETER_STATE_PROGRAM
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def set_speed(self, speed=None):
         self.speed = speed
@@ -462,8 +462,8 @@ class Interpreter:
         self.is_relative = False
 
     def set_position(self, x, y):
-        self.kernel.current_x = x
-        self.kernel.current_y = y
+        self.context.current_x = x
+        self.context.current_y = y
 
     def wait(self, t):
         self.next_run = t
@@ -474,18 +474,18 @@ class Interpreter:
 
     def reset(self):
         self.spooled_item = None
-        self.kernel.spooler.clear_queue()
+        self.context.spooler.clear_queue()
         self.spooled_item = None
         self.extra_hold = None
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.kernel.current_x)
-        parts.append("y=%f" % self.kernel.current_y)
+        parts.append("x=%f" % self.context.current_x)
+        parts.append("y=%f" % self.context.current_y)
         parts.append("speed=%f" % self.speed)
         parts.append("power=%d" % self.power)
         status = ";".join(parts)
-        self.kernel.signal('interpreter;status', status)
+        self.context.signal('interpreter;status', status)
 
     def set_prop(self, mask):
         self.properties |= mask
@@ -658,13 +658,13 @@ class Elemental(Modifier):
         self._bounds = None
 
     def attach(self, channel=None):
-        device = self.context
-        device.elements = self
-        device.classify = self.classify
-        device.save = self.save
-        device.save_types = self.save_types
-        device.load = self.load
-        device.load_types = self.load_types
+        context = self.context
+        context.elements = self
+        context.classify = self.classify
+        context.save = self.save
+        context.save_types = self.save_types
+        context.load = self.load
+        context.load_types = self.load_types
 
     def register(self, obj):
         obj.wx_bitmap_image = None
@@ -784,8 +784,8 @@ class Elemental(Modifier):
         self.classify(self.elems())
 
     def finalize(self, channel=None):
-        kernel = self.context
-        settings = kernel.derive('operations')
+        context = self.context
+        settings = context.derive('operations')
         settings.clear_persistent()
         for i, op in enumerate(self.ops()):
             op_set = settings.derive(str(i))
@@ -1180,8 +1180,9 @@ class Elemental(Modifier):
                     self.add_op(op)
 
     def load(self, pathname, **kwargs):
-        for loader_name in self.context.match('load'):
-            loader = self.context.registered[loader_name]
+        kernel = self.context.kernel
+        for loader_name in kernel.match('load'):
+            loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
                     results = loader.load(self.context, pathname, **kwargs)
@@ -1200,16 +1201,19 @@ class Elemental(Modifier):
         return None
 
     def load_types(self, all=True):
+        kernel = self.context.kernel
         filetypes = []
         if all:
             filetypes.append('All valid types')
             exts = []
-            for loader_name, loader in self.context.registered['load'].items():
+            for loader_name in kernel.match('load'):
+                loader = kernel.registered[loader_name]
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
                         exts.append('*.%s' % ext)
             filetypes.append(';'.join(exts))
-        for loader_name, loader in self.context.registered['load'].items():
+        for loader_name in kernel.match('load'):
+            loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
@@ -1219,7 +1223,9 @@ class Elemental(Modifier):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        for save_name, saver in self.context.registered['save'].items():
+        kernel = self.context.kernel
+        for save_name in kernel.match('save'):
+            saver = kernel.registered[save_name]
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
                     saver.save(self.context, pathname, 'default')
@@ -1227,8 +1233,10 @@ class Elemental(Modifier):
         return False
 
     def save_types(self):
+        kernel = self.context.kernel
         filetypes = []
-        for saver_name, saver in self.context.registered['save'].items():
+        for save_name in kernel.match('save'):
+            saver = kernel.registered[save_name]
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % (extension))
@@ -1371,42 +1379,6 @@ class BindAlias(Modifier):
         self.alias['reset_bind_alias'] = "bind default;alias default"
 
 
-class Devices(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-
-    def attach(self, channel=None):
-        self.context.device_add = self.kernel_add
-
-    def boot(self, channel=None):
-        """
-        Boots any devices that are set to boot.
-
-        :return:
-        """
-        for device in self.context.derivable():
-            try:
-                d = int(device)
-            except ValueError:
-                # device is not integer and thus not a boot device.
-                continue
-            boot_device = self.context.derive(str(d))
-            boot_device.setting(str, 'device_name', 'Lhystudios')
-            boot_device.setting(bool, 'autoboot', True)
-            if boot_device.autoboot:
-                boot_device.activate("device/%s" % boot_device.device_name)
-                boot_device.boot()
-
-    def shutdown(self, channel=None):
-        pass
-
-    def device_add(self, device_type, device_uid):
-        settings = self.context.derive(str(device_uid))
-        settings.setting(str, 'device_name', device_type)
-        settings.setting(bool, 'autoboot', True)
-        settings.flush()
-
-
 class Context:
     """
     Contexts serve as path relevant snapshots of the kernel. These are are the primary interaction between the modules
@@ -1427,17 +1399,15 @@ class Context:
         subpath = str(subpath)
         if subpath.startswith('/'):
             return subpath[1:]
-        if self.path is None:
+        if self.path is None or self.path == '/':
             return subpath
         return "%s/%s" % (self.path, subpath)
 
     def derive(self, path):
         return self.kernel.get_context(self.abs_path(path))
 
-
     def get_context(self, path):
         return self.kernel.get_context(path)
-
 
     def derivable(self):
         for e in self.kernel.derivable(self.path):
@@ -1668,6 +1638,9 @@ class Kernel:
     """
 
     def __init__(self, config=None):
+        self.devices = {}
+        self.active = None
+
         self.contexts = {}
         self.threads = {}
         self.registered = {}
@@ -1702,7 +1675,6 @@ class Kernel:
         device.register('modifier/Elemental', Elemental)
         device.register('modifier/Spooler', Spooler)
         device.register('modifier/BindAlias', BindAlias)
-        device.register('modifier/Devices', Devices)
 
     def __str__(self):
         return "Kernel()"
@@ -1961,6 +1933,29 @@ class Kernel:
         """
         self.thread = self.threaded(self.run, 'Scheduler')
         self.signal_job = self.add_job(run=self.delegate_messages, interval=0.05)
+        for device in self.derivable('/'):
+            try:
+                d = int(device)
+            except ValueError:
+                # Devices are marked as integers.
+                continue
+            self.device_boot(d)
+
+    def device_boot(self, d, device_name=None, autoboot=True):
+        device_str = str(d)
+        if device_str in self.devices:
+            return self.devices[device_str]
+        boot_device = self.get_context(device_str)
+        boot_device.setting(str, 'device_name', device_name)
+        boot_device.setting(bool, 'autoboot', autoboot)
+        if boot_device.autoboot and boot_device.device_name is not None:
+            boot_device.activate("device/%s" % boot_device.device_name)
+            try:
+                boot_device.boot()
+            except AttributeError:
+                pass
+            self.devices[device_str] = boot_device
+            self.active = boot_device
 
     def shutdown(self, channel=None):
         """

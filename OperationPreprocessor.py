@@ -48,7 +48,7 @@ class OperationPreprocessor:
                     if op.operation == "Raster":
                         if len(op) == 1 and isinstance(op[0], SVGImage):
                             continue
-                        renderer = LaserRender(self.device.device_root)
+                        renderer = LaserRender(self.device)
                         bounds = OperationPreprocessor.bounding_box(op)
                         if bounds is None:
                             return None

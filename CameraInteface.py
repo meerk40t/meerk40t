@@ -18,7 +18,7 @@ class CameraInterface(wx.Frame, Module, Job):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
-        Job.__init__(self, device=context)
+        Job.__init__(self, context=context)
         if len(args) > 0 and args[0] >= 1:
             self.settings_value = args[0]
         else:
@@ -171,8 +171,8 @@ class CameraInterface(wx.Frame, Module, Job):
         # end wxGlade
 
     @staticmethod
-    def sub_register(device):
-        device.register('window/CameraURI', CameraURI)
+    def sub_register(context):
+        context.register('window/CameraURI', CameraURI)
 
     def on_close(self, event):
         if self.state == 5:
@@ -428,7 +428,7 @@ class CameraInterface(wx.Frame, Module, Job):
             self.interval = 5
         except AttributeError:
             return
-        self.context.threaded(self.threaded_image_fetcher)
+        self.context.kernel.threaded(self.threaded_image_fetcher)
         self.schedule()
 
     def open_camera(self, camera_index=0):
@@ -443,7 +443,7 @@ class CameraInterface(wx.Frame, Module, Job):
         self.setting.index = camera_index
         uri = self.get_camera_uri()
         if uri is not None:
-            self.camera_job = self.context.add_job(self.init_camera, times=1, interval=0.1)
+            self.camera_job = self.context.kernel.add_job(self.init_camera, times=1, interval=0.1)
 
     def close_camera(self):
         """

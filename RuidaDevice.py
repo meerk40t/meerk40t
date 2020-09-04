@@ -42,7 +42,7 @@ class RuidaDevice:
         device.register('load/RDLoader', RDLoader)
         device.register('module/RuidaEmulator', RuidaEmulator)
 
-    def initialize(self, device, channel=None):
+    def initialize(self, context, channel=None):
         """
         Device initialize.
         """
@@ -51,7 +51,7 @@ class RuidaDevice:
 
 class RuidaInterpreter(Interpreter):
     def __init__(self, pipe):
-        Interpreter.__init__(self,pipe=pipe)
+        Interpreter.__init__(self, pipe=pipe)
         self.pipe = pipe
         self.is_relative = True
         self.laser = False
@@ -70,13 +70,13 @@ class RuidaInterpreter(Interpreter):
         self.step = new_step
 
     def initialize(self, channel=None):
-        self.kernel.setting(bool, "swap_xy", False)
-        self.kernel.setting(bool, "flip_x", False)
-        self.kernel.setting(bool, "flip_y", False)
-        self.kernel.setting(bool, "home_right", False)
-        self.kernel.setting(bool, "home_bottom", False)
-        self.kernel.setting(int, "home_adjust_x", 0)
-        self.kernel.setting(int, "home_adjust_y", 0)
+        self.context.setting(bool, "swap_xy", False)
+        self.context.setting(bool, "flip_x", False)
+        self.context.setting(bool, "flip_y", False)
+        self.context.setting(bool, "home_right", False)
+        self.context.setting(bool, "home_bottom", False)
+        self.context.setting(int, "home_adjust_x", 0)
+        self.context.setting(int, "home_adjust_y", 0)
 
     def laser_on(self):
         pass
@@ -94,8 +94,8 @@ class RuidaInterpreter(Interpreter):
         pass
 
     def move(self, x, y):
-        sx = self.kernel.current_x
-        sy = self.kernel.current_y
+        sx = self.context.current_x
+        sy = self.context.current_y
         if self.is_relative:
             x += sx
             y += sy
@@ -159,8 +159,8 @@ class RuidaInterpreter(Interpreter):
             self.is_relative = False
         elif command == COMMAND_SET_POSITION:
             x, y = values
-            self.kernel.current_x = x
-            self.kernel.current_y = y
+            self.context.current_x = x
+            self.context.current_y = y
         elif command == COMMAND_MODE_PROGRAM:
             pass
         elif command == COMMAND_MODE_RAPID:
@@ -182,9 +182,9 @@ class RuidaInterpreter(Interpreter):
                 t()
         elif command == COMMAND_SIGNAL:
             if isinstance(values, str):
-                self.kernel.signal(values, None)
+                self.context.signal(values, None)
             elif len(values) >= 2:
-                self.kernel.signal(values[0], *values[1:])
+                self.context.signal(values[0], *values[1:])
 
     def realtime_command(self, command, values=None):
         if command == COMMAND_SET_SPEED:
@@ -200,8 +200,8 @@ class RuidaInterpreter(Interpreter):
             pass
         elif command == COMMAND_SET_POSITION:
             x, y = values
-            self.kernel.current_x = x
-            self.kernel.current_y = y
+            self.context.current_x = x
+            self.context.current_y = y
         elif command == REALTIME_RESET:
             pass
         elif command == REALTIME_PAUSE:

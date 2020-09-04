@@ -7,10 +7,10 @@ _ = wx.GetTranslation
 
 
 class About(wx.Frame, Module):
-    def __init__(self, kernel, path, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: About.__init__
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, kernel, path)
+        Module.__init__(self, context, path)
         self.SetSize((699, 442))
         self.bitmap_button_1 = wx.BitmapButton(self, wx.ID_ANY, icon_meerk40t.GetBitmap())
 
@@ -19,10 +19,10 @@ class About(wx.Frame, Module):
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-        kernel.close(self.name)
-        kernel.setting(str, "device_name", "MeerK40t")
-        name = kernel.device_name
-        version = kernel.device_version
+        context.close(self.name)
+        context.setting(str, "device_name", "MeerK40t")
+        name = context.device_name
+        version = context.device_version
         self.SetTitle(_("About %s v%s" % (name, version)))
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
         self.Show()

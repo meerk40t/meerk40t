@@ -9,6 +9,7 @@ MILS_PER_MM = 39.3701
 GRBL device is a stub device. Serving as a placeholder. 
 """
 
+
 class GrblDevice:
     """
     """
@@ -94,14 +95,14 @@ class GRBLInterpreter(Interpreter):
         self.speed_updated = True
 
     def initialize(self, channel=None):
-        self.kernel.setting(str, 'line_end', '\n')
+        self.context.setting(str, 'line_end', '\n')
 
     def ensure_program_mode(self, *values):
-        self.pipe.write('M3' + self.kernel.line_end)
+        self.pipe.write('M3' + self.context.line_end)
         Interpreter.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
-        self.pipe.write('M5' + self.kernel.line_end)
+        self.pipe.write('M5' + self.context.line_end)
         Interpreter.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
@@ -124,7 +125,7 @@ class GRBLInterpreter(Interpreter):
         if self.speed_updated:
             line.append('F%d' % int(self.feed_convert(self.speed)))
             self.speed_updated = False
-        self.pipe.write(' '.join(line) + self.kernel.line_end)
+        self.pipe.write(' '.join(line) + self.context.line_end)
         Interpreter.move(self, x, y)
 
     def execute(self):

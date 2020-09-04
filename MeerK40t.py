@@ -68,7 +68,6 @@ kernel_root.device_version = "0.7.0"
 kernel_root.device_name = "MeerK40t"
 kernel_root.activate('modifier/Elemental')
 kernel_root.activate('modifier/BindAlias')
-kernel_root.activate('modifier/Devices')
 
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t

@@ -11,7 +11,7 @@ class Console(Module, Pipe):
         self.channel_file = None
         self.channel = None
         self.buffer = ''
-        self.active_device = None
+        self.active_context = None
         self.interval = 0.05
         self.process = self.tick
         self.commands = []
@@ -25,7 +25,7 @@ class Console(Module, Pipe):
         self.context.setting(int, "bed_width", 280)
         self.context.setting(int, "bed_height", 200)
         self.channel = self.context.channel_open('console')
-        self.active_device = self.context
+        self.active_context = self.context
 
     def finalize(self, channel=None):
         self.context.unlisten('interpreter;mode', self.on_mode_change)
@@ -109,15 +109,15 @@ class Console(Module, Pipe):
             yield e
 
     def interface_parse_command(self, command, *args):
-        kernel = self.context
-        elements = kernel.elements
-        active_device = self.active_device
+        context = self.context
+        elements = context.elements
+        active_context = self.active_context
         try:
-            spooler = active_device.spooler
+            spooler = active_context.spooler
         except AttributeError:
             spooler = None
         try:
-            interpreter = active_device.interpreter
+            interpreter = active_context.interpreter
         except AttributeError:
             interpreter = None
         command = command.lower()
@@ -351,14 +351,14 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Windows Registered:'
-                for i, name in enumerate(kernel.match('window')):
+                for i, name in enumerate(context.match('window')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Windows in Device %s:' % str(active_device._path)
-                for i, name in enumerate(active_device.opened):
+                yield 'Loaded Windows in Device %s:' % str(active_context._path)
+                for i, name in enumerate(active_context.opened):
                     if not name.startswith('window'):
                         continue
-                    module = active_device.opened[name]
+                    module = active_context.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
                 yield '----------'
             else:
@@ -367,30 +367,30 @@ class Console(Module, Pipe):
                 window_path = 'window/%s' % str(window_name)
                 if value == 'toggle':
                     index = args[1]
-                    if window_path in active_device.opened:
+                    if window_path in active_context.opened:
                         value = 'close'
                     else:
                         value = 'open'
                 if value == 'open':
-                    if window_path in kernel.registered:
+                    if window_path in context.registered:
                         parent_window = None
                         try:
-                            parent_window = active_device.gui
+                            parent_window = active_context.gui
                         except AttributeError:
                             pass
-                        active_device.open(window_path, window_name, parent_window, *args[2:])
+                        active_context.open(window_path, window_name, parent_window, *args[2:])
                         yield 'Window %s opened.' % window_name
                     else:
                         yield "Window '%s' not found." % window_name
                 elif value == 'close':
-                    if window_name in active_device.opened:
-                        active_device.close(window_name)
+                    if window_name in active_context.opened:
+                        active_context.close(window_name)
                     else:
                         yield "Window '%s' not found." % window_name
         elif command == 'set':
             if len(args) == 0:
-                for attr in dir(active_device):
-                    v = getattr(active_device, attr)
+                for attr in dir(active_context):
+                    v = getattr(active_context, attr)
                     if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                         continue
                     yield '"%s" := %s' % (attr, str(v))
@@ -399,19 +399,19 @@ class Console(Module, Pipe):
                 attr = args[0]
                 value = args[1]
                 try:
-                    if hasattr(active_device, attr):
-                        v = getattr(active_device, attr)
+                    if hasattr(active_context, attr):
+                        v = getattr(active_context, attr)
                         if isinstance(v, bool):
                             if value == 'False' or value == 'false' or value == 0:
-                                setattr(active_device, attr, False)
+                                setattr(active_context, attr, False)
                             else:
-                                setattr(active_device, attr, True)
+                                setattr(active_context, attr, True)
                         elif isinstance(v, int):
-                            setattr(active_device, attr, int(value))
+                            setattr(active_context, attr, int(value))
                         elif isinstance(v, float):
-                            setattr(active_device, attr, float(value))
+                            setattr(active_context, attr, float(value))
                         elif isinstance(v, str):
-                            setattr(active_device, attr, str(value))
+                            setattr(active_context, attr, str(value))
                 except RuntimeError:
                     yield 'Attempt failed. Produced a runtime error.'
                 except ValueError:
@@ -419,12 +419,12 @@ class Console(Module, Pipe):
             return
         elif command == 'control':
             if len(args) == 0:
-                for control_name in active_device.register_match('\d+/control'):
+                for control_name in active_context.register_match('\d+/control'):
                     yield control_name
             else:
                 control_name = ' '.join(args)
-                if control_name in active_device.register_match('\d+/control'):
-                    active_device.execute(control_name)
+                if control_name in active_context.register_match('\d+/control'):
+                    active_context.execute(control_name)
                     yield "Executed '%s'" % control_name
                 else:
                     yield "Control '%s' not found." % control_name
@@ -433,12 +433,12 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Modules Registered:'
-                for i, name in enumerate(kernel.match('module')):
+                for i, name in enumerate(context.match('module')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Modules in Device %s:' % str(active_device._path)
-                for i, name in enumerate(active_device.opened):
-                    module = active_device.opened[name]
+                yield 'Loaded Modules in Device %s:' % str(active_context._path)
+                for i, name in enumerate(active_context.opened):
+                    module = active_context.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
                 yield '----------'
             else:
@@ -448,24 +448,24 @@ class Console(Module, Pipe):
                     name = None
                     if len(args) >= 3:
                         name = args[2]
-                    if index in kernel.registered:
+                    if index in context.registered:
                         if name is not None:
-                            active_device.open_as(index, name)
+                            active_context.open_as(index, name)
                         else:
-                            active_device.open(index)
+                            active_context.open(index)
                     else:
                         yield "Module '%s' not found." % index
                 elif value == 'close':
                     index = args[1]
-                    if index in active_device.opened:
-                        active_device.close(index)
+                    if index in active_context.opened:
+                        active_context.close(index)
                     else:
                         yield "Module '%s' not found." % index
             return
         elif command == 'schedule':
             yield '----------'
             yield 'Scheduled Processes:'
-            for i, job in enumerate(active_device.jobs):
+            for i, job in enumerate(active_context.jobs):
                 parts = list()
                 parts.append('%d:' % (i + 1))
                 parts.append(str(job))
@@ -484,12 +484,12 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Channels Active:'
-                for i, name in enumerate(active_device.channels):
+                for i, name in enumerate(active_context.channels):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Channels Watching:'
-                for name in active_device.watchers:
-                    watchers = active_device.watchers[name]
+                for name in active_context.watchers:
+                    watchers = active_context.watchers[name]
                     if self.channel in watchers:
                         yield name
                 yield '----------'
@@ -500,11 +500,11 @@ class Console(Module, Pipe):
                     if chan == 'console':
                         yield "Infinite Loop Error."
                     else:
-                        active_device.add_watcher(chan, self.channel)
+                        active_context.add_watcher(chan, self.channel)
                         yield "Watching Channel: %s" % chan
                 elif value == 'close':
                     try:
-                        active_device.remove_watcher(chan, self.channel)
+                        active_context.remove_watcher(chan, self.channel)
                         yield "No Longer Watching Channel: %s" % chan
                     except KeyError:
                         yield "Channel %s is not opened." % chan
@@ -515,24 +515,24 @@ class Console(Module, Pipe):
                         yield "Opening file: %s" % filename
                         self.channel_file = open(filename, "a")
                     yield "Recording Channel: %s" % chan
-                    active_device.add_watcher(chan, self.channel_file_write)
+                    active_context.add_watcher(chan, self.channel_file_write)
             return
         elif command == 'device':
             if len(args) == 0:
                 yield '----------'
                 yield 'Backends permitted:'
-                for i, name in enumerate(kernel.register_match('device/')):
+                for i, name in enumerate(context.register_match('device/')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
 
-                for device in list(kernel.derivable()):
+                for device in list(context.derivable()):
                     try:
                         d = int(device)
                     except ValueError:
                         continue
                     try:
-                        settings = kernel.derive(device)
+                        settings = context.derive(device)
                         device_name = settings.setting(str, 'device_name', 'Lhystudios')
                         autoboot = settings.setting(bool, 'autoboot', True)
                         yield 'Device %d. "%s" -- Boots: %s' % (d, device_name, autoboot)
@@ -542,11 +542,11 @@ class Console(Module, Pipe):
                         break
                 yield '----------'
                 yield 'Devices Instances:'
-                kernel.setting(str, 'device_name', 'Unknown')
-                kernel.setting(str, 'device_location', 'Unknown')
-                yield '%d: %s on %s' % (0, kernel.device_name, kernel.device_location)
-                for i, name in enumerate(kernel.contexts):
-                    device = kernel.contexts[name]
+                context.setting(str, 'device_name', 'Unknown')
+                context.setting(str, 'device_location', 'Unknown')
+                yield '%d: %s on %s' % (0, context.device_name, context.device_location)
+                for i, name in enumerate(context.kernel.contexts):
+                    device = context.kernel.contexts[name]
                     yield '%d: %s on %s' % (i + 1, device.device_name, device.device_location)
                 yield '----------'
             else:
@@ -556,16 +556,16 @@ class Console(Module, Pipe):
                 except ValueError:
                     value = None
                 if value == 0:
-                    self.active_device = kernel
+                    self.active_context = context
                     yield 'Device set: %s on %s' % \
-                          (self.active_device.device_name, self.active_device.device_location)
+                          (self.active_context.device_name, self.active_context.device_location)
                 else:
-                    for i, name in enumerate(kernel.contexts):
+                    for i, name in enumerate(context.kernel.contexts):
                         if i + 1 == value:
-                            self.active_device = kernel.contexts[name]
-                            self.active_device.setting(str, 'device_location', 'unknown')
+                            self.active_context = context.kernel.contexts[name]
+                            self.active_context.setting(str, 'device_location', 'unknown')
                             yield 'Device set: %s on %s' % \
-                                  (self.active_device.device_name, self.active_device.device_location)
+                                  (self.active_context.device_name, self.active_context.device_location)
                             break
             return
         # Element commands.
@@ -747,7 +747,7 @@ class Console(Module, Pipe):
                 for element in elements.elems(emphasized=True):
                     element.stroke = Color(args[0])
                     element.altered()
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'fill':
             if len(args) == 0:
@@ -778,7 +778,7 @@ class Console(Module, Pipe):
                 for element in elements.elems(emphasized=True):
                     element.fill = Color(args[0])
                     element.altered()
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'rotate':
             if len(args) == 0:
@@ -823,7 +823,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'scale':
             if len(args) == 0:
@@ -876,7 +876,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'translate':
             if len(args) == 0:
@@ -910,7 +910,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'rotate_to':
             if len(args) == 0:
@@ -959,7 +959,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'scale_to':
             if len(args) == 0:
@@ -1015,7 +1015,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'translate_to':
             if len(args) == 0:
@@ -1054,7 +1054,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'resize':
             if len(args) < 4:
@@ -1078,7 +1078,7 @@ class Console(Module, Pipe):
                         pass
                     element *= matrix
                     element.modified()
-                active_device.signal('refresh_scene')
+                active_context.signal('refresh_scene')
             except (ValueError, ZeroDivisionError):
                 return
 
@@ -1117,7 +1117,7 @@ class Console(Module, Pipe):
                     element.modified()
             except ValueError:
                 yield "Invalid value"
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'reset':
             for element in elements.elems(emphasized=True):
@@ -1133,7 +1133,7 @@ class Console(Module, Pipe):
                 yield 'reset - %s' % name
                 element.transform.reset()
                 element.modified()
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'reify':
             for element in elements.elems(emphasized=True):
@@ -1149,7 +1149,7 @@ class Console(Module, Pipe):
                 yield 'reified - %s' % name
                 element.reify()
                 element.altered()
-            active_device.signal('refresh_scene')
+            active_context.signal('refresh_scene')
             return
         elif command == 'optimize':
             if not elements.has_emphasis():
@@ -1354,7 +1354,7 @@ class Console(Module, Pipe):
                 element.transform.post_translate(tx, ty)
                 element.modified()
                 self.context.signal('element_property_update', element)
-                active_device.signal('refresh_scene')
+                active_context.signal('refresh_scene')
             return
         elif command == 'image':
             if len(args) == 0:
@@ -1381,13 +1381,13 @@ class Console(Module, Pipe):
             elif args[0] == 'wizard':
                 if len(args) == 1:
                     try:
-                        for script_name in kernel.registered['raster_script']:
+                        for script_name in context.registered['raster_script']:
                             yield "Raster Script: %s" % script_name
                     except KeyError:
                         yield "No Raster Scripts Found."
                     return
                 try:
-                    script = kernel.registered['raster_script'][args[1]]
+                    script = context.registered['raster_script'][args[1]]
                 except KeyError:
                     yield "Raster Script %s is not registered." % args[1]
                     return
@@ -1842,15 +1842,15 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Binds:'
-                for i, key in enumerate(kernel.keymap):
-                    value = kernel.keymap[key]
+                for i, key in enumerate(context.keymap):
+                    value = context.keymap[key]
                     yield '%d: key %s -> %s' % (i, key, value)
                 yield '----------'
             else:
                 key = args[0].lower()
                 if key == 'default':
-                    kernel.keymap = dict()
-                    kernel.default_keymap()
+                    context.keymap = dict()
+                    context.default_keymap()
                     yield 'Set default keymap.'
                     return
                 command_line = ' '.join(args[1:])
@@ -1858,21 +1858,21 @@ class Console(Module, Pipe):
                 if f == -1:  # If bind value has a bind, do not evaluate.
                     if '$x' in command_line:
                         try:
-                            x = active_device.current_x
+                            x = active_context.current_x
                         except AttributeError:
                             x = 0
                         command_line = command_line.replace('$x', str(x))
                     if '$y' in command_line:
                         try:
-                            y = active_device.current_y
+                            y = active_context.current_y
                         except AttributeError:
                             y = 0
                         command_line = command_line.replace('$y', str(y))
                 if len(command_line) != 0:
-                    kernel.keymap[key] = command_line
+                    context.keymap[key] = command_line
                 else:
                     try:
-                        del kernel.keymap[key]
+                        del context.keymap[key]
                         yield "Unbound %s" % key
                     except KeyError:
                         pass
@@ -1881,66 +1881,66 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Aliases:'
-                for i, key in enumerate(kernel.alias):
-                    value = kernel.alias[key]
+                for i, key in enumerate(context.alias):
+                    value = context.alias[key]
                     yield '%d: %s -> %s' % (i, key, value)
                 yield '----------'
             else:
                 key = args[0].lower()
                 if key == 'default':
-                    kernel.alias = dict()
-                    kernel.default_alias()
+                    context.alias = dict()
+                    context.default_alias()
                     yield 'Set default keymap.'
                     return
-                kernel.alias[args[0]] = ' '.join(args[1:])
+                context.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements
         elif command == 'egv':
             if len(args) >= 1:
-                if active_device.device_name != 'Lhystudios':
+                if active_context.device_name != 'Lhystudios':
                     yield 'Device cannot send egv data.'
-                active_device.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
+                active_context.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
         elif command == "grblserver":
             port = 23
             tcp = True
             try:
-                server = active_device.open('module/LaserServer',
+                server = active_context.open('module/LaserServer',
                                             port=port,
                                             tcp=tcp,
                                             greet="Grbl 1.1e ['$' for help]\r\n")
                 yield "GRBL Mode."
                 chan = 'grbl'
-                active_device.add_watcher(chan, self.channel)
+                active_context.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
                 chan = 'server'
-                active_device.add_watcher(chan, self.channel)
+                active_context.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.open('module/GRBLEmulator'))
+                server.set_pipe(active_context.open('module/GRBLEmulator'))
             except OSError:
                 yield 'Server failed on port: %d' % port
             return
 
         elif command == "ruidaserver":
             try:
-                server = active_device.open_as('module/LaserServer', 'ruidaserver', port=50200, tcp=False)
-                jog = active_device.open_as('module/LaserServer', 'ruidajog', port=50207, tcp=False)
+                server = active_context.open_as('module/LaserServer', 'ruidaserver', port=50200, tcp=False)
+                jog = active_context.open_as('module/LaserServer', 'ruidajog', port=50207, tcp=False)
                 yield 'Ruida Data Server opened on port %d.' % 50200
                 yield 'Ruida Jog Server opened on port %d.' % 50207
                 chan = 'ruida'
-                active_device.add_watcher(chan, self.channel)
+                active_context.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
                 chan = 'server'
-                active_device.add_watcher(chan, self.channel)
+                active_context.add_watcher(chan, self.channel)
                 yield "Watching Channel: %s" % chan
-                server.set_pipe(active_device.open('module/RuidaEmulator'))
-                jog.set_pipe(active_device.open('module/RuidaEmulator'))
+                server.set_pipe(active_context.open('module/RuidaEmulator'))
+                jog.set_pipe(active_context.open('module/RuidaEmulator'))
             except OSError:
                 yield 'Server failed.'
             return
         elif command == 'flush':
-            kernel.flush()
-            if kernel != active_device:
-                active_device.flush()
+            context.flush()
+            if context != active_context:
+                active_context.flush()
                 yield 'Persistent settings force saved.'
         elif command == 'trace_hull':
             pts = []
@@ -2013,16 +2013,16 @@ class Console(Module, Pipe):
                 yield 'Pulse laser failed: Busy'
             return
         elif command == 'refresh':
-            active_device.signal('refresh_scene')
-            active_device.signal('rebuild_tree')
+            active_context.signal('refresh_scene')
+            active_context.signal('rebuild_tree')
             yield "Refreshed."
             return
         elif command == 'shutdown':
-            active_device.stop()
+            active_context.stop()
             return
         else:
-            if command in kernel.alias:
-                aliased_command = kernel.alias[command]
+            if command in context.alias:
+                aliased_command = context.alias[command]
                 for cmd in aliased_command.split(';'):
                     for e in self.interface(cmd):
                         yield e
@@ -2030,7 +2030,7 @@ class Console(Module, Pipe):
                 yield "Error. Command Unrecognized: %s" % command
 
     def add_element(self, element):
-        kernel = self.context.get_context('/')
+        context_root = self.context.get_context('/')
         element.stroke = Color('black')
-        kernel.elements.add_elem(element)
-        kernel.elements.set_selected([element])
+        context_root.elements.add_elem(element)
+        context_root.elements.set_selected([element])

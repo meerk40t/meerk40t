@@ -415,13 +415,13 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Alignment', self), id=ID_MENU_ALIGNMENT)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self), id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Terminal', self), id=ID_MENU_TERMINAL)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.device_root.open('window/DeviceManager', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/DeviceManager', self),
                   id=ID_MENU_DEVICE_MANAGER)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.device_root.open('window/Keymap', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Keymap', self),
                   id=ID_MENU_KEYMAP)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Preferences', self),
                   id=wx.ID_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.device_root.open('window/Settings', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Settings', self),
                   id=ID_MENU_SETTINGS)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Rotary', self), id=ID_MENU_ROTARY)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Navigation', self),
@@ -433,7 +433,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/UsbConnect', self), id=ID_MENU_USB)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU,
-                  lambda v: self.context.open('window/JobPreview', self, list(self.context.device_root.elements.ops())),
+                  lambda v: self.context.open('window/JobPreview', self, list(self.context.elements.ops())),
                   id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
@@ -441,7 +441,7 @@ class MeerK40t(wx.Frame, Module, Job):
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/JobPreview', self,
-                                                 list(self.context.device_root.elements.ops())),
+                                                 list(self.context.elements.ops())),
                      id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
 
@@ -454,7 +454,7 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/Preferences', self), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.device_root.open('window/DeviceManager', self), id=ID_DEVICES)
+                     lambda v: self.context.open('window/DeviceManager', self), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/CameraInterface', self), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -675,7 +675,7 @@ class MeerK40t(wx.Frame, Module, Job):
                     m.Check(True)
 
                 def language_update(q):
-                    return lambda e: self.context.device_root.app.update_language(q)
+                    return lambda e: self.context.app.update_language(q)
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
                 if not os.path.exists(resource_path('./locale/%s' % language_code)) and i != 0:
@@ -692,41 +692,39 @@ class MeerK40t(wx.Frame, Module, Job):
                 channel = self.context.open_channel('shutdown')
             except AttributeError:
                 channel = print
-            self.context.shutdown(channel)
+            self.context.kernel.shutdown(channel)
             event.Skip()  # Call destroy as regular.
 
     def finalize(self, channel=None):
-        device = self.context
-        kernel = device.device_root
-        if kernel.print_shutdown:
-            kernel.add_watcher('shutdown', print)
-        device.stop()
+        context = self.context
+        context_root = context.get_context('/')
+
+        if context_root.print_shutdown:
+            context_root.add_watcher('shutdown', print)
 
         self.unschedule()
         self.screen_refresh_lock.acquire()
 
-        kernel = device.device_root
+        context_root.unlisten('element_added', self.on_rebuild_tree_request)
+        context_root.unlisten('operation_added', self.on_rebuild_tree_request)
+        context_root.unlisten('element_removed', self.on_rebuild_tree_request)
+        context_root.unlisten('operation_removed', self.on_rebuild_tree_request)
+        context_root.unlisten('units', self.space_changed)
+        context_root.unlisten('emphasized', self.on_emphasized_elements_changed)
+        context_root.unlisten('modified', self.on_element_modified)
+        context_root.unlisten('altered', self.on_element_alteration)
 
-        kernel.unlisten('element_added', self.on_rebuild_tree_request)
-        kernel.unlisten('operation_added', self.on_rebuild_tree_request)
-        kernel.unlisten('element_removed', self.on_rebuild_tree_request)
-        kernel.unlisten('operation_removed', self.on_rebuild_tree_request)
-        kernel.unlisten('units', self.space_changed)
-        kernel.unlisten('emphasized', self.on_emphasized_elements_changed)
-        kernel.unlisten('modified', self.on_element_modified)
-        kernel.unlisten('altered', self.on_element_alteration)
-
-        device.unlisten('background', self.on_background_signal)
-        device.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
-        device.unlisten('refresh_scene', self.on_refresh_scene)
-        device.unlisten('element_property_update', self.on_element_update)
-        device.unlisten('pipe;error', self.on_usb_error)
-        device.unlisten('pipe;usb_state_text', self.on_usb_state_text)
-        device.unlisten('pipe;thread', self.on_pipe_state)
-        device.unlisten('spooler;thread', self.on_spooler_state)
-        device.unlisten('interpreter;position', self.update_position)
-        device.unlisten('interpreter;mode', self.on_interpreter_mode)
-        device.unlisten('bed_size', self.bed_changed)
+        context.unlisten('background', self.on_background_signal)
+        context.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
+        context.unlisten('refresh_scene', self.on_refresh_scene)
+        context.unlisten('element_property_update', self.on_element_update)
+        context.unlisten('pipe;error', self.on_usb_error)
+        context.unlisten('pipe;usb_state_text', self.on_usb_state_text)
+        context.unlisten('pipe;thread', self.on_pipe_state)
+        context.unlisten('spooler;thread', self.on_spooler_state)
+        context.unlisten('interpreter;position', self.update_position)
+        context.unlisten('interpreter;mode', self.on_interpreter_mode)
+        context.unlisten('bed_size', self.bed_changed)
         try:
             self.Close()
         except RuntimeError:
@@ -854,37 +852,37 @@ class MeerK40t(wx.Frame, Module, Job):
     def populate_recent_menu(self):
         for i in range(self.recent_file_menu.MenuItemCount):
             self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
-        device = self.context
-        if device.file0 is not None and len(device.file0):
-            self.recent_file_menu.Append(ID_MENU_FILE0, device.file0, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file0), id=ID_MENU_FILE0)
-        if device.file1 is not None and len(device.file1):
-            self.recent_file_menu.Append(ID_MENU_FILE1, device.file1, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file1), id=ID_MENU_FILE1)
-        if device.file2 is not None and len(device.file2):
-            self.recent_file_menu.Append(ID_MENU_FILE2, device.file2, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file2), id=ID_MENU_FILE2)
-        if device.file3 is not None and len(device.file3):
-            self.recent_file_menu.Append(ID_MENU_FILE3, device.file3, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file3), id=ID_MENU_FILE3)
-        if device.file4 is not None and len(device.file4):
-            self.recent_file_menu.Append(ID_MENU_FILE4, device.file4, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file4), id=ID_MENU_FILE4)
-        if device.file5 is not None and len(device.file5):
-            self.recent_file_menu.Append(ID_MENU_FILE5, device.file5, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file5), id=ID_MENU_FILE5)
-        if device.file6 is not None and len(device.file6):
-            self.recent_file_menu.Append(ID_MENU_FILE6, device.file6, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file6), id=ID_MENU_FILE6)
-        if device.file7 is not None and len(device.file7):
-            self.recent_file_menu.Append(ID_MENU_FILE7, device.file7, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file7), id=ID_MENU_FILE7)
-        if device.file8 is not None and len(device.file8):
-            self.recent_file_menu.Append(ID_MENU_FILE8, device.file8, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file8), id=ID_MENU_FILE8)
-        if device.file9 is not None and len(device.file9):
-            self.recent_file_menu.Append(ID_MENU_FILE9, device.file9, "")
-            self.Bind(wx.EVT_MENU, lambda e: self.load(device.file9), id=ID_MENU_FILE9)
+        context = self.context
+        if context.file0 is not None and len(context.file0):
+            self.recent_file_menu.Append(ID_MENU_FILE0, context.file0, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file0), id=ID_MENU_FILE0)
+        if context.file1 is not None and len(context.file1):
+            self.recent_file_menu.Append(ID_MENU_FILE1, context.file1, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file1), id=ID_MENU_FILE1)
+        if context.file2 is not None and len(context.file2):
+            self.recent_file_menu.Append(ID_MENU_FILE2, context.file2, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file2), id=ID_MENU_FILE2)
+        if context.file3 is not None and len(context.file3):
+            self.recent_file_menu.Append(ID_MENU_FILE3, context.file3, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file3), id=ID_MENU_FILE3)
+        if context.file4 is not None and len(context.file4):
+            self.recent_file_menu.Append(ID_MENU_FILE4, context.file4, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file4), id=ID_MENU_FILE4)
+        if context.file5 is not None and len(context.file5):
+            self.recent_file_menu.Append(ID_MENU_FILE5, context.file5, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file5), id=ID_MENU_FILE5)
+        if context.file6 is not None and len(context.file6):
+            self.recent_file_menu.Append(ID_MENU_FILE6, context.file6, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file6), id=ID_MENU_FILE6)
+        if context.file7 is not None and len(context.file7):
+            self.recent_file_menu.Append(ID_MENU_FILE7, context.file7, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file7), id=ID_MENU_FILE7)
+        if context.file8 is not None and len(context.file8):
+            self.recent_file_menu.Append(ID_MENU_FILE8, context.file8, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file8), id=ID_MENU_FILE8)
+        if context.file9 is not None and len(context.file9):
+            self.recent_file_menu.Append(ID_MENU_FILE9, context.file9, "")
+            self.Bind(wx.EVT_MENU, lambda e: self.load(context.file9), id=ID_MENU_FILE9)
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
@@ -912,17 +910,17 @@ class MeerK40t(wx.Frame, Module, Job):
 
     def load(self, pathname):
         self.context.setting(bool, 'auto_note', True)
-        self.context.device_root.setting(bool, 'uniform_svg', False)
+        self.context.setting(bool, 'uniform_svg', False)
         with wx.BusyInfo(_("Loading File...")):
-            n = self.context.device_root.elements.note
-            results = self.context.device_root.load(pathname, channel=self.context.device_root.channel_open('load'))
+            n = self.context.elements.note
+            results = self.context.load(pathname, channel=self.context.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
                 self.save_recent(pathname)
-                self.context.device_root.classify(elements)
-                if n != self.context.device_root.elements.note and self.context.auto_note:
+                self.context.classify(elements)
+                if n != self.context.elements.note and self.context.auto_note:
                     self.context.open('window/Notes', self)
-                if (self.context.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
+                if (self.context.uniform_svg and pathname.lower().endswith('svg')) or \
                         (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
                 return True
@@ -984,7 +982,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.request_refresh_for_animation()
 
     def space_changed(self, *args):
-        self.ribbon_position_units = self.context.device_root.units_index
+        self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
         self.widget_scene.signal('grid')
         self.widget_scene.signal('guide')
@@ -1079,7 +1077,7 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.scene.HasCapture():
             return
         rotation = event.GetWheelRotation()
-        if self.context.device_root.mouse_zoom_invert:
+        if self.context.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
             self.widget_scene.event(event.GetPosition(), 'wheelup')
@@ -1132,7 +1130,7 @@ class MeerK40t(wx.Frame, Module, Job):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.device_root.keymap
+        keymap = self.context.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
             self.context.open('module/Console').write(action + "\n")
@@ -1141,7 +1139,7 @@ class MeerK40t(wx.Frame, Module, Job):
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.device_root.keymap
+        keymap = self.context.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
             if action.startswith('+'):
@@ -1310,9 +1308,9 @@ class MeerK40t(wx.Frame, Module, Job):
         self.update_ribbon_position()
 
     def on_click_new(self, event):  # wxGlade: MeerK40t.<event_handler>
-        kernel = self.context.device_root
+        context = self.context
         self.working_file = None
-        kernel.elements.clear_all()
+        context.elements.clear_all()
         self.clear_laserpath()
         self.request_refresh()
         self.context.signal('rebuild_tree', 0)
@@ -1374,7 +1372,7 @@ class MeerK40t(wx.Frame, Module, Job):
         """
         Zoom size button press.
         """
-        elements = self.context.device_root.elements
+        elements = self.context.elements
         bbox = elements.bounds()
         if bbox is None:
             bedwidth = self.context.bed_width
@@ -1428,7 +1426,7 @@ class MeerK40t(wx.Frame, Module, Job):
 
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
-            kernel = self.context.device_root
+            context_root = self.context.get_context('/')
             m = str(dlg.GetValue())
             m = m.replace('$x', str(p.current_x))
             m = m.replace('$y', str(p.current_y))
@@ -1443,7 +1441,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 result = dlg.ShowModal()
                 dlg.Destroy()
             else:
-                for element in kernel.elements.elems():
+                for element in context_root.elements.elems():
                     try:
                         element *= mx
                         element.modified()
@@ -1451,8 +1449,8 @@ class MeerK40t(wx.Frame, Module, Job):
                         pass
 
     def open_fill_dialog(self):
-        kernel = self.context.device_root
-        elements = kernel.elements
+        context = self.context
+        elements = context.elements
         first_selected = elements.first_element(selected=True)
         if first_selected is None:
             return
@@ -1471,8 +1469,8 @@ class MeerK40t(wx.Frame, Module, Job):
                 elem.altered()
 
     def open_stroke_dialog(self):
-        kernel = self.context.device_root
-        elements = kernel.elements
+        context = self.context
+        elements = context.elements
         first_selected = elements.first_element(emphasized=True)
         if first_selected is None:
             return
@@ -1497,13 +1495,13 @@ class MeerK40t(wx.Frame, Module, Job):
         dlg.SetValue('')
         if dlg.ShowModal() == wx.ID_OK:
             p = self.context
-            kernel = p.device_root
+            context = p
             wmils = p.bed_width * MILS_IN_MM
             hmils = p.bed_height * MILS_IN_MM
             length = Length(dlg.GetValue()).value(ppi=1000.0, relative_length=wmils)
             mx = Matrix()
             mx.post_scale(-1.0, 1, length / 2.0, 0)
-            for element in kernel.elements.elems(emphasized=True):
+            for element in context.elements.elems(emphasized=True):
                 try:
                     element *= mx
                     element.modified()
@@ -1516,11 +1514,11 @@ class MeerK40t(wx.Frame, Module, Job):
         dlg.SetValue('')
 
         if dlg.ShowModal() == wx.ID_OK:
-            kernel = self.context.device_root
+            context = self.context
             path = Path(dlg.GetValue())
             path.stroke = 'blue'
             p = abs(path)
-            kernel.elements.add_elem(p)
+            context.elements.add_elem(p)
             self.context.classify(p)
         dlg.Destroy()
 
@@ -2202,11 +2200,11 @@ class RootNode(list):
         elif t == NODE_OPERATION_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
                      menu.Append(wx.ID_ANY, _("Refresh Classification"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, lambda e: self.context.device_root.elements.load_default(),
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.load_default(),
                      menu.Append(wx.ID_ANY, _("Set Other/Blue/Red Classify"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, lambda e: self.context.device_root.elements.load_default2(),
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.load_default2(),
                      menu.Append(wx.ID_ANY, _("Set Basic Classification"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, lambda e: self.context.device_root.elements.add_op(LaserOperation()),
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(LaserOperation()),
                      menu.Append(wx.ID_ANY, _("Add Operation"), "", wx.ITEM_NORMAL))
 
         elif t == NODE_ELEMENTS_BRANCH:
@@ -2335,7 +2333,7 @@ class RootNode(list):
 
                 try:
                     raster_wizard_menu = wx.Menu()
-                    for script in self.context.device_root.registered['raster_script']:
+                    for script in self.context.registered['raster_script']:
                         menu_item = raster_wizard_menu.Append(wx.ID_ANY, _("RasterWizard: %s") % script, "",
                                                               wx.ITEM_NORMAL)
                         gui.Bind(wx.EVT_MENU, self.menu_console('window open RasterWizard %s' % script), menu_item)
@@ -2344,7 +2342,7 @@ class RootNode(list):
                     pass
                 try:
                     raster_wizard_apply_menu = wx.Menu()
-                    for script in self.context.device_root.registered['raster_script']:
+                    for script in self.context.registered['raster_script']:
                         menu_item = raster_wizard_apply_menu.Append(wx.ID_ANY, _("Apply: %s") % script, "",
                                                                     wx.ITEM_NORMAL)
                         gui.Bind(wx.EVT_MENU, self.menu_console('image wizard %s\n' % script), menu_item)
@@ -2422,7 +2420,6 @@ class RootNode(list):
         """
 
         def specific(event):
-            kernel = self.context.device_root
             element = node.object
             if not isinstance(element, SVGImage):
                 return
@@ -2446,8 +2443,8 @@ class RootNode(list):
         """
 
         def specific(event):
-            kernel = self.context.device_root
-            elements = kernel.elements
+            context = self.context
+            elements = context.elements
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
             bounds = OperationPreprocessor.bounding_box(child_objects)
@@ -2529,8 +2526,8 @@ class RootNode(list):
         """
 
         def specific(event):
-            kernel = self.context.device_root
-            elements = kernel.elements
+            context = self.context
+            elements = context.elements
             node = remove_node
             if node.type == NODE_ELEMENT:
                 self.context.open('module/Console').write('element delete\n')
@@ -2554,8 +2551,8 @@ class RootNode(list):
 
     def menu_clear_all_operation(self, node):
         def specific(event):
-            kernel = self.context.device_root
-            elements = kernel.elements
+            context = self.context
+            elements = context.elements
             for op in elements.ops(emphasized=True):
                 op.clear()
                 self.context.signal('rebuild_tree', 0)
@@ -2564,8 +2561,8 @@ class RootNode(list):
 
     def menu_clear_all_files_branch(self, node):
         def specific(event):
-            kernel = self.context.device_root
-            elements = kernel.elements
+            context = self.context
+            elements = context.elements
             elements.clear_files()
             self.context.signal('rebuild_tree', 0)
 
@@ -2588,8 +2585,8 @@ class RootNode(list):
         """
 
         def specific(event):
-            kernel = self.context.device_root
-            elements = kernel.elements
+            context = self.context
+            elements = context.elements
             adding_elements = [copy(e) for e in list(self.elements.elems(emphasized=True)) * copies]
             elements.add_elems(adding_elements)
             elements.classify(adding_elements)
@@ -2633,15 +2630,15 @@ class RootNode(list):
         :param node:
         :return:
         """
-        kernel = self.context.device_root
-        elements = kernel.elements
+        context = self.context
+        elements = context.elements
 
         def specific(event):
             t = node.type
             if t == NODE_ELEMENTS_BRANCH:
-                self.elements._elements.reverse()
+                context.elements._elements.reverse()
             elif t == NODE_OPERATION_BRANCH:
-                self.elements._operations.reverse()
+                context.elements._operations.reverse()
             elif t == NODE_OPERATION:
                 for op in elements.ops(emphasized=True):
                     op.reverse()
@@ -2651,8 +2648,8 @@ class RootNode(list):
 
     def menu_reclassify_operations(self, node):
         def specific(event):
-            kernel = node.root.device.device_root
-            elements = kernel.elements
+            context = node.root.context
+            elements = context.elements
             elements.remove_elements_from_operations(list(elements.elems()))
             elements.classify(list(elements.elems()))
             self.context.signal('rebuild_tree', 0)
@@ -2671,7 +2668,7 @@ class RootNode(list):
             op = LaserOperation(node.object)
             op.clear()
             op.extend(node.object)
-            self.context.device_root.elements.add_op(op)
+            self.context.elements.add_op(op)
 
         return specific
 
@@ -2942,19 +2939,19 @@ class wxMeerK40t(wx.App, Module):
             self.update_language(language)
 
     def clear_control(self):
-        device = self.context.device_root
-        if device.config is not None:
-            device.config.DeleteAll()
-            device.config = None
-            device.stop()
+        kernel = self.context.kernel
+        if kernel.config is not None:
+            kernel.config.DeleteAll()
+            kernel.config = None
+            kernel.shutdown()
 
     def update_language(self, lang):
         """
         Update language to the requested language.
         """
-        device = self.context
+        context = self.context
         language_code, language_name, language_index = supported_languages[lang]
-        device.language = lang
+        context.language = lang
 
         if self.locale:
             assert sys.getrefcount(self.locale) <= 2
@@ -2964,7 +2961,7 @@ class wxMeerK40t(wx.App, Module):
             self.locale.AddCatalog('meerk40t')
         else:
             self.locale = None
-        device.signal('language', (lang, language_code, language_name, language_index))
+        context.signal('language', (lang, language_code, language_name, language_index))
 
 
 # end of class MeerK40tGui

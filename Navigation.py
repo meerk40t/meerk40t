@@ -349,26 +349,27 @@ class Navigation(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        device = self.context
-        kernel = self.context.get_context('/')
-        device.close(self.name)
+        context = self.context
+        context_root = self.context.get_context('/')
+        context.close(self.name)
         self.Show()
 
-        self.elements = kernel.elements
+        self.elements = context_root.elements
 
-        device.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
-        device.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
+        context.setting(float, "navigate_jog", self.spin_jog_mils.GetValue())
+        context.setting(float, "navigate_pulse", self.spin_pulse_duration.GetValue())
         self.spin_pulse_duration.SetValue(self.context.navigate_pulse)
         self.set_jog_distances(self.context.navigate_jog)
 
-        kernel.listen('emphasized', self.on_emphasized_elements_changed)
-        device.listen('interpreter;position', self.on_position_update)
+        context_root.listen('emphasized', self.on_emphasized_elements_changed)
+        context.listen('interpreter;position', self.on_position_update)
         self.console = self.context.open('module/Console')
         self.update_matrix_text()
         self.SetFocus()
 
     def finalize(self, channel=None):
-        self.context.device_root.unlisten('emphasized', self.on_emphasized_elements_changed)
+        context_root = self.context.get_context('/')
+        context_root.unlisten('emphasized', self.on_emphasized_elements_changed)
         self.context.unlisten('interpreter;position', self.on_position_update)
         try:
             self.Close()
@@ -536,7 +537,7 @@ class Navigation(wx.Frame, Module):
         self.drag_ready(True)
 
     def on_button_align_corner_tr(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.device_root.elements
+        elements = self.context.elements
         bbox = elements.bounds()
         if bbox is None:
             return
@@ -544,7 +545,7 @@ class Navigation(wx.Frame, Module):
         self.drag_ready(True)
 
     def on_button_align_corner_bl(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.device_root.elements
+        elements = self.context.elements
         bbox = elements.bounds()
         if bbox is None:
             return
@@ -552,7 +553,7 @@ class Navigation(wx.Frame, Module):
         self.drag_ready(True)
 
     def on_button_align_corner_br(self, event):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.device_root.elements
+        elements = self.context.elements
         bbox = elements.bounds()
         if bbox is None:
             return
@@ -579,7 +580,7 @@ class Navigation(wx.Frame, Module):
         self.update_matrix_text()
 
     def on_button_align_first_position(self, event):
-        elements = self.context.device_root.elements
+        elements = self.context.elements
         e = list(elements.elems(emphasized=True))
         try:
             pos = e[0].first_point * e[0].transform

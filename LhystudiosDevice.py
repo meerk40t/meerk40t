@@ -125,7 +125,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
-        Interpreter.__init__(self, kernel=context)
+        Interpreter.__init__(self, context=context)
         Job.__init__(self, context=context, process=self.process_spool, interval=0.01)
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
@@ -149,26 +149,26 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.is_paused = False
 
     def attach(self, channel=None):
-        self.kernel.interpreter = self
-        self.kernel.setting(int, 'current_x', 0)
-        self.kernel.setting(int, 'current_y', 0)
+        self.context.interpreter = self
+        self.context.setting(int, 'current_x', 0)
+        self.context.setting(int, 'current_y', 0)
 
-        self.kernel.setting(bool, "swap_xy", False)
-        self.kernel.setting(bool, "flip_x", False)
-        self.kernel.setting(bool, "flip_y", False)
-        self.kernel.setting(bool, "home_right", False)
-        self.kernel.setting(bool, "home_bottom", False)
-        self.kernel.setting(int, "home_adjust_x", 0)
-        self.kernel.setting(int, "home_adjust_y", 0)
-        self.kernel.setting(int, "buffer_max", 900)
-        self.kernel.setting(bool, "buffer_limit", True)
-        self.kernel.setting(int, "current_x", 0)
-        self.kernel.setting(int, "current_y", 0)
+        self.context.setting(bool, "swap_xy", False)
+        self.context.setting(bool, "flip_x", False)
+        self.context.setting(bool, "flip_y", False)
+        self.context.setting(bool, "home_right", False)
+        self.context.setting(bool, "home_bottom", False)
+        self.context.setting(int, "home_adjust_x", 0)
+        self.context.setting(int, "home_adjust_y", 0)
+        self.context.setting(int, "buffer_max", 900)
+        self.context.setting(bool, "buffer_limit", True)
+        self.context.setting(int, "current_x", 0)
+        self.context.setting(int, "current_y", 0)
 
         self.update_codes()
 
-        current_x = self.kernel.current_x
-        current_y = self.kernel.current_y
+        current_x = self.context.current_x
+        current_y = self.context.current_y
         self.next_x = current_x
         self.next_y = current_y
         self.max_x = current_x
@@ -178,10 +178,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.kernel.register('control/Realtime Pause_Resume', self.pause_resume)
-        self.kernel.register('control/Realtime Pause', self.pause)
-        self.kernel.register('control/Realtime Resume', self.resume)
-        self.kernel.register('control/Update Codes', self.update_codes)
+        self.context.register('control/Realtime Pause_Resume', self.pause_resume)
+        self.context.register('control/Realtime Pause', self.pause)
+        self.context.register('control/Realtime Resume', self.resume)
+        self.context.register('control/Update Codes', self.update_codes)
 
     def finalize(self, channel=None):
         pass
@@ -195,7 +195,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         return "LhymicroInterpreter()"
 
     def update_codes(self):
-        if not self.kernel.swap_xy:
+        if not self.context.swap_xy:
             self.CODE_RIGHT = b'B'
             self.CODE_LEFT = b'T'
             self.CODE_TOP = b'L'
@@ -205,11 +205,11 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.CODE_LEFT = b'L'
             self.CODE_TOP = b'T'
             self.CODE_BOTTOM = b'B'
-        if self.kernel.flip_x:
+        if self.context.flip_x:
             q = self.CODE_LEFT
             self.CODE_LEFT = self.CODE_RIGHT
             self.CODE_RIGHT = q
-        if self.kernel.flip_y:
+        if self.context.flip_y:
             q = self.CODE_TOP
             self.CODE_TOP = self.CODE_BOTTOM
             self.CODE_BOTTOM = q
@@ -222,7 +222,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 return True
             else:
                 self.extra_hold = None
-        return self.kernel.buffer_limit and len(self.pipe) > self.kernel.buffer_max
+        return self.context.buffer_limit and len(self.pipe) > self.context.buffer_max
 
     def execute(self):
         if self.hold():
@@ -230,8 +230,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         while self.plot is not None:
             if self.hold():
                 return
-            sx = self.kernel.current_x
-            sy = self.kernel.current_y
+            sx = self.context.current_x
+            sy = self.context.current_y
             try:
                 x, y, on = next(self.plot)
                 dx = x - sx
@@ -298,16 +298,16 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                             (bounds[0], bounds[3]),
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3])])
-            self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(p), True, self.kernel.current_x, self.kernel.current_y)
+            self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(p), True, self.context.current_x, self.context.current_y)
             return
         if len(path) == 0:
             return
         first_point = path.first_point
         self.move_absolute(first_point[0], first_point[1])
-        self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(path), True, self.kernel.current_x, self.kernel.current_y)
+        self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(path), True, self.context.current_x, self.context.current_y)
 
     def plot_raster(self, raster):
-        self.plot = self.plot_planner.plot_cut(raster.plot(), True, self.kernel.current_x, self.kernel.current_y)
+        self.plot = self.plot_planner.plot_cut(raster.plot(), True, self.context.current_x, self.context.current_y)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -339,13 +339,13 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         Interpreter.reset(self)
         self.pipe._buffer = b''
         self.pipe._queue = b''
-        self.kernel.signal('pipe;buffer', 0)
+        self.context.signal('pipe;buffer', 0)
         self.plot = None
         self.pipe.realtime_write(b'I*\n')
         self.laser = False
         self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
         self.is_paused = False
 
     def cut(self, x, y):
@@ -391,7 +391,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         :param cut:
         :return:
         """
-        self.goto_relative(x - self.kernel.current_x, y - self.kernel.current_y, cut)
+        self.goto_relative(x - self.context.current_x, y - self.context.current_y, cut)
 
     def goto_relative(self, dx, dy, cut):
         """
@@ -413,7 +413,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             if dy != 0:
                 self.goto_y(dy)
             self.pipe.write(b'S1P\n')
-            if not self.kernel.autolock:
+            if not self.context.autolock:
                 self.pipe.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
@@ -429,12 +429,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.goto_y(dy)
             self.pipe.write(b'N')
         self.check_bounds()
-        self.kernel.signal('interpreter;position', (self.kernel.current_x, self.kernel.current_y,
-                                                    self.kernel.current_x - dx, self.kernel.current_y - dy))
+        self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
+                                                     self.context.current_x - dx, self.context.current_y - dy))
 
     def goto_octent_abs(self, x, y, on):
-        dx = x - self.kernel.current_x
-        dy = y - self.kernel.current_y
+        dx = x - self.context.current_x
+        dy = y - self.context.current_y
         self.goto_octent(dx, dy, on)
 
     def goto_octent(self, dx, dy, on):
@@ -449,8 +449,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.goto_x(dx)
         else:
             self.goto_y(dy)
-        self.kernel.signal('interpreter;position', (self.kernel.current_x, self.kernel.current_y,
-                                                    self.kernel.current_x - dx, self.kernel.current_y - dy))
+        self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
+                                                     self.context.current_x - dx, self.context.current_y - dy))
 
     def set_speed(self, speed=None):
         change = False
@@ -504,7 +504,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             controller.write(b'I')
             controller.write(self.CODE_LASER_OFF)
             controller.write(b'S1P\n')
-            if not self.kernel.autolock:
+            if not self.context.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_LASER_OFF)
@@ -522,7 +522,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             controller.write(b'I')
             controller.write(self.CODE_LASER_ON)
             controller.write(b'S1P\n')
-            if not self.kernel.autolock:
+            if not self.context.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_LASER_ON)
@@ -538,19 +538,19 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         controller = self.pipe
         if self.state == INTERPRETER_STATE_FINISH:
             controller.write(b'S1P\n')
-            if not self.kernel.autolock:
+            if not self.context.autolock:
                 controller.write(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
             controller.write(b'FNSE-\n')
             self.reset_modes()
         self.state = INTERPRETER_STATE_RAPID
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def fly_switch_speed(self):
         controller = self.pipe
         switch = b'@NSE'
         speed_code = LaserSpeed(
-            self.kernel.board,
+            self.context.board,
             self.speed,
             self.raster_step,
             d_ratio=self.d_ratio,
@@ -579,7 +579,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         elif self.state == INTERPRETER_STATE_RAPID:
             controller.write(b'I')
         self.state = INTERPRETER_STATE_FINISH
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def ensure_program_mode(self):
         if self.state == INTERPRETER_STATE_PROGRAM:
@@ -588,7 +588,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.ensure_finished_mode()
 
         speed_code = LaserSpeed(
-            self.kernel.board,
+            self.context.board,
             self.speed,
             self.raster_step,
             d_ratio=self.d_ratio,
@@ -606,7 +606,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.declare_directions()
         controller.write(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
-        self.kernel.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def h_switch(self):
         controller = self.pipe
@@ -617,9 +617,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             controller.write(self.CODE_LEFT)
             self.set_prop(DIRECTION_FLAG_LEFT)
         if self.is_prop(DIRECTION_FLAG_TOP):
-            self.kernel.current_y -= self.raster_step
+            self.context.current_y -= self.raster_step
         else:
-            self.kernel.current_y += self.raster_step
+            self.context.current_y += self.raster_step
         self.laser = False
 
     def v_switch(self):
@@ -631,18 +631,18 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             controller.write(self.CODE_TOP)
             self.set_prop(DIRECTION_FLAG_TOP)
         if self.is_prop(DIRECTION_FLAG_LEFT):
-            self.kernel.current_x -= self.raster_step
+            self.context.current_x -= self.raster_step
         else:
-            self.kernel.current_x += self.raster_step
+            self.context.current_x += self.raster_step
         self.laser = False
 
     def calc_home_position(self):
         x = 0
         y = 0
-        if self.kernel.home_right:
-            x = int(self.kernel.bed_width * 39.3701)
-        if self.kernel.home_bottom:
-            y = int(self.kernel.bed_height * 39.3701)
+        if self.context.home_right:
+            x = int(self.context.bed_width * 39.3701)
+        if self.context.home_bottom:
+            y = int(self.context.bed_height * 39.3701)
         return x, y
 
     def home(self):
@@ -650,23 +650,23 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         controller = self.pipe
         self.ensure_rapid_mode()
         controller.write(b'IPP\n')
-        old_x = self.kernel.current_x
-        old_y = self.kernel.current_y
-        self.kernel.current_x = x
-        self.kernel.current_y = y
+        old_x = self.context.current_x
+        old_y = self.context.current_y
+        self.context.current_x = x
+        self.context.current_y = y
         self.reset_modes()
         self.state = INTERPRETER_STATE_RAPID
-        adjust_x = self.kernel.home_adjust_x
-        adjust_y = self.kernel.home_adjust_y
+        adjust_x = self.context.home_adjust_x
+        adjust_y = self.context.home_adjust_y
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
             # Erase adjustment
-            self.kernel.current_x = x
-            self.kernel.current_y = y
+            self.context.current_x = x
+            self.context.current_y = y
 
-        self.kernel.signal('interpreter;mode', self.state)
-        self.kernel.signal('interpreter;position', (self.kernel.current_x, self.kernel.current_y, old_x, old_y))
+        self.context.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y, old_x, old_y))
 
     def lock_rail(self):
         controller = self.pipe
@@ -683,10 +683,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         controller.write(b'I\n')
 
     def check_bounds(self):
-        self.min_x = min(self.min_x, self.kernel.current_x)
-        self.min_y = min(self.min_y, self.kernel.current_y)
-        self.max_x = max(self.max_x, self.kernel.current_x)
-        self.max_y = max(self.max_y, self.kernel.current_y)
+        self.min_x = min(self.min_x, self.context.current_x)
+        self.min_y = min(self.min_y, self.context.current_y)
+        self.max_x = max(self.max_x, self.context.current_x)
+        self.max_y = max(self.max_y, self.context.current_y)
 
     def reset_modes(self):
         self.laser = False
@@ -726,8 +726,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             if not self.is_prop(DIRECTION_FLAG_TOP):
                 controller.write(self.CODE_TOP)
                 self.set_prop(DIRECTION_FLAG_TOP)
-        self.kernel.current_x += dx
-        self.kernel.current_y += dy
+        self.context.current_x += dx
+        self.context.current_y += dy
         self.check_bounds()
         controller.write(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
@@ -802,7 +802,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def move_right(self, dx=0):
         controller = self.pipe
-        self.kernel.current_x += dx
+        self.context.current_x += dx
         if not self.is_right or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_RIGHT)
             self.set_right()
@@ -812,7 +812,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def move_left(self, dx=0):
         controller = self.pipe
-        self.kernel.current_x -= abs(dx)
+        self.context.current_x -= abs(dx)
         if not self.is_left or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_LEFT)
             self.set_left()
@@ -822,7 +822,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def move_bottom(self, dy=0):
         controller = self.pipe
-        self.kernel.current_y += dy
+        self.context.current_y += dy
         if not self.is_bottom or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_BOTTOM)
             self.set_bottom()
@@ -832,7 +832,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def move_top(self, dy=0):
         controller = self.pipe
-        self.kernel.current_y -= abs(dy)
+        self.context.current_y -= abs(dy)
         if not self.is_top or self.state != INTERPRETER_STATE_PROGRAM:
             controller.write(self.CODE_TOP)
             self.set_top()
@@ -939,36 +939,36 @@ class LhystudioController(Modifier, Pipe):
         self.pipe_channel = None
 
     def attach(self, channel=None):
-        device = self.context
-        device.pipe = self
-        device.setting(int, 'packet_count', 0)
-        device.setting(int, 'rejected_count', 0)
+        context = self.context
+        context.pipe = self
+        context.setting(int, 'packet_count', 0)
+        context.setting(int, 'rejected_count', 0)
 
-        device.register("control/Connect_USB", self.open)
-        device.register("control/Disconnect_USB", self.close)
-        device.register("control/Status Update", self.update_status)
-        self.usb_log = device.channel_open("usb", buffer=20)
-        self.send_channel = device.channel_open('send')
-        self.recv_channel = device.channel_open('recv')
-        self.pipe_channel = device.channel_open('pipe')
+        context.register("control/Connect_USB", self.open)
+        context.register("control/Disconnect_USB", self.close)
+        context.register("control/Status Update", self.update_status)
+        self.usb_log = context.channel_open("usb", buffer=20)
+        self.send_channel = context.channel_open('send')
+        self.recv_channel = context.channel_open('recv')
+        self.pipe_channel = context.channel_open('pipe')
         self.reset()
 
         def abort_wait():
             self.abort_waiting = True
 
-        device.register("control/Wait Abort", abort_wait)
+        context.register("control/Wait Abort", abort_wait)
 
         def pause_k40():
             self.update_state(STATE_PAUSE)
             self.start()
 
-        device.register("control/Pause", pause_k40)
+        context.register("control/Pause", pause_k40)
 
         def resume_k40():
             self.update_state(STATE_ACTIVE)
             self.start()
 
-        device.register("control/Resume", resume_k40)
+        context.register("control/Resume", resume_k40)
 
     def shutdown(self, channel=None):
         # Module.shutdown(channel=channel)

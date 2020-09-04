@@ -432,13 +432,13 @@ class OperationProperty(wx.Frame, Module):
         self.display_panel.Update()
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.context.device_root.elements.clear_operations()
+        self.context.elements.clear_operations()
 
     def on_menu_default0(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.context.device_root.elements.load_default()
+        self.context.elements.load_default()
 
     def on_menu_default1(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.context.device_root.elements.load_default2()
+        self.context.elements.load_default2()
 
     def on_menu_save(self, event):  # wxGlade: OperationProperty.<event_handler>
         pass
@@ -551,7 +551,7 @@ class OperationProperty(wx.Frame, Module):
 
     def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
         self.operation.raster_direction = self.combo_raster_direction.GetSelection()
-        self.context.device_root.raster_direction = self.operation.raster_direction
+        self.context.raster_direction = self.operation.raster_direction
         self.context.signal('element_property_update', self.operation)
 
     def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>

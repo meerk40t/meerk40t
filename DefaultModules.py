@@ -19,7 +19,7 @@ class SVGWriter:
         yield 'default'
 
     @staticmethod
-    def save(device, f, version='default'):
+    def save(context, f, version='default'):
         root = Element(SVG_NAME_TAG)
         root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
@@ -30,10 +30,10 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        device.setting(int, "bed_width", 320)
-        device.setting(int, "bed_height", 220)
-        mm_width = device.bed_width
-        mm_height = device.bed_height
+        context.setting(int, "bed_width", 320)
+        context.setting(int, "bed_height", 220)
+        mm_width = context.bed_width
+        mm_height = context.bed_height
         root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
         root.set(SVG_ATTR_HEIGHT, '%fmm' % mm_height)
         px_width = mm_width * mils_per_mm * px_per_mils
@@ -42,7 +42,7 @@ class SVGWriter:
         viewbox = '%d %d %d %d' % (0, 0, round(px_width), round(px_height))
         scale = 'scale(%f)' % px_per_mils
         root.set(SVG_ATTR_VIEWBOX, viewbox)
-        elements = device.elements
+        elements = context.elements
         for operation in elements.ops():
             subelement = SubElement(root, "operation")
             c = getattr(operation, 'color')
@@ -119,15 +119,15 @@ class SVGLoader:
         yield "Scalable Vector Graphics", ("svg",), "image/svg+xml"
 
     @staticmethod
-    def load(kernel, pathname, **kwargs):
-        kernel.setting(int, "bed_width", 320)
-        kernel.setting(int, "bed_height", 220)
+    def load(context, pathname, **kwargs):
+        context.setting(int, "bed_width", 320)
+        context.setting(int, "bed_height", 220)
         elements = []
         basename = os.path.basename(pathname)
         scale_factor = 1000.0 / 96.0
         svg = SVG.parse(source=pathname,
-                        width='%fmm' % (kernel.bed_width),
-                        height='%fmm' % (kernel.bed_height),
+                        width='%fmm' % (context.bed_width),
+                        height='%fmm' % (context.bed_height),
                         ppi=96.0,
                         transform='scale(%f)' % scale_factor)
         ops = None
@@ -205,14 +205,14 @@ class ImageLoader:
         yield "Webp Format", ("webp",), "image/webp"
 
     @staticmethod
-    def load(kernel, pathname, **kwargs):
+    def load(context, pathname, **kwargs):
         basename = os.path.basename(pathname)
 
         image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
         image.load()
         try:
-            kernel.setting(bool, 'image_dpi', True)
-            if kernel.image_dpi:
+            context.setting(bool, 'image_dpi', True)
+            if context.image_dpi:
                 dpi = image.image.info['dpi']
                 if isinstance(dpi, tuple):
                     image *= 'scale(%f,%f)' % (1000.0/dpi[0], 1000.0/dpi[1])
@@ -228,14 +228,14 @@ class DxfLoader:
         yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
 
     @staticmethod
-    def load(kernel, pathname, **kwargs):
+    def load(context, pathname, **kwargs):
         """"
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        kernel.setting(int, "bed_width", 320)
-        kernel.setting(int, "bed_height", 220)
+        context.setting(int, "bed_width", 320)
+        context.setting(int, "bed_height", 220)
 
         import ezdxf
 
@@ -427,7 +427,7 @@ class DxfLoader:
             else:
                 element.stroke = Color('black')
             element.transform.post_scale(MILS_PER_MM, -MILS_PER_MM)
-            element.transform.post_translate_y(kernel.bed_height * MILS_PER_MM)
+            element.transform.post_translate_y(context.bed_height * MILS_PER_MM)
             if isinstance(element, SVGText):
                 elements.append(element)
             else:
