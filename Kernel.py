@@ -29,9 +29,9 @@ class Job:
     This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
     and times. This is usually extended directly by a module requiring that functionality.
     """
-    def __init__(self, name=None, device=None, process=None, args=(), interval=1.0, times=None):
+    def __init__(self, name=None, context=None, process=None, args=(), interval=1.0, times=None):
         self.name = name
-        self.device = device
+        self.context = context
         self.state = STATE_INITIALIZE
 
         self.process = process
@@ -50,13 +50,13 @@ class Job:
 
     def schedule(self):
         """Schedule this as a job."""
-        if self.device is not None and self not in self.device.jobs:
-            self.device.jobs.append(self)
+        if self.context is not None and self not in self.context.kernel.jobs:
+            self.context.kernel.jobs.append(self)
 
     def unschedule(self):
         """Unschedule this module as a job"""
-        if self in self.device.jobs:
-            self.device.jobs.remove(self)
+        if self in self.context.kernel.jobs:
+            self.context.kernel.jobs.remove(self)
 
 
 class Modifier:
@@ -67,6 +67,11 @@ class Modifier:
     undone.
     """
 
+    def __init__(self, context, name=None, channel=None):
+        self.context = context
+        self.name = name
+        self.state = STATE_INITIALIZE
+
     def boot(self, channel=None):
         """
         Called when a kernel is booted, to boot the respective modifiers.
@@ -74,7 +79,7 @@ class Modifier:
         """
         pass
 
-    def attach(self, device, name=None, channel=None):
+    def attach(self, channel=None):
         """
         Called by open to attach module to device.
 
@@ -91,7 +96,7 @@ class Modifier:
         """
         pass
 
-    def detach(self, device, channel=None):
+    def detach(self, channel=None):
         """
         Called by close to detach the module from device.
 
@@ -123,8 +128,8 @@ class Module:
     channel 'close' and shutdown is given the channel 'shutdown'.
     """
 
-    def __init__(self, device, name=None, channel=None):
-        self.device = device
+    def __init__(self, context, name=None, channel=None):
+        self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
 
@@ -157,11 +162,11 @@ class Interpreter:
     objects that may also be common within devices.
     """
 
-    def __init__(self, device):
-        self.device = device
+    def __init__(self, kernel):
+        self.kernel = kernel
         self.process_item = None
         self.spooled_item = None
-        self.pipe = device.pipe
+        self.pipe = kernel.pipe
         self.extra_hold = None
 
         self.state = INTERPRETER_STATE_RAPID
@@ -189,8 +194,8 @@ class Interpreter:
         if self.spooled_item is not None:
             self.execute()
         else:
-            if self.device.quit:
-                self.device.stop()
+            if self.kernel.quit:
+                self.kernel.stop()
 
     def execute(self):
         """
@@ -214,11 +219,11 @@ class Interpreter:
             self.spooled_item = None
 
     def fetch_next_item(self):
-        element = self.device.spooler.peek()
+        element = self.kernel.spooler.peek()
         if element is None:
             return  # Spooler is empty.
 
-        self.device.spooler.pop()
+        self.kernel.spooler.pop()
         if isinstance(element, int):
             self.spooled_item = (element,)
         elif isinstance(element, tuple):
@@ -315,9 +320,9 @@ class Interpreter:
                         t()
             elif command == COMMAND_SIGNAL:
                 if isinstance(values, str):
-                    self.device.signal(values, None)
+                    self.kernel.signal(values, None)
                 elif len(values) >= 2:
-                    self.device.signal(values[0], *values[1:])
+                    self.kernel.signal(values[0], *values[1:])
         except AttributeError:
             pass
 
@@ -385,34 +390,34 @@ class Interpreter:
         self.plot_planner.laser_enabled = True
 
     def move(self, x, y):
-        self.device.current_x = x
-        self.device.current_y = y
+        self.kernel.current_x = x
+        self.kernel.current_y = y
 
     def cut(self, x, y):
-        self.device.current_x = x
-        self.device.current_y = y
+        self.kernel.current_x = x
+        self.kernel.current_y = y
 
     def home(self, *values):
-        self.device.current_x = 0
-        self.device.current_y = 0
+        self.kernel.current_x = 0
+        self.kernel.current_y = 0
 
     def ensure_rapid_mode(self, *values):
         if self.state == INTERPRETER_STATE_RAPID:
             return
         self.state = INTERPRETER_STATE_RAPID
-        self.device.signal('interpreter;mode', self.state)
+        self.kernel.signal('interpreter;mode', self.state)
 
     def ensure_finished_mode(self, *values):
         if self.state == INTERPRETER_STATE_FINISH:
             return
         self.state = INTERPRETER_STATE_FINISH
-        self.device.signal('interpreter;mode', self.state)
+        self.kernel.signal('interpreter;mode', self.state)
 
     def ensure_program_mode(self, *values):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
         self.state = INTERPRETER_STATE_PROGRAM
-        self.device.signal('interpreter;mode', self.state)
+        self.kernel.signal('interpreter;mode', self.state)
 
     def set_speed(self, speed=None):
         self.speed = speed
@@ -457,8 +462,8 @@ class Interpreter:
         self.is_relative = False
 
     def set_position(self, x, y):
-        self.device.current_x = x
-        self.device.current_y = y
+        self.kernel.current_x = x
+        self.kernel.current_y = y
 
     def wait(self, t):
         self.next_run = t
@@ -469,18 +474,18 @@ class Interpreter:
 
     def reset(self):
         self.spooled_item = None
-        self.device.spooler.clear_queue()
+        self.kernel.spooler.clear_queue()
         self.spooled_item = None
         self.extra_hold = None
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.device.current_x)
-        parts.append("y=%f" % self.device.current_y)
+        parts.append("x=%f" % self.kernel.current_x)
+        parts.append("y=%f" % self.kernel.current_y)
         parts.append("speed=%f" % self.speed)
         parts.append("power=%d" % self.power)
         status = ";".join(parts)
-        self.device.signal('interpreter;status', status)
+        self.kernel.signal('interpreter;status', status)
 
     def set_prop(self, mask):
         self.properties |= mask
@@ -552,19 +557,17 @@ class Spooler(Modifier):
     * remove(job)
     """
 
-    def __init__(self):
-        Modifier.__init__(self)
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
         self.queue_lock = Lock()
         self._queue = []
-        self.device = None
 
     def __repr__(self):
         return "Spooler()"
 
-    def attach(self, device, name=None, channel=None):
+    def attach(self, channel=None):
         """Overloaded attach to demand .spooler attribute."""
-        device.spooler = self
-        self.device = device
+        self.context.spooler = self
 
     def peek(self):
         if len(self._queue) == 0:
@@ -578,7 +581,7 @@ class Spooler(Modifier):
         queue_head = self._queue[0]
         del self._queue[0]
         self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
+        self.context.signal('spooler;queue', len(self._queue))
         return queue_head
 
     def job(self, *job):
@@ -598,7 +601,7 @@ class Spooler(Modifier):
         else:
             self._queue.append(job)
         self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
+        self.context.signal('spooler;queue', len(self._queue))
 
     def jobs(self, jobs):
         """
@@ -614,7 +617,7 @@ class Spooler(Modifier):
         else:
             self._queue.append(jobs)
         self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
+        self.context.signal('spooler;queue', len(self._queue))
 
     def job_if_idle(self, element):
         if len(self._queue) == 0:
@@ -627,152 +630,13 @@ class Spooler(Modifier):
         self.queue_lock.acquire(True)
         self._queue = []
         self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
+        self.context.signal('spooler;queue', len(self._queue))
 
     def remove(self, element):
         self.queue_lock.acquire(True)
         self._queue.remove(element)
         self.queue_lock.release()
-        self.device.signal('spooler;queue', len(self._queue))
-
-
-class Signaler(Modifier, Job):
-    """
-    Signaler provides the signals functionality for a device. It replaces the functions for .signal(), .listen(),
-    .unlisten(), .last_signal().
-    """
-
-    def __init__(self, device):
-        Modifier.__init__(self)
-        Job.__init__(self, device=device, name='signaler', process=self.delegate_messages, args=(), interval=0.05)
-        self.listeners = {}
-        self.adding_listeners = []
-        self.removing_listeners = []
-        self.last_message = {}
-        self.queue_lock = Lock()
-        self.message_queue = {}
-        self._is_queue_processing = False
-
-    def attach(self, device, name=None, channel=None):
-        device.signal = self.signal
-        device.listen = self.listen
-        device.unlisten = self.unlisten
-        device.last_signal = self.last_signal
-        self.schedule()
-
-    def detach(self, device, channel=None):
-        self.unschedule()
-
-        def signal(code, *message):
-            _ = self.device_root.translation
-            channel(_("Suspended Signal: %s for %s" % (code, message)))
-        device.signal = signal
-
-    def shutdown(self, channel=None):
-        _ = self.device.device_root.translation
-        for key, listener in self.listeners.items():
-            if len(listener):
-                if channel is not None:
-                    channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
-        self.last_message = {}
-        self.listeners = {}
-
-    # Signal processing.
-
-    def signal(self, code, *message):
-        """
-        Signals add the latest message to the message queue.
-
-        :param code: Signal code
-        :param message: Message to send.
-        """
-        self.queue_lock.acquire(True)
-        self.message_queue[code] = message
-        self.queue_lock.release()
-
-    def delegate_messages(self):
-        """
-        Delegate the process queue to the run_later thread.
-        run_later should be a threading instance wherein all signals are delivered.
-        """
-        if self._is_queue_processing:
-            return
-        if self.device.run_later is not None:
-            self.device.run_later(self.process_queue, None)
-        else:
-            self.process_queue(None)
-
-    def process_queue(self, *args):
-        """
-        Performed in the run_later thread. Signal groups. Threadsafe.
-
-        Process the signals queued up. Inserting any attaching listeners, removing any removing listeners. And
-        providing the newly attached listeners the last message known from that signal.
-        :param args: None
-        :return:
-        """
-        if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
-            return
-        self._is_queue_processing = True
-        add = None
-        remove = None
-        self.queue_lock.acquire(True)
-        queue = self.message_queue
-        if len(self.adding_listeners) != 0:
-            add = self.adding_listeners
-            self.adding_listeners = []
-        if len(self.removing_listeners):
-            remove = self.removing_listeners
-            self.removing_listeners = []
-        self.message_queue = {}
-        self.queue_lock.release()
-        if add is not None:
-            for signal, funct in add:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    listeners.append(funct)
-                else:
-                    self.listeners[signal] = [funct]
-                if signal in self.last_message:
-                    last_message = self.last_message[signal]
-                    funct(*last_message)
-        if remove is not None:
-            for signal, funct in remove:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    try:
-                        listeners.remove(funct)
-                    except ValueError:
-                        print("Value error removing: %s  %s" % (str(listeners), signal))
-
-        for code, message in queue.items():
-            if code in self.listeners:
-                listeners = self.listeners[code]
-                for listener in listeners:
-                    listener(*message)
-            self.last_message[code] = message
-        self._is_queue_processing = False
-
-    def last_signal(self, code):
-        """
-        Queries the last signal for a particular code.
-        :param code: code to query.
-        :return: Last signal sent through the kernel for that code.
-        """
-        try:
-            return self.last_message[code]
-        except KeyError:
-            return None
-
-    def listen(self, signal, funct):
-        self.queue_lock.acquire(True)
-        self.adding_listeners.append((signal, funct))
-        self.queue_lock.release()
-
-    def unlisten(self, signal, funct):
-        self.queue_lock.acquire(True)
-        self.removing_listeners.append((signal, funct))
-        self.queue_lock.release()
+        self.context.signal('spooler;queue', len(self._queue))
 
 
 class Elemental(Modifier):
@@ -785,17 +649,16 @@ class Elemental(Modifier):
     that information out to inform other interested modules.
     """
 
-    def __init__(self):
-        Modifier.__init__(self)
-        self.device = None
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
         self.note = None
         self._bounds = None
 
-    def attach(self, device, name=None, channel=None):
-        self.device = device
+    def attach(self, channel=None):
+        device = self.context
         device.elements = self
         device.classify = self.classify
         device.save = self.save
@@ -814,28 +677,28 @@ class Elemental(Modifier):
 
         def select():
             obj.selected = True
-            self.device.signal('selected', obj)
+            self.context.signal('selected', obj)
 
         def unselect():
             obj.selected = False
-            self.device.signal('selected', obj)
+            self.context.signal('selected', obj)
 
         def highlight():
             obj.highlighted = True
-            self.device.signal('highlighted', obj)
+            self.context.signal('highlighted', obj)
 
         def unhighlight():
             obj.highlighted = False
-            self.device.signal('highlighted', obj)
+            self.context.signal('highlighted', obj)
 
         def emphasize():
             obj.emphasized = True
-            self.device.signal('emphasized', obj)
+            self.context.signal('emphasized', obj)
             self.validate_bounds()
 
         def unemphasize():
             obj.emphasized = False
-            self.device.signal('emphasized', obj)
+            self.context.signal('emphasized', obj)
             self.validate_bounds()
 
         def modified():
@@ -845,7 +708,7 @@ class Elemental(Modifier):
             obj.bounds = None
             self._bounds = None
             self.validate_bounds()
-            self.device.signal('modified', obj)
+            self.context.signal('modified', obj)
 
         def altered():
             """
@@ -862,7 +725,7 @@ class Elemental(Modifier):
             obj.bounds = None
             self._bounds = None
             self.validate_bounds()
-            self.device.signal('altered', obj)
+            self.context.signal('altered', obj)
 
         obj.select = select
         obj.unselect = unselect
@@ -921,7 +784,7 @@ class Elemental(Modifier):
         self.classify(self.elems())
 
     def finalize(self, channel=None):
-        kernel = self.device
+        kernel = self.context
         settings = kernel.derive('operations')
         settings.clear_persistent()
         for i, op in enumerate(self.ops()):
@@ -937,8 +800,7 @@ class Elemental(Modifier):
                 op_set.write_persistent(key, value)
 
     def boot(self, channel=None):
-        kernel = self.device
-        settings = kernel.derive('operations')
+        settings = self.context.derive('operations')
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
@@ -953,7 +815,7 @@ class Elemental(Modifier):
             self.load_default()
             return
         self.add_ops([o for o in ops if o is not None])
-        self.device.signal('rebuild_tree')
+        self.context.signal('rebuild_tree')
 
     def items(self, **kwargs):
         def combined(*args):
@@ -1040,24 +902,24 @@ class Elemental(Modifier):
     def add_op(self, op):
         self._operations.append(op)
         self.register(op)
-        self.device.signal('operation_added', op)
+        self.context.signal('operation_added', op)
 
     def add_ops(self, adding_ops):
         self._operations.extend(adding_ops)
         for op in adding_ops:
             self.register(op)
-        self.device.signal('operation_added', adding_ops)
+        self.context.signal('operation_added', adding_ops)
 
     def add_elem(self, element):
         self._elements.append(element)
         self.register(element)
-        self.device.signal('element_added', element)
+        self.context.signal('element_added', element)
 
     def add_elems(self, adding_elements):
         self._elements.extend(adding_elements)
         for element in adding_elements:
             self.register(element)
-        self.device.signal('element_added', adding_elements)
+        self.context.signal('element_added', adding_elements)
 
     def files(self):
         return self._filenodes
@@ -1065,13 +927,13 @@ class Elemental(Modifier):
     def clear_operations(self):
         for op in self._operations:
             self.unregister(op)
-            self.device.signal('operation_removed', op)
+            self.context.signal('operation_removed', op)
         self._operations.clear()
 
     def clear_elements(self):
         for e in self._elements:
             self.unregister(e)
-            self.device.signal('element_removed', e)
+            self.context.signal('element_removed', e)
         self._elements.clear()
 
     def clear_files(self):
@@ -1100,7 +962,7 @@ class Elemental(Modifier):
             for i, e in enumerate(self._elements):
                 if elem is e:
                     self.unregister(elem)
-                    self.device.signal('element_removed', elem)
+                    self.context.signal('element_removed', elem)
                     self._elements[i] = None
         self.remove_elements_from_operations(elements_list)
         self.validate_bounds()
@@ -1110,7 +972,7 @@ class Elemental(Modifier):
             for i, o in enumerate(self._operations):
                 if o is op:
                     self.unregister(op)
-                    self.device.signal('operation_removed', op)
+                    self.context.signal('operation_removed', op)
                     self._operations[i] = None
         self.purge_unset()
 
@@ -1166,7 +1028,7 @@ class Elemental(Modifier):
             new_bounds = [xmin, ymin, xmax, ymax]
         if self._bounds != new_bounds:
             self._bounds = new_bounds
-            self.device.device_root.signal('selected_bounds', self._bounds)
+            self.context.signal('selected_bounds', self._bounds)
 
     def is_in_set(self, v, selected, flat=True):
         for q in selected:
@@ -1227,11 +1089,11 @@ class Elemental(Modifier):
     def ensure_positive_bounds(self):
         b = self._bounds
         self._bounds = [min(b[0], b[2]), min(b[1], b[3]), max(b[0], b[2]), max(b[1], b[3])]
-        self.device.device_root.signal('selected_bounds', self._bounds)
+        self.context.signal('selected_bounds', self._bounds)
 
     def update_bounds(self, b):
         self._bounds = [b[0], b[1], b[0], b[1]]
-        self.device.device_root.signal('selected_bounds', self._bounds)
+        self.context.signal('selected_bounds', self._bounds)
 
     @staticmethod
     def bounding_box(elements):
@@ -1318,11 +1180,11 @@ class Elemental(Modifier):
                     self.add_op(op)
 
     def load(self, pathname, **kwargs):
-        for loader_name in self.device.match('load'):
-            loader = self.device.registered[loader_name]
+        for loader_name in self.context.match('load'):
+            loader = self.context.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    results = loader.load(self.device, pathname, **kwargs)
+                    results = loader.load(self.context, pathname, **kwargs)
                     if results is None:
                         continue
                     elements, ops, note, pathname, basename = results
@@ -1342,12 +1204,12 @@ class Elemental(Modifier):
         if all:
             filetypes.append('All valid types')
             exts = []
-            for loader_name, loader in self.device.registered['load'].items():
+            for loader_name, loader in self.context.registered['load'].items():
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
                         exts.append('*.%s' % ext)
             filetypes.append(';'.join(exts))
-        for loader_name, loader in self.device.registered['load'].items():
+        for loader_name, loader in self.context.registered['load'].items():
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
@@ -1357,170 +1219,20 @@ class Elemental(Modifier):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        for save_name, saver in self.device.registered['save'].items():
+        for save_name, saver in self.context.registered['save'].items():
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
-                    saver.save(self.device, pathname, 'default')
+                    saver.save(self.context, pathname, 'default')
                     return True
         return False
 
     def save_types(self):
         filetypes = []
-        for saver_name, saver in self.device.registered['save'].items():
+        for saver_name, saver in self.context.registered['save'].items():
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % (extension))
         return "|".join(filetypes)
-
-
-class Scheduler(Modifier):
-    """
-    Provides a scheduler for a specific kernel location. This will allow jobs to be run at this specific path location.
-    """
-    def __init__(self):
-        self.state = STATE_INITIALIZE
-        self.device = None
-        self.jobs = []
-
-    def attach(self, kernel, name=None, channel=None):
-        self.device = kernel
-        kernel.jobs = self.jobs
-        kernel.add_job = self.add_job
-        kernel.thread = kernel.threaded(self.run, 'Device%s' % str(kernel))
-
-    def detach(self, kernel, channel=None):
-        self.state = STATE_TERMINATE
-        kernel.thread.join()
-
-    def shutdown(self, channel=None):
-        self.state = STATE_TERMINATE
-
-    def run(self):
-        """
-        Scheduler main loop.
-
-        Check the Scheduler thread state, and whether it should abort or pause.
-        Check each job, and if that job is scheduled to run. Executes that job.
-        :return:
-        """
-        self.state = STATE_ACTIVE
-        while self.state != STATE_END:
-            time.sleep(0.005)  # 200 ticks a second.
-            if self.state == STATE_TERMINATE:
-                break
-            while self.state == STATE_PAUSE:
-                # The scheduler is paused.
-                time.sleep(0.1)
-            if self.state == STATE_TERMINATE:
-                break
-            jobs = self.device.jobs
-            jobs_update = False
-            for job in jobs:
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job.next_run = 0  # Set to zero while running.
-                    if job.times is not None:
-                        job.times = job.times - 1
-                        if job.times <= 0:
-                            jobs_update = True
-                        if job.times < 0:
-                            continue
-                    try:
-                        if isinstance(jobs, int):
-                            job.process(job.args[0])
-                        elif isinstance(job.args, tuple):
-                            job.process(*job.args)
-                        else:
-                            job.process(job.args)
-                    except:
-                        import sys
-                        sys.excepthook(*sys.exc_info())
-                    job.last_run = time.time()
-                    job.next_run += job.last_run + job.interval
-            if jobs_update:
-                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
-        self.state = STATE_END
-
-    def add_job(self, run, args=(), interval=1.0, times=None):
-        """
-        Adds a job to the scheduler.
-
-        :param run: function to run
-        :param args: arguments to give to that function.
-        :param interval: in seconds, how often should the job be run.
-        :param times: limit on number of executions.
-        :return: Reference to the job added.
-        """
-        job = Job(self, process=run, args=args, interval=interval, times=times)
-        self.jobs.append(job)
-        return job
-
-
-class Channels(Modifier):
-    """
-    Functionality to add Channels to a Kernel.
-    """
-    def __init__(self):
-        Modifier.__init__(self)
-        self.device = None
-        self.channels = {}
-        self.watchers = {}
-        self.buffer = {}
-        self.greet = {}
-
-    def attach(self, kernel, name=None, channel=None):
-        self.device = kernel
-        kernel.add_greet = self.add_greet
-        kernel.add_watcher = self.add_watcher
-        kernel.remove_watcher = self.remove_watcher
-        kernel.channel_open = self.channel_open
-
-    def detach(self, device, channel=None):
-        pass
-
-    def add_greet(self, channel, greet):
-        self.greet[channel] = greet
-        if channel in self.channels:
-            self.channels[channel](greet)
-
-    def add_watcher(self, channel, monitor_function):
-        if channel not in self.watchers:
-            self.watchers[channel] = [monitor_function]
-        else:
-            for q in self.watchers[channel]:
-                if q is monitor_function:
-                    return  # This is already being watched by that.
-            self.watchers[channel].append(monitor_function)
-        if channel in self.greet:
-            monitor_function(self.greet[channel])
-        if channel in self.buffer:
-            for line in self.buffer[channel]:
-                monitor_function(line)
-
-    def remove_watcher(self, channel, monitor_function):
-        self.watchers[channel].remove(monitor_function)
-
-    def channel_open(self, channel, buffer=0):
-        if channel not in self.channels:
-            def chan(message):
-                if channel in self.watchers:
-                    for w in self.watchers[channel]:
-                        w(message)
-                if buffer <= 0:
-                    return
-                try:
-                    buff = self.buffer[channel]
-                except KeyError:
-                    buff = list()
-                    self.buffer[channel] = buff
-                buff.append(message)
-                if len(buff) + 10 > buffer:
-                    self.buffer[channel] = buff[-buffer:]
-
-            self.channels[channel] = chan
-            if channel in self.greet:
-                chan(self.greet[channel])
-        return self.channels[channel]
 
 
 class BindAlias(Modifier):
@@ -1529,19 +1241,17 @@ class BindAlias(Modifier):
 
     Stub.
     """
-    def __init__(self):
-        Modifier.__init__(self)
-        self.device = None
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
         # Keymap/alias values
         self.keymap = {}
         self.alias = {}
 
-    def attach(self, device, name=None, channel=None):
-        self.device = device
-        device.keymap = self.keymap
-        device.alias = self.alias
-        device.default_keymap = self.default_keymap
-        device.default_alias = self.default_alias
+    def attach(self, channel=None):
+        self.context.keymap = self.keymap
+        self.context.alias = self.alias
+        self.context.default_keymap = self.default_keymap
+        self.context.default_alias = self.default_alias
 
     def boot(self, channel=None):
         self.boot_keymap()
@@ -1551,8 +1261,8 @@ class BindAlias(Modifier):
         self.save_keymap_alias()
 
     def save_keymap_alias(self):
-        keys = self.device.derive('keymap')
-        alias = self.device.derive('alias')
+        keys = self.context.derive('keymap')
+        alias = self.context.derive('alias')
 
         keys.clear_persistent()
         alias.clear_persistent()
@@ -1569,14 +1279,14 @@ class BindAlias(Modifier):
 
     def boot_keymap(self):
         self.keymap.clear()
-        prefs = self.device.derive('keymap')
+        prefs = self.context.derive('keymap')
         prefs.load_persistent_string_dict(self.keymap)
         if not len(self.keymap):
             self.default_keymap()
 
     def boot_alias(self):
         self.alias.clear()
-        prefs = self.device.derive('alias')
+        prefs = self.context.derive('alias')
         prefs.load_persistent_string_dict(self.alias)
         if not len(self.alias):
             self.default_alias()
@@ -1662,13 +1372,11 @@ class BindAlias(Modifier):
 
 
 class Devices(Modifier):
-    def __init__(self):
-        Modifier.__init__(self)
-        self.device = None
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
 
-    def attach(self, device, name=None, channel=None):
-        self.device = device
-        device.device_add = self.device_add
+    def attach(self, channel=None):
+        self.context.device_add = self.kernel_add
 
     def boot(self, channel=None):
         """
@@ -1676,13 +1384,13 @@ class Devices(Modifier):
 
         :return:
         """
-        for device in self.device.derivable():
+        for device in self.context.derivable():
             try:
                 d = int(device)
             except ValueError:
                 # device is not integer and thus not a boot device.
                 continue
-            boot_device = self.device.derive(str(d))
+            boot_device = self.context.derive(str(d))
             boot_device.setting(str, 'device_name', 'Lhystudios')
             boot_device.setting(bool, 'autoboot', True)
             if boot_device.autoboot:
@@ -1693,14 +1401,255 @@ class Devices(Modifier):
         pass
 
     def device_add(self, device_type, device_uid):
-        settings = self.device.derive(str(device_uid))
+        settings = self.context.derive(str(device_uid))
         settings.setting(str, 'device_name', device_type)
         settings.setting(bool, 'autoboot', True)
         settings.flush()
 
 
+class Context:
+    """
+    Contexts serve as path relevant snapshots of the kernel. These are are the primary interaction between the modules
+    and the kernel. These should be fairly lightweight. And permit getting other contexts of the kernel as well.
+    This should serve as the primary interface code between the kernel and the modules.
+    """
+    def __init__(self, kernel, path):
+        self.kernel = kernel
+        self.path = path
+        self.state = STATE_UNKNOWN
+        self.opened = {}
+        self.attached = {}
+
+    def __str__(self):
+        return "Context('%s')" % self.path
+
+    def abs_path(self, subpath):
+        subpath = str(subpath)
+        if subpath.startswith('/'):
+            return subpath[1:]
+        if self.path is None:
+            return subpath
+        return "%s/%s" % (self.path, subpath)
+
+    def derive(self, path):
+        return self.kernel.get_context(self.abs_path(path))
+
+
+    def get_context(self, path):
+        return self.kernel.get_context(path)
+
+
+    def derivable(self):
+        for e in self.kernel.derivable(self.path):
+            yield e
+
+    def setting(self, setting_type, key, default=None):
+        """
+        Registers a setting to be used between modules.
+
+        If the setting exists, its value remains unchanged.
+        If the setting exists in the persistent storage that value is used.
+        If there is no settings value, the default will be used.
+
+        :param setting_type: int, float, str, or bool value
+        :param key: name of the setting
+        :param default: default value for the setting to have.
+        :return: load_value
+        """
+        if hasattr(self, key) and getattr(self, key) is not None:
+            return getattr(self, key)
+
+        # Key is not located in the attr. Load the value.
+        if not key.startswith('_'):
+            load_value = self.kernel.read_persistent(setting_type, self.abs_path(key), default)
+        else:
+            load_value = default
+        setattr(self, key, load_value)
+        return load_value
+
+    def flush(self):
+        """
+        Commit any and all values currently stored as attr for this object to persistent storage.
+        """
+
+        for attr in dir(self):
+            if attr.startswith('_'):
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, str, float, Color)):
+                self.kernel.write_persistent(attr, value)
+
+    def execute(self, control):
+        try:
+            funct= self.kernel.registered[self.abs_path("control/%s" % control)]
+        except KeyError:
+            return
+        funct()
+
+    def register(self, path, obj):
+        self.kernel.register(self.abs_path(path), obj)
+
+    def find(self, path):
+        """
+        Finds a loaded instance. Or returns None if not such instance.
+
+        Note name is not necessarily the type of instance. It could be the named value of the instance.
+
+        :param path: The type of instance to find.
+        :return: The instance if found, otherwise none.
+        """
+        try:
+            return self.opened[self.abs_path(path)]
+        except KeyError:
+            return None
+
+    def open(self, registered_path, *args, **kwargs):
+        """
+        Opens a registered module with the same instance path as the registered path. This is fairly standard but should
+        not be used if the goal would be to open the same module several times.
+
+        :param registered_path: registered path of the given module.
+        :param args: args to open the module with.
+        :param kwargs: kwargs to open the module with.
+        :return:
+        """
+        return self.open_as(registered_path, registered_path, *args, **kwargs)
+
+    def open_as(self, registered_path, instance_path, *args, **kwargs):
+        """
+        Opens a registered module. If that module already exists it returns the already open module.
+
+        Instance_name is the name under which this given module is opened under.
+
+        If the module already exists, the restore function is called on that object, if restore() exists, with the same
+        args and kwargs that were intended for the init() routine.
+
+        :param registered_path: path of object being opened.
+        :param instance_path: path of object should be attached.
+        :param args: Args to pass to newly opened module.
+        :param kwargs: Kwargs to pass to newly opened module.
+        :return: Opened module.
+        """
+        try:
+            find = self.opened[instance_path]
+            try:
+                find.restore(*args, **kwargs)
+            except AttributeError:
+                pass
+            return find
+        except KeyError:
+            pass
+
+        try:
+            open_object = self.kernel.registered[registered_path]
+        except KeyError:
+            raise ValueError
+
+        instance = open_object(self, instance_path, *args, **kwargs)
+        channel = self.kernel.channel_open('open')
+        instance.initialize(channel=channel)
+
+        self.opened[instance_path] = instance
+        return instance
+
+    def close(self, instance_path):
+        try:
+            instance = self.opened[instance_path]
+        except KeyError:
+            return  # Nothing to close. Return.
+        try:
+            instance.close()
+        except AttributeError:
+            pass
+        instance.finalize(self.kernel.channel_open('close'))
+        del self.opened[instance_path]
+
+    def activate(self, registered_path, *args, **kwargs):
+        """
+        Activates a registered modifier.
+        """
+        try:
+            open_object = self.kernel.registered[registered_path]
+        except KeyError:
+            raise ValueError
+
+        try:
+            instance = open_object(self, registered_path, *args, **kwargs)
+            self.attached[registered_path] = instance
+            instance.attach(self)
+        except AttributeError:
+            pass
+
+        return instance
+
+    def deactivate(self, registered_path):
+        try:
+            instance = self.attached[registered_path]
+            del self.attached[registered_path]
+            instance.detach(self)
+        except (KeyError, AttributeError):
+            pass
+
+    def load_persistent_object(self, obj):
+        """
+        Loads values of the persistent attributes, and assigns them to the obj.
+        The type of the value depends on the obj value default values.
+
+        :param obj:
+        :return:
+        """
+        for attr in dir(obj):
+            if attr.startswith('_'):
+                continue
+            obj_value = getattr(obj, attr)
+
+            if not isinstance(obj_value, (int, float, str, bool, Color)):
+                continue
+            load_value = self.kernel.read_persistent(type(obj_value), self.abs_path(attr))
+            setattr(obj, attr, load_value)
+            setattr(self, attr, load_value)
+
+    def set_attrib_keys(self):
+        """
+        Iterate all the entries for the registered config, adds a None attribute for keys.
+        """
+
+        for k in self.kernel.keylist(self.path):
+            if not hasattr(self, k):
+                setattr(self, k, None)
+
+    def signal(self, code, *message):
+        self.kernel.signal(self.abs_path(code), *message)
+
+    def last_signal(self, code):
+        return self.kernel.last_signal(self.abs_path(code))
+
+    def listen(self, signal, process):
+        self.kernel.listen(self.abs_path(signal), process)
+
+    def unlisten(self, signal, process):
+        self.kernel.unlisten(self.abs_path(signal), process)
+
+    def add_greet(self, channel, greet):
+        self.kernel.add_greet(self.abs_path(channel), greet)
+
+    def add_watcher(self, channel, monitor_function):
+        self.kernel.add_watcher(self.abs_path(channel), monitor_function)
+
+    def remove_watcher(self, channel, monitor_function):
+        self.kernel.remove_watcher(self.abs_path(channel), monitor_function)
+
+    def channel_open(self, channel, buffer=0):
+        self.kernel.channel_open(self.abs_path(channel), buffer=buffer)
+
+
 class Kernel:
     """
+    The kernels serves to provide contexts with particular information, opened processes, channels, signals, controls,
+    and registered values.
+
     The Kernel defines a specific location for functional elements. The elements themselves are registered within the
     kernel and availible to all derived subkernel elements. Kernels can have functionality added to them dynamically.
     For example, activating 'Spooler' attaches a .spooler function to the kernel at that path location. The Modifiers
@@ -1718,47 +1667,45 @@ class Kernel:
     The channels can opened and provided information without any consideration of what might be watching.
     """
 
-    def __init__(self, root=None, path=None, config=None):
-        self._root = self
-        self._path = path
-        self.opened = {}
-        self.attached = {}
+    def __init__(self, config=None):
+        self.contexts = {}
+        self.threads = {}
+        self.registered = {}
         self.translation = lambda e: e
         self.run_later = lambda listener, message: listener(message)
-        self.state = STATE_UNKNOWN
+        self.state = STATE_INITIALIZE
+        self.jobs = []
 
-        if root is not None:
-            self.registered = root.registered
-            self.kernels = root.kernels
-            self._root = root._root
-            self.translation = root.translation
-            self.run_later = root.run_later
-            self.set_config(root._config)
+        self.thread = None
+
+        self.signal_job = None
+        self.listeners = {}
+        self.adding_listeners = []
+        self.removing_listeners = []
+        self.last_message = {}
+        self.queue_lock = Lock()
+        self.message_queue = {}
+        self._is_queue_processing = False
+
+        self.channels = {}
+        self.watchers = {}
+        self.buffer = {}
+        self.greet = {}
+
+        if config is not None:
+            self.set_config(config)
         else:
-            self.registered = {}
-            self.kernels = {}
-            if config is not None:
-                self.set_config(config)
-            else:
-                self._config = None
-        self.device_root = self._root
+            self._config = None
 
     @staticmethod
     def sub_register(device):
-        device.register('modifier/Scheduler', Scheduler)
-        device.register('modifier/Signaler', Signaler)
         device.register('modifier/Elemental', Elemental)
         device.register('modifier/Spooler', Spooler)
         device.register('modifier/BindAlias', BindAlias)
-        device.register('modifier/Channels', Channels)
         device.register('modifier/Devices', Devices)
 
     def __str__(self):
-        if self._path is None:
-            return "Kernel('/')"
-        return "Kernel('%s')" % self._path
-
-    __repr__ = __str__
+        return "Kernel()"
 
     def __setitem__(self, key, value):
         """
@@ -1836,63 +1783,22 @@ class Kernel:
                     continue
                 setattr(obj, attr, debug(fn, obj))
 
-    def abs_path(self, subpath):
-        subpath = str(subpath)
-        current = self
-        if subpath.startswith('/'):
-            return subpath[1:]
-        if self._path is None:
-            return subpath
-        return "%s/%s" % (current._path, subpath)
-
-    def derive(self, subpath):
+    def get_context(self, path):
         """
-        Create a sub-kernel derived from this kernel, at the given path.
+        Create a context derived from this kernel, at the given path.
 
         If this has been created previously, then return the previous object.
 
-        :param subpath: subpath underwhich to have the object.
-        :return: Derived Object.
+        :param path: path of context being gotten
+        :return: Context object.
         """
-        path = self.abs_path(subpath)
         try:
-            return self.kernels[path]
+            return self.contexts[path]
         except KeyError:
             pass
-        derive = Kernel(root=self._root, path=path, config=self._config)
-        self.kernels[path] = derive
+        derive = Context(self, path=path)
+        self.contexts[path] = derive
         return derive
-
-    def setting(self, setting_type, key, default=None):
-        """
-        Registers a setting to be used between modules.
-
-        If the setting exists, its value remains unchanged.
-        If the setting exists in the persistent storage that value is used.
-        If there is no settings value, the default will be used.
-
-        :param setting_type: int, float, str, or bool value
-        :param key: name of the setting
-        :param default: default value for the setting to have.
-        :return: load_value
-        """
-        if hasattr(self, key) and getattr(self, key) is not None:
-            return getattr(self, key)
-
-        # Key is not located in the attr. Load the value.
-        if not key.startswith('_'):
-            load_value = self.read_persistent(setting_type, key, default)
-        else:
-            load_value = default
-        setattr(self, key, load_value)
-        return load_value
-
-    def execute(self, control):
-        try:
-            funct= self.registered[self.abs_path("control/%s" % control)]
-        except KeyError:
-            return
-        funct()
 
     def match(self, matchtext):
         """
@@ -1906,28 +1812,10 @@ class Kernel:
             if match.match(r):
                 yield r
 
-    def flush(self):
-        """
-        Commit any and all values currently stored as attr for this object to persistent storage.
-        """
-
-        for attr in dir(self):
-            if attr.startswith('_'):
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float, Color)):
-                self.write_persistent(attr, value)
-
     def read_item_persistent(self, key):
         """Directly read from persistent storage the value of an item."""
         if self._config is None:
-            self._config = self._root._config
-        if self._config is None:
             return None
-        if self._path is not None:
-            key = '%s/%s' % (str(self._path), key)
         return self._config.Read(key)
 
     def read_persistent(self, t, key, default=None):
@@ -1940,11 +1828,7 @@ class Kernel:
         :return: value
         """
         if self._config is None:
-            self._config = self._root._config
-        if self._config is None:
             return default
-        if self._path is not None:
-            key = '%s/%s' % (str(self._path), key)
         if default is not None:
             if t == str:
                 return self._config.Read(key, default)
@@ -1977,11 +1861,7 @@ class Kernel:
         :param value: the value of the item.
         """
         if self._config is None:
-            self._config = self._root._config
-        if self._config is None:
             return
-        if self._path is not None:
-            key = '%s/%s' % (str(self._path), key)
         if isinstance(value, str):
             self._config.Write(key, value)
         elif isinstance(value, int):
@@ -1993,82 +1873,42 @@ class Kernel:
         elif isinstance(value, Color):
             self._config.WriteInt(key, value)
 
-    def clear_persistent(self):
-        if self._config is None:
-            self._config = self._root._config
+    def clear_persistent(self, path):
         if self._config is None:
             return
-        self._config.DeleteGroup(self._path)
+        self._config.DeleteGroup(path)
 
     def delete_persistent(self, key):
         if self._config is None:
-            self._config = self._root._config
-        if self._config is None:
             return
-        if self._path is not None:
-            key = '%s/%s' % (str(self._path), key)
         self._config.DeleteEntry(key)
 
-    def load_persistent_object(self, obj):
-        """
-        Loads values of the persistent attributes, and assigns them to the obj.
-        The type of the value depends on the obj value default values.
-
-        :param obj:
-        :return:
-        """
-        for attr in dir(obj):
-            if attr.startswith('_'):
-                continue
-            obj_value = getattr(obj, attr)
-
-            if not isinstance(obj_value, (int, float, str, bool, Color)):
-                continue
-            load_value = self.read_persistent(type(obj_value), attr)
-            setattr(obj, attr, load_value)
-            setattr(self, attr, load_value)
-
-    def load_persistent_string_dict(self, dictionary=None):
+    def load_persistent_string_dict(self, path, dictionary=None):
         if dictionary is None:
             dictionary = dict()
-        for k in list(self.keylist()):
+        for k in list(self.keylist(path)):
             dictionary[k] = self.read_item_persistent(k)
         return dictionary
 
-    def keylist(self):
-        if self._config is None:
-            self._config = self._root._config
+    def keylist(self, path):
         if self._config is None:
             return
-        if self._path is not None:
-            self._config.SetPath(self._path)
+        self._config.SetPath(path)
         more, value, index = self._config.GetFirstEntry()
         while more:
-            yield value
+            yield "%s/%s" % (path, value)
             more, value, index = self._config.GetNextEntry(index)
         self._config.SetPath('/')
 
-    def derivable(self):
-        if self._config is None:
-            self._config = self._root._config
+    def derivable(self, path):
         if self._config is None:
             return
-        if self._path is not None:
-            self._config.SetPath(self._path)
+        self._config.SetPath(path)
         more, value, index = self._config.GetFirstGroup()
         while more:
             yield value
             more, value, index = self._config.GetNextGroup(index)
         self._config.SetPath('/')
-
-    def set_attrib_keys(self):
-        """
-        Iterate all the entries for the registered config, adds a None attribute for keys.
-        """
-
-        for k in self.keylist():
-            if not hasattr(self, k):
-                setattr(self, k, None)
 
     def set_config(self, config):
         """
@@ -2090,133 +1930,25 @@ class Kernel:
         :param obj:
         :return:
         """
-        self.registered[self.abs_path(path)] = obj
+        self.registered[path] = obj
         try:
             obj.sub_register(self)
         except AttributeError:
             pass
 
-    def activate(self, registered_path, *args, **kwargs):
-        """
-        Activates a registered modifier.
-        """
-        try:
-            open_object = self.registered[registered_path]
-        except KeyError:
-            raise ValueError
-
-        try:
-            instance = open_object(*args, **kwargs)
-            self.attached[registered_path] = instance
-            instance.attach(self)
-        except AttributeError:
-            pass
-
-        return instance
-
-    def deactivate(self, registered_path):
-        try:
-            instance = self.attached[registered_path]
-            del self.attached[registered_path]
-            instance.detach(self)
-        except (KeyError, AttributeError):
-            pass
-
-    def find(self, path):
-        """
-        Finds a loaded instance. Or returns None if not such instance.
-
-        Note name is not necessarily the type of instance. It could be the named value of the instance.
-
-        :param path: The type of instance to find.
-        :return: The instance if found, otherwise none.
-        """
-        try:
-            return self.opened[self.abs_path(path)]
-        except KeyError:
-            return None
-
-    def open(self, registered_path, *args, **kwargs):
-        """
-        Opens a registered module with the same instance path as the registered path. This is fairly standard but should
-        not be used if the goal would be to open the same module several times.
-
-        :param registered_path: registered path of the given module.
-        :param args: args to open the module with.
-        :param kwargs: kwargs to open the module with.
-        :return:
-        """
-        return self.open_as(registered_path, registered_path, *args, **kwargs)
-
-    def open_as(self, registered_path, instance_path, *args, **kwargs):
-        """
-        Opens a registered module. If that module already exists it returns the already open module.
-
-        Instance_name is the name under which this given module is opened under.
-
-        If the module already exists, the restore function is called on that object, if restore() exists, with the same
-        args and kwargs that were intended for the init() routine.
-
-        :param registered_path: path of object being opened.
-        :param instance_path: path of object should be attached.
-        :param args: Args to pass to newly opened module.
-        :param kwargs: Kwargs to pass to newly opened module.
-        :return: Opened module.
-        """
-        try:
-            find = self.opened[instance_path]
-            try:
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-        except KeyError:
-            pass
-
-        try:
-            open_object = self.registered[registered_path]
-        except KeyError:
-            raise ValueError
-
-        instance = open_object(self, instance_path, *args, **kwargs)
-        try:
-            channel = self.channel_open('open')
-        except AttributeError:
-            channel = None
-        instance.initialize(channel=channel)
-
-        self.opened[instance_path] = instance
-        return instance
-
-    def close(self, instance_path):
-        try:
-            instance = self.opened[instance_path]
-        except KeyError:
-            return  # Nothing to close. Return.
-        try:
-            instance.close()
-        except AttributeError:
-            pass
-        try:
-            instance.finalize(self.channel_open('close'))
-        except AttributeError:
-            pass
-        del self.opened[instance_path]
-
     def threaded(self, func, thread_name=None):
         if thread_name is None:
             thread_name = func.__name__
-        thread_name = 'thread/%s' % thread_name
         thread = Thread(name=thread_name)
 
         def run():
-            self.opened[thread_name] = thread
+            self.threads[thread_name] = thread
             try:
                 func()
             except:
                 import sys
                 sys.excepthook(*sys.exc_info())
-            del self.opened[thread_name]
+            del self.threads[thread_name]
 
         thread.run = run
         thread.start()
@@ -2227,87 +1959,58 @@ class Kernel:
         Kernel boot sequence. This should be called after all the registered devices are established.
         :return:
         """
-        for attached_name in list(self.attached):
-            attached = self.attached[attached_name]
-            attached.boot()
+        self.thread = self.threaded(self.run, 'Scheduler')
+        self.signal_job = self.add_job(run=self.delegate_messages, interval=0.05)
 
     def shutdown(self, channel=None):
         """
-        Starts full shutdown procedure. Each registered kernel is shutdown_kernel
+        Starts full shutdown procedure. Each registered context is shutdown.
 
         :param channel:
         :return:
         """
+        self.state = STATE_TERMINATE
         _ = self.translation
-        for kernel_name in list(self.kernels):
-            kernel = self.kernels[kernel_name]
-            channel(_("Device Shutdown Started: '%s'") % str(kernel))
-            try:
-                kernel.shutdown_kernel(channel=channel)
-            except AttributeError:
-                pass
-            del self.kernels[kernel_name]
-            channel(_("Device Shutdown Finished: '%s'") % str(kernel))
 
-    def shutdown_kernel(self, channel=None):
-        """
-        Begins single kernel shutdown procedure.
+        def signal(code, *message):
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
 
-        Each attached modifier is detached and shutdown.
-        Each attached module is closed and finalized.
+        self.signal = signal
 
-        Each thread object is joined and waited on.
-        """
-        _ = self.translation
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+            channel(_("Context Shutdown Started: '%s'") % str(context))
+            context.flush()
+            channel(_("Saving Context State: '%s'") % str(context))
+            # Stop all instances
+            for opened_name in list(context.opened):
+                obj = context.opened[opened_name]
+                try:
+                    obj.stop()
+                    channel(_("Stopping %s: %s") % (opened_name, str(obj)))
+                except AttributeError:
+                    pass
+                channel(_("Closing %s: %s") % (opened_name, str(obj)))
+                context.close(opened_name)  # Calls kernel's close. Detach and Close.
+
+            del self.contexts[context_name]
+            channel(_("Context Shutdown Finished: '%s'") % str(context))
         channel(_("Shutting down."))
-
-        channel(_("Saving Device State: '%s'") % str(self))
-        self.flush()
-
-        # Shutdown all attached.
-        for attached_name in list(self.attached):
-            obj = self.attached[attached_name]
-            try:
-                obj.detach(self, channel=channel)
-                channel(_("Detaching modifier %s: %s") % (attached_name, str(obj)))
-            except AttributeError:
-                pass
-
-        for attached_name in list(self.attached):
-            obj = self.attached[attached_name]
-            try:
-                obj.shutdown(channel=channel)
-                channel(_("Shutting down %s: %s") % (attached_name, str(obj)))
-            except AttributeError:
-                pass
-
-        # Stop all instances
-        for opened_name in list(self.opened):
-            if opened_name.startswith('thread'):
-                continue
-            obj = self.opened[opened_name]
-            try:
-                obj.stop()
-                channel(_("Stopping %s: %s") % (opened_name, str(obj)))
-            except AttributeError:
-                pass
-            channel(_("Closing %s: %s") % (opened_name, str(obj)))
-            self.close(opened_name)  # Calls kernel's close. Detach and Close.
 
         # Stop/Wait for all threads
         thread_count = 0
-        for thread_name in list(self.opened):
-            if not thread_name.startswith('thread'):
-                continue
+        for thread_name in list(self.threads):
             thread_count += 1
             try:
-                thread = self.opened[thread_name]
+                thread = self.threads[thread_name]
             except KeyError:
                 channel(_("Thread %s exited safely") % (thread_name))
                 continue
+
             if not thread.is_alive:
                 channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
                 continue
+
             channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
             try:
                 if thread is self.thread:
@@ -2319,43 +2022,20 @@ class Kernel:
                 pass
             channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
             thread.join()
-            channel(_("Thread %s finished. %s") % (thread_name, str(thread)))
+            channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
         if thread_count == 0:
             channel(_("No threads required halting."))
 
-        # Check for failures.
-        for opened_name in list(self.opened):
-            obj = self.opened[opened_name]
-            try:
-                if obj is self.thread:
-                    continue  # Don't warn about failure to close current thread.
-            except AttributeError:
-                pass
-            channel(_("WARNING: %s was not closed.") % (opened_name))
-
+        for key, listener in self.listeners.items():
+            if len(listener):
+                if channel is not None:
+                    channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
+        self.last_message = {}
+        self.listeners = {}
         channel(_("Shutdown."))
 
-        shutdown_root = False
-        if self != self._root:
-            for kernel_name in self.device_root.kernels:
-                root_devices = self.device_root.kernels[kernel_name]
-                if root_devices is None:
-                    shutdown_root = True
-                else:
-                    if str(self._uid) in root_devices:
-                        del root_devices[str(self._uid)]
-                    if len(root_devices) == 0:
-                        shutdown_root = True
-            else:
-                shutdown_root = True
-        if shutdown_root:
-            channel(_("All Devices are shutdown. Stopping Kernel."))
-            self.device_root.stop()
-        else:
-            self.device_root.resume()
-
     def get_text_thread_state(self, state):
-        _ = self.device_root.translation
+        _ = self.translation
         if state == STATE_INITIALIZE:
             return _("Unstarted")
         elif state == STATE_TERMINATE:
@@ -2372,3 +2052,204 @@ class Kernel:
             return _("Idle")
         elif state == STATE_UNKNOWN:
             return _("Unknown")
+
+    def run(self):
+        """
+        Scheduler main loop.
+
+        Check the Scheduler thread state, and whether it should abort or pause.
+        Check each job, and if that job is scheduled to run. Executes that job.
+        :return:
+        """
+        self.state = STATE_ACTIVE
+        while self.state != STATE_END:
+            time.sleep(0.005)  # 200 ticks a second.
+            if self.state == STATE_TERMINATE:
+                break
+            while self.state == STATE_PAUSE:
+                # The scheduler is paused.
+                time.sleep(0.1)
+            if self.state == STATE_TERMINATE:
+                break
+            jobs = self.jobs
+            jobs_update = False
+            for job in jobs:
+                # Checking if jobs should run.
+                if job.scheduled:
+                    job.next_run = 0  # Set to zero while running.
+                    if job.times is not None:
+                        job.times = job.times - 1
+                        if job.times <= 0:
+                            jobs_update = True
+                        if job.times < 0:
+                            continue
+                    try:
+                        if isinstance(jobs, int):
+                            job.process(job.args[0])
+                        elif isinstance(job.args, tuple):
+                            job.process(*job.args)
+                        else:
+                            job.process(job.args)
+                    except:
+                        import sys
+                        sys.excepthook(*sys.exc_info())
+                    job.last_run = time.time()
+                    job.next_run += job.last_run + job.interval
+            if jobs_update:
+                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
+        self.state = STATE_END
+
+    def add_job(self, run, args=(), interval=1.0, times=None):
+        """
+        Adds a job to the scheduler.
+
+        :param run: function to run
+        :param args: arguments to give to that function.
+        :param interval: in seconds, how often should the job be run.
+        :param times: limit on number of executions.
+        :return: Reference to the job added.
+        """
+        job = Job(self, process=run, args=args, interval=interval, times=times)
+        self.jobs.append(job)
+        return job
+
+    # Signal processing.
+
+    def signal(self, code, *message):
+        """
+        Signals add the latest message to the message queue.
+
+        :param code: Signal code
+        :param message: Message to send.
+        """
+        self.queue_lock.acquire(True)
+        self.message_queue[code] = message
+        self.queue_lock.release()
+
+    def delegate_messages(self):
+        """
+        Delegate the process queue to the run_later thread.
+        run_later should be a threading instance wherein all signals are delivered.
+        """
+        if self._is_queue_processing:
+            return
+        if self.run_later is not None:
+            self.run_later(self.process_queue, None)
+        else:
+            self.process_queue(None)
+
+    def process_queue(self, *args):
+        """
+        Performed in the run_later thread. Signal groups. Threadsafe.
+
+        Process the signals queued up. Inserting any attaching listeners, removing any removing listeners. And
+        providing the newly attached listeners the last message known from that signal.
+        :param args: None
+        :return:
+        """
+        if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
+            return
+        self._is_queue_processing = True
+        add = None
+        remove = None
+        self.queue_lock.acquire(True)
+        queue = self.message_queue
+        if len(self.adding_listeners) != 0:
+            add = self.adding_listeners
+            self.adding_listeners = []
+        if len(self.removing_listeners):
+            remove = self.removing_listeners
+            self.removing_listeners = []
+        self.message_queue = {}
+        self.queue_lock.release()
+        if add is not None:
+            for signal, funct in add:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    listeners.append(funct)
+                else:
+                    self.listeners[signal] = [funct]
+                if signal in self.last_message:
+                    last_message = self.last_message[signal]
+                    funct(*last_message)
+        if remove is not None:
+            for signal, funct in remove:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    try:
+                        listeners.remove(funct)
+                    except ValueError:
+                        print("Value error removing: %s  %s" % (str(listeners), signal))
+
+        for code, message in queue.items():
+            if code in self.listeners:
+                listeners = self.listeners[code]
+                for listener in listeners:
+                    listener(*message)
+            self.last_message[code] = message
+        self._is_queue_processing = False
+
+    def last_signal(self, code):
+        """
+        Queries the last signal for a particular code.
+        :param code: code to query.
+        :return: Last signal sent through the kernel for that code.
+        """
+        try:
+            return self.last_message[code]
+        except KeyError:
+            return None
+
+    def listen(self, signal, funct):
+        self.queue_lock.acquire(True)
+        self.adding_listeners.append((signal, funct))
+        self.queue_lock.release()
+
+    def unlisten(self, signal, funct):
+        self.queue_lock.acquire(True)
+        self.removing_listeners.append((signal, funct))
+        self.queue_lock.release()
+
+    def add_greet(self, channel, greet):
+        self.greet[channel] = greet
+        if channel in self.channels:
+            self.channels[channel](greet)
+
+    def add_watcher(self, channel, monitor_function):
+        if channel not in self.watchers:
+            self.watchers[channel] = [monitor_function]
+        else:
+            for q in self.watchers[channel]:
+                if q is monitor_function:
+                    return  # This is already being watched by that.
+            self.watchers[channel].append(monitor_function)
+        if channel in self.greet:
+            monitor_function(self.greet[channel])
+        if channel in self.buffer:
+            for line in self.buffer[channel]:
+                monitor_function(line)
+
+    def remove_watcher(self, channel, monitor_function):
+        self.watchers[channel].remove(monitor_function)
+
+    def channel_open(self, channel, buffer=0):
+        if channel not in self.channels:
+            def chan(message):
+                if channel in self.watchers:
+                    for w in self.watchers[channel]:
+                        w(message)
+                if buffer <= 0:
+                    return
+                try:
+                    buff = self.buffer[channel]
+                except KeyError:
+                    buff = list()
+                    self.buffer[channel] = buff
+                buff.append(message)
+                if len(buff) + 10 > buffer:
+                    self.buffer[channel] = buff[-buffer:]
+
+            self.channels[channel] = chan
+            if channel in self.greet:
+                chan(self.greet[channel])
+        return self.channels[channel]

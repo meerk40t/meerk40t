@@ -37,8 +37,8 @@ def swizzlecolor(c):
 
 
 class LaserRender:
-    def __init__(self, device):
-        self.device = device
+    def __init__(self, context):
+        self.context = context
         self.cache = None
         self.pen = wx.Pen()
         self.brush = wx.Brush()
@@ -53,7 +53,7 @@ class LaserRender:
         :return:
         """
         if draw_mode is None:
-            draw_mode = self.device.draw_mode
+            draw_mode = self.context.draw_mode
 
         if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
             types = []

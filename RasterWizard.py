@@ -20,9 +20,9 @@ _ = wx.GetTranslation
 
 
 class RasterWizard(wx.Frame, Module):
-    def __init__(self, device, path, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, device, path)
+        Module.__init__(self, context, path)
         self._preview_panel_buffer = None
         if len(args) >= 1:
             script = args[0]
@@ -88,7 +88,7 @@ class RasterWizard(wx.Frame, Module):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(self.device.device_root.registered['raster_script/%s' % name])
+            self.ops = deepcopy(self.context.device_root.registered['raster_script/%s' % name])
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op['name']) for op in self.ops]
@@ -105,7 +105,7 @@ class RasterWizard(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close(self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, *args, **kwargs):
@@ -113,20 +113,20 @@ class RasterWizard(wx.Frame, Module):
             self.set_wizard_script(args[1])
 
     def initialize(self, channel=None):
-        self.device.close(self.name)
+        self.context.close(self.name)
         if self.script is not None:
             self.set_wizard_script(self.script)
         self.Show()
 
-        self.device.listen('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
-        self.device.listen('RasterWizard-Image', self.on_raster_wizard_image_signal)
-        self.device.device_root.listen('emphasized', self.on_emphasis_change)
-        self.device.signal("RasterWizard-Image")
+        self.context.listen('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
+        self.context.listen('RasterWizard-Image', self.on_raster_wizard_image_signal)
+        self.context.device_root.listen('emphasized', self.on_emphasis_change)
+        self.context.signal("RasterWizard-Image")
 
     def finalize(self, channel=None):
-        self.device.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
-        self.device.unlisten('RasterWizard-Image', self.on_raster_wizard_image_signal)
-        self.device.device_root.unlisten('emphasized', self.on_emphasis_change)
+        self.context.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
+        self.context.unlisten('RasterWizard-Image', self.on_raster_wizard_image_signal)
+        self.context.device_root.unlisten('emphasized', self.on_emphasis_change)
         try:
             self.Close()
         except RuntimeError:
@@ -187,11 +187,11 @@ class RasterWizard(wx.Frame, Module):
                 if step is not None:
                     self.step_image = step
             self.wx_bitmap_image = None
-            if self.device is None:
+            if self.context is None:
                 with self.thread_update_lock:
                     self.wizard_thread = None
                 return
-            self.device.signal("RasterWizard-Refresh")
+            self.context.signal("RasterWizard-Refresh")
         if self.pil_image is not None and self.needs_centering:
             self.focus_viewport_scene(self.pil_image.getbbox(), self._preview_panel_buffer.Size)
             self.needs_centering = False
@@ -199,7 +199,7 @@ class RasterWizard(wx.Frame, Module):
             self.wizard_thread = None
 
     def on_emphasis_change(self, *args):
-        for e in self.device.device_root.elements.elems(emphasized=True):
+        for e in self.context.device_root.elements.elems(emphasized=True):
             if isinstance(e, SVGImage):
                 self.svg_image = e
                 self.pil_image = None
@@ -208,7 +208,7 @@ class RasterWizard(wx.Frame, Module):
                     self.step_image = e.values['raster_step']
                 except KeyError:
                     self.step_image = 1
-                self.device.signal("RasterWizard-Image")
+                self.context.signal("RasterWizard-Image")
                 if self.ops is not None:
                     self.panel_select_op()
                 self.needs_centering = True
@@ -250,7 +250,7 @@ class RasterWizard(wx.Frame, Module):
         if panel is None:
             return
         self.sizer_operation_panels.Add(panel, 1, wx.EXPAND, 0)
-        panel.set_operation(self.device, op, svg_image=self.svg_image)
+        panel.set_operation(self.context, op, svg_image=self.svg_image)
         self.Layout()
 
     def on_size(self, event=None):
@@ -281,7 +281,7 @@ class RasterWizard(wx.Frame, Module):
             pass
 
     def on_update_buffer(self, event=None):
-        if self.device is None or self.svg_image is None or self.pil_image is None:
+        if self.context is None or self.svg_image is None or self.pil_image is None:
             dc = wx.MemoryDC()
             dc.SelectObject(self._preview_panel_buffer)
             dc.Clear()
@@ -305,7 +305,7 @@ class RasterWizard(wx.Frame, Module):
         gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.matrix)))
         wx_bitmap = self.wx_bitmap_image
         if wx_bitmap is None:
-            renderer = LaserRender(self.device.device_root)
+            renderer = LaserRender(self.context.device_root)
             self.wx_bitmap_image = renderer.make_thumbnail(self.pil_image)
         width, height = self.pil_image.size
         gc.DrawBitmap(self.wx_bitmap_image, 0, 0, width, height)
@@ -342,7 +342,7 @@ class RasterWizard(wx.Frame, Module):
     def on_preview_mousewheel(self, event):
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
-        if self.device.device_root.mouse_zoom_invert:
+        if self.context.device_root.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
@@ -354,7 +354,7 @@ class RasterWizard(wx.Frame, Module):
         menu = wx.Menu()
         sub_menu = wx.Menu()
         try:
-            for script_name, script in self.device.device_root.registered['raster_script'].items():
+            for script_name, script in self.context.device_root.registered['raster_script'].items():
                 gui.Bind(wx.EVT_MENU, self.set_script(script_name),
                          sub_menu.Append(wx.ID_ANY, script_name, "", wx.ITEM_NORMAL))
             menu.Append(wx.ID_ANY, _("Raster Script"), sub_menu)
@@ -433,19 +433,19 @@ class RasterWizard(wx.Frame, Module):
 
     def scene_post_pan(self, px, py):
         self.matrix.post_translate(px, py)
-        self.device.signal("RasterWizard-Refresh")
+        self.context.signal("RasterWizard-Refresh")
 
     def scene_post_scale(self, sx, sy=None, ax=0, ay=0):
         self.matrix.post_scale(sx, sy, ax, ay)
-        self.device.signal("RasterWizard-Refresh")
+        self.context.signal("RasterWizard-Refresh")
 
     def on_raster_wizard_image_signal(self, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         with self.thread_update_lock:
             self.needs_update = True
             if self.wizard_thread is None:
-                self.wizard_thread = self.device.threaded(self.wiz_img)
-                self.device.signal("RasterWizard-Refresh")
+                self.wizard_thread = self.context.threaded(self.wiz_img)
+                self.context.signal("RasterWizard-Refresh")
 
     def on_raster_wizard_refresh_signal(self, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
@@ -491,7 +491,7 @@ class DitherPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
-        self.device = None
+        self.kernel = None
         self.op = None
         # end wxGlade
 
@@ -515,18 +515,18 @@ class DitherPanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.check_enable_dither.SetValue(op['enable'])
         self.combo_dither.SetSelection(op['type'])
 
     def on_check_enable_dither(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_dither.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_combo_dither_type(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['type'] = self.combo_dither.GetSelection()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
 
 # end of class DitherPanel
@@ -547,7 +547,7 @@ class CropPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_crop, self.check_enable_crop)
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_crop, self.button_reset_crop)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
 
     def __set_properties(self):
@@ -581,7 +581,7 @@ class CropPanel(wx.Panel):
             pass
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.check_enable_crop.SetValue(op['enable'])
         self.Layout()
@@ -597,11 +597,11 @@ class CropPanel(wx.Panel):
 
     def on_check_enable_crop(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_crop.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_button_reset_crop(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['bounds'] = (0, 0, 100, 100)
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
 
 # end of class CropPanel
@@ -641,7 +641,7 @@ class ResamplePanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_resample_dpi, self.combo_resample_dpi)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_resample_dpi, self.combo_resample_dpi)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
         self.svg_image = None
 
@@ -697,7 +697,7 @@ class ResamplePanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.svg_image = svg_image
         self.check_enable_resample.SetValue(op['enable'])
@@ -768,19 +768,19 @@ class ResamplePanel(wx.Panel):
 
     def on_check_enable_resample(self, event):  # wxGlade: ResamplePanel.<event_handler>
         self.op['enable'] = self.check_enable_resample.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_text_resample_width(self, event):  # wxGlade: ResamplePanel.<event_handler>
         pass
-        # self.device.signal("RasterWizard-Image")
+        # self.kernel.signal("RasterWizard-Image")
 
     def on_check_resample_maintain_aspect(self, event):  # wxGlade: ResamplePanel.<event_handler>
         self.op['aspect'] = self.check_resample_maintain_aspect.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_text_resample_height(self, event):  # wxGlade: ResamplePanel.<event_handler>
         pass
-        # self.device.signal("RasterWizard-Image")
+        # self.kernel.signal("RasterWizard-Image")
 
     def on_combo_resample_units(self, event):  # wxGlade: ResamplePanel.<event_handler>
         self.op['units'] = self.combo_resample_units.GetSelection()
@@ -790,7 +790,7 @@ class ResamplePanel(wx.Panel):
         if self.combo_resample_step.GetSelection() != self.op['step'] + 1:
             self.combo_resample_dpi.SetSelection(self.combo_resample_step.GetSelection())
             self.op['step'] = self.combo_resample_step.GetSelection() + 1
-            self.device.signal("RasterWizard-Image")
+            self.kernel.signal("RasterWizard-Image")
 
     def on_combo_resample_dpi(self, event):  # wxGlade: ResamplePanel.<event_handler>
         if self.combo_resample_dpi.GetSelection() != self.combo_resample_step.GetSelection():
@@ -817,7 +817,7 @@ class GammaPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_gamma_factor, self.slider_gamma_factor)
         self.Bind(wx.EVT_TEXT, self.on_text_gamma_factor, self.text_gamma_factor)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
         self.last_x = None
 
@@ -847,7 +847,7 @@ class GammaPanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.text_gamma_factor.SetValue(str(op['factor']))
         self.slider_gamma_factor.SetValue(op['factor'] * 100.0)
@@ -855,18 +855,18 @@ class GammaPanel(wx.Panel):
 
     def on_check_enable_gamma(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_gamma.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_button_reset_gamma(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['factor'] = 3.5
         self.slider_gamma_factor.SetValue(self.op['factor'] * 100.0)
         self.text_gamma_factor.SetValue(str(self.op['factor']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_slider_gamma_factor(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['factor'] = self.slider_gamma_factor.GetValue() / 100.0
         self.text_gamma_factor.SetValue(str(self.op['factor']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_text_gamma_factor(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -900,7 +900,7 @@ class GrayscalePanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_green)
         self.Bind(wx.EVT_SLIDER, self.on_slider_grayscale_component, self.slider_grayscale_blue)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
 
     def __set_properties(self):
@@ -941,7 +941,7 @@ class GrayscalePanel(wx.Panel):
         self.Layout()
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.check_enable_grayscale.SetValue(op['enable'])
         self.check_invert_grayscale.SetValue(op['invert'])
@@ -960,11 +960,11 @@ class GrayscalePanel(wx.Panel):
 
     def on_check_enable_grayscale(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_grayscale.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_check_invert_grayscale(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['invert'] = self.check_invert_grayscale.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_slider_grayscale_component(self, event):  # wxGlade: GrayscalePanel.<event_handler>
         self.op['red'] = float(int(self.slider_grayscale_red.GetValue()) / 500.0)
@@ -979,7 +979,7 @@ class GrayscalePanel(wx.Panel):
         self.op['lightness'] = float(int(self.slider_grayscale_lightness.GetValue()) / 500.0)
         self.text_grayscale_lightness.SetValue(str(self.op['lightness']))
 
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
 # end of class GrayscalePanel
 
@@ -1004,7 +1004,7 @@ class ToneCurvePanel(wx.Panel):
         self.curve_panel.Bind(wx.EVT_MOTION, self.on_curve_mouse_move)
         self.curve_panel.Bind(wx.EVT_LEFT_DOWN, self.on_curve_mouse_left_down)
         self.curve_panel.Bind(wx.EVT_LEFT_UP, self.on_curve_mouse_left_up)
-        self.device = None
+        self.kernel = None
         self.op = None
         self.point = -1
 
@@ -1031,7 +1031,7 @@ class ToneCurvePanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.check_enable_tone.SetValue(op['enable'])
         self.Layout()
@@ -1068,7 +1068,7 @@ class ToneCurvePanel(wx.Panel):
                         self.op['values'][pos[0]] = (pos[0], v)
                 else:
                     self.op['values'][self.point] = (pos[0], v)
-                self.device.signal("RasterWizard-Image")
+                self.kernel.signal("RasterWizard-Image")
                 self.update_in_gui_thread()
             except (KeyError, IndexError):
                 pass
@@ -1123,13 +1123,13 @@ class ToneCurvePanel(wx.Panel):
 
     def on_check_enable_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_tone.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_button_reset_tone(self, event):  # wxGlade: RasterWizard.<event_handler>
         tone_values = [[0, 0], [100, 150], [255, 255]]
         self.op['values'] = tone_values
         self.op['type'] = 'spline'
-        self.device.signal('RasterWizard-Image')
+        self.kernel.signal('RasterWizard-Image')
         self.update_in_gui_thread()
 
 
@@ -1161,7 +1161,7 @@ class SharpenPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_sharpen_threshold, self.slider_sharpen_threshold)
         self.Bind(wx.EVT_TEXT, self.on_text_sharpen_threshold, self.text_sharpen_threshold)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
 
     def __set_properties(self):
@@ -1203,7 +1203,7 @@ class SharpenPanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.check_enable_sharpen.SetValue(op['enable'])
         self.slider_sharpen_percent.SetValue(op['percent'])
@@ -1215,7 +1215,7 @@ class SharpenPanel(wx.Panel):
 
     def on_check_enable_sharpen(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['enable'] = self.check_enable_sharpen.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_button_reset_sharpen(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['percent'] = 500
@@ -1227,12 +1227,12 @@ class SharpenPanel(wx.Panel):
         self.text_sharpen_percent.SetValue(str(self.op['percent']))
         self.text_sharpen_radius.SetValue(str(self.op['radius']))
         self.text_sharpen_threshold.SetValue(str(self.op['threshold']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_slider_sharpen_percent(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['percent'] = int(self.slider_sharpen_percent.GetValue())
         self.text_sharpen_percent.SetValue(str(self.op['percent']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_text_sharpen_percent(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -1240,7 +1240,7 @@ class SharpenPanel(wx.Panel):
     def on_slider_sharpen_radius(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['radius'] = int(self.slider_sharpen_radius.GetValue())
         self.text_sharpen_radius.SetValue(str(self.op['radius']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_text_sharpen_radius(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -1248,7 +1248,7 @@ class SharpenPanel(wx.Panel):
     def on_slider_sharpen_threshold(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op['threshold'] = int(self.slider_sharpen_threshold.GetValue())
         self.text_sharpen_threshold.SetValue(str(self.op['threshold']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_text_sharpen_threshold(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -1270,7 +1270,7 @@ class OutputPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_output, self.check_enable_output)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_replace_output, self.check_replace_output)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
 
     def __set_properties(self):
@@ -1293,7 +1293,7 @@ class OutputPanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         try:
             self.check_enable_output.SetValue(self.op['enable'])
@@ -1322,7 +1322,7 @@ class BasicPanel(wx.Panel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_enable, self.check_enable)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
 
     def __set_properties(self):
@@ -1343,12 +1343,12 @@ class BasicPanel(wx.Panel):
     def set_operation(self, device, op, svg_image=None):
         self.check_enable.SetLabel(_("Enable %s") % op['name'])
         self.check_enable.SetValue(op['enable'])
-        self.device = device
+        self.kernel = device
         self.op = op
 
     def on_check_enable(self, event):
         self.op['enable'] = self.check_enable.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
 # end of class OutputPanel
 
@@ -1375,7 +1375,7 @@ class ContrastPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_contrast_contrast, self.slider_contrast_contrast)
         self.Bind(wx.EVT_SLIDER, self.on_slider_contrast_brightness, self.slider_contrast_brightness)
         # end wxGlade
-        self.device = None
+        self.kernel = None
         self.op = None
 
     def __set_properties(self):
@@ -1411,7 +1411,7 @@ class ContrastPanel(wx.Panel):
         # end wxGlade
 
     def set_operation(self, device, op, svg_image=None):
-        self.device = device
+        self.kernel = device
         self.op = op
         self.check_enable_contrast.SetValue(self.op['enable'])
         self.text_contrast_contrast.SetValue(str(self.op['contrast']))
@@ -1421,7 +1421,7 @@ class ContrastPanel(wx.Panel):
 
     def on_check_enable_contrast(self, event):  # wxGlade: ContrastPanel.<event_handler>
         self.op['enable'] = self.check_enable_contrast.GetValue()
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_button_reset_contrast(self, event):  # wxGlade: ContrastPanel.<event_handler>
         self.op['contrast'] = 0
@@ -1430,16 +1430,16 @@ class ContrastPanel(wx.Panel):
         self.text_contrast_brightness.SetValue(str(self.op['brightness']))
         self.slider_contrast_contrast.SetValue(self.op['contrast'])
         self.slider_contrast_brightness.SetValue(self.op['brightness'])
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_slider_contrast_contrast(self, event):  # wxGlade: ContrastPanel.<event_handler>
         self.op['contrast'] = int(self.slider_contrast_contrast.GetValue())
         self.text_contrast_contrast.SetValue(str(self.op['contrast']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
     def on_slider_contrast_brightness(self, event):  # wxGlade: ContrastPanel.<event_handler>
         self.op['brightness'] = int(self.slider_contrast_brightness.GetValue())
         self.text_contrast_brightness.SetValue(str(self.op['brightness']))
-        self.device.signal("RasterWizard-Image")
+        self.kernel.signal("RasterWizard-Image")
 
 # end of class ContrastPanel

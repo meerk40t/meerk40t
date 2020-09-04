@@ -92,13 +92,13 @@ class MoshiInterpreter(Interpreter):
         self.step = new_step
 
     def initialize(self, channel=None):
-        self.device.setting(bool, "swap_xy", False)
-        self.device.setting(bool, "flip_x", False)
-        self.device.setting(bool, "flip_y", False)
-        self.device.setting(bool, "home_right", False)
-        self.device.setting(bool, "home_bottom", False)
-        self.device.setting(int, "home_adjust_x", 0)
-        self.device.setting(int, "home_adjust_y", 0)
+        self.kernel.setting(bool, "swap_xy", False)
+        self.kernel.setting(bool, "flip_x", False)
+        self.kernel.setting(bool, "flip_y", False)
+        self.kernel.setting(bool, "home_right", False)
+        self.kernel.setting(bool, "home_bottom", False)
+        self.kernel.setting(int, "home_adjust_x", 0)
+        self.kernel.setting(int, "home_adjust_y", 0)
 
     def laser_on(self):
         pass
@@ -116,8 +116,8 @@ class MoshiInterpreter(Interpreter):
         pass
 
     def move(self, x, y):
-        sx = self.device.current_x
-        sy = self.device.current_y
+        sx = self.kernel.current_x
+        sy = self.kernel.current_y
         if self.is_relative:
             x += sx
             y += sy
@@ -134,8 +134,8 @@ class MoshiInterpreter(Interpreter):
 
 
 class MoshiboardController(Module, Pipe):
-    def __init__(self, device, path, uid=''):
-        Module.__init__(self, device, path)
+    def __init__(self, context, path, uid=''):
+        Module.__init__(self, context, path)
         Pipe.__init__(self)
         self.usb_log = None
         self.driver = None
@@ -143,18 +143,18 @@ class MoshiboardController(Module, Pipe):
         self.usb_state = -1
 
     def initialize(self, channel=None):
-        self.usb_log = self.device.channel_open("usb")
+        self.usb_log = self.context.channel_open("usb")
 
     def open(self):
         if self.driver is None:
             self.detect_driver_and_open()
         else:
             # Update criteria
-            self.driver.index = self.device.usb_index
-            self.driver.bus = self.device.usb_bus
-            self.driver.address = self.device.usb_address
-            self.driver.serial = self.device.usb_serial
-            self.driver.chipv = self.device.usb_version
+            self.driver.index = self.context.usb_index
+            self.driver.bus = self.context.usb_bus
+            self.driver.address = self.context.usb_address
+            self.driver.serial = self.context.usb_serial
+            self.driver.chipv = self.context.usb_version
             self.driver.open()
         if self.driver is None:
             raise ConnectionRefusedError
@@ -170,19 +170,19 @@ class MoshiboardController(Module, Pipe):
     def state_listener(self, code):
         if isinstance(code, int):
             self.usb_state = code
-            name = get_name_for_status(code, translation=self.device.device_root.translation)
+            name = get_name_for_status(code, translation=self.context.kernel.translation)
             self.log(name)
-            self.device.signal('pipe;usb_state', code)
-            self.device.signal('pipe;usb_state_text', name)
+            self.context.signal('pipe;usb_state', code)
+            self.context.signal('pipe;usb_state_text', name)
         else:
             self.log(str(code))
 
     def detect_driver_and_open(self):
-        index = self.device.usb_index
-        bus = self.device.usb_bus
-        address = self.device.usb_address
-        serial = self.device.usb_serial
-        chipv = self.device.usb_version
+        index = self.context.usb_index
+        bus = self.context.usb_bus
+        address = self.context.usb_address
+        serial = self.context.usb_serial
+        chipv = self.context.usb_version
 
         try:
             from CH341LibusbDriver import CH341Driver
@@ -191,7 +191,7 @@ class MoshiboardController(Module, Pipe):
             driver.open()
             chip_version = driver.get_chip_version()
             self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
-            self.device.signal('pipe;chipv', chip_version)
+            self.context.signal('pipe;chipv', chip_version)
             self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_LIBUSB)
             self.state_listener(STATE_CONNECTED)
             return
@@ -206,7 +206,7 @@ class MoshiboardController(Module, Pipe):
             driver.open()
             chip_version = driver.get_chip_version()
             self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
-            self.device.signal('pipe;chipv', chip_version)
+            self.context.signal('pipe;chipv', chip_version)
             self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_CH341)
             self.state_listener(STATE_CONNECTED)
         except ConnectionRefusedError:

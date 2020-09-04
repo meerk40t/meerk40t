@@ -15,11 +15,11 @@ _ = wx.GetTranslation
 # end wxGlade
 
 class Settings(wx.Frame, Module):
-    def __init__(self, device, path, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Preferences.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, device, path)
+        Module.__init__(self, context, path)
         self.SetSize((412, 183))
 
         self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
@@ -55,38 +55,38 @@ class Settings(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close(self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close(self.name)
+        self.context.close(self.name)
         self.Show()
 
-        self.device.setting(bool, "mouse_zoom_invert", False)
-        self.device.setting(bool, "print_shutdown", False)
-        self.device.setting(bool, "uniform_svg", False)
-        self.device.setting(bool, 'image_dpi', True)
-        self.device.setting(bool, "show_negative_guide", True)
-        self.device.setting(bool, "auto_spooler", True)
-        self.device.setting(int, "language", 0)
-        self.device.setting(str, "units_name", 'mm')
-        self.device.setting(int, "units_marks", 10)
-        self.device.setting(int, "units_index", 0)
+        self.context.setting(bool, "mouse_zoom_invert", False)
+        self.context.setting(bool, "print_shutdown", False)
+        self.context.setting(bool, "uniform_svg", False)
+        self.context.setting(bool, 'image_dpi', True)
+        self.context.setting(bool, "show_negative_guide", True)
+        self.context.setting(bool, "auto_spooler", True)
+        self.context.setting(int, "language", 0)
+        self.context.setting(str, "units_name", 'mm')
+        self.context.setting(int, "units_marks", 10)
+        self.context.setting(int, "units_index", 0)
 
-        if self.device.mouse_zoom_invert:
+        if self.context.mouse_zoom_invert:
             self.checklist_options.Check(0, True)
-        if self.device.print_shutdown:
+        if self.context.print_shutdown:
             self.checklist_options.Check(1, True)
-        if self.device.uniform_svg:
+        if self.context.uniform_svg:
             self.checklist_options.Check(2, True)
-        if self.device.image_dpi:
+        if self.context.image_dpi:
             self.checklist_options.Check(3, True)
-        if self.device.show_negative_guide:
+        if self.context.show_negative_guide:
             self.checklist_options.Check(4, True)
-        if self.device.auto_spooler:
+        if self.context.auto_spooler:
             self.checklist_options.Check(5, True)
-        self.radio_units.SetSelection(self.device.units_index)
-        self.combo_language.SetSelection(self.device.language)
+        self.radio_units.SetSelection(self.context.units_index)
+        self.combo_language.SetSelection(self.context.language)
 
     def finalize(self, channel=None):
         try:
@@ -129,17 +129,17 @@ class Settings(wx.Frame, Module):
         # end wxGlade
 
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
-        self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
-        self.device.print_shutdown = self.checklist_options.IsChecked(1)
-        self.device.uniform_svg = self.checklist_options.IsChecked(2)
-        self.device.image_dpi = self.checklist_options.IsChecked(3)
-        self.device.show_negative_guide = self.checklist_options.IsChecked(4)
-        self.device.auto_spooler = self.checklist_options.IsChecked(5)
+        self.context.mouse_zoom_invert = self.checklist_options.IsChecked(0)
+        self.context.print_shutdown = self.checklist_options.IsChecked(1)
+        self.context.uniform_svg = self.checklist_options.IsChecked(2)
+        self.context.image_dpi = self.checklist_options.IsChecked(3)
+        self.context.show_negative_guide = self.checklist_options.IsChecked(4)
+        self.context.auto_spooler = self.checklist_options.IsChecked(5)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
-        if lang != -1 and self.device.app is not None:
-            self.device.app.update_language(lang)
+        if lang != -1 and self.context.app is not None:
+            self.context.app.update_language(lang)
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
         if event.Int == 0:
@@ -152,21 +152,21 @@ class Settings(wx.Frame, Module):
             self.set_mil()
 
     def set_inch(self):
-        p = self.device.device_root
+        p = self.context.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1000.0, "inch", 1, 2)
         p.signal('units')
 
     def set_mil(self):
-        p = self.device.device_root
+        p = self.context.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1.0, "mil", 1000, 3)
         p.signal('units')
 
     def set_cm(self):
-        p = self.device.device_root
+        p = self.context.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (393.7, "cm", 1, 1)
         p.signal('units')
 
     def set_mm(self):
-        p = self.device.device_root
+        p = self.context.device_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (39.37, "mm", 10, 0)
         p.signal('units')

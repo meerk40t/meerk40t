@@ -15,11 +15,11 @@ _ = wx.GetTranslation
 # end wxGlade
 
 class Preferences(wx.Frame, Module):
-    def __init__(self, device, path, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Preferences.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, device, path)
+        Module.__init__(self, context, path)
         self.SetSize((395, 424))
         self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
@@ -87,52 +87,52 @@ class Preferences(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close(self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close(self.name)
+        self.context.close(self.name)
         self.Show()
 
-        self.device.setting(bool, "swap_xy", False)
-        self.device.setting(bool, "flip_x", False)
-        self.device.setting(bool, "flip_y", False)
-        self.device.setting(bool, "home_right", False)
-        self.device.setting(bool, "home_bottom", False)
-        self.device.setting(int, "home_adjust_x", 0)
-        self.device.setting(int, "home_adjust_y", 0)
+        self.context.setting(bool, "swap_xy", False)
+        self.context.setting(bool, "flip_x", False)
+        self.context.setting(bool, "flip_y", False)
+        self.context.setting(bool, "home_right", False)
+        self.context.setting(bool, "home_bottom", False)
+        self.context.setting(int, "home_adjust_x", 0)
+        self.context.setting(int, "home_adjust_y", 0)
 
-        self.device.setting(bool, "mock", False)
-        self.device.setting(bool, "autobeep", False)
-        self.device.setting(bool, "autohome", False)
-        self.device.setting(bool, "autolock", True)
-        self.device.setting(str, "board", 'M2')
-        self.device.setting(int, "bed_width", 280)
-        self.device.setting(int, "bed_height", 200)
-        self.device.setting(int, "units_index", 0)
-        self.device.setting(int, "usb_index", -1)
-        self.device.setting(int, "usb_bus", -1)
-        self.device.setting(int, "usb_address", -1)
-        self.device.setting(int, "usb_version", -1)
+        self.context.setting(bool, "mock", False)
+        self.context.setting(bool, "autobeep", False)
+        self.context.setting(bool, "autohome", False)
+        self.context.setting(bool, "autolock", True)
+        self.context.setting(str, "board", 'M2')
+        self.context.setting(int, "bed_width", 280)
+        self.context.setting(int, "bed_height", 200)
+        self.context.setting(int, "units_index", 0)
+        self.context.setting(int, "usb_index", -1)
+        self.context.setting(int, "usb_bus", -1)
+        self.context.setting(int, "usb_address", -1)
+        self.context.setting(int, "usb_version", -1)
 
-        self.checkbox_swap_xy.SetValue(self.device.swap_xy)
-        self.checkbox_flip_x.SetValue(self.device.flip_x)
-        self.checkbox_flip_y.SetValue(self.device.flip_y)
-        self.checkbox_home_right.SetValue(self.device.home_right)
-        self.checkbox_home_bottom.SetValue(self.device.home_bottom)
-        self.checkbox_mock_usb.SetValue(self.device.mock)
-        self.checkbox_autobeep.SetValue(self.device.autobeep)
-        self.checkbox_autohome.SetValue(self.device.autohome)
-        self.checkbox_autolock.SetValue(self.device.autolock)
-        self.combobox_board.SetValue(self.device.board)
-        self.spin_bedwidth.SetValue(self.device.bed_width)
-        self.spin_bedheight.SetValue(self.device.bed_height)
-        self.spin_device_index.SetValue(self.device.usb_index)
-        self.spin_device_bus.SetValue(self.device.usb_bus)
-        self.spin_device_address.SetValue(self.device.usb_address)
-        self.spin_device_version.SetValue(self.device.usb_version)
-        self.spin_home_x.SetValue(self.device.home_adjust_x)
-        self.spin_home_y.SetValue(self.device.home_adjust_y)
+        self.checkbox_swap_xy.SetValue(self.context.swap_xy)
+        self.checkbox_flip_x.SetValue(self.context.flip_x)
+        self.checkbox_flip_y.SetValue(self.context.flip_y)
+        self.checkbox_home_right.SetValue(self.context.home_right)
+        self.checkbox_home_bottom.SetValue(self.context.home_bottom)
+        self.checkbox_mock_usb.SetValue(self.context.mock)
+        self.checkbox_autobeep.SetValue(self.context.autobeep)
+        self.checkbox_autohome.SetValue(self.context.autohome)
+        self.checkbox_autolock.SetValue(self.context.autolock)
+        self.combobox_board.SetValue(self.context.board)
+        self.spin_bedwidth.SetValue(self.context.bed_width)
+        self.spin_bedheight.SetValue(self.context.bed_height)
+        self.spin_device_index.SetValue(self.context.usb_index)
+        self.spin_device_bus.SetValue(self.context.usb_bus)
+        self.spin_device_address.SetValue(self.context.usb_address)
+        self.spin_device_version.SetValue(self.context.usb_version)
+        self.spin_home_x.SetValue(self.context.home_adjust_x)
+        self.spin_home_y.SetValue(self.context.home_adjust_y)
 
     def finalize(self, channel=None):
         try:
@@ -260,78 +260,78 @@ class Preferences(wx.Frame, Module):
     def calc_home_position(self):
         x = 0
         y = 0
-        if self.device.home_right:
-            x = int(self.device.bed_width * 39.3701)
-        if self.device.home_bottom:
-            y = int(self.device.bed_height * 39.3701)
+        if self.context.home_right:
+            x = int(self.context.bed_width * 39.3701)
+        if self.context.home_bottom:
+            y = int(self.context.bed_height * 39.3701)
         return x, y
 
     def on_combobox_boardtype(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.board = self.combobox_board.GetValue()
+        self.context.board = self.combobox_board.GetValue()
 
     def on_check_swap_xy(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.swap_xy = self.checkbox_swap_xy.GetValue()
-        self.device.execute("Update Codes")
+        self.context.swap_xy = self.checkbox_swap_xy.GetValue()
+        self.context.execute("Update Codes")
 
     def on_check_flip_x(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.flip_x = self.checkbox_flip_x.GetValue()
-        self.device.execute("Update Codes")
+        self.context.flip_x = self.checkbox_flip_x.GetValue()
+        self.context.execute("Update Codes")
 
     def on_check_home_right(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_right = self.checkbox_home_right.GetValue()
+        self.context.home_right = self.checkbox_home_right.GetValue()
 
     def on_check_flip_y(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.flip_y = self.checkbox_flip_y.GetValue()
-        self.device.execute("Update Codes")
+        self.context.flip_y = self.checkbox_flip_y.GetValue()
+        self.context.execute("Update Codes")
 
     def on_check_home_bottom(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_bottom = self.checkbox_home_bottom.GetValue()
+        self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_adjust_x = int(self.spin_home_x.GetValue())
+        self.context.home_adjust_x = int(self.spin_home_x.GetValue())
 
     def spin_on_home_y(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.home_adjust_y = int(self.spin_home_y.GetValue())
+        self.context.home_adjust_y = int(self.spin_home_y.GetValue())
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
         x, y = self.calc_home_position()
-        current_x = self.device.current_x - x
-        current_y = self.device.current_y - y
-        self.device.home_adjust_x = int(current_x)
-        self.device.home_adjust_y = int(current_y)
-        self.spin_home_x.SetValue(self.device.home_adjust_x)
-        self.spin_home_y.SetValue(self.device.home_adjust_y)
+        current_x = self.context.current_x - x
+        current_y = self.context.current_y - y
+        self.context.home_adjust_x = int(current_x)
+        self.context.home_adjust_y = int(current_y)
+        self.spin_home_x.SetValue(self.context.home_adjust_x)
+        self.spin_home_y.SetValue(self.context.home_adjust_y)
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.bed_width = int(self.spin_bedwidth.GetValue())
-        self.device.bed_height = int(self.spin_bedheight.GetValue())
-        self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
+        self.context.bed_width = int(self.spin_bedwidth.GetValue())
+        self.context.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.bed_width = int(self.spin_bedwidth.GetValue())
-        self.device.bed_height = int(self.spin_bedheight.GetValue())
-        self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
+        self.context.bed_width = int(self.spin_bedwidth.GetValue())
+        self.context.bed_height = int(self.spin_bedheight.GetValue())
+        self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.autolock = self.checkbox_autolock.GetValue()
+        self.context.autolock = self.checkbox_autolock.GetValue()
 
     def on_check_autohome(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.autohome = self.checkbox_autohome.GetValue()
+        self.context.autohome = self.checkbox_autohome.GetValue()
 
     def on_check_autobeep(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.autobeep = self.checkbox_autobeep.GetValue()
+        self.context.autobeep = self.checkbox_autobeep.GetValue()
 
     def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.usb_index = int(self.spin_device_index.GetValue())
+        self.context.usb_index = int(self.spin_device_index.GetValue())
 
     def spin_on_device_address(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.usb_address = int(self.spin_device_address.GetValue())
+        self.context.usb_address = int(self.spin_device_address.GetValue())
 
     def spin_on_device_bus(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.usb_bus = int(self.spin_device_bus.GetValue())
+        self.context.usb_bus = int(self.spin_device_bus.GetValue())
 
     def spin_on_device_version(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.usb_version = int(self.spin_device_version.GetValue())
+        self.context.usb_version = int(self.spin_device_version.GetValue())
 
     def on_checkbox_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
-        self.device.mock = self.checkbox_mock_usb.GetValue()
+        self.context.mock = self.checkbox_mock_usb.GetValue()

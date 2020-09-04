@@ -70,13 +70,13 @@ class RuidaInterpreter(Interpreter):
         self.step = new_step
 
     def initialize(self, channel=None):
-        self.device.setting(bool, "swap_xy", False)
-        self.device.setting(bool, "flip_x", False)
-        self.device.setting(bool, "flip_y", False)
-        self.device.setting(bool, "home_right", False)
-        self.device.setting(bool, "home_bottom", False)
-        self.device.setting(int, "home_adjust_x", 0)
-        self.device.setting(int, "home_adjust_y", 0)
+        self.kernel.setting(bool, "swap_xy", False)
+        self.kernel.setting(bool, "flip_x", False)
+        self.kernel.setting(bool, "flip_y", False)
+        self.kernel.setting(bool, "home_right", False)
+        self.kernel.setting(bool, "home_bottom", False)
+        self.kernel.setting(int, "home_adjust_x", 0)
+        self.kernel.setting(int, "home_adjust_y", 0)
 
     def laser_on(self):
         pass
@@ -94,8 +94,8 @@ class RuidaInterpreter(Interpreter):
         pass
 
     def move(self, x, y):
-        sx = self.device.current_x
-        sy = self.device.current_y
+        sx = self.kernel.current_x
+        sy = self.kernel.current_y
         if self.is_relative:
             x += sx
             y += sy
@@ -159,8 +159,8 @@ class RuidaInterpreter(Interpreter):
             self.is_relative = False
         elif command == COMMAND_SET_POSITION:
             x, y = values
-            self.device.current_x = x
-            self.device.current_y = y
+            self.kernel.current_x = x
+            self.kernel.current_y = y
         elif command == COMMAND_MODE_PROGRAM:
             pass
         elif command == COMMAND_MODE_RAPID:
@@ -182,9 +182,9 @@ class RuidaInterpreter(Interpreter):
                 t()
         elif command == COMMAND_SIGNAL:
             if isinstance(values, str):
-                self.device.signal(values, None)
+                self.kernel.signal(values, None)
             elif len(values) >= 2:
-                self.device.signal(values[0], *values[1:])
+                self.kernel.signal(values[0], *values[1:])
 
     def realtime_command(self, command, values=None):
         if command == COMMAND_SET_SPEED:
@@ -200,8 +200,8 @@ class RuidaInterpreter(Interpreter):
             pass
         elif command == COMMAND_SET_POSITION:
             x, y = values
-            self.device.current_x = x
-            self.device.current_y = y
+            self.kernel.current_x = x
+            self.kernel.current_y = y
         elif command == REALTIME_RESET:
             pass
         elif command == REALTIME_PAUSE:
@@ -232,8 +232,8 @@ class RuidaInterpreter(Interpreter):
 
 class RuidaEmulator(Module):
 
-    def __init__(self, device, path):
-        Module.__init__(self, device, path)
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
         self.channel = lambda e: e
         self.path_d = list()
         self.x = 0.0
@@ -255,7 +255,7 @@ class RuidaEmulator(Module):
         self.power2_max = 0
 
     def initialize(self, channel=None):
-        self.channel = self.device.channel_open('ruida')
+        self.channel = self.context.channel_open('ruida')
 
     @staticmethod
     def signed35(v):

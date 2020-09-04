@@ -46,9 +46,8 @@ def swizzlecolor(c):
 
 
 class Scene(Module):
-    def __init__(self, device, path):
-        Module.__init__(self, device, path)
-        self.device = device
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
@@ -60,10 +59,10 @@ class Scene(Module):
         self.distance = None
 
     def initialize(self, channel=None):
-        self.device.setting(int, "draw_mode", 0)
+        self.context.setting(int, "draw_mode", 0)
 
     def finalize(self, channel=None):
-        elements = self.device.device_root.elements
+        elements = self.context.device_root.elements
         for e in elements.elems():
             elements.unregister(e)
 
@@ -497,12 +496,12 @@ class ElementsWidget(Widget):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
-        kernel = self.scene.device.device_root
-        self.renderer.render(kernel.elements.elems(), gc, self.renderer.device.draw_mode)
+        context = self.scene.context
+        self.renderer.render(context.elements.elems(), gc, self.renderer.context.draw_mode)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftclick'):
-            elements = self.scene.device.device_root.elements
+            elements = self.scene.context.device_root.elements
             elements.set_selected_by_position(space_pos)
             self.root.select_in_tree_by_selected()
             return RESPONSE_CONSUME
@@ -513,7 +512,7 @@ class SelectionWidget(Widget):
     def __init__(self, scene, root):
         Widget.__init__(self, scene, all=False)
         self.root = root
-        self.elements = scene.device.device_root.elements
+        self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
@@ -532,7 +531,7 @@ class SelectionWidget(Widget):
             self.right = bounds[2]
             self.bottom = bounds[3]
             self.clear()
-            self.scene.device.signal('refresh_scene', 0)
+            self.scene.context.signal('refresh_scene', 0)
             return HITCHAIN_HIT
         else:
             self.left = float('inf')
@@ -540,18 +539,18 @@ class SelectionWidget(Widget):
             self.right = -float('inf')
             self.bottom = -float('inf')
             self.clear()
-            self.scene.device.signal('refresh_scene', 0)
+            self.scene.context.signal('refresh_scene', 0)
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
         if event_type == 'hover_start':
             self.cursor = wx.CURSOR_SIZING
-            self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == 'hover_end':
             self.cursor = wx.CURSOR_ARROW
-            self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+            self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         if event_type == 'hover':
             matrix = self.parent.matrix
@@ -568,7 +567,7 @@ class SelectionWidget(Widget):
             try:
                 if first.lock:
                     if self.cursor != cursor:
-                        self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+                        self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
                     return RESPONSE_CHAIN
             except (ValueError, AttributeError):
                 pass
@@ -597,7 +596,7 @@ class SelectionWidget(Widget):
                 self.cursor = wx.CURSOR_SIZENESW
                 self.tool = self.tool_scalexy_sw
             if self.cursor != cursor:
-                self.scene.device.gui.SetCursor(wx.Cursor(self.cursor))
+                self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
@@ -606,7 +605,7 @@ class SelectionWidget(Widget):
             elements.set_selected_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            self.root.create_menu(self.scene.device.gui, elements.first_element(emphasized=True))
+            self.root.create_menu(self.scene.context.gui, elements.first_element(emphasized=True))
             return RESPONSE_CONSUME
         if event_type == 'doubleclick':
             elements.set_selected_by_position(space_pos)
@@ -636,7 +635,7 @@ class SelectionWidget(Widget):
         return RESPONSE_CHAIN
 
     def tool_scalexy(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
@@ -651,10 +650,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], position[1]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scalexy_se(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
@@ -673,10 +672,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scalexy_nw(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (self.right - position[0]) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
@@ -695,10 +694,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scalexy_ne(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         scaley = (self.bottom - position[1]) / self.save_height
@@ -717,10 +716,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scalexy_sw(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (self.right - position[0]) / self.save_width
         scaley = (position[1] - self.top) / self.save_height
@@ -739,10 +738,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scalex_e(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (position[0] - self.left) / self.save_width
         self.save_width *= scalex
@@ -755,10 +754,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, 1, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], b[3]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scalex_w(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scalex = (self.right - position[0]) / self.save_width
         self.save_width *= scalex
@@ -771,10 +770,10 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, 1, self.right, self.top)
             obj.modified()
         # elements.update_bounds([position[0], b[1], b[2], b[3]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scaley_s(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scaley = (position[1] - self.top) / self.save_height
         self.save_height *= scaley
@@ -788,10 +787,10 @@ class SelectionWidget(Widget):
             obj.modified()
 
         # elements.update_bounds([b[0], b[1], b[2], position[1]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_scaley_n(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         scaley = (self.bottom - position[1]) / self.save_height
         self.save_height *= scaley
@@ -804,24 +803,24 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], position[1], b[2], b[3]])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def tool_translate(self, position, dx, dy):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.device_root.elements
         b = elements.bounds()
         for obj in elements.elems(emphasized=True):
             obj.transform.post_translate(dx, dy)
             obj.modified()
         self.translate(dx, dy)
         # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & DRAW_MODE_SELECTION != 0:
+        if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
-        device = self.scene.device
+        device = self.scene.context
         draw_mode = device.draw_mode
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.elements
         bounds = elements.bounds()
         matrix = self.parent.matrix
         if bounds is not None:
@@ -840,7 +839,7 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
             if draw_mode & DRAW_MODE_SELECTION == 0:
-                p = self.scene.device.device_root
+                p = self.scene.context.device_root
                 conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
                 gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
                 gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
@@ -862,7 +861,7 @@ class RectSelectWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        elements = self.scene.device.device_root.elements
+        elements = self.scene.context.elements
         if event_type == 'leftdown':
             self.start_location = space_pos
             self.end_location = space_pos
@@ -894,12 +893,12 @@ class RectSelectWidget(Widget):
                         obj.emphasize()
                     else:
                         obj.unemphasize()
-            self.scene.device.signal('refresh_scene', 0)
+            self.scene.context.signal('refresh_scene', 0)
             self.start_location = None
             self.end_location = None
             return RESPONSE_CONSUME
         elif event_type == 'move':
-            self.scene.device.signal('refresh_scene', 0)
+            self.scene.context.signal('refresh_scene', 0)
             self.end_location = space_pos
             return RESPONSE_CONSUME
         return RESPONSE_DROP
@@ -925,7 +924,7 @@ class ReticleWidget(Widget):
         Widget.__init__(self, scene, all=False)
 
     def process_draw(self, gc):
-        device = self.scene.device
+        device = self.scene.context
         if device.draw_mode & DRAW_MODE_RETICLE == 0:
             # Draw Reticle
             gc.SetPen(wx.RED_PEN)
@@ -947,7 +946,7 @@ class LaserPathWidget(Widget):
         Widget.__init__(self, scene, all=False)
 
     def process_draw(self, gc):
-        device = self.scene.device
+        device = self.scene.context
         if device.draw_mode & DRAW_MODE_LASERPATH == 0:
             gc.SetPen(wx.BLUE_PEN)
             starts, ends = gc.laserpath
@@ -970,17 +969,17 @@ class GridWidget(Widget):
         return RESPONSE_CHAIN
 
     def calculate_grid(self):
-        if self.scene.device is not None:
-            v = self.scene.device
-            wmils = v.bed_width * MILS_IN_MM
-            hmils = v.bed_height * MILS_IN_MM
+        if self.scene.context is not None:
+            kernel = self.scene.context
+            wmils = kernel.bed_width * MILS_IN_MM
+            hmils = kernel.bed_height * MILS_IN_MM
         else:
             wmils = 320 * MILS_IN_MM
             hmils = 220 * MILS_IN_MM
 
-        p = self.scene.device.device_root
-        convert = p.units_convert
-        marks = p.units_marks
+        kernel_root = self.scene.context
+        convert = kernel_root.units_convert
+        marks = kernel_root.units_marks
         step = convert * marks
         starts = []
         ends = []
@@ -1000,11 +999,11 @@ class GridWidget(Widget):
         self.grid = starts, ends
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            device = self.scene.device
-            if device is not None:
-                wmils = device.bed_width * MILS_IN_MM
-                hmils = device.bed_height * MILS_IN_MM
+        if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
+            kernel = self.scene.context
+            if kernel is not None:
+                wmils = kernel.bed_width * MILS_IN_MM
+                hmils = kernel.bed_height * MILS_IN_MM
             else:
                 wmils = 320 * MILS_IN_MM
                 hmils = 220 * MILS_IN_MM
@@ -1018,7 +1017,7 @@ class GridWidget(Widget):
             else:
                 gc.DrawBitmap(background, 0, 0, wmils, hmils)
 
-        if self.scene.device.draw_mode & DRAW_MODE_GRID == 0:
+        if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
@@ -1035,14 +1034,14 @@ class GridWidget(Widget):
 class GuideWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
-        self.scene.device.device_root.setting(bool, "show_negative_guide", True)
+        self.scene.context.setting(bool, "show_negative_guide", True)
 
     def process_draw(self, gc):
-        if self.scene.device.draw_mode & DRAW_MODE_GUIDES != 0:
+        if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
-        p = self.scene.device.device_root
+        p = self.scene.context
         scaled_conversion = p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         if scaled_conversion == 0:
             return
@@ -1123,18 +1122,18 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CHAIN
         if event_type == 'wheelup':
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
-            self.scene.device.signal('refresh_scene', 0)
+            self.scene.context.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'wheeldown':
             self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
-            self.scene.device.signal('refresh_scene', 0)
+            self.scene.context.signal('refresh_scene', 0)
             return RESPONSE_CONSUME
         elif event_type == 'middledown':
             return RESPONSE_CONSUME
         elif event_type == 'middleup':
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-        self.scene.device.signal('refresh_scene', 0)
+        self.scene.context.signal('refresh_scene', 0)
         return RESPONSE_CONSUME
 
     def focus_position_scene(self, scene_point, scene_size):

@@ -7,11 +7,11 @@ _ = wx.GetTranslation
 
 
 class ImageProperty(wx.Frame, Module):
-    def __init__(self, device, path, parent, element, *args, **kwds):
+    def __init__(self, context, path, parent, element, *args, **kwds):
         # begin wxGlade: ImageProperty.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, device, path)
+        Module.__init__(self, context, path)
         self.SetSize((276, 218))
         self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
         self.combo_dpi = wx.ComboBox(self, wx.ID_ANY,
@@ -46,7 +46,7 @@ class ImageProperty(wx.Frame, Module):
             return
         else:
             self.state = 5
-            self.device.close(self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, element, *args, **kwds):
@@ -54,7 +54,7 @@ class ImageProperty(wx.Frame, Module):
         self.set_widgets()
 
     def initialize(self, channel=None):
-        self.device.close(self.name)
+        self.context.close(self.name)
         self.Show()
         self.set_widgets()
 
@@ -165,9 +165,9 @@ class ImageProperty(wx.Frame, Module):
         element.transform = Matrix.scale(float(step_value), float(step_value))
         element.transform.post_translate(tx, ty)
         element.modified()
-        if self.device is not None:
-            self.device.signal('element_property_update', element)
-            self.device.signal('refresh_scene')
+        if self.context is not None:
+            self.context.signal('element_property_update', element)
+            self.context.signal('refresh_scene')
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()

@@ -7,10 +7,10 @@ _ = wx.GetTranslation
 
 
 class Adjustments(wx.Frame, Module):
-    def __init__(self, device, path, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, device, path)
+        Module.__init__(self, context, path)
         self.SetSize((424, 417))
         self.check_speed_override = wx.CheckBox(self, wx.ID_ANY, "")
         self.slider_speed_override = wx.Slider(self, wx.ID_ANY, 100, 0, 500,
@@ -156,20 +156,20 @@ class Adjustments(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close(self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close(self.name)
+        self.context.close(self.name)
         self.Show()
-        self.device.execute("Realtime Pause")
+        self.context.execute("Realtime Pause")
         try:
-            self.checkbox_pattern_group.SetValue(self.device.interpreter.group_modulation)
+            self.checkbox_pattern_group.SetValue(self.context.interpreter.group_modulation)
         except AttributeError:
             pass
 
     def finalize(self, channel=None):
-        self.device.execute("Realtime Resume")
+        self.context.execute("Realtime Resume")
         try:
             self.Close()
         except RuntimeError:
@@ -203,7 +203,7 @@ class Adjustments(wx.Frame, Module):
 
     def on_check_pattern_group(self, event):  # wxGlade: Adjustments.<event_handler>
         try:
-            self.device.interpreter.group_modulation = self.checkbox_pattern_group.GetValue()
+            self.context.interpreter.group_modulation = self.checkbox_pattern_group.GetValue()
         except AttributeError:
             pass
 

@@ -5,8 +5,8 @@ from svgelements import *
 
 
 class Console(Module, Pipe):
-    def __init__(self, device, path):
-        Module.__init__(self, device, path)
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
         Pipe.__init__(self)
         self.channel_file = None
         self.channel = None
@@ -21,14 +21,14 @@ class Console(Module, Pipe):
         self.dy = 0
 
     def initialize(self, channel=None):
-        self.device.listen('interpreter;mode', self.on_mode_change)
-        self.device.setting(int, "bed_width", 280)
-        self.device.setting(int, "bed_height", 200)
-        self.channel = self.device.channel_open('console')
-        self.active_device = self.device
+        self.context.listen('interpreter;mode', self.on_mode_change)
+        self.context.setting(int, "bed_width", 280)
+        self.context.setting(int, "bed_height", 200)
+        self.channel = self.context.channel_open('console')
+        self.active_device = self.context
 
     def finalize(self, channel=None):
-        self.device.unlisten('interpreter;mode', self.on_mode_change)
+        self.context.unlisten('interpreter;mode', self.on_mode_change)
 
     def on_mode_change(self, *args):
         self.dx = 0
@@ -75,8 +75,8 @@ class Console(Module, Pipe):
             self.unschedule()
 
     def execute_absolute_position(self, position_x, position_y):
-        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
 
         def move():
             yield COMMAND_SET_ABSOLUTE
@@ -86,8 +86,8 @@ class Console(Module, Pipe):
         return move
 
     def execute_relative_position(self, position_x, position_y):
-        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
 
         def move():
             yield COMMAND_SET_INCREMENTAL
@@ -109,7 +109,7 @@ class Console(Module, Pipe):
             yield e
 
     def interface_parse_command(self, command, *args):
-        kernel = self.device.device_root
+        kernel = self.context
         elements = kernel.elements
         active_device = self.active_device
         try:
@@ -200,8 +200,8 @@ class Console(Module, Pipe):
                 yield 'Device has no spooler.'
                 return
             if len(args) == 1:
-                max_bed_height = self.device.bed_height * 39.3701
-                max_bed_width = self.device.bed_width * 39.3701
+                max_bed_height = self.context.bed_height * 39.3701
+                max_bed_width = self.context.bed_width * 39.3701
                 direction = command
                 amount = args[0]
                 if direction == 'right':
@@ -545,8 +545,8 @@ class Console(Module, Pipe):
                 kernel.setting(str, 'device_name', 'Unknown')
                 kernel.setting(str, 'device_location', 'Unknown')
                 yield '%d: %s on %s' % (0, kernel.device_name, kernel.device_location)
-                for i, name in enumerate(kernel.kernels):
-                    device = kernel.kernels[name]
+                for i, name in enumerate(kernel.contexts):
+                    device = kernel.contexts[name]
                     yield '%d: %s on %s' % (i + 1, device.device_name, device.device_location)
                 yield '----------'
             else:
@@ -560,9 +560,9 @@ class Console(Module, Pipe):
                     yield 'Device set: %s on %s' % \
                           (self.active_device.device_name, self.active_device.device_location)
                 else:
-                    for i, name in enumerate(kernel.kernels):
+                    for i, name in enumerate(kernel.contexts):
                         if i + 1 == value:
-                            self.active_device = kernel.kernels[name]
+                            self.active_device = kernel.contexts[name]
                             self.active_device.setting(str, 'device_location', 'unknown')
                             yield 'Device set: %s on %s' % \
                                   (self.active_device.device_name, self.active_device.device_location)
@@ -604,7 +604,7 @@ class Console(Module, Pipe):
                         elif value == "delete":
                             yield "deleting."
                             elements.remove_elements(list(elements.elems(emphasized=True)))
-                            self.device.signal('refresh_scene', 0)
+                            self.context.signal('refresh_scene', 0)
                             continue
                         elif value == "copy":
                             add_elem = list(map(copy, elements.elems(emphasized=True)))
@@ -659,15 +659,15 @@ class Console(Module, Pipe):
             return
         elif command == 'circle':
             if len(args) == 3:
-                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
                 r_pos = Length(args[2]).value(ppi=1000.0,
-                                              relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+                                              relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
             elif len(args) == 1:
                 x_pos = 0
                 y_pos = 0
                 r_pos = Length(args[0]).value(ppi=1000.0,
-                                      relative_length=min(self.device.bed_height, self.device.bed_width) * 39.3701)
+                                              relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
             else:
                 yield 'Circle <x> <y> <r> or circle <r>'
                 return
@@ -679,10 +679,10 @@ class Console(Module, Pipe):
             if len(args) < 4:
                 yield "Too few arguments (needs center_x, center_y, radius_x, radius_y)"
                 return
-            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            ry_pos = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            ry_pos = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
             element = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             element = Path(element)
             self.add_element(element)
@@ -691,10 +691,10 @@ class Console(Module, Pipe):
             if len(args) < 4:
                 yield "Too few arguments (needs x, y, width, height)"
                 return
-            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-            width = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-            height = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            width = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            height = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
             element = Rect(x=x_pos, y=y_pos, width=width, height=height)
             element = Path(element)
             self.add_element(element)
@@ -803,11 +803,11 @@ class Console(Module, Pipe):
             else:
                 rot = 0
             if len(args) >= 2:
-                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if len(args) >= 3:
-                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix('rotate(%f,%f,%f)' % (rot, center_x, center_y))
@@ -853,11 +853,11 @@ class Console(Module, Pipe):
             else:
                 sy = sx
             if len(args) >= 3:
-                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if len(args) >= 4:
-                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if sx == 0 or sy == 0:
@@ -896,11 +896,11 @@ class Console(Module, Pipe):
                 yield "No selected elements."
                 return
             if len(args) >= 1:
-                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 tx = 0
             if len(args) >= 2:
-                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 ty = 0
             matrix = Matrix('translate(%f,%f)' % (tx, ty))
@@ -936,11 +936,11 @@ class Console(Module, Pipe):
                 yield "Invalid Value."
                 return
             if len(args) >= 2:
-                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if len(args) >= 3:
-                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
 
@@ -988,11 +988,11 @@ class Console(Module, Pipe):
             else:
                 sy = sx
             if len(args) >= 3:
-                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if len(args) >= 4:
-                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             try:
@@ -1036,11 +1036,11 @@ class Console(Module, Pipe):
                 return
 
             if len(args) >= 1:
-                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             else:
                 tx = 0
             if len(args) >= 2:
-                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
             else:
                 ty = 0
             try:
@@ -1061,10 +1061,10 @@ class Console(Module, Pipe):
                 yield "Too few arguments (needs x, y, width, height)"
                 return
             try:
-                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
-                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-                w_dim = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
-                h_dim = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                w_dim = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                h_dim = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
                 x, y, x1, y1 = elements.bounds()
                 w, h = x1 - x, y1 - y
                 sx = w_dim / w
@@ -1104,8 +1104,8 @@ class Console(Module, Pipe):
                 return
             try:
                 matrix = Matrix(float(args[0]), float(args[1]), float(args[2]), float(args[3]),
-                                Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701),
-                                Length(args[5]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                                Length(args[4]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701),
+                                Length(args[5]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701))
                 for element in elements.elems(emphasized=True):
                     try:
                         if element.lock:
@@ -1190,7 +1190,7 @@ class Console(Module, Pipe):
             else:
                 angle = None
             if len(args) >= 2:
-                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
             else:
                 distance = 16
             for element in elements.elems(emphasized=True):
@@ -1344,7 +1344,7 @@ class Console(Module, Pipe):
             for op in elements.ops(emphasized=True):
                 if op.operation in ("Raster", "Image"):
                     op.raster_step = step
-                    self.device.signal('element_property_update', op)
+                    self.context.signal('element_property_update', op)
             for element in elements.elems(emphasized=True):
                 element.values['raster_step'] = str(step)
                 m = element.transform
@@ -1353,7 +1353,7 @@ class Console(Module, Pipe):
                 element.transform = Matrix.scale(float(step), float(step))
                 element.transform.post_translate(tx, ty)
                 element.modified()
-                self.device.signal('element_property_update', element)
+                self.context.signal('element_property_update', element)
                 active_device.signal('refresh_scene')
             return
         elif command == 'image':
@@ -2007,7 +2007,7 @@ class Console(Module, Pipe):
                 yield COMMAND_WAIT, value
                 yield COMMAND_LASER_OFF
 
-            if self.device.spooler.job_if_idle(timed_fire):
+            if self.context.spooler.job_if_idle(timed_fire):
                 yield 'Pulse laser for %f milliseconds' % (value * 1000.0)
             else:
                 yield 'Pulse laser failed: Busy'
@@ -2030,7 +2030,7 @@ class Console(Module, Pipe):
                 yield "Error. Command Unrecognized: %s" % command
 
     def add_element(self, element):
-        kernel = self.device.device_root
+        kernel = self.context.get_context('/')
         element.stroke = Color('black')
         kernel.elements.add_elem(element)
         kernel.elements.set_selected([element])

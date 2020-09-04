@@ -9,11 +9,11 @@ _ = wx.GetTranslation
 
 
 class JobPreview(wx.Frame, Module):
-    def __init__(self, device, path,  parent, ops, *args, **kwds):
+    def __init__(self, context, path, parent, ops, *args, **kwds):
         # begin wxGlade: Preview.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self, device, path)
+        Module.__init__(self, context, path)
         self.SetSize((711, 629))
         self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
@@ -210,31 +210,30 @@ class JobPreview(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close(self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close(self.name)
+        self.context.close(self.name)
         self.Show()
-        self.device.device_root.setting(bool, "auto_spooler", True)
-        self.device.setting(bool, "rotary", False)
-        self.device.setting(float, "scale_x", 1.0)
-        self.device.setting(float, "scale_y", 1.0)
-        self.device.setting(bool, "prehome", False)
-        self.device.setting(bool, "autohome", False)
-        self.device.setting(bool, "autoorigin", False)
-        self.device.setting(bool, "autobeep", True)
-        self.device.listen('element_property_update', self.on_element_property_update)
+        self.context.setting(bool, "rotary", False)
+        self.context.setting(float, "scale_x", 1.0)
+        self.context.setting(float, "scale_y", 1.0)
+        self.context.setting(bool, "prehome", False)
+        self.context.setting(bool, "autohome", False)
+        self.context.setting(bool, "autoorigin", False)
+        self.context.setting(bool, "autobeep", True)
+        self.context.listen('element_property_update', self.on_element_property_update)
 
-        self.preview_menu.menu_prehome.Check(self.device.prehome)
-        self.preview_menu.menu_autohome.Check(self.device.autohome)
-        self.preview_menu.menu_autoorigin.Check(self.device.autoorigin)
-        self.preview_menu.menu_autobeep.Check(self.device.autobeep)
-        self.preprocessor.device = self.device
+        self.preview_menu.menu_prehome.Check(self.context.prehome)
+        self.preview_menu.menu_autohome.Check(self.context.autohome)
+        self.preview_menu.menu_autoorigin.Check(self.context.autoorigin)
+        self.preview_menu.menu_autobeep.Check(self.context.autobeep)
+        self.preprocessor.device = self.context
         operations = list(self.operations)
         self.operations.clear()
-        if self.device.prehome:
-            if not self.device.rotary:
+        if self.context.prehome:
+            if not self.context.rotary:
                 self.jobadd_home()
             else:
                 self.operations.append(_("Home Before: Disabled (Rotary On)"))
@@ -244,22 +243,22 @@ class JobPreview(wx.Frame, Module):
             if not op.output:
                 continue
             self.operations.append(copy(op))
-        if self.device.autobeep:
+        if self.context.autobeep:
             self.jobadd_beep()
 
-        if self.device.autohome:
-            if not self.device.rotary:
+        if self.context.autohome:
+            if not self.context.rotary:
                 self.jobadd_home()
             else:
                 self.operations.append(_("Home After: Disabled (Rotary On)"))
-        if self.device.autoorigin:
+        if self.context.autoorigin:
             self.jobadd_origin()
 
         self.preprocessor.process(self.operations)
         self.update_gui()
 
     def finalize(self, channel=None):
-        self.device.unlisten('element_property_update', self.on_element_property_update)
+        self.context.unlisten('element_property_update', self.on_element_property_update)
         try:
             self.Close()
         except RuntimeError:
@@ -276,24 +275,24 @@ class JobPreview(wx.Frame, Module):
         event.Skip()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.autostart = self.preview_menu.menu_autostart.IsChecked()
+        self.context.autostart = self.preview_menu.menu_autostart.IsChecked()
 
     def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.prehome = self.preview_menu.menu_prehome.IsChecked()
+        self.context.prehome = self.preview_menu.menu_prehome.IsChecked()
 
     def on_check_home_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.autohome = self.preview_menu.menu_autohome.IsChecked()
+        self.context.autohome = self.preview_menu.menu_autohome.IsChecked()
 
     def on_check_origin_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.autoorigin = self.preview_menu.menu_autoorigin.IsChecked()
+        self.context.autoorigin = self.preview_menu.menu_autoorigin.IsChecked()
 
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.autobeep = self.preview_menu.menu_autobeep.IsChecked()
+        self.context.autobeep = self.preview_menu.menu_autobeep.IsChecked()
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if len(self.preprocessor.commands) == 0:
-            self.device.spooler.jobs(self.operations)
-            self.device.close(self.name)
+            self.context.spooler.jobs(self.operations)
+            self.context.close(self.name)
         else:
             self.preprocessor.execute()
             self.update_gui()
@@ -307,7 +306,7 @@ class JobPreview(wx.Frame, Module):
             return
         obj = self.operations[node_index]
         if isinstance(obj, LaserOperation):
-            self.device.open('window/OperationProperty', self, obj)
+            self.context.open('window/OperationProperty', self, obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

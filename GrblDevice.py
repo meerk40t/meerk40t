@@ -94,14 +94,14 @@ class GRBLInterpreter(Interpreter):
         self.speed_updated = True
 
     def initialize(self, channel=None):
-        self.device.setting(str, 'line_end', '\n')
+        self.kernel.setting(str, 'line_end', '\n')
 
     def ensure_program_mode(self, *values):
-        self.pipe.write('M3' + self.device.line_end)
+        self.pipe.write('M3' + self.kernel.line_end)
         Interpreter.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
-        self.pipe.write('M5' + self.device.line_end)
+        self.pipe.write('M5' + self.kernel.line_end)
         Interpreter.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
@@ -124,7 +124,7 @@ class GRBLInterpreter(Interpreter):
         if self.speed_updated:
             line.append('F%d' % int(self.feed_convert(self.speed)))
             self.speed_updated = False
-        self.pipe.write(' '.join(line) + self.device.line_end)
+        self.pipe.write(' '.join(line) + self.kernel.line_end)
         Interpreter.move(self, x, y)
 
     def execute(self):
@@ -151,8 +151,8 @@ class GRBLInterpreter(Interpreter):
 
 class GRBLEmulator(Module, Pipe):
 
-    def __init__(self, device, path):
-        Module.__init__(self, device, path)
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
@@ -213,7 +213,7 @@ class GRBLEmulator(Module, Pipe):
         self.elements = None
 
     def initialize(self, channel=None):
-        self.grbl_channel = self.device.channel_open('grbl')
+        self.grbl_channel = self.context.channel_open('grbl')
 
     def close(self):
         pass
@@ -228,21 +228,21 @@ class GRBLEmulator(Module, Pipe):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        interpreter = self.device.interpreter
+        interpreter = self.context.interpreter
         if bytes_to_write == '?':  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if interpreter.state == 0:
                 state = 'Idle'
             else:
                 state = 'Busy'
-            x = self.device.current_x / self.scale
-            y = self.device.current_y / self.scale
+            x = self.context.current_x / self.scale
+            y = self.context.current_y / self.scale
             z = 0.0
             parts = list()
             parts.append(state)
             parts.append('MPos:%f,%f,%f' % (x, y, z))
-            f = self.feed_invert(self.device.interpreter.speed)
-            s = self.device.interpreter.power
+            f = self.feed_invert(self.context.interpreter.speed)
+            s = self.context.interpreter.power
             parts.append('FS:%f,%d' % (f, s))
             self.grbl_write("<%s>\r\n" % '|'.join(parts))
         elif bytes_to_write == '~':  # Resume.
@@ -305,7 +305,7 @@ class GRBLEmulator(Module, Pipe):
             yield code
 
     def commandline(self, data):
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         pos = data.find('(')
         commands = {}
         while pos != -1:
@@ -372,7 +372,7 @@ class GRBLEmulator(Module, Pipe):
         return self.command(commands)
 
     def command(self, gc):
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:

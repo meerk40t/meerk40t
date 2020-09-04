@@ -7,8 +7,9 @@ class LaserServer(Module):
     """
     Laser Server opens up a localhost server and waits, sends whatever data received to the pipe
     """
-    def __init__(self, device, path, tcp=True, port=23, pipe=None, name='', greet=None):  # port 1040
-        Module.__init__(self, device, path)
+    def __init__(self, context, path, tcp=True, port=23, pipe=None, name='', greet=None):  # port 1040
+        Module.__init__(self, context, path)
+        self.context_root = context.get_context('/')
         self.tcp = tcp
         self.pipe = pipe
         self.port = port
@@ -22,13 +23,13 @@ class LaserServer(Module):
 
     def initialize(self, channel=None):
         if self.tcp:
-            self.device.threaded(self.tcp_run)
+            self.context.threaded(self.tcp_run)
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.settimeout(2)
             self.socket.bind(('', self.port))
-            self.device.threaded(self.udp_run)
-        self.server_channel = self.device.channel_open('server')
+            self.context.threaded(self.udp_run)
+        self.server_channel = self.context.channel_open('server')
 
     def finalize(self, channel=None):
         if self.socket is not None:
@@ -46,7 +47,7 @@ class LaserServer(Module):
             self.socket.sendto(e, address)
 
         def elems(e):
-            self.device.device_root.elements.add_elem(e)
+            self.context_root.elements.add_elem(e)
 
         try:
             if self.server_channel is not None:
@@ -55,7 +56,7 @@ class LaserServer(Module):
                 try:
                     message, address = self.socket.recvfrom(1024)
                 except socket.timeout:
-                    if self.device.state == STATE_TERMINATE:
+                    if self.context.state == STATE_TERMINATE:
                         return
                     continue
                 if self.port == 50207:
@@ -79,14 +80,14 @@ class LaserServer(Module):
             self.server_channel("Could not start listening.")
             return
 
-        while self.device.state != STATE_TERMINATE:
+        while self.context.state != STATE_TERMINATE:
             self.server_channel("Listening %s on port %d..." % (self.name, self.port))
             connection = None
             addr = None
             try:
                 connection, addr = self.socket.accept()
                 self.server_channel("Socket Connected: %s" % str(addr))
-                self.device.threaded(self.tcp_connection_handle(connection, addr))
+                self.context.threaded(self.tcp_connection_handle(connection, addr))
             except socket.timeout:
                 pass
             except OSError:
@@ -107,12 +108,12 @@ class LaserServer(Module):
                 self.server_channel("<-- %s" % str(e))
 
         def elems(e):
-            self.device.device_root.elements.add_elem(e)
+            self.context_root.elements.add_elem(e)
 
         def handle():
             if self.greet is not None:
                 reply(self.greet)
-            while self.device.state != STATE_TERMINATE:
+            while self.context.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
                     if len(data_from_socket) != 0:
