@@ -1036,7 +1036,7 @@ class LhystudioController(Modifier, Pipe):
         :return:
         """
         if self._thread is None or not self._thread.is_alive():
-            self._thread = self.context.threaded(self._thread_data_send)
+            self._thread = self.context.kernel.threaded(self._thread_data_send)
             self.update_state(STATE_INITIALIZE)
 
     def _pause_busy(self):

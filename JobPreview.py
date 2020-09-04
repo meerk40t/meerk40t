@@ -15,6 +15,7 @@ class JobPreview(wx.Frame, Module):
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
         self.SetSize((711, 629))
+        self.spooler = context.kernel.active.spooler
         self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.panel_simulation = wx.Panel(self, wx.ID_ANY)
@@ -291,7 +292,7 @@ class JobPreview(wx.Frame, Module):
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
         if len(self.preprocessor.commands) == 0:
-            self.context.spooler.jobs(self.operations)
+            self.spooler.jobs(self.operations)
             self.context.close(self.name)
         else:
             self.preprocessor.execute()

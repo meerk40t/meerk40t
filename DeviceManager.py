@@ -154,7 +154,7 @@ class DeviceManager(wx.Frame, Module):
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        context = self.context.get_contexts('/%s' % uid)
+        context = self.context.get_context('/%s' % uid)
         context_name = context.setting(str, 'device_name', 'Lhystudios')
         if context.state == STATE_UNKNOWN:
             context.boot()

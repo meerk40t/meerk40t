@@ -16,6 +16,7 @@ _ = wx.GetTranslation
 class Controller(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Controller.__init__
+        context = context.kernel.active
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
@@ -370,7 +371,7 @@ class Controller(wx.Frame, Module):
         button = self.button_controller_control
         if self.text_controller_status is None:
             return
-        value = self.context.get_text_thread_state(state)
+        value = self.context.kernel.get_text_thread_state(state)
         self.text_controller_status.SetValue(str(value))
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
             def f(event):
