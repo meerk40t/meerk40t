@@ -20,7 +20,6 @@ class About(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         context.close(self.name)
-        context.setting(str, "device_name", "MeerK40t")
         name = context.device_name
         version = context.device_version
         self.SetTitle(_("About %s v%s" % (name, version)))

@@ -1272,30 +1272,30 @@ class BindAlias(Modifier):
         keys = self.context.derive('keymap')
         alias = self.context.derive('alias')
 
-        keys.clear_persistent()
-        alias.clear_persistent()
+        keys.kernel.clear_persistent(keys.path)
+        alias.kernel.clear_persistent(alias.path)
 
         for key in self.keymap:
             if key is None or len(key) == 0:
                 continue
-            keys.write_persistent(key, self.keymap[key])
+            keys.kernel.write_persistent(keys.abs_path(key), self.keymap[key])
 
         for key in self.alias:
             if key is None or len(key) == 0:
                 continue
-            alias.write_persistent(key, self.alias[key])
+            alias.kernel.write_persistent(alias.abs_path(key), self.alias[key])
 
     def boot_keymap(self):
         self.keymap.clear()
         prefs = self.context.derive('keymap')
-        prefs.load_persistent_string_dict(self.keymap)
+        prefs.kernel.load_persistent_string_dict(prefs.path, self.keymap)
         if not len(self.keymap):
             self.default_keymap()
 
     def boot_alias(self):
         self.alias.clear()
         prefs = self.context.derive('alias')
-        prefs.load_persistent_string_dict(self.alias)
+        prefs.kernel.load_persistent_string_dict(prefs.path, self.alias)
         if not len(self.alias):
             self.default_alias()
 
@@ -1395,6 +1395,13 @@ class Context:
     def __str__(self):
         return "Context('%s')" % self.path
 
+    def boot(self, channel=None):
+        for opened_name in self.opened:
+            opened = self.opened[opened_name]
+        for attached_name in self.attached:
+            attached = self.attached[attached_name]
+            attached.boot(channel=channel)
+
     def abs_path(self, subpath):
         subpath = str(subpath)
         if subpath.startswith('/'):
@@ -1449,7 +1456,7 @@ class Context:
             if value is None:
                 continue
             if isinstance(value, (int, bool, str, float, Color)):
-                self.kernel.write_persistent(attr, value)
+                self.kernel.write_persistent(self.abs_path(attr), value)
 
     def execute(self, control):
         try:
@@ -1549,15 +1556,14 @@ class Context:
             instance = open_object(self, registered_path, *args, **kwargs)
             self.attached[registered_path] = instance
             instance.attach(self)
+            return instance
         except AttributeError:
-            pass
+            return None
 
-        return instance
-
-    def deactivate(self, registered_path):
+    def deactivate(self, instance_path):
         try:
-            instance = self.attached[registered_path]
-            del self.attached[registered_path]
+            instance = self.attached[instance_path]
+            del self.attached[instance_path]
             instance.detach(self)
         except (KeyError, AttributeError):
             pass
@@ -1612,7 +1618,7 @@ class Context:
         self.kernel.remove_watcher(self.abs_path(channel), monitor_function)
 
     def channel_open(self, channel, buffer=0):
-        self.kernel.channel_open(self.abs_path(channel), buffer=buffer)
+        return self.kernel.channel_open(self.abs_path(channel), buffer=buffer)
 
 
 class Kernel:
@@ -1933,6 +1939,12 @@ class Kernel:
         """
         self.thread = self.threaded(self.run, 'Scheduler')
         self.signal_job = self.add_job(run=self.delegate_messages, interval=0.05)
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+            try:
+                context.boot()
+            except AttributeError:
+                pass
         for device in self.derivable('/'):
             try:
                 d = int(device)
@@ -1964,7 +1976,6 @@ class Kernel:
         :param channel:
         :return:
         """
-        self.state = STATE_TERMINATE
         _ = self.translation
 
         def signal(code, *message):
@@ -1986,7 +1997,17 @@ class Kernel:
                 except AttributeError:
                     pass
                 channel(_("Closing %s: %s") % (opened_name, str(obj)))
-                context.close(opened_name)  # Calls kernel's close. Detach and Close.
+                context.close(opened_name)
+
+            for attached_name in list(context.attached):
+                obj = context.attached[attached_name]
+                try:
+                    obj.shutdown(channel=channel)
+                    channel(_("Shutdown-modifier %s: %s") % (attached_name, str(obj)))
+                except AttributeError:
+                    pass
+                channel(_("Detaching %s: %s") % (attached_name, str(obj)))
+                context.deactivate(attached_name)
 
             del self.contexts[context_name]
             channel(_("Context Shutdown Finished: '%s'") % str(context))
@@ -2027,6 +2048,8 @@ class Kernel:
                     channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
         self.last_message = {}
         self.listeners = {}
+        self.state = STATE_TERMINATE
+        self.thread.join()
         channel(_("Shutdown."))
 
     def get_text_thread_state(self, state):

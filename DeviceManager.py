@@ -149,7 +149,7 @@ class DeviceManager(wx.Frame, Module):
         context_obj = self.context.get_context('/%s' % uid)
         context_obj.setting(bool, 'autoboot', True)
         context_obj.autoboot = not context_obj.autoboot
-        context_obj.write_persistent('autoboot', context_obj.autoboot)
+        context_obj.kernel.write_persistent(context_obj.abs_path('autoboot'), context_obj.autoboot)
         self.refresh_device_list()
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
@@ -165,7 +165,7 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        names = [name[7:] for name in self.context.register_match('device')]
+        names = [name[7:] for name in self.context.kernel.match('device')]
         dlg = wx.SingleChoiceDialog(None, _('What type of device is being added?'), _('Device Type'), names)
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
@@ -182,7 +182,7 @@ class DeviceManager(wx.Frame, Module):
             device_uid += 1
             if str(device_uid) not in devices:
                 break
-        settings = self.context.get_context('/%d' % devices)
+        settings = self.context.get_context('%d' % device_uid)
         settings.setting(str, 'device_name', device_type)
         settings.setting(bool, 'autoboot', True)
         settings.flush()

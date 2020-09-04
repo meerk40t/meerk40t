@@ -4,28 +4,22 @@ from OperationPreprocessor import OperationPreprocessor
 from svgelements import *
 
 
-class Console(Module, Pipe):
+class Console(Module, Job, Pipe):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        Job.__init__(context=context, process=self.tick, interval=0.05)
         Pipe.__init__(self)
         self.channel_file = None
-        self.channel = None
         self.buffer = ''
-        self.active_context = None
-        self.interval = 0.05
-        self.process = self.tick
         self.commands = []
         self.queue = []
         self.laser_on = False
         self.dx = 0
         self.dy = 0
-
-    def initialize(self, channel=None):
         self.context.listen('interpreter;mode', self.on_mode_change)
         self.context.setting(int, "bed_width", 280)
         self.context.setting(int, "bed_height", 200)
         self.channel = self.context.channel_open('console')
-        self.active_context = self.context
 
     def finalize(self, channel=None):
         self.context.unlisten('interpreter;mode', self.on_mode_change)
@@ -521,7 +515,7 @@ class Console(Module, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Backends permitted:'
-                for i, name in enumerate(context.register_match('device/')):
+                for i, name in enumerate(context.kernel.match('device/')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
@@ -542,12 +536,28 @@ class Console(Module, Pipe):
                         break
                 yield '----------'
                 yield 'Devices Instances:'
-                context.setting(str, 'device_name', 'Unknown')
-                context.setting(str, 'device_location', 'Unknown')
-                yield '%d: %s on %s' % (0, context.device_name, context.device_location)
-                for i, name in enumerate(context.kernel.contexts):
-                    device = context.kernel.contexts[name]
-                    yield '%d: %s on %s' % (i + 1, device.device_name, device.device_location)
+                try:
+                    device_name = context.device_name
+                except AttributeError:
+                    device_name = "Unknown"
+
+                try:
+                    device_location = context.device_location
+                except AttributeError:
+                    device_location = "Unknown"
+                yield '%d: %s on %s' % (0, device_name, device_location)
+                for i, name in enumerate(context.kernel.devices):
+                    device = context.kernel.devices[name]
+                    try:
+                        device_name = device.device_name
+                    except AttributeError:
+                        device_name = "Unknown"
+
+                    try:
+                        device_location = device.device_location
+                    except AttributeError:
+                        device_location = "Unknown"
+                    yield '%d: %s on %s' % (i + 1, device_name, device_location)
                 yield '----------'
             else:
                 value = args[0]

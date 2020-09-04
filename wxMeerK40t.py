@@ -10,7 +10,6 @@ import traceback
 import wx.ribbon as RB
 
 from About import About
-from Adjustments import Adjustments
 from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
@@ -187,7 +186,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.screen_refresh_is_running = False
         self.screen_refresh_lock = threading.Lock()
         self.background_brush = wx.Brush("Grey")
-        self.renderer = None
+        self.renderer = LaserRender(context)
         self.laserpath = [[0, 0] for i in range(1000)], [[0, 0] for i in range(1000)]
         self.laserpath_index = 0
         self.working_file = None
@@ -559,7 +558,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context_root.listen('bed_size', self.bed_changed)
         if context.fps <= 0:
             context.fps = 60
-        self.renderer = LaserRender(context)
 
         if context.window_width < 300:
             context.window_width = 300
@@ -2915,7 +2913,6 @@ class wxMeerK40t(wx.App, Module):
         device.register('window/JobSpooler', JobSpooler)
         device.register('window/JobPreview', JobPreview)
         device.register('window/BufferView', BufferView)
-        device.register('window/Adjustments', Adjustments)
         device.register('window/RasterWizard', RasterWizard)
 
     def run_later(self, command, *args):
