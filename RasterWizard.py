@@ -356,7 +356,7 @@ class RasterWizard(wx.Frame, Module):
         menu = wx.Menu()
         sub_menu = wx.Menu()
         try:
-            for script_name, script in self.context.registered['raster_script'].items():
+            for script_name in self.context.match('raster_script', True):
                 gui.Bind(wx.EVT_MENU, self.set_script(script_name),
                          sub_menu.Append(wx.ID_ANY, script_name, "", wx.ITEM_NORMAL))
             menu.Append(wx.ID_ANY, _("Raster Script"), sub_menu)

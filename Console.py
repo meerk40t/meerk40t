@@ -105,7 +105,7 @@ class Console(Module, Job, Pipe):
     def interface_parse_command(self, command, *args):
         context = self.context
         elements = context.elements
-        active_context = context._kernel.active
+        active_context = context.active
         try:
             spooler = active_context.spooler
         except AttributeError:
@@ -345,7 +345,7 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Windows Registered:'
-                for i, name in enumerate(context._kernel.match('window')):
+                for i, name in enumerate(context.match('window')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Loaded Windows in Context %s:' % str(context._path)
@@ -376,16 +376,16 @@ class Console(Module, Job, Pipe):
                     if window_path in context.registered:
                         parent_window = None
                         try:
-                            parent_window = active_context.gui
+                            parent_window = context.gui
                         except AttributeError:
                             pass
-                        active_context.open(window_path, window_name, parent_window, *args[2:])
+                        context.open(window_path, parent_window, *args[2:])
                         yield 'Window %s opened.' % window_name
                     else:
                         yield "Window '%s' not found." % window_name
                 elif value == 'close':
                     if window_name in active_context.opened:
-                        active_context.close(window_name)
+                        context.close(window_name)
                     else:
                         yield "Window '%s' not found." % window_name
         elif command == 'set':
@@ -420,11 +420,11 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'control':
             if len(args) == 0:
-                for control_name in active_context._kernel.match('\d+/control'):
+                for control_name in active_context.match('\d+/control'):
                     yield control_name
             else:
                 control_name = ' '.join(args)
-                if control_name in active_context._kernel.match('\d+/control'):
+                if control_name in active_context.match('\d+/control'):
                     active_context.execute(control_name)
                     yield "Executed '%s'" % control_name
                 else:
@@ -434,7 +434,7 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Modules Registered:'
-                for i, name in enumerate(context._kernel.match('module')):
+                for i, name in enumerate(context.match('module')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Loaded Modules in Context %s:' % str(context._path)
@@ -468,10 +468,42 @@ class Console(Module, Job, Pipe):
                     else:
                         yield "Module '%s' not found." % index
             return
+        elif command == 'modifier':
+            if len(args) == 0:
+                yield '----------'
+                yield 'Modifiers Registered:'
+                for i, name in enumerate(context.match('modifier')):
+                    yield '%d: %s' % (i + 1, name)
+                yield '----------'
+                yield 'Loaded Modifiers in Context %s:' % str(context._path)
+                for i, name in enumerate(context.attached):
+                    modifier = context.attached[name]
+                    yield '%d: %s as type of %s' % (i + 1, name, type(modifier))
+                yield '----------'
+                yield 'Loaded Modifiers in Device %s:' % str(active_context._path)
+                for i, name in enumerate(active_context.attached):
+                    modifier = active_context.attached[name]
+                    yield '%d: %s as type of %s' % (i + 1, name, type(modifier))
+                yield '----------'
+            else:
+                value = args[0]
+                if value == 'open':
+                    index = args[1]
+                    if index in context.registered:
+                        active_context.activate(index)
+                    else:
+                        yield "Modifier '%s' not found." % index
+                elif value == 'close':
+                    index = args[1]
+                    if index in active_context.attached:
+                        active_context.deactivate(index)
+                    else:
+                        yield "Modifier '%s' not found." % index
+            return
         elif command == 'schedule':
             yield '----------'
             yield 'Scheduled Processes:'
-            for i, job in enumerate(active_context.jobs):
+            for i, job in enumerate(active_context._kernel.jobs):
                 parts = list()
                 parts.append('%d:' % (i + 1))
                 parts.append(str(job))
@@ -527,7 +559,7 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Backends permitted:'
-                for i, name in enumerate(context._kernel.match('device/')):
+                for i, name in enumerate(context.match('device/')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
@@ -557,7 +589,6 @@ class Console(Module, Job, Pipe):
                     device_location = context.device_location
                 except AttributeError:
                     device_location = "Unknown"
-                yield '%d: %s on %s' % (0, device_name, device_location)
                 for i, name in enumerate(context._kernel.devices):
                     device = context._kernel.devices[name]
                     try:
@@ -577,19 +608,13 @@ class Console(Module, Job, Pipe):
                     value = int(value)
                 except ValueError:
                     value = None
-                if value == 0:
-                    self.active_context = context
-                    self.active_context.setting(str, 'device_location', 'Unknown')
-                    yield 'Device set: %s on %s' % \
-                          (self.active_context.device_name, self.active_context.device_location)
-                else:
-                    for i, name in enumerate(context._kernel.contexts):
-                        if i + 1 == value:
-                            self.active_context = context._kernel.contexts[name]
-                            self.active_context.setting(str, 'device_location', 'Unknown')
-                            yield 'Device set: %s on %s' % \
-                                  (self.active_context.device_name, self.active_context.device_location)
-                            break
+                for i, name in enumerate(context._kernel.devices):
+                    if i + 1 == value:
+                        self.active_context = context._kernel.devices[name]
+                        self.active_context.setting(str, 'device_location', 'Unknown')
+                        yield 'Device set: %s on %s' % \
+                              (self.active_context.device_name, self.active_context.device_location)
+                        break
             return
         # Element commands.
         elif command == 'element':
@@ -1404,13 +1429,13 @@ class Console(Module, Job, Pipe):
             elif args[0] == 'wizard':
                 if len(args) == 1:
                     try:
-                        for script_name in context.registered['raster_script']:
+                        for script_name in context.match('raster_script', True):
                             yield "Raster Script: %s" % script_name
                     except KeyError:
                         yield "No Raster Scripts Found."
                     return
                 try:
-                    script = context.registered['raster_script'][args[1]]
+                    script = context.registered['raster_script/%s' % args[1]]
                 except KeyError:
                     yield "Raster Script %s is not registered." % args[1]
                     return

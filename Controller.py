@@ -16,7 +16,6 @@ _ = wx.GetTranslation
 class Controller(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Controller.__init__
-        context = context._kernel.active
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)

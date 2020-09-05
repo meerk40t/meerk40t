@@ -2356,7 +2356,8 @@ class RootNode(list):
 
                 try:
                     raster_wizard_menu = wx.Menu()
-                    for script in self.context.registered['raster_script']:
+                    for script in self.context._kernel.match('raster_script'):
+                        script = script[14:]
                         menu_item = raster_wizard_menu.Append(wx.ID_ANY, _("RasterWizard: %s") % script, "",
                                                               wx.ITEM_NORMAL)
                         gui.Bind(wx.EVT_MENU, self.menu_console('window open RasterWizard %s' % script), menu_item)
@@ -2365,7 +2366,8 @@ class RootNode(list):
                     pass
                 try:
                     raster_wizard_apply_menu = wx.Menu()
-                    for script in self.context.registered['raster_script']:
+                    for script in self.context._kernel.match('raster_script'):
+                        script = script[14:]
                         menu_item = raster_wizard_apply_menu.Append(wx.ID_ANY, _("Apply: %s") % script, "",
                                                                     wx.ITEM_NORMAL)
                         gui.Bind(wx.EVT_MENU, self.menu_console('image wizard %s\n' % script), menu_item)

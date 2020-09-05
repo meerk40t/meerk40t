@@ -1505,6 +1505,30 @@ class Context:
         """
         self._kernel.register(self.abs_path(path), obj)
 
+    @property
+    def registered(self):
+        return self._kernel.registered
+
+    @property
+    def active(self):
+        return self._kernel.active
+
+    @property
+    def contexts(self):
+        return self._kernel.contexts
+
+    def match(self, matchtext, suffix=False):
+        """
+        Delegate of Kernel match.
+        :param matchtext:  regex matchtext to locate.
+        :yield: matched entries.
+        """
+        for m in self._kernel.match(matchtext):
+            if suffix:
+                yield list(m.split('/'))[-1]
+            else:
+                yield m
+
     def find(self, path):
         """
         Finds a loaded instance. Or returns None if not such instance.
