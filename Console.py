@@ -579,13 +579,14 @@ class Console(Module, Job, Pipe):
                     value = None
                 if value == 0:
                     self.active_context = context
+                    self.active_context.setting(str, 'device_location', 'Unknown')
                     yield 'Device set: %s on %s' % \
                           (self.active_context.device_name, self.active_context.device_location)
                 else:
                     for i, name in enumerate(context.kernel.contexts):
                         if i + 1 == value:
                             self.active_context = context.kernel.contexts[name]
-                            self.active_context.setting(str, 'device_location', 'unknown')
+                            self.active_context.setting(str, 'device_location', 'Unknown')
                             yield 'Device set: %s on %s' % \
                                   (self.active_context.device_name, self.active_context.device_location)
                             break

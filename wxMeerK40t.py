@@ -176,11 +176,6 @@ class MeerK40t(wx.Frame, Module, Job):
         Job.__init__(self, context=context, process=self.refresh_scene)
         self.DragAcceptFiles(True)
 
-        self.matrix = Matrix()
-        self.previous_window_position = None
-        self.previous_scene_position = None
-        self.popup_window_position = None
-        self.popup_scene_position = None
         self._Buffer = None
         self.screen_refresh_is_requested = False
         self.screen_refresh_is_running = False
@@ -195,7 +190,164 @@ class MeerK40t(wx.Frame, Module, Job):
         self.scene.SetDoubleBuffered(True)
 
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
+        self.ribbon_position_aspect_ratio = True
+        self.ribbon_position_ignore_update = False
+        self.ribbon_position_x = 0.0
+        self.ribbon_position_y = 0.0
+        self.ribbon_position_h = 0.0
+        self.ribbon_position_w = 0.0
+        self.ribbon_position_units = 0
+        self.ribbon_position_name = None
+        self.__set_ribbonbar()
 
+        self.CenterOnScreen()
+        # Menu Bar
+        self.main_menubar = wx.MenuBar()
+        self.__set_menubar()
+
+        self.main_statusbar = self.CreateStatusBar(3)
+
+        # end wxGlade
+
+        self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
+
+        self.previous_position = None
+        self.__set_properties()
+        self.__do_layout()
+        self.__scene_binds()
+
+        self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
+        self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.scene.SetFocus()
+        self.widget_scene = None
+        self.pipe_state = None
+
+        self.root = RootNode(context, self, context.elements)
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
+        self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_selection_changed, self.tree)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
+
+        self.__set_titlebar()
+        self.__kernel_initialize(context)
+
+        self.Bind(wx.EVT_SIZE, self.on_size)
+
+        self.Show()
+        self.schedule()
+
+    def __scene_binds(self):
+        self.scene.Bind(wx.EVT_PAINT, self.on_paint)
+        self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
+
+        self.scene.Bind(wx.EVT_MOTION, self.on_mouse_move)
+
+        self.scene.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
+
+        self.scene.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
+        self.scene.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
+
+        self.scene.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
+
+        self.scene.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
+        self.scene.Bind(wx.EVT_RIGHT_UP, self.on_right_mouse_up)
+
+        self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
+        self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
+
+    def __kernel_initialize(self, context):
+        context.gui = self
+        context.setting(int, "draw_mode", 0)
+        context.setting(int, "window_width", 1200)
+        context.setting(int, "window_height", 600)
+        context.setting(float, "units_convert", MILS_IN_MM)
+        context.setting(str, "units_name", 'mm')
+        context.setting(int, "units_marks", 10)
+        context.setting(int, "units_index", 0)
+        context.setting(bool, "mouse_zoom_invert", False)
+        context.setting(bool, "print_shutdown", False)
+        context.setting(int, 'fps', 40)
+        if context.fps <= 0:
+            context.fps = 60
+        if context.window_width < 300:
+            context.window_width = 300
+        if context.window_height < 300:
+            context.window_height = 300
+
+        context.listen('element_added', self.on_rebuild_tree_request)
+        context.listen('operation_added', self.on_rebuild_tree_request)
+        context.listen('element_removed', self.on_rebuild_tree_request)
+        context.listen('operation_removed', self.on_rebuild_tree_request)
+        context.listen('units', self.space_changed)
+        context.listen('emphasized', self.on_emphasized_elements_changed)
+        context.listen('modified', self.on_element_modified)
+        context.listen('altered', self.on_element_alteration)
+
+        context.listen('background', self.on_background_signal)
+        context.listen('rebuild_tree', self.on_rebuild_tree_signal)
+        context.listen('refresh_scene', self.on_refresh_scene)
+        context.listen('element_property_update', self.on_element_update)
+        context.setting(int, "bed_width", 320)  # Default Value
+        context.setting(int, "bed_height", 220)  # Default Value
+
+        context.listen('active', self.on_active_change)
+
+        self.widget_scene = context.open('module/Scene')
+
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
+        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.root, self.renderer))
+        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+
+        context.register("control/Transform", self.open_transform_dialog)
+        context.register("control/Flip", self.open_flip_dialog)
+        context.register("control/Path", self.open_path_dialog)
+        context.register("control/Fill", self.open_fill_dialog)
+        context.register("control/Stroke", self.open_stroke_dialog)
+        context.register("control/FPS", self.open_fps_dialog)
+        context.register("control/Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        context.register("control/Home and Dot", self.run_home_and_dot_test)
+
+        def test_crash_in_thread():
+            def foo():
+                a = 1 / 0
+
+            context.threaded(foo)
+
+        context.register("control/Crash Thread", test_crash_in_thread)
+        context.register("control/Clear Laserpath", self.clear_laserpath)
+        self.SetSize((context.window_width, context.window_height))
+        self.interval = 1.0 / float(context.fps)
+        self.process()
+
+        context.setting(str, 'file0', None)
+        context.setting(str, 'file1', None)
+        context.setting(str, 'file2', None)
+        context.setting(str, 'file3', None)
+        context.setting(str, 'file4', None)
+        context.setting(str, 'file5', None)
+        context.setting(str, 'file6', None)
+        context.setting(str, 'file7', None)
+        context.setting(str, 'file8', None)
+        context.setting(str, 'file9', None)
+        self.populate_recent_menu()
+
+        bedwidth = context.bed_width
+        bedheight = context.bed_height
+        bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
+        self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
+
+    def __set_ribbonbar(self):
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Home"), icons8_opened_folder_50.GetBitmap(), )
 
         toolbar_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Main"),
@@ -291,14 +443,6 @@ class MeerK40t(wx.Frame, Module, Job):
         position_panel.SetSizer(sizer_panel)
         self._ribbon.Realize()
 
-        self.ribbon_position_aspect_ratio = True
-        self.ribbon_position_ignore_update = False
-        self.ribbon_position_x = 0.0
-        self.ribbon_position_y = 0.0
-        self.ribbon_position_h = 0.0
-        self.ribbon_position_w = 0.0
-        self.ribbon_position_units = 0
-        self.ribbon_position_name = None
         self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_pos_enter, self.text_x)
         self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
@@ -310,9 +454,43 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dim_enter, self.text_h)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
 
-        self.CenterOnScreen()
-        # Menu Bar
-        self.main_menubar = wx.MenuBar()
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/JobPreview', self, list(self.context.elements.ops())),
+                     id=ID_JOB)
+        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.kernel.active.open('window/UsbConnect', self), id=ID_USB)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.kernel.active.open('window/Navigation', self), id=ID_NAV)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.kernel.active.open('window/Controller', self), id=ID_CONTROLLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.kernel.active.open('window/Preferences', self), id=ID_PREFERENCES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.kernel.active.open('window/Rotary', self), id=ID_ROTARY)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.kernel.active.open('window/JobSpooler', self), id=ID_SPOOLER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.get_context('camera').open('window/CameraInterface', self), id=ID_CAMERA)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/DeviceManager', self), id=ID_DEVICES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.get_context('keymap').open('window/Keymap', self), id=ID_KEYMAP)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/Notes', self), id=ID_NOTES)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/Terminal', self), id=ID_TERMINAL)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/Operations', self), id=ID_OPERATIONS)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/RasterWizard', self), id=ID_RASTER)
+        self.context.setting(int, 'units_index', 0)
+        self.ribbon_position_units = self.context.units_index
+        self.update_ribbon_position()
+
+    def __set_menubar(self):
         wxglade_tmp_menu = wx.Menu()
 
         wxglade_tmp_menu.Append(wx.ID_NEW, _("New"), "")
@@ -412,189 +590,33 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/About', self), id=wx.ID_ABOUT)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Alignment', self), id=ID_MENU_ALIGNMENT)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self), id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Terminal', self), id=ID_MENU_TERMINAL)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/DeviceManager', self),
                   id=ID_MENU_DEVICE_MANAGER)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Keymap', self),
                   id=ID_MENU_KEYMAP)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Preferences', self),
-                  id=wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Settings', self),
                   id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Rotary', self), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Navigation', self),
-                  id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Notes', self),
                   id=ID_MENU_NOTES)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Controller', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.get_context('camera').open('window/CameraInterface', self),
+                  id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Preferences', self),
+                  id=wx.ID_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Rotary', self), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Navigation', self),
+                  id=ID_MENU_NAVIGATION)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Controller', self),
                   id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/UsbConnect', self), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
-        self.Bind(wx.EVT_MENU,
-                  lambda v: self.context.open('window/JobPreview', self, list(self.context.elements.ops())),
-                  id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/UsbConnect', self), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self,
+                                                           list(self.context.elements.ops())), id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/JobPreview', self,
-                                                 list(self.context.elements.ops())),
-                     id=ID_JOB)
-        toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
-
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/UsbConnect', self), id=ID_USB)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Navigation', self), id=ID_NAV)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Controller', self), id=ID_CONTROLLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Preferences', self), id=ID_PREFERENCES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/DeviceManager', self), id=ID_DEVICES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/CameraInterface', self), id=ID_CAMERA)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/JobSpooler', self), id=ID_SPOOLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Keymap', self), id=ID_KEYMAP)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Notes', self), id=ID_NOTES)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Terminal', self), id=ID_TERMINAL)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Operations', self), id=ID_OPERATIONS)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/Rotary', self), id=ID_ROTARY)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/RasterWizard', self), id=ID_RASTER)
-        self.main_statusbar = self.CreateStatusBar(3)
-
-        # end wxGlade
-
-        self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
-
-        self.previous_position = None
-
-        self.__set_properties()
-        self.__do_layout()
-
-        self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.BLUE)
-        self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
-
-        self.scene.Bind(wx.EVT_PAINT, self.on_paint)
-        self.scene.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
-
-        self.scene.Bind(wx.EVT_MOTION, self.on_mouse_move)
-
-        self.scene.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-
-        self.scene.Bind(wx.EVT_MIDDLE_DOWN, self.on_mouse_middle_down)
-        self.scene.Bind(wx.EVT_MIDDLE_UP, self.on_mouse_middle_up)
-
-        self.scene.Bind(wx.EVT_LEFT_DCLICK, self.on_mouse_double_click)
-
-        self.scene.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_down)
-        self.scene.Bind(wx.EVT_RIGHT_UP, self.on_right_mouse_up)
-
-        self.scene.Bind(wx.EVT_LEFT_DOWN, self.on_left_mouse_down)
-        self.scene.Bind(wx.EVT_LEFT_UP, self.on_left_mouse_up)
-
-        self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
-        self.tree.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.tree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.scene.SetFocus()
-        self.fps_job = None
-        self.widget_scene = None
-        self.pipe_state = None
-        context_root = context.get_context('/')
-        self.root = RootNode(context_root, self, context_root.elements)
-
-        self.__set_titlebar()
-        context.gui = self
-        context_root.setting(int, "draw_mode", 0)
-        context.setting(int, "window_width", 1200)
-        context.setting(int, "window_height", 600)
-        context_root.setting(float, "units_convert", MILS_IN_MM)
-        context_root.setting(str, "units_name", 'mm')
-        context_root.setting(int, "units_marks", 10)
-        context_root.setting(int, "units_index", 0)
-        context_root.setting(bool, "mouse_zoom_invert", False)
-        context_root.setting(bool, "print_shutdown", False)
-        context.setting(int, 'fps', 40)
-
-        if context is not None:
-            context.setting(int, "bed_width", 320)  # Default Value
-            context.setting(int, "bed_height", 220)  # Default Value
-
-        context_root.listen('element_added', self.on_rebuild_tree_request)
-        context_root.listen('operation_added', self.on_rebuild_tree_request)
-        context_root.listen('element_removed', self.on_rebuild_tree_request)
-        context_root.listen('operation_removed', self.on_rebuild_tree_request)
-        context_root.listen('units', self.space_changed)
-        context_root.listen('emphasized', self.on_emphasized_elements_changed)
-        context_root.listen('modified', self.on_element_modified)
-        context_root.listen('altered', self.on_element_alteration)
-
-        context.listen('background', self.on_background_signal)
-        context.listen('rebuild_tree', self.on_rebuild_tree_signal)
-        context.listen('refresh_scene', self.on_refresh_scene)
-        context.listen('element_property_update', self.on_element_update)
-        context.listen('pipe;error', self.on_usb_error)
-        context.listen('pipe;usb_state_text', self.on_usb_state_text)
-        context.listen('pipe;thread', self.on_pipe_state)
-        context.listen('spooler;thread', self.on_spooler_state)
-        context_root.listen('interpreter;position', self.update_position)
-        context_root.listen('interpreter;mode', self.on_interpreter_mode)
-        context_root.listen('bed_size', self.bed_changed)
-        if context.fps <= 0:
-            context.fps = 60
-
-        if context.window_width < 300:
-            context.window_width = 300
-        if context.window_height < 300:
-            context.window_height = 300
-        self.widget_scene = context.open('module/Scene')
-
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene, self.root))
-        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
-        self.widget_scene.add_scenewidget(LaserPathWidget(self.widget_scene))
-        self.widget_scene.add_scenewidget(ElementsWidget(self.widget_scene, self.root, self.renderer))
-        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
-        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
-
-        context.register("control/Transform", self.open_transform_dialog)
-        context.register("control/Flip", self.open_flip_dialog)
-        context.register("control/Path", self.open_path_dialog)
-        context.register("control/Fill", self.open_fill_dialog)
-        context.register("control/Stroke", self.open_stroke_dialog)
-        context.register("control/FPS", self.open_fps_dialog)
-        context.register("control/Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
-        context.register("control/Home and Dot", self.run_home_and_dot_test)
-
-        def test_crash_in_thread():
-            def foo():
-                a = 1 / 0
-
-            context.threaded(foo)
-
-        context.register("control/Crash Thread", test_crash_in_thread)
-        context.register("control/Clear Laserpath", self.clear_laserpath)
-        self.SetSize((context.window_width, context.window_height))
-        self.interval = 1.0 / float(context.fps)
-        self.process()
         self.add_language_menu()
 
+        self.context.setting(int, 'draw_mode', 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.context.draw_mode & DRAW_MODE_FILLS != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
@@ -632,36 +654,6 @@ class MeerK40t(wx.Frame, Module, Job):
         m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
         m.Check(self.context.draw_mode & DRAW_MODE_INVERT != 0)
 
-        context.setting(str, 'file0', None)
-        context.setting(str, 'file1', None)
-        context.setting(str, 'file2', None)
-        context.setting(str, 'file3', None)
-        context.setting(str, 'file4', None)
-        context.setting(str, 'file5', None)
-        context.setting(str, 'file6', None)
-        context.setting(str, 'file7', None)
-        context.setting(str, 'file8', None)
-        context.setting(str, 'file9', None)
-        self.populate_recent_menu()
-
-        self.Bind(wx.EVT_SIZE, self.on_size)
-
-        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.root.on_drag_begin_handler, self.tree)
-        self.Bind(wx.EVT_TREE_END_DRAG, self.root.on_drag_end_handler, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.root.on_item_activated, self.tree)
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.root.on_item_selection_changed, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.root.on_item_right_click, self.tree)
-
-        if context is not None:
-            bedwidth = context.bed_width
-            bedheight = context.bed_height
-            bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
-            self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
-            self.ribbon_position_units = context_root.units_index
-            self.update_ribbon_position()
-        self.Show()
-        self.schedule()
-
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
             wxglade_tmp_menu = wx.Menu()
@@ -693,36 +685,46 @@ class MeerK40t(wx.Frame, Module, Job):
             self.context.kernel.shutdown(channel)
             event.Skip()  # Call destroy as regular.
 
+    def on_active_change(self, old_active, context_active):
+        if old_active is not None:
+            old_active.unlisten('pipe;error', self.on_usb_error)
+            old_active.unlisten('pipe;usb_state_text', self.on_usb_state_text)
+            old_active.unlisten('pipe;thread', self.on_pipe_state)
+            old_active.unlisten('spooler;thread', self.on_spooler_state)
+            old_active.unlisten('interpreter;position', self.update_position)
+            old_active.unlisten('interpreter;mode', self.on_interpreter_mode)
+            old_active.unlisten('bed_size', self.bed_changed)
+        if context_active is not None:
+            context_active.listen('pipe;error', self.on_usb_error)
+            context_active.listen('pipe;usb_state_text', self.on_usb_state_text)
+            context_active.listen('pipe;thread', self.on_pipe_state)
+            context_active.listen('spooler;thread', self.on_spooler_state)
+            context_active.listen('interpreter;position', self.update_position)
+            context_active.listen('interpreter;mode', self.on_interpreter_mode)
+            context_active.listen('bed_size', self.bed_changed)
+
     def finalize(self, channel=None):
         context = self.context
-        context_root = context.get_context('/')
 
-        if context_root.print_shutdown:
-            context_root.add_watcher('shutdown', print)
+        if context.print_shutdown:
+            context.add_watcher('shutdown', print)
 
         self.unschedule()
         self.screen_refresh_lock.acquire()
 
-        context_root.unlisten('element_added', self.on_rebuild_tree_request)
-        context_root.unlisten('operation_added', self.on_rebuild_tree_request)
-        context_root.unlisten('element_removed', self.on_rebuild_tree_request)
-        context_root.unlisten('operation_removed', self.on_rebuild_tree_request)
-        context_root.unlisten('units', self.space_changed)
-        context_root.unlisten('emphasized', self.on_emphasized_elements_changed)
-        context_root.unlisten('modified', self.on_element_modified)
-        context_root.unlisten('altered', self.on_element_alteration)
+        context.unlisten('element_added', self.on_rebuild_tree_request)
+        context.unlisten('operation_added', self.on_rebuild_tree_request)
+        context.unlisten('element_removed', self.on_rebuild_tree_request)
+        context.unlisten('operation_removed', self.on_rebuild_tree_request)
+        context.unlisten('units', self.space_changed)
+        context.unlisten('emphasized', self.on_emphasized_elements_changed)
+        context.unlisten('modified', self.on_element_modified)
+        context.unlisten('altered', self.on_element_alteration)
 
         context.unlisten('background', self.on_background_signal)
         context.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
         context.unlisten('refresh_scene', self.on_refresh_scene)
         context.unlisten('element_property_update', self.on_element_update)
-        context.unlisten('pipe;error', self.on_usb_error)
-        context.unlisten('pipe;usb_state_text', self.on_usb_state_text)
-        context.unlisten('pipe;thread', self.on_pipe_state)
-        context.unlisten('spooler;thread', self.on_spooler_state)
-        context.unlisten('interpreter;position', self.update_position)
-        context.unlisten('interpreter;mode', self.on_interpreter_mode)
-        context.unlisten('bed_size', self.bed_changed)
         try:
             self.Close()
         except RuntimeError:
@@ -798,7 +800,7 @@ class MeerK40t(wx.Frame, Module, Job):
             return
         self.pipe_state = state
 
-        self.main_statusbar.SetStatusText(_("Controller: %s") % self.context.get_text_thread_state(state), 1)
+        self.main_statusbar.SetStatusText(_("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1)
         self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
     def on_spooler_state(self, value):

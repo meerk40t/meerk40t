@@ -61,10 +61,10 @@ class Job:
 
 class Modifier:
     """
-    A modifier alters a given kernel object with some additional functionality, set during attachment and detachment.
+    A modifier alters a given context with some additional functionality set during attachment and detachment.
 
-    These are also booted and shutdown with the kernel. However the modifications to the kernel are not expected to be
-    undone.
+    These are also booted and shutdown with the kernel. The modifications to the kernel are not expected to be undone.
+    Rather the detach should kill any secondary processes the modifier may possess.
     """
 
     def __init__(self, context, name=None, channel=None):
@@ -109,23 +109,18 @@ class Modifier:
 
 class Module:
     """
-    Modules are a generic lifecycle object. When open() is called for a module registered with the device the device is
-    attached. When attached the module is initialized to that device. When close() is called for a module initialized
-    on the device. The device is detached. When detached the module is finalized. When that device controlling the
-    initialized module is shutdown the shutdown() event is called. By default shutdown() calls the close for the
-    device. During device shutdown, initialized modules will be notified by a shutdown() call that it is shutting down
-    and after all modules are notified of the shutdown they will be close() by the device. This will detach and finalize
-    them.
+    Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
+    context, the module is opened. When close() is called on the context, it will close and delete refrences to the
+    opened module, and call finalize. When the kernel is shutting down the shutdown() event is called.
 
-    If a device is attempted to be open() a second time while the device is still registered. The device restore()
+    If a module is attempted to be open() a second time in a context, and was never closed. The device restore()
     function is called for the device, with the same args and kwargs that would have been called on __init__().
 
-    A module always has an understanding of its current state within the device, and is notified of any changes in this
+    A module always has an understanding of its current state within the context, and is notified of any changes in this
     state.
 
     All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
-    any relevant information. Attach and initialize are given the channel 'open', detach and finalize are given the
-    channel 'close' and shutdown is given the channel 'shutdown'.
+    any relevant information.
     """
 
     def __init__(self, context, name=None, channel=None):
@@ -133,12 +128,12 @@ class Module:
         self.name = name
         self.state = STATE_INITIALIZE
 
-    def restore(self, *args, **kwargs):
-        """Called if a second open attempt is made for this module."""
-        pass
-
     def initialize(self, channel=None):
         """Called when device is registered and module is named. On a freshly opened module."""
+        pass
+
+    def restore(self, *args, **kwargs):
+        """Called if a second open attempt is made for this module."""
         pass
 
     def finalize(self, channel=None):
@@ -543,7 +538,7 @@ class Pipe:
 
 class Spooler(Modifier):
     """
-    The spooler module stores spoolable lasercode events, as a synchronous queue.
+    The spooler module stores spoolable lasercode events as a synchronous queue.
 
     Spooler registers itself as the device.spooler object and provides a standard location to send data to an unknown
     device.
@@ -1382,8 +1377,8 @@ class BindAlias(Modifier):
 class Context:
     """
     Contexts serve as path relevant snapshots of the kernel. These are are the primary interaction between the modules
-    and the kernel. These should be fairly lightweight. And permit getting other contexts of the kernel as well.
-    This should serve as the primary interface code between the kernel and the modules.
+    and the kernel. They permit getting other contexts of the kernel as well. This should serve as the primary interface
+    code between the kernel and the modules.
     """
     def __init__(self, kernel, path):
         self.kernel = kernel
@@ -1396,6 +1391,12 @@ class Context:
         return "Context('%s')" % self.path
 
     def boot(self, channel=None):
+        """
+        Boot calls all attached modifiers with the boot command.
+
+        :param channel:
+        :return:
+        """
         for opened_name in self.opened:
             opened = self.opened[opened_name]
         for attached_name in self.attached:
@@ -1403,6 +1404,13 @@ class Context:
             attached.boot(channel=channel)
 
     def abs_path(self, subpath):
+        """
+        The absolute path function determines the absolute path of the given subpath within the current path of the
+        context.
+
+        :param subpath: relative path to the path at this context
+        :return:
+        """
         subpath = str(subpath)
         if subpath.startswith('/'):
             return subpath[1:]
@@ -1411,12 +1419,29 @@ class Context:
         return "%s/%s" % (self.path, subpath)
 
     def derive(self, path):
+        """
+        Derive a subpath context.
+
+        :param path:
+        :return:
+        """
         return self.kernel.get_context(self.abs_path(path))
 
     def get_context(self, path):
+        """
+        Get a context at a given path location.
+
+        :param path: path location to get a context.
+        :return:
+        """
         return self.kernel.get_context(path)
 
     def derivable(self):
+        """
+        Generate all sub derived paths.
+
+        :return:
+        """
         for e in self.kernel.derivable(self.path):
             yield e
 
@@ -1448,7 +1473,6 @@ class Context:
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
-
         for attr in dir(self):
             if attr.startswith('_'):
                 continue
@@ -1459,6 +1483,12 @@ class Context:
                 self.kernel.write_persistent(self.abs_path(attr), value)
 
     def execute(self, control):
+        """
+        Execute the given control code relative to the path of this context.
+
+        :param control: Function to execute relative to the current position.
+        :return:
+        """
         try:
             funct= self.kernel.registered[self.abs_path("control/%s" % control)]
         except KeyError:
@@ -1466,19 +1496,26 @@ class Context:
         funct()
 
     def register(self, path, obj):
+        """
+        Register a object at a relative path to the current location.
+
+        :param path: Path postion within this context to register an object.
+        :param obj: Object to register.
+        :return:
+        """
         self.kernel.register(self.abs_path(path), obj)
 
     def find(self, path):
         """
         Finds a loaded instance. Or returns None if not such instance.
 
-        Note name is not necessarily the type of instance. It could be the named value of the instance.
+        Note: 'name' is not necessarily the type of instance. It could be the named value of the instance.
 
-        :param path: The type of instance to find.
-        :return: The instance if found, otherwise none.
+        :param path: The opened path to find the given instance.
+        :return: The instance, if found, otherwise None.
         """
         try:
-            return self.opened[self.abs_path(path)]
+            return self.opened[path]
         except KeyError:
             return None
 
@@ -1498,7 +1535,7 @@ class Context:
         """
         Opens a registered module. If that module already exists it returns the already open module.
 
-        Instance_name is the name under which this given module is opened under.
+        Instance_name is the name under which this given module is opened.
 
         If the module already exists, the restore function is called on that object, if restore() exists, with the same
         args and kwargs that were intended for the init() routine.
@@ -1532,6 +1569,15 @@ class Context:
         return instance
 
     def close(self, instance_path):
+        """
+        Closes an opened instance. Located at the instance_path location.
+
+        This calls the close() function on the object (which may not exist). And calls finalize() on the module,
+        which should exist.
+
+        :param instance_path: Instance path to close.
+        :return:
+        """
         try:
             instance = self.opened[instance_path]
         except KeyError:
@@ -1545,7 +1591,15 @@ class Context:
 
     def activate(self, registered_path, *args, **kwargs):
         """
-        Activates a registered modifier.
+        Activates a modifier at this context. The activate calls and attaches a modifier located at the given path
+        to be attached to this context.
+
+        The modifier is opened and attached at the current context.
+
+        :param registered_path: registered_path location of the modifier.
+        :param args: arguments to call the modifier
+        :param kwargs: kwargs to call the modifier
+        :return: Modifier object.
         """
         try:
             open_object = self.kernel.registered[registered_path]
@@ -1561,6 +1615,13 @@ class Context:
             return None
 
     def deactivate(self, instance_path):
+        """
+        Deactivate a modifier attached to this context.
+        The modifier is deleted from the list of attached and detach() is called on the modifier.
+
+        :param instance_path: Attached path location.
+        :return:
+        """
         try:
             instance = self.attached[instance_path]
             del self.attached[instance_path]
@@ -1570,8 +1631,9 @@ class Context:
 
     def load_persistent_object(self, obj):
         """
-        Loads values of the persistent attributes, and assigns them to the obj.
-        The type of the value depends on the obj value default values.
+        Loads values of the persistent attributes, at this context and assigns them to the provided object.
+
+        The attribute type of the value depends on the provided object value default values.
 
         :param obj:
         :return:
@@ -1589,58 +1651,106 @@ class Context:
 
     def set_attrib_keys(self):
         """
-        Iterate all the entries for the registered config, adds a None attribute for keys.
-        """
+        Iterate all the entries keys for the registered persistent settings, adds a None attribute for any key that
+        exists.
 
+        :return:
+        """
         for k in self.kernel.keylist(self.path):
             if not hasattr(self, k):
                 setattr(self, k, None)
 
     def signal(self, code, *message):
+        """
+        Signal delegate to the kernel.
+        :param code: Code to delegate at this given context location.
+        :param message: Message to send.
+        :return:
+        """
         self.kernel.signal(self.abs_path(code), *message)
 
     def last_signal(self, code):
+        """
+        Last Signal delegate to the kernel.
+
+        :param code: Code to delegate at this given context location.
+        :return: message value of the last signal sent for that code.
+        """
         return self.kernel.last_signal(self.abs_path(code))
 
     def listen(self, signal, process):
+        """
+        Listen delegate to the kernel.
+
+        :param signal: Signal code to listen for
+        :param process: listener to be attached
+        :return:
+        """
         self.kernel.listen(self.abs_path(signal), process)
 
     def unlisten(self, signal, process):
+        """
+        Unlisten delegate to the kernel.
+
+        :param signal: Signal to unlisten for.
+        :param process: listener that is to be detached.
+        :return:
+        """
         self.kernel.unlisten(self.abs_path(signal), process)
 
     def add_greet(self, channel, greet):
+        """
+        Channel add_greet delegate to the kernel.
+
+        :param channel: Channel to add a greet message for.
+        :param greet: Greet to add to that channel.
+        :return:
+        """
         self.kernel.add_greet(self.abs_path(channel), greet)
 
     def add_watcher(self, channel, monitor_function):
+        """
+        Channel add_watcher delegate to the kernel.
+
+        :param channel: Channel to be watched.
+        :param monitor_function: monitor function to be sent channel information.
+        :return:
+        """
         self.kernel.add_watcher(self.abs_path(channel), monitor_function)
 
     def remove_watcher(self, channel, monitor_function):
+        """
+        Channel remove_watcher delegate to the kernel.
+
+        :param channel: Channel to be no longer watched.
+        :param monitor_function: monitor function to be removed.
+        :return:
+        """
         self.kernel.remove_watcher(self.abs_path(channel), monitor_function)
 
     def channel_open(self, channel, buffer=0):
+        """
+        Channel channel_open delegate to the kernel.
+
+        :param channel: Channel to be opened.
+        :param buffer: Buffer to be applied to the given channel and sent to any watcher upon connection.
+        :return: Channel object that is opened.
+        """
         return self.kernel.channel_open(self.abs_path(channel), buffer=buffer)
 
 
 class Kernel:
     """
-    The kernels serves to provide contexts with particular information, opened processes, channels, signals, controls,
-    and registered values.
+    The Kernel serves as the central hub of communication between different objects within the system. These are mapped
+    to particular contexts that have locations within the kernel. The contexts can have modules opened and modifiers
+    applied to them. The kernel serves to store the location of registered objects, as well as providing a scheduler,
+    signals, and channels to be used by the modules, modifiers, devices, and other objects.
 
-    The Kernel defines a specific location for functional elements. The elements themselves are registered within the
-    kernel and availible to all derived subkernel elements. Kernels can have functionality added to them dynamically.
-    For example, activating 'Spooler' attaches a .spooler function to the kernel at that path location. The Modifiers
-    are activated by attaching and detaching to the kernel at a particular path location. The Modules are opened at
-    specific kernel path locations. Specific settings can be set on a Kernel by calling the .setting() function to
-    assign a persistent value. Modifiers are called with .activate() at a kernel location. Modules are opened with the
-    open() function.
+    The Kernel stores a persistence object, thread interactions, contexts, a translation routine, a run_later operation,
+    jobs for the scheduler, listeners for signals, channel information, and a list of devices.
 
-    * Shared location of loaded elements data.
-    * The translation function
-    * The run later function
-    * The keymap/alias object
-
-    Channels send messages to watcher functions. These can be watched even if the channels are not ever opened or used.
-    The channels can opened and provided information without any consideration of what might be watching.
+    Devices are contexts with a device. These are expected to have a Spooler attached, and the location should consist
+    of numbers.
     """
 
     def __init__(self, config=None):
@@ -1915,6 +2025,15 @@ class Kernel:
             pass
 
     def threaded(self, func, thread_name=None):
+        """
+        Register a thread, and run the provided function with the name if needed. When the function finishes this thread
+        will exit, and deregister itself. During shutdown any active threads created will be told to stop and the kernel
+        will wait until such time as it stops.
+
+        :param func: The function to be executed.
+        :param thread_name: The name under which the thread should be registered.
+        :return: The thread object created.
+        """
         if thread_name is None:
             thread_name = func.__name__
         thread = Thread(name=thread_name)
@@ -1935,16 +2054,18 @@ class Kernel:
     def boot(self):
         """
         Kernel boot sequence. This should be called after all the registered devices are established.
+
         :return:
         """
         self.thread = self.threaded(self.run, 'Scheduler')
-        self.signal_job = self.add_job(run=self.delegate_messages, interval=0.05)
+        self.signal_job = self.add_job(run=self.delegate_messages, interval=0.005)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             try:
                 context.boot()
             except AttributeError:
                 pass
+        self.set_active(None)
         for device in self.derivable('/'):
             try:
                 d = int(device)
@@ -1967,7 +2088,12 @@ class Kernel:
             except AttributeError:
                 pass
             self.devices[device_str] = boot_device
-            self.active = boot_device
+            self.set_active(boot_device)
+
+    def set_active(self, active):
+        old_active = self.active
+        self.active = active
+        self.signal('active', old_active, self.active)
 
     def shutdown(self, channel=None):
         """
@@ -2227,6 +2353,8 @@ class Kernel:
         self.queue_lock.acquire(True)
         self.removing_listeners.append((signal, funct))
         self.queue_lock.release()
+
+    # Channel processing.
 
     def add_greet(self, channel, greet):
         self.greet[channel] = greet

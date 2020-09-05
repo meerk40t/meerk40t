@@ -48,6 +48,7 @@ def swizzlecolor(c):
 class Scene(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        self.matrix = Matrix()
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
@@ -1000,10 +1001,10 @@ class GridWidget(Widget):
 
     def process_draw(self, gc):
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            kernel = self.scene.context
-            if kernel is not None:
-                wmils = kernel.bed_width * MILS_IN_MM
-                hmils = kernel.bed_height * MILS_IN_MM
+            context = self.scene.context
+            if context is not None:
+                wmils = context.bed_width * MILS_IN_MM
+                hmils = context.bed_height * MILS_IN_MM
             else:
                 wmils = 320 * MILS_IN_MM
                 hmils = 220 * MILS_IN_MM
