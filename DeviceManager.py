@@ -128,8 +128,8 @@ class DeviceManager(wx.Frame, Module):
             autoboot = settings.setting(bool, 'autoboot', True)
             location_name = settings.setting(str, 'location_name', 'Unknown')
             try:
-                device_obj = self.context.kernel.contexts[device]
-                state = device_obj.state
+                device_obj = self.context._kernel.contexts[device]
+                state = device_obj._state
             except KeyError:
                 state = -1
             m = self.devices_list.InsertItem(i, str(d))
@@ -149,14 +149,14 @@ class DeviceManager(wx.Frame, Module):
         context_obj = self.context.get_context('/%s' % uid)
         context_obj.setting(bool, 'autoboot', True)
         context_obj.autoboot = not context_obj.autoboot
-        context_obj.kernel.write_persistent(context_obj.abs_path('autoboot'), context_obj.autoboot)
+        context_obj._kernel.write_persistent(context_obj.abs_path('autoboot'), context_obj.autoboot)
         self.refresh_device_list()
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
         context = self.context.get_context('/%s' % uid)
         context_name = context.setting(str, 'device_name', 'Lhystudios')
-        if context.state == STATE_UNKNOWN:
+        if context._state == STATE_UNKNOWN:
             context.boot()
         else:
             dlg = wx.MessageDialog(None, _("That device already booted."),
@@ -165,7 +165,7 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        names = [name[7:] for name in self.context.kernel.match('device')]
+        names = [name[7:] for name in self.context._kernel.match('device')]
         dlg = wx.SingleChoiceDialog(None, _('What type of device is being added?'), _('Device Type'), names)
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
@@ -194,8 +194,8 @@ class DeviceManager(wx.Frame, Module):
         settings = self.context.derive(str(uid))
         settings.clear_persistent()
         try:
-            device = self.context.kernel.contexts[uid]
-            del self.context.kernel.contexts[uid]
+            device = self.context._kernel.contexts[uid]
+            del self.context._kernel.contexts[uid]
             device.opened['window/MeerK40t'].Close()
         except (KeyError, AttributeError):
             pass

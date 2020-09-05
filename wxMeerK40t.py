@@ -362,6 +362,7 @@ class MeerK40t(wx.Frame, Module, Job):
         windows_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Windows"), icons8_opened_folder_50.GetBitmap(),
                                        style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
         windows = RB.RibbonButtonBar(windows_panel)
+        self.window_button_bar = windows
         windows.AddButton(ID_NAV, _("Navigation"), icons8_move_50.GetBitmap(), "")
         windows.AddButton(ID_USB, _("Usb"), icons8_usb_connector_50.GetBitmap(), "")
         windows.AddButton(ID_SPOOLER, _("Spooler"), icons8_route_50.GetBitmap(), "")
@@ -461,23 +462,23 @@ class MeerK40t(wx.Frame, Module, Job):
                      id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.kernel.active.open('window/UsbConnect', self), id=ID_USB)
+                     lambda v: self.context._kernel.active.open('window/UsbConnect', self), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.kernel.active.open('window/Navigation', self), id=ID_NAV)
+                     lambda v: self.context._kernel.active.open('window/Controller', self), id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.kernel.active.open('window/Controller', self), id=ID_CONTROLLER)
+                     lambda v: self.context._kernel.active.open('window/Preferences', self), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.kernel.active.open('window/Preferences', self), id=ID_PREFERENCES)
+                     lambda v: self.context._kernel.active.open('window/Rotary', self), id=ID_ROTARY)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.kernel.active.open('window/Rotary', self), id=ID_ROTARY)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.kernel.active.open('window/JobSpooler', self), id=ID_SPOOLER)
+                     lambda v: self.context._kernel.active.open('window/JobSpooler', self), id=ID_SPOOLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.get_context('camera').open('window/CameraInterface', self), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open('window/Navigation', self), id=ID_NAV)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/DeviceManager', self), id=ID_DEVICES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.get_context('keymap').open('window/Keymap', self), id=ID_KEYMAP)
+                     lambda v: self.context.open('window/Keymap', self), id=ID_KEYMAP)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/Notes', self), id=ID_NOTES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -532,21 +533,21 @@ class MeerK40t(wx.Frame, Module, Job):
 
         self.main_menubar.Append(wxglade_tmp_menu, _("View"))
         wxglade_tmp_menu = wx.Menu()
-
-        wxglade_tmp_menu.Append(wx.ID_PREFERENCES, _("Preferences"), "")
-        wxglade_tmp_menu.Append(ID_MENU_SETTINGS, _("Settings"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
-        wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
-        wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
-        wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
-        wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
-        wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
-        wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
-        wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
-        wxglade_tmp_menu.Append(ID_MENU_NOTES, _("Notes"), "")
-        wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
-        wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
-        wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
+        self.main_menubar.view = wxglade_tmp_menu
+        self.main_menubar.preferences = wxglade_tmp_menu.Append(wx.ID_PREFERENCES, _("Preferences"), "")
+        self.main_menubar.settings = wxglade_tmp_menu.Append(ID_MENU_SETTINGS, _("Settings"), "")
+        self.main_menubar.rotary = wxglade_tmp_menu.Append(ID_MENU_ROTARY, _("Rotary Settings"), "")
+        self.main_menubar.keymap = wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
+        self.main_menubar.devices = wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
+        self.main_menubar.alignment = wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
+        self.main_menubar.camera = wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
+        self.main_menubar.terminal = wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
+        self.main_menubar.navigation = wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
+        self.main_menubar.controller = wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
+        self.main_menubar.notes = wxglade_tmp_menu.Append(ID_MENU_NOTES, _("Notes"), "")
+        self.main_menubar.usb = wxglade_tmp_menu.Append(ID_MENU_USB, _("USB"), "")
+        self.main_menubar.jobspooler = wxglade_tmp_menu.Append(ID_MENU_SPOOLER, _("Job Spooler"), "")
+        self.main_menubar.jobpreview = wxglade_tmp_menu.Append(ID_MENU_JOB, _("Execute Job"), "")
 
         self.main_menubar.Append(wxglade_tmp_menu, _("Windows"))
 
@@ -599,19 +600,20 @@ class MeerK40t(wx.Frame, Module, Job):
                   id=ID_MENU_SETTINGS)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Notes', self),
                   id=ID_MENU_NOTES)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.get_context('camera').open('window/CameraInterface', self),
-                  id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Preferences', self),
-                  id=wx.ID_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Rotary', self), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Navigation', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Navigation', self),
                   id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/Controller', self),
-                  id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/UsbConnect', self), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.kernel.active.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self,
                                                            list(self.context.elements.ops())), id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.get_context('camera').open('window/CameraInterface', self),
+                  id=ID_MENU_CAMERA)
+        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Preferences', self),
+                  id=wx.ID_PREFERENCES)
+        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Rotary', self), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Controller', self),
+                  id=ID_MENU_CONTROLLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/UsbConnect', self), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
+
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
         self.add_language_menu()
@@ -682,7 +684,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 channel = self.context.open_channel('shutdown')
             except AttributeError:
                 channel = print
-            self.context.kernel.shutdown(channel)
+            self.context._kernel.shutdown(channel)
             event.Skip()  # Call destroy as regular.
 
     def on_active_change(self, old_active, context_active):
@@ -702,6 +704,27 @@ class MeerK40t(wx.Frame, Module, Job):
             context_active.listen('interpreter;position', self.update_position)
             context_active.listen('interpreter;mode', self.on_interpreter_mode)
             context_active.listen('bed_size', self.bed_changed)
+            self.main_menubar.Enable(ID_MENU_ROTARY, True)
+            self.main_menubar.Enable(ID_MENU_USB, True)
+            self.main_menubar.Enable(ID_MENU_CONTROLLER, True)
+            self.main_menubar.Enable(wx.ID_PREFERENCES, True)
+            self.main_menubar.Enable(ID_MENU_SPOOLER, True)
+            self.window_button_bar.EnableButton(ID_CONTROLLER, True)
+            self.window_button_bar.EnableButton(ID_PREFERENCES, True)
+            self.window_button_bar.EnableButton(ID_ROTARY, True)
+            self.window_button_bar.EnableButton(ID_SPOOLER, True)
+            self.window_button_bar.EnableButton(ID_USB, True)
+        else:
+            self.main_menubar.Enable(ID_MENU_ROTARY, False)
+            self.main_menubar.Enable(ID_MENU_USB, False)
+            self.main_menubar.Enable(ID_MENU_CONTROLLER, False)
+            self.main_menubar.Enable(wx.ID_PREFERENCES, False)
+            self.main_menubar.Enable(ID_MENU_SPOOLER, False)
+            self.window_button_bar.EnableButton(ID_CONTROLLER, False)
+            self.window_button_bar.EnableButton(ID_PREFERENCES, False)
+            self.window_button_bar.EnableButton(ID_ROTARY, False)
+            self.window_button_bar.EnableButton(ID_SPOOLER, False)
+            self.window_button_bar.EnableButton(ID_USB, False)
 
     def finalize(self, channel=None):
         context = self.context
@@ -800,7 +823,7 @@ class MeerK40t(wx.Frame, Module, Job):
             return
         self.pipe_state = state
 
-        self.main_statusbar.SetStatusText(_("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1)
+        self.main_statusbar.SetStatusText(_("Controller: %s") % self.context._kernel.get_text_thread_state(state), 1)
         self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
 
     def on_spooler_state(self, value):
@@ -2926,9 +2949,9 @@ class wxMeerK40t(wx.App, Module):
     def initialize(self, channel=None):
         context = self.context
         wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
-        context.kernel.run_later = self.run_later
-        context.kernel.translation = wx.GetTranslation
-        context.kernel.set_config(wx.Config("MeerK40t"))
+        context._kernel.run_later = self.run_later
+        context._kernel.translation = wx.GetTranslation
+        context._kernel.set_config(wx.Config("MeerK40t"))
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, 'language', None)
@@ -2938,7 +2961,7 @@ class wxMeerK40t(wx.App, Module):
             self.update_language(language)
 
     def clear_control(self):
-        kernel = self.context.kernel
+        kernel = self.context._kernel
         if kernel.config is not None:
             kernel.config.DeleteAll()
             kernel.config = None

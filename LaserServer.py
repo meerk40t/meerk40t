@@ -56,7 +56,7 @@ class LaserServer(Module):
                 try:
                     message, address = self.socket.recvfrom(1024)
                 except socket.timeout:
-                    if self.context.state == STATE_TERMINATE:
+                    if self.context._state == STATE_TERMINATE:
                         return
                     continue
                 if self.port == 50207:
@@ -80,7 +80,7 @@ class LaserServer(Module):
             self.server_channel("Could not start listening.")
             return
 
-        while self.context.state != STATE_TERMINATE:
+        while self.context._state != STATE_TERMINATE:
             self.server_channel("Listening %s on port %d..." % (self.name, self.port))
             connection = None
             addr = None
@@ -113,7 +113,7 @@ class LaserServer(Module):
         def handle():
             if self.greet is not None:
                 reply(self.greet)
-            while self.context.state != STATE_TERMINATE:
+            while self.context._state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
                     if len(data_from_socket) != 0:

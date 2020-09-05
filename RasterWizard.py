@@ -88,7 +88,7 @@ class RasterWizard(wx.Frame, Module):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(self.context.kernel.registered['raster_script/%s' % name])
+            self.ops = deepcopy(self.context._kernel.registered['raster_script/%s' % name])
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op['name']) for op in self.ops]
@@ -446,7 +446,7 @@ class RasterWizard(wx.Frame, Module):
         with self.thread_update_lock:
             self.needs_update = True
             if self.wizard_thread is None:
-                self.wizard_thread = self.context.kernel.threaded(self.wiz_img)
+                self.wizard_thread = self.context._kernel.threaded(self.wiz_img)
                 self.context.signal("RasterWizard-Refresh")
 
     def on_raster_wizard_refresh_signal(self, *args):

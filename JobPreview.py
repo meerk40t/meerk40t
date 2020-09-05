@@ -15,7 +15,7 @@ class JobPreview(wx.Frame, Module):
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
         self.SetSize((711, 629))
-        self.spooler = context.kernel.active.spooler
+        self.spooler = context._kernel.active.spooler
         self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.panel_simulation = wx.Panel(self, wx.ID_ANY)
@@ -274,9 +274,6 @@ class JobPreview(wx.Frame, Module):
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
         print("Event handler 'on_combo_device' not implemented!")
         event.Skip()
-
-    def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.context.autostart = self.preview_menu.menu_autostart.IsChecked()
 
     def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
         self.context.prehome = self.preview_menu.menu_prehome.IsChecked()

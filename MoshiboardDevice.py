@@ -170,7 +170,7 @@ class MoshiboardController(Module, Pipe):
     def state_listener(self, code):
         if isinstance(code, int):
             self.usb_state = code
-            name = get_name_for_status(code, translation=self.context.kernel.translation)
+            name = get_name_for_status(code, translation=self.context._kernel.translation)
             self.log(name)
             self.context.signal('pipe;usb_state', code)
             self.context.signal('pipe;usb_state_text', name)

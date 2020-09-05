@@ -50,13 +50,13 @@ class Job:
 
     def schedule(self):
         """Schedule this as a job."""
-        if self.context is not None and self not in self.context.kernel.jobs:
-            self.context.kernel.jobs.append(self)
+        if self.context is not None and self not in self.context._kernel.jobs:
+            self.context._kernel.jobs.append(self)
 
     def unschedule(self):
         """Unschedule this module as a job"""
-        if self in self.context.kernel.jobs:
-            self.context.kernel.jobs.remove(self)
+        if self in self.context._kernel.jobs:
+            self.context._kernel.jobs.remove(self)
 
 
 class Modifier:
@@ -1175,7 +1175,7 @@ class Elemental(Modifier):
                     self.add_op(op)
 
     def load(self, pathname, **kwargs):
-        kernel = self.context.kernel
+        kernel = self.context._kernel
         for loader_name in kernel.match('load'):
             loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
@@ -1196,7 +1196,7 @@ class Elemental(Modifier):
         return None
 
     def load_types(self, all=True):
-        kernel = self.context.kernel
+        kernel = self.context._kernel
         filetypes = []
         if all:
             filetypes.append('All valid types')
@@ -1218,7 +1218,7 @@ class Elemental(Modifier):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        kernel = self.context.kernel
+        kernel = self.context._kernel
         for save_name in kernel.match('save'):
             saver = kernel.registered[save_name]
             for description, extension, mimetype in saver.save_types():
@@ -1228,7 +1228,7 @@ class Elemental(Modifier):
         return False
 
     def save_types(self):
-        kernel = self.context.kernel
+        kernel = self.context._kernel
         filetypes = []
         for save_name in kernel.match('save'):
             saver = kernel.registered[save_name]
@@ -1267,30 +1267,30 @@ class BindAlias(Modifier):
         keys = self.context.derive('keymap')
         alias = self.context.derive('alias')
 
-        keys.kernel.clear_persistent(keys.path)
-        alias.kernel.clear_persistent(alias.path)
+        keys._kernel.clear_persistent(keys._path)
+        alias._kernel.clear_persistent(alias._path)
 
         for key in self.keymap:
             if key is None or len(key) == 0:
                 continue
-            keys.kernel.write_persistent(keys.abs_path(key), self.keymap[key])
+            keys._kernel.write_persistent(keys.abs_path(key), self.keymap[key])
 
         for key in self.alias:
             if key is None or len(key) == 0:
                 continue
-            alias.kernel.write_persistent(alias.abs_path(key), self.alias[key])
+            alias._kernel.write_persistent(alias.abs_path(key), self.alias[key])
 
     def boot_keymap(self):
         self.keymap.clear()
         prefs = self.context.derive('keymap')
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.keymap)
+        prefs._kernel.load_persistent_string_dict(prefs._path, self.keymap)
         if not len(self.keymap):
             self.default_keymap()
 
     def boot_alias(self):
         self.alias.clear()
         prefs = self.context.derive('alias')
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.alias)
+        prefs._kernel.load_persistent_string_dict(prefs._path, self.alias)
         if not len(self.alias):
             self.default_alias()
 
@@ -1381,14 +1381,14 @@ class Context:
     code between the kernel and the modules.
     """
     def __init__(self, kernel, path):
-        self.kernel = kernel
-        self.path = path
-        self.state = STATE_UNKNOWN
+        self._kernel = kernel
+        self._path = path
+        self._state = STATE_UNKNOWN
         self.opened = {}
         self.attached = {}
 
     def __str__(self):
-        return "Context('%s')" % self.path
+        return "Context('%s')" % self._path
 
     def boot(self, channel=None):
         """
@@ -1414,9 +1414,9 @@ class Context:
         subpath = str(subpath)
         if subpath.startswith('/'):
             return subpath[1:]
-        if self.path is None or self.path == '/':
+        if self._path is None or self._path == '/':
             return subpath
-        return "%s/%s" % (self.path, subpath)
+        return "%s/%s" % (self._path, subpath)
 
     def derive(self, path):
         """
@@ -1425,7 +1425,7 @@ class Context:
         :param path:
         :return:
         """
-        return self.kernel.get_context(self.abs_path(path))
+        return self._kernel.get_context(self.abs_path(path))
 
     def get_context(self, path):
         """
@@ -1434,7 +1434,7 @@ class Context:
         :param path: path location to get a context.
         :return:
         """
-        return self.kernel.get_context(path)
+        return self._kernel.get_context(path)
 
     def derivable(self):
         """
@@ -1442,7 +1442,7 @@ class Context:
 
         :return:
         """
-        for e in self.kernel.derivable(self.path):
+        for e in self._kernel.derivable(self._path):
             yield e
 
     def setting(self, setting_type, key, default=None):
@@ -1463,7 +1463,7 @@ class Context:
 
         # Key is not located in the attr. Load the value.
         if not key.startswith('_'):
-            load_value = self.kernel.read_persistent(setting_type, self.abs_path(key), default)
+            load_value = self._kernel.read_persistent(setting_type, self.abs_path(key), default)
         else:
             load_value = default
         setattr(self, key, load_value)
@@ -1480,7 +1480,7 @@ class Context:
             if value is None:
                 continue
             if isinstance(value, (int, bool, str, float, Color)):
-                self.kernel.write_persistent(self.abs_path(attr), value)
+                self._kernel.write_persistent(self.abs_path(attr), value)
 
     def execute(self, control):
         """
@@ -1490,7 +1490,7 @@ class Context:
         :return:
         """
         try:
-            funct= self.kernel.registered[self.abs_path("control/%s" % control)]
+            funct= self._kernel.registered[self.abs_path("control/%s" % control)]
         except KeyError:
             return
         funct()
@@ -1503,7 +1503,7 @@ class Context:
         :param obj: Object to register.
         :return:
         """
-        self.kernel.register(self.abs_path(path), obj)
+        self._kernel.register(self.abs_path(path), obj)
 
     def find(self, path):
         """
@@ -1557,12 +1557,12 @@ class Context:
             pass
 
         try:
-            open_object = self.kernel.registered[registered_path]
+            open_object = self._kernel.registered[registered_path]
         except KeyError:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
-        channel = self.kernel.channel_open('open')
+        channel = self._kernel.channel_open('open')
         instance.initialize(channel=channel)
 
         self.opened[instance_path] = instance
@@ -1586,7 +1586,7 @@ class Context:
             instance.close()
         except AttributeError:
             pass
-        instance.finalize(self.kernel.channel_open('close'))
+        instance.finalize(self._kernel.channel_open('close'))
         del self.opened[instance_path]
 
     def activate(self, registered_path, *args, **kwargs):
@@ -1602,7 +1602,7 @@ class Context:
         :return: Modifier object.
         """
         try:
-            open_object = self.kernel.registered[registered_path]
+            open_object = self._kernel.registered[registered_path]
         except KeyError:
             raise ValueError
 
@@ -1645,7 +1645,7 @@ class Context:
 
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
-            load_value = self.kernel.read_persistent(type(obj_value), self.abs_path(attr))
+            load_value = self._kernel.read_persistent(type(obj_value), self.abs_path(attr))
             setattr(obj, attr, load_value)
             setattr(self, attr, load_value)
 
@@ -1656,7 +1656,7 @@ class Context:
 
         :return:
         """
-        for k in self.kernel.keylist(self.path):
+        for k in self._kernel.keylist(self._path):
             if not hasattr(self, k):
                 setattr(self, k, None)
 
@@ -1667,7 +1667,7 @@ class Context:
         :param message: Message to send.
         :return:
         """
-        self.kernel.signal(self.abs_path(code), *message)
+        self._kernel.signal(self.abs_path(code), *message)
 
     def last_signal(self, code):
         """
@@ -1676,7 +1676,7 @@ class Context:
         :param code: Code to delegate at this given context location.
         :return: message value of the last signal sent for that code.
         """
-        return self.kernel.last_signal(self.abs_path(code))
+        return self._kernel.last_signal(self.abs_path(code))
 
     def listen(self, signal, process):
         """
@@ -1686,7 +1686,7 @@ class Context:
         :param process: listener to be attached
         :return:
         """
-        self.kernel.listen(self.abs_path(signal), process)
+        self._kernel.listen(self.abs_path(signal), process)
 
     def unlisten(self, signal, process):
         """
@@ -1696,7 +1696,7 @@ class Context:
         :param process: listener that is to be detached.
         :return:
         """
-        self.kernel.unlisten(self.abs_path(signal), process)
+        self._kernel.unlisten(self.abs_path(signal), process)
 
     def add_greet(self, channel, greet):
         """
@@ -1706,7 +1706,7 @@ class Context:
         :param greet: Greet to add to that channel.
         :return:
         """
-        self.kernel.add_greet(self.abs_path(channel), greet)
+        self._kernel.add_greet(self.abs_path(channel), greet)
 
     def add_watcher(self, channel, monitor_function):
         """
@@ -1716,7 +1716,7 @@ class Context:
         :param monitor_function: monitor function to be sent channel information.
         :return:
         """
-        self.kernel.add_watcher(self.abs_path(channel), monitor_function)
+        self._kernel.add_watcher(self.abs_path(channel), monitor_function)
 
     def remove_watcher(self, channel, monitor_function):
         """
@@ -1726,7 +1726,7 @@ class Context:
         :param monitor_function: monitor function to be removed.
         :return:
         """
-        self.kernel.remove_watcher(self.abs_path(channel), monitor_function)
+        self._kernel.remove_watcher(self.abs_path(channel), monitor_function)
 
     def channel_open(self, channel, buffer=0):
         """
@@ -1736,7 +1736,7 @@ class Context:
         :param buffer: Buffer to be applied to the given channel and sent to any watcher upon connection.
         :return: Channel object that is opened.
         """
-        return self.kernel.channel_open(self.abs_path(channel), buffer=buffer)
+        return self._kernel.channel_open(self.abs_path(channel), buffer=buffer)
 
 
 class Kernel:

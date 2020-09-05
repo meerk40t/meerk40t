@@ -105,7 +105,7 @@ class Console(Module, Job, Pipe):
     def interface_parse_command(self, command, *args):
         context = self.context
         elements = context.elements
-        active_context = context.kernel.active
+        active_context = context._kernel.active
         try:
             spooler = active_context.spooler
         except AttributeError:
@@ -345,17 +345,17 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Windows Registered:'
-                for i, name in enumerate(context.kernel.match('window')):
+                for i, name in enumerate(context._kernel.match('window')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Windows in Context %s:' % str(context.path)
+                yield 'Loaded Windows in Context %s:' % str(context._path)
                 for i, name in enumerate(context.opened):
                     if not name.startswith('window'):
                         continue
                     module = context.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
                 yield '----------'
-                yield 'Loaded Windows in Device %s:' % str(active_context.path)
+                yield 'Loaded Windows in Device %s:' % str(active_context._path)
                 for i, name in enumerate(active_context.opened):
                     if not name.startswith('window'):
                         continue
@@ -420,11 +420,11 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'control':
             if len(args) == 0:
-                for control_name in active_context.kernel.match('\d+/control'):
+                for control_name in active_context._kernel.match('\d+/control'):
                     yield control_name
             else:
                 control_name = ' '.join(args)
-                if control_name in active_context.kernel.match('\d+/control'):
+                if control_name in active_context._kernel.match('\d+/control'):
                     active_context.execute(control_name)
                     yield "Executed '%s'" % control_name
                 else:
@@ -434,15 +434,15 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Modules Registered:'
-                for i, name in enumerate(context.kernel.match('module')):
+                for i, name in enumerate(context._kernel.match('module')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
-                yield 'Loaded Modules in Context %s:' % str(context.path)
+                yield 'Loaded Modules in Context %s:' % str(context._path)
                 for i, name in enumerate(context.opened):
                     module = context.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
                 yield '----------'
-                yield 'Loaded Modules in Device %s:' % str(active_context.path)
+                yield 'Loaded Modules in Device %s:' % str(active_context._path)
                 for i, name in enumerate(active_context.opened):
                     module = active_context.opened[name]
                     yield '%d: %s as type of %s' % (i + 1, name, type(module))
@@ -490,12 +490,12 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Channels Active:'
-                for i, name in enumerate(active_context.channels):
+                for i, name in enumerate(active_context._kernel.channels):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Channels Watching:'
-                for name in active_context.watchers:
-                    watchers = active_context.watchers[name]
+                for name in active_context._kernel.watchers:
+                    watchers = active_context._kernel.watchers[name]
                     if self.channel in watchers:
                         yield name
                 yield '----------'
@@ -527,7 +527,7 @@ class Console(Module, Job, Pipe):
             if len(args) == 0:
                 yield '----------'
                 yield 'Backends permitted:'
-                for i, name in enumerate(context.kernel.match('device/')):
+                for i, name in enumerate(context._kernel.match('device/')):
                     yield '%d: %s' % (i + 1, name)
                 yield '----------'
                 yield 'Existing Device:'
@@ -558,8 +558,8 @@ class Console(Module, Job, Pipe):
                 except AttributeError:
                     device_location = "Unknown"
                 yield '%d: %s on %s' % (0, device_name, device_location)
-                for i, name in enumerate(context.kernel.devices):
-                    device = context.kernel.devices[name]
+                for i, name in enumerate(context._kernel.devices):
+                    device = context._kernel.devices[name]
                     try:
                         device_name = device.device_name
                     except AttributeError:
@@ -583,9 +583,9 @@ class Console(Module, Job, Pipe):
                     yield 'Device set: %s on %s' % \
                           (self.active_context.device_name, self.active_context.device_location)
                 else:
-                    for i, name in enumerate(context.kernel.contexts):
+                    for i, name in enumerate(context._kernel.contexts):
                         if i + 1 == value:
-                            self.active_context = context.kernel.contexts[name]
+                            self.active_context = context._kernel.contexts[name]
                             self.active_context.setting(str, 'device_location', 'Unknown')
                             yield 'Device set: %s on %s' % \
                                   (self.active_context.device_name, self.active_context.device_location)

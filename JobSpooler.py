@@ -13,7 +13,7 @@ class JobSpooler(wx.Frame, Module):
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
         self.SetSize((643, 633))
-        self.spooler = context.kernel.active.spooler
+        self.spooler = context._kernel.active.spooler
         self.panel_simulation = wx.Panel(self, wx.ID_ANY)
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -94,11 +94,11 @@ class JobSpooler(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
 
-        self.context.kernel.active.listen('spooler;queue', self.on_spooler_update)
+        self.context._kernel.active.listen('spooler;queue', self.on_spooler_update)
         self.refresh_spooler_list()
 
     def finalize(self, channel=None):
-        self.context.kernel.active.unlisten('spooler;queue', self.on_spooler_update)
+        self.context._kernel.active.unlisten('spooler;queue', self.on_spooler_update)
         try:
             self.Close()
         except RuntimeError:

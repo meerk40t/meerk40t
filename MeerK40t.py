@@ -189,7 +189,7 @@ if args.console:
     kernel_root.add_watcher('shutdown', print)
     while True:
         device_entries = input('>')
-        if device.state == STATE_TERMINATE:
+        if device._state == STATE_TERMINATE:
             break
         if device_entries == 'quit':
             break

@@ -85,7 +85,6 @@ class LhystudiosDevice(Modifier):
         self.context.setting(bool, "autolock", True)
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "autobeep", True)
-        self.context.setting(bool, "autostart", True)
 
         self.context.setting(str, "board", 'M2')
         self.context.setting(bool, "rotary", False)
@@ -182,6 +181,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.register('control/Realtime Pause', self.pause)
         self.context.register('control/Realtime Resume', self.resume)
         self.context.register('control/Update Codes', self.update_codes)
+        self.schedule()
 
     def finalize(self, channel=None):
         pass
@@ -1036,7 +1036,7 @@ class LhystudioController(Modifier, Pipe):
         :return:
         """
         if self._thread is None or not self._thread.is_alive():
-            self._thread = self.context.kernel.threaded(self._thread_data_send)
+            self._thread = self.context._kernel.threaded(self._thread_data_send)
             self.update_state(STATE_INITIALIZE)
 
     def _pause_busy(self):
@@ -1103,7 +1103,7 @@ class LhystudioController(Modifier, Pipe):
         """
         if isinstance(code, int):
             self._usb_state = code
-            name = get_name_for_status(code, translation=self.context.kernel.translation)
+            name = get_name_for_status(code, translation=self.context._kernel.translation)
             self.usb_log(str(name))
             self.context.signal('pipe;usb_state', code)
             self.context.signal('pipe;usb_state_text', name)

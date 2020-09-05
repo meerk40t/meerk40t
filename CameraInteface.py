@@ -428,7 +428,7 @@ class CameraInterface(wx.Frame, Module, Job):
             self.interval = 5
         except AttributeError:
             return
-        self.context.kernel.threaded(self.threaded_image_fetcher)
+        self.context._kernel.threaded(self.threaded_image_fetcher)
         self.schedule()
 
     def open_camera(self, camera_index=0):
@@ -443,7 +443,7 @@ class CameraInterface(wx.Frame, Module, Job):
         self.setting.index = camera_index
         uri = self.get_camera_uri()
         if uri is not None:
-            self.camera_job = self.context.kernel.add_job(self.init_camera, times=1, interval=0.1)
+            self.camera_job = self.context._kernel.add_job(self.init_camera, times=1, interval=0.1)
 
     def close_camera(self):
         """
