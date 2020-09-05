@@ -192,7 +192,7 @@ class DeviceManager(wx.Frame, Module):
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
         settings = self.context.derive(str(uid))
-        settings.clear_persistent()
+        settings._kernel.clear_persistent(settings._path)
         try:
             device = self.context._kernel.contexts[uid]
             del self.context._kernel.contexts[uid]

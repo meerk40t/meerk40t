@@ -472,7 +472,7 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context._kernel.active.open('window/JobSpooler', self), id=ID_SPOOLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.get_context('camera').open('window/CameraInterface', self), id=ID_CAMERA)
+                     lambda v: self.context.open('window/CameraInterface', self), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/Navigation', self), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -604,7 +604,7 @@ class MeerK40t(wx.Frame, Module, Job):
                   id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self,
                                                            list(self.context.elements.ops())), id=ID_MENU_JOB)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.get_context('camera').open('window/CameraInterface', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self),
                   id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Preferences', self),
                   id=wx.ID_PREFERENCES)

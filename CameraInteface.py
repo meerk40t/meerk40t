@@ -1060,7 +1060,7 @@ class CameraURI(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
         self.camera_setting = self.context.get_context('/camera')
-        self.camera_dict = self.camera_setting.load_persistent_string_dict()
+        self.camera_dict = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path)
         self.on_list_refresh()
 
     def finalize(self, channel=None):

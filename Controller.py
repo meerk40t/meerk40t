@@ -116,9 +116,9 @@ class Controller(wx.Frame, Module):
         gui = self
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
-        for control_name, control in self.context.match('control'):
+        for control_name in self.context.match('control'):
             gui.Bind(wx.EVT_MENU, self.context.execute(control_name),
-                     path_scale_sub_menu.Append(wx.ID_ANY, control_name, "", wx.ITEM_NORMAL))
+                     path_scale_sub_menu.Append(wx.ID_ANY, list(control_name.split('/'))[-1], "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
