@@ -175,7 +175,6 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
             return
         dlg.Destroy()
-        # TODO: Run this against
         device_uid = 0
         devices = list(self.context.derivable())
         while device_uid <= 100:

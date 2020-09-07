@@ -183,14 +183,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.register('control/Update Codes', self.update_codes)
         self.schedule()
 
-    def finalize(self, channel=None):
-        pass
-        # TODO: Unregister this stuff.
-        # self.kernel.remove('control', "Realtime Pause_Resume")
-        # self.kernel.remove('control', "Realtime Pause")
-        # self.kernel.remove('control', "Realtime Resume")
-        # self.kernel.remove('control', "Update Codes")
-
     def __repr__(self):
         return "LhymicroInterpreter()"
 
@@ -295,19 +287,22 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             bounds = path.bbox()
             p = Path()
             p.move([(bounds[0], bounds[1]),
-                            (bounds[0], bounds[3]),
-                            (bounds[2], bounds[1]),
-                            (bounds[2], bounds[3])])
-            self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(p), True, self.context.current_x, self.context.current_y)
+                    (bounds[0], bounds[3]),
+                    (bounds[2], bounds[1]),
+                    (bounds[2], bounds[3])])
+            self.plot_planner.add_path(p)
+            self.plot = self.plot_planner
             return
         if len(path) == 0:
             return
         first_point = path.first_point
         self.move_absolute(first_point[0], first_point[1])
-        self.plot = self.plot_planner.plot_cut(ZinglPlotter.plot_path(path), True, self.context.current_x, self.context.current_y)
+        self.plot_planner.add_path(path)
+        self.plot = self.plot_planner
 
     def plot_raster(self, raster):
-        self.plot = self.plot_planner.plot_cut(raster.plot(), True, self.context.current_x, self.context.current_y)
+        self.plot_planner.add_plot(raster.plot())
+        self.plot = self.plot_planner
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
