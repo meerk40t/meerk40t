@@ -5590,6 +5590,14 @@ class _RoundShape(Shape):
         """
         return self.point_at_t(tau * position)
 
+    def _ramanujan_length(self):
+        a = self.implicit_rx
+        b = self.implicit_ry
+        if b > a:
+            a, b = b, a
+        h = (a - b) ** 2 / (a + b) ** 2
+        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
+
 
 class Ellipse(_RoundShape):
     """

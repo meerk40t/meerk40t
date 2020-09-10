@@ -376,7 +376,7 @@ class Navigation(wx.Frame, Module):
         except RuntimeError:
             pass
 
-    def shutdown(self,  channel=None):
+    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:
@@ -621,17 +621,17 @@ class Navigation(wx.Frame, Module):
     def on_scale_down(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
         self.console.write('scale %f %f %f %f\n' % (scale,
-                                                                              scale,
-                                                                              self.context.current_x,
-                                                                              self.context.current_y))
+                                                    scale,
+                                                    self.context.active.current_x,
+                                                    self.context.active.current_y))
         self.matrix_updated()
 
     def on_scale_up(self, event):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
         self.console.write('scale %f %f %f %f\n' % (scale,
-                                                                              scale,
-                                                                              self.context.current_x,
-                                                                              self.context.current_y))
+                                                    scale,
+                                                    self.context.active.current_x,
+                                                    self.context.active.current_y))
         self.matrix_updated()
 
     def on_translate_up(self, event):  # wxGlade: Navigation.<event_handler>
@@ -664,14 +664,14 @@ class Navigation(wx.Frame, Module):
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
         self.console.write('rotate %fdeg %f %f\n' % (-5,
-                                                                               self.context.current_x,
-                                                                               self.context.current_y))
+                                                     self.context.current_x,
+                                                     self.context.current_y))
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
         self.console.write('rotate %fdeg %f %f\n' % (5,
-                                                                               self.context.current_x,
-                                                                               self.context.current_y))
+                                                     self.context.current_x,
+                                                     self.context.current_y))
         self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>

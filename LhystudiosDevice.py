@@ -63,7 +63,11 @@ class LhystudiosDevice(Modifier):
         device.register('modifier/LhystudioController', LhystudioController)
         device.register('load/EgvLoader', EgvLoader)
 
+    def egv(self, *args):
+        self.context.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
+
     def attach(self, channel=None):
+        self.context.register('command/egv', self.egv)
         self.context.activate('modifier/LhystudioController')
         self.context.activate('modifier/LhymicroInterpreter', self.context)
         self.context.activate('modifier/Spooler')

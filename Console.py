@@ -5,6 +5,13 @@ from svgelements import *
 
 
 class Console(Module, Job, Pipe):
+    """
+    Console is a central element within MeerK40t which controls the parsing and commands
+    of console commands. These are commands passed to bind as well as batch-commands and
+    terminal commands. Most command line operations will be done with console commands running
+    with the -c flag.
+    """
+
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         Job.__init__(self, context=context, process=self.tick, interval=0.05)
@@ -16,10 +23,10 @@ class Console(Module, Job, Pipe):
         self.laser_on = False
         self.dx = 0
         self.dy = 0
-        self.context.listen('interpreter;mode', self.on_mode_change)
         self.context.setting(int, "bed_width", 280)
         self.context.setting(int, "bed_height", 200)
         self.channel = self.context.channel_open('console')
+        self.context.listen('interpreter;mode', self.on_mode_change)
 
     def finalize(self, channel=None):
         self.context.unlisten('interpreter;mode', self.on_mode_change)
@@ -103,6 +110,7 @@ class Console(Module, Job, Pipe):
             yield e
 
     def interface_parse_command(self, command, *args):
+        _ = self.context._kernel.translation
         context = self.context
         elements = context.elements
         active_context = context.active
@@ -144,8 +152,6 @@ class Console(Module, Job, Pipe):
             yield 'text <text>'
             yield 'polygon [<x> <y>]*'
             yield 'polyline [<x> <y>]*'
-            # yield 'group'
-            # yield 'ungroup'
             yield 'stroke <color>'
             yield 'fill <color>'
             yield 'rotate <angle>'
@@ -178,6 +184,7 @@ class Console(Module, Job, Pipe):
         # +- controls.
         elif command == "loop":
             self.tick_command(' '.join(args))
+            return
         elif command == "end":
             if len(args) == 0:
                 self.commands.clear()
@@ -186,12 +193,14 @@ class Console(Module, Job, Pipe):
                 self.untick_command(' '.join(args))
         elif command == '+laser':
             spooler.job(COMMAND_LASER_ON)
+            return
         elif command == '-laser':
             spooler.job(COMMAND_LASER_OFF)
+            return
         # Laser Control Commands
         elif command == 'right' or command == 'left' or command == 'up' or command == 'down':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             if len(args) == 1:
                 max_bed_height = self.context.bed_height * 39.3701
@@ -208,26 +217,26 @@ class Console(Module, Job, Pipe):
                     self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
                 self.queue_command('jog')
             else:
-                yield 'Syntax Error'
+                yield _('Syntax Error')
             return
         elif command == 'jog':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             idx = int(self.dx)
             idy = int(self.dy)
             if idx == 0 and idy == 0:
                 return
             if spooler.job_if_idle(self.execute_relative_position(idx, idy)):
-                yield 'Position moved: %d %d' % (idx, idy)
+                yield _('Position moved: %d %d') % (idx, idy)
                 self.dx -= idx
                 self.dy -= idy
             else:
-                yield 'Busy Error'
+                yield _('Busy Error')
             return
         elif command == 'laser':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             if len(args) == 1:
                 if args[0] == 'on':
@@ -235,55 +244,54 @@ class Console(Module, Job, Pipe):
                 elif args[0] == 'off':
                     self.laser_on = False
             if self.laser_on:
-                yield 'Laser is on.'
+                yield _('Laser is on.')
             else:
-                yield 'Laser is off.'
+                yield _('Laser is off.')
             return
         elif command == 'move' or command == 'move_absolute':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_absolute_position(*args)):
-                    yield 'Busy Error'
+                    yield _('Busy Error')
             else:
-                yield 'Syntax Error'
+                yield _('Syntax Error')
             return
         elif command == 'move_relative':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_relative_position(*args)):
-                    yield 'Busy Error'
+                    yield _('Busy Error')
             else:
-                yield 'Syntax Error'
+                yield _('Syntax Error')
             return
         elif command == 'home':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             spooler.job(COMMAND_HOME)
             return
         elif command == 'unlock':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             spooler.job(COMMAND_UNLOCK)
             return
         elif command == 'lock':
             if spooler is None:
-                yield 'Device has no spooler.'
+                yield _('Device has no spooler.')
                 return
             spooler.job(COMMAND_LOCK)
             return
         elif command == 'speed':
             if interpreter is None:
-                yield 'Device has no interpreter.'
+                yield _('Device has no interpreter.')
                 return
-
             if len(args) == 0:
-                yield 'Speed set at: %f mm/s' % interpreter.speed
+                yield _('Speed set at: %f mm/s') % interpreter.speed
                 return
             inc = False
             percent = False
@@ -297,7 +305,7 @@ class Console(Module, Job, Pipe):
             try:
                 s = float(speed)
             except ValueError:
-                yield 'Not a valid speed or percent.'
+                yield _('Not a valid speed or percent.')
                 return
             if percent and inc:
                 s = interpreter.speed + interpreter.speed * (s / 100.0)
@@ -306,13 +314,13 @@ class Console(Module, Job, Pipe):
             elif percent:
                 s = interpreter.speed * (s / 100.0)
             interpreter.set_speed(s)
-            yield 'Speed set at: %f mm/s' % interpreter.speed
+            yield _('Speed set at: %f mm/s') % interpreter.speed
         elif command == 'power':
             if interpreter is None:
-                yield 'Device has no interpreter.'
+                yield _('Device has no interpreter.')
                 return
             if len(args) == 0:
-                yield 'Power set at: %d pulses per inch' % interpreter.power
+                yield _('Power set at: %d pulses per inch') % interpreter.power
             else:
                 try:
                     interpreter.set_power(int(args[0]))
@@ -320,54 +328,80 @@ class Console(Module, Job, Pipe):
                     pass
         elif command == 'acceleration':
             if interpreter is None:
-                yield 'Device has no interpreter.'
+                yield _('Device has no interpreter.')
                 return
             if len(args) == 0:
                 if interpreter.acceleration is None:
-                    yield 'Acceleration is set to default.'
+                    yield _('Acceleration is set to default.')
                 else:
-                    yield 'Acceleration: %d' % interpreter.acceleration
+                    yield _('Acceleration: %d') % interpreter.acceleration
 
             else:
                 try:
                     v = int(args[0])
                     if v not in (1, 2, 3, 4):
                         interpreter.set_acceleration(None)
-                        yield 'Acceleration is set to default.'
+                        yield _('Acceleration is set to default.')
                         return
                     interpreter.set_acceleration(v)
-                    yield 'Acceleration: %d' % interpreter.acceleration
+                    yield _('Acceleration: %d') % interpreter.acceleration
                 except ValueError:
-                    yield 'Invalid Acceleration [1-4].'
+                    yield _('Invalid Acceleration [1-4].')
                     return
         # Kernel Element commands.
+        elif command == 'register':
+            if len(args) == 0:
+                yield _('----------')
+                yield 'Objects Registered:'
+                for i, name in enumerate(context.match('.*')):
+                    obj = context.registered[name]
+                    yield '%d: %s type of %s' % (i + 1, name, str(obj))
+                yield _('----------')
+            if len(args) == 1:
+                yield _('----------')
+                yield 'Objects Registered:'
+                for i, name in enumerate(context.match('%s.*' % args[0])):
+                    obj = context.registered[name]
+                    yield '%d: %s type of %s' % (i + 1, name, str(obj))
+                yield _('----------')
+        elif command == 'context':
+            if len(args) == 0:
+                for control_name in active_context.match('\d+/control'):
+                    yield control_name
+            else:
+                control_name = ' '.join(args)
+                if control_name in active_context.match('\d+/control'):
+                    active_context.execute(control_name)
+                    yield _("Executed '%s'") % control_name
+                else:
+                    yield _("Control '%s' not found.") % control_name
+            return
         elif command == 'window':
             if len(args) == 0:
-                yield '----------'
-                yield 'Windows Registered:'
+                yield _('----------')
+                yield _('Windows Registered:')
                 for i, name in enumerate(context.match('window')):
                     yield '%d: %s' % (i + 1, name)
-                yield '----------'
-                yield 'Loaded Windows in Context %s:' % str(context._path)
+                yield _('----------')
+                yield _('Loaded Windows in Context %s:') % str(context._path)
                 for i, name in enumerate(context.opened):
                     if not name.startswith('window'):
                         continue
                     module = context.opened[name]
-                    yield '%d: %s as type of %s' % (i + 1, name, type(module))
-                yield '----------'
-                yield 'Loaded Windows in Device %s:' % str(active_context._path)
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
+                yield _('Loaded Windows in Device %s:') % str(active_context._path)
                 for i, name in enumerate(active_context.opened):
                     if not name.startswith('window'):
                         continue
                     module = active_context.opened[name]
-                    yield '%d: %s as type of %s' % (i + 1, name, type(module))
-                yield '----------'
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
             else:
                 value = args[0]
                 window_name = args[1]
                 window_path = 'window/%s' % str(window_name)
                 if value == 'toggle':
-                    index = args[1]
                     if window_path in active_context.opened:
                         value = 'close'
                     else:
@@ -380,14 +414,14 @@ class Console(Module, Job, Pipe):
                         except AttributeError:
                             pass
                         context.open(window_path, parent_window, *args[2:])
-                        yield 'Window %s opened.' % window_name
+                        yield _('Window %s opened.') % window_name
                     else:
-                        yield "Window '%s' not found." % window_name
+                        yield _('Window %s not found.') % window_name
                 elif value == 'close':
                     if window_name in active_context.opened:
                         context.close(window_name)
                     else:
-                        yield "Window '%s' not found." % window_name
+                        yield _('Window %s not found.') % window_name
         elif command == 'set':
             if len(args) == 0:
                 for attr in dir(active_context):
@@ -414,9 +448,9 @@ class Console(Module, Job, Pipe):
                         elif isinstance(v, str):
                             setattr(active_context, attr, str(value))
                 except RuntimeError:
-                    yield 'Attempt failed. Produced a runtime error.'
+                    yield _('Attempt failed. Produced a runtime error.')
                 except ValueError:
-                    yield 'Attempt failed. Produced a value error.'
+                    yield _('Attempt failed. Produced a value error.')
             return
         elif command == 'control':
             if len(args) == 0:
@@ -426,27 +460,27 @@ class Console(Module, Job, Pipe):
                 control_name = ' '.join(args)
                 if control_name in active_context.match('\d+/control'):
                     active_context.execute(control_name)
-                    yield "Executed '%s'" % control_name
+                    yield _("Executed '%s'") % control_name
                 else:
-                    yield "Control '%s' not found." % control_name
+                    yield _("Control '%s' not found.") % control_name
             return
         elif command == 'module':
             if len(args) == 0:
-                yield '----------'
-                yield 'Modules Registered:'
+                yield _('----------')
+                yield _('Modules Registered:')
                 for i, name in enumerate(context.match('module')):
                     yield '%d: %s' % (i + 1, name)
-                yield '----------'
-                yield 'Loaded Modules in Context %s:' % str(context._path)
+                yield _('----------')
+                yield _('Loaded Modules in Context %s:') % str(context._path)
                 for i, name in enumerate(context.opened):
                     module = context.opened[name]
-                    yield '%d: %s as type of %s' % (i + 1, name, type(module))
-                yield '----------'
-                yield 'Loaded Modules in Device %s:' % str(active_context._path)
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
+                yield _('Loaded Modules in Device %s:') % str(active_context._path)
                 for i, name in enumerate(active_context.opened):
                     module = active_context.opened[name]
-                    yield '%d: %s as type of %s' % (i + 1, name, type(module))
-                yield '----------'
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
             else:
                 value = args[0]
                 if value == 'open':
@@ -460,31 +494,31 @@ class Console(Module, Job, Pipe):
                         else:
                             active_context.open(index)
                     else:
-                        yield "Module '%s' not found." % index
+                        yield _("Module '%s' not found.") % index
                 elif value == 'close':
                     index = args[1]
                     if index in active_context.opened:
                         active_context.close(index)
                     else:
-                        yield "Module '%s' not found." % index
+                        yield _("Module '%s' not found.") % index
             return
         elif command == 'modifier':
             if len(args) == 0:
-                yield '----------'
-                yield 'Modifiers Registered:'
+                yield _('----------')
+                yield _('Modifiers Registered:')
                 for i, name in enumerate(context.match('modifier')):
                     yield '%d: %s' % (i + 1, name)
-                yield '----------'
-                yield 'Loaded Modifiers in Context %s:' % str(context._path)
+                yield _('----------')
+                yield _('Loaded Modifiers in Context %s:') % str(context._path)
                 for i, name in enumerate(context.attached):
                     modifier = context.attached[name]
-                    yield '%d: %s as type of %s' % (i + 1, name, type(modifier))
-                yield '----------'
-                yield 'Loaded Modifiers in Device %s:' % str(active_context._path)
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(modifier))
+                yield _('----------')
+                yield _('Loaded Modifiers in Device %s:') % str(active_context._path)
                 for i, name in enumerate(active_context.attached):
                     modifier = active_context.attached[name]
-                    yield '%d: %s as type of %s' % (i + 1, name, type(modifier))
-                yield '----------'
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(modifier))
+                yield _('----------')
             else:
                 value = args[0]
                 if value == 'open':
@@ -492,77 +526,77 @@ class Console(Module, Job, Pipe):
                     if index in context.registered:
                         active_context.activate(index)
                     else:
-                        yield "Modifier '%s' not found." % index
+                        yield _("Modifier '%s' not found.") % index
                 elif value == 'close':
                     index = args[1]
                     if index in active_context.attached:
                         active_context.deactivate(index)
                     else:
-                        yield "Modifier '%s' not found." % index
+                        yield _("Modifier '%s' not found.") % index
             return
         elif command == 'schedule':
-            yield '----------'
-            yield 'Scheduled Processes:'
+            yield _('----------')
+            yield _('Scheduled Processes:')
             for i, job in enumerate(active_context._kernel.jobs):
                 parts = list()
                 parts.append('%d:' % (i + 1))
                 parts.append(str(job))
                 if job.times is None:
-                    parts.append('forever')
+                    parts.append(_('forever'))
                 else:
-                    parts.append('%d times' % job.times)
+                    parts.append(_('%d times') % job.times)
                 if job.interval is None:
-                    parts.append('never')
+                    parts.append(_('never'))
                 else:
-                    parts.append(', each %f seconds' % job.interval)
+                    parts.append(_(', each %f seconds') % job.interval)
                 yield ' '.join(parts)
-            yield '----------'
+            yield _('----------')
             return
         elif command == 'channel':
             if len(args) == 0:
-                yield '----------'
-                yield 'Channels Active:'
+                yield _('----------')
+                yield _('Channels Active:')
                 for i, name in enumerate(active_context._kernel.channels):
                     yield '%d: %s' % (i + 1, name)
-                yield '----------'
-                yield 'Channels Watching:'
+                yield _('----------')
+                yield _('Channels Watching:')
                 for name in active_context._kernel.watchers:
                     watchers = active_context._kernel.watchers[name]
                     if self.channel in watchers:
                         yield name
-                yield '----------'
+                yield _('----------')
             else:
                 value = args[0]
                 chan = args[1]
                 if value == 'open':
                     if chan == 'console':
-                        yield "Infinite Loop Error."
+                        yield _('Infinite Loop Error.')
                     else:
                         active_context.add_watcher(chan, self.channel)
-                        yield "Watching Channel: %s" % chan
+                        yield _('Watching Channel: %s') % chan
                 elif value == 'close':
                     try:
                         active_context.remove_watcher(chan, self.channel)
-                        yield "No Longer Watching Channel: %s" % chan
+                        yield _('No Longer Watching Channel: %s') % chan
                     except KeyError:
-                        yield "Channel %s is not opened." % chan
+                        yield _('Channel %s is not opened.') % chan
                 elif value == 'save':
                     from datetime import datetime
                     if self.channel_file is None:
                         filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
-                        yield "Opening file: %s" % filename
+                        yield _('Opening file: %s') % filename
                         self.channel_file = open(filename, "a")
-                    yield "Recording Channel: %s" % chan
+                    yield _('Recording Channel: %s') % chan
                     active_context.add_watcher(chan, self.channel_file_write)
             return
         elif command == 'device':
             if len(args) == 0:
-                yield '----------'
-                yield 'Backends permitted:'
+                yield _('----------')
+                yield _('Backends permitted:')
                 for i, name in enumerate(context.match('device/')):
                     yield '%d: %s' % (i + 1, name)
-                yield '----------'
-                yield 'Existing Device:'
+                yield _('----------')
+                yield _('Existing Device:')
 
                 for device in list(context.derivable()):
                     try:
@@ -573,13 +607,13 @@ class Console(Module, Job, Pipe):
                         settings = context.derive(device)
                         device_name = settings.setting(str, 'device_name', 'Lhystudios')
                         autoboot = settings.setting(bool, 'autoboot', True)
-                        yield 'Device %d. "%s" -- Boots: %s' % (d, device_name, autoboot)
+                        yield _('Device %d. "%s" -- Boots: %s') % (d, device_name, autoboot)
                     except ValueError:
                         break
                     except AttributeError:
                         break
-                yield '----------'
-                yield 'Devices Instances:'
+                yield _('----------')
+                yield _('Devices Instances:')
                 try:
                     device_name = context.device_name
                 except AttributeError:
@@ -600,8 +634,8 @@ class Console(Module, Job, Pipe):
                         device_location = device.device_location
                     except AttributeError:
                         device_location = "Unknown"
-                    yield '%d: %s on %s' % (i + 1, device_name, device_location)
-                yield '----------'
+                    yield _('%d: %s on %s') % (i + 1, device_name, device_location)
+                yield _('----------')
             else:
                 value = args[0]
                 try:
@@ -612,15 +646,15 @@ class Console(Module, Job, Pipe):
                     if i + 1 == value:
                         self.active_context = context._kernel.devices[name]
                         self.active_context.setting(str, 'device_location', 'Unknown')
-                        yield 'Device set: %s on %s' % \
+                        yield _('Device set: %s on %s') % \
                               (self.active_context.device_name, self.active_context.device_location)
                         break
             return
         # Element commands.
         elif command == 'element':
             if len(args) == 0:
-                yield '----------'
-                yield 'Graphical Elements:'
+                yield _('----------')
+                yield _('Graphical Elements:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
@@ -631,26 +665,26 @@ class Console(Module, Job, Pipe):
                     else:
                         yield '%d: %s' % (i, name)
                     i += 1
-                yield '----------'
+                yield _('----------')
             else:
                 for value in args:
                     try:
                         value = int(value)
                     except ValueError:
                         if value == "*":
-                            yield "Selecting all elements."
+                            yield _('Selecting all elements.')
                             elements.set_selected(list(elements.elems()))
                             continue
                         elif value == "~":
-                            yield "Invert selection."
+                            yield _('Invert selection.')
                             elements.set_selected(list(elements.elems(emphasized=False)))
                             continue
                         elif value == "!":
-                            yield "Select none"
+                            yield _('Select none')
                             elements.set_selected(None)
                             continue
                         elif value == "delete":
-                            yield "deleting."
+                            yield _('deleting.')
                             elements.remove_elements(list(elements.elems(emphasized=True)))
                             self.context.signal('refresh_scene', 0)
                             continue
@@ -682,7 +716,7 @@ class Console(Module, Job, Pipe):
                                     add.append(subelement)
                                 elements.add_elems(add)
                             continue
-                        yield "Value Error: %s is not an integer" % value
+                        yield _('Value Error: %s is not an integer') % value
                         continue
                     try:
                         element = elements.get_elem(value)
@@ -692,13 +726,13 @@ class Console(Module, Job, Pipe):
                         if element.selected:
                             element.unselect()
                             element.unemphasize()
-                            yield "Deselecting item %d called %s" % (value, name)
+                            yield _('Deselecting item %d called %s') % (value, name)
                         else:
                             element.select()
                             element.emphasize()
-                            yield "Selecting item %d called %s" % (value, name)
+                            yield _('Selecting item %d called %s') % (value, name)
                     except IndexError:
-                        yield 'index %d out of range' % value
+                        yield _('index %d out of range') % value
             return
         elif command == 'path':
             path_d = ' '.join(args)
@@ -717,7 +751,7 @@ class Console(Module, Job, Pipe):
                 r_pos = Length(args[0]).value(ppi=1000.0,
                                               relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
             else:
-                yield 'Circle <x> <y> <r> or circle <r>'
+                yield _('Circle <x> <y> <r> or circle <r>')
                 return
             element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             element = Path(element)
@@ -725,7 +759,7 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'ellipse':
             if len(args) < 4:
-                yield "Too few arguments (needs center_x, center_y, radius_x, radius_y)"
+                yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
                 return
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
@@ -737,7 +771,7 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'rect':
             if len(args) < 4:
-                yield "Too few arguments (needs x, y, width, height)"
+                yield _("Too few arguments (needs x, y, width, height)")
                 return
             x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
             y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
@@ -762,30 +796,24 @@ class Console(Module, Job, Pipe):
             element = Path(element)
             self.add_element(element)
             return
-        # elif command == 'group':
-        #     return
-        # elif command == 'ungroup':
-        #     return
         elif command == 'stroke':
             if len(args) == 0:
-                yield '----------'
-                yield 'Stroke Values:'
+                yield _('----------')
+                yield _('Stroke Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
                     if element.stroke is None or element.stroke == 'none':
-                        yield '%d: stroke = none - %s' % \
-                              (i, name)
+                        yield _('%d: stroke = none - %s') % (i, name)
                     else:
-                        yield '%d: stroke = %s - %s' % \
-                              (i, element.stroke.hex, name)
+                        yield _('%d: stroke = %s - %s') % (i, element.stroke.hex, name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _("No selected elements.")
                 return
             if args[0] == 'none':
                 for element in elements.elems(emphasized=True):
@@ -799,24 +827,22 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'fill':
             if len(args) == 0:
-                yield '----------'
-                yield 'Fill Values:'
+                yield _('----------')
+                yield _('Fill Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
                     if element.fill is None or element.fill == 'none':
-                        yield '%d: fill = none - %s' % \
-                              (i, name)
+                        yield _('%d: fill = none - %s') % (i, name)
                     else:
-                        yield '%d: fill = %s - %s' % \
-                              (i, element.fill.hex, name)
+                        yield _('%d: fill = %s - %s') % (i, element.fill.hex, name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             if args[0] == 'none':
                 for element in elements.elems(emphasized=True):
@@ -830,20 +856,20 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'rotate':
             if len(args) == 0:
-                yield '----------'
-                yield 'Rotate Values:'
+                yield _('----------')
+                yield _('Rotate Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: rotate(%fturn) - %s' % \
+                    yield _('%d: rotate(%fturn) - %s') % \
                           (i, element.rotation.as_turns, name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             bounds = elements.bounds()
             if len(args) >= 1:
@@ -870,13 +896,13 @@ class Console(Module, Job, Pipe):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'scale':
             if len(args) == 0:
-                yield '----------'
-                yield 'Scale Values:'
+                yield _('----------')
+                yield _('Scale Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
@@ -885,10 +911,10 @@ class Console(Module, Job, Pipe):
                     yield '%d: scale(%f, %f) - %s' % \
                           (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             bounds = elements.bounds()
 
@@ -909,7 +935,7 @@ class Console(Module, Job, Pipe):
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if sx == 0 or sy == 0:
-                yield 'Scaling by Zero Error'
+                yield _('Scaling by Zero Error')
                 return
             matrix = Matrix('scale(%f,%f,%f,%f)' % (sx, sy, center_x, center_y))
             try:
@@ -923,25 +949,25 @@ class Console(Module, Job, Pipe):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'translate':
             if len(args) == 0:
-                yield '----------'
-                yield 'Translate Values:'
+                yield _('----------')
+                yield _('Translate Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: translate(%f, %f) - %s' % \
+                    yield _('%d: translate(%f, %f) - %s') % \
                           (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             if len(args) >= 1:
                 tx = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -957,31 +983,31 @@ class Console(Module, Job, Pipe):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'rotate_to':
             if len(args) == 0:
-                yield '----------'
-                yield 'Rotate Values:'
+                yield _('----------')
+                yield _('Rotate Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: rotate(%fturn) - %s' % \
+                    yield _('%d: rotate(%fturn) - %s') % \
                           (i, element.rotation.as_turns, name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             bounds = elements.bounds()
             try:
                 end_angle = Angle.parse(args[0])
             except ValueError:
-                yield "Invalid Value."
+                yield _('Invalid Value.')
                 return
             if len(args) >= 2:
                 center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -1006,25 +1032,25 @@ class Console(Module, Job, Pipe):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'scale_to':
             if len(args) == 0:
-                yield '----------'
-                yield 'Scale Values:'
+                yield _('----------')
+                yield _('Scale Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: scale(%f, %f) - %s' % \
+                    yield _('%d: scale(%f, %f) - %s') % \
                           (i, element.transform.value_scale_x(), element.transform.value_scale_y(), name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             bounds = elements.bounds()
             if len(args) >= 1:
@@ -1054,7 +1080,7 @@ class Console(Module, Job, Pipe):
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
                     if sx == 0 or sy == 0:
-                        yield 'Scaling by Zero Error'
+                        yield _('Scaling by Zero Error')
                         return
                     nsx = sx / osx
                     nsy = sy / osy
@@ -1062,25 +1088,25 @@ class Console(Module, Job, Pipe):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'translate_to':
             if len(args) == 0:
-                yield '----------'
-                yield 'Translate Values:'
+                yield _('----------')
+                yield _('Translate Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: translate(%f, %f) - %s' % \
+                    yield _('%d: translate(%f, %f) - %s') % \
                           (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
 
             if len(args) >= 1:
@@ -1101,12 +1127,12 @@ class Console(Module, Job, Pipe):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'resize':
             if len(args) < 4:
-                yield "Too few arguments (needs x, y, width, height)"
+                yield _('Too few arguments (needs x, y, width, height)')
                 return
             try:
                 x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -1129,11 +1155,10 @@ class Console(Module, Job, Pipe):
                 active_context.signal('refresh_scene')
             except (ValueError, ZeroDivisionError):
                 return
-
         elif command == 'matrix':
             if len(args) == 0:
-                yield '----------'
-                yield 'Matrix Values:'
+                yield _('----------')
+                yield _('Matrix Values:')
                 i = 0
                 for element in elements.elems():
                     name = str(element)
@@ -1142,13 +1167,13 @@ class Console(Module, Job, Pipe):
                     yield '%d: %s - %s' % \
                           (i, str(element.transform), name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             if len(args) != 6:
-                yield "Requires six matrix parameters"
+                yield _('Requires six matrix parameters')
                 return
             try:
                 matrix = Matrix(float(args[0]), float(args[1]), float(args[2]), float(args[3]),
@@ -1164,7 +1189,7 @@ class Console(Module, Job, Pipe):
                     element.transform = Matrix(matrix)
                     element.modified()
             except ValueError:
-                yield "Invalid value"
+                yield _('Invalid value')
             active_context.signal('refresh_scene')
             return
         elif command == 'reset':
@@ -1178,7 +1203,7 @@ class Console(Module, Job, Pipe):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield 'reset - %s' % name
+                yield _('reset - %s') % name
                 element.transform.reset()
                 element.modified()
             active_context.signal('refresh_scene')
@@ -1194,17 +1219,17 @@ class Console(Module, Job, Pipe):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield 'reified - %s' % name
+                yield _('reified - %s') % name
                 element.reify()
                 element.altered()
             active_context.signal('refresh_scene')
             return
         elif command == 'optimize':
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             elif len(args) == 0:
-                yield 'Optimizations: cut_inner, travel, cut_travel'
+                yield _('Optimizations: cut_inner, travel, cut_travel')
                 return
             elif args[0] == 'cut_inner':
                 for element in elements.elems(emphasized=True):
@@ -1213,26 +1238,26 @@ class Console(Module, Job, Pipe):
                     element += e
                     element.altered()
             elif args[0] == 'travel':
-                yield "Travel Optimizing: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+                yield _('Travel Optimizing: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_travel(element)
                     element.clear()
                     element += e
                     element.altered()
-                yield "Optimized: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+                yield _('Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
             elif args[0] == 'cut_travel':
-                yield "Cut Travel Initial: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+                yield _('Cut Travel Initial: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_general(element)
                     element.clear()
                     element += e
                     element.altered()
-                yield "Cut Travel Optimized: %f" % CutPlanner.length_travel(elements.elems(emphasized=True))
+                yield _('Cut Travel Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
             else:
-                yield 'Optimization not found.'
+                yield _('Optimization not found.')
                 return
         elif command == 'embroider':
-            yield "Embroidery Filling"
+            yield _('Embroidery Filling')
             if len(args) >= 1:
                 angle = Angle.parse(args[0])
             else:
@@ -1256,8 +1281,8 @@ class Console(Module, Job, Pipe):
         # Operation Command Elements
         elif command == 'operation':
             if len(args) == 0:
-                yield '----------'
-                yield 'Operations:'
+                yield _('----------')
+                yield _('Operations:')
                 i = 0
 
                 for operation in elements.ops():
@@ -1270,26 +1295,26 @@ class Console(Module, Job, Pipe):
                     else:
                         yield '%d: %s' % (i, name)
                     i += 1
-                yield '----------'
+                yield _('----------')
             else:
                 for value in args:
                     try:
                         value = int(value)
                     except ValueError:
                         if value == "*":
-                            yield "Selecting all operations."
+                            yield _('Selecting all operations.')
                             elements.set_selected(list(elements.ops()))
                             continue
                         elif value == "~":
-                            yield "Invert selection."
+                            yield _('Invert selection.')
                             elements.set_selected(list(elements.ops(emphasized=False)))
                             continue
                         elif value == "!":
-                            yield "Select none"
+                            yield _('Select none')
                             elements.set_selected(None)
                             continue
                         elif value == "delete":
-                            yield "Deleting."
+                            yield _('Deleting.')
                             elements.remove_operations(list(elements.ops(emphasized=True)))
                             continue
                         elif value == "copy":
@@ -1299,7 +1324,7 @@ class Console(Module, Job, Pipe):
                                 e.select()
                                 e.emphasize()
                             continue
-                        yield "Value Error: %s is not an integer" % value
+                        yield _('Value Error: %s is not an integer') % value
                         continue
                     try:
                         operation = elements.get_op(value)
@@ -1309,38 +1334,38 @@ class Console(Module, Job, Pipe):
                         if operation.emphasized:
                             operation.unemphasize()
                             operation.unselect()
-                            yield "Deselecting operation %d called %s" % (value, name)
+                            yield _('Deselecting operation %d called %s') % (value, name)
                         else:
                             operation.emphasize()
                             operation.select()
-                            yield "Selecting operation %d called %s" % (value, name)
+                            yield _('Selecting operation %d called %s') % (value, name)
                     except IndexError:
-                        yield 'index %d out of range' % value
+                        yield _('index %d out of range') % value
             return
         elif command == 'classify':
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             elements.classify(list(elements.elems(emphasized=True)))
             return
         elif command == 'declassify':
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
             return
         elif command == 'note':
             if len(args) == 0:
                 if elements.note is None:
-                    yield "No Note."
+                    yield _('No Note.')
                 else:
                     yield str(elements.note)
             else:
                 elements.note = ' '.join(args)
-                yield "Note Set."
+                yield _('Note Set.')
         elif command == 'cut':
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             op = LaserOperation()
             op.operation = "Cut"
@@ -1349,7 +1374,7 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'engrave':
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             op = LaserOperation()
             op.operation = "Engrave"
@@ -1358,7 +1383,7 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'raster':
             if not elements.has_emphasis():
-                yield "No selected elements."
+                yield _('No selected elements.')
                 return
             op = LaserOperation()
             op.operation = "Raster"
@@ -1371,7 +1396,7 @@ class Console(Module, Job, Pipe):
                 for op in elements.ops(emphasized=True):
                     if op.operation in ("Raster", "Image"):
                         step = op.raster_step
-                        yield 'Step for %s is currently: %d' % (str(op), step)
+                        yield _('Step for %s is currently: %d') % (str(op), step)
                         found = True
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
@@ -1379,15 +1404,15 @@ class Console(Module, Job, Pipe):
                             step = element.values['raster_step']
                         except KeyError:
                             step = 1
-                        yield 'Image step for %s is currently: %s' % (str(element), step)
+                        yield _('Image step for %s is currently: %s') % (str(element), step)
                         found = True
                 if not found:
-                    yield 'No raster operations selected.'
+                    yield _( 'No raster operations selected.')
                 return
             try:
                 step = int(args[0])
             except ValueError:
-                yield 'Not integer value for raster step.'
+                yield _('Not integer value for raster step.')
                 return
             for op in elements.ops(emphasized=True):
                 if op.operation in ("Raster", "Image"):
@@ -1406,8 +1431,8 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'image':
             if len(args) == 0:
-                yield '----------'
-                yield 'Images:'
+                yield _('----------')
+                yield _('Images:')
                 i = 0
                 for element in elements.elems():
                     if not isinstance(element, SVGImage):
@@ -1421,23 +1446,23 @@ class Console(Module, Job, Pipe):
                                                    element.image.mode,
                                                    name)
                     i += 1
-                yield '----------'
+                yield _('----------')
                 return
             if not elements.has_emphasis():
-                yield "No selected images."
+                yield _('No selected images.')
                 return
             elif args[0] == 'wizard':
                 if len(args) == 1:
                     try:
                         for script_name in context.match('raster_script', True):
-                            yield "Raster Script: %s" % script_name
+                            yield _('Raster Script: %s') % script_name
                     except KeyError:
-                        yield "No Raster Scripts Found."
+                        yield _('No Raster Scripts Found.')
                     return
                 try:
                     script = context.registered['raster_script/%s' % args[1]]
                 except KeyError:
-                    yield "Raster Script %s is not registered." % args[1]
+                    yield _('Raster Script %s is not registered.') % args[1]
                     return
                 from RasterScripts import RasterScripts
                 for element in elements.elems(emphasized=True):
@@ -1450,23 +1475,23 @@ class Console(Module, Job, Pipe):
                         element.altered()
                 return
             elif args[0] == 'unlock':
-                yield 'Unlocking Elements...'
+                yield _('Unlocking Elements...')
                 for element in elements.elems(emphasized=True):
                     try:
                         if element.lock:
                             yield "Unlocked: %s" % str(element)
                             element.lock = False
                         else:
-                            yield "Element was not locked: %s" % str(element)
+                            yield _('Element was not locked: %s') % str(element)
                     except AttributeError:
-                        yield "Element was not locked: %s" % str(element)
+                        yield _('Element was not locked: %s') % str(element)
                 return
             elif args[0] == 'threshold':
                 try:
                     threshold_min = float(args[1])
                     threshold_max = float(args[2])
                 except (ValueError, IndexError):
-                    yield "Threshold values improper."
+                    yield _('Threshold values improper.')
                     return
                 divide = (threshold_max - threshold_min) / 255.0
                 for element in elements.elems(emphasized=True):
@@ -1517,7 +1542,7 @@ class Console(Module, Job, Pipe):
                         element.altered()
             elif args[0] == 'remove':
                 if len(args) == 1:
-                    yield "Must specify a color, and optionally a distance."
+                    yield _('Must specify a color, and optionally a distance.')
                     return
                 distance = 50.0
                 color = "White"
@@ -1526,13 +1551,13 @@ class Console(Module, Job, Pipe):
                 try:
                     color = Color(color)
                 except ValueError:
-                    yield "Color Invalid."
+                    yield _('Color Invalid.')
                     return
                 if len(args) >= 3:
                     try:
                         distance = float(args[2])
                     except ValueError:
-                        yield "Color distance is invalid."
+                        yield _('Color distance is invalid.')
                         return
                 distance_sq = distance * distance
 
@@ -1560,7 +1585,7 @@ class Console(Module, Job, Pipe):
                     element.altered()
             elif args[0] == 'add':
                 if len(args) == 1:
-                    yield "Must specify a color, to add."
+                    yield _('Must specify a color, to add.')
                     return
                 color = "White"
                 if len(args) >= 2:
@@ -1568,7 +1593,7 @@ class Console(Module, Job, Pipe):
                 try:
                     color = Color(color)
                 except ValueError:
-                    yield "Color Invalid."
+                    yield _('Color Invalid.')
                     return
                 pix = (color.red, color.green, color.blue, color.alpha)
                 for element in elements.elems(emphasized=True):
@@ -1601,7 +1626,7 @@ class Console(Module, Job, Pipe):
                             element.image_height = lower - upper
                             element.altered()
                         except (KeyError, ValueError):
-                            yield "image crop <left> <upper> <right> <lower>"
+                            yield _('image crop <left> <upper> <right> <lower>')
                 return
             elif args[0] == 'contrast':
                 for element in elements.elems(emphasized=True):
@@ -1614,9 +1639,9 @@ class Console(Module, Job, Pipe):
                             enhancer = ImageEnhance.Contrast(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield "Image Contrast Factor: %f" % factor
+                            yield _('Image Contrast Factor: %f') % factor
                         except (IndexError, ValueError):
-                            yield "image contrast <factor>"
+                            yield _('image contrast <factor>')
                 return
             elif args[0] == 'brightness':
                 for element in elements.elems(emphasized=True):
@@ -1628,24 +1653,23 @@ class Console(Module, Job, Pipe):
                             enhancer = ImageEnhance.Brightness(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield "Image Brightness Factor: %f" % factor
+                            yield _('Image Brightness Factor: %f') % factor
                         except (IndexError, ValueError):
-                            yield "image brightness <factor>"
+                            yield _('image brightness <factor>')
                 return
             elif args[0] == 'color':
                 for element in elements.elems(emphasized=True):
                     from PIL import ImageEnhance
                     if isinstance(element, SVGImage):
                         try:
-
                             factor = float(args[1])
                             img = element.image
                             enhancer = ImageEnhance.Color(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield "Image Color Factor: %f" % factor
+                            yield _('Image Color Factor: %f') % factor
                         except (IndexError, ValueError):
-                            yield "image color <factor>"
+                            yield _('image color <factor>')
                 return
             elif args[0] == 'sharpness':
                 for element in elements.elems(emphasized=True):
@@ -1657,9 +1681,9 @@ class Console(Module, Job, Pipe):
                             enhancer = ImageEnhance.Sharpness(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield "Image Sharpness Factor: %f" % factor
+                            yield _('Image Sharpness Factor: %f') % factor
                         except (IndexError, ValueError):
-                            yield "image sharpness <factor>"
+                            yield _('image sharpness <factor>')
                 return
             elif args[0] == 'blur':
                 from PIL import ImageFilter
@@ -1668,7 +1692,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.BLUR)
                         element.altered()
-                        yield "Image Blurred."
+                        yield _('Image Blurred.')
                 return
             elif args[0] == 'sharpen':
                 from PIL import ImageFilter
@@ -1677,7 +1701,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.SHARPEN)
                         element.altered()
-                        yield "Image Sharpened."
+                        yield _('Image Sharpened.')
                 return
             elif args[0] == 'edge_enhance':
                 from PIL import ImageFilter
@@ -1686,7 +1710,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
                         element.altered()
-                        yield "Image Edges Enhanced."
+                        yield _('Image Edges Enhanced.')
                 return
             elif args[0] == 'find_edges':
                 from PIL import ImageFilter
@@ -1695,7 +1719,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.FIND_EDGES)
                         element.altered()
-                        yield "Image Edges Found."
+                        yield _('Image Edges Found.')
                 return
             elif args[0] == 'emboss':
                 from PIL import ImageFilter
@@ -1704,7 +1728,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.EMBOSS)
                         element.altered()
-                        yield "Image Embossed."
+                        yield _('Image Embossed.')
                 return
             elif args[0] == 'smooth':
                 from PIL import ImageFilter
@@ -1713,7 +1737,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.SMOOTH)
                         element.altered()
-                        yield "Image Smoothed."
+                        yield _('Image Smoothed.')
                 return
             elif args[0] == 'contour':
                 from PIL import ImageFilter
@@ -1722,7 +1746,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.CONTOUR)
                         element.altered()
-                        yield "Image Contoured."
+                        yield _('Image Contoured.')
                 return
             elif args[0] == 'detail':
                 from PIL import ImageFilter
@@ -1731,7 +1755,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.DETAIL)
                         element.altered()
-                        yield "Image Detailed."
+                        yield _('Image Detailed.')
                 return
             elif args[0] == 'quantize':
                 for element in elements.elems(emphasized=True):
@@ -1741,9 +1765,9 @@ class Console(Module, Job, Pipe):
                             img = element.image
                             element.image = img.quantize(colors=colors)
                             element.altered()
-                            yield "Image Quantized to %d colors." % colors
+                            yield _('Image Quantized to %d colors.') % colors
                         except (IndexError, ValueError):
-                            yield "image quantize <colors>"
+                            yield _('image quantize <colors>')
                 return
             elif args[0] == 'solarize':
                 from PIL import ImageOps
@@ -1754,9 +1778,9 @@ class Console(Module, Job, Pipe):
                             img = element.image
                             element.image = ImageOps.solarize(img, threshold=threshold)
                             element.altered()
-                            yield "Image Solarized at %d gray." % threshold
+                            yield _('Image Solarized at %d gray.') % threshold
                         except (IndexError, ValueError):
-                            yield "image solarize <threshold>"
+                            yield _('image solarize <threshold>')
                 return
             elif args[0] == 'invert':
                 from PIL import ImageOps
@@ -1771,9 +1795,9 @@ class Console(Module, Job, Pipe):
                             if original_mode == '1':
                                 element.image = element.image.convert('1')
                             element.altered()
-                            yield "Image Inverted."
+                            yield _('Image Inverted.')
                         except OSError:
-                            yield "Image type cannot be converted. %s" % img.mode
+                            yield _('Image type cannot be converted. %s') % img.mode
                 return
             elif args[0] == 'flip':
                 from PIL import ImageOps
@@ -1782,7 +1806,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = ImageOps.flip(img)
                         element.altered()
-                        yield "Image Flipped."
+                        yield _('Image Flipped.')
                 return
             elif args[0] == 'mirror':
                 from PIL import ImageOps
@@ -1791,7 +1815,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = ImageOps.mirror(img)
                         element.altered()
-                        yield "Image Mirrored."
+                        yield _('Image Mirrored.')
                 return
             elif args[0] == 'ccw':
                 from PIL import Image
@@ -1801,7 +1825,7 @@ class Console(Module, Job, Pipe):
                         element.image = img.transpose(Image.ROTATE_90)
                         element.image_height, element.image_width = element.image_width, element.image_height
                         element.altered()
-                        yield "Rotated image counterclockwise."
+                        yield _('Rotated image counterclockwise.')
                 return
             elif args[0] == 'cw':
                 from PIL import Image
@@ -1811,7 +1835,7 @@ class Console(Module, Job, Pipe):
                         element.image = img.transpose(Image.ROTATE_270)
                         element.image_height, element.image_width = element.image_width, element.image_height
                         element.altered()
-                        yield "Rotated image clockwise."
+                        yield _('Rotated image clockwise.')
                 return
             elif args[0] == 'autocontrast':
                 from PIL import ImageOps
@@ -1824,9 +1848,9 @@ class Console(Module, Job, Pipe):
                                 img = img.convert('RGB')
                             element.image = ImageOps.autocontrast(img, cutoff=cutoff)
                             element.altered()
-                            yield "Image Auto-Contrasted."
+                            yield _('Image Auto-Contrasted.')
                         except (IndexError, ValueError):
-                            yield "image autocontrast <cutoff-percent>"
+                            yield _('image autocontrast <cutoff-percent>')
                 return
             elif args[0] == 'grayscale' or args[0] == 'greyscale':
                 from PIL import ImageOps
@@ -1835,7 +1859,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = ImageOps.grayscale(img)
                         element.altered()
-                        yield "Image Grayscale."
+                        yield _('Image Grayscale.')
                 return
             elif args[0] == 'equalize':
                 from PIL import ImageOps
@@ -1844,7 +1868,7 @@ class Console(Module, Job, Pipe):
                         img = element.image
                         element.image = ImageOps.equalize(img)
                         element.altered()
-                        yield "Image Equalized."
+                        yield _('Image Equalized.')
                 return
             elif args[0] == 'save':
                 for element in elements.elems(emphasized=True):
@@ -1852,13 +1876,13 @@ class Console(Module, Job, Pipe):
                         try:
                             img = element.image
                             img.save(args[1])
-                            yield "Saved: %s" % (args[1])
+                            yield _('Saved: %s') % (args[1])
                         except IndexError:
-                            yield "No file given."
+                            yield _('No file given.')
                         except OSError:
-                            yield "File could not be written / created."
+                            yield _('File could not be written / created.')
                         except ValueError:
-                            yield "Could not determine expected format."
+                            yield _('Could not determine expected format.')
 
                 return
             elif args[0] == 'flatrotary':
@@ -1883,23 +1907,23 @@ class Console(Module, Job, Pipe):
                                                      Image.BILINEAR)
                         element.altered()
             else:
-                yield "Image command unrecognized."
+                yield _('Image command unrecognized.')
                 return
         # Alias / Bind Command Elements.
         elif command == 'bind':
             if len(args) == 0:
-                yield '----------'
-                yield 'Binds:'
+                yield _('----------')
+                yield _('Binds:')
                 for i, key in enumerate(context.keymap):
                     value = context.keymap[key]
-                    yield '%d: key %s -> %s' % (i, key, value)
-                yield '----------'
+                    yield _('%d: key %s -> %s') % (i, key, value)
+                yield _('----------')
             else:
                 key = args[0].lower()
                 if key == 'default':
                     context.keymap = dict()
                     context.default_keymap()
-                    yield 'Set default keymap.'
+                    yield _('Set default keymap.')
                     return
                 command_line = ' '.join(args[1:])
                 f = command_line.find('bind')
@@ -1921,33 +1945,33 @@ class Console(Module, Job, Pipe):
                 else:
                     try:
                         del context.keymap[key]
-                        yield "Unbound %s" % key
+                        yield _('Unbound %s') % key
                     except KeyError:
                         pass
             return
         elif command == 'alias':
             if len(args) == 0:
-                yield '----------'
-                yield 'Aliases:'
+                yield _('----------')
+                yield _('Aliases:')
                 for i, key in enumerate(context.alias):
                     value = context.alias[key]
-                    yield '%d: %s -> %s' % (i, key, value)
-                yield '----------'
+                    yield ('%d: %s -> %s') % (i, key, value)
+                yield _('----------')
             else:
                 key = args[0].lower()
                 if key == 'default':
                     context.alias = dict()
                     context.default_alias()
-                    yield 'Set default keymap.'
+                    yield _('Set default aliases.')
                     return
                 context.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements
-        elif command == 'egv':
-            if len(args) >= 1:
-                if active_context.device_name != 'Lhystudios':
-                    yield 'Device cannot send egv data.'
-                active_context.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
+        # elif command == 'egv':
+        #     if len(args) >= 1:
+        #         if active_context.device_name != 'Lhystudios':
+        #             yield 'Device cannot send egv data.'
+        #         active_context.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
         elif command == "grblserver":
             port = 23
             tcp = True
@@ -1956,40 +1980,39 @@ class Console(Module, Job, Pipe):
                                             port=port,
                                             tcp=tcp,
                                             greet="Grbl 1.1e ['$' for help]\r\n")
-                yield "GRBL Mode."
+                yield _('GRBL Mode.')
                 chan = 'grbl'
                 active_context.add_watcher(chan, self.channel)
-                yield "Watching Channel: %s" % chan
+                yield _('Watching Channel: %s') % chan
                 chan = 'server'
                 active_context.add_watcher(chan, self.channel)
-                yield "Watching Channel: %s" % chan
+                yield _('Watching Channel: %s') % chan
                 server.set_pipe(active_context.open('module/GRBLEmulator'))
             except OSError:
-                yield 'Server failed on port: %d' % port
+                yield _('Server failed on port: %d') % port
             return
-
         elif command == "ruidaserver":
             try:
                 server = active_context.open_as('module/LaserServer', 'ruidaserver', port=50200, tcp=False)
                 jog = active_context.open_as('module/LaserServer', 'ruidajog', port=50207, tcp=False)
-                yield 'Ruida Data Server opened on port %d.' % 50200
-                yield 'Ruida Jog Server opened on port %d.' % 50207
+                yield _('Ruida Data Server opened on port %d.') % 50200
+                yield _('Ruida Jog Server opened on port %d.') % 50207
                 chan = 'ruida'
                 active_context.add_watcher(chan, self.channel)
-                yield "Watching Channel: %s" % chan
+                yield _('Watching Channel: %s') % chan
                 chan = 'server'
                 active_context.add_watcher(chan, self.channel)
-                yield "Watching Channel: %s" % chan
+                yield _('Watching Channel: %s') % chan
                 server.set_pipe(active_context.open('module/RuidaEmulator'))
                 jog.set_pipe(active_context.open('module/RuidaEmulator'))
             except OSError:
-                yield 'Server failed.'
+                yield _('Server failed.')
             return
         elif command == 'flush':
             context.flush()
             if context != active_context:
                 active_context.flush()
-                yield 'Persistent settings force saved.'
+                yield _('Persistent settings force saved.')
         elif command == 'trace_hull':
             pts = []
             for obj in elements.elems(emphasized=True):
@@ -2004,7 +2027,7 @@ class Console(Module, Job, Pipe):
                             (bounds[2], bounds[3])]
             hull = [p for p in Point.convex_hull(pts)]
             if len(hull) == 0:
-                yield 'No elements bounds to trace.'
+                yield _('No elements bounds to trace.')
                 return
             hull.append(hull[0])  # loop
 
@@ -2019,7 +2042,7 @@ class Console(Module, Job, Pipe):
         elif command == 'trace_quick':
             bbox = elements.bounds()
             if bbox is None:
-                yield 'No elements bounds to trace.'
+                yield _('No elements bounds to trace.')
                 return
 
             def trace_quick():
@@ -2034,15 +2057,15 @@ class Console(Module, Job, Pipe):
             return
         elif command == 'pulse':
             if len(args) == 0:
-                yield 'Must specify a pulse time in milliseconds.'
+                yield _('Must specify a pulse time in milliseconds.')
                 return
             try:
                 value = float(args[0]) / 1000.0
             except ValueError:
-                yield '"%s" not a valid pulse time in milliseconds' % (args[0])
+                yield _('"%s" not a valid pulse time in milliseconds') % (args[0])
                 return
             if value > 1.0:
-                yield 'Exceeds 1 second limit to fire a standing laser.' % (args[0])
+                yield _('Exceeds 1 second limit to fire a standing laser.') % (args[0])
                 try:
                     if args[1] != "idonotlovemyhouse":
                         return
@@ -2056,14 +2079,14 @@ class Console(Module, Job, Pipe):
                 yield COMMAND_LASER_OFF
 
             if self.context.spooler.job_if_idle(timed_fire):
-                yield 'Pulse laser for %f milliseconds' % (value * 1000.0)
+                yield _('Pulse laser for %f milliseconds') % (value * 1000.0)
             else:
-                yield 'Pulse laser failed: Busy'
+                yield _('Pulse laser failed: Busy')
             return
         elif command == 'refresh':
             active_context.signal('refresh_scene')
             active_context.signal('rebuild_tree')
-            yield "Refreshed."
+            yield _('Refreshed.')
             return
         elif command == 'shutdown':
             active_context.stop()
@@ -2075,7 +2098,16 @@ class Console(Module, Job, Pipe):
                     for e in self.interface(cmd):
                         yield e
             else:
-                yield "Error. Command Unrecognized: %s" % command
+                for command_name in context.match('\d+/command/%s' % command):
+                    command = active_context.registered[command_name]
+                    q = command(*args)
+                    if isinstance(q, str):
+                        yield q
+                    return
+                try:
+                    context.registered['command/%s' % command](*args)
+                except KeyError:
+                    yield _('Error. Command Unrecognized: %s') % command
 
     def add_element(self, element):
         context_root = self.context.get_context('/')
