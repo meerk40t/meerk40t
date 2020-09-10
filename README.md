@@ -99,7 +99,7 @@ The wxMeerK40t is the GUI and is written in wxPython.
 
 ## Pulse Modulation
 
-The stock controller is not known for having power control, MeerK40t gives it power control. How is this possible? I use software to pulse the laser. See the Wiki for additional details: https://github.com/meerk40t/meerk40t/wiki/How-does-MeerK40t's-pulse-modulation-works%3F
+The stock controller is not known for having power control, MeerK40t gives it power control. How is this possible? I use software to pulse the laser. See the Wiki for additional details: https://github.com/meerk40t/meerk40t/wiki/How-does-MeerK40t's-pulse-modulation-works
 
 This does not mean you should overpower your laser with the knob? NO. Leave that knob alone.
 
