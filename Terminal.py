@@ -25,7 +25,6 @@ class Terminal(wx.Frame, Module):
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.pipe = None
         self.command_log = []
         self.command_position = 0
 
@@ -43,7 +42,6 @@ class Terminal(wx.Frame, Module):
     def initialize(self, channel=None):
         self.context.close(self.name)
         self.Show()
-        self.pipe = self.context.open('module/Console')
         self.context.add_watcher('console', self.update_text)
         self.text_entry.SetFocus()
 
@@ -121,10 +119,9 @@ class Terminal(wx.Frame, Module):
             pass
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
-        if self.pipe is not None:
-            command = self.text_entry.GetValue()
-            self.pipe.write(command + '\n')
-            self.text_entry.SetValue('')
-            self.command_log.append(command)
-            self.command_position = 0
+        command = self.text_entry.GetValue()
+        self.context.console(command + '\n')
+        self.text_entry.SetValue('')
+        self.command_log.append(command)
+        self.command_position = 0
         event.Skip()

@@ -664,14 +664,14 @@ class Navigation(wx.Frame, Module):
 
     def on_rotate_ccw(self, event):  # wxGlade: Navigation.<event_handler>
         self.console.write('rotate %fdeg %f %f\n' % (-5,
-                                                     self.context.current_x,
-                                                     self.context.current_y))
+                                                     self.context.active.current_x,
+                                                     self.context.active.current_y))
         self.matrix_updated()
 
     def on_rotate_cw(self, event):  # wxGlade: Navigation.<event_handler>
         self.console.write('rotate %fdeg %f %f\n' % (5,
-                                                     self.context.current_x,
-                                                     self.context.current_y))
+                                                     self.context.active.current_x,
+                                                     self.context.active.current_y))
         self.matrix_updated()
 
     def on_text_matrix(self, event):  # wxGlade: Navigation.<event_handler>

@@ -173,7 +173,7 @@ class MeerK40t(wx.Frame, Module, Job):
         # begin wxGlade: MeerK40t.__init__
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         Module.__init__(self, context, path)
-        Job.__init__(self, context=context, process=self.refresh_scene)
+        Job.__init__(self, name="refresh_scene", process=self.refresh_scene)
         self.DragAcceptFiles(True)
 
         self._Buffer = None
@@ -241,7 +241,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.Show()
-        self.schedule()
+        self.context.schedule(self)
 
     def __scene_binds(self):
         self.scene.Bind(wx.EVT_PAINT, self.on_paint)

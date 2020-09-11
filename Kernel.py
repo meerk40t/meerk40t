@@ -21,44 +21,6 @@ INTERPRETER_STATE_FINISH = 1
 INTERPRETER_STATE_PROGRAM = 2
 
 
-class Job:
-    """
-    Generic job for the scheduler.
-
-    Jobs that can be scheduled in the scheduler-kernel to run at a particular time and a given number of times.
-    This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
-    and times. This is usually extended directly by a module requiring that functionality.
-    """
-    def __init__(self, name=None, context=None, process=None, args=(), interval=1.0, times=None):
-        self.name = name
-        self.context = context
-        self.state = STATE_INITIALIZE
-
-        self.process = process
-        self.args = args
-        self.interval = interval
-        self.times = times
-        self.last_run = None
-        self.next_run = time.time() + self.interval
-
-    @property
-    def scheduled(self):
-        return self.next_run is not None and time.time() >= self.next_run
-
-    def cancel(self):
-        self.times = -1
-
-    def schedule(self):
-        """Schedule this as a job."""
-        if self.context is not None and self not in self.context._kernel.jobs:
-            self.context._kernel.jobs.append(self)
-
-    def unschedule(self):
-        """Unschedule this module as a job"""
-        if self in self.context._kernel.jobs:
-            self.context._kernel.jobs.remove(self)
-
-
 class Modifier:
     """
     A modifier alters a given context with some additional functionality set during attachment and detachment.
@@ -1762,18 +1724,27 @@ class Context:
         """
         return self._kernel.channel_open(self.abs_path(channel), buffer=buffer)
 
+    def console(self, data):
+        self._kernel.console(data)
+
+    def schedule(self, job):
+        self._kernel.schedule(job)
+
+    def unschedule(self, job):
+        self._kernel.unschedule(job)
+
 
 class Kernel:
     """
     The Kernel serves as the central hub of communication between different objects within the system. These are mapped
     to particular contexts that have locations within the kernel. The contexts can have modules opened and modifiers
     applied to them. The kernel serves to store the location of registered objects, as well as providing a scheduler,
-    signals, and channels to be used by the modules, modifiers, devices, and other objects.
+    signals, channels, and a command console to be used by the modules, modifiers, devices, and other objects.
 
     The Kernel stores a persistence object, thread interactions, contexts, a translation routine, a run_later operation,
-    jobs for the scheduler, listeners for signals, channel information, and a list of devices.
+    jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
 
-    Devices are contexts with a device. These are expected to have a Spooler attached, and the location should consist
+    Devices are contexts with a device. These are expected to have a Spooler attached, and the path should consist
     of numbers.
     """
 
@@ -1787,7 +1758,7 @@ class Kernel:
         self.translation = lambda e: e
         self.run_later = lambda listener, message: listener(message)
         self.state = STATE_INITIALIZE
-        self.jobs = []
+        self.jobs = {}
 
         self.thread = None
 
@@ -1804,6 +1775,13 @@ class Kernel:
         self.watchers = {}
         self.buffer = {}
         self.greet = {}
+
+        self.commands = []
+        self.console_job = Job(name="kernel.console.ticks", process=self._console_tick, interval=0.05)
+        self._console_buffer = ''
+        self.queue = []
+        self._console_channel = self.channel_open('console')
+        self.console_channel_file = None
 
         if config is not None:
             self.set_config(config)
@@ -2082,7 +2060,7 @@ class Kernel:
         :return:
         """
         self.thread = self.threaded(self.run, 'Scheduler')
-        self.signal_job = self.add_job(run=self.delegate_messages, interval=0.005)
+        self.signal_job = self.add_job(run=self.delegate_messages, name='kernel.signals', interval=0.005)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             try:
@@ -2240,15 +2218,16 @@ class Kernel:
             if self.state == STATE_TERMINATE:
                 break
             jobs = self.jobs
-            jobs_update = False
-            for job in jobs:
+            for job_name in list(jobs):
+                job = jobs[job_name]
+
                 # Checking if jobs should run.
                 if job.scheduled:
-                    job.next_run = 0  # Set to zero while running.
+                    job._next_run = 0  # Set to zero while running.
                     if job.times is not None:
                         job.times = job.times - 1
                         if job.times <= 0:
-                            jobs_update = True
+                            del jobs[job_name]
                         if job.times < 0:
                             continue
                     try:
@@ -2261,13 +2240,19 @@ class Kernel:
                     except:
                         import sys
                         sys.excepthook(*sys.exc_info())
-                    job.last_run = time.time()
-                    job.next_run += job.last_run + job.interval
-            if jobs_update:
-                self.jobs = [job for job in jobs if job.times is None or job.times > 0]
+                    job._last_run = time.time()
+                    job._next_run += job._last_run + job.interval
         self.state = STATE_END
 
-    def add_job(self, run, args=(), interval=1.0, times=None):
+    def schedule(self, job):
+        self.jobs[job.name] = job
+        return job
+
+    def unschedule(self, job):
+        del self.jobs[job.name]
+        return job
+
+    def add_job(self, run, name=None, args=(), interval=1.0, times=None):
         """
         Adds a job to the scheduler.
 
@@ -2277,9 +2262,25 @@ class Kernel:
         :param times: limit on number of executions.
         :return: Reference to the job added.
         """
-        job = Job(self, process=run, args=args, interval=interval, times=times)
-        self.jobs.append(job)
-        return job
+
+        job = Job(name=name, process=run, args=args, interval=interval, times=times)
+        return self.schedule(job)
+
+    def remove_job(self, job):
+        return self.unschedule(job)
+
+    def set_timer(self, command, name=None, times=1, interval=1.0):
+        def timer():
+            self.console("%s\n" % command)
+
+        if name is None or len(name) == 0:
+            i = 1
+            while 'timer%d' % i in self.jobs:
+                i += 1
+            name = 'timer%d' % i
+        if not name.startswith('timer'):
+            name = 'timer' + name
+        self.add_job(timer, name=name, interval=interval, times=times)
 
     # Signal processing.
 
@@ -2423,3 +2424,421 @@ class Kernel:
             if channel in self.greet:
                 chan(self.greet[channel])
         return self.channels[channel]
+
+    # Console Processing.
+
+    def console(self, data):
+        if isinstance(data, bytes):
+            data = data.decode()
+        self._console_buffer += data
+        while '\n' in self._console_buffer:
+            pos = self._console_buffer.find('\n')
+            command = self._console_buffer[0:pos].strip('\r')
+            self._console_buffer = self._console_buffer[pos + 1:]
+            for response in self._console_interface(command):
+                self._console_channel(response)
+
+    def _console_tick(self):
+        for command in self.commands:
+            for e in self._console_interface(command):
+                if self._console_channel is not None:
+                    self._console_channel(e)
+        if len(self.queue):
+            for command in self.queue:
+                for e in self._console_interface(command):
+                    if self._console_channel is not None:
+                        self._console_channel(e)
+            self.queue.clear()
+        if len(self.commands) == 0 and len(self.queue) == 0:
+            self.remove_job(self.console_job)
+
+    def _console_queue(self, command):
+        self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
+        self.queue.append(command)
+        if self.console_job not in self.jobs:
+            self.jobs.append(self.console_job)
+
+    def _tick_command(self, command):
+        self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
+        self.commands.append(command)
+        if self.console_job not in self.jobs:
+            self.jobs.append(self.console_job)
+
+    def _untick_command(self, command):
+        self.commands = [c for c in self.commands if c != command]
+        if len(self.commands) == 0:
+            self.remove_job(self.console_job)
+
+    def _console_file_write(self, v):
+        if self.console_channel_file is not None:
+            self.console_channel_file.write('%s\n' % v)
+            self.console_channel_file.flush()
+
+    def _console_interface(self, command):
+        yield command
+        args = str(command).split(' ')
+        for e in self._console_parse(*args):
+            yield e
+
+    def _console_parse(self, command, *args):
+        _ = self.translation
+        active_context = self.active
+        command = command.lower()
+        if command == 'help' or command == '?':
+            yield 'loop <command>'
+            yield 'end <commmand>'
+            yield '-------------------'
+            yield 'device [<value>]'
+            yield 'set [<key> <value>]'
+            yield 'control [<executive>]'
+            yield 'module [(open|close) <module_name>]'
+            yield 'modifier [(open|close) <module_name>]'
+            yield 'schedule'
+            yield 'channel [(open|close|save) <channel_name>]'
+            yield 'shutdown'
+            return
+        # +- controls.
+        elif command == "loop":
+            self._tick_command(' '.join(args))
+            return
+        elif command == "end":
+            if len(args) == 0:
+                self.commands.clear()
+                self.remove_job(self.console_job)
+            else:
+                self._untick_command(' '.join(args))
+        elif command.startswith("timer"):
+            name = command[5:]
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Timers:')
+                for i, job_name in enumerate(self.jobs):
+                    if not job_name.startswith('timer'):
+                        continue
+                    obj = self.jobs[job_name]
+                    yield _('%d: %s %s') % (i + 1, job_name, str(obj))
+                yield _('----------')
+                return
+            if len(args) == 1:
+                if args[0] == 'off':
+                    obj = self.jobs[command]
+                    obj.cancel()
+                    self.unschedule(obj)
+                    yield _("timer %s canceled." % command)
+                return
+            if len(args) == 2:
+                yield _("Syntax Error: timer<name> <times> <interval> <command>")
+                return
+            try:
+                self.set_timer(' '.join(args[2:]), name=name, times=int(args[0]), interval=float(args[1]))
+            except ValueError:
+                yield _("Syntax Error: timer<name> <times> <interval> <command>")
+            return
+
+        # Kernel Element commands.
+        elif command == 'register':
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Objects Registered:')
+                for i, name in enumerate(self.match('.*')):
+                    obj = self.registered[name]
+                    yield _('%d: %s type of %s') % (i + 1, name, str(obj))
+                yield _('----------')
+            if len(args) == 1:
+                yield _('----------')
+                yield 'Objects Registered:'
+                for i, name in enumerate(self.match('%s.*' % args[0])):
+                    obj = self.registered[name]
+                    yield '%d: %s type of %s' % (i + 1, name, str(obj))
+                yield _('----------')
+        elif command == 'context':
+            if len(args) == 0:
+                for control_name in active_context.match('\d+/control'):
+                    yield control_name
+            else:
+                control_name = ' '.join(args)
+                if control_name in active_context.match('\d+/control'):
+                    active_context.execute(control_name)
+                    yield _("Executed '%s'") % control_name
+                else:
+                    yield _("Control '%s' not found.") % control_name
+            return
+        elif command == 'set':
+            if len(args) == 0:
+                for attr in dir(active_context):
+                    v = getattr(active_context, attr)
+                    if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
+                        continue
+                    yield '"%s" := %s' % (attr, str(v))
+                return
+            if len(args) >= 2:
+                attr = args[0]
+                value = args[1]
+                try:
+                    if hasattr(active_context, attr):
+                        v = getattr(active_context, attr)
+                        if isinstance(v, bool):
+                            if value == 'False' or value == 'false' or value == 0:
+                                setattr(active_context, attr, False)
+                            else:
+                                setattr(active_context, attr, True)
+                        elif isinstance(v, int):
+                            setattr(active_context, attr, int(value))
+                        elif isinstance(v, float):
+                            setattr(active_context, attr, float(value))
+                        elif isinstance(v, str):
+                            setattr(active_context, attr, str(value))
+                except RuntimeError:
+                    yield _('Attempt failed. Produced a runtime error.')
+                except ValueError:
+                    yield _('Attempt failed. Produced a value error.')
+            return
+        elif command == 'control':
+            if len(args) == 0:
+                for control_name in active_context.match('\d+/control'):
+                    yield control_name
+            else:
+                control_name = ' '.join(args)
+                if control_name in active_context.match('\d+/control'):
+                    active_context.execute(control_name)
+                    yield _("Executed '%s'") % control_name
+                else:
+                    yield _("Control '%s' not found.") % control_name
+            return
+        elif command == 'module':
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Modules Registered:')
+                for i, name in enumerate(self.match('module')):
+                    yield '%d: %s' % (i + 1, name)
+                yield _('----------')
+                yield _('Loaded Modules in Context %s:') % str(active_context._path)
+                for i, name in enumerate(active_context.opened):
+                    module = active_context.opened[name]
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
+                yield _('Loaded Modules in Device %s:') % str(active_context._path)
+                for i, name in enumerate(active_context.opened):
+                    module = active_context.opened[name]
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
+            else:
+                value = args[0]
+                if value == 'open':
+                    index = args[1]
+                    name = None
+                    if len(args) >= 3:
+                        name = args[2]
+                    if index in self.registered:
+                        if name is not None:
+                            active_context.open_as(index, name)
+                        else:
+                            active_context.open(index)
+                    else:
+                        yield _("Module '%s' not found.") % index
+                elif value == 'close':
+                    index = args[1]
+                    if index in active_context.opened:
+                        active_context.close(index)
+                    else:
+                        yield _("Module '%s' not found.") % index
+            return
+        elif command == 'modifier':
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Modifiers Registered:')
+                for i, name in enumerate(self.match('modifier')):
+                    yield '%d: %s' % (i + 1, name)
+                yield _('----------')
+                yield _('Loaded Modifiers in Context %s:') % str(active_context._path)
+                for i, name in enumerate(active_context.attached):
+                    modifier = active_context.attached[name]
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(modifier))
+                yield _('----------')
+                yield _('Loaded Modifiers in Device %s:') % str(active_context._path)
+                for i, name in enumerate(active_context.attached):
+                    modifier = active_context.attached[name]
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(modifier))
+                yield _('----------')
+            else:
+                value = args[0]
+                if value == 'open':
+                    index = args[1]
+                    if index in self.registered:
+                        active_context.activate(index)
+                    else:
+                        yield _("Modifier '%s' not found.") % index
+                elif value == 'close':
+                    index = args[1]
+                    if index in active_context.attached:
+                        active_context.deactivate(index)
+                    else:
+                        yield _("Modifier '%s' not found.") % index
+            return
+        elif command == 'schedule':
+            yield _('----------')
+            yield _('Scheduled Processes:')
+            for i, job_name in enumerate(self.jobs):
+                job = self.jobs[job_name]
+                parts = list()
+                parts.append('%d:' % (i + 1))
+                parts.append(str(job))
+                if job.times is None:
+                    parts.append(_('forever'))
+                else:
+                    parts.append(_('%d times') % job.times)
+                if job.interval is None:
+                    parts.append(_('never'))
+                else:
+                    parts.append(_(', each %f seconds') % job.interval)
+                yield ' '.join(parts)
+            yield _('----------')
+            return
+        elif command == 'channel':
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Channels Active:')
+                for i, name in enumerate(self.channels):
+                    yield '%d: %s' % (i + 1, name)
+                yield _('----------')
+                yield _('Channels Watching:')
+                for name in self.watchers:
+                    watchers = self.watchers[name]
+                    if self._console_channel in watchers:
+                        yield name
+                yield _('----------')
+            else:
+                value = args[0]
+                chan = args[1]
+                if value == 'open':
+                    if chan == 'console':
+                        yield _('Infinite Loop Error.')
+                    else:
+                        active_context.add_watcher(chan, self._console_channel)
+                        yield _('Watching Channel: %s') % chan
+                elif value == 'close':
+                    try:
+                        active_context.remove_watcher(chan, self._console_channel)
+                        yield _('No Longer Watching Channel: %s') % chan
+                    except KeyError:
+                        yield _('Channel %s is not opened.') % chan
+                elif value == 'save':
+                    from datetime import datetime
+                    if self.console_channel_file is None:
+                        filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
+                        yield _('Opening file: %s') % filename
+                        self.console_channel_file = open(filename, "a")
+                    yield _('Recording Channel: %s') % chan
+                    active_context.add_watcher(chan, self._console_file_write)
+            return
+        elif command == 'device':
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Backends permitted:')
+                for i, name in enumerate(self.match('device/')):
+                    yield '%d: %s' % (i + 1, name)
+                yield _('----------')
+                yield _('Existing Device:')
+
+                for device in list(active_context.derivable()):
+                    try:
+                        d = int(device)
+                    except ValueError:
+                        continue
+                    try:
+                        settings = active_context.derive(device)
+                        device_name = settings.setting(str, 'device_name', 'Lhystudios')
+                        autoboot = settings.setting(bool, 'autoboot', True)
+                        yield _('Device %d. "%s" -- Boots: %s') % (d, device_name, autoboot)
+                    except ValueError:
+                        break
+                    except AttributeError:
+                        break
+                yield _('----------')
+                yield _('Devices Instances:')
+                try:
+                    device_name = active_context.device_name
+                except AttributeError:
+                    device_name = "Unknown"
+
+                try:
+                    device_location = active_context.device_location
+                except AttributeError:
+                    device_location = "Unknown"
+                for i, name in enumerate(self.devices):
+                    device = self.devices[name]
+                    try:
+                        device_name = device.device_name
+                    except AttributeError:
+                        device_name = "Unknown"
+
+                    try:
+                        device_location = device.device_location
+                    except AttributeError:
+                        device_location = "Unknown"
+                    yield _('%d: %s on %s') % (i + 1, device_name, device_location)
+                yield _('----------')
+            else:
+                value = args[0]
+                try:
+                    value = int(value)
+                except ValueError:
+                    value = None
+                for i, name in enumerate(self.devices):
+                    if i + 1 == value:
+                        self.active = self.devices[name]
+                        active_context.setting(str, 'device_location', 'Unknown')
+                        yield _('Device set: %s on %s') % \
+                              (active_context.device_name, active_context.device_location)
+                        break
+            return
+        elif command == 'flush':
+            active_context.flush()
+            yield _('Persistent settings force saved.')
+        elif command == 'shutdown':
+            active_context.stop()
+            return
+        else:
+            for command_name in self.match('\d+/command/%s' % command):
+                command = self.registered[command_name]
+                q = command(*args)
+                if isinstance(q, str):
+                    yield q
+                return
+            try:
+                self.registered['command/%s' % command](*args)
+            except KeyError:
+                yield _('Error. Command Unrecognized: %s') % command
+
+
+class Job:
+    """
+    Generic job for the scheduler.
+
+    Jobs that can be scheduled in the scheduler-kernel to run at a particular time and a given number of times.
+    This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
+    and times. This is usually extended directly by a module requiring that functionality.
+    """
+    def __init__(self, process=None, args=(), interval=1.0, times=None, name=None):
+        self.name = name
+        self.state = STATE_INITIALIZE
+
+        self.process = process
+        self.args = args
+        self.interval = interval
+        self.times = times
+        self._last_run = None
+        self._next_run = time.time() + self.interval
+
+    def __str__(self):
+        if self.name is not None:
+            return self.name
+        else:
+            return self.process.__name__
+
+    @property
+    def scheduled(self):
+        return self._next_run is not None and time.time() >= self._next_run
+
+    def cancel(self):
+        self.times = -1

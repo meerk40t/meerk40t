@@ -14,7 +14,7 @@ class Console(Module, Job, Pipe):
 
     def __init__(self, context, path):
         Module.__init__(self, context, path)
-        Job.__init__(self, context=context, process=self.tick, interval=0.05)
+        Job.__init__(self, name="Console-Ticks", process=self.tick, interval=0.05)
         Pipe.__init__(self)
         self.channel_file = None
         self.buffer = ''
@@ -58,22 +58,22 @@ class Console(Module, Job, Pipe):
                         self.channel(e)
             self.queue.clear()
         if len(self.commands) == 0 and len(self.queue) == 0:
-            self.unschedule()
+            self.context.unschedule(self)
 
     def queue_command(self, command):
         self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
         self.queue.append(command)
-        self.schedule()
+        self.context.schedule(self)
 
     def tick_command(self, command):
         self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
         self.commands.append(command)
-        self.schedule()
+        self.context.schedule(self)
 
     def untick_command(self, command):
         self.commands = [c for c in self.commands if c != command]
         if len(self.commands) == 0:
-            self.unschedule()
+            self.context.unschedule(self)
 
     def execute_absolute_position(self, position_x, position_y):
         x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -188,7 +188,7 @@ class Console(Module, Job, Pipe):
         elif command == "end":
             if len(args) == 0:
                 self.commands.clear()
-                self.unschedule()
+                self.context.unschedule(self)
             else:
                 self.untick_command(' '.join(args))
         elif command == '+laser':
@@ -1906,6 +1906,9 @@ class Console(Module, Job, Pipe):
                                                      mesh,
                                                      Image.BILINEAR)
                         element.altered()
+            elif args[0] == 'halftone':
+                #  https://stackoverflow.com/questions/10572274/halftone-images-in-python/10575940#10575940
+                pass
             else:
                 yield _('Image command unrecognized.')
                 return
@@ -2078,7 +2081,7 @@ class Console(Module, Job, Pipe):
                 yield COMMAND_WAIT, value
                 yield COMMAND_LASER_OFF
 
-            if self.context.spooler.job_if_idle(timed_fire):
+            if active_context.spooler.job_if_idle(timed_fire):
                 yield _('Pulse laser for %f milliseconds') % (value * 1000.0)
             else:
                 yield _('Pulse laser failed: Busy')

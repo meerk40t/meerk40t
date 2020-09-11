@@ -129,7 +129,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         Interpreter.__init__(self, context=context)
-        Job.__init__(self, context=context, process=self.process_spool, interval=0.01)
+        Job.__init__(self, name="Lhystudios-spool", process=self.process_spool, interval=0.01)
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
         self.CODE_TOP = b'L'
