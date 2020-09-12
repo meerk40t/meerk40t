@@ -52,7 +52,6 @@ parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emula
 args = parser.parse_args(sys.argv[1:])
 
 kernel.register('static/RasterScripts', RasterScripts)
-kernel.register('module/Console', Console)
 kernel.register('module/LaserServer', LaserServer)
 kernel.register('load/SVGLoader', SVGLoader)
 kernel.register('load/ImageLoader', ImageLoader)
@@ -136,10 +135,10 @@ if args.grbl is not None:
         device.grbl_home_y = args.adjust_y
     if args.adjust_x is not None:
         device.grbl_home_x = args.adjust_x
-    console = device.open('module/Console').write('grblserver\n')
+    console = device.console('grblserver\n')
 
 if args.ruida:
-    console = device.open('module/Console').write('ruidaserver\n')
+    console = device.console('ruidaserver\n')
 
 if args.auto:
     # Automatically classify and start the job.
@@ -177,14 +176,12 @@ if args.output is not None:
 
 if args.batch:
     device.add_watcher('console', print)
-    console = device.open('module/Console')
     with args.batch as batch:
         for line in batch:
-            console.write(line.strip() + '\n')
+            device.console(line.strip() + '\n')
     device.remove_watcher('console', print)
 
 if args.console:
-    console = device.open('module/Console')
     device.add_watcher('console', print)
     kernel_root.add_watcher('shutdown', print)
     while True:
@@ -193,7 +190,7 @@ if args.console:
             break
         if device_entries == 'quit':
             break
-        console.write(device_entries + '\n')
+        device.console(device_entries + '\n')
 
     device.remove_watcher('console', print)
 

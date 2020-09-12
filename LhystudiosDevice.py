@@ -63,11 +63,128 @@ class LhystudiosDevice(Modifier):
         device.register('modifier/LhystudioController', LhystudioController)
         device.register('load/EgvLoader', EgvLoader)
 
-    def egv(self, *args):
-        self.context.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
+    def execute_absolute_position(self, position_x, position_y):
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+
+        def move():
+            yield COMMAND_SET_ABSOLUTE
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_MOVE, int(x_pos), int(y_pos)
+
+        return move
+
+    def execute_relative_position(self, position_x, position_y):
+        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+
+        def move():
+            yield COMMAND_SET_INCREMENTAL
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_MOVE, int(x_pos), int(y_pos)
+            yield COMMAND_SET_ABSOLUTE
+
+        return move
 
     def attach(self, channel=None):
-        self.context.register('command/egv', self.egv)
+        context = self.context
+        kernel = self.context._kernel
+        _ = kernel.translation
+        spooler = self.spooler
+
+        def plus_laser(command, *args):
+            kernel.active.spooler.job(COMMAND_LASER_ON)
+        kernel.register('command/+laser', plus_laser)
+
+        def minus_laser(command, *args):
+            kernel.active.spooler.job(COMMAND_LASER_ON)
+        kernel.register('command/-laser', minus_laser)
+
+        def direction(command, *args):
+            spooler = kernel.active.spooler
+            active = kernel.active
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            if len(args) == 1:
+                max_bed_height = active.bed_height * 39.3701
+                max_bed_width = active.bed_width * 39.3701
+                direction = command
+                amount = args[0]
+                if direction == 'right':
+                    self.dx += Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+                elif direction == 'left':
+                    self.dx -= Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+                elif direction == 'up':
+                    self.dy -= Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+                elif direction == 'down':
+                    self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+                kernel.queue_command('jog')
+        kernel.register('command/right', direction)
+        kernel.register('command/left', direction)
+        kernel.register('command/up', direction)
+        kernel.register('command/down', direction)
+
+        def jog(command, *args):
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            idx = int(self.dx)
+            idy = int(self.dy)
+            if idx == 0 and idy == 0:
+                return
+            if spooler.job_if_idle(self.execute_relative_position(idx, idy)):
+                yield _('Position moved: %d %d') % (idx, idy)
+                self.dx -= idx
+                self.dy -= idy
+            else:
+                yield _('Busy Error')
+        kernel.register('command/jog', jog)
+
+        def move(command, *args):
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            if len(args) == 2:
+                if not spooler.job_if_idle(self.execute_absolute_position(*args)):
+                    yield _('Busy Error')
+            else:
+                yield _('Syntax Error')
+        kernel.register('command/move', move)
+        kernel.register('command/move_absolute', move)
+
+        def move_relative(command, *args):
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            if len(args) == 2:
+                if not spooler.job_if_idle(self.execute_relative_position(*args)):
+                    yield _('Busy Error')
+            else:
+                yield _('Syntax Error')
+        kernel.register('command/move_relative', move_relative)
+
+        def home(command, *args):
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            spooler.job(COMMAND_HOME)
+        kernel.register('command/home', home)
+
+        def unlock(command, *args):
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            spooler.job(COMMAND_UNLOCK)
+        kernel.register('command/unlock', unlock)
+
+        def lock(command, *args):
+            if spooler is None:
+                yield _('Device has no spooler.')
+                return
+            spooler.job(COMMAND_LOCK)
+        kernel.register('command/lock', lock)
+
         self.context.activate('modifier/LhystudioController')
         self.context.activate('modifier/LhymicroInterpreter', self.context)
         self.context.activate('modifier/Spooler')
@@ -96,6 +213,9 @@ class LhystudiosDevice(Modifier):
         self.context.setting(float, "scale_y", 1.0)
         self.context.setting(int, "bed_width", 320)
         self.context.setting(int, "bed_height", 220)
+        self.dx = 0
+        self.dy = 0
+        context.listen('interpreter;mode', self.on_mode_change)
 
         self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
 
@@ -152,7 +272,100 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.is_paused = False
 
     def attach(self, channel=None):
+        kernel = self.context._kernel
+        _ = kernel.translation
+
+        def pulse(command, *args):
+            if len(args) == 0:
+                yield _('Must specify a pulse time in milliseconds.')
+                return
+            try:
+                value = float(args[0]) / 1000.0
+            except ValueError:
+                yield _('"%s" not a valid pulse time in milliseconds') % (args[0])
+                return
+            if value > 1.0:
+                yield _('"%s" exceeds 1 second limit to fire a standing laser.') % (args[0])
+                try:
+                    if args[1] != "idonotlovemyhouse":
+                        return
+                except IndexError:
+                    return
+
+            def timed_fire():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, value
+                yield COMMAND_LASER_OFF
+
+            if self.context.spooler.job_if_idle(timed_fire):
+                yield _('Pulse laser for %f milliseconds') % (value * 1000.0)
+            else:
+                yield _('Pulse laser failed: Busy')
+            return
+        kernel.register('command/pulse', pulse)
+
+        def speed(command, *args):
+            if len(args) == 0:
+                yield _('Speed set at: %f mm/s') % self.speed
+                return
+            inc = False
+            percent = False
+            speed = args[0]
+            if speed == "inc":
+                speed = args[1]
+                inc = True
+            if speed.endswith('%'):
+                speed = speed[:-1]
+                percent = True
+            try:
+                s = float(speed)
+            except ValueError:
+                yield _('Not a valid speed or percent.')
+                return
+            if percent and inc:
+                s = self.speed + self.speed * (s / 100.0)
+            elif inc:
+                s += self.speed
+            elif percent:
+                s = self.speed * (s / 100.0)
+            self.set_speed(s)
+            yield _('Speed set at: %f mm/s') % self.speed
+        kernel.register('command/speed', speed)
+
+        def power(command, *args):
+            if len(args) == 0:
+                yield _('Power set at: %d pulses per inch') % self.power
+            else:
+                try:
+                    self.set_power(int(args[0]))
+                except ValueError:
+                    pass
+        kernel.register('command/power', power)
+
+        def acceleration(command, *args):
+            if len(args) == 0:
+                if self.acceleration is None:
+                    yield _('Acceleration is set to default.')
+                else:
+                    yield _('Acceleration: %d') % self.acceleration
+
+            else:
+                try:
+                    v = int(args[0])
+                    if v not in (1, 2, 3, 4):
+                        self.set_acceleration(None)
+                        yield _('Acceleration is set to default.')
+                        return
+                    self.set_acceleration(v)
+                    yield _('Acceleration: %d') % self.acceleration
+                except ValueError:
+                    yield _('Invalid Acceleration [1-4].')
+                    return
+        kernel.register('command/acceleration', acceleration)
+
         self.context.interpreter = self
+
         self.context.setting(int, 'current_x', 0)
         self.context.setting(int, 'current_y', 0)
 
@@ -185,7 +398,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.register('control/Realtime Pause', self.pause)
         self.context.register('control/Realtime Resume', self.resume)
         self.context.register('control/Update Codes', self.update_codes)
-        self.schedule()
+        self.context.schedule(self)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -937,8 +1150,30 @@ class LhystudioController(Modifier, Pipe):
         self.recv_channel = None
         self.pipe_channel = None
 
+    def egv(self, command, *args):
+        if len(args) == 0:
+            yield "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+        else:
+            self.write(bytes(args[0].replace('$', '\n'), "utf8"))
+
+    def usb_connect(self, command, *args):
+        try:
+            self.open()
+        except ConnectionRefusedError:
+            yield "Connection Refused."
+
+    def usb_disconnect(self, command, *args):
+        if self.driver is not None:
+            self.close()
+        else:
+            yield "Usb is not connected."
+
     def attach(self, channel=None):
         context = self.context
+        self.context.register('command/egv', self.egv)
+        self.context.register('command/usb_connect', self.usb_connect)
+        self.context.register('command/usb_disconnect', self.usb_disconnect)
+
         context.pipe = self
         context.setting(int, 'packet_count', 0)
         context.setting(int, 'rejected_count', 0)

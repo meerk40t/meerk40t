@@ -219,6 +219,6 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.altered()
         self.path_element.emphasize()
         self.Refresh()
-        self.context.open('module/Console').write('declassify\nclassify\n')
+        self.context.console('declassify\nclassify\n')
         self.context.signal('element_property_update', self.path_element)
         self.context.signal('refresh_scene', 0)

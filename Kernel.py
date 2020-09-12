@@ -3,7 +3,7 @@ import time
 import re
 
 from threading import Thread, Lock
-
+from svgelements import *
 from LaserOperation import *
 from zinglplotter import ZinglPlotter
 
@@ -623,6 +623,1388 @@ class Elemental(Modifier):
         context.load = self.load
         context.load_types = self.load_types
 
+        context = self.context
+        kernel = self.context._kernel
+        elements = self
+        _ = kernel.translation
+
+        def element(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Graphical Elements:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if element.emphasized:
+                        yield '%d: * %s' % (i, name)
+                    else:
+                        yield '%d: %s' % (i, name)
+                    i += 1
+                yield _('----------')
+            else:
+                for value in args:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        if value == "*":
+                            yield _('Selecting all elements.')
+                            elements.set_selected(list(elements.elems()))
+                            continue
+                        elif value == "~":
+                            yield _('Invert selection.')
+                            elements.set_selected(list(elements.elems(emphasized=False)))
+                            continue
+                        elif value == "!":
+                            yield _('Select none')
+                            elements.set_selected(None)
+                            continue
+                        elif value == "delete":
+                            yield _('deleting.')
+                            elements.remove_elements(list(elements.elems(emphasized=True)))
+                            self.context.signal('refresh_scene', 0)
+                            continue
+                        elif value == "copy":
+                            add_elem = list(map(copy, elements.elems(emphasized=True)))
+                            elements.add_elems(add_elem)
+                            for e in add_elem:
+                                e.select()
+                                e.emphasize()
+                            continue
+                        elif value == "merge":
+                            superelement = Path()
+                            for e in elements.elems(emphasized=True):
+                                if superelement.stroke is None:
+                                    superelement.stroke = e.stroke
+                                if superelement.fill is None:
+                                    superelement.fill = e.fill
+                                superelement += abs(e)
+                            elements.remove_elements(list(elements.elems(emphasized=True)))
+                            elements.add_elem(superelement)
+                            superelement.emphasize()
+                            continue
+                        elif value == "subpath":
+                            for e in elements.elems(emphasized=True):
+                                p = abs(e)
+                                add = []
+                                for subpath in p.as_subpaths():
+                                    subelement = Path(subpath)
+                                    add.append(subelement)
+                                elements.add_elems(add)
+                            continue
+                        yield _('Value Error: %s is not an integer') % value
+                        continue
+                    try:
+                        element = elements.get_elem(value)
+                        name = str(element)
+                        if len(name) > 50:
+                            name = name[:50] + '...'
+                        if element.selected:
+                            element.unselect()
+                            element.unemphasize()
+                            yield _('Deselecting item %d called %s') % (value, name)
+                        else:
+                            element.select()
+                            element.emphasize()
+                            yield _('Selecting item %d called %s') % (value, name)
+                    except IndexError:
+                        yield _('index %d out of range') % value
+            return
+        kernel.register('command/element', element)
+
+        def path(command, *args):
+            path_d = ' '.join(args)
+            element = Path(path_d)
+            self.add_element(element)
+            return
+        kernel.register('command/path', path)
+
+        def circle(command, *args):
+            if len(args) == 3:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                r_pos = Length(args[2]).value(ppi=1000.0,
+                                              relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
+            elif len(args) == 1:
+                x_pos = 0
+                y_pos = 0
+                r_pos = Length(args[0]).value(ppi=1000.0,
+                                              relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
+            else:
+                yield _('Circle <x> <y> <r> or circle <r>')
+                return
+            element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
+            element = Path(element)
+            self.add_element(element)
+        kernel.register('command/circle', circle)
+
+        def ellipse(command, *args):
+            if len(args) < 4:
+                yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
+                return
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            ry_pos = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            element = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
+            element = Path(element)
+            self.add_element(element)
+            return
+        kernel.register('command/ellipse', ellipse)
+
+        def rect(command, *args):
+            if len(args) < 4:
+                yield _("Too few arguments (needs x, y, width, height)")
+                return
+            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            width = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            height = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            element = Rect(x=x_pos, y=y_pos, width=width, height=height)
+            element = Path(element)
+            self.add_element(element)
+            return
+        kernel.register('command/rect', rect)
+
+        def text(command, *args):
+            text = ' '.join(args)
+            element = SVGText(text)
+            self.add_element(element)
+        kernel.register('command/text', text)
+
+        def polygon(command, *args):
+            element = Polygon(list(map(float, args)))
+            element = Path(element)
+            self.add_element(element)
+            return
+        kernel.register('command/polygon', polygon)
+
+        def polyline(command, *args):
+            element = Polygon(list(map(float, args)))
+            element = Path(element)
+            self.add_element(element)
+            return
+        kernel.register('command/polyline', polyline)
+
+        def stroke(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Stroke Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if element.stroke is None or element.stroke == 'none':
+                        yield _('%d: stroke = none - %s') % (i, name)
+                    else:
+                        yield _('%d: stroke = %s - %s') % (i, element.stroke.hex, name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _("No selected elements.")
+                return
+            if args[0] == 'none':
+                for element in elements.elems(emphasized=True):
+                    element.stroke = None
+                    element.altered()
+            else:
+                for element in elements.elems(emphasized=True):
+                    element.stroke = Color(args[0])
+                    element.altered()
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/stroke', stroke)
+
+        def fill(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Fill Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if element.fill is None or element.fill == 'none':
+                        yield _('%d: fill = none - %s') % (i, name)
+                    else:
+                        yield _('%d: fill = %s - %s') % (i, element.fill.hex, name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            if args[0] == 'none':
+                for element in elements.elems(emphasized=True):
+                    element.fill = None
+                    element.altered()
+            else:
+                for element in elements.elems(emphasized=True):
+                    element.fill = Color(args[0])
+                    element.altered()
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/fill', fill)
+
+        def rotate(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Rotate Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield _('%d: rotate(%fturn) - %s') % \
+                          (i, element.rotation.as_turns, name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            bounds = elements.bounds()
+            if len(args) >= 1:
+                rot = Angle.parse(args[0]).as_degrees
+            else:
+                rot = 0
+            if len(args) >= 2:
+                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 3:
+                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+            matrix = Matrix('rotate(%f,%f,%f)' % (rot, center_x, center_y))
+            try:
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
+                    element *= matrix
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/rotate', rotate)
+
+        def scale(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Scale Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: scale(%f, %f) - %s' % \
+                          (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            bounds = elements.bounds()
+
+            if len(args) >= 1:
+                sx = Length(args[0]).value(relative_length=1.0)
+            else:
+                sx = 1
+            if len(args) >= 2:
+                sy = Length(args[1]).value(relative_length=1.0)
+            else:
+                sy = sx
+            if len(args) >= 3:
+                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 4:
+                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+            if sx == 0 or sy == 0:
+                yield _('Scaling by Zero Error')
+                return
+            matrix = Matrix('scale(%f,%f,%f,%f)' % (sx, sy, center_x, center_y))
+            try:
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
+                    element *= matrix
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/scale', scale)
+
+        def translate(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Translate Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield _('%d: translate(%f, %f) - %s') % \
+                          (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            if len(args) >= 1:
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                tx = 0
+            if len(args) >= 2:
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                ty = 0
+            matrix = Matrix('translate(%f,%f)' % (tx, ty))
+            try:
+                for element in elements.elems(emphasized=True):
+                    element *= matrix
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/translate', translate)
+
+        def rotate_to(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Rotate Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield _('%d: rotate(%fturn) - %s') % \
+                          (i, element.rotation.as_turns, name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            bounds = elements.bounds()
+            try:
+                end_angle = Angle.parse(args[0])
+            except ValueError:
+                yield _('Invalid Value.')
+                return
+            if len(args) >= 2:
+                center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 3:
+                center_y = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+
+            try:
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
+                    start_angle = element.rotation
+                    amount = end_angle - start_angle
+                    matrix = Matrix('rotate(%f,%f,%f)' % (Angle(amount).as_degrees, center_x, center_y))
+                    element *= matrix
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/rotate_to', rotate_to)
+
+        def scale_to(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Scale Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield _('%d: scale(%f, %f) - %s') % \
+                          (i, element.transform.value_scale_x(), element.transform.value_scale_y(), name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            bounds = elements.bounds()
+            if len(args) >= 1:
+                sx = Length(args[0]).value(relative_length=1.0)
+            else:
+                sx = 1
+            if len(args) >= 2:
+                sy = Length(args[1]).value(relative_length=1.0)
+            else:
+                sy = sx
+            if len(args) >= 3:
+                center_x = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_x = (bounds[2] + bounds[0]) / 2.0
+            if len(args) >= 4:
+                center_y = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                center_y = (bounds[3] + bounds[1]) / 2.0
+            try:
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
+                    osx = element.transform.value_scale_x()
+                    osy = element.transform.value_scale_y()
+                    if sx == 0 or sy == 0:
+                        yield _('Scaling by Zero Error')
+                        return
+                    nsx = sx / osx
+                    nsy = sy / osy
+                    matrix = Matrix('scale(%f,%f,%f,%f)' % (nsx, nsy, center_x, center_y))
+                    element *= matrix
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/scale_to', scale_to)
+
+        def translate_to(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Translate Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield _('%d: translate(%f, %f) - %s') % \
+                          (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+
+            if len(args) >= 1:
+                tx = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            else:
+                tx = 0
+            if len(args) >= 2:
+                ty = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            else:
+                ty = 0
+            try:
+                for element in elements.elems(emphasized=True):
+                    otx = element.transform.value_trans_x()
+                    oty = element.transform.value_trans_y()
+                    ntx = tx - otx
+                    nty = ty - oty
+                    matrix = Matrix('translate(%f,%f)' % (ntx, nty))
+                    element *= matrix
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/translate_to', translate_to)
+
+        def resize(command, *args):
+            if len(args) < 4:
+                yield _('Too few arguments (needs x, y, width, height)')
+                return
+            try:
+                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                w_dim = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                h_dim = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                x, y, x1, y1 = elements.bounds()
+                w, h = x1 - x, y1 - y
+                sx = w_dim / w
+                sy = h_dim / h
+                matrix = Matrix('translate(%f,%f) scale(%f,%f) translate(%f,%f)' % (x_pos, y_pos, sx, sy, -x, -y))
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    element *= matrix
+                    element.modified()
+                context.signal('refresh_scene')
+            except (ValueError, ZeroDivisionError):
+                return
+        kernel.register('command/resize', resize)
+
+        def matrix(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Matrix Values:')
+                i = 0
+                for element in elements.elems():
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: %s - %s' % \
+                          (i, str(element.transform), name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            if len(args) != 6:
+                yield _('Requires six matrix parameters')
+                return
+            try:
+                matrix = Matrix(float(args[0]), float(args[1]), float(args[2]), float(args[3]),
+                                Length(args[4]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701),
+                                Length(args[5]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701))
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            continue
+                    except AttributeError:
+                        pass
+
+                    element.transform = Matrix(matrix)
+                    element.modified()
+            except ValueError:
+                yield _('Invalid value')
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/matrix', matrix)
+
+        def reset(command, *args):
+            for element in elements.elems(emphasized=True):
+                try:
+                    if element.lock:
+                        continue
+                except AttributeError:
+                    pass
+
+                name = str(element)
+                if len(name) > 50:
+                    name = name[:50] + '...'
+                yield _('reset - %s') % name
+                element.transform.reset()
+                element.modified()
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/reset', reset)
+
+        def reify(command, *args):
+            for element in elements.elems(emphasized=True):
+                try:
+                    if element.lock:
+                        continue
+                except AttributeError:
+                    pass
+
+                name = str(element)
+                if len(name) > 50:
+                    name = name[:50] + '...'
+                yield _('reified - %s') % name
+                element.reify()
+                element.altered()
+            context.signal('refresh_scene')
+            return
+        kernel.register('command/reify', reify)
+
+        # REQUIRES CUTPLANNER
+        def optimize(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            elif len(args) == 0:
+                yield _('Optimizations: cut_inner, travel, cut_travel')
+                return
+            elif args[0] == 'cut_inner':
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_cut_inside(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+            elif args[0] == 'travel':
+                yield _('Travel Optimizing: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_travel(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+                yield _('Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+            elif args[0] == 'cut_travel':
+                yield _('Cut Travel Initial: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_general(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+                yield _('Cut Travel Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+            else:
+                yield _('Optimization not found.')
+                return
+        kernel.register('command/optimize', optimize)
+
+        # REQUIRES CUTPLANNER
+        def embroider(command, *args):
+            yield _('Embroidery Filling')
+            if len(args) >= 1:
+                angle = Angle.parse(args[0])
+            else:
+                angle = None
+            if len(args) >= 2:
+                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            else:
+                distance = 16
+            for element in elements.elems(emphasized=True):
+                if not isinstance(element, Path):
+                    continue
+                if angle is not None:
+                    element *= Matrix.rotate(angle)
+                e = CutPlanner.eulerian_fill([abs(element)], distance=distance)
+                element.transform.reset()
+                element.clear()
+                element += e
+                if angle is not None:
+                    element *= Matrix.rotate(-angle)
+                element.altered()
+        kernel.register('command/embroider', embroider)
+
+        def operation(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Operations:')
+                i = 0
+
+                for operation in elements.ops():
+                    selected = operation.selected
+                    name = str(operation)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    if selected:
+                        yield '%d: * %s' % (i, name)
+                    else:
+                        yield '%d: %s' % (i, name)
+                    i += 1
+                yield _('----------')
+            else:
+                for value in args:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        if value == "*":
+                            yield _('Selecting all operations.')
+                            elements.set_selected(list(elements.ops()))
+                            continue
+                        elif value == "~":
+                            yield _('Invert selection.')
+                            elements.set_selected(list(elements.ops(emphasized=False)))
+                            continue
+                        elif value == "!":
+                            yield _('Select none')
+                            elements.set_selected(None)
+                            continue
+                        elif value == "delete":
+                            yield _('Deleting.')
+                            elements.remove_operations(list(elements.ops(emphasized=True)))
+                            continue
+                        elif value == "copy":
+                            add_elem = list(map(copy, elements.ops(emphasized=True)))
+                            elements.add_ops(add_elem)
+                            for e in add_elem:
+                                e.select()
+                                e.emphasize()
+                            continue
+                        yield _('Value Error: %s is not an integer') % value
+                        continue
+                    try:
+                        operation = elements.get_op(value)
+                        name = str(operation)
+                        if len(name) > 50:
+                            name = name[:50] + '...'
+                        if operation.emphasized:
+                            operation.unemphasize()
+                            operation.unselect()
+                            yield _('Deselecting operation %d called %s') % (value, name)
+                        else:
+                            operation.emphasize()
+                            operation.select()
+                            yield _('Selecting operation %d called %s') % (value, name)
+                    except IndexError:
+                        yield _('index %d out of range') % value
+            return
+        kernel.register('command/operation', operation)
+
+        def classify(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            elements.classify(list(elements.elems(emphasized=True)))
+            return
+        kernel.register('command/classify', classify)
+
+        def declassify(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
+            return
+        kernel.register('command/declassify', declassify)
+
+        def note(command, *args):
+            if len(args) == 0:
+                if elements.note is None:
+                    yield _('No Note.')
+                else:
+                    yield str(elements.note)
+            else:
+                elements.note = ' '.join(args)
+                yield _('Note Set.')
+        kernel.register('command/note', note)
+
+        def cut(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            op = LaserOperation()
+            op.operation = "Cut"
+            op.extend(elements.elems(emphasized=True))
+            elements.add_op(op)
+            return
+        kernel.register('command/cut', cut)
+
+        def engrave(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            op = LaserOperation()
+            op.operation = "Engrave"
+            op.extend(elements.elems(emphasized=True))
+            elements.add_op(op)
+            return
+        kernel.register('command/engrave', engrave)
+
+        def raster(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            op = LaserOperation()
+            op.operation = "Raster"
+            op.extend(elements.elems(emphasized=True))
+            elements.add_op(op)
+            return
+        kernel.register('command/raster', raster)
+
+        def step(command, *args):
+            if len(args) == 0:
+                found = False
+                for op in elements.ops(emphasized=True):
+                    if op.operation in ("Raster", "Image"):
+                        step = op.raster_step
+                        yield _('Step for %s is currently: %d') % (str(op), step)
+                        found = True
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            step = element.values['raster_step']
+                        except KeyError:
+                            step = 1
+                        yield _('Image step for %s is currently: %s') % (str(element), step)
+                        found = True
+                if not found:
+                    yield _( 'No raster operations selected.')
+                return
+            try:
+                step = int(args[0])
+            except ValueError:
+                yield _('Not integer value for raster step.')
+                return
+            for op in elements.ops(emphasized=True):
+                if op.operation in ("Raster", "Image"):
+                    op.raster_step = step
+                    self.context.signal('element_property_update', op)
+            for element in elements.elems(emphasized=True):
+                element.values['raster_step'] = str(step)
+                m = element.transform
+                tx = m.e
+                ty = m.f
+                element.transform = Matrix.scale(float(step), float(step))
+                element.transform.post_translate(tx, ty)
+                element.modified()
+                self.context.signal('element_property_update', element)
+                self.context.signal('refresh_scene')
+            return
+        kernel.register('command/step', step)
+
+        # REQUIRES OPERATION PREPROCESSOR.
+        def image(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Images:')
+                i = 0
+                for element in elements.elems():
+                    if not isinstance(element, SVGImage):
+                        continue
+                    name = str(element)
+                    if len(name) > 50:
+                        name = name[:50] + '...'
+                    yield '%d: (%d, %d) %s, %s' % (i,
+                                                   element.image_width,
+                                                   element.image_height,
+                                                   element.image.mode,
+                                                   name)
+                    i += 1
+                yield _('----------')
+                return
+            if not elements.has_emphasis():
+                yield _('No selected images.')
+                return
+            elif args[0] == 'wizard':
+                if len(args) == 1:
+                    try:
+                        for script_name in context.match('raster_script', True):
+                            yield _('Raster Script: %s') % script_name
+                    except KeyError:
+                        yield _('No Raster Scripts Found.')
+                    return
+                try:
+                    script = context.registered['raster_script/%s' % args[1]]
+                except KeyError:
+                    yield _('Raster Script %s is not registered.') % args[1]
+                    return
+                from RasterScripts import RasterScripts
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        element.image, element.transform, step = RasterScripts.wizard_image(element, script)
+                        if step is not None:
+                            element.values['raster_step'] = step
+                        element.image_width, element.image_height = element.image.size
+                        element.lock = True
+                        element.altered()
+                return
+            elif args[0] == 'unlock':
+                yield _('Unlocking Elements...')
+                for element in elements.elems(emphasized=True):
+                    try:
+                        if element.lock:
+                            yield "Unlocked: %s" % str(element)
+                            element.lock = False
+                        else:
+                            yield _('Element was not locked: %s') % str(element)
+                    except AttributeError:
+                        yield _('Element was not locked: %s') % str(element)
+                return
+            elif args[0] == 'threshold':
+                try:
+                    threshold_min = float(args[1])
+                    threshold_max = float(args[2])
+                except (ValueError, IndexError):
+                    yield _('Threshold values improper.')
+                    return
+                divide = (threshold_max - threshold_min) / 255.0
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    image_element = copy(element)
+                    image_element.image = image_element.image.copy()
+                    if OperationPreprocessor.needs_actualization(image_element):
+                        OperationPreprocessor.make_actual(image_element)
+                    img = image_element.image
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if pixel[3] == 0:
+                                new_data[x, y] = (255, 255, 255, 255)
+                                continue
+                            gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
+                            if threshold_min >= gray:
+                                new_data[x, y] = (0, 0, 0, 255)
+                            elif threshold_max < gray:
+                                new_data[x, y] = (255, 255, 255, 255)
+                            else:  # threshold_min <= grey < threshold_max
+                                v = gray - threshold_min
+                                v *= divide
+                                v = int(round(v))
+                                new_data[x, y] = (v, v, v, 255)
+                    elements.add_elem(image_element)
+            elif args[0] == 'resample':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        OperationPreprocessor.make_actual(element)
+                        element.altered()
+                return
+            elif args[0] == 'dither':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        if img.mode == 'RGBA':
+                            pixel_data = img.load()
+                            width, height = img.size
+                            for y in range(height):
+                                for x in range(width):
+                                    if pixel_data[x, y][3] == 0:
+                                        pixel_data[x, y] = (255, 255, 255, 255)
+                        element.image = img.convert("1")
+                        element.altered()
+            elif args[0] == 'remove':
+                if len(args) == 1:
+                    yield _('Must specify a color, and optionally a distance.')
+                    return
+                distance = 50.0
+                color = "White"
+                if len(args) >= 2:
+                    color = args[1]
+                try:
+                    color = Color(color)
+                except ValueError:
+                    yield _('Color Invalid.')
+                    return
+                if len(args) >= 3:
+                    try:
+                        distance = float(args[2])
+                    except ValueError:
+                        yield _('Color distance is invalid.')
+                        return
+                distance_sq = distance * distance
+
+                def dist(pixel):
+                    r = color.red - pixel[0]
+                    g = color.green - pixel[1]
+                    b = color.blue - pixel[2]
+                    return r * r + g * g + b * b <= distance_sq
+
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    img = element.image
+                    if img.mode != "RGBA":
+                        img = img.convert('RGBA')
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if dist(pixel):
+                                new_data[x, y] = (255, 255, 255, 0)
+                                continue
+                    element.image = img
+                    element.altered()
+            elif args[0] == 'add':
+                if len(args) == 1:
+                    yield _('Must specify a color, to add.')
+                    return
+                color = "White"
+                if len(args) >= 2:
+                    color = args[1]
+                try:
+                    color = Color(color)
+                except ValueError:
+                    yield _('Color Invalid.')
+                    return
+                pix = (color.red, color.green, color.blue, color.alpha)
+                for element in elements.elems(emphasized=True):
+                    if not isinstance(element, SVGImage):
+                        continue
+                    img = element.image
+                    if img.mode != "RGBA":
+                        img = img.convert('RGBA')
+                    new_data = img.load()
+                    width, height = img.size
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = new_data[x, y]
+                            if pixel[3] == 0:
+                                new_data[x, y] = pix
+                                continue
+                    element.image = img
+                    element.altered()
+            elif args[0] == 'crop':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        try:
+                            left = int(args[1])
+                            upper = int(args[2])
+                            right = int(args[3])
+                            lower = int(args[4])
+                            element.image = img.crop((left, upper, right, lower))
+                            element.image_width = right - left
+                            element.image_height = lower - upper
+                            element.altered()
+                        except (KeyError, ValueError):
+                            yield _('image crop <left> <upper> <right> <lower>')
+                return
+            elif args[0] == 'contrast':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Contrast(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield _('Image Contrast Factor: %f') % factor
+                        except (IndexError, ValueError):
+                            yield _('image contrast <factor>')
+                return
+            elif args[0] == 'brightness':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Brightness(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield _('Image Brightness Factor: %f') % factor
+                        except (IndexError, ValueError):
+                            yield _('image brightness <factor>')
+                return
+            elif args[0] == 'color':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Color(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield _('Image Color Factor: %f') % factor
+                        except (IndexError, ValueError):
+                            yield _('image color <factor>')
+                return
+            elif args[0] == 'sharpness':
+                for element in elements.elems(emphasized=True):
+                    from PIL import ImageEnhance
+                    if isinstance(element, SVGImage):
+                        try:
+                            factor = float(args[1])
+                            img = element.image
+                            enhancer = ImageEnhance.Sharpness(img)
+                            element.image = enhancer.enhance(factor)
+                            element.altered()
+                            yield _('Image Sharpness Factor: %f') % factor
+                        except (IndexError, ValueError):
+                            yield _('image sharpness <factor>')
+                return
+            elif args[0] == 'blur':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.BLUR)
+                        element.altered()
+                        yield _('Image Blurred.')
+                return
+            elif args[0] == 'sharpen':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.SHARPEN)
+                        element.altered()
+                        yield _('Image Sharpened.')
+                return
+            elif args[0] == 'edge_enhance':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
+                        element.altered()
+                        yield _('Image Edges Enhanced.')
+                return
+            elif args[0] == 'find_edges':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.FIND_EDGES)
+                        element.altered()
+                        yield _('Image Edges Found.')
+                return
+            elif args[0] == 'emboss':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.EMBOSS)
+                        element.altered()
+                        yield _('Image Embossed.')
+                return
+            elif args[0] == 'smooth':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.SMOOTH)
+                        element.altered()
+                        yield _('Image Smoothed.')
+                return
+            elif args[0] == 'contour':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.CONTOUR)
+                        element.altered()
+                        yield _('Image Contoured.')
+                return
+            elif args[0] == 'detail':
+                from PIL import ImageFilter
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.filter(filter=ImageFilter.DETAIL)
+                        element.altered()
+                        yield _('Image Detailed.')
+                return
+            elif args[0] == 'quantize':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            colors = int(args[1])
+                            img = element.image
+                            element.image = img.quantize(colors=colors)
+                            element.altered()
+                            yield _('Image Quantized to %d colors.') % colors
+                        except (IndexError, ValueError):
+                            yield _('image quantize <colors>')
+                return
+            elif args[0] == 'solarize':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            threshold = int(args[1])
+                            img = element.image
+                            element.image = ImageOps.solarize(img, threshold=threshold)
+                            element.altered()
+                            yield _('Image Solarized at %d gray.') % threshold
+                        except (IndexError, ValueError):
+                            yield _('image solarize <threshold>')
+                return
+            elif args[0] == 'invert':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        original_mode = img.mode
+                        if img.mode == 'P' or img.mode == 'RGBA' or img.mode == '1':
+                            img = img.convert('RGB')
+                        try:
+                            element.image = ImageOps.invert(img)
+                            if original_mode == '1':
+                                element.image = element.image.convert('1')
+                            element.altered()
+                            yield _('Image Inverted.')
+                        except OSError:
+                            yield _('Image type cannot be converted. %s') % img.mode
+                return
+            elif args[0] == 'flip':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.flip(img)
+                        element.altered()
+                        yield _('Image Flipped.')
+                return
+            elif args[0] == 'mirror':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.mirror(img)
+                        element.altered()
+                        yield _('Image Mirrored.')
+                return
+            elif args[0] == 'ccw':
+                from PIL import Image
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.transpose(Image.ROTATE_90)
+                        element.image_height, element.image_width = element.image_width, element.image_height
+                        element.altered()
+                        yield _('Rotated image counterclockwise.')
+                return
+            elif args[0] == 'cw':
+                from PIL import Image
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = img.transpose(Image.ROTATE_270)
+                        element.image_height, element.image_width = element.image_width, element.image_height
+                        element.altered()
+                        yield _('Rotated image clockwise.')
+                return
+            elif args[0] == 'autocontrast':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            cutoff = int(args[1])
+                            img = element.image
+                            if img.mode == 'RGBA':
+                                img = img.convert('RGB')
+                            element.image = ImageOps.autocontrast(img, cutoff=cutoff)
+                            element.altered()
+                            yield _('Image Auto-Contrasted.')
+                        except (IndexError, ValueError):
+                            yield _('image autocontrast <cutoff-percent>')
+                return
+            elif args[0] == 'grayscale' or args[0] == 'greyscale':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.grayscale(img)
+                        element.altered()
+                        yield _('Image Grayscale.')
+                return
+            elif args[0] == 'equalize':
+                from PIL import ImageOps
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        img = element.image
+                        element.image = ImageOps.equalize(img)
+                        element.altered()
+                        yield _('Image Equalized.')
+                return
+            elif args[0] == 'save':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        try:
+                            img = element.image
+                            img.save(args[1])
+                            yield _('Saved: %s') % (args[1])
+                        except IndexError:
+                            yield _('No file given.')
+                        except OSError:
+                            yield _('File could not be written / created.')
+                        except ValueError:
+                            yield _('Could not determine expected format.')
+
+                return
+            elif args[0] == 'flatrotary':
+                for element in elements.elems(emphasized=True):
+                    if isinstance(element, SVGImage):
+                        points = len(args) - 1
+                        im = element.image
+                        w, h = im.size
+                        from PIL import Image
+
+                        def t(i):
+                            return int(i * w / (points - 1))
+
+                        def x(i):
+                            return int(w * float(args[i + 1]))
+
+                        boxes = list((t(i), 0, t(i + 1), h) for i in range(points - 1))
+                        quads = list((x(i), 0, x(i), h, x(i + 1), h, x(i + 1), 0) for i in range(points - 1))
+                        mesh = list(zip(boxes, quads))
+                        element.image = im.transform(im.size, Image.MESH,
+                                                     mesh,
+                                                     Image.BILINEAR)
+                        element.altered()
+            elif args[0] == 'halftone':
+                #  https://stackoverflow.com/questions/10572274/halftone-images-in-python/10575940#10575940
+                pass
+            else:
+                yield _('Image command unrecognized.')
+                return
+        kernel.register('command/image', image)
+
+        def trace_hull(command, *args):
+            spooler = context.spooler
+            pts = []
+            for obj in elements.elems(emphasized=True):
+                if isinstance(obj, Path):
+                    epath = abs(obj)
+                    pts += [q for q in epath.as_points()]
+                elif isinstance(obj, SVGImage):
+                    bounds = obj.bbox()
+                    pts += [(bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3])]
+            hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) == 0:
+                yield _('No elements bounds to trace.')
+                return
+            hull.append(hull[0])  # loop
+
+            def trace_hull():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MODE_RAPID
+                for p in hull:
+                    yield COMMAND_MOVE, p[0], p[1]
+
+            spooler.job(trace_hull)
+            return
+        kernel.register('command/trace_hull', trace_hull)
+
+        def trace_quick(command, *args):
+            spooler = context.spooler
+            bbox = elements.bounds()
+            if bbox is None:
+                yield _('No elements bounds to trace.')
+                return
+
+            def trace_quick():
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, bbox[0], bbox[1]
+                yield COMMAND_MOVE, bbox[2], bbox[1]
+                yield COMMAND_MOVE, bbox[2], bbox[3]
+                yield COMMAND_MOVE, bbox[0], bbox[3]
+                yield COMMAND_MOVE, bbox[0], bbox[1]
+
+            spooler.job(trace_quick)
+            return
+        kernel.register('command/trace_quick', trace_quick)
+
+    def add_element(self, element):
+        context_root = self.context.get_context('/')
+        element.stroke = Color('black')
+        context_root.elements.add_elem(element)
+        context_root.elements.set_selected([element])
+
     def register(self, obj):
         obj.wx_bitmap_image = None
         obj.icon = None
@@ -1217,6 +2599,70 @@ class BindAlias(Modifier):
         self.context.alias = self.alias
         self.context.default_keymap = self.default_keymap
         self.context.default_alias = self.default_alias
+
+        def bind(command, *args):
+            context = self.context
+            _ = self.context._kernel.translation
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Binds:')
+                for i, key in enumerate(context.keymap):
+                    value = context.keymap[key]
+                    yield _('%d: key %s -> %s') % (i, key, value)
+                yield _('----------')
+            else:
+                key = args[0].lower()
+                if key == 'default':
+                    context.keymap = dict()
+                    context.default_keymap()
+                    yield _('Set default keymap.')
+                    return
+                command_line = ' '.join(args[1:])
+                f = command_line.find('bind')
+                if f == -1:  # If bind value has a bind, do not evaluate.
+                    if '$x' in command_line:
+                        try:
+                            x = context.active.current_x
+                        except AttributeError:
+                            x = 0
+                        command_line = command_line.replace('$x', str(x))
+                    if '$y' in command_line:
+                        try:
+                            y = context.active.current_y
+                        except AttributeError:
+                            y = 0
+                        command_line = command_line.replace('$y', str(y))
+                if len(command_line) != 0:
+                    context.keymap[key] = command_line
+                else:
+                    try:
+                        del context.keymap[key]
+                        yield _('Unbound %s') % key
+                    except KeyError:
+                        pass
+            return
+        self.context.register('command/bind', bind)
+
+        def alias(command, *args):
+            context = self.context
+            _ = self.context._kernel.translation
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Aliases:')
+                for i, key in enumerate(context.alias):
+                    value = context.alias[key]
+                    yield ('%d: %s -> %s') % (i, key, value)
+                yield _('----------')
+            else:
+                key = args[0].lower()
+                if key == 'default':
+                    context.alias = dict()
+                    context.default_alias()
+                    yield _('Set default aliases.')
+                    return
+                context.alias[args[0]] = ' '.join(args[1:])
+            return
+        self.context.register('command/alias', alias)
 
     def boot(self, channel=None):
         self.boot_keymap()
@@ -2801,12 +4247,12 @@ class Kernel:
         else:
             for command_name in self.match('\d+/command/%s' % command):
                 command = self.registered[command_name]
-                q = command(*args)
-                if isinstance(q, str):
-                    yield q
+                for line in command(command_name, *args):
+                    yield line
                 return
             try:
-                self.registered['command/%s' % command](*args)
+                for line in self.registered['command/%s' % command](command, *args):
+                    yield line
             except KeyError:
                 yield _('Error. Command Unrecognized: %s') % command
 

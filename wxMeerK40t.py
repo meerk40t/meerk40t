@@ -732,7 +732,7 @@ class MeerK40t(wx.Frame, Module, Job):
         if context.print_shutdown:
             context.add_watcher('shutdown', print)
 
-        self.unschedule()
+        context.unschedule(self)
         self.screen_refresh_lock.acquire()
 
         context.unlisten('element_added', self.on_rebuild_tree_request)
@@ -1148,7 +1148,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.widget_scene.event(event.GetPosition(), 'rightup')
 
     def on_focus_lost(self, event):
-        self.context.open('module/Console').write("-laser\nend\n")
+        self.context.console("-laser\nend\n")
         # event.Skip()
 
     def on_key_down(self, event):
@@ -1156,7 +1156,7 @@ class MeerK40t(wx.Frame, Module, Job):
         keymap = self.context.keymap
         if keyvalue in keymap:
             action = keymap[keyvalue]
-            self.context.open('module/Console').write(action + "\n")
+            self.context.console(action + "\n")
         else:
             event.Skip()
 
@@ -1168,7 +1168,7 @@ class MeerK40t(wx.Frame, Module, Job):
             if action.startswith('+'):
                 # Keyup commands only trigger if the down command started with +
                 action = '-' + action[1:]
-                self.context.open('module/Console').write(action + "\n")
+                self.context.console(action + "\n")
         else:
             event.Skip()
 
@@ -1349,7 +1349,7 @@ class MeerK40t(wx.Frame, Module, Job):
             self.load(pathname)
 
     def on_click_pause(self, event):
-        self.context.open('module/Console').write("control Realtime Pause_Resume\n")
+        self.context.console("control Realtime Pause_Resume\n")
 
     def on_click_save(self, event):
         if self.working_file is None:
@@ -2393,7 +2393,7 @@ class RootNode(list):
         """
 
         def specific(event):
-            self.context.open('module/Console').write('%s\n' % console_command)
+            self.context.console('%s\n' % console_command)
 
         return specific
 
@@ -2454,7 +2454,7 @@ class RootNode(list):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self.context.open('module/Console').write(
+                self.context.console(
                     'image threshold %f %f\n' % (threshold_min, threshold_max))
 
         return specific
@@ -2507,7 +2507,7 @@ class RootNode(list):
             bounds = OperationPreprocessor.bounding_box(node.parent)
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context.open('module/Console').write('rotate %frad %f %f\n' % (value, center_x, center_y))
+            self.context.console('rotate %frad %f %f\n' % (value, center_x, center_y))
 
         return specific
 
@@ -2522,7 +2522,7 @@ class RootNode(list):
 
         def specific(event):
             center_x, center_y = self.elements.center()
-            self.context.open('module/Console').write(
+            self.context.console(
                 'scale %f %f %f %f\n' % (value, value, center_x, center_y))
 
         return specific
@@ -2555,9 +2555,9 @@ class RootNode(list):
             elements = context.elements
             node = remove_node
             if node.type == NODE_ELEMENT:
-                self.context.open('module/Console').write('element delete\n')
+                self.context.console('element delete\n')
             elif node.type == NODE_OPERATION:
-                self.context.open('module/Console').write('operation delete\n')
+                self.context.console('operation delete\n')
             elif node.type == NODE_FILE_FILE:
                 # Removing file can only have 1 copy.
                 elements.remove_files([node.filepath])
@@ -2961,6 +2961,39 @@ class wxMeerK40t(wx.App, Module):
         language = context.language
         if language is not None and language != 0:
             self.update_language(language)
+
+        def window(command, *args):
+            context = self.context
+            _ = self.context._kernel.translation
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Windows Registered:')
+                for i, name in enumerate(context.match('window')):
+                    yield '%d: %s' % (i + 1, name)
+                yield _('----------')
+                yield _('Loaded Windows in Context %s:') % str(context._path)
+                for i, name in enumerate(context.opened):
+                    if not name.startswith('window'):
+                        continue
+                    module = context.opened[name]
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
+                yield _('Loaded Windows in Device %s:') % str(context.active._path)
+                for i, name in enumerate(context.active.opened):
+                    if not name.startswith('window'):
+                        continue
+                    module = context.active.opened[name]
+                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                yield _('----------')
+        context.register('command/window', window)
+
+        def refresh(command, *args):
+            context.signal('refresh_scene')
+            context.signal('rebuild_tree')
+            yield _('Refreshed.')
+            return
+        context.register('command/refresh', refresh)
+
 
     def clear_control(self):
         kernel = self.context._kernel
