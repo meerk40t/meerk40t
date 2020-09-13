@@ -628,6 +628,25 @@ class Elemental(Modifier):
         elements = self
         _ = kernel.translation
 
+        def grid(command, *args):
+            cols = int(args[0])
+            rows = int(args[1])
+            x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+            y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            items = list(elements.elems(emphasized=True))
+            y_pos = elements._bounds[1]
+            for j in range(rows):
+                x_pos = elements._bounds[0]
+                for k in range(cols):
+                    if j != 0 or k != 0:
+                        add_elem = list(map(copy, items))
+                        for e in add_elem:
+                            e *= 'translate(%f, %f)' % (x_pos, y_pos)
+                        elements.add_elems(add_elem)
+                    x_pos += x_distance
+                y_pos += y_distance
+        kernel.register('command/grid', grid)
+
         def element(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -3019,7 +3038,10 @@ class Context:
         except AttributeError:
             pass
         instance.finalize(self._kernel.channel_open('close'))
-        del self.opened[instance_path]
+        try:
+            del self.opened[instance_path]
+        except KeyError:
+            pass
 
     def activate(self, registered_path, *args, **kwargs):
         """
@@ -3178,6 +3200,9 @@ class Context:
 
     def unschedule(self, job):
         self._kernel.unschedule(job)
+
+    def threaded(self, func, thread_name=None):
+        self._kernel.threaded(func, thread_name=thread_name)
 
 
 class Kernel:
@@ -4247,15 +4272,19 @@ class Kernel:
         else:
             for command_name in self.match('\d+/command/%s' % command):
                 command = self.registered[command_name]
-                for line in command(command_name, *args):
-                    yield line
+                try:
+                    for line in command(command_name, *args):
+                        yield line
+                except TypeError:
+                    pass
                 return
             try:
                 for line in self.registered['command/%s' % command](command, *args):
                     yield line
             except KeyError:
                 yield _('Error. Command Unrecognized: %s') % command
-
+            except TypeError:
+                pass  #Did not yield anything. Still success. But, not a generator.
 
 class Job:
     """

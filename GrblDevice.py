@@ -32,9 +32,33 @@ class GrblDevice:
         return "GrblDevice(uid='%s')" % str(self.uid)
 
     @staticmethod
-    def sub_register(device):
-        device.register('modifier/GRBLInterpreter', GRBLInterpreter)
-        device.register('module/GRBLEmulator', GRBLEmulator)
+    def sub_register(kernel):
+        kernel.register('modifier/GRBLInterpreter', GRBLInterpreter)
+        kernel.register('module/GRBLEmulator', GRBLEmulator)
+
+        def grblserver(command, *args):
+            active_context = kernel.active
+            _ = kernel.translation
+            port = 23
+            tcp = True
+            try:
+                server = kernel.open('module/LaserServer',
+                                     port=port,
+                                     tcp=tcp,
+                                     greet="Grbl 1.1e ['$' for help]\r\n")
+                yield _('GRBL Mode.')
+                chan = 'grbl'
+                active_context.add_watcher(chan, kernel.channel_open('console'))
+                yield _('Watching Channel: %s') % chan
+                chan = 'server'
+                active_context.add_watcher(chan, kernel.channel_open('console'))
+                yield _('Watching Channel: %s') % chan
+                server.set_pipe(active_context.open('module/GRBLEmulator'))
+            except OSError:
+                yield _('Server failed on port: %d') % port
+            return
+        kernel.register('command/grblserver', grblserver)
+
 
     def initialize(self, device, channel=None):
         """

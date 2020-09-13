@@ -37,10 +37,31 @@ class RuidaDevice:
         return "RuidaDevice(uid='%s')" % str(self.uid)
 
     @staticmethod
-    def sub_register(device):
-        device.register('modifier/RuidaInterpreter', RuidaInterpreter)
-        device.register('load/RDLoader', RDLoader)
-        device.register('module/RuidaEmulator', RuidaEmulator)
+    def sub_register(kernel):
+        kernel.register('modifier/RuidaInterpreter', RuidaInterpreter)
+        kernel.register('load/RDLoader', RDLoader)
+        kernel.register('module/RuidaEmulator', RuidaEmulator)
+
+        def ruidaserver(command, *args):
+            active_context = kernel.active
+            _ = kernel.translation
+            try:
+                server = active_context.open_as('module/LaserServer', 'ruidaserver', port=50200, tcp=False)
+                jog = active_context.open_as('module/LaserServer', 'ruidajog', port=50207, tcp=False)
+                yield _('Ruida Data Server opened on port %d.') % 50200
+                yield _('Ruida Jog Server opened on port %d.') % 50207
+                chan = 'ruida'
+                active_context.add_watcher(chan, kernel.channel_open('console'))
+                yield _('Watching Channel: %s') % chan
+                chan = 'server'
+                active_context.add_watcher(chan, kernel.channel_open('console'))
+                yield _('Watching Channel: %s') % chan
+                server.set_pipe(active_context.open('module/RuidaEmulator'))
+                jog.set_pipe(active_context.open('module/RuidaEmulator'))
+            except OSError:
+                yield _('Server failed.')
+            return
+        kernel.register('command/ruidaserver', ruidaserver)
 
     def initialize(self, context, channel=None):
         """
