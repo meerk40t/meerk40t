@@ -1,4 +1,3 @@
-from Kernel import Module
 from math import ceil
 
 from svgelements import Matrix
@@ -25,6 +24,7 @@ class RasterScripts:
         device.register('raster_script/Stipo', RasterScripts.raster_script_stipo())
         device.register('raster_script/Gravy', RasterScripts.raster_script_gravy())
         device.register('raster_script/Xin', RasterScripts.raster_script_xin())
+        device.register('raster_script/Newsy', RasterScripts.raster_script_newsy())
         device.register('raster_script/Simple', RasterScripts.raster_script_simple())
 
     @staticmethod
@@ -207,6 +207,46 @@ class RasterScripts:
         return ops
 
     @staticmethod
+    def raster_script_newsy():
+        ops = list()
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 2
+        })
+        ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0,
+            'lightness': 1.0
+        })
+        ops.append({
+            'name': 'contrast',
+            'enable': True,
+            'contrast': 25,
+            'brightness': 25,
+        })
+        ops.append({
+            'name': 'halftone',
+            'enable': True,
+            'black': True,
+            'sample': 10,
+            'angle': 22,
+            'oversample': 2
+        })
+        ops.append({
+            'name': 'dither',
+            'enable': True,
+            'type': 0
+        })
+        return ops
+
+    @staticmethod
     def raster_script_simple():
         ops = list()
         ops.append({
@@ -271,8 +311,8 @@ class RasterScripts:
                                     resample=Image.BICUBIC)
         else:
             image = image.transform((element_width, element_height), Image.AFFINE,
-                                            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                                            resample=Image.BICUBIC)
+                                    (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                                    resample=Image.BICUBIC)
         matrix.reset()
 
         box = image.getbbox()
@@ -286,6 +326,42 @@ class RasterScripts:
         matrix.post_scale(step_level, step_level)
         matrix.post_translate(tx, ty)
         return image, matrix
+
+    @staticmethod
+    def halftone(image, sample=10, scale=3.0, angle=22.0, oversample=2, black=False):
+        from PIL import Image, ImageDraw, ImageStat
+        original_image = image
+        image = image.convert('L')
+        image = image.rotate(angle, expand=1)
+        size = int(image.size[0] * scale), int(image.size[1] * scale)
+        if black:
+            half_tone = Image.new('L', size, color=255)
+        else:
+            half_tone = Image.new('L', size)
+        draw = ImageDraw.Draw(half_tone)
+        for x in range(0, image.size[0], sample):
+            for y in range(0, image.size[1], sample):
+                box = image.crop(
+                    (x - oversample, y - oversample, x + sample + oversample, y + sample + oversample))
+                stat = ImageStat.Stat(box)
+                if black:
+                    diameter = ((255 - stat.mean[0]) / 255) ** 0.5
+                else:
+                    diameter = (stat.mean[0] / 255) ** 0.5
+                edge = 0.5 * (1 - diameter)
+                x_pos, y_pos = (x + edge) * scale, (y + edge) * scale
+                box_edge = sample * diameter * scale
+                if black:
+                    draw.ellipse((x_pos, y_pos, x_pos + box_edge, y_pos + box_edge), fill=0)
+                else:
+                    draw.ellipse((x_pos, y_pos, x_pos + box_edge, y_pos + box_edge), fill=255)
+        half_tone = half_tone.rotate(-angle, expand=1)
+        width_half, height_half = half_tone.size
+        xx = (width_half - original_image.size[0] * scale) / 2
+        yy = (height_half - original_image.size[1] * scale) / 2
+        half_tone = half_tone.crop((xx, yy, xx + original_image.size[0] * scale, yy + original_image.size[1] * scale))
+        half_tone = half_tone.resize(original_image.size)
+        return half_tone
 
     @staticmethod
     def wizard_image(svg_image, operations):
@@ -325,9 +401,9 @@ class RasterScripts:
                             c = r + g + b
                             try:
                                 c /= v
-                                r = r/c
-                                g = g/c
-                                b = b/c
+                                r = r / c
+                                g = g / c
+                                b = b / c
                             except ZeroDivisionError:
                                 pass
                             m = [r, g, b, 1.0]
@@ -377,7 +453,7 @@ class RasterScripts:
                                 tone_values = [q for q in tone_values if q is not None]
                                 spline = RasterScripts.line(tone_values)
                             if len(spline) < 256:
-                                spline.extend([255] * (256-len(spline)))
+                                spline.extend([255] * (256 - len(spline)))
                             if len(spline) > 256:
                                 spline = spline[:256]
                             image = image.point(spline)
@@ -443,6 +519,16 @@ class RasterScripts:
                                     if pixel_data[x, y][3] == 0:
                                         pixel_data[x, y] = (255, 255, 255, 255)
                         image = image.convert("1")
+                except KeyError:
+                    pass
+            if name == 'halftone':
+                try:
+                    if op['enable']:
+                        image = RasterScripts.halftone(image,
+                                                       sample=op['sample'],
+                                                       angle=op['angle'],
+                                                       oversample=op['oversample'],
+                                                       black=op['black'])
                 except KeyError:
                     pass
         return image, matrix, step

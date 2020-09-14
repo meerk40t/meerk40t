@@ -1,10 +1,9 @@
 import os
 import time
-import re
-
 from threading import Thread, Lock
-from svgelements import *
+
 from LaserOperation import *
+from svgelements import *
 from zinglplotter import ZinglPlotter
 
 STATE_UNKNOWN = -1
@@ -629,10 +628,14 @@ class Elemental(Modifier):
         _ = kernel.translation
 
         def grid(command, *args):
-            cols = int(args[0])
-            rows = int(args[1])
-            x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-            y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            try:
+                cols = int(args[0])
+                rows = int(args[1])
+                x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
+                y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            except (ValueError, IndexError):
+                yield _("Syntax Error: grid <columns> <rows> <x_distance> <y_distance>")
+                return
             items = list(elements.elems(emphasized=True))
             y_pos = elements._bounds[1]
             for j in range(rows):
@@ -645,6 +648,7 @@ class Elemental(Modifier):
                         elements.add_elems(add_elem)
                     x_pos += x_distance
                 y_pos += y_distance
+
         kernel.register('command/grid', grid)
 
         def element(command, *args):
@@ -730,6 +734,7 @@ class Elemental(Modifier):
                     except IndexError:
                         yield _('index %d out of range') % value
             return
+
         kernel.register('command/element', element)
 
         def path(command, *args):
@@ -737,6 +742,7 @@ class Elemental(Modifier):
             element = Path(path_d)
             self.add_element(element)
             return
+
         kernel.register('command/path', path)
 
         def circle(command, *args):
@@ -744,18 +750,21 @@ class Elemental(Modifier):
                 x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
                 y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
                 r_pos = Length(args[2]).value(ppi=1000.0,
-                                              relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
+                                              relative_length=min(self.context.bed_height,
+                                                                  self.context.bed_width) * 39.3701)
             elif len(args) == 1:
                 x_pos = 0
                 y_pos = 0
                 r_pos = Length(args[0]).value(ppi=1000.0,
-                                              relative_length=min(self.context.bed_height, self.context.bed_width) * 39.3701)
+                                              relative_length=min(self.context.bed_height,
+                                                                  self.context.bed_width) * 39.3701)
             else:
                 yield _('Circle <x> <y> <r> or circle <r>')
                 return
             element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
             element = Path(element)
             self.add_element(element)
+
         kernel.register('command/circle', circle)
 
         def ellipse(command, *args):
@@ -770,6 +779,7 @@ class Elemental(Modifier):
             element = Path(element)
             self.add_element(element)
             return
+
         kernel.register('command/ellipse', ellipse)
 
         def rect(command, *args):
@@ -784,12 +794,14 @@ class Elemental(Modifier):
             element = Path(element)
             self.add_element(element)
             return
+
         kernel.register('command/rect', rect)
 
         def text(command, *args):
             text = ' '.join(args)
             element = SVGText(text)
             self.add_element(element)
+
         kernel.register('command/text', text)
 
         def polygon(command, *args):
@@ -797,6 +809,7 @@ class Elemental(Modifier):
             element = Path(element)
             self.add_element(element)
             return
+
         kernel.register('command/polygon', polygon)
 
         def polyline(command, *args):
@@ -804,6 +817,7 @@ class Elemental(Modifier):
             element = Path(element)
             self.add_element(element)
             return
+
         kernel.register('command/polyline', polyline)
 
         def stroke(command, *args):
@@ -835,6 +849,7 @@ class Elemental(Modifier):
                     element.altered()
             context.signal('refresh_scene')
             return
+
         kernel.register('command/stroke', stroke)
 
         def fill(command, *args):
@@ -866,6 +881,7 @@ class Elemental(Modifier):
                     element.altered()
             context.signal('refresh_scene')
             return
+
         kernel.register('command/fill', fill)
 
         def rotate(command, *args):
@@ -913,6 +929,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/rotate', rotate)
 
         def scale(command, *args):
@@ -968,6 +985,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/scale', scale)
 
         def translate(command, *args):
@@ -1004,6 +1022,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/translate', translate)
 
         def rotate_to(command, *args):
@@ -1055,6 +1074,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/rotate_to', rotate_to)
 
         def scale_to(command, *args):
@@ -1113,6 +1133,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/scale_to', scale_to)
 
         def translate_to(command, *args):
@@ -1154,6 +1175,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/translate_to', translate_to)
 
         def resize(command, *args):
@@ -1181,6 +1203,7 @@ class Elemental(Modifier):
                 context.signal('refresh_scene')
             except (ValueError, ZeroDivisionError):
                 return
+
         kernel.register('command/resize', resize)
 
         def matrix(command, *args):
@@ -1220,6 +1243,7 @@ class Elemental(Modifier):
                 yield _('Invalid value')
             context.signal('refresh_scene')
             return
+
         kernel.register('command/matrix', matrix)
 
         def reset(command, *args):
@@ -1238,6 +1262,7 @@ class Elemental(Modifier):
                 element.modified()
             context.signal('refresh_scene')
             return
+
         kernel.register('command/reset', reset)
 
         def reify(command, *args):
@@ -1256,6 +1281,7 @@ class Elemental(Modifier):
                 element.altered()
             context.signal('refresh_scene')
             return
+
         kernel.register('command/reify', reify)
 
         # REQUIRES CUTPLANNER
@@ -1291,6 +1317,7 @@ class Elemental(Modifier):
             else:
                 yield _('Optimization not found.')
                 return
+
         kernel.register('command/optimize', optimize)
 
         # REQUIRES CUTPLANNER
@@ -1316,6 +1343,7 @@ class Elemental(Modifier):
                 if angle is not None:
                     element *= Matrix.rotate(-angle)
                 element.altered()
+
         kernel.register('command/embroider', embroider)
 
         def operation(command, *args):
@@ -1381,6 +1409,7 @@ class Elemental(Modifier):
                     except IndexError:
                         yield _('index %d out of range') % value
             return
+
         kernel.register('command/operation', operation)
 
         def classify(command, *args):
@@ -1389,6 +1418,7 @@ class Elemental(Modifier):
                 return
             elements.classify(list(elements.elems(emphasized=True)))
             return
+
         kernel.register('command/classify', classify)
 
         def declassify(command, *args):
@@ -1397,6 +1427,7 @@ class Elemental(Modifier):
                 return
             elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
             return
+
         kernel.register('command/declassify', declassify)
 
         def note(command, *args):
@@ -1408,6 +1439,7 @@ class Elemental(Modifier):
             else:
                 elements.note = ' '.join(args)
                 yield _('Note Set.')
+
         kernel.register('command/note', note)
 
         def cut(command, *args):
@@ -1419,6 +1451,7 @@ class Elemental(Modifier):
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
+
         kernel.register('command/cut', cut)
 
         def engrave(command, *args):
@@ -1430,6 +1463,7 @@ class Elemental(Modifier):
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
+
         kernel.register('command/engrave', engrave)
 
         def raster(command, *args):
@@ -1441,6 +1475,7 @@ class Elemental(Modifier):
             op.extend(elements.elems(emphasized=True))
             elements.add_op(op)
             return
+
         kernel.register('command/raster', raster)
 
         def step(command, *args):
@@ -1460,7 +1495,7 @@ class Elemental(Modifier):
                         yield _('Image step for %s is currently: %s') % (str(element), step)
                         found = True
                 if not found:
-                    yield _( 'No raster operations selected.')
+                    yield _('No raster operations selected.')
                 return
             try:
                 step = int(args[0])
@@ -1482,6 +1517,7 @@ class Elemental(Modifier):
                 self.context.signal('element_property_update', element)
                 self.context.signal('refresh_scene')
             return
+
         kernel.register('command/step', step)
 
         # REQUIRES OPERATION PREPROCESSOR.
@@ -1968,7 +2004,50 @@ class Elemental(Modifier):
             else:
                 yield _('Image command unrecognized.')
                 return
+
         kernel.register('command/image', image)
+
+        def halftone(command, *args):
+            '''Returns list of half-tone images for cmyk image. sample (pixels),
+               determines the sample box size from the original image. The maximum
+               output dot diameter is given by sample * scale (which is also the number
+               of possible dot sizes). So sample=1 will presevere the original image
+               resolution, but scale must be >1 to allow variation in dot size.'''
+            from PIL import Image, ImageDraw, ImageStat
+            oversample = 2
+            sample = 10
+            scale = 1
+            angle = 22
+            for element in elements.elems(emphasized=True):
+                if not isinstance(element, SVGImage):
+                    continue
+                image = element.image
+                im = image
+                image = image.convert('L')
+                image = image.rotate(angle, expand=1)
+                size = image.size[0] * scale, image.size[1] * scale
+                half_tone = Image.new('L', size)
+                draw = ImageDraw.Draw(half_tone)
+                for x in range(0, image.size[0], sample):
+                    for y in range(0, image.size[1], sample):
+                        box = image.crop(
+                            (x - oversample, y - oversample, x + sample + oversample, y + sample + oversample))
+                        stat = ImageStat.Stat(box)
+                        diameter = (stat.mean[0] / 255) ** 0.5
+                        edge = 0.5 * (1 - diameter)
+                        x_pos, y_pos = (x + edge) * scale, (y + edge) * scale
+                        box_edge = sample * diameter * scale
+                        draw.ellipse((x_pos, y_pos, x_pos + box_edge, y_pos + box_edge), fill=255)
+                half_tone = half_tone.rotate(-angle, expand=1)
+                width_half, height_half = half_tone.size
+                xx = (width_half - im.size[0] * scale) / 2
+                yy = (height_half - im.size[1] * scale) / 2
+                half_tone = half_tone.crop((xx, yy, xx + im.size[0] * scale, yy + im.size[1] * scale))
+            element.image = half_tone
+            element.altered()
+
+        kernel.register('command/halftone', halftone)
+        kernel.register('command-help/halftone', 'image halftone <diameter> <scale> <angle> ')
 
         def trace_hull(command, *args):
             spooler = context.spooler
@@ -1997,6 +2076,7 @@ class Elemental(Modifier):
 
             spooler.job(trace_hull)
             return
+
         kernel.register('command/trace_hull', trace_hull)
 
         def trace_quick(command, *args):
@@ -2016,6 +2096,7 @@ class Elemental(Modifier):
 
             spooler.job(trace_quick)
             return
+
         kernel.register('command/trace_quick', trace_quick)
 
     def add_element(self, element):
@@ -2607,6 +2688,7 @@ class BindAlias(Modifier):
 
     Stub.
     """
+
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         # Keymap/alias values
@@ -2660,6 +2742,7 @@ class BindAlias(Modifier):
                     except KeyError:
                         pass
             return
+
         self.context.register('command/bind', bind)
 
         def alias(command, *args):
@@ -2681,6 +2764,7 @@ class BindAlias(Modifier):
                     return
                 context.alias[args[0]] = ' '.join(args[1:])
             return
+
         self.context.register('command/alias', alias)
 
     def boot(self, channel=None):
@@ -2807,6 +2891,7 @@ class Context:
     and the kernel. They permit getting other contexts of the kernel as well. This should serve as the primary interface
     code between the kernel and the modules.
     """
+
     def __init__(self, kernel, path):
         self._kernel = kernel
         self._path = path
@@ -2917,7 +3002,7 @@ class Context:
         :return:
         """
         try:
-            funct= self._kernel.registered[self.abs_path("control/%s" % control)]
+            funct = self._kernel.registered[self.abs_path("control/%s" % control)]
         except KeyError:
             return
         funct()
@@ -4284,7 +4369,8 @@ class Kernel:
             except KeyError:
                 yield _('Error. Command Unrecognized: %s') % command
             except TypeError:
-                pass  #Did not yield anything. Still success. But, not a generator.
+                pass  # Did not yield anything. Still success. But, not a generator.
+
 
 class Job:
     """
@@ -4294,6 +4380,7 @@ class Job:
     This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
     and times. This is usually extended directly by a module requiring that functionality.
     """
+
     def __init__(self, process=None, args=(), interval=1.0, times=None, name=None):
         self.name = name
         self.state = STATE_INITIALIZE

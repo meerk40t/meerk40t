@@ -247,6 +247,8 @@ class RasterWizard(wx.Frame, Module):
             panel = OutputPanel(self, wx.ID_ANY)
         elif name_op == 'contrast':
             panel = ContrastPanel(self, wx.ID_ANY)
+        elif name_op == 'halftone':
+            panel = HalftonePanel(self, wx.ID_ANY)
         else:
             panel = BasicPanel(self, wx.ID_ANY)
         if panel is None:
@@ -1445,3 +1447,123 @@ class ContrastPanel(wx.Panel):
         self.context.signal("RasterWizard-Image")
 
 # end of class ContrastPanel
+
+
+class HalftonePanel(wx.Panel):
+    def __init__(self, *args, **kwds):
+        # begin wxGlade: HalftonePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.check_enable_halftone = wx.CheckBox(self, wx.ID_ANY, "Enable")
+        self.button_reset_halftone = wx.Button(self, wx.ID_ANY, "Reset")
+        self.check_halftone_black = wx.CheckBox(self, wx.ID_ANY, "Black")
+        self.slider_halftone_sample = wx.Slider(self, wx.ID_ANY, 10, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_halftone_sample = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.slider_halftone_angle = wx.Slider(self, wx.ID_ANY, 22, 0, 90, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_halftone_angle = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.slider_halftone_oversample = wx.Slider(self, wx.ID_ANY, 2, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_halftone_oversample = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_halftone, self.check_enable_halftone)
+        self.Bind(wx.EVT_BUTTON, self.on_button_reset_halftone, self.button_reset_halftone)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_halftone_black, self.check_halftone_black)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_halftone_sample, self.slider_halftone_sample)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_halftone_angle, self.slider_halftone_angle)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_halftone_oversample, self.slider_halftone_oversample)
+        # end wxGlade
+        self.context = None
+        self.op = None
+
+    def __set_properties(self):
+        # begin wxGlade: HalftonePanel.__set_properties
+        self.check_enable_halftone.SetToolTip(_("Enable Halftone"))
+        self.check_enable_halftone.SetValue(1)
+        self.button_reset_halftone.SetToolTip(_("Halftone Reset"))
+        self.check_halftone_black.SetToolTip(_("Use black rather than white dots"))
+        self.slider_halftone_sample.SetToolTip(_("Sample size for halftone dots"))
+        self.text_halftone_sample.SetToolTip(_("Halftone dot size"))
+        self.slider_halftone_angle.SetToolTip(_("Angle for halftone dots"))
+        self.text_halftone_angle.SetToolTip(_("Halftone dot angle"))
+        self.slider_halftone_oversample.SetToolTip(_("Oversampling amount for halftone-dots"))
+        self.text_halftone_oversample.SetToolTip(_("Halftone dot oversampling amount"))
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: HalftonePanel.__do_layout
+        sizer_halftone = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Halftone")), wx.VERTICAL)
+        sizer_halftone_oversample = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Oversample")), wx.HORIZONTAL)
+        sizer_halftone_angle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Angle")), wx.HORIZONTAL)
+        sizer_halftone_sample = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Sample")), wx.HORIZONTAL)
+        sizer_halftone_main = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_halftone_main.Add(self.check_enable_halftone, 0, 0, 0)
+        sizer_halftone_main.Add(self.button_reset_halftone, 0, 0, 0)
+        sizer_halftone_main.Add((20, 20), 0, 0, 0)
+        sizer_halftone_main.Add(self.check_halftone_black, 0, 0, 0)
+        sizer_halftone.Add(sizer_halftone_main, 0, wx.EXPAND, 0)
+        sizer_halftone_sample.Add(self.slider_halftone_sample, 5, wx.EXPAND, 0)
+        sizer_halftone_sample.Add(self.text_halftone_sample, 1, 0, 0)
+        sizer_halftone.Add(sizer_halftone_sample, 0, wx.EXPAND, 0)
+        sizer_halftone_angle.Add(self.slider_halftone_angle, 5, wx.EXPAND, 0)
+        sizer_halftone_angle.Add(self.text_halftone_angle, 1, 0, 0)
+        sizer_halftone.Add(sizer_halftone_angle, 0, wx.EXPAND, 0)
+        sizer_halftone_oversample.Add(self.slider_halftone_oversample, 5, wx.EXPAND, 0)
+        sizer_halftone_oversample.Add(self.text_halftone_oversample, 1, 0, 0)
+        sizer_halftone.Add(sizer_halftone_oversample, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_halftone)
+        sizer_halftone.Fit(self)
+        self.Layout()
+        # end wxGlade
+
+    def set_operation(self, context, op, svg_image=None):
+        self.context = context
+        self.op = op
+        self.check_enable_halftone.SetValue(self.op['enable'])
+        self.check_halftone_black.SetValue(self.op['black'])
+        self.text_halftone_sample.SetValue(str(self.op['sample']))
+        self.slider_halftone_sample.SetValue(self.op['sample'])
+        self.text_halftone_angle.SetValue(str(self.op['angle']))
+        self.slider_halftone_angle.SetValue(self.op['angle'])
+        self.text_halftone_oversample.SetValue(str(self.op['oversample']))
+        self.slider_halftone_oversample.SetValue(self.op['oversample'])
+
+    def on_check_enable_halftone(self, event):  # wxGlade: HalftonePanel.<event_handler>
+        self.op['enable'] = self.check_enable_halftone.GetValue()
+        self.context.signal("RasterWizard-Image")
+
+    def on_button_reset_halftone(self, event):  # wxGlade: HalftonePanel.<event_handler>
+        self.op['black'] = False
+        self.op['sample'] = 10
+        self.op['angle'] = 22.0
+        self.op['oversample'] = 2
+        self.check_enable_halftone.SetValue(self.op['enable'])
+        self.check_halftone_black.SetValue(self.op['black'])
+        self.text_halftone_sample.SetValue(str(self.op['sample']))
+        self.slider_halftone_sample.SetValue(self.op['sample'])
+        self.text_halftone_angle.SetValue(str(self.op['angle']))
+        self.slider_halftone_angle.SetValue(self.op['angle'])
+        self.text_halftone_oversample.SetValue(str(self.op['oversample']))
+        self.slider_halftone_oversample.SetValue(self.op['oversample'])
+
+    def on_check_halftone_black(self, event):  # wxGlade: HalftonePanel.<event_handler>
+        self.op['black'] = self.check_halftone_black.GetValue()
+        self.context.signal("RasterWizard-Image")
+
+    def on_slider_halftone_sample(self, event):  # wxGlade: HalftonePanel.<event_handler>
+        self.op['sample'] = int(self.slider_halftone_sample.GetValue())
+        self.text_halftone_sample.SetValue(str(self.op['sample']))
+        self.context.signal("RasterWizard-Image")
+
+    def on_slider_halftone_angle(self, event):  # wxGlade: HalftonePanel.<event_handler>
+        self.op['angle'] = int(self.slider_halftone_angle.GetValue())
+        self.text_halftone_angle.SetValue(str(self.op['angle']))
+        self.context.signal("RasterWizard-Image")
+
+    def on_slider_halftone_oversample(self, event):  # wxGlade: HalftonePanel.<event_handler>
+        self.op['oversample'] = int(self.slider_halftone_oversample.GetValue())
+        self.text_halftone_oversample.SetValue(str(self.op['oversample']))
+        self.context.signal("RasterWizard-Image")
+
+# end of class HalftonePanel
