@@ -102,7 +102,7 @@ class RotarySettings(wx.Frame, Module):
         self.spin_rotary_scaley.Enable(False)
         self.spin_rotary_scaley.SetIncrement(0.01)
         self.spin_rotary_scalex.SetMinSize((80, 23))
-        self.spin_rotary_scalex.SetToolTip(_("Rotary Scale Factor X"))
+        self.spin_rotary_scalex.SetToolTip(_("Rotary Scale Factor Y"))
         self.spin_rotary_scalex.Enable(False)
         self.spin_rotary_scalex.SetIncrement(0.01)
         self.checkbox_rotary_loop.SetFont(
