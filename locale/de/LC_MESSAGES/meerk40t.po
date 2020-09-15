@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-09-13 23:15-0700\n"
+"PO-Revision-Date: 2020-09-15 09:50-0700\n"
 "Last-Translator: tatarize\n"
 "Language-Team: German\n"
 "Language: de\n"
@@ -2388,7 +2388,7 @@ msgstr "Pässe aktivieren"
 
 #: OperationProperty.py:135 loco:5f08f12237a36673712355ba
 msgid "Run operation how many times?"
-msgstr "Wie oft wird der Betrieb ausgeführt?"
+msgstr ""
 
 #: OperationProperty.py:162 loco:5f08f12237a36673712355bb
 msgid "PPI Advanced"
@@ -2895,7 +2895,7 @@ msgstr "Blaue Komponentensteuerung"
 
 #: RasterWizard.py:916 loco:5f48613cd5809f444e2df932
 msgid "Blue Factor"
-msgstr "Blauer Faktor"
+msgstr "Blau Faktor"
 
 #: RasterWizard.py:921 loco:5f48613cd5809f444e2df933
 msgid "Lightness"
