@@ -3295,6 +3295,9 @@ class Context:
         """
         return self._kernel.channel_open(self.abs_path(channel), buffer=buffer)
 
+    def console_function(self, data):
+        return ConsoleFunction(self, data)
+
     def console(self, data):
         self._kernel.console(data)
 
@@ -3306,6 +3309,18 @@ class Context:
 
     def threaded(self, func, thread_name=None):
         self._kernel.threaded(func, thread_name=thread_name)
+
+
+class ConsoleFunction:
+    def __init__(self, context, data):
+        self.context = context
+        self.data = data
+
+    def __call__(self, *args, **kwargs):
+        self.context.console(self.data)
+
+    def __repr__(self):
+        return self.data.replace('\n', '')
 
 
 class Kernel:

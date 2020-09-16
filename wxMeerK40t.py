@@ -2234,9 +2234,20 @@ class RootNode(list):
                      menu.Append(wx.ID_ANY, _("Set Basic Classification"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(LaserOperation()),
                      menu.Append(wx.ID_ANY, _("Add Operation"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(BlobOperation()),
-                     menu.Append(wx.ID_ANY, _("Add Blob"), "", wx.ITEM_NORMAL))
-
+            special_op_menu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(CommandOperation("Home", COMMAND_HOME)),
+                     special_op_menu.Append(wx.ID_ANY, _("Add Home"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(CommandOperation("Beep", COMMAND_BEEP)),
+                     special_op_menu.Append(wx.ID_ANY, _("Add Beep"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(CommandOperation("Origin", COMMAND_MOVE, 0, 0)),
+                     special_op_menu.Append(wx.ID_ANY, _("Add Move Origin"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(
+                CommandOperation("Interrupt", COMMAND_FUNCTION, self.context.console_function("interrupt\n"))),
+                     special_op_menu.Append(wx.ID_ANY, _("Add Interrupt"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(
+                CommandOperation("Shutdown", COMMAND_FUNCTION, self.context.console_function("shutdown\n"))),
+                     special_op_menu.Append(wx.ID_ANY, _("Add Shutdown"), "", wx.ITEM_NORMAL))
+            menu.AppendSubMenu(special_op_menu, _("Special Operations"))
         elif t == NODE_ELEMENTS_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
                      menu.Append(wx.ID_ANY, _("Reclassify Operations"), "", wx.ITEM_NORMAL))

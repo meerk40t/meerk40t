@@ -429,3 +429,26 @@ class LaserOperation(list):
                     yield COMMAND_MODE_PROGRAM
                     yield COMMAND_RASTER, cross_raster
             yield COMMAND_MODE_RAPID
+
+
+class CommandOperation:
+    """CommandOperation is a basic command operation. It contains nothing except a single command to be executed."""
+    def __init__(self, name, command, *args):
+        self.name = name
+        self.command = command
+        self.args = args
+        self.output = True
+        self.operation = "Command"
+
+    def __str__(self):
+        return "%s: %s" % (self.name, str(self.args))
+
+    def __copy__(self):
+        return CommandOperation(self.name, self.command, *self.args)
+
+    def __len__(self):
+        return 1
+
+    def generate(self):
+
+        yield (self.command,) + self.args
