@@ -45,9 +45,10 @@ class SVGWriter:
         elements = context.elements
         for operation in elements.ops():
             subelement = SubElement(root, "operation")
-            c = getattr(operation, 'color')
-            if c is not None:
-                subelement.set('color', str(c))
+            if hasattr(operation, 'color'):
+                c = getattr(operation, 'color')
+                if c is not None:
+                    subelement.set('color', str(c))
             for key in dir(operation):
                 if key.startswith('_'):
                     continue
@@ -65,7 +66,29 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_DATA, element.d())
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
                 for key, val in element.values.items():
-                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                    if key in (SVG_ATTR_STROKE_WIDTH, 'fill-opacity', 'speed',
+                               'overscan', 'power', 'id', 'passes',
+                               'raster_direction', 'raster_step', 'd_ratio'):
+                        subelement.set(key, str(val))
+            elif isinstance(element, Shape):
+                if isinstance(element, Rect):
+                    subelement = SubElement(root, SVG_TAG_RECT)
+                elif isinstance(element, Circle):
+                    subelement = SubElement(root, SVG_TAG_CIRCLE)
+                elif isinstance(element, Ellipse):
+                    subelement = SubElement(root, SVG_TAG_ELLIPSE)
+                elif isinstance(element, Polygon):
+                    subelement = SubElement(root, SVG_TAG_POLYGON)
+                elif isinstance(element, Polyline):
+                    subelement = SubElement(root, SVG_TAG_POLYLINE)
+                else:
+                    subelement = SubElement(root, type(element))
+                t = Matrix(element.transform)
+                t *= scale
+                subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
+                for key, val in element.values.items():
+                    if key in (SVG_ATTR_RADIUS_X, SVG_ATTR_RADIUS_Y, SVG_ATTR_POINTS, SVG_ATTR_RADIUS, SVG_ATTR_X,
+                               SVG_ATTR_Y, SVG_ATTR_STROKE_WIDTH, 'fill-opacity', 'speed',
                                'overscan', 'power', 'id', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
@@ -76,12 +99,12 @@ class SVGWriter:
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
                 for key, val in element.values.items():
-                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                    if key in (SVG_ATTR_STROKE_WIDTH, 'fill-opacity', 'speed',
                                'overscan', 'power', 'id', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio',
                                'font-family', 'font-size', 'font-weight'):
                         subelement.set(key, str(val))
-            else:  # Image.
+            elif isinstance(element, SVGImage):
                 subelement = SubElement(root, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 element.image.save(stream, format='PNG')
@@ -96,18 +119,21 @@ class SVGWriter:
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
                 for key, val in element.values.items():
-                    if key in ('stroke-width', 'fill-opacity', 'speed',
+                    if key in (SVG_ATTR_STROKE_WIDTH, 'fill-opacity', 'speed',
                                'overscan', 'power', 'id', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
-            stroke = str(element.stroke)
-            fill = str(element.fill)
-            if stroke == 'None':
-                stroke = SVG_VALUE_NONE
-            if fill == 'None':
-                fill = SVG_VALUE_NONE
-            subelement.set(SVG_ATTR_STROKE, stroke)
-            subelement.set(SVG_ATTR_FILL, fill)
+            try:
+                stroke = str(element.stroke)
+                fill = str(element.fill)
+                if stroke == 'None':
+                    stroke = SVG_VALUE_NONE
+                if fill == 'None':
+                    fill = SVG_VALUE_NONE
+                subelement.set(SVG_ATTR_STROKE, stroke)
+                subelement.set(SVG_ATTR_FILL, fill)
+            except AttributeError:
+                pass  # element lacks a fill or stroke attribute.
         tree = ElementTree(root)
         tree.write(f)
 

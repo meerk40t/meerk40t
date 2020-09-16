@@ -2,6 +2,7 @@ import os
 import time
 from threading import Thread, Lock
 
+from Blob import Blob
 from LaserOperation import *
 from svgelements import *
 from zinglplotter import ZinglPlotter
@@ -621,6 +622,8 @@ class Elemental(Modifier):
         context.save_types = self.save_types
         context.load = self.load
         context.load_types = self.load_types
+        self.add_elem(Blob("This String", 'string'))
+        self.add_elem(Rect(0,0,1000,1000, stroke='black'))
 
         context = self.context
         kernel = self.context._kernel
@@ -2106,7 +2109,7 @@ class Elemental(Modifier):
         context_root.elements.set_selected([element])
 
     def register(self, obj):
-        obj.wx_bitmap_image = None
+        obj.cache = None
         obj.icon = None
         obj.bounds = None
         obj.last_transform = None
@@ -2154,11 +2157,11 @@ class Elemental(Modifier):
             The data structure was changed.
             """
             try:
-                obj.wx_bitmap_image.UnGetNativePath(obj.wx_bitmap_image.NativePath)
+                obj.cache.UnGetNativePath(obj.cache.NativePath)
             except AttributeError:
                 pass
-            del obj.wx_bitmap_image
-            obj.wx_bitmap_image = None
+            del obj.cache
+            obj.cache = None
             del obj.icon
             obj.icon = None
             obj.bounds = None
@@ -2177,11 +2180,11 @@ class Elemental(Modifier):
 
     def unregister(self, e):
         try:
-            e.wx_bitmap_image.UngetNativePath(e.wx_bitmap_image.NativePath)
+            e.cache.UngetNativePath(e.cache.NativePath)
         except AttributeError:
             pass
         try:
-            del e.wx_bitmap_image
+            del e.cache
         except AttributeError:
             pass
         try:
@@ -2441,7 +2444,11 @@ class Elemental(Modifier):
         boundary_points = []
         for e in self._elements:
             if e.last_transform is None or e.last_transform != e.transform or e.bounds is None:
-                e.bounds = e.bbox(False)
+                try:
+                    e.bounds = e.bbox(False)
+                except AttributeError:
+                    # Type does not have bbox.
+                    continue
                 e.last_transform = copy(e.transform)
             if e.bounds is None:
                 continue
@@ -2580,7 +2587,10 @@ class Elemental(Modifier):
             if self._bounds is not None and contains(self._bounds, position):
                 return  # Select by position aborted since selection position within current select bounds.
         for e in reversed(list(self.elems())):
-            bounds = e.bbox()
+            try:
+                bounds = e.bbox()
+            except AttributeError:
+                continue  # No bounds.
             if bounds is None:
                 continue
             if contains(bounds, position):
@@ -2599,8 +2609,16 @@ class Elemental(Modifier):
             return
         for element in elements:
             found_color = False
+            try:
+                stroke = element.stroke
+            except AttributeError:
+                stroke = None  # Element has no stroke.
+            try:
+                fill = element.fill
+            except AttributeError:
+                fill = None  # Element has no stroke.
             for op in self.ops():
-                if op.operation in ("Engrave", "Cut", "Raster") and op.color == element.stroke:
+                if op.operation in ("Engrave", "Cut", "Raster") and op.color == stroke:
                     op.append(element)
                     found_color = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
@@ -2608,13 +2626,13 @@ class Elemental(Modifier):
                     found_color = True
                 elif op.operation == 'Raster' and \
                         not isinstance(element, SVGImage) and \
-                        element.fill is not None and \
-                        element.fill.value is not None:
+                        fill is not None and \
+                        fill.value is not None:
                     op.append(element)
                     found_color = True
             if not found_color:
-                if element.stroke is not None and element.stroke.value is not None:
-                    op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
+                if stroke is not None and stroke.value is not None:
+                    op = LaserOperation(operation="Engrave", color=stroke, speed=35.0)
                     op.append(element)
                     self.add_op(op)
 

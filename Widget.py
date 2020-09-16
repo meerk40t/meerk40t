@@ -870,6 +870,10 @@ class RectSelectWidget(Widget):
         elif event_type == 'leftup':
             elements.validate_bounds()
             for obj in elements.elems():
+                try:
+                    q = obj.bbox(True)
+                except AttributeError:
+                    continue  # This element has no bounds.
                 sx = self.start_location[0]
                 sy = self.start_location[1]
                 ex = self.end_location[0]
@@ -879,7 +883,6 @@ class RectSelectWidget(Widget):
                 sy = min(self.start_location[1], self.end_location[1])
                 ex = max(self.start_location[0], self.end_location[0])
                 ey = max(self.start_location[1], self.end_location[1])
-                q = obj.bbox(True)
                 xmin = q[0]
                 ymin = q[1]
                 xmax = q[2]

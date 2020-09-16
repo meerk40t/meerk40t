@@ -500,6 +500,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         :param path: svg object
         :return:
         """
+        if isinstance(path, Shape) and not isinstance(path, Path):
+            path = Path(path)
         if isinstance(path, SVGImage):
             bounds = path.bbox()
             p = Path()

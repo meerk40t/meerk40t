@@ -11,6 +11,7 @@ import wx.ribbon as RB
 
 from About import About
 from Alignment import Alignment
+from Blob import BlobOperation
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller
@@ -1849,7 +1850,11 @@ class RootNode(list):
         self.node_operations.set_icon(icons8_laser_beam_20.GetBitmap())
         self.build_tree(self.node_operations, list(elements.ops()))
         for n in self.node_operations:
-            if n.object.operation in ("Raster", "Image"):
+            try:
+                op = n.object.operation
+            except AttributeError:
+                op = None
+            if op in ("Raster", "Image"):
                 n.set_icon(icons8_direction_20.GetBitmap())
             else:
                 n.set_icon(icons8_laser_beam_20.GetBitmap())
@@ -2229,6 +2234,8 @@ class RootNode(list):
                      menu.Append(wx.ID_ANY, _("Set Basic Classification"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(LaserOperation()),
                      menu.Append(wx.ID_ANY, _("Add Operation"), "", wx.ITEM_NORMAL))
+            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(BlobOperation()),
+                     menu.Append(wx.ID_ANY, _("Add Blob"), "", wx.ITEM_NORMAL))
 
         elif t == NODE_ELEMENTS_BRANCH:
             gui.Bind(wx.EVT_MENU, self.menu_reclassify_operations(node),
@@ -2273,36 +2280,38 @@ class RootNode(list):
                          duplicate_menu.Append(wx.ID_ANY, _("Make %d copies.") % i, "", wx.ITEM_NORMAL))
             menu.AppendSubMenu(duplicate_menu, _("Duplicate"))
         if t in (NODE_ELEMENTS_BRANCH, NODE_ELEMENT):
-            if not locked:
-                gui.Bind(wx.EVT_MENU, self.menu_console('reset'),
-                         menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
+            if isinstance(node.object, SVGElement):
+                if not locked:
+                    gui.Bind(wx.EVT_MENU, self.menu_console('reset'),
+                             menu.Append(wx.ID_ANY, _("Reset User Changes"), "", wx.ITEM_NORMAL))
         if t == NODE_ELEMENT:
-            path_scale_sub_menu = wx.Menu()
-            for i in range(1, 25):
-                gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
-                         path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%") % (600.0 / float(i)), "",
-                                                    wx.ITEM_NORMAL))
-            if not locked:
-                menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
+            if isinstance(node.object, SVGElement):
+                path_scale_sub_menu = wx.Menu()
+                for i in range(1, 25):
+                    gui.Bind(wx.EVT_MENU, self.menu_scale(node, 6.0 / float(i)),
+                             path_scale_sub_menu.Append(wx.ID_ANY, _("Scale %.0f%%") % (600.0 / float(i)), "",
+                                                        wx.ITEM_NORMAL))
+                if not locked:
+                    menu.AppendSubMenu(path_scale_sub_menu, _("Scale"))
 
-            path_rotate_sub_menu = wx.Menu()
-            for i in range(2, 13):
-                angle = Angle.turns(1.0 / float(i))
-                gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                         path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
-                                                     "",
-                                                     wx.ITEM_NORMAL))
-            for i in range(2, 13):
-                angle = Angle.turns(1.0 / float(i))
-                gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
-                         path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                     _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
-                                                     wx.ITEM_NORMAL))
-            if not locked:
-                menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
-            if not locked:
-                gui.Bind(wx.EVT_MENU, self.menu_console('reify'),
-                         menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
+                path_rotate_sub_menu = wx.Menu()
+                for i in range(2, 13):
+                    angle = Angle.turns(1.0 / float(i))
+                    gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
+                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
+                                                         "",
+                                                         wx.ITEM_NORMAL))
+                for i in range(2, 13):
+                    angle = Angle.turns(1.0 / float(i))
+                    gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
+                             path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                         _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
+                                                         wx.ITEM_NORMAL))
+                if not locked:
+                    menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
+                if not locked:
+                    gui.Bind(wx.EVT_MENU, self.menu_console('reify'),
+                             menu.Append(wx.ID_ANY, _("Reify User Changes"), "", wx.ITEM_NORMAL))
             if isinstance(node.object, Path):
                 gui.Bind(wx.EVT_MENU, self.menu_console('element subpath'),
                          menu.Append(wx.ID_ANY, _("Break Subpaths"), "", wx.ITEM_NORMAL))

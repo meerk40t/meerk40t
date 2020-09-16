@@ -1,3 +1,5 @@
+import os
+
 from Kernel import Kernel, Interpreter, INTERPRETER_STATE_PROGRAM
 from Kernel import Module, Pipe
 from LaserCommandConstants import *
@@ -34,6 +36,7 @@ class GrblDevice:
     @staticmethod
     def sub_register(kernel):
         kernel.register('modifier/GRBLInterpreter', GRBLInterpreter)
+        kernel.register('load/GCodeLoader', GCodeLoader)
         kernel.register('module/GRBLEmulator', GRBLEmulator)
 
         def grblserver(command, *args):
@@ -330,7 +333,7 @@ class GRBLEmulator(Module, Pipe):
             yield code
 
     def commandline(self, data):
-        spooler = self.context.spooler
+        spooler = self.context.active.spooler
         pos = data.find('(')
         commands = {}
         while pos != -1:
@@ -397,7 +400,7 @@ class GRBLEmulator(Module, Pipe):
         return self.command(commands)
 
     def command(self, gc):
-        spooler = self.context.spooler
+        spooler = self.context.active.spooler
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:
@@ -665,3 +668,20 @@ class GRBLEmulator(Module, Pipe):
         self.feed_convert = lambda s: s / ((self.scale / MILS_PER_MM) * 60.0)
         self.feed_invert = lambda s: s * ((self.scale / MILS_PER_MM) * 60.0)
         # units to mm, seconds to minutes.
+
+
+class GCodeLoader:
+    @staticmethod
+    def load_types():
+        yield "Gcode File", ("gcode", "nc", "gc"), "application/x-gcode"
+
+    @staticmethod
+    def load(kernel, pathname, channel=None, **kwargs):
+        basename = os.path.basename(pathname)
+        grblemulator = GRBLEmulator(kernel, pathname)
+        elements = list()
+        with open(pathname, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                grblemulator.write(line, elements=elements.append, channel=channel)
+        return elements, None, None, pathname, basename
