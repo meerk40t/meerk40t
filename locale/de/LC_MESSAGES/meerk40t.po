@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-09-15 09:50-0700\n"
+"PO-Revision-Date: 2020-09-15 20:02-0700\n"
 "Last-Translator: tatarize\n"
 "Language-Team: German\n"
 "Language: de\n"
@@ -2813,7 +2813,7 @@ msgstr ""
 
 #: wxMeerK40t.py:2000 loco:5f30290bc57dd46b3924f435
 msgid "RasterWizard"
-msgstr ""
+msgstr "RasterWizard"
 
 #: wxMeerK40t.py:2006 loco:5f30290bc57dd46b3924f436
 #, python-format
@@ -2879,15 +2879,15 @@ msgstr "Rote Komponentenmenge"
 
 #: RasterWizard.py:912 loco:5f485e022b1acf03fa49f28c
 msgid "Red Factor"
-msgstr "Roter Faktor"
+msgstr "Rot Faktor"
 
 #: RasterWizard.py:913 loco:5f485e022b1acf03fa49f28d
 msgid "Green component control"
-msgstr "Steuerung der grünen Komponenten"
+msgstr "Grüne Komponentensteuerung"
 
 #: RasterWizard.py:914 loco:5f485e022b1acf03fa49f28e
 msgid "Green Factor"
-msgstr "Grüner Faktor"
+msgstr "Grün Faktor"
 
 #: RasterWizard.py:915 loco:5f485e022b1acf03fa49f28f
 msgid "Blue component control"
@@ -2959,11 +2959,11 @@ msgstr "Vertikal spiegeln"
 
 #: wxMeerK40t.py:2334 loco:5f48613cd5809f444e2df942
 msgid "Rotate CW"
-msgstr "CW drehen"
+msgstr "Im Uhrzeigersinn drehen"
 
 #: wxMeerK40t.py:2336 loco:5f48613cd5809f444e2df943
 msgid "Rotate CCW"
-msgstr "CCW drehen"
+msgstr "Gegen den Uhrzeigersinn drehen"
 
 #: wxMeerK40t.py:2338 loco:5f48613cd5809f444e2df944
 msgid "Save output.png"
