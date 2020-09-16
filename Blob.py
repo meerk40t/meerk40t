@@ -17,7 +17,7 @@ class BlobOperation:
         self.operation = "Blob"
 
     def __copy__(self):
-        return BlobOperation(self)
+        return BlobOperation(self, self.blob)
 
     def __len__(self):
         return 1

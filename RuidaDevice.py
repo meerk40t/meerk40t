@@ -1366,6 +1366,31 @@ class RuidaEmulator(Module):
         return b
 
 
+class RuidaBlob:
+    def __init__(self, name, b=b''):
+        self.name = name
+        self.data = b
+        self.output = True
+        self.operation = "Blob"
+
+    def __repr__(self):
+        return "RuidaBlob(%s, %d bytes)" % (self.name, len(self.data))
+
+    def as_svg(self):
+        elements = list()
+        ruidaemulator = RuidaEmulator(None, None)
+
+        ruidaemulator.parse(BytesIO(ruidaemulator.unswizzle(self.data)), elements=elements.append)
+        return elements
+
+    def __len__(self):
+        return len(self.data)
+
+    def generate(self):
+        # TODO: This should actually go over the Ruida data and generate the commands it needs.
+        yield COMMAND_HOME
+
+
 class RDLoader:
     @staticmethod
     def load_types():
@@ -1374,8 +1399,6 @@ class RDLoader:
     @staticmethod
     def load(kernel, pathname, channel=None, **kwargs):
         basename = os.path.basename(pathname)
-        ruidaemulator = RuidaEmulator()
-        elements = list()
         with open(pathname, 'rb') as f:
-            ruidaemulator.parse(f, elements=elements.append, channel=channel)
-        return elements, None, None, pathname, basename
+            blob = RuidaBlob(basename, f.read())
+        return [blob], None, None, pathname, basename

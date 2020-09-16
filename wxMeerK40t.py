@@ -944,9 +944,12 @@ class MeerK40t(wx.Frame, Module, Job):
                 self.context.classify(elements)
                 if n != self.context.elements.note and self.context.auto_note:
                     self.context.open('window/Notes', self)
-                if (self.context.uniform_svg and pathname.lower().endswith('svg')) or \
-                        (len(elements) > 0 and 'meerK40t' in elements[0].values):
-                    self.working_file = pathname
+                try:
+                    if (self.context.uniform_svg and pathname.lower().endswith('svg')) or \
+                            (len(elements) > 0 and 'meerK40t' in elements[0].values):
+                        self.working_file = pathname
+                except AttributeError:
+                    pass
                 return True
             return False
 
@@ -2397,7 +2400,12 @@ class RootNode(list):
             if isinstance(node.object, SVGText):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
                          menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
-
+            if hasattr(node.object, 'as_svg'):
+                gui.Bind(wx.EVT_MENU, self.menu_convert_svg(node),
+                         menu.Append(wx.ID_ANY, _("Convert to SVG"), "", wx.ITEM_NORMAL))
+            if hasattr(node.object, 'generate'):
+                gui.Bind(wx.EVT_MENU, self.menu_move_to_operations(node),
+                         menu.Append(wx.ID_ANY, _("Process as Operation"), "", wx.ITEM_NORMAL))
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
             menu.Destroy()
@@ -2714,6 +2722,18 @@ class RootNode(list):
             op.clear()
             op.extend(node.object)
             self.context.elements.add_op(op)
+
+        return specific
+
+    def menu_convert_svg(self, node):
+        def specific(event):
+            self.context.elements.add_elems(node.object.as_svg())
+
+        return specific
+
+    def menu_move_to_operations(self, node):
+        def specific(event):
+            self.context.elements.add_op(node.object)
 
         return specific
 
