@@ -670,6 +670,28 @@ class GRBLEmulator(Module, Pipe):
         # units to mm, seconds to minutes.
 
 
+class GcodeBlob:
+    def __init__(self, name, b=[]):
+        self.name = name
+        self.data = b
+        self.output = True
+        self.operation = "GcodeBlob"
+
+    def __repr__(self):
+        return "GcodeBlob(%s, %d lines)" % (self.name, len(self.data))
+
+    def as_svg(self):
+        pass
+
+    def __len__(self):
+        return len(self.data)
+
+    def generate(self):
+        grblemulator = GRBLEmulator(None, None)
+        for line in self.data:
+            grblemulator.write(line)
+
+
 class GCodeLoader:
     @staticmethod
     def load_types():
@@ -678,10 +700,6 @@ class GCodeLoader:
     @staticmethod
     def load(kernel, pathname, channel=None, **kwargs):
         basename = os.path.basename(pathname)
-        grblemulator = GRBLEmulator(kernel, pathname)
-        elements = list()
         with open(pathname, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                grblemulator.write(line, elements=elements.append, channel=channel)
-        return elements, None, None, pathname, basename
+            blob = GcodeBlob(basename, f.readlines())
+        return [blob], None, None, pathname, basename

@@ -1667,18 +1667,19 @@ class LhystudioController(Modifier, Pipe):
                 return  # Wait abort was requested.
 
 
-class EgvLoader:
+class EgvBlob:
+    def __init__(self, name, b=b''):
+        self.name = name
+        self.data = b
+        self.output = True
+        self.operation = "EgvBlob"
 
-    @staticmethod
-    def load_types():
-        yield "Engrave Files", ("egv",), "application/x-egv"
+    def __repr__(self):
+        return "EgvBlob(%s, %d bytes)" % (self.name, len(self.data))
 
-    @staticmethod
-    def load(kernel, pathname, **kwargs):
+    def as_svg(self):
         elements = []
-        basename = os.path.basename(pathname)
-
-        for event in parse_egv(pathname):
+        for event in parse_egv(self.data):
             path = event['path']
             path.stroke = Color('black')
             if len(path) > 0:
@@ -1692,7 +1693,26 @@ class EgvLoader:
                     elements.append(image)
                     if 'speed' in event:
                         image.values['speed'] = event['speed']
-        return elements, pathname, basename
+        return elements
+
+    def __len__(self):
+        return len(self.data)
+
+    def generate(self):
+        yield COMMAND_HOME
+
+
+class EgvLoader:
+    @staticmethod
+    def load_types():
+        yield "Engrave Files", ("egv",), "application/x-egv"
+
+    @staticmethod
+    def load(kernel, pathname, **kwargs):
+        basename = os.path.basename(pathname)
+        with open(pathname, 'rb') as f:
+            blob = EgvBlob(basename, f.read())
+        return [blob], None, None, pathname, basename
 
 
 CMD_RIGHT = ord(b'B')

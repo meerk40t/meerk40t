@@ -1371,7 +1371,7 @@ class RuidaBlob:
         self.name = name
         self.data = b
         self.output = True
-        self.operation = "Blob"
+        self.operation = "RuidaBlob"
 
     def __repr__(self):
         return "RuidaBlob(%s, %d bytes)" % (self.name, len(self.data))

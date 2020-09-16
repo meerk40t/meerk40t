@@ -11,7 +11,6 @@ import wx.ribbon as RB
 
 from About import About
 from Alignment import Alignment
-from Blob import BlobOperation
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller

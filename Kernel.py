@@ -2,7 +2,6 @@ import os
 import time
 from threading import Thread, Lock
 
-from Blob import Blob
 from LaserOperation import *
 from svgelements import *
 from zinglplotter import ZinglPlotter
@@ -622,7 +621,6 @@ class Elemental(Modifier):
         context.save_types = self.save_types
         context.load = self.load
         context.load_types = self.load_types
-        self.add_elem(Blob("This String", 'string'))
         self.add_elem(Rect(0,0,1000,1000, stroke='black'))
 
         context = self.context
