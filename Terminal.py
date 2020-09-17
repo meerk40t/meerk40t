@@ -42,11 +42,11 @@ class Terminal(wx.Frame, Module):
     def initialize(self, channel=None):
         self.context.close(self.name)
         self.Show()
-        self.context.add_watcher('console', self.update_text)
+        self.context.channel('console').watch(self.update_text)
         self.text_entry.SetFocus()
 
     def finalize(self, channel=None):
-        self.context.remove_watcher('console', self.update_text)
+        self.context.channel('console').unwatch(self.update_text)
         try:
             self.Close()
         except RuntimeError:

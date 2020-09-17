@@ -143,7 +143,7 @@ class MoshiboardController(Module, Pipe):
         self.usb_state = -1
 
     def initialize(self, channel=None):
-        self.usb_log = self.context.channel_open("usb")
+        self.usb_log = self.context.channel("usb")
 
     def open(self):
         if self.driver is None:

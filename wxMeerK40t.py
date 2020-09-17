@@ -730,7 +730,7 @@ class MeerK40t(wx.Frame, Module, Job):
         context = self.context
 
         if context.print_shutdown:
-            context.add_watcher('shutdown', print)
+            context.channel('shutdown').watch(print)
 
         context.unschedule(self)
         self.screen_refresh_lock.acquire()
@@ -936,7 +936,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.context.setting(bool, 'uniform_svg', False)
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
-            results = self.context.load(pathname, channel=self.context.channel_open('load'))
+            results = self.context.load(pathname, channel=self.context.channel('load'))
             if results is not None:
                 elements, pathname, basename = results
                 self.save_recent(pathname)

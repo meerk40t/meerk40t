@@ -35,10 +35,10 @@ class UsbConnect(wx.Frame, Module):
     def initialize(self, channel=None):
         self.context.close(self.name)
         self.Show()
-        self.context.add_watcher('usb', self.update_text)
+        self.context.channel('usb').watch(self.update_text)
 
     def finalize(self, channel=None):
-        self.context.remove_watcher('usb', self.update_text)
+        self.context.channel('usb').watch(self.update_text)
         try:
             self.Close()
         except RuntimeError:

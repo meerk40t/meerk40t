@@ -1193,10 +1193,10 @@ class LhystudioController(Modifier, Pipe):
         context.register("control/Connect_USB", self.open)
         context.register("control/Disconnect_USB", self.close)
         context.register("control/Status Update", self.update_status)
-        self.usb_log = context.channel_open("usb", buffer=20)
-        self.send_channel = context.channel_open('send')
-        self.recv_channel = context.channel_open('recv')
-        self.pipe_channel = context.channel_open('pipe')
+        self.usb_log = context.channel("usb", buffer_size=20)
+        self.send_channel = context.channel('send')
+        self.recv_channel = context.channel('recv')
+        self.pipe_channel = context.channel('pipe')
         self.reset()
 
         def abort_wait():

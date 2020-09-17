@@ -52,17 +52,17 @@ class RuidaDevice:
                 yield _('Ruida Jog Server opened on port %d.') % 50207
 
                 chan = 'ruida'
-                c.add_watcher(chan, kernel.channel_open('console'))
+                c.channel(chan).watch(kernel.channel('console'))
                 yield _('Watching Channel: %s') % chan
 
                 chan = 'server'
-                c.add_watcher(chan, kernel.channel_open('console'))
+                c.channel(chan).watch(kernel.channel('console'))
                 yield _('Watching Channel: %s') % chan
 
                 emulator = c.open('module/RuidaEmulator')
-                c.add_watcher('ruidaserver/recv', emulator.checksum_write)
-                c.add_watcher('ruidajog/recv', emulator.realtime_write)
-                c.add_watcher('ruida_reply', c.channel_open('ruidaserver/send'))
+                c.channel('ruidaserver/recv').watch(emulator.checksum_write)
+                c.channel('ruidajog/recv').watch(emulator.realtime_write)
+                c.channel('ruida_reply').watch(c.channel('ruidaserver/send'))
             except OSError:
                 yield _('Server failed.')
             return
@@ -285,10 +285,10 @@ class RuidaEmulator(Module):
         self.power2_min = 0
         self.power2_max = 0
 
-        self.ruida_channel = self.context.channel_open('ruida')
-        self.ruida_reply = self.context.channel_open('ruida_reply')
-        self.ruida_send = self.context.channel_open('ruida_send')
-        self.ruida_describe = self.context.channel_open('ruida_desc')
+        self.ruida_channel = self.context.channel('ruida')
+        self.ruida_reply = self.context.channel('ruida_reply')
+        self.ruida_send = self.context.channel('ruida_send')
+        self.ruida_describe = self.context.channel('ruida_desc')
 
         self.process_commands = True
         self.parse_lasercode = True

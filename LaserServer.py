@@ -20,21 +20,20 @@ class UDPServer(Module):
         :param port: UDP listen port.
         """
         Module.__init__(self, context, path)
-        self.server_channel = self.context.channel_open('server')
+        self.server_channel = self.context.channel('server')
         self.port = port
 
         self.udp_address = None
-
-        self.context.add_watcher('%s/send' % path, self.send)
-        self.recv = self.context.channel_open('%s/recv' % path)
+        self.context.channel('%s/send' % path).watch(self.send)
+        self.recv = self.context.channel('%s/recv' % path)
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
         self.socket.bind(('', self.port))
-        self.context.threaded(self.run)
+        self.context.threaded(self.run_udp_listener, thread_name=path)
 
     def finalize(self, channel=None):
-        self.context.remove_watcher('%s/send' % self.name, self.send)  # We stop watching the send channel
+        self.context.channel('%s/send' % self.name).unwatch(self.send)  # We stop watching the send channel
         self.server_channel("Shutting down server.")
         if self.socket is not None:
             self.socket.close()
@@ -49,7 +48,7 @@ class UDPServer(Module):
             return
         self.socket.sendto(message, self.udp_address)
 
-    def run(self):
+    def run_udp_listener(self):
         try:
             self.server_channel("UDP Socket(%d) Listening." % self.port)
             while True:
@@ -81,8 +80,8 @@ class TCPServer(Module):
 
         self.server_channel = None
         self.socket = None
-        self.server_channel = self.context.channel_open('server')
-        self.context.threaded(self.run)
+        self.server_channel = self.context.channel('server')
+        self.context.threaded(self.run_tcp_delegater)
 
     def finalize(self, channel=None):
         self.server_channel("Shutting down server.")
@@ -93,7 +92,7 @@ class TCPServer(Module):
     def shutdown(self,  channel=None):
         self.finalize()
 
-    def run(self):
+    def run_tcp_delegater(self):
         """
         TCP Run is a connection thread delegate. Any connections are given a different threaded
         handle to interact with that connection. This thread here waits for sockets and delegates.
@@ -135,8 +134,8 @@ class TCPServer(Module):
                     connection.send(bytes(e, 'utf-8'))
                     self.server_channel("<-- %s" % str(e))
 
-            recv = self.context.channel_open('%s/recv' % self.name)
-            self.context.add_watcher('%s/send' % self.name, send)
+            recv = self.context.channel('%s/recv' % self.name)
+            self.context.channel('%s/send' % self.name).watch(send)
             while self.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
@@ -150,5 +149,5 @@ class TCPServer(Module):
                     if connection is not None:
                         connection.close()
                     break
-            self.context.remove_watcher('%s/send' % self.name, send)
+            self.context.channel('%s/send' % self.name).unwatch(send)
         return handle

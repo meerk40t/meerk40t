@@ -175,15 +175,15 @@ if args.output is not None:
     kernel_root.save(os.path.realpath(args.output.name))
 
 if args.batch:
-    device.add_watcher('console', print)
+    device.channel('console').watch(print)
     with args.batch as batch:
         for line in batch:
             device.console(line.strip() + '\n')
-    device.remove_watcher('console', print)
+    device.channel('console').unwatch(print)
 
 if args.console:
-    device.add_watcher('console', print)
-    kernel_root.add_watcher('shutdown', print)
+    device.channel('console').watch(print)
+    kernel_root.channel('shutdown').watch(print)
     while True:
         device_entries = input('>')
         if device._state == STATE_TERMINATE:
@@ -191,8 +191,7 @@ if args.console:
         if device_entries == 'quit':
             break
         device.console(device_entries + '\n')
-
-    device.remove_watcher('console', print)
+    device.channel('console').unwatch(print)
 
 
 if not args.no_gui:

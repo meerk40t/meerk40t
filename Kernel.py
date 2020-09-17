@@ -2787,10 +2787,12 @@ class BindAlias(Modifier):
             _ = self.context._kernel.translation
             port = 23
             try:
-                self.context.open_as('module/TCPServer', 'console-server', port=23)
-                self.context.add_greet("console-server/send", "MeerK40t 0.7.0 Telnet Console.\r\n")
-                self.context.add_watcher('console-server/recv', self.context.console)
-                self.context.add_watcher('console', self.context.channel_open('console-server/send'))
+                self.context.open_as('module/TCPServer', 'console-server', port=port)
+                send = self.context.channel('console-server/send')
+                send.greet = "MeerK40t 0.7.0 Telnet Console.\r\n"
+                recv = self.context.channel('console-server/recv')
+                recv.watch(self.context.console)
+                self.context.channel('console').watch(send)
             except OSError:
                 yield _('Server failed on port: %d') % port
             return
@@ -3127,7 +3129,7 @@ class Context:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
-        channel = self._kernel.channel_open('open')
+        channel = self._kernel.channel('open')
         instance.initialize(channel=channel)
 
         self.opened[instance_path] = instance
@@ -3151,7 +3153,7 @@ class Context:
             instance.close()
         except AttributeError:
             pass
-        instance.finalize(self._kernel.channel_open('close'))
+        instance.finalize(self._kernel.channel('close'))
         try:
             del self.opened[instance_path]
         except KeyError:
@@ -3266,37 +3268,7 @@ class Context:
         """
         self._kernel.unlisten(self.abs_path(signal), process)
 
-    def add_greet(self, channel, greet):
-        """
-        Channel add_greet delegate to the kernel.
-
-        :param channel: Channel to add a greet message for.
-        :param greet: Greet to add to that channel.
-        :return:
-        """
-        self._kernel.add_greet(self.abs_path(channel), greet)
-
-    def add_watcher(self, channel, monitor_function):
-        """
-        Channel add_watcher delegate to the kernel.
-
-        :param channel: Channel to be watched.
-        :param monitor_function: monitor function to be sent channel information.
-        :return:
-        """
-        self._kernel.add_watcher(self.abs_path(channel), monitor_function)
-
-    def remove_watcher(self, channel, monitor_function):
-        """
-        Channel remove_watcher delegate to the kernel.
-
-        :param channel: Channel to be no longer watched.
-        :param monitor_function: monitor function to be removed.
-        :return:
-        """
-        self._kernel.remove_watcher(self.abs_path(channel), monitor_function)
-
-    def channel_open(self, channel, buffer=0):
+    def channel(self, channel, *args, **kwargs):
         """
         Channel channel_open delegate to the kernel.
 
@@ -3304,7 +3276,7 @@ class Context:
         :param buffer: Buffer to be applied to the given channel and sent to any watcher upon connection.
         :return: Channel object that is opened.
         """
-        return self._kernel.channel_open(self.abs_path(channel), buffer=buffer)
+        return self._kernel.channel(self.abs_path(channel), *args, **kwargs)
 
     def console_function(self, data):
         return ConsoleFunction(self, data)
@@ -3332,6 +3304,43 @@ class ConsoleFunction:
 
     def __repr__(self):
         return self.data.replace('\n', '')
+
+
+class Channel:
+    def __init__(self, name, buffer_size=0, line_end=None):
+        self.watchers = []
+        self.greet = None
+        self.name = name
+        self.buffer_size = buffer_size
+        self.line_end = line_end
+        if buffer_size == 0:
+            self.buffer = None
+        else:
+            self.buffer = list()
+
+    def __call__(self, message, *args, **kwargs):
+        if self.line_end is not None:
+            message = message + self.line_end
+        for w in self.watchers:
+            w(message)
+        if self.buffer is not None:
+            self.buffer.append(message)
+            if len(self.buffer) + 10 > self.buffer_size:
+                self.buffer = self.buffer[-self.buffer_size:]
+
+    def watch(self, monitor_function):
+        for q in self.watchers:
+            if q is monitor_function:
+                return  # This is already being watched by that.
+        self.watchers.append(monitor_function)
+        if self.greet is not None:
+            monitor_function(self.greet)
+        if self.buffer is not None:
+            for line in self.buffer:
+                monitor_function(line)
+
+    def unwatch(self, monitor_function):
+        self.watchers.remove(monitor_function)
 
 
 class Kernel:
@@ -3372,15 +3381,12 @@ class Kernel:
         self._is_queue_processing = False
 
         self.channels = {}
-        self.watchers = {}
-        self.buffer = {}
-        self.greet = {}
 
         self.commands = []
         self.console_job = Job(name="kernel.console.ticks", process=self._console_tick, interval=0.05)
         self._console_buffer = ''
         self.queue = []
-        self._console_channel = self.channel_open('console')
+        self._console_channel = self.channel('console')
         self.console_channel_file = None
 
         if config is not None:
@@ -3981,48 +3987,9 @@ class Kernel:
 
     # Channel processing.
 
-    def add_greet(self, channel, greet):
-        self.greet[channel] = greet
-        if channel in self.channels:
-            self.channels[channel](greet)
-
-    def add_watcher(self, channel, monitor_function):
-        if channel not in self.watchers:
-            self.watchers[channel] = [monitor_function]
-        else:
-            for q in self.watchers[channel]:
-                if q is monitor_function:
-                    return  # This is already being watched by that.
-            self.watchers[channel].append(monitor_function)
-        if channel in self.greet:
-            monitor_function(self.greet[channel])
-        if channel in self.buffer:
-            for line in self.buffer[channel]:
-                monitor_function(line)
-
-    def remove_watcher(self, channel, monitor_function):
-        self.watchers[channel].remove(monitor_function)
-
-    def channel_open(self, channel, buffer=0):
+    def channel(self, channel, *args, **kwargs):
         if channel not in self.channels:
-            def chan(message):
-                if channel in self.watchers:
-                    for w in self.watchers[channel]:
-                        w(message)
-                if buffer <= 0:
-                    return
-                try:
-                    buff = self.buffer[channel]
-                except KeyError:
-                    buff = list()
-                    self.buffer[channel] = buff
-                buff.append(message)
-                if len(buff) + 10 > buffer:
-                    self.buffer[channel] = buff[-buffer:]
-
-            self.channels[channel] = chan
-            if channel in self.greet:
-                chan(self.greet[channel])
+            self.channels[channel] = Channel(channel, *args, **kwargs)
         return self.channels[channel]
 
     # Console Processing.
@@ -4071,7 +4038,7 @@ class Kernel:
 
     def _console_file_write(self, v):
         if self.console_channel_file is not None:
-            self.console_channel_file.write('%s\n' % v)
+            self.console_channel_file.write('%s\r\n' % v)
             self.console_channel_file.flush()
 
     def _console_interface(self, command):
@@ -4298,14 +4265,12 @@ class Kernel:
                 yield _('----------')
                 yield _('Channels Active:')
                 for i, name in enumerate(self.channels):
-                    yield '%d: %s' % (i + 1, name)
-                yield _('----------')
-                yield _('Channels Watching:')
-                for name in self.watchers:
-                    watchers = self.watchers[name]
-                    if self._console_channel in watchers:
-                        yield name
-                yield _('----------')
+                    channel = self.channels[name]
+                    if self._console_channel in channel.watchers:
+                        is_watched = '* '
+                    else:
+                        is_watched = ''
+                    yield '%s%d: %s' % (is_watched, i + 1, name)
             else:
                 value = args[0]
                 chan = args[1]
@@ -4313,11 +4278,11 @@ class Kernel:
                     if chan == 'console':
                         yield _('Infinite Loop Error.')
                     else:
-                        active_context.add_watcher(chan, self._console_channel)
+                        active_context.channel(chan).watch(self._console_channel)
                         yield _('Watching Channel: %s') % chan
                 elif value == 'close':
                     try:
-                        active_context.remove_watcher(chan, self._console_channel)
+                        active_context.channel(chan).unwatch(self._console_channel)
                         yield _('No Longer Watching Channel: %s') % chan
                     except KeyError:
                         yield _('Channel %s is not opened.') % chan
@@ -4328,7 +4293,7 @@ class Kernel:
                         yield _('Opening file: %s') % filename
                         self.console_channel_file = open(filename, "a")
                     yield _('Recording Channel: %s') % chan
-                    active_context.add_watcher(chan, self._console_file_write)
+                    active_context.channel(chan).watch(self._console_file_write)
             return
         elif command == 'device':
             if len(args) == 0:

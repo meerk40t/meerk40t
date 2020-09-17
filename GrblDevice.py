@@ -48,13 +48,13 @@ class GrblDevice:
                 active_context.add_greet("grbl/send", "Grbl 1.1e ['$' for help]\r\n")
                 yield _('GRBL Mode.')
                 chan = 'grbl'
-                active_context.add_watcher(chan, kernel.channel_open('console'))
+                active_context.channel(chan).watch(kernel.channel('console'))
                 yield _('Watching Channel: %s') % chan
                 chan = 'server'
-                active_context.add_watcher(chan, kernel.channel_open('console'))
+                active_context.channel(chan).watch(kernel.channel('console'))
                 yield _('Watching Channel: %s') % chan
                 emulator = active_context.open('module/GRBLEmulator')
-                active_context.add_watcher('grbl/recv', emulator.write)
+                active_context.channel('grbl/recv').watch(emulator.write)
             except OSError:
                 yield _('Server failed on port: %d') % port
             return
@@ -239,7 +239,7 @@ class GRBLEmulator(Module, Pipe):
         self.elements = None
 
     def initialize(self, channel=None):
-        self.grbl_channel = self.context.channel_open('grbl')
+        self.grbl_channel = self.context.channel('grbl')
 
     def close(self):
         pass
