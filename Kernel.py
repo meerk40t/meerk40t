@@ -2790,6 +2790,7 @@ class BindAlias(Modifier):
                 self.context.open_as('module/TCPServer', 'console-server', port=port)
                 send = self.context.channel('console-server/send')
                 send.greet = "MeerK40t 0.7.0 Telnet Console.\r\n"
+                send.line_end = '\r\n'
                 recv = self.context.channel('console-server/recv')
                 recv.watch(self.context.console)
                 self.context.channel('console').watch(send)
@@ -3327,6 +3328,12 @@ class Channel:
             self.buffer.append(message)
             if len(self.buffer) + 10 > self.buffer_size:
                 self.buffer = self.buffer[-self.buffer_size:]
+
+    def __iadd__(self, other):
+        self.watch(monitor_function=other)
+
+    def __isub__(self, other):
+        self.unwatch(monitor_function=other)
 
     def watch(self, monitor_function):
         for q in self.watchers:

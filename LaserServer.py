@@ -131,8 +131,11 @@ class TCPServer(Module):
         def handle():
             def send(e):
                 if connection is not None:
-                    connection.send(bytes(e, 'utf-8'))
-                    self.server_channel("<-- %s" % str(e))
+                    try:
+                        connection.send(bytes(e, 'utf-8'))
+                        self.server_channel("<-- %s" % str(e))
+                    except ConnectionAbortedError:
+                        connection.close()
 
             recv = self.context.channel('%s/recv' % self.name)
             self.context.channel('%s/send' % self.name).watch(send)
