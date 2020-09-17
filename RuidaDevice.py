@@ -43,21 +43,26 @@ class RuidaDevice:
         kernel.register('module/RuidaEmulator', RuidaEmulator)
 
         def ruidaserver(command, *args):
-            active_context = kernel.active
+            c = kernel.active
             _ = kernel.translation
             try:
-                server = active_context.open_as('module/LaserServer', 'ruidaserver', port=50200, tcp=False)
-                jog = active_context.open_as('module/LaserServer', 'ruidajog', port=50207, tcp=False)
+                c.open_as('module/UDPServer', 'ruidaserver', port=50200)
+                c.open_as('module/UDPServer', 'ruidajog', port=50207)
                 yield _('Ruida Data Server opened on port %d.') % 50200
                 yield _('Ruida Jog Server opened on port %d.') % 50207
+
                 chan = 'ruida'
-                active_context.add_watcher(chan, kernel.channel_open('console'))
+                c.add_watcher(chan, kernel.channel_open('console'))
                 yield _('Watching Channel: %s') % chan
+
                 chan = 'server'
-                active_context.add_watcher(chan, kernel.channel_open('console'))
+                c.add_watcher(chan, kernel.channel_open('console'))
                 yield _('Watching Channel: %s') % chan
-                server.set_pipe(active_context.open('module/RuidaEmulator'))
-                jog.set_pipe(active_context.open('module/RuidaEmulator'))
+
+                emulator = c.open('module/RuidaEmulator')
+                c.add_watcher('ruidaserver/recv', emulator.checksum_write)
+                c.add_watcher('ruidajog/recv', emulator.realtime_write)
+                c.add_watcher('ruida_reply', c.channel_open('ruidaserver/send'))
             except OSError:
                 yield _('Server failed.')
             return
@@ -252,12 +257,16 @@ class RuidaInterpreter(Interpreter):
 
 
 class RuidaEmulator(Module):
-
     def __init__(self, context, path):
         Module.__init__(self, context, path)
-        self.blob = None
-        self.channel = lambda e: e
+        self.output = True
+        self.operation = "Ruida"
+
         self.path_d = list()
+        self.elements = []
+        self.lasercode = []
+        self.blob = []
+
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
@@ -276,8 +285,30 @@ class RuidaEmulator(Module):
         self.power2_min = 0
         self.power2_max = 0
 
-    def initialize(self, channel=None):
-        self.channel = self.context.channel_open('ruida')
+        self.ruida_channel = self.context.channel_open('ruida')
+        self.ruida_reply = self.context.channel_open('ruida_reply')
+        self.ruida_send = self.context.channel_open('ruida_send')
+        self.ruida_describe = self.context.channel_open('ruida_desc')
+
+        self.process_commands = True
+        self.parse_lasercode = True
+        self.parse_blob = True
+        self.parse_svg = True
+        self.in_file = False
+        self.swizzle_mode = True
+
+    def __len__(self):
+        return len(self.blob)
+
+    def __repr__(self):
+        return "Ruida(%s, %d commands)" % (self.name, len(self.blob))
+
+    def as_svg(self):
+        return self.elements
+
+    def generate(self):
+        for lc in self.lasercode:
+            yield lc
 
     @staticmethod
     def signed35(v):
@@ -332,28 +363,36 @@ class RuidaEmulator(Module):
             v & 0x7F,
         ]
 
-    def abscoord(self, data):
+    @staticmethod
+    def abscoord(data):
         return RuidaEmulator.decode35(data)
 
-    def relcoord(self, data):
+    @staticmethod
+    def relcoord(data):
         return RuidaEmulator.decode14(data)
 
-    def parse_filenumber(self, data):
+    @staticmethod
+    def parse_filenumber(data):
         return RuidaEmulator.decode14(data)
 
-    def parse_speed(self, data):
+    @staticmethod
+    def parse_speed(data):
         return RuidaEmulator.decode35(data) / 1000.0
 
-    def parse_frequency(self, data):
+    @staticmethod
+    def parse_frequency(data):
         return RuidaEmulator.decodeu35(data)
 
-    def parse_power(self, data):
+    @staticmethod
+    def parse_power(data):
         return RuidaEmulator.decodeu14(data) / 163.84  # 16384 / 100%
 
-    def parse_time(self, data):
+    @staticmethod
+    def parse_time(data):
         return RuidaEmulator.decodeu35(data) / 1000.0
 
-    def parse_commands(self, f):
+    @staticmethod
+    def parse_commands(f):
         array = list()
         while True:
             byte = f.read(1)
@@ -367,25 +406,22 @@ class RuidaEmulator(Module):
         if len(array) > 0:
             yield array
 
-    def jog_parse(self, data, reply=None, channel=None, elements=None):
-        if channel is None:
-            channel = self.channel
-        if reply is None:
-            reply = lambda e: e
-        if elements is None:
-            elements = lambda e: e
-        response = b'\xCC'  # Clear ACK.
-        reply(response)
-        self.parse(BytesIO(data), reply=reply, channel=channel, elements=elements)
-        channel("<-- %s\t(ACK)" % str(response.hex()))
+    def reply(self, response, desc='ACK'):
+        if self.swizzle_mode:
+            self.ruida_reply(self.swizzle(response))
+        else:
+            self.ruida_reply(response)
+        self.ruida_channel("<-- %s\t(%s)" % (response.hex(), desc))
 
-    def checksum_parse(self, sent_data, reply=None, channel=None, elements=None):
-        if channel is None:
-            channel = self.channel
-        if reply is None:
-            reply = lambda e: e
-        if elements is None:
-            elements = lambda e: e
+    def checksum_write(self, sent_data):
+        """
+        This is a write with a checksum and swizzling. This is how the 50200 packets arrive and need to be processed.
+
+        :param sent_data: Packet data.
+        :return:
+        """
+        self.swizzle_mode = True
+
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
@@ -394,55 +430,117 @@ class RuidaEmulator(Module):
                 self.magic = 0x88
                 self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
                 self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
-                channel("Setting magic to 0x88")
+                self.ruida_channel("Setting magic to 0x88")
             if self.magic != 0x11 and sent_data[2] == 0x4B:
                 self.magic = 0x11
                 self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
                 self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
-                channel("Setting magic to 0x11")
+                self.ruida_channel("Setting magic to 0x11")
+
         if checksum_check == checksum_sum:
             response = b'\xCC'
-            reply(self.swizzle(response))
-            channel("<-- %s     (checksum match)" % str(response.hex()))
+            self.reply(response, desc="Checksum match")
         else:
             response = b'\xCF'
-            reply(self.swizzle(response))
-            channel("--> " + str(data.hex()))
-            channel("<--     (Checksum Fail (%d != %d))" % (str(response.hex()), checksum_sum, checksum_check))
+            self.reply(response, desc="Checksum Fail (%d != %d)" % (checksum_sum, checksum_check))
+            self.ruida_channel("--> " + str(data.hex()))
             return
-        self.parse(BytesIO(self.unswizzle(data)), reply=reply, channel=channel, elements=elements)
+        self.write(BytesIO(self.unswizzle(data)))
 
-    def parse(self, data, reply=None, channel=None, elements=None):
+    def realtime_write(self, bytes_to_write):
+        """
+        Real time commands are replied to and sent in realtime. For Ruida devices these are sent along udp 50207.
+
+        :param bytes_to_write: bytes to write.
+        :return:
+        """
+        self.swizzle_mode = False
+        self.reply(b'\xCC')  # Clear ACK.
+        self.write(BytesIO(bytes_to_write))
+
+    def write(self, data):
+        """
+        Procedural commands sent in large data chunks. This can be through USB or UDP or a loaded file. These are
+        expected to be unswizzled with the swizzle_mode set for the reply. Write will parse out the individual commands
+        and send those to the command routine.
+
+        :param data:
+        :return:
+        """
         for array in self.parse_commands(data):
-            self.ruida_command(array, reply=reply, channel=channel, elements=elements)
+            self.command(array)
 
-    def ruida_command(self, array, reply=None, channel=None, elements=None):
-        um_per_mil = 25.4
-        path_d = self.path_d
-        if channel is None:
-            channel = self.channel
-        if reply is None:
-            reply = lambda e: e
-        if elements is None:
-            elements = lambda e: e
+    def command(self, array):
+        """
+        Sends an individual unswizzled ruida command to the emulator.
 
-        def new_path():
-            path = Path(' '.join(path_d))
-            path.values['name'] = self.filename
-            path.values['speed'] = self.speed
-            path.values['power'] = self.power1_min
-            path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
-            path.stroke = Color(self.color)
-            elements(path)
-            path_d.clear()
-
-        if self.blob is not None:
+        :param array:
+        :return:
+        """
+        if self.process_commands:
+            self.process(array)
+        if self.in_file and self.parse_blob:
             self.blob.append(array)
+
+    def new_path(self):
+        """
+        Start a new path during the parsing.
+
+        :return:
+        """
+        if not self.parse_svg:
+            return
+        path_d = self.path_d
+        if len(path_d) == 0:
+            return
+        path = Path(' '.join(path_d))
+        path.values['name'] = self.filename
+        path.values['speed'] = self.speed
+        path.values['power'] = self.power1_min
+        path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
+        path.stroke = Color(self.color)
+        self.elements.append(path)
+        path_d.clear()
+
+    def path_move(self):
+        if not self.parse_svg:
+            return
+        um_per_mil = 25.4
+        self.path_d.append("M%f,%f" % (self.x / um_per_mil, self.y / um_per_mil))
+
+    def path_abs_cut(self):
+        if not self.parse_svg:
+            return
+        um_per_mil = 25.4
+        self.path_d.append("L%0.4f,%0.4f" % (self.x / um_per_mil, self.y / um_per_mil))
+
+    def path_rel_cut(self, dx=0, dy=0):
+        if not self.parse_svg:
+            return
+        um_per_mil = 25.4
+        if dx == 0 and dy == 0:
+            return
+        elif dy == 0:
+            self.path_d.append("h%0.4f" % (dx / um_per_mil))
+        elif dx == 0:
+            self.path_d.append("v%0.4f" % (dy / um_per_mil))
+        else:
+            self.path_d.append("l%0.4f,%0.4f" % (dx / um_per_mil, dy / um_per_mil))
+
+    def process(self, array):
+        """
+        Parses an individual unswizzled ruida command, updating the emulator state.
+
+        These commands can change the position, settings, speed, color, power, create elements, creates lasercode.
+        :param array:
+        :return:
+        """
+        um_per_mil = 25.4
         desc = ""
         respond = None
         respond_desc = None
         if array[0] < 0x80:
-            channel("NOT A COMMAND: %d" % array[0])
+            self.ruida_channel("NOT A COMMAND: %d" % array[0])
             raise ValueError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
@@ -455,32 +553,28 @@ class RuidaEmulator(Module):
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            if len(path_d) != 0:
-                new_path()
-            path_d.append("M%f,%f" % (self.x / um_per_mil, self.y / um_per_mil))
+            self.new_path()
+            self.path_move()
             desc = "Move Absolute (%f, %f)" % (self.x, self.y)
         elif array[0] == 0x89:  # 0b10001001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
-            if len(path_d) != 0:
-                new_path()
+            self.new_path()
             self.x += dx
             self.y += dy
-            path_d.append("M%f,%f" % (self.x / um_per_mil, self.y / um_per_mil))
+            self.path_move()
             desc = "Move Relative (%f, %f)" % (dx, dy)
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
-            if len(path_d) != 0:
-                new_path()
+            self.new_path()
             self.x += dx
-            path_d.append("M%f,%f" % (self.x / um_per_mil, self.y / um_per_mil))
+            self.path_move()
             desc = "Move Horizontal Relative (%f)" % (dx)
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
-            if len(path_d) != 0:
-                new_path()
+            self.new_path()
             self.y += dy
-            path_d.append("M%f,%f" % (self.x / um_per_mil, self.y / um_per_mil))
+            self.path_move()
             desc = "Move Vertical Relative (%f)" % (dy)
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
@@ -535,23 +629,23 @@ class RuidaEmulator(Module):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            path_d.append("L%0.4f,%0.4f" % (self.x / um_per_mil, self.y / um_per_mil))
+            self.path_abs_cut()
             desc = "Cut Absolute (%f, %f)" % (self.x, self.y)
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
-            path_d.append("l%0.4f,%0.4f" % (dx / um_per_mil, dy / um_per_mil))
+            self.path_rel_cut(dx, dy)
             self.x += dx
             self.y += dy
             desc = "Cut Relative (%f, %f)" % (dx, dy)
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
-            path_d.append("h%0.4f" % (dx / um_per_mil))
+            self.path_rel_cut(dx, 0)
             self.x += dx
             desc = "Cut Horizontal Relative (%f)" % (dx)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
-            path_d.append("v%0.4f" % (dy / um_per_mil))
+            self.path_rel_cut(0, dy)
             self.y += dy
             desc = "Cut Vertical Relative (%f)" % (dy)
         elif array[0] == 0xC7:
@@ -754,7 +848,7 @@ class RuidaEmulator(Module):
                 desc = "%d, Max Layer" % (part)
             elif array[1] == 0x30:
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "U File ID %d"
+                desc = "U File ID %d" % filenumber
             elif array[1] == 0x40:
                 value = array[2]
                 desc = "ZU Map %d" % value
@@ -769,16 +863,11 @@ class RuidaEmulator(Module):
         elif array[0] == 0xCE:
             desc = "Keep Alive"
         elif array[0] == 0xD7:
-            if len(path_d) != 0:
-                new_path()
-            if self.blob is not None:
-                print(self.blob)
-                elements(RuidaBlob('UDPTransfer', self.blob))
-                self.blob = None
+            self.new_path()
+            self.in_file = False
             desc = "End Of File"
         elif array[0] == 0xD8:
-            if self.blob is None:
-                self.blob = [array]
+            self.in_file = True
             if array[1] == 0x00:
                 desc = "Start Process"
             if array[1] == 0x01:
@@ -831,7 +920,7 @@ class RuidaEmulator(Module):
                 desc = "Home %s XY" % param
                 self.x = 0
                 self.y = 0
-            path_d.append("M%04f,%04f" % (self.x / um_per_mil, self.y / um_per_mil))
+            self.path_move()
         elif array[0] == 0xDA:
             v = 0
             name = None
@@ -1147,13 +1236,11 @@ class RuidaEmulator(Module):
                     vencode = v
                     respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(vencode)
                     respond_desc = "Respond %02x %02x (%s) = %s" % (array[2], array[3], name, str(vencode))
-                reply(self.swizzle(respond))
             elif array[1] == 0x01:
                 value0 = array[4:9]
                 value1 = array[9:14]
                 v0 = self.decodeu35(value0)
                 v1 = self.decodeu35(value1)
-
                 desc = "Set %02x %02x (%s) = %d (0x%08x) %d (0x%08x)" % (array[2], array[3], name, v0, v0, v1, v1)
         elif array[0] == 0xE6:
             if array[1] == 0x01:
@@ -1340,12 +1427,11 @@ class RuidaEmulator(Module):
                 desc = "Element Array Mirror (%d)" % (index)
         else:
             desc = "Unknown Command!"
-        channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
-        if respond is not None:
-            channel("<-- %s     (%s)" % (respond, respond_desc))
 
-    def realtime_write(self, bytes_to_write):
-        print(bytes_to_write)
+        self.ruida_describe("%s\t%s" % (str(bytes(array).hex()), desc))
+        self.ruida_channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
+        if respond is not None:
+            self.reply(respond, desc=respond_desc)
 
     def unswizzle(self, data):
         array = list()
@@ -1376,31 +1462,6 @@ class RuidaEmulator(Module):
         return b
 
 
-class RuidaBlob:
-    def __init__(self, name, b=b''):
-        self.name = name
-        self.data = b
-        self.output = True
-        self.operation = "RuidaBlob"
-
-    def __repr__(self):
-        return "RuidaBlob(%s, %d commands)" % (self.name, len(self.data))
-
-    def as_svg(self):
-        elements = list()
-        ruidaemulator = RuidaEmulator(None, None)
-        for command in self.data:
-            ruidaemulator.ruida_command(command, elements=elements.append)
-        return elements
-
-    def __len__(self):
-        return len(self.data)
-
-    def generate(self):
-        # TODO: This should actually go over the Ruida data and generate the commands it needs.
-        yield COMMAND_HOME
-
-
 class RDLoader:
     @staticmethod
     def load_types():
@@ -1410,6 +1471,6 @@ class RDLoader:
     def load(kernel, pathname, channel=None, **kwargs):
         basename = os.path.basename(pathname)
         with open(pathname, 'rb') as f:
-            ruidaemulator = RuidaEmulator(None, None)
-            blob = RuidaBlob(basename, list(ruidaemulator.parse_commands(BytesIO(ruidaemulator.unswizzle(f.read())))))
-        return [blob], None, None, pathname, basename
+            ruidaemulator = kernel.get_context('/').open_as('module/RuidaEmulator', basename)
+            ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
+        return [ruidaemulator], None, None, pathname, basename

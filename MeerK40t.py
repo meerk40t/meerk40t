@@ -1,7 +1,6 @@
 import argparse
 import sys
 
-from Console import Console
 from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
@@ -52,7 +51,8 @@ parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emula
 args = parser.parse_args(sys.argv[1:])
 
 kernel.register('static/RasterScripts', RasterScripts)
-kernel.register('module/LaserServer', LaserServer)
+kernel.register('module/TCPServer', TCPServer)
+kernel.register('module/UDPServer', UDPServer)
 kernel.register('load/SVGLoader', SVGLoader)
 kernel.register('load/ImageLoader', ImageLoader)
 kernel.register('load/DxfLoader', DxfLoader)

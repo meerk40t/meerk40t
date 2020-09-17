@@ -53,6 +53,9 @@ class LhystudiosDevice(Modifier):
         self.interpreter = None
         self.spooler = None
         self.state = STATE_UNKNOWN
+        self.context.listen('interpreter;mode', self.on_mode_change)
+        self.dx = 0
+        self.dy = 0
 
     def __repr__(self):
         return "LhystudiosDevice()"
@@ -218,6 +221,13 @@ class LhystudiosDevice(Modifier):
         context.listen('interpreter;mode', self.on_mode_change)
 
         self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
+
+    def detach(self, channel=None):
+        self.context.unlisten('interpreter;mode', self.on_mode_change)
+
+    def on_mode_change(self, *args):
+        self.dx = 0
+        self.dy = 0
 
 
 distance_lookup = [

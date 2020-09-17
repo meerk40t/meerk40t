@@ -60,9 +60,9 @@ class Terminal(wx.Frame, Module):
 
     def update_text(self, text):
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, text + '\n')
+            wx.CallAfter(self.update_text_gui, str(text) + '\n')
         else:
-            self.update_text_gui(text + '\n')
+            self.update_text_gui(str(text) + '\n')
 
     def update_text_gui(self, text):
         try:

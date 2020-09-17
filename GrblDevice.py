@@ -43,12 +43,9 @@ class GrblDevice:
             active_context = kernel.active
             _ = kernel.translation
             port = 23
-            tcp = True
             try:
-                server = kernel.open('module/LaserServer',
-                                     port=port,
-                                     tcp=tcp,
-                                     greet="Grbl 1.1e ['$' for help]\r\n")
+                server = kernel.open_as('module/TCPServer', 'grbl', port=port)
+                active_context.add_greet("grbl/send", "Grbl 1.1e ['$' for help]\r\n")
                 yield _('GRBL Mode.')
                 chan = 'grbl'
                 active_context.add_watcher(chan, kernel.channel_open('console'))
@@ -56,7 +53,8 @@ class GrblDevice:
                 chan = 'server'
                 active_context.add_watcher(chan, kernel.channel_open('console'))
                 yield _('Watching Channel: %s') % chan
-                server.set_pipe(active_context.open('module/GRBLEmulator'))
+                emulator = active_context.open('module/GRBLEmulator')
+                active_context.add_watcher('grbl/recv', emulator.write)
             except OSError:
                 yield _('Server failed on port: %d') % port
             return

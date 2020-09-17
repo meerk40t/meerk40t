@@ -2783,6 +2783,19 @@ class BindAlias(Modifier):
 
         self.context.register('command/alias', alias)
 
+        def server_console(command, *args):
+            _ = self.context._kernel.translation
+            port = 23
+            try:
+                self.context.open_as('module/TCPServer', 'console-server', port=23)
+                self.context.add_greet("console-server/send", "MeerK40t 0.7.0 Telnet Console.\r\n")
+                self.context.add_watcher('console-server/recv', self.context.console)
+                self.context.add_watcher('console', self.context.channel_open('console-server/send'))
+            except OSError:
+                yield _('Server failed on port: %d') % port
+            return
+        self.context.register('command/consoleserver', server_console)
+
     def boot(self, channel=None):
         self.boot_keymap()
         self.boot_alias()
@@ -4199,16 +4212,15 @@ class Kernel:
                 for i, name in enumerate(self.match('module')):
                     yield '%d: %s' % (i + 1, name)
                 yield _('----------')
-                yield _('Loaded Modules in Context %s:') % str(active_context._path)
-                for i, name in enumerate(active_context.opened):
-                    module = active_context.opened[name]
-                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
-                yield _('----------')
-                yield _('Loaded Modules in Device %s:') % str(active_context._path)
-                for i, name in enumerate(active_context.opened):
-                    module = active_context.opened[name]
-                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
-                yield _('----------')
+                for i, name in enumerate(self.contexts):
+                    context = self.contexts[name]
+                    if len(context.opened) == 0:
+                        continue
+                    yield _('Loaded Modules in Context %s:') % str(context._path)
+                    for i, name in enumerate(context.opened):
+                        module = context.opened[name]
+                        yield _('%d: %s as type of %s') % (i + 1, name, type(module))
+                    yield _('----------')
             else:
                 value = args[0]
                 if value == 'open':
