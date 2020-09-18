@@ -1,7 +1,6 @@
 import os
 
-from Kernel import Kernel, Interpreter, INTERPRETER_STATE_PROGRAM
-from Kernel import Module, Pipe
+from Kernel import Kernel, Module, Interpreter, INTERPRETER_STATE_PROGRAM
 from LaserCommandConstants import *
 from svgelements import *
 
@@ -44,8 +43,8 @@ class GrblDevice:
             _ = kernel.translation
             port = 23
             try:
-                server = kernel.open_as('module/TCPServer', 'grbl', port=port)
-                active_context.add_greet("grbl/send", "Grbl 1.1e ['$' for help]\r\n")
+                active_context.open_as('module/TCPServer', 'grbl', port=port)
+                active_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
                 yield _('GRBL Mode.')
                 chan = 'grbl'
                 active_context.channel(chan).watch(kernel.channel('console'))
@@ -59,7 +58,6 @@ class GrblDevice:
                 yield _('Server failed on port: %d') % port
             return
         kernel.register('command/grblserver', grblserver)
-
 
     def initialize(self, device, channel=None):
         """
@@ -175,7 +173,7 @@ class GRBLInterpreter(Interpreter):
         Interpreter.execute(self)
 
 
-class GRBLEmulator(Module, Pipe):
+class GRBLEmulator(Module):
 
     def __init__(self, context, path):
         Module.__init__(self, context, path)

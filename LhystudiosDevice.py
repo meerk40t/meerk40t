@@ -63,7 +63,7 @@ class LhystudiosDevice(Modifier):
     @staticmethod
     def sub_register(device):
         device.register('modifier/LhymicroInterpreter', LhymicroInterpreter)
-        device.register('modifier/LhystudioController', LhystudioController)
+        device.register('module/LhystudioController', LhystudioController)
         device.register('load/EgvLoader', EgvLoader)
 
     def execute_absolute_position(self, position_x, position_y):
@@ -93,14 +93,15 @@ class LhystudiosDevice(Modifier):
         context = self.context
         kernel = self.context._kernel
         _ = kernel.translation
-        spooler = self.spooler
 
         def plus_laser(command, *args):
-            kernel.active.spooler.job(COMMAND_LASER_ON)
+            spooler = kernel.active.spooler
+            spooler.job(COMMAND_LASER_ON)
         kernel.register('command/+laser', plus_laser)
 
         def minus_laser(command, *args):
-            kernel.active.spooler.job(COMMAND_LASER_ON)
+            spooler = kernel.active.spooler
+            spooler.job(COMMAND_LASER_ON)
         kernel.register('command/-laser', minus_laser)
 
         def direction(command, *args):
@@ -129,9 +130,7 @@ class LhystudiosDevice(Modifier):
         kernel.register('command/down', direction)
 
         def jog(command, *args):
-            if spooler is None:
-                yield _('Device has no spooler.')
-                return
+            spooler = kernel.active.spooler
             idx = int(self.dx)
             idy = int(self.dy)
             if idx == 0 and idy == 0:
@@ -145,9 +144,7 @@ class LhystudiosDevice(Modifier):
         kernel.register('command/jog', jog)
 
         def move(command, *args):
-            if spooler is None:
-                yield _('Device has no spooler.')
-                return
+            spooler = kernel.active.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_absolute_position(*args)):
                     yield _('Busy Error')
@@ -157,9 +154,7 @@ class LhystudiosDevice(Modifier):
         kernel.register('command/move_absolute', move)
 
         def move_relative(command, *args):
-            if spooler is None:
-                yield _('Device has no spooler.')
-                return
+            spooler = kernel.active.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_relative_position(*args)):
                     yield _('Busy Error')
@@ -168,27 +163,21 @@ class LhystudiosDevice(Modifier):
         kernel.register('command/move_relative', move_relative)
 
         def home(command, *args):
-            if spooler is None:
-                yield _('Device has no spooler.')
-                return
+            spooler = kernel.active.spooler
             spooler.job(COMMAND_HOME)
         kernel.register('command/home', home)
 
         def unlock(command, *args):
-            if spooler is None:
-                yield _('Device has no spooler.')
-                return
+            spooler = kernel.active.spooler
             spooler.job(COMMAND_UNLOCK)
         kernel.register('command/unlock', unlock)
 
         def lock(command, *args):
-            if spooler is None:
-                yield _('Device has no spooler.')
-                return
+            spooler = kernel.active.spooler
             spooler.job(COMMAND_LOCK)
         kernel.register('command/lock', lock)
 
-        self.context.activate('modifier/LhystudioController')
+        self.context.open_as('module/LhystudioController', 'pipe')
         self.context.activate('modifier/LhymicroInterpreter', self.context)
         self.context.activate('modifier/Spooler')
 
@@ -280,6 +269,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.start_x = None
         self.start_y = None
         self.is_paused = False
+
+        self.pipe = self.context.channel('pipe/send')
+        self.realtime_pipe = self.context.channel('pipe/send_realtime')
 
     def attach(self, channel=None):
         kernel = self.context._kernel
@@ -552,20 +544,20 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.pause(*values)
 
     def pause(self, *values):
-        self.pipe.realtime_write(b'PN!\n')
+        self.realtime_pipe(b'PN!\n')
         self.is_paused = True
 
     def resume(self, *values):
-        self.pipe.realtime_write(b'PN&\n')
+        self.realtime_pipe(b'PN&\n')
         self.is_paused = False
 
     def reset(self):
         Interpreter.reset(self)
-        self.pipe._buffer = b''
-        self.pipe._queue = b''
-        self.context.signal('pipe;buffer', 0)
+        # self.pipe._buffer = b''
+        # self.pipe._queue = b''
+        # self.context.signal('pipe;buffer', 0)
         self.plot = None
-        self.pipe.realtime_write(b'I*\n')
+        self.realtime_pipe(b'I*\n')
         self.laser = False
         self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
@@ -631,14 +623,14 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe.write(b'I')
+            self.pipe(b'I')
             if dx != 0:
                 self.goto_x(dx)
             if dy != 0:
                 self.goto_y(dy)
-            self.pipe.write(b'S1P\n')
+            self.pipe(b'S1P\n')
             if not self.context.autolock:
-                self.pipe.write(b'IS2P\n')
+                self.pipe(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
@@ -651,7 +643,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.goto_x(dx)
             if dy != 0:
                 self.goto_y(dy)
-            self.pipe.write(b'N')
+            self.pipe(b'N')
         self.check_bounds()
         self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
                                                      self.context.current_x - dx, self.context.current_y - dy))
@@ -723,55 +715,51 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def laser_off(self):
         if not self.laser:
             return False
-        controller = self.pipe
         if self.state == INTERPRETER_STATE_RAPID:
-            controller.write(b'I')
-            controller.write(self.CODE_LASER_OFF)
-            controller.write(b'S1P\n')
+            self.pipe(b'I')
+            self.pipe(self.CODE_LASER_OFF)
+            self.pipe(b'S1P\n')
             if not self.context.autolock:
-                controller.write(b'IS2P\n')
+                self.pipe(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_LASER_OFF)
+            self.pipe(self.CODE_LASER_OFF)
         elif self.state == INTERPRETER_STATE_FINISH:
-            controller.write(self.CODE_LASER_OFF)
-            controller.write(b'N')
+            self.pipe(self.CODE_LASER_OFF)
+            self.pipe(b'N')
         self.laser = False
         return True
 
     def laser_on(self):
         if self.laser:
             return False
-        controller = self.pipe
         if self.state == INTERPRETER_STATE_RAPID:
-            controller.write(b'I')
-            controller.write(self.CODE_LASER_ON)
-            controller.write(b'S1P\n')
+            self.pipe(b'I')
+            self.pipe(self.CODE_LASER_ON)
+            self.pipe(b'S1P\n')
             if not self.context.autolock:
-                controller.write(b'IS2P\n')
+                self.pipe(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_LASER_ON)
+            self.pipe(self.CODE_LASER_ON)
         elif self.state == INTERPRETER_STATE_FINISH:
-            controller.write(self.CODE_LASER_ON)
-            controller.write(b'N')
+            self.pipe(self.CODE_LASER_ON)
+            self.pipe(b'N')
         self.laser = True
         return True
 
     def ensure_rapid_mode(self):
         if self.state == INTERPRETER_STATE_RAPID:
             return
-        controller = self.pipe
         if self.state == INTERPRETER_STATE_FINISH:
-            controller.write(b'S1P\n')
+            self.pipe(b'S1P\n')
             if not self.context.autolock:
-                controller.write(b'IS2P\n')
+                self.pipe(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM:
-            controller.write(b'FNSE-\n')
+            self.pipe(b'FNSE-\n')
             self.reset_modes()
         self.state = INTERPRETER_STATE_RAPID
         self.context.signal('interpreter;mode', self.state)
 
     def fly_switch_speed(self):
-        controller = self.pipe
         switch = b'@NSE'
         speed_code = LaserSpeed(
             self.context.board,
@@ -791,24 +779,22 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         switch += b'N'
         switch += self.code_declare_directions()
         switch += b'S1E'
-        controller.write(switch)
+        self.pipe(switch)
 
     def ensure_finished_mode(self):
         if self.state == INTERPRETER_STATE_FINISH:
             return
-        controller = self.pipe
         if self.state == INTERPRETER_STATE_PROGRAM:
-            controller.write(b'@NSE')
+            self.pipe(b'@NSE')
             self.reset_modes()
         elif self.state == INTERPRETER_STATE_RAPID:
-            controller.write(b'I')
+            self.pipe(b'I')
         self.state = INTERPRETER_STATE_FINISH
         self.context.signal('interpreter;mode', self.state)
 
     def ensure_program_mode(self):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
-        controller = self.pipe
         self.ensure_finished_mode()
 
         speed_code = LaserSpeed(
@@ -825,20 +811,19 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        controller.write(speed_code)
-        controller.write(b'N')
+        self.pipe(speed_code)
+        self.pipe(b'N')
         self.declare_directions()
-        controller.write(b'S1E')
+        self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
         self.context.signal('interpreter;mode', self.state)
 
     def h_switch(self):
-        controller = self.pipe
         if self.is_prop(DIRECTION_FLAG_LEFT):
-            controller.write(self.CODE_RIGHT)
+            self.pipe(self.CODE_RIGHT)
             self.unset_prop(DIRECTION_FLAG_LEFT)
         else:
-            controller.write(self.CODE_LEFT)
+            self.pipe(self.CODE_LEFT)
             self.set_prop(DIRECTION_FLAG_LEFT)
         if self.is_prop(DIRECTION_FLAG_TOP):
             self.context.current_y -= self.raster_step
@@ -847,12 +832,11 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.laser = False
 
     def v_switch(self):
-        controller = self.pipe
         if self.is_prop(DIRECTION_FLAG_TOP):
-            controller.write(self.CODE_BOTTOM)
+            self.pipe(self.CODE_BOTTOM)
             self.unset_prop(DIRECTION_FLAG_TOP)
         else:
-            controller.write(self.CODE_TOP)
+            self.pipe(self.CODE_TOP)
             self.set_prop(DIRECTION_FLAG_TOP)
         if self.is_prop(DIRECTION_FLAG_LEFT):
             self.context.current_x -= self.raster_step
@@ -871,9 +855,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def home(self):
         x, y = self.calc_home_position()
-        controller = self.pipe
         self.ensure_rapid_mode()
-        controller.write(b'IPP\n')
+        self.pipe(b'IPP\n')
         old_x = self.context.current_x
         old_y = self.context.current_y
         self.context.current_x = x
@@ -893,18 +876,15 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y, old_x, old_y))
 
     def lock_rail(self):
-        controller = self.pipe
         self.ensure_rapid_mode()
-        controller.write(b'IS1P\n')
+        self.pipe(b'IS1P\n')
 
     def unlock_rail(self, abort=False):
-        controller = self.pipe
         self.ensure_rapid_mode()
-        controller.write(b'IS2P\n')
+        self.pipe(b'IS2P\n')
 
     def abort(self):
-        controller = self.pipe
-        controller.write(b'I\n')
+        self.pipe(b'I\n')
 
     def check_bounds(self):
         self.min_x = min(self.min_x, self.context.current_x)
@@ -929,37 +909,35 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.move_top(dy)
 
     def goto_angle(self, dx, dy):
-        controller = self.pipe
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
         self.set_prop(DIRECTION_FLAG_X)  # Set both on
         self.set_prop(DIRECTION_FLAG_Y)
         if dx > 0:  # Moving right
             if self.is_prop(DIRECTION_FLAG_LEFT):
-                controller.write(self.CODE_RIGHT)
+                self.pipe(self.CODE_RIGHT)
                 self.unset_prop(DIRECTION_FLAG_LEFT)
         else:  # Moving left
             if not self.is_prop(DIRECTION_FLAG_LEFT):
-                controller.write(self.CODE_LEFT)
+                self.pipe(self.CODE_LEFT)
                 self.set_prop(DIRECTION_FLAG_LEFT)
         if dy > 0:  # Moving bottom
             if self.is_prop(DIRECTION_FLAG_TOP):
-                controller.write(self.CODE_BOTTOM)
+                self.pipe(self.CODE_BOTTOM)
                 self.unset_prop(DIRECTION_FLAG_TOP)
         else:  # Moving top
             if not self.is_prop(DIRECTION_FLAG_TOP):
-                controller.write(self.CODE_TOP)
+                self.pipe(self.CODE_TOP)
                 self.set_prop(DIRECTION_FLAG_TOP)
         self.context.current_x += dx
         self.context.current_y += dy
         self.check_bounds()
-        controller.write(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
+        self.pipe(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
     def declare_directions(self):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
         You cannot declare a diagonal direction."""
-        controller = self.pipe
-        controller.write(self.code_declare_directions())
+        self.pipe(self.code_declare_directions())
 
     def code_declare_directions(self):
         if self.is_prop(DIRECTION_FLAG_LEFT):
@@ -1025,43 +1003,39 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.unset_prop(DIRECTION_FLAG_TOP)
 
     def move_right(self, dx=0):
-        controller = self.pipe
         self.context.current_x += dx
         if not self.is_right or self.state != INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_RIGHT)
+            self.pipe(self.CODE_RIGHT)
             self.set_right()
         if dx != 0:
-            controller.write(lhymicro_distance(abs(dx)))
+            self.pipe(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_left(self, dx=0):
-        controller = self.pipe
         self.context.current_x -= abs(dx)
         if not self.is_left or self.state != INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_LEFT)
+            self.pipe(self.CODE_LEFT)
             self.set_left()
         if dx != 0:
-            controller.write(lhymicro_distance(abs(dx)))
+            self.pipe(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        controller = self.pipe
         self.context.current_y += dy
         if not self.is_bottom or self.state != INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_BOTTOM)
+            self.pipe(self.CODE_BOTTOM)
             self.set_bottom()
         if dy != 0:
-            controller.write(lhymicro_distance(abs(dy)))
+            self.pipe(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
     def move_top(self, dy=0):
-        controller = self.pipe
         self.context.current_y -= abs(dy)
         if not self.is_top or self.state != INTERPRETER_STATE_PROGRAM:
-            controller.write(self.CODE_TOP)
+            self.pipe(self.CODE_TOP)
             self.set_top()
         if dy != 0:
-            controller.write(lhymicro_distance(abs(dy)))
+            self.pipe(lhymicro_distance(abs(dy)))
             self.check_bounds()
 
 
@@ -1120,7 +1094,7 @@ def onewire_crc_lookup(line):
     return crc
 
 
-class LhystudioController(Modifier, Pipe):
+class LhystudioController(Module):
     """
     K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
 
@@ -1133,10 +1107,8 @@ class LhystudioController(Modifier, Pipe):
     information about the connecting and error status of the USB device.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-        Pipe.__init__(self)
-        self.usb_log = None
+    def __init__(self, context, name, channel=None, *args, **kwargs):
+        Module.__init__(self, context, name, channel)
         self.state = STATE_UNKNOWN
 
         self._thread = None
@@ -1158,45 +1130,63 @@ class LhystudioController(Modifier, Pipe):
         self.count = 0
 
         self.abort_waiting = False
-        self.send_channel = None
-        self.recv_channel = None
-        self.pipe_channel = None
+        self.pipe_channel = context.channel("%s/events" % name)
+        self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
+        self.usb_send_channel = context.channel('%s/usb_send' % name)
+        self.recv_channel = context.channel('%s/recv' % name)
+        send = context.channel('%s/send' % name)
+        send.watch(self.write)
+        send.__len__ = lambda: len(self._buffer) + len(self._queue)
+        context.channel('%s/send_realtime' % name).watch(self.realtime_write)
 
-    def egv(self, command, *args):
-        if len(args) == 0:
-            yield "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
-        else:
-            self.write(bytes(args[0].replace('$', '\n'), "utf8"))
-
-    def usb_connect(self, command, *args):
-        try:
-            self.open()
-        except ConnectionRefusedError:
-            yield "Connection Refused."
-
-    def usb_disconnect(self, command, *args):
-        if self.driver is not None:
-            self.close()
-        else:
-            yield "Usb is not connected."
-
-    def attach(self, channel=None):
+    def initialize(self, channel=None):
         context = self.context
-        self.context.register('command/egv', self.egv)
-        self.context.register('command/usb_connect', self.usb_connect)
-        self.context.register('command/usb_disconnect', self.usb_disconnect)
 
-        context.pipe = self
+        def egv(command, *args):
+            if len(args) == 0:
+                yield "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+            else:
+                self.write(bytes(args[0].replace('$', '\n'), "utf8"))
+        self.context.register('command/egv', egv)
+
+        def usb_connect(command, *args):
+            try:
+                self.open()
+            except ConnectionRefusedError:
+                yield "Connection Refused."
+        self.context.register('command/usb_connect', usb_connect)
+
+        def usb_disconnect(command, *args):
+            if self.driver is not None:
+                self.close()
+            else:
+                yield "Usb is not connected."
+        self.context.register('command/usb_disconnect', usb_disconnect)
+
+        def pipe_start(command, *args):
+            self.update_state(STATE_ACTIVE)
+            self.start()
+            yield "Lhystudios Channel Started."
+        self.context.register('command/start', pipe_start)
+
+        def pipe_pause(command, *args):
+            self.update_state(STATE_PAUSE)
+            self.pause()
+            yield "Lhystudios Channel Paused."
+        self.context.register('command/pause', pipe_pause)
+
+        def pipe_resume(command, *args):
+            self.update_state(STATE_ACTIVE)
+            self.start()
+            yield "Lhystudios Channel Resumed."
+        self.context.register('command/resume', pipe_resume)
+
         context.setting(int, 'packet_count', 0)
         context.setting(int, 'rejected_count', 0)
 
         context.register("control/Connect_USB", self.open)
         context.register("control/Disconnect_USB", self.close)
         context.register("control/Status Update", self.update_status)
-        self.usb_log = context.channel("usb", buffer_size=20)
-        self.send_channel = context.channel('send')
-        self.recv_channel = context.channel('recv')
-        self.pipe_channel = context.channel('pipe')
         self.reset()
 
         def abort_wait():
@@ -1405,7 +1395,7 @@ class LhystudioController(Modifier, Pipe):
         if self.context is not None:
             self.context.signal('pipe;packet', convert_to_list_bytes(packet))
             self.context.signal('pipe;packet_text', packet)
-            self.send_channel(str(packet))
+            self.usb_send_channel(str(packet))
 
     def _thread_data_send(self):
         """

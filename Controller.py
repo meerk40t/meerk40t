@@ -374,8 +374,8 @@ class Controller(wx.Frame, Module):
         self.text_controller_status.SetValue(str(value))
         if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
             def f(event):
-                self.context.interpreter.pipe.start()
-                self.context.interpreter.pipe.pause()
+                self.context.console('start\n')
+                self.context.console('pause\n')
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#009900")
@@ -389,7 +389,7 @@ class Controller(wx.Frame, Module):
             button.Enable(False)
         elif state == STATE_PAUSE:
             def f(event):
-                self.context.interpreter.pipe.resume()
+                self.context.console('resume\n')
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00dd00")

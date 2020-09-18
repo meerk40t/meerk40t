@@ -122,7 +122,6 @@ class Interpreter:
         self.context = context
         self.process_item = None
         self.spooled_item = None
-        self.pipe = context.pipe
         self.extra_hold = None
 
         self.state = INTERPRETER_STATE_RAPID
@@ -457,44 +456,6 @@ class Interpreter:
             self.unset_prop(mask)
         else:
             self.set_prop(mask)
-
-
-class Pipe:
-    """
-    Pipes are a generic file-like object with write commands and a realtime_write function.
-
-    The realtime_write function should exist, but code using pipes should do so in a try block. Excepting
-    the AttributeError if it doesn't exist. So that pipes are able to be exchanged for real file-like objects.
-
-    Buffer size general information is provided through len() builtin.
-    """
-
-    def __len__(self):
-        return 0
-
-    def __enter__(self):
-        self.open()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def write(self, bytes_to_write):
-        pass
-
-    def realtime_write(self, bytes_to_write):
-        """
-        This method shall be permitted to not exist.
-        To facilitate pipes being easily replaced with filelike objects, any calls
-        to this method should assume pipe may not have this command.
-        """
-        self.write(bytes_to_write)
 
 
 class Spooler(Modifier):
@@ -3328,6 +3289,9 @@ class Channel:
             self.buffer.append(message)
             if len(self.buffer) + 10 > self.buffer_size:
                 self.buffer = self.buffer[-self.buffer_size:]
+
+    def __len__(self):
+        return self.buffer_size
 
     def __iadd__(self, other):
         self.watch(monitor_function=other)

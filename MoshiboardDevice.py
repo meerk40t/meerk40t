@@ -133,10 +133,9 @@ class MoshiInterpreter(Interpreter):
         pass
 
 
-class MoshiboardController(Module, Pipe):
+class MoshiboardController(Module):
     def __init__(self, context, path, uid=''):
         Module.__init__(self, context, path)
-        Pipe.__init__(self)
         self.usb_log = None
         self.driver = None
         self.status = [0] * 6

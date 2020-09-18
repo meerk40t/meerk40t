@@ -34,11 +34,11 @@ class BufferView(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
 
-        pipe = self.context.interpreter.pipe
+        pipe = self.context.open('pipe')
         buffer = None
         if pipe is not None:
             try:
-                buffer = pipe._buffer + pipe._queue
+                buffer = pipe._realtime_buffer + pipe._buffer + pipe._queue
             except AttributeError:
                 buffer = None
         if buffer is None:
