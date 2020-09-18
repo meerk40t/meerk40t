@@ -164,9 +164,11 @@ class ZinglPlotter:
         """
         if self.x == x and self.y == y:
             return  # We are already there.
-        if start_x is None and start_y is None:
+        if start_x is None or start_y is None:
             self.queue.put(([[round(x), round(y)]], 0))
         else:
+            self.x = start_x
+            self.y = start_y
             self.line_to(x, y, 0)
         self.x = x
         self.y = y

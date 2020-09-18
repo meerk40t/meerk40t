@@ -2012,7 +2012,7 @@ class Elemental(Modifier):
         kernel.register('command-help/halftone', 'image halftone <diameter> <scale> <angle> ')
 
         def trace_hull(command, *args):
-            spooler = context.spooler
+            spooler = context.active.spooler
             pts = []
             for obj in elements.elems(emphasized=True):
                 if isinstance(obj, Path):
@@ -2042,7 +2042,7 @@ class Elemental(Modifier):
         kernel.register('command/trace_hull', trace_hull)
 
         def trace_quick(command, *args):
-            spooler = context.spooler
+            spooler = context.active.spooler
             bbox = elements.bounds()
             if bbox is None:
                 yield _('No elements bounds to trace.')
@@ -3619,11 +3619,11 @@ class Kernel:
 
         def run():
             self.threads[thread_name] = thread
-            try:
-                func()
-            except:
-                import sys
-                sys.excepthook(*sys.exc_info())
+            # try:
+            func()
+            # except:
+            #     import sys
+            #     sys.excepthook(*sys.exc_info())
             del self.threads[thread_name]
 
         thread.run = run

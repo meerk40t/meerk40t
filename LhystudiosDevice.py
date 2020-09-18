@@ -516,8 +516,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             return
         if len(path) == 0:
             return
-        first_point = path.first_point
-        self.move_absolute(first_point[0], first_point[1])
+        # first_point = path.first_point
+        # self.move_absolute(first_point[0], first_point[1])
         self.plot_planner.add_path(path)
         self.plot = self.plot_planner
 
@@ -634,10 +634,11 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
-            for x, y, on in self.plot_planner.plot_cut(ZinglPlotter.plot_line(0, 0, dx, dy), cut, 0, 0):
-                self.goto_octent(x - mx, y - my, on)
-                mx = x
-                my = y
+            self.plot_planner.move_to(self.plot_planner.single_x + dx, self.plot_planner.single_y + dy)
+            # for x, y, on in self.plot_planner.plot_cut(ZinglPlotter.plot_line(0, 0, dx, dy), cut, 0, 0):
+            #     self.goto_octent(x - mx, y - my, on)
+            #     mx = x
+            #     my = y
         elif self.state == INTERPRETER_STATE_FINISH:
             if dx != 0:
                 self.goto_x(dx)
@@ -1134,6 +1135,7 @@ class LhystudioController(Module):
         self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
         self.usb_send_channel = context.channel('%s/usb_send' % name)
         self.recv_channel = context.channel('%s/recv' % name)
+
         send = context.channel('%s/send' % name)
         send.watch(self.write)
         send.__len__ = lambda: len(self._buffer) + len(self._queue)
