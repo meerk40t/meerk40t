@@ -634,11 +634,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
-            self.plot_planner.move_to(self.plot_planner.single_x + dx, self.plot_planner.single_y + dy)
-            # for x, y, on in self.plot_planner.plot_cut(ZinglPlotter.plot_line(0, 0, dx, dy), cut, 0, 0):
-            #     self.goto_octent(x - mx, y - my, on)
-            #     mx = x
-            #     my = y
+            for x, y in ZinglPlotter.plot_line(0, 0, dx, dy):
+                self.goto_octent(x - mx, y - my, cut)
+                mx = x
+                my = y
         elif self.state == INTERPRETER_STATE_FINISH:
             if dx != 0:
                 self.goto_x(dx)
