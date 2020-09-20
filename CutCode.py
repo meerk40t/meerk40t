@@ -1,3 +1,5 @@
+from copy import copy
+
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
 from zinglplotter import ZinglPlotter
 
@@ -23,6 +25,21 @@ class CutCode(list):
         for e in self:
             svg.append(e.as_svg())
         return svg
+
+    def cross(self, j, k):
+        """
+        Reverses subpaths flipping the individual elements from position j inclusive to
+        k exclusive.
+
+        :param subpaths:
+        :param j:
+        :param k:
+        :return:
+        """
+        for q in range(j, k):
+            self[q].direct_close()
+            self[q].reverse()
+        self[j:k] = self[j:k][::-1]
 
 
 class LaserSettings:
@@ -66,6 +83,9 @@ class CutObject:
     def end(self):
         return None
 
+    def reverse(self):
+        raise NotImplemented
+
     def generator(self):
         raise NotImplemented
 
@@ -81,6 +101,9 @@ class LineCut(CutObject):
 
     def end(self):
         return self.end_point
+
+    def reverse(self):
+        self.start_point, self.end_point = self.end_point, self.start_point
 
     def generator(self):
         return ZinglPlotter.plot_line(self.start_point[0], self.start_point[1], self.end_point[0], self.end_point[1])
@@ -98,6 +121,9 @@ class QuadCut(CutObject):
 
     def end(self):
         return self.end_point
+
+    def reverse(self):
+        self.start_point, self.end_point = self.end_point, self.start_point
 
     def generator(self):
         return ZinglPlotter.plot_quad_bezier(self.start_point[0], self.start_point[1],
@@ -119,6 +145,10 @@ class CubicCut(CutObject):
     def end(self):
         return self.end_point
 
+    def reverse(self):
+        self.control1, self.control2 = self.control2, self.control1
+        self.start_point, self.end_point = self.end_point, self.start_point
+
     def generator(self):
         return ZinglPlotter.plot_cubic_bezier(self.start_point[0], self.start_point[1],
                                              self.control1[0], self.control1[1],
@@ -136,6 +166,9 @@ class ArcCut(CutObject):
 
     def end(self):
         return self.arc.end
+
+    def reverse(self):
+        self.arc = copy(self.arc).reversed()
 
     def generator(self):
         return ZinglPlotter.plot_arc(self.arc)

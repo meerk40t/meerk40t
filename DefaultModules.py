@@ -405,7 +405,7 @@ class DxfLoader:
                                    height=size[1])
             elif entity.dxftype() == 'MTEXT':
                 insert = entity.dxf.insert
-                element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
+                element = SVGText(x=insert[0], y=insert[1], text=entity.text)
             elif entity.dxftype() == 'TEXT':
                 insert = entity.dxf.insert
                 element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
