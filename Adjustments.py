@@ -35,7 +35,7 @@ class Adjustments(wx.Frame, Module):
         self.button_down = wx.BitmapButton(self, wx.ID_ANY, icons8_down.GetBitmap())
         self.bitmap_flush_buffer = wx.BitmapButton(self, wx.ID_ANY, icons8_goal_50.GetBitmap())
         self.bitmap_cancel = wx.BitmapButton(self, wx.ID_ANY, icons8_delete_50.GetBitmap())
-        self.bitmap_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_sign_50.GetBitmap())
+        self.bitmap_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
         self.text_status_information = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
 
         self.__set_properties()
