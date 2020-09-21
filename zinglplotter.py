@@ -657,6 +657,7 @@ class ZinglPlotter:
         last_on = 0
         dx = 0
         dy = 0
+        print((start_x, start_y))
         for event in generate:
             x = event[0]
             y = event[1]
@@ -671,7 +672,7 @@ class ZinglPlotter:
             dy = y - last_y
             if abs(dx) > 1 or abs(dy) > 1:
                 # The last step was not valid.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
+                 raise ValueError("dx(%d) or dy(%d) exceeds 1" % (dx, dy))
             last_x = x
             last_y = y
             last_on = on
