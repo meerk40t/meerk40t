@@ -647,6 +647,27 @@ class Console(Module, Pipe):
                     except IndexError:
                         yield 'index %d out of range' % value
             return
+        elif command == 'grid':
+            try:
+                cols = int(args[0])
+                rows = int(args[1])
+                x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            except (ValueError, IndexError):
+                yield "Syntax Error: grid <columns> <rows> <x_distance> <y_distance>"
+                return
+            items = list(elements.elems(emphasized=True))
+            y_pos = elements._bounds[1]
+            for j in range(rows):
+                x_pos = elements._bounds[0]
+                for k in range(cols):
+                    if j != 0 or k != 0:
+                        add_elem = list(map(copy, items))
+                        for e in add_elem:
+                            e *= 'translate(%f, %f)' % (x_pos, y_pos)
+                        elements.add_elems(add_elem)
+                    x_pos += x_distance
+                y_pos += y_distance
         elif command == 'path':
             path_d = ' '.join(args)
             element = Path(path_d)
