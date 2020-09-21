@@ -379,7 +379,7 @@ class DxfLoader:
                                    height=size[1])
             elif entity.dxftype() == 'MTEXT':
                 insert = entity.dxf.insert
-                element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
+                element = SVGText(x=insert[0], y=insert[1], text=entity.text)
             elif entity.dxftype() == 'TEXT':
                 insert = entity.dxf.insert
                 element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
@@ -431,6 +431,10 @@ class DxfLoader:
             if isinstance(element, SVGText):
                 elements.append(element)
             else:
-                elements.append(abs(Path(element)))
+                path = abs(Path(element))
+                if len(path) != 0:
+                    if not isinstance(path[0], Move):
+                        path = Move(path.first_point) + path
+                elements.append(path)
 
         return elements, None, None, pathname, basename
