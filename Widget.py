@@ -1,6 +1,9 @@
 import time
-from math import tau
-
+try:
+    from math import tau
+except ImportError:
+    from math import pi
+    tau = 2 * pi
 import wx
 
 from Kernel import Module
