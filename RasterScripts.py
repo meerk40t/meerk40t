@@ -549,6 +549,7 @@ class RasterScripts:
                     pass
 
         return image, matrix, step
+
     @staticmethod
     def line(p):
         N = len(p) - 1
