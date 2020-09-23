@@ -657,7 +657,6 @@ class ZinglPlotter:
         last_on = 0
         dx = 0
         dy = 0
-        print((start_x, start_y))
         for event in generate:
             x = event[0]
             y = event[1]
