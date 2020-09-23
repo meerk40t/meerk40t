@@ -660,9 +660,9 @@ class Console(Module, Pipe):
             if items is None or len(items) == 0 or elements._bounds is None:
                 yield 'No item selected.'
                 return
-            y_pos = elements._bounds[1]
+            y_pos = 0
             for j in range(rows):
-                x_pos = elements._bounds[0]
+                x_pos = 0
                 for k in range(cols):
                     if j != 0 or k != 0:
                         add_elem = list(map(copy, items))
