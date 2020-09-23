@@ -142,6 +142,7 @@ class Console(Module, Pipe):
             yield 'channel [(open|close|save) <channel_name>]'
             yield '-------------------'
             yield 'element [<element>]*'
+            yield 'grid <columns> <rows> <x-distance> <y-distance>'
             yield 'path <svg_path>'
             yield 'circle <cx> <cy> <r>'
             yield 'ellipse <cx> <cy> <rx> <ry>'
@@ -656,6 +657,9 @@ class Console(Module, Pipe):
                 yield "Syntax Error: grid <columns> <rows> <x_distance> <y_distance>"
                 return
             items = list(elements.elems(emphasized=True))
+            if items is None or len(items) == 0 or elements._bounds is None:
+                yield 'No item selected.'
+                return
             y_pos = elements._bounds[1]
             for j in range(rows):
                 x_pos = elements._bounds[0]
