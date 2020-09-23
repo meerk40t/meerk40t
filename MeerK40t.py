@@ -147,20 +147,19 @@ if args.transform:
 
 if args.set is not None:
     # Set the variables requested here.
-    for var in args.set:
-        for v in var:
-            attr = v[0]
-            value = v[1]
-            if hasattr(device, attr):
-                v = getattr(device, attr)
-                if isinstance(v, bool):
-                    setattr(device, attr, bool(value))
-                elif isinstance(v, int):
-                    setattr(device, attr, int(value))
-                elif isinstance(v, float):
-                    setattr(device, attr, float(value))
-                elif isinstance(v, str):
-                    setattr(device, attr, str(value))
+    for v in args.set:
+        attr = v[0]
+        value = v[1]
+        if hasattr(device, attr):
+            v = getattr(device, attr)
+            if isinstance(v, bool):
+                setattr(device, attr, bool(value))
+            elif isinstance(v, int):
+                setattr(device, attr, int(value))
+            elif isinstance(v, float):
+                setattr(device, attr, float(value))
+            elif isinstance(v, str):
+                setattr(device, attr, str(value))
 
 if device is not kernel:  # We can process this stuff only with a real device.
     if args.grbl is not None:
