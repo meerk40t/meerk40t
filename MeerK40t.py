@@ -30,6 +30,14 @@ kernel = Kernel()
 kernel.open('module', 'Signaler')
 kernel.open('module', 'Elemental')
 
+
+def pair(value):
+    rv = value.split('=')
+    if len(rv) != 2:
+        raise argparse.ArgumentParser()
+    return rv
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('input', nargs='?', type=argparse.FileType('r'), help='input file')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
@@ -40,7 +48,7 @@ parser.add_argument('-t', '--transform', type=str, help="adds SVG Transform comm
 parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='output file name')
 parser.add_argument('-v', '--verbose', action='store_true', help='display verbose debugging')
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
-parser.add_argument('-s', '--set', action='append', nargs='+', help='set a device variable')
+parser.add_argument('-s', '--set', action='append', nargs='?', type=pair, metavar='key=value', help='set a device variable')
 parser.add_argument('-H', '--home', action='store_true', help="prehome the device")
 parser.add_argument('-b', '--batch', type=argparse.FileType('r'), help='console batch file')
 parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
@@ -53,7 +61,6 @@ parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emula
 
 
 args = parser.parse_args(sys.argv[1:])
-
 kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)
 kernel.register('module', 'LaserServer', LaserServer)
@@ -141,9 +148,9 @@ if args.transform:
 if args.set is not None:
     # Set the variables requested here.
     for var in args.set:
-        for i in range(0, len(var), 2):
-            attr = var[i]
-            value = var[i+1]
+        for v in var:
+            attr = v[0]
+            value = v[1]
             if hasattr(device, attr):
                 v = getattr(device, attr)
                 if isinstance(v, bool):
@@ -177,6 +184,8 @@ if device is not kernel:  # We can process this stuff only with a real device.
 
     if args.home:
         console = device.using('module', 'Console').write('home\n')
+        device.setting(bool, 'quit', True)
+        device.quit = True
 
     if args.auto:
         # Automatically classify and start the job.
