@@ -169,7 +169,6 @@ if device is not kernel:  # We can process this stuff only with a real device.
         device.spooler.jobs(ops)
         device.setting(bool, 'quit', True)
         device.quit = True
-        device.interpreter.pipe.stop()
 
 if args.set is not None:
     # Set the variables requested here.
@@ -221,6 +220,3 @@ if not args.no_gui:
             for key, device in kernel.instances['device'].items():
                 device.open('window', 'MeerK40t', None)
         meerk40tgui.MainLoop()
-else:
-    if args.auto:
-        device.stop()

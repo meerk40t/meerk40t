@@ -267,10 +267,9 @@ class Interpreter(Module):
         if self.spooled_item is not None:
             self.execute()
         else:
-            if len(self.device.interpreter.pipe) != 0:
-                return
             if self.device.quit:
                 self.device.interpreter.pipe.stop()
+                self.device.stop()
 
     def execute(self):
         """
