@@ -1,6 +1,5 @@
 from CutPlanner import CutPlanner
 from Kernel import *
-from OperationPreprocessor import OperationPreprocessor
 from svgelements import *
 
 
@@ -1442,6 +1441,11 @@ class Console(Module, Pipe):
                         continue
                     image_element = copy(element)
                     image_element.image = image_element.image.copy()
+                    try:
+                        from OperationPreprocessor import OperationPreprocessor
+                    except ImportError:
+                        yield "No Render Engine Installed."
+                        return
                     if OperationPreprocessor.needs_actualization(image_element):
                         OperationPreprocessor.make_actual(image_element)
                     img = image_element.image
