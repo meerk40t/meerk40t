@@ -268,6 +268,7 @@ class Interpreter(Module):
             self.execute()
         else:
             if self.device.quit:
+                self.device.interpreter.pipe.stop()
                 self.device.stop()
 
     def execute(self):
