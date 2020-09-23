@@ -1473,6 +1473,11 @@ class Console(Module, Pipe):
                                 new_data[x, y] = (v, v, v, 255)
                     elements.add_elem(image_element)
             elif args[0] == 'resample':
+                try:
+                    from OperationPreprocessor import OperationPreprocessor
+                except ImportError:
+                    yield "No Render Engine Installed."
+                    return
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         OperationPreprocessor.make_actual(element)
