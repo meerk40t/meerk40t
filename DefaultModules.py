@@ -123,12 +123,18 @@ class SVGLoader:
         kernel.setting(int, "bed_width", 320)
         kernel.setting(int, "bed_height", 220)
         elements = []
+        if 'ppi' in kwargs:
+            ppi = float(kwargs['ppi'])
+        else:
+            ppi = 96.0
+        if ppi == 0:
+            ppi = 96.0
         basename = os.path.basename(pathname)
-        scale_factor = 1000.0 / 96.0
+        scale_factor = 1000.0 / ppi
         svg = SVG.parse(source=pathname,
                         width='%fmm' % (kernel.bed_width),
                         height='%fmm' % (kernel.bed_height),
-                        ppi=96.0,
+                        ppi=ppi,
                         transform='scale(%f)' % scale_factor)
         ops = None
         note = None

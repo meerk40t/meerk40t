@@ -918,16 +918,23 @@ class MeerK40t(wx.Frame, Module):
     def load(self, pathname):
         self.device.setting(bool, 'auto_note', True)
         self.device.device_root.setting(bool, 'uniform_svg', False)
+        self.device.device_root.setting(float, 'svg_ppi', 96.0)
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
-            results = self.device.load(pathname, channel=self.device.channel_open('load'))
+            is_svg = pathname.lower().endswith('svg')
+            if is_svg:
+                results = self.device.load(pathname,
+                                           channel=self.device.channel_open('load'),
+                                           svg_ppi=self.device.device_root.svg_ppi)
+            else:
+                results = self.device.load(pathname, channel=self.device.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
                 self.save_recent(pathname)
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self)
-                if (self.device.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
+                if (self.device.device_root.uniform_svg and is_svg) or \
                         (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
                 return True
