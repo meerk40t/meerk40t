@@ -52,7 +52,8 @@ parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y posi
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
 
-args = parser.parse_args(sys.argv[1:])
+argm = [0, '-zHmcs', 'home_adjust_x', '20', 'home_adjust_y', '20']
+args = parser.parse_args(argm[1:])
 
 kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)
@@ -141,20 +142,19 @@ if args.transform:
 if args.set is not None:
     # Set the variables requested here.
     for var in args.set:
-        if len(var) <= 1:
-            continue  # Need at least two for a set.
-        attr = var[0]
-        value = var[1]
-        if hasattr(device, attr):
-            v = getattr(device, attr)
-            if isinstance(v, bool):
-                setattr(device, attr, bool(value))
-            elif isinstance(v, int):
-                setattr(device, attr, int(value))
-            elif isinstance(v, float):
-                setattr(device, attr, float(value))
-            elif isinstance(v, str):
-                setattr(device, attr, str(value))
+        for i in range(0, len(var), 2):
+            attr = var[i]
+            value = var[i+1]
+            if hasattr(device, attr):
+                v = getattr(device, attr)
+                if isinstance(v, bool):
+                    setattr(device, attr, bool(value))
+                elif isinstance(v, int):
+                    setattr(device, attr, int(value))
+                elif isinstance(v, float):
+                    setattr(device, attr, float(value))
+                elif isinstance(v, str):
+                    setattr(device, attr, str(value))
 
 if device is not kernel:  # We can process this stuff only with a real device.
     if args.grbl is not None:
