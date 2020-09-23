@@ -52,8 +52,7 @@ parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y posi
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
 
-argm = [0, '-zHmcs', 'home_adjust_x', '20', 'home_adjust_y', '20']
-args = parser.parse_args(argm[1:])
+args = parser.parse_args(sys.argv[1:])
 
 kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)
