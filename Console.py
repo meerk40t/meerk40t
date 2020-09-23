@@ -1,6 +1,5 @@
 from CutPlanner import CutPlanner
 from Kernel import *
-from OperationPreprocessor import OperationPreprocessor
 from svgelements import *
 
 
@@ -143,6 +142,7 @@ class Console(Module, Pipe):
             yield 'channel [(open|close|save) <channel_name>]'
             yield '-------------------'
             yield 'element [<element>]*'
+            yield 'grid <columns> <rows> <x-distance> <y-distance>'
             yield 'path <svg_path>'
             yield 'circle <cx> <cy> <r>'
             yield 'ellipse <cx> <cy> <rx> <ry>'
@@ -647,6 +647,30 @@ class Console(Module, Pipe):
                     except IndexError:
                         yield 'index %d out of range' % value
             return
+        elif command == 'grid':
+            try:
+                cols = int(args[0])
+                rows = int(args[1])
+                x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
+            except (ValueError, IndexError):
+                yield "Syntax Error: grid <columns> <rows> <x_distance> <y_distance>"
+                return
+            items = list(elements.elems(emphasized=True))
+            if items is None or len(items) == 0 or elements._bounds is None:
+                yield 'No item selected.'
+                return
+            y_pos = 0
+            for j in range(rows):
+                x_pos = 0
+                for k in range(cols):
+                    if j != 0 or k != 0:
+                        add_elem = list(map(copy, items))
+                        for e in add_elem:
+                            e *= 'translate(%f, %f)' % (x_pos, y_pos)
+                        elements.add_elems(add_elem)
+                    x_pos += x_distance
+                y_pos += y_distance
         elif command == 'path':
             path_d = ' '.join(args)
             element = Path(path_d)
@@ -1421,6 +1445,11 @@ class Console(Module, Pipe):
                         continue
                     image_element = copy(element)
                     image_element.image = image_element.image.copy()
+                    try:
+                        from OperationPreprocessor import OperationPreprocessor
+                    except ImportError:
+                        yield "No Render Engine Installed."
+                        return
                     if OperationPreprocessor.needs_actualization(image_element):
                         OperationPreprocessor.make_actual(image_element)
                     img = image_element.image

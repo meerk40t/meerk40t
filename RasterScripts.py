@@ -25,6 +25,7 @@ class RasterScripts:
         device.register('raster_script', "Stipo", RasterScripts.raster_script_stipo())
         device.register('raster_script', "Gravy", RasterScripts.raster_script_gravy())
         device.register('raster_script', "Xin", RasterScripts.raster_script_xin())
+        device.register('raster_script', "Newsy", RasterScripts.raster_script_newsy())
         device.register('raster_script', "Simple", RasterScripts.raster_script_simple())
 
     @staticmethod
@@ -207,6 +208,47 @@ class RasterScripts:
         return ops
 
     @staticmethod
+    def raster_script_newsy():
+        ops = list()
+        ops.append({
+            'name': 'resample',
+            'enable': True,
+            'aspect': True,
+            'units': 0,
+            'step': 2
+        })
+        ops.append({
+            'name': 'grayscale',
+            'enable': True,
+            'invert': False,
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0,
+            'lightness': 1.0
+        })
+        ops.append({
+            'name': 'contrast',
+            'enable': True,
+            'contrast': 25,
+            'brightness': 25,
+        })
+        ops.append({
+            'name': 'halftone',
+            'enable': True,
+            'black': True,
+            'sample': 10,
+            'scale': 2,
+            'angle': 22,
+            'oversample': 0
+        })
+        ops.append({
+            'name': 'dither',
+            'enable': True,
+            'type': 0
+        })
+        return ops
+
+    @staticmethod
     def raster_script_simple():
         ops = list()
         ops.append({
@@ -252,16 +294,14 @@ class RasterScripts:
         xmax = max([e[0] for e in boundary_points])
         ymax = max([e[1] for e in boundary_points])
         bbox = xmin, ymin, xmax, ymax
-
-        tx = bbox[0]
-        ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
         element_width = int(ceil(bbox[2] - bbox[0]))
         element_height = int(ceil(bbox[3] - bbox[1]))
         step_scale = 1 / float(step_level)
-        matrix.pre_scale(step_scale, step_scale)
+        tx = bbox[0]
+        ty = bbox[1]
+        matrix.post_translate(-tx, -ty)
+        matrix.post_scale(step_scale, step_scale)
         matrix.inverse()
-        invert = False
         if matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0:
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
             if image.mode != 'RGBA':
@@ -271,11 +311,13 @@ class RasterScripts:
                                     resample=Image.BICUBIC)
         else:
             image = image.transform((element_width, element_height), Image.AFFINE,
-                                            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                                            resample=Image.BICUBIC)
+                                    (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                                    resample=Image.BICUBIC)
         matrix.reset()
 
         box = image.getbbox()
+        if box is None:
+            return image, matrix
         width = box[2] - box[0]
         height = box[3] - box[1]
         if width != element_width and height != element_height:
@@ -288,11 +330,48 @@ class RasterScripts:
         return image, matrix
 
     @staticmethod
+    def halftone(image, sample=10, scale=2.0, angle=22.0, oversample=0, black=False):
+        from PIL import Image, ImageDraw, ImageStat
+        original_image = image
+        image = image.convert('L')
+        image = image.rotate(angle, expand=1)
+        size = int(image.size[0] * scale), int(image.size[1] * scale)
+        if black:
+            half_tone = Image.new('L', size, color=255)
+        else:
+            half_tone = Image.new('L', size)
+        draw = ImageDraw.Draw(half_tone)
+        for x in range(0, image.size[0], sample):
+            for y in range(0, image.size[1], sample):
+                box = image.crop(
+                    (x - oversample, y - oversample, x + sample + oversample, y + sample + oversample))
+                stat = ImageStat.Stat(box)
+                if black:
+                    diameter = ((255 - stat.mean[0]) / 255) ** 0.5
+                else:
+                    diameter = (stat.mean[0] / 255) ** 0.5
+                edge = 0.5 * (1 - diameter)
+                x_pos, y_pos = (x + edge) * scale, (y + edge) * scale
+                box_edge = sample * diameter * scale
+                if black:
+                    draw.ellipse((x_pos, y_pos, x_pos + box_edge, y_pos + box_edge), fill=0)
+                else:
+                    draw.ellipse((x_pos, y_pos, x_pos + box_edge, y_pos + box_edge), fill=255)
+        half_tone = half_tone.rotate(-angle, expand=1)
+        width_half, height_half = half_tone.size
+        xx = (width_half - original_image.size[0] * scale) / 2
+        yy = (height_half - original_image.size[1] * scale) / 2
+        half_tone = half_tone.crop((xx, yy, xx + original_image.size[0] * scale, yy + original_image.size[1] * scale))
+        half_tone = half_tone.resize(original_image.size)
+        return half_tone
+
+    @staticmethod
     def wizard_image(svg_image, operations):
         image = svg_image.image
         matrix = Matrix(svg_image.transform)
         step = None
-        from PIL import ImageOps, ImageFilter, ImageEnhance
+        mask = None
+        from PIL import Image, ImageOps, ImageFilter, ImageEnhance
         for op in operations:
             name = op['name']
             if name == 'crop':
@@ -310,7 +389,6 @@ class RasterScripts:
                 try:
                     if op['enable']:
                         image, matrix = RasterScripts.actualize(image, matrix, step_level=op['step'])
-
                         step = op['step']
                 except KeyError:
                     pass
@@ -325,23 +403,33 @@ class RasterScripts:
                             c = r + g + b
                             try:
                                 c /= v
-                                r = r/c
-                                g = g/c
-                                b = b/c
+                                r = r / c
+                                g = g / c
+                                b = b / c
                             except ZeroDivisionError:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
+                                if image.mode == "P":
+                                    image = image.convert('RGBA')
+                                if op['invert']:
+                                    color = 0, 0, 0
+                                    c8 = 0
+                                else:
+                                    color = 255, 255, 255
+                                    c8 = 255
                                 if image.mode == 'RGBA':
-                                    from PIL import Image
-                                    if op['invert']:
-                                        color = 0, 0, 0
-                                    else:
-                                        color = 255, 255, 255
                                     background = Image.new('RGB', image.size, color)
                                     background.paste(image, mask=image.getchannel('A'))
                                     image = background
                                 image = image.convert("L", matrix=m)
+
+                                def mask_filter(e):
+                                    if e == c8:
+                                        return 0
+                                    else:
+                                        return 255
+                                mask = image.point(mask_filter)  # Makes a mask out of Alpha or pure mask color.
                             if op['invert']:
                                 image = ImageOps.invert(image)
                         except (KeyError, OSError):
@@ -377,7 +465,7 @@ class RasterScripts:
                                 tone_values = [q for q in tone_values if q is not None]
                                 spline = RasterScripts.line(tone_values)
                             if len(spline) < 256:
-                                spline.extend([255] * (256-len(spline)))
+                                spline.extend([255] * (256 - len(spline)))
                             if len(spline) > 256:
                                 spline = spline[:256]
                             image = image.point(spline)
@@ -435,6 +523,10 @@ class RasterScripts:
             if name == 'dither':
                 try:
                     if op['enable'] and op['type'] is not None:
+                        if mask is not None:
+                            background = Image.new(image.mode, image.size, 'white')
+                            background.paste(image, mask=mask)
+                            image = background  # Mask exists use it to remove any pixels that were pure reject.
                         if image.mode == 'RGBA':
                             pixel_data = image.load()
                             width, height = image.size
@@ -445,6 +537,17 @@ class RasterScripts:
                         image = image.convert("1")
                 except KeyError:
                     pass
+            if name == 'halftone':
+                try:
+                    if op['enable']:
+                        image = RasterScripts.halftone(image,
+                                                       sample=op['sample'],
+                                                       angle=op['angle'],
+                                                       oversample=op['oversample'],
+                                                       black=op['black'])
+                except KeyError:
+                    pass
+
         return image, matrix, step
 
     @staticmethod

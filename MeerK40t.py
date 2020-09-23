@@ -42,6 +42,7 @@ parser.add_argument('-v', '--verbose', action='store_true', help='display verbos
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 parser.add_argument('-s', '--set', action='append', nargs='+', help='set a device variable')
 parser.add_argument('-b', '--batch', type=argparse.FileType('r'), help='console batch file')
+parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
 parser.add_argument('-gs', '--grbl', type=int, help='run grbl-emulator on given port.')
 parser.add_argument('-gy', '--flip_y', action='store_true', help="grbl y-flip")
 parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
@@ -161,7 +162,11 @@ if device is not kernel:  # We can process this stuff only with a real device.
         # Automatically classify and start the job.
         elements = kernel.elements
         elements.classify(list(elements.elems()))
-        device.spooler.jobs(list(elements.ops()))
+        ops = list(elements.ops())
+        if args.speed is not None:
+            for o in ops:
+                o.speed = args.speed
+        device.spooler.jobs(ops)
         device.setting(bool, 'quit', True)
         device.quit = True
 

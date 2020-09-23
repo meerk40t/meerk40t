@@ -268,6 +268,7 @@ class Interpreter(Module):
             self.execute()
         else:
             if self.device.quit:
+                self.device.interpreter.pipe.stop()
                 self.device.stop()
 
     def execute(self):
@@ -2387,7 +2388,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.4"
+        self.device_version = "0.6.5"
         self.device_root = self
 
         # Persistent storage if it exists.
