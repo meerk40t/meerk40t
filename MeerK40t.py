@@ -50,6 +50,7 @@ parser.add_argument('-v', '--verbose', action='store_true', help='display verbos
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 parser.add_argument('-s', '--set', action='append', nargs='?', type=pair, metavar='key=value', help='set a device variable')
 parser.add_argument('-H', '--home', action='store_true', help="prehome the device")
+parser.add_argument('-O', '--origin', action='store_true', help="return back to 0,0 on finish")
 parser.add_argument('-b', '--batch', type=argparse.FileType('r'), help='console batch file')
 parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
 parser.add_argument('-gs', '--grbl', type=int, help='run grbl-emulator on given port.')
@@ -197,6 +198,14 @@ if device is not kernel:  # We can process this stuff only with a real device.
         device.spooler.jobs(ops)
         device.setting(bool, 'quit', True)
         device.quit = True
+
+    if args.origin:
+        def origin():
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_SET_ABSOLUTE
+            yield COMMAND_MOVE, 0, 0
+        device.spooler.job(origin)
 
 if args.mock:
     # Set the device to mock.
