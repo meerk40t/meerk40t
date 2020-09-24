@@ -5251,8 +5251,8 @@ class Rect(Shape):
         Skewed and Rotated rectangles cannot be reified.
         """
         Transformable.reify(self)
-        scale_x = self.transform.value_scale_x()
-        scale_y = self.transform.value_scale_y()
+        scale_x = abs(self.transform.value_scale_x())
+        scale_y = abs(self.transform.value_scale_y())
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if self.transform.value_skew_x() == 0 and self.transform.value_skew_y() == 0 \
@@ -5408,6 +5408,8 @@ class _RoundShape(Shape):
         path = Path()
         steps = 4
         step_size = tau / steps
+        if transformed and self.transform.value_scale_x() * self.transform.value_scale_y() < 0:
+            step_size = -step_size
         t_start = 0
         t_end = step_size
         path.move((self.point_at_t(0)))

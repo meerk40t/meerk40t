@@ -2,8 +2,8 @@ import wx
 
 from Kernel import Module
 from LaserCommandConstants import *
-from icons import icons8_stop_50, icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50, \
-    icons8_laser_beam_hazard_50
+from icons import icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50, \
+    icons8_laser_beam_hazard_50, icons8_end_50
 
 _ = wx.GetTranslation
 
@@ -28,8 +28,8 @@ class Alignment(wx.Frame, Module):
         self.button_horizontal_align_nearfar = wx.BitmapButton(self, wx.ID_ANY, icons8_resize_horizontal_50.GetBitmap())
         self.button_vertical_align = wx.BitmapButton(self, wx.ID_ANY, icons8_resize_vertical_50.GetBitmap())
         self.button_horizontal_align = wx.BitmapButton(self, wx.ID_ANY, icons8_resize_horizontal_50.GetBitmap())
-        self.button_square_align_4_corner = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_50.GetBitmap())
-        self.button_square_align = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_50.GetBitmap())
+        self.button_square_align_4_corner = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
+        self.button_square_align = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()

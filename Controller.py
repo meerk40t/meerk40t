@@ -412,7 +412,7 @@ class Controller(wx.Frame, Module):
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")
             button.SetLabel(_("Manual Reset"))
-            button.SetBitmap(icons8_stop_50.GetBitmap())
+            button.SetBitmap(icons8_end_50.GetBitmap())
             button.Enable(True)
 
 # end of class Controller

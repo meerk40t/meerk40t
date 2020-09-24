@@ -987,6 +987,7 @@ class GrayscalePanel(wx.Panel):
 
 # end of class GrayscalePanel
 
+
 class ToneCurvePanel(wx.Panel):
     def __init__(self, *args, **kwds):
         # begin wxGlade: ToneCurvePanel.__init__

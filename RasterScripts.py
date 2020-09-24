@@ -292,16 +292,14 @@ class RasterScripts:
         xmax = max([e[0] for e in boundary_points])
         ymax = max([e[1] for e in boundary_points])
         bbox = xmin, ymin, xmax, ymax
-
-        tx = bbox[0]
-        ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
         element_width = int(ceil(bbox[2] - bbox[0]))
         element_height = int(ceil(bbox[3] - bbox[1]))
         step_scale = 1 / float(step_level)
-        matrix.pre_scale(step_scale, step_scale)
+        tx = bbox[0]
+        ty = bbox[1]
+        matrix.post_translate(-tx, -ty)
+        matrix.post_scale(step_scale, step_scale)
         matrix.inverse()
-        invert = False
         if matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0:
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
             if image.mode != 'RGBA':
@@ -316,6 +314,8 @@ class RasterScripts:
         matrix.reset()
 
         box = image.getbbox()
+        if box is None:
+            return image, matrix
         width = box[2] - box[0]
         height = box[3] - box[1]
         if width != element_width and height != element_height:
@@ -368,7 +368,8 @@ class RasterScripts:
         image = svg_image.image
         matrix = Matrix(svg_image.transform)
         step = None
-        from PIL import ImageOps, ImageFilter, ImageEnhance
+        mask = None
+        from PIL import Image, ImageOps, ImageFilter, ImageEnhance
         for op in operations:
             name = op['name']
             if name == 'crop':
@@ -386,7 +387,6 @@ class RasterScripts:
                 try:
                     if op['enable']:
                         image, matrix = RasterScripts.actualize(image, matrix, step_level=op['step'])
-
                         step = op['step']
                 except KeyError:
                     pass
@@ -408,16 +408,26 @@ class RasterScripts:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
+                                if image.mode == "P":
+                                    image = image.convert('RGBA')
+                                if op['invert']:
+                                    color = 0, 0, 0
+                                    c8 = 0
+                                else:
+                                    color = 255, 255, 255
+                                    c8 = 255
                                 if image.mode == 'RGBA':
-                                    from PIL import Image
-                                    if op['invert']:
-                                        color = 0, 0, 0
-                                    else:
-                                        color = 255, 255, 255
                                     background = Image.new('RGB', image.size, color)
                                     background.paste(image, mask=image.getchannel('A'))
                                     image = background
                                 image = image.convert("L", matrix=m)
+
+                                def mask_filter(e):
+                                    if e == c8:
+                                        return 0
+                                    else:
+                                        return 255
+                                mask = image.point(mask_filter)  # Makes a mask out of Alpha or pure mask color.
                             if op['invert']:
                                 image = ImageOps.invert(image)
                         except (KeyError, OSError):
@@ -511,6 +521,10 @@ class RasterScripts:
             if name == 'dither':
                 try:
                     if op['enable'] and op['type'] is not None:
+                        if mask is not None:
+                            background = Image.new(image.mode, image.size, 'white')
+                            background.paste(image, mask=mask)
+                            image = background  # Mask exists use it to remove any pixels that were pure reject.
                         if image.mode == 'RGBA':
                             pixel_data = image.load()
                             width, height = image.size
@@ -531,6 +545,7 @@ class RasterScripts:
                                                        black=op['black'])
                 except KeyError:
                     pass
+
         return image, matrix, step
 
     @staticmethod
