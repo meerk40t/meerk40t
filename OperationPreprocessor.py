@@ -194,7 +194,6 @@ class OperationPreprocessor:
         image_element.cache = None
         matrix = image_element.transform
         bbox = OperationPreprocessor.bounding_box([image_element])
-        print(bbox)
         element_width = int(ceil(bbox[2] - bbox[0]))
         element_height = int(ceil(bbox[3] - bbox[1]))
         if step_level is None:
@@ -221,7 +220,6 @@ class OperationPreprocessor:
         matrix.reset()
 
         box = pil_image.getbbox()
-        print(box)
         width = box[2] - box[0]
         height = box[3] - box[1]
         if width != element_width and height != element_height:
