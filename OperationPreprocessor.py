@@ -192,11 +192,9 @@ class OperationPreprocessor:
 
         pil_image = image_element.image
         image_element.cache = None
-        m = image_element.transform
+        matrix = image_element.transform
         bbox = OperationPreprocessor.bounding_box([image_element])
-        tx = bbox[0]
-        ty = bbox[1]
-        m.post_translate(-tx, -ty)
+        print(bbox)
         element_width = int(ceil(bbox[2] - bbox[0]))
         element_height = int(ceil(bbox[3] - bbox[1]))
         if step_level is None:
@@ -205,32 +203,34 @@ class OperationPreprocessor:
                 step_level = float(image_element.values['raster_step'])
             else:
                 step_level = 1.0
-        step_scale = 1 / step_level
-        m.pre_scale(step_scale, step_scale)
-        # step level requires the actual image be scaled down.
-        m.inverse()
+        step_scale = 1 / float(step_level)
+        tx = bbox[0]
+        ty = bbox[1]
+        matrix.post_translate(-tx, -ty)
+        matrix.post_scale(step_scale, step_scale)  # step level requires the actual image be scaled down.
+        matrix.inverse()
 
-        if (m.value_skew_y() != 0.0 or m.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
+        if (matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
             pil_image = pil_image.convert('RGBA')
 
         pil_image = pil_image.transform((element_width, element_height), Image.AFFINE,
-                                        (m.a, m.c, m.e, m.b, m.d, m.f),
+                                        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
                                         resample=Image.BICUBIC)
         image_element.image_width, image_element.image_height = (element_width, element_height)
-        m.reset()
+        matrix.reset()
 
         box = pil_image.getbbox()
+        print(box)
         width = box[2] - box[0]
         height = box[3] - box[1]
         if width != element_width and height != element_height:
             image_element.image_width, image_element.image_height = (width, height)
             pil_image = pil_image.crop(box)
-            box = pil_image.getbbox()
-            m.post_translate(box[0], box[1])
+            matrix.post_translate(box[0], box[1])
         # step level requires the new actualized matrix be scaled up.
-        m.post_scale(step_level, step_level)
-        m.post_translate(tx, ty)
+        matrix.post_scale(step_level, step_level)
+        matrix.post_translate(tx, ty)
         image_element.image = pil_image
 
     @staticmethod
