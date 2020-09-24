@@ -132,9 +132,10 @@ if args.path is not None:
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
-        kernel.elements.add(path)
+        kernel.elements.add_elem(path)
     except Exception:
         print("SVG Path Exception to: %s" % ' '.join(sys.argv))
+
 if args.transform:
     # Transform any data loaded data
     from svgelements import Matrix
