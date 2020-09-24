@@ -409,7 +409,7 @@ class RasterScripts:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode == "P":
+                                if image.mode == "P" or image.mode == '1':
                                     image = image.convert('RGBA')
                                 if op['invert']:
                                     color = 0, 0, 0
