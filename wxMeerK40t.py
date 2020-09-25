@@ -1591,17 +1591,15 @@ class Node(list):
         self.parent = parent
         self.root = root
         self.object = data_object
-        if name is None:
-            self.name = None
-            try:
-                self.name = data_object.id
-            except AttributeError:
-                pass
-            if self.name is None:
-                self.name = str(data_object)
-        else:
-            self.name = name
         self.type = node_type
+        self.name = name
+        if self.name is None:
+            try:
+                self.name = self.object.id
+                if self.name is None:
+                    self.name = str(self.object)
+            except AttributeError:
+                self.name = str(self.object)
         parent.append(self)
         self.filepath = None
         try:
@@ -1640,9 +1638,13 @@ class Node(list):
         return "Node(%d, %s, %s, %s)" % (self.type, str(self.object), str(self.parent), str(self.root))
 
     def update_name(self):
-        self.name = str(self.object)
-        if len(self.name) >= 27:
-            self.name = self.name[:28] + '...'
+        self.name = None
+        try:
+            self.name = self.object.id
+        except AttributeError:
+            pass
+        if self.name is None:
+            self.name = str(self.object)
         self.root.tree.SetItemText(self.item, self.name)
         try:
             stroke = self.object.values[SVG_ATTR_STROKE]
