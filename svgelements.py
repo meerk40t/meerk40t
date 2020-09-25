@@ -2715,6 +2715,11 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
+        if SVG_ATTR_STROKE_WIDTH in self.values:
+            width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
+            t = self.transform
+            det = t.a * t.d - t.c * t.b
+            self.values[SVG_ATTR_STROKE_WIDTH] = width * sqrt(abs(det))
         return self
 
     def render(self, **kwargs):
@@ -6969,5 +6974,6 @@ class SVG(Group):
                             styles[selector.strip()] = value
                 context, values = stack.pop()
             elif event == 'start-ns':
-                values[elem[0]] = elem[1]
+                if elem[0] != SVG_ATTR_DATA:
+                    values[elem[0]] = elem[1]
         return root
