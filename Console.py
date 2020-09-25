@@ -1397,6 +1397,17 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected images."
                 return
+            elif args[0] == 'path':
+                for element in list(elements.elems(emphasized=True)):
+                    bounds = element.bbox()
+                    p = Path()
+                    p.move((bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[3]),
+                           (bounds[2], bounds[1]))
+                    p.closed()
+                    self.add_element(p)
+                return
             elif args[0] == 'wizard':
                 if len(args) == 1:
                     try:

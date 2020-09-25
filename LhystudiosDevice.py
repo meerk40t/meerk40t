@@ -289,10 +289,11 @@ class LhymicroInterpreter(Interpreter):
         if isinstance(path, SVGImage):
             bounds = path.bbox()
             p = Path()
-            p.move([(bounds[0], bounds[1]),
-                            (bounds[0], bounds[3]),
-                            (bounds[2], bounds[1]),
-                            (bounds[2], bounds[3])])
+            p.move((bounds[0], bounds[1]),
+                   (bounds[0], bounds[3]),
+                   (bounds[2], bounds[3]),
+                   (bounds[2], bounds[1]))
+            p.closed()
             self.plot = self.convert_to_wrapped_plot(ZinglPlotter.plot_path(p), True, self.device.current_x, self.device.current_y)
             return
         if len(path) == 0:
