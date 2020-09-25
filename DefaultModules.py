@@ -123,8 +123,8 @@ class SVGLoader:
         kernel.setting(int, "bed_width", 320)
         kernel.setting(int, "bed_height", 220)
         elements = []
-        if 'ppi' in kwargs:
-            ppi = float(kwargs['ppi'])
+        if 'svg_ppi' in kwargs:
+            ppi = float(kwargs['svg_ppi'])
         else:
             ppi = 96.0
         if ppi == 0:
