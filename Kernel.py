@@ -1276,7 +1276,13 @@ class Elemental(Module):
             found_color = False
             added_to_op = False
             for op in self.ops():
-                if op.operation == "Raster" and op.color == element.stroke:
+                if op.operation == "Raster" and (
+                        op.color == element.stroke or
+                        (
+                                not isinstance(element, SVGImage) and
+                                element.fill is not None and
+                                element.fill.value is not None
+                        )):
                     if not added_to_op:
                         op.append(element)
                     found_color = True
@@ -1286,13 +1292,6 @@ class Elemental(Module):
                     found_color = True
                     added_to_op = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
-                    op.append(element)
-                    found_color = True
-                    added_to_op = True
-                elif op.operation == 'Raster' and \
-                        not isinstance(element, SVGImage) and \
-                        element.fill is not None and \
-                        element.fill.value is not None:
                     op.append(element)
                     found_color = True
                     added_to_op = True
