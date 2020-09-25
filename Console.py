@@ -1580,10 +1580,10 @@ class Console(Module, Pipe):
                     if isinstance(element, SVGImage):
                         img = element.image
                         try:
-                            left = int(args[1])
-                            upper = int(args[2])
-                            right = int(args[3])
-                            lower = int(args[4])
+                            left = int(Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                            upper = int(Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701))
+                            right = int(Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                            lower = int(Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701))
                             element.image = img.crop((left, upper, right, lower))
                             element.image_width = right - left
                             element.image_height = lower - upper
