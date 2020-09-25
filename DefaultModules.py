@@ -216,7 +216,7 @@ class ImageLoader:
     def load(kernel, pathname, **kwargs):
         basename = os.path.basename(pathname)
 
-        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
+        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%", 'id': basename})
         image.load()
         try:
             kernel.setting(bool, 'image_dpi', True)

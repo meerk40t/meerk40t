@@ -1592,7 +1592,13 @@ class Node(list):
         self.root = root
         self.object = data_object
         if name is None:
-            self.name = str(data_object)
+            self.name = None
+            try:
+                self.name = data_object.id
+            except AttributeError:
+                pass
+            if self.name is None:
+                self.name = str(data_object)
         else:
             self.name = name
         self.type = node_type
