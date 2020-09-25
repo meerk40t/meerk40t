@@ -1464,24 +1464,20 @@ class Console(Module, Pipe):
                     if OperationPreprocessor.needs_actualization(image_element):
                         OperationPreprocessor.make_actual(image_element)
                     img = image_element.image
-                    new_data = img.load()
-                    width, height = img.size
-                    for y in range(height):
-                        for x in range(width):
-                            pixel = new_data[x, y]
-                            if pixel[3] == 0:
-                                new_data[x, y] = (255, 255, 255, 255)
-                                continue
-                            gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
-                            if threshold_min >= gray:
-                                new_data[x, y] = (0, 0, 0, 255)
-                            elif threshold_max < gray:
-                                new_data[x, y] = (255, 255, 255, 255)
-                            else:  # threshold_min <= grey < threshold_max
-                                v = gray - threshold_min
-                                v *= divide
-                                v = int(round(v))
-                                new_data[x, y] = (v, v, v, 255)
+                    img = img.convert('L')
+
+                    def thresh(g):
+                        if threshold_min >= g:
+                            return 0
+                        elif threshold_max < g:
+                            return 255
+                        else:  # threshold_min <= grey < threshold_max
+                            value = g - threshold_min
+                            value *= divide
+                            return int(round(value))
+                    lut = [thresh(g) for g in range(256)]
+                    img = img.point(lut)
+                    image_element.image = img
                     elements.add_elem(image_element)
             elif args[0] == 'resample':
                 try:
