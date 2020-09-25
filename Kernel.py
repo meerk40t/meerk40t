@@ -1274,27 +1274,23 @@ class Elemental(Module):
             return
         for element in elements:
             found_color = False
-            added_to_op = False
+            image_added = False
             for op in self.ops():
-                if op.operation == "Raster" and (
-                        op.color == element.stroke or
-                        (
-                                not isinstance(element, SVGImage) and
-                                element.fill is not None and
-                                element.fill.value is not None
-                        )):
-                    if not added_to_op:
+                if op.operation == "Raster":
+                    if op.color == element.stroke:
+                        op.append(element)
+                    elif not image_added and isinstance(element, SVGImage):
+                        op.append(element)
+                    elif element.fill is not None and element.fill.value is not None:
                         op.append(element)
                     found_color = True
-                    added_to_op = True
                 elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
                     op.append(element)
                     found_color = True
-                    added_to_op = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
                     op.append(element)
                     found_color = True
-                    added_to_op = True
+                    image_added = True
             if not found_color:
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
