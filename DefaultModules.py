@@ -135,6 +135,7 @@ class SVGLoader:
                         width='%fmm' % (kernel.bed_width),
                         height='%fmm' % (kernel.bed_height),
                         ppi=ppi,
+                        color='none',
                         transform='scale(%f)' % scale_factor)
         ops = None
         note = None
