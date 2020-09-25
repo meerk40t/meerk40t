@@ -963,6 +963,7 @@ class LhystudioController(Module, Pipe):
         Pipe.__init__(self)
         self.usb_log = None
         self.state = STATE_UNKNOWN
+        self.is_shutdown = False
 
         self._thread = None
         self._buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -1234,6 +1235,8 @@ class LhystudioController(Module, Pipe):
                 # We try to process the queue.
                 queue_processed = self.process_queue()
                 self.refuse_counts = 0
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
             except ConnectionRefusedError:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
@@ -1268,6 +1271,7 @@ class LhystudioController(Module, Pipe):
         self._main_lock.release()
         self._thread = None
         self.update_state(STATE_END)
+        self.is_shutdown = False
 
     def process_queue(self):
         """
@@ -1341,6 +1345,7 @@ class LhystudioController(Module, Pipe):
                 packet = packet[:-1]
             elif packet.endswith(b'\x18'):
                 self.state = STATE_TERMINATE
+                self.is_shutdown = True
                 packet = packet[:-1]
             if len(packet) != 0:
                 if packet.endswith(b'#'):
