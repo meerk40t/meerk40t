@@ -2715,6 +2715,11 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
+        if SVG_ATTR_STROKE_WIDTH in self.values:
+            width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
+            t = self.transform
+            det = t.a * t.d - t.c * t.b
+            self.values[SVG_ATTR_STROKE_WIDTH] = width * sqrt(abs(det))
         return self
 
     def render(self, **kwargs):
@@ -5408,6 +5413,8 @@ class _RoundShape(Shape):
         path = Path()
         steps = 4
         step_size = tau / steps
+        if transformed and self.transform.value_scale_x() * self.transform.value_scale_y() < 0:
+            step_size = -step_size
         t_start = 0
         t_end = step_size
         path.move((self.point_at_t(0)))
@@ -5430,8 +5437,8 @@ class _RoundShape(Shape):
         Skewed and Rotated roundshapes cannot be reified.
         """
         Transformable.reify(self)
-        scale_x = self.transform.value_scale_x()
-        scale_y = self.transform.value_scale_y()
+        scale_x = abs(self.transform.value_scale_x())
+        scale_y = abs(self.transform.value_scale_y())
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if self.transform.value_skew_x() == 0 and self.transform.value_skew_y() == 0 \
@@ -6967,5 +6974,6 @@ class SVG(Group):
                             styles[selector.strip()] = value
                 context, values = stack.pop()
             elif event == 'start-ns':
-                values[elem[0]] = elem[1]
+                if elem[0] != SVG_ATTR_DATA:
+                    values[elem[0]] = elem[1]
         return root

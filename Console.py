@@ -1397,6 +1397,17 @@ class Console(Module, Pipe):
             if not elements.has_emphasis():
                 yield "No selected images."
                 return
+            elif args[0] == 'path':
+                for element in list(elements.elems(emphasized=True)):
+                    bounds = element.bbox()
+                    p = Path()
+                    p.move((bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[3]),
+                           (bounds[2], bounds[1]))
+                    p.closed()
+                    self.add_element(p)
+                return
             elif args[0] == 'wizard':
                 if len(args) == 1:
                     try:
@@ -1453,26 +1464,27 @@ class Console(Module, Pipe):
                     if OperationPreprocessor.needs_actualization(image_element):
                         OperationPreprocessor.make_actual(image_element)
                     img = image_element.image
-                    new_data = img.load()
-                    width, height = img.size
-                    for y in range(height):
-                        for x in range(width):
-                            pixel = new_data[x, y]
-                            if pixel[3] == 0:
-                                new_data[x, y] = (255, 255, 255, 255)
-                                continue
-                            gray = (pixel[0] + pixel[1] + pixel[2]) / 3.0
-                            if threshold_min >= gray:
-                                new_data[x, y] = (0, 0, 0, 255)
-                            elif threshold_max < gray:
-                                new_data[x, y] = (255, 255, 255, 255)
-                            else:  # threshold_min <= grey < threshold_max
-                                v = gray - threshold_min
-                                v *= divide
-                                v = int(round(v))
-                                new_data[x, y] = (v, v, v, 255)
+                    img = img.convert('L')
+
+                    def thresh(g):
+                        if threshold_min >= g:
+                            return 0
+                        elif threshold_max < g:
+                            return 255
+                        else:  # threshold_min <= grey < threshold_max
+                            value = g - threshold_min
+                            value *= divide
+                            return int(round(value))
+                    lut = [thresh(g) for g in range(256)]
+                    img = img.point(lut)
+                    image_element.image = img
                     elements.add_elem(image_element)
             elif args[0] == 'resample':
+                try:
+                    from OperationPreprocessor import OperationPreprocessor
+                except ImportError:
+                    yield "No Render Engine Installed."
+                    return
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         OperationPreprocessor.make_actual(element)
@@ -1568,10 +1580,10 @@ class Console(Module, Pipe):
                     if isinstance(element, SVGImage):
                         img = element.image
                         try:
-                            left = int(args[1])
-                            upper = int(args[2])
-                            right = int(args[3])
-                            lower = int(args[4])
+                            left = int(Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                            upper = int(Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701))
+                            right = int(Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                            lower = int(Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701))
                             element.image = img.crop((left, upper, right, lower))
                             element.image_width = right - left
                             element.image_height = lower - upper

@@ -918,16 +918,23 @@ class MeerK40t(wx.Frame, Module):
     def load(self, pathname):
         self.device.setting(bool, 'auto_note', True)
         self.device.device_root.setting(bool, 'uniform_svg', False)
+        self.device.device_root.setting(float, 'svg_ppi', 96.0)
         with wx.BusyInfo(_("Loading File...")):
             n = self.device.device_root.elements.note
-            results = self.device.load(pathname, channel=self.device.channel_open('load'))
+            is_svg = pathname.lower().endswith('svg')
+            if is_svg:
+                results = self.device.load(pathname,
+                                           channel=self.device.channel_open('load'),
+                                           svg_ppi=self.device.device_root.svg_ppi)
+            else:
+                results = self.device.load(pathname, channel=self.device.channel_open('load'))
             if results is not None:
                 elements, pathname, basename = results
                 self.save_recent(pathname)
                 self.device.classify(elements)
                 if n != self.device.device_root.elements.note and self.device.auto_note:
                     self.device.open('window', "Notes", self)
-                if (self.device.device_root.uniform_svg and pathname.lower().endswith('svg')) or \
+                if (self.device.device_root.uniform_svg and is_svg) or \
                         (len(elements) > 0 and 'meerK40t' in elements[0].values):
                     self.working_file = pathname
                 return True
@@ -1584,11 +1591,15 @@ class Node(list):
         self.parent = parent
         self.root = root
         self.object = data_object
-        if name is None:
-            self.name = str(data_object)
-        else:
-            self.name = name
         self.type = node_type
+        self.name = name
+        if self.name is None:
+            try:
+                self.name = self.object.id
+                if self.name is None:
+                    self.name = str(self.object)
+            except AttributeError:
+                self.name = str(self.object)
         parent.append(self)
         self.filepath = None
         try:
@@ -1627,9 +1638,13 @@ class Node(list):
         return "Node(%d, %s, %s, %s)" % (self.type, str(self.object), str(self.parent), str(self.root))
 
     def update_name(self):
-        self.name = str(self.object)
-        if len(self.name) >= 27:
-            self.name = self.name[:28] + '...'
+        self.name = None
+        try:
+            self.name = self.object.id
+        except AttributeError:
+            pass
+        if self.name is None:
+            self.name = str(self.object)
         self.root.tree.SetItemText(self.item, self.name)
         try:
             stroke = self.object.values[SVG_ATTR_STROKE]
@@ -2991,7 +3006,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.5')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.6')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

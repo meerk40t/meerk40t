@@ -123,12 +123,19 @@ class SVGLoader:
         kernel.setting(int, "bed_width", 320)
         kernel.setting(int, "bed_height", 220)
         elements = []
+        if 'svg_ppi' in kwargs:
+            ppi = float(kwargs['svg_ppi'])
+        else:
+            ppi = 96.0
+        if ppi == 0:
+            ppi = 96.0
         basename = os.path.basename(pathname)
-        scale_factor = 1000.0 / 96.0
+        scale_factor = 1000.0 / ppi
         svg = SVG.parse(source=pathname,
                         width='%fmm' % (kernel.bed_width),
                         height='%fmm' % (kernel.bed_height),
-                        ppi=96.0,
+                        ppi=ppi,
+                        color='none',
                         transform='scale(%f)' % scale_factor)
         ops = None
         note = None
@@ -208,7 +215,7 @@ class ImageLoader:
     def load(kernel, pathname, **kwargs):
         basename = os.path.basename(pathname)
 
-        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%"})
+        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%", 'id': basename})
         image.load()
         try:
             kernel.setting(bool, 'image_dpi', True)

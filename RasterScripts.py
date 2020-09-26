@@ -322,7 +322,6 @@ class RasterScripts:
         height = box[3] - box[1]
         if width != element_width and height != element_height:
             image = image.crop(box)
-            box = image.getbbox()
             matrix.post_translate(box[0], box[1])
         # step level requires the new actualized matrix be scaled up.
         matrix.post_scale(step_level, step_level)
@@ -410,7 +409,7 @@ class RasterScripts:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode == "P":
+                                if image.mode == "P" or image.mode == '1':
                                     image = image.convert('RGBA')
                                 if op['invert']:
                                     color = 0, 0, 0

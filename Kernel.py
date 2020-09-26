@@ -1274,19 +1274,23 @@ class Elemental(Module):
             return
         for element in elements:
             found_color = False
+            image_added = False
             for op in self.ops():
-                if op.operation in ("Engrave", "Cut", "Raster") and op.color == element.stroke:
+                if op.operation == "Raster":
+                    if op.color == element.stroke:
+                        op.append(element)
+                    elif not image_added and isinstance(element, SVGImage):
+                        op.append(element)
+                    elif element.fill is not None and element.fill.value is not None:
+                        op.append(element)
+                    found_color = True
+                elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
                     op.append(element)
                     found_color = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
                     op.append(element)
                     found_color = True
-                elif op.operation == 'Raster' and \
-                        not isinstance(element, SVGImage) and \
-                        element.fill is not None and \
-                        element.fill.value is not None:
-                    op.append(element)
-                    found_color = True
+                    image_added = True
             if not found_color:
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
@@ -2388,7 +2392,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.5"
+        self.device_version = "0.6.6"
         self.device_root = self
 
         # Persistent storage if it exists.

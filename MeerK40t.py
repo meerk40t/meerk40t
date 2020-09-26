@@ -30,6 +30,14 @@ kernel = Kernel()
 kernel.open('module', 'Signaler')
 kernel.open('module', 'Elemental')
 
+
+def pair(value):
+    rv = value.split('=')
+    if len(rv) != 2:
+        raise argparse.ArgumentParser()
+    return rv
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('input', nargs='?', type=argparse.FileType('r'), help='input file')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
@@ -40,7 +48,9 @@ parser.add_argument('-t', '--transform', type=str, help="adds SVG Transform comm
 parser.add_argument('-o', '--output', type=argparse.FileType('w'), help='output file name')
 parser.add_argument('-v', '--verbose', action='store_true', help='display verbose debugging')
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
-parser.add_argument('-s', '--set', action='append', nargs='+', help='set a device variable')
+parser.add_argument('-s', '--set', action='append', nargs='?', type=pair, metavar='key=value', help='set a device variable')
+parser.add_argument('-H', '--home', action='store_true', help="prehome the device")
+parser.add_argument('-O', '--origin', action='store_true', help="return back to 0,0 on finish")
 parser.add_argument('-b', '--batch', type=argparse.FileType('r'), help='console batch file')
 parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
 parser.add_argument('-gs', '--grbl', type=int, help='run grbl-emulator on given port.')
@@ -52,8 +62,6 @@ parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emula
 
 
 args = parser.parse_args(sys.argv[1:])
-# args = parser.parse_args(["-zc"])
-
 kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)
 kernel.register('module', 'LaserServer', LaserServer)
@@ -124,9 +132,10 @@ if args.path is not None:
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
-        kernel.elements.add(path)
+        kernel.elements.add_elem(path)
     except Exception:
         print("SVG Path Exception to: %s" % ' '.join(sys.argv))
+
 if args.transform:
     # Transform any data loaded data
     from svgelements import Matrix
@@ -137,6 +146,22 @@ if args.transform:
             e.modified()
         except AttributeError:
             pass
+
+if args.set is not None:
+    # Set the variables requested here.
+    for v in args.set:
+        attr = v[0]
+        value = v[1]
+        if hasattr(device, attr):
+            v = getattr(device, attr)
+            if isinstance(v, bool):
+                setattr(device, attr, bool(value))
+            elif isinstance(v, int):
+                setattr(device, attr, int(value))
+            elif isinstance(v, float):
+                setattr(device, attr, float(value))
+            elif isinstance(v, str):
+                setattr(device, attr, str(value))
 
 if device is not kernel:  # We can process this stuff only with a real device.
     if args.grbl is not None:
@@ -158,6 +183,11 @@ if device is not kernel:  # We can process this stuff only with a real device.
     if args.ruida:
         console = device.using('module', 'Console').write('ruidaserver\n')
 
+    if args.home:
+        console = device.using('module', 'Console').write('home\n')
+        device.setting(bool, 'quit', True)
+        device.quit = True
+
     if args.auto:
         # Automatically classify and start the job.
         elements = kernel.elements
@@ -170,23 +200,14 @@ if device is not kernel:  # We can process this stuff only with a real device.
         device.setting(bool, 'quit', True)
         device.quit = True
 
-if args.set is not None:
-    # Set the variables requested here.
-    for var in args.set:
-        if len(var) <= 1:
-            continue  # Need at least two for a set.
-        attr = var[0]
-        value = var[1]
-        if hasattr(device, attr):
-            v = getattr(device, attr)
-            if isinstance(v, bool):
-                setattr(device, attr, bool(value))
-            elif isinstance(v, int):
-                setattr(device, attr, int(value))
-            elif isinstance(v, float):
-                setattr(device, attr, float(value))
-            elif isinstance(v, str):
-                setattr(device, attr, str(value))
+    if args.origin:
+        def origin():
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_SET_ABSOLUTE
+            yield COMMAND_MOVE, 0, 0
+        device.spooler.job(origin)
+
 if args.mock:
     # Set the device to mock.
     device.setting(bool, 'mock', True)
