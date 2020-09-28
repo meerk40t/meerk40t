@@ -1,21 +1,20 @@
-from Kernel import Device, Interpreter, INTERPRETER_STATE_PROGRAM
-from Kernel import Module, Pipe
+import os
+
+from Kernel import Kernel, Module, Interpreter, INTERPRETER_STATE_PROGRAM
 from LaserCommandConstants import *
 from svgelements import *
 
 MILS_PER_MM = 39.3701
-
 
 """
 GRBL device is a stub device. Serving as a placeholder. 
 """
 
 
-class GrblDevice(Device):
+class GrblDevice:
     """
     """
     def __init__(self, root, uid=''):
-        Device.__init__(self, root, uid)
         self.uid = uid
         self.device_name = "GRBL"
         self.location_name = "Print"
@@ -34,9 +33,31 @@ class GrblDevice(Device):
         return "GrblDevice(uid='%s')" % str(self.uid)
 
     @staticmethod
-    def sub_register(device):
-        device.register('module', 'GRBLInterpreter', GRBLInterpreter)
-        device.register('module', 'GRBLEmulator', GRBLEmulator)
+    def sub_register(kernel):
+        kernel.register('modifier/GRBLInterpreter', GRBLInterpreter)
+        kernel.register('load/GCodeLoader', GCodeLoader)
+        kernel.register('module/GRBLEmulator', GRBLEmulator)
+
+        def grblserver(command, *args):
+            active_context = kernel.active
+            _ = kernel.translation
+            port = 23
+            try:
+                active_context.open_as('module/TCPServer', 'grbl', port=port)
+                active_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
+                yield _('GRBL Mode.')
+                chan = 'grbl'
+                active_context.channel(chan).watch(kernel.channel('console'))
+                yield _('Watching Channel: %s') % chan
+                chan = 'server'
+                active_context.channel(chan).watch(kernel.channel('console'))
+                yield _('Watching Channel: %s') % chan
+                emulator = active_context.open('module/GRBLEmulator')
+                active_context.channel('grbl/recv').watch(emulator.write)
+            except OSError:
+                yield _('Server failed on port: %d') % port
+            return
+        kernel.register('command/grblserver', grblserver)
 
     def initialize(self, device, channel=None):
         """
@@ -46,9 +67,9 @@ class GrblDevice(Device):
         :param name:
         :return:
         """
-        self.open('module', 'Spooler')
         self.write = print
-        self.open('module', 'GRBLInterpreter', pipe=self)
+        device.activate('modifier/Spooler')
+        device.activate('modifier/GRBLInterpreter')
 
     def __len__(self):
         return 0
@@ -97,14 +118,14 @@ class GRBLInterpreter(Interpreter):
         self.speed_updated = True
 
     def initialize(self, channel=None):
-        self.device.setting(str, 'line_end', '\n')
+        self.context.setting(str, 'line_end', '\n')
 
     def ensure_program_mode(self, *values):
-        self.pipe.write('M3' + self.device.line_end)
+        self.pipe.write('M3' + self.context.line_end)
         Interpreter.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
-        self.pipe.write('M5' + self.device.line_end)
+        self.pipe.write('M5' + self.context.line_end)
         Interpreter.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
@@ -127,7 +148,7 @@ class GRBLInterpreter(Interpreter):
         if self.speed_updated:
             line.append('F%d' % int(self.feed_convert(self.speed)))
             self.speed_updated = False
-        self.pipe.write(' '.join(line) + self.device.line_end)
+        self.pipe.write(' '.join(line) + self.context.line_end)
         Interpreter.move(self, x, y)
 
     def execute(self):
@@ -152,10 +173,10 @@ class GRBLInterpreter(Interpreter):
         Interpreter.execute(self)
 
 
-class GRBLEmulator(Module, Pipe):
+class GRBLEmulator(Module):
 
-    def __init__(self):
-        Module.__init__(self)
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
@@ -216,7 +237,7 @@ class GRBLEmulator(Module, Pipe):
         self.elements = None
 
     def initialize(self, channel=None):
-        self.grbl_channel = self.device.channel_open('grbl')
+        self.grbl_channel = self.context.channel('grbl')
 
     def close(self):
         pass
@@ -231,21 +252,21 @@ class GRBLEmulator(Module, Pipe):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        interpreter = self.device.interpreter
+        interpreter = self.context.interpreter
         if bytes_to_write == '?':  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if interpreter.state == 0:
                 state = 'Idle'
             else:
                 state = 'Busy'
-            x = self.device.current_x / self.scale
-            y = self.device.current_y / self.scale
+            x = self.context.current_x / self.scale
+            y = self.context.current_y / self.scale
             z = 0.0
             parts = list()
             parts.append(state)
             parts.append('MPos:%f,%f,%f' % (x, y, z))
-            f = self.feed_invert(self.device.interpreter.speed)
-            s = self.device.interpreter.power
+            f = self.feed_invert(self.context.interpreter.speed)
+            s = self.context.interpreter.power
             parts.append('FS:%f,%d' % (f, s))
             self.grbl_write("<%s>\r\n" % '|'.join(parts))
         elif bytes_to_write == '~':  # Resume.
@@ -308,7 +329,7 @@ class GRBLEmulator(Module, Pipe):
             yield code
 
     def commandline(self, data):
-        spooler = self.device.spooler
+        spooler = self.context.active.spooler
         pos = data.find('(')
         commands = {}
         while pos != -1:
@@ -375,7 +396,7 @@ class GRBLEmulator(Module, Pipe):
         return self.command(commands)
 
     def command(self, gc):
-        spooler = self.device.spooler
+        spooler = self.context.active.spooler
         if 'm' in gc:
             for v in gc['m']:
                 if v == 0 or v == 1:
@@ -643,3 +664,38 @@ class GRBLEmulator(Module, Pipe):
         self.feed_convert = lambda s: s / ((self.scale / MILS_PER_MM) * 60.0)
         self.feed_invert = lambda s: s * ((self.scale / MILS_PER_MM) * 60.0)
         # units to mm, seconds to minutes.
+
+
+class GcodeBlob:
+    def __init__(self, name, b=[]):
+        self.name = name
+        self.data = b
+        self.output = True
+        self.operation = "GcodeBlob"
+
+    def __repr__(self):
+        return "GcodeBlob(%s, %d lines)" % (self.name, len(self.data))
+
+    def as_svg(self):
+        pass
+
+    def __len__(self):
+        return len(self.data)
+
+    def generate(self):
+        grblemulator = GRBLEmulator(None, None)
+        for line in self.data:
+            grblemulator.write(line)
+
+
+class GCodeLoader:
+    @staticmethod
+    def load_types():
+        yield "Gcode File", ("gcode", "nc", "gc"), "application/x-gcode"
+
+    @staticmethod
+    def load(kernel, pathname, channel=None, **kwargs):
+        basename = os.path.basename(pathname)
+        with open(pathname, 'r') as f:
+            blob = GcodeBlob(basename, f.readlines())
+        return [blob], None, None, pathname, basename

@@ -1,7 +1,6 @@
 import argparse
 import sys
 
-from Console import Console
 from DefaultModules import *
 from GrblDevice import GrblDevice
 from LhystudiosDevice import LhystudiosDevice
@@ -27,9 +26,8 @@ for full details.
 """
 
 kernel = Kernel()
-kernel.open('module', 'Signaler')
-kernel.open('module', 'Elemental')
 
+Kernel.sub_register(kernel)
 
 def pair(value):
     rv = value.split('=')
@@ -60,71 +58,56 @@ parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x posi
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
-
 args = parser.parse_args(sys.argv[1:])
-kernel.register('static', 'RasterScripts', RasterScripts)
-kernel.register('module', 'Console', Console)
-kernel.register('module', 'LaserServer', LaserServer)
-kernel.register('load', 'SVGLoader', SVGLoader)
-kernel.register('load', 'ImageLoader', ImageLoader)
-kernel.register('load', "DxfLoader", DxfLoader)
-kernel.register('save', 'SVGWriter', SVGWriter)
-kernel.register('device', 'Lhystudios', LhystudiosDevice)
-kernel.register('disabled-device', 'Moshiboard', MoshiboardDevice)
-kernel.register('disabled-device', 'Ruida', RuidaDevice)
-kernel.register('disabled-device', 'GRBL', GrblDevice)
+
+kernel.register('static/RasterScripts', RasterScripts)
+kernel.register('module/TCPServer', TCPServer)
+kernel.register('module/UDPServer', UDPServer)
+kernel.register('load/SVGLoader', SVGLoader)
+kernel.register('load/ImageLoader', ImageLoader)
+kernel.register('load/DxfLoader', DxfLoader)
+kernel.register('save/SVGWriter', SVGWriter)
+kernel.register('device/Lhystudios', LhystudiosDevice)
+kernel.register('disabled-device/Moshiboard', MoshiboardDevice)
+kernel.register('disabled-device/Ruida', RuidaDevice)
+kernel.register('disabled-device/GRBL', GrblDevice)
+
+kernel_root = kernel.get_context('/')
+kernel_root.device_version = "0.7.0"
+kernel_root.device_name = "MeerK40t"
+kernel_root.activate('modifier/Elemental')
+kernel_root.activate('modifier/BindAlias')
 
 if not args.no_gui:
     from wxMeerK40t import wxMeerK40t
-    kernel.register_module('wxMeerK40t', wxMeerK40t)
-    meerk40tgui = kernel.open('module', 'wxMeerK40t', device=kernel)
+
+    kernel.register('module/wxMeerK40t', wxMeerK40t)
+    meerk40tgui = kernel_root.open('module/wxMeerK40t')
 
 kernel.boot()
-device = None
 
-if 'device' in kernel.instances:
-    # Device was booted by kernel boot.
-    for key, d in kernel.instances['device'].items():
-        device = d
-        break
-else:
-    if args.no_gui:
-        # Without a booted device, if also no gui, just start a default device.
-        device = kernel.open('device', 'Lhystudios', instance_name='1', uid=1)
-        device.boot()
+device_entries = list()
+for dev in kernel_root.derivable():
+    try:
+        device_entries.append(int(dev))
+    except ValueError:
         pass
-    else:
-        # There is a gui but the device wasn't booted.
-        devices = list(kernel.derivable())
-        device_entries = list()
-        for dev in devices:
-            try:
-                device_entries.append(int(dev))
-            except ValueError:
-                continue
-        if len(device_entries) == 0:
-            # There are no device entries in the kernel.
-            kernel.device_add('Lhystudios', 1)
-            kernel.device_boot()
-            for key, d in kernel.instances['device'].items():
-                device = d
-                break
-        if device is None:
-            #  Set device to kernel and start the DeviceManager
-            device = kernel
-            kernel.open('window', "DeviceManager", None)
 
+if len(device_entries) != 0:
+    device = kernel_root.derive(str(device_entries[0]))
+    device_name = device.setting(str, 'device_name', 'Lhystudios')
+    device.activate('device/%s' % device_name)
+else:
+    device = kernel_root.derive('1')
+    device.activate('device/Lhystudios')
 
 if args.verbose:
-    # Debug the device.
-    device.execute('Debug Device')
-    kernel.execute('Debug Device')
+    kernel_root.execute('Debug Device')
 
 if args.input is not None:
-    # load the given filename.
     import os
 
-    kernel.load(os.path.realpath(args.input.name))
+    kernel_root.load(os.path.realpath(args.input.name))
 
 if args.path is not None:
     # Force the inclusion of the path.
@@ -132,7 +115,7 @@ if args.path is not None:
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
-        kernel.elements.add_elem(path)
+        kernel_root.elements.add_elem(path)
     except Exception:
         print("SVG Path Exception to: %s" % ' '.join(sys.argv))
 
@@ -140,7 +123,7 @@ if args.transform:
     # Transform any data loaded data
     from svgelements import Matrix
     m = Matrix(args.transform)
-    for e in kernel.elements.elems():
+    for e in kernel_root.elements.elems():
         e *= m
         try:
             e.modified()
@@ -163,81 +146,80 @@ if args.set is not None:
             elif isinstance(v, str):
                 setattr(device, attr, str(value))
 
-if device is not kernel:  # We can process this stuff only with a real device.
-    if args.grbl is not None:
-        # Start the GRBL server on the device.
-        device.setting(int, 'grbl_flip_x', 1)
-        device.setting(int, 'grbl_flip_y', 1)
-        device.setting(int, 'grbl_home_x', 0)
-        device.setting(int, 'grbl_home_y', 0)
-        if args.flip_y:
-            device.grbl_flip_x = -1
-        if args.flip_x:
-            device.grbl_flip_y = -1
-        if args.adjust_y is not None:
-            device.grbl_home_y = args.adjust_y
-        if args.adjust_x is not None:
-            device.grbl_home_x = args.adjust_x
-        console = device.using('module', 'Console').write('grblserver\n')
-
-    if args.ruida:
-        console = device.using('module', 'Console').write('ruidaserver\n')
-
-    if args.home:
-        console = device.using('module', 'Console').write('home\n')
-        device.setting(bool, 'quit', True)
-        device.quit = True
-
-    if args.auto:
-        # Automatically classify and start the job.
-        elements = kernel.elements
-        elements.classify(list(elements.elems()))
-        ops = list(elements.ops())
-        if args.speed is not None:
-            for o in ops:
-                o.speed = args.speed
-        device.spooler.jobs(ops)
-        device.setting(bool, 'quit', True)
-        device.quit = True
-
-    if args.origin:
-        def origin():
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_SET_ABSOLUTE
-            yield COMMAND_MOVE, 0, 0
-        device.spooler.job(origin)
-
 if args.mock:
     # Set the device to mock.
     device.setting(bool, 'mock', True)
     device.mock = True
+
+# We can process this stuff only with a real device.
+if args.grbl is not None:
+    # Start the GRBL server on the device.
+    device.setting(int, 'grbl_flip_x', 1)
+    device.setting(int, 'grbl_flip_y', 1)
+    device.setting(int, 'grbl_home_x', 0)
+    device.setting(int, 'grbl_home_y', 0)
+    if args.flip_y:
+        device.grbl_flip_x = -1
+    if args.flip_x:
+        device.grbl_flip_y = -1
+    if args.adjust_y is not None:
+        device.grbl_home_y = args.adjust_y
+    if args.adjust_x is not None:
+        device.grbl_home_x = args.adjust_x
+    console = device.console('grblserver\n')
+
+if args.ruida:
+    console = device.console('ruidaserver\n')
+
+if args.home:
+    console = device.console('home\n')
+    device.setting(bool, 'quit', True)
+    device.quit = True
+
+if args.auto:
+    # Automatically classify and start the job.
+    elements = kernel.elements
+    elements.classify(list(elements.elems()))
+    ops = list(elements.ops())
+    if args.speed is not None:
+        for o in ops:
+            o.speed = args.speed
+    device.spooler.jobs(ops)
+    device.setting(bool, 'quit', True)
+    device.quit = True
+
+if args.origin:
+    def origin():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MOVE, 0, 0
+    device.spooler.job(origin)
+
 if args.output is not None:
     import os
-    kernel.save(os.path.realpath(args.output.name))
+    kernel_root.save(os.path.realpath(args.output.name))
+
 if args.batch:
-    device.add_watcher('console', print)
-    console = device.using('module', 'Console')
+    device.channel('console').watch(print)
     with args.batch as batch:
         for line in batch:
-            console.write(line.strip() + '\n')
-    device.remove_watcher('console', print)
+            device.console(line.strip() + '\n')
+    device.channel('console').unwatch(print)
+
 if args.console:
-    console = device.using('module', 'Console')
-    device.add_watcher('console', print)
-    kernel.add_watcher('shutdown', print)
+    device.channel('console').watch(print)
+    kernel_root.channel('shutdown').watch(print)
     while True:
         device_entries = input('>')
-        if device.state == STATE_TERMINATE:
+        if device._state == STATE_TERMINATE:
             break
         if device_entries == 'quit':
             break
-        console.write(device_entries + '\n')
+        device.console(device_entries + '\n')
+    device.channel('console').unwatch(print)
 
-    device.remove_watcher('console', print)
+
 if not args.no_gui:
-    if device.state != STATE_TERMINATE:
-        if 'device' in kernel.instances:
-            for key, device in kernel.instances['device'].items():
-                device.open('window', 'MeerK40t', None)
-        meerk40tgui.MainLoop()
+    kernel_root.open('window/MeerK40t', None)
+    meerk40tgui.MainLoop()

@@ -5,7 +5,7 @@ from svgelements import SVGImage
 """
 This file class/collection is part of an exploration of the modification scheme.
 
-This highlights problems and requirements for lasy modifications of elements.
+This highlights problems and requirements for lazy modifications of elements.
 """
 
 
@@ -107,7 +107,7 @@ class MakeImage(Modification):
             return None
         xmin, ymin, xmax, ymax = bounds
 
-        renderer = LaserRender(self.device.device_root)
+        renderer = LaserRender(self.context)
         image = renderer.make_raster(self, bounds, step=self.step)
         image_element = SVGImage(image=image)
         image_element.transform.post_translate(xmin, ymin)

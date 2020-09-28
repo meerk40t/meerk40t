@@ -1,4 +1,3 @@
-from Kernel import Module
 from math import ceil
 
 from svgelements import Matrix
@@ -21,12 +20,12 @@ class RasterScripts:
 
     @staticmethod
     def sub_register(device):
-        device.register('raster_script', "Gold", RasterScripts.raster_script_gold())
-        device.register('raster_script', "Stipo", RasterScripts.raster_script_stipo())
-        device.register('raster_script', "Gravy", RasterScripts.raster_script_gravy())
-        device.register('raster_script', "Xin", RasterScripts.raster_script_xin())
-        device.register('raster_script', "Newsy", RasterScripts.raster_script_newsy())
-        device.register('raster_script', "Simple", RasterScripts.raster_script_simple())
+        device.register('raster_script/Gold', RasterScripts.raster_script_gold())
+        device.register('raster_script/Stipo', RasterScripts.raster_script_stipo())
+        device.register('raster_script/Gravy', RasterScripts.raster_script_gravy())
+        device.register('raster_script/Xin', RasterScripts.raster_script_xin())
+        device.register('raster_script/Newsy', RasterScripts.raster_script_newsy())
+        device.register('raster_script/Simple', RasterScripts.raster_script_simple())
 
     @staticmethod
     def raster_script_gold():
@@ -237,9 +236,8 @@ class RasterScripts:
             'enable': True,
             'black': True,
             'sample': 10,
-            'scale': 2,
             'angle': 22,
-            'oversample': 0
+            'oversample': 2
         })
         ops.append({
             'name': 'dither',
@@ -322,6 +320,7 @@ class RasterScripts:
         height = box[3] - box[1]
         if width != element_width and height != element_height:
             image = image.crop(box)
+            box = image.getbbox()
             matrix.post_translate(box[0], box[1])
         # step level requires the new actualized matrix be scaled up.
         matrix.post_scale(step_level, step_level)
@@ -329,7 +328,7 @@ class RasterScripts:
         return image, matrix
 
     @staticmethod
-    def halftone(image, sample=10, scale=2.0, angle=22.0, oversample=0, black=False):
+    def halftone(image, sample=10, scale=3.0, angle=22.0, oversample=2, black=False):
         from PIL import Image, ImageDraw, ImageStat
         original_image = image
         image = image.convert('L')
@@ -409,7 +408,7 @@ class RasterScripts:
                                 pass
                             m = [r, g, b, 1.0]
                             if image.mode != "L":
-                                if image.mode == "P" or image.mode == '1':
+                                if image.mode == "P":
                                     image = image.convert('RGBA')
                                 if op['invert']:
                                     color = 0, 0, 0

@@ -7,11 +7,11 @@ _ = wx.GetTranslation
 
 
 class Keymap(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Keymap.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((500, 530))
         self.list_keymap = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
@@ -34,11 +34,11 @@ class Keymap(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
         self.reload_keymap()
 
@@ -82,7 +82,7 @@ class Keymap(wx.Frame, Module):
     def on_item_activated(self, event):
         element = event.Text
         self.text_key_name.SetValue(element)
-        self.text_command_name.SetValue(self.device.device_root.keymap[element])
+        self.text_command_name.SetValue(self.context.keymap[element])
 
     def on_item_rightclick(self, event):
         element = event.Text
@@ -96,7 +96,7 @@ class Keymap(wx.Frame, Module):
 
     def on_tree_popup_clear(self, element):
         def delete(event):
-            self.device.default_keymap()
+            self.context.default_keymap()
             self.list_keymap.DeleteAllItems()
             self.reload_keymap()
 
@@ -105,7 +105,7 @@ class Keymap(wx.Frame, Module):
     def on_tree_popup_delete(self, element):
         def delete(event):
             try:
-                del self.device.keymap[element]
+                del self.context.keymap[element]
                 self.list_keymap.DeleteAllItems()
                 self.reload_keymap()
             except KeyError:
@@ -115,8 +115,8 @@ class Keymap(wx.Frame, Module):
 
     def reload_keymap(self):
         i = 0
-        for key in self.device.device_root.keymap:
-            value = self.device.device_root.keymap[key]
+        for key in self.context.keymap:
+            value = self.context.keymap[key]
             m = self.list_keymap.InsertItem(i, str(key))
             i += 1
             if m != -1:
@@ -136,7 +136,7 @@ class Keymap(wx.Frame, Module):
             result = dlg.ShowModal()
             dlg.Destroy()
             return
-        self.device.device_root.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
+        self.context.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
         self.text_key_name.SetValue('')
         self.text_command_name.SetValue('')
         self.list_keymap.DeleteAllItems()
@@ -150,10 +150,10 @@ class Keymap(wx.Frame, Module):
             self.text_key_name.SetValue('')
         else:
             self.text_key_name.SetValue(keyvalue)
-            for i, key in enumerate(self.device.device_root.keymap):
+            for i, key in enumerate(self.context.keymap):
                 if key == keyvalue:
                     self.list_keymap.Select(i, True)
                     self.list_keymap.Focus(i)
-                    self.text_command_name.SetValue(self.device.device_root.keymap[key])
+                    self.text_command_name.SetValue(self.context.keymap[key])
                 else:
                     self.list_keymap.Select(i, False)

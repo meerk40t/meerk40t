@@ -8,11 +8,11 @@ _ = wx.GetTranslation
 
 
 class Terminal(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Terminal.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((581, 410))
         self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
         self.text_entry = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB)
@@ -25,7 +25,6 @@ class Terminal(wx.Frame, Module):
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.pipe = None
         self.command_log = []
         self.command_position = 0
 
@@ -37,18 +36,17 @@ class Terminal(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
-        self.pipe = self.device.using('module', 'Console')
-        self.device.add_watcher('console', self.update_text)
+        self.context.channel('console').watch(self.update_text)
         self.text_entry.SetFocus()
 
     def finalize(self, channel=None):
-        self.device.remove_watcher('console', self.update_text)
+        self.context.channel('console').unwatch(self.update_text)
         try:
             self.Close()
         except RuntimeError:
@@ -62,9 +60,9 @@ class Terminal(wx.Frame, Module):
 
     def update_text(self, text):
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, text + '\n')
+            wx.CallAfter(self.update_text_gui, str(text) + '\n')
         else:
-            self.update_text_gui(text + '\n')
+            self.update_text_gui(str(text) + '\n')
 
     def update_text_gui(self, text):
         try:
@@ -121,10 +119,9 @@ class Terminal(wx.Frame, Module):
             pass
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
-        if self.pipe is not None:
-            command = self.text_entry.GetValue()
-            self.pipe.write(command + '\n')
-            self.text_entry.SetValue('')
-            self.command_log.append(command)
-            self.command_position = 0
+        command = self.text_entry.GetValue()
+        self.context.console(command + '\n')
+        self.text_entry.SetValue('')
+        self.command_log.append(command)
+        self.command_position = 0
         event.Skip()

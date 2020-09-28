@@ -7,11 +7,11 @@ _ = wx.GetTranslation
 
 
 class BufferView(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: BufferView.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((697, 584))
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE)
@@ -27,18 +27,18 @@ class BufferView(wx.Frame, Module):
             return
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
 
-        pipe = self.device.interpreter.pipe
+        pipe = self.context.open('pipe')
         buffer = None
         if pipe is not None:
             try:
-                buffer = pipe._buffer + pipe._queue
+                buffer = pipe._realtime_buffer + pipe._buffer + pipe._queue
             except AttributeError:
                 buffer = None
         if buffer is None:

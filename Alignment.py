@@ -2,18 +2,18 @@ import wx
 
 from Kernel import Module
 from LaserCommandConstants import *
-from icons import icons8_resize_horizontal_50, icons8_resize_vertical_50, \
-    icons8_laser_beam_hazard_50, icons8_stop_50
+from icons import icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50, \
+    icons8_laser_beam_hazard_50, icons8_end_50
 
 _ = wx.GetTranslation
 
 
 class Alignment(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Alignment.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((631, 365))
 
         self.spin_vertical_distance = wx.SpinCtrl(self, wx.ID_ANY, "180", min=10, max=400)
@@ -28,8 +28,8 @@ class Alignment(wx.Frame, Module):
         self.button_horizontal_align_nearfar = wx.BitmapButton(self, wx.ID_ANY, icons8_resize_horizontal_50.GetBitmap())
         self.button_vertical_align = wx.BitmapButton(self, wx.ID_ANY, icons8_resize_vertical_50.GetBitmap())
         self.button_horizontal_align = wx.BitmapButton(self, wx.ID_ANY, icons8_resize_horizontal_50.GetBitmap())
-        self.button_square_align_4_corner = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_50.GetBitmap())
-        self.button_square_align = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_50.GetBitmap())
+        self.button_square_align_4_corner = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
+        self.button_square_align = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()
@@ -65,11 +65,11 @@ class Alignment(wx.Frame, Module):
             return
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
 
     def finalize(self, channel=None):
@@ -184,11 +184,11 @@ class Alignment(wx.Frame, Module):
         # end wxGlade
 
     def on_button_vertical_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.job(self.vertical_near_far_test)
 
     def on_button_vertical_align(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.job(self.vertical_test)
 
     def on_spin_vertical_distance(self, event):  # wxGlade: Alignment.<event_handler>
@@ -205,11 +205,11 @@ class Alignment(wx.Frame, Module):
         self.check_horizontal_done.Enable(self.check_vertical_done.GetValue())
 
     def on_button_horizontal_align_nearfar(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.job(self.horizontal_near_far_test)
 
     def on_button_horizontal_align(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.job(self.horizontal_test)
 
     def on_spin_horizontal_distance(self, event):  # wxGlade: Alignment.<event_handler>
@@ -223,15 +223,15 @@ class Alignment(wx.Frame, Module):
         self.button_square_align_4_corner.Enable(self.check_horizontal_done.GetValue())
 
     def on_slider_square_power_change(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.set_power(self.slider_square_power.GetValue())
 
     def on_button_square_align_4_corners(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.job(self.square4_test)
 
     def on_button_square_align(self, event):  # wxGlade: Alignment.<event_handler>
-        spooler = self.device.spooler
+        spooler = self.context.spooler
         spooler.job(self.square_test)
 
     def square_test(self):
@@ -257,8 +257,8 @@ class Alignment(wx.Frame, Module):
         yield COMMAND_SET_ABSOLUTE
         y_max = round(self.spin_vertical_distance.GetValue() * 39.3701)
         x_max = round(self.spin_horizontal_distance.GetValue() * 39.3701)
-        y_val = self.device.current_y
-        x_val = self.device.current_x
+        y_val = self.context.current_y
+        x_val = self.context.current_x
         y_step = round(5 * 39.3701)
 
         while y_val < y_max:

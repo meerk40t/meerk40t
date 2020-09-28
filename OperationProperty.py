@@ -12,11 +12,11 @@ _advanced_width = 612
 
 
 class OperationProperty(wx.Frame, Module):
-    def __init__(self, parent, operation, *args, **kwds):
+    def __init__(self, context, path, parent, operation, *args, **kwds):
         # begin wxGlade: OperationProperty.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((_simple_width, 500))
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
@@ -79,7 +79,7 @@ class OperationProperty(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, operation, *args, **kwargs):
@@ -88,7 +88,7 @@ class OperationProperty(wx.Frame, Module):
         self.on_size()
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
         if self.operation.operation is not None:
             op = self.operation.operation
@@ -432,13 +432,13 @@ class OperationProperty(wx.Frame, Module):
         self.display_panel.Update()
 
     def on_menu_clear(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.device.device_root.elements.clear_operations()
+        self.context.elements.clear_operations()
 
     def on_menu_default0(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.device.device_root.elements.load_default()
+        self.context.elements.load_default()
 
     def on_menu_default1(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.device.device_root.elements.load_default2()
+        self.context.elements.load_default2()
 
     def on_menu_save(self, event):  # wxGlade: OperationProperty.<event_handler>
         pass
@@ -473,7 +473,7 @@ class OperationProperty(wx.Frame, Module):
             color = swizzlecolor(rgb)
             self.operation.color = Color(color, 1.0)
             self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_combo_operation(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         select = self.combo_type.GetSelection()
@@ -505,36 +505,36 @@ class OperationProperty(wx.Frame, Module):
             self.check_dratio_custom.Enable(False)
             self.text_dratio.Enable(False)
             self.Layout()
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_output(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.output = bool(self.checkbox_output.GetValue())
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_show(self, event):
         self.operation.show = bool(self.checkbox_show.GetValue())
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.speed = float(self.text_speed.GetValue())
         except ValueError:
             return
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_text_power(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.power = float(self.text_power.GetValue())
         except ValueError:
             return
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_text_raster_step(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.raster_step = int(self.text_raster_step.GetValue())
         except ValueError:
             return
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
         self.raster_lines = None
         self.travel_lines = None
         self.refresh_display()
@@ -547,32 +547,32 @@ class OperationProperty(wx.Frame, Module):
             except ValueError:
                 return
         self.operation.overscan = overscan
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
         self.operation.raster_direction = self.combo_raster_direction.GetSelection()
-        self.device.device_root.raster_direction = self.operation.raster_direction
-        self.device.signal('element_property_update', self.operation)
+        self.context.raster_direction = self.operation.raster_direction
+        self.context.signal('element_property_update', self.operation)
 
     def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>
         self.operation.raster_swing = self.radio_directional_raster.GetSelection()
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_slider_top(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.raster_preference_top = self.slider_top.GetValue() - 1
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_slider_left(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.raster_preference_left = self.slider_left.GetValue() - 1
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_slider_right(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.raster_preference_right = self.slider_right.GetValue() - 1
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_slider_bottom(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_advanced(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_advanced.GetValue()
@@ -587,51 +587,51 @@ class OperationProperty(wx.Frame, Module):
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
         self.operation.dratio_custom = bool(on)
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_text_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.dratio = float(self.text_dratio.GetValue())
         except ValueError:
             return
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_acceleration(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
         self.operation.acceleration_custom = bool(on)
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_slider_accel(self, event):
         self.operation.acceleration = self.slider_accel.GetValue()
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
         self.operation.dot_length_custom = bool(on)
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_text_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.dot_length = int(self.text_dot_length.GetValue())
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_group_pulses(self, event):  # wxGlade: OperationProperty.<event_handler>
         self.operation.group_pulses = bool(self.check_group_pulse.GetValue())
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_check_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
         self.operation.passes_custom = bool(on)
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_text_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.passes = int(self.text_passes.GetValue())
         except ValueError:
             return
-        self.device.signal('element_property_update', self.operation)
+        self.context.signal('element_property_update', self.operation)
 
     def on_key_press(self, event):
         keycode = event.GetKeyCode()

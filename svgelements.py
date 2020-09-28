@@ -2715,11 +2715,6 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
-        if SVG_ATTR_STROKE_WIDTH in self.values:
-            width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
-            t = self.transform
-            det = t.a * t.d - t.c * t.b
-            self.values[SVG_ATTR_STROKE_WIDTH] = width * sqrt(abs(det))
         return self
 
     def render(self, **kwargs):
@@ -5256,8 +5251,8 @@ class Rect(Shape):
         Skewed and Rotated rectangles cannot be reified.
         """
         Transformable.reify(self)
-        scale_x = self.transform.value_scale_x()
-        scale_y = self.transform.value_scale_y()
+        scale_x = abs(self.transform.value_scale_x())
+        scale_y = abs(self.transform.value_scale_y())
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if self.transform.value_skew_x() == 0 and self.transform.value_skew_y() == 0 \
@@ -5437,8 +5432,8 @@ class _RoundShape(Shape):
         Skewed and Rotated roundshapes cannot be reified.
         """
         Transformable.reify(self)
-        scale_x = abs(self.transform.value_scale_x())
-        scale_y = abs(self.transform.value_scale_y())
+        scale_x = self.transform.value_scale_x()
+        scale_y = self.transform.value_scale_y()
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if self.transform.value_skew_x() == 0 and self.transform.value_skew_y() == 0 \
@@ -5596,6 +5591,14 @@ class _RoundShape(Shape):
         :return: point at t
         """
         return self.point_at_t(tau * position)
+
+    def _ramanujan_length(self):
+        a = self.implicit_rx
+        b = self.implicit_ry
+        if b > a:
+            a, b = b, a
+        h = (a - b) ** 2 / (a + b) ** 2
+        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
 
 
 class Ellipse(_RoundShape):
@@ -6974,6 +6977,5 @@ class SVG(Group):
                             styles[selector.strip()] = value
                 context, values = stack.pop()
             elif event == 'start-ns':
-                if elem[0] != SVG_ATTR_DATA:
-                    values[elem[0]] = elem[1]
+                values[elem[0]] = elem[1]
         return root

@@ -15,29 +15,28 @@ _ = wx.GetTranslation
 # end wxGlade
 
 class Settings(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
-        # begin wxGlade: Settings.__init__
+    def __init__(self, context, path, parent, *args, **kwds):
+        # begin wxGlade: Preferences.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
-        self.SetSize((455, 183))
-        self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=["mm", "cm", "inch", "mils"], majorDimension=1,
+        Module.__init__(self, context, path)
+        self.SetSize((412, 183))
+
+        self.checklist_options = wx.CheckListBox(self, wx.ID_ANY,
+                                                 choices=[
+                                                     _("Invert Mouse Wheel Zoom"),
+                                                     _("Print Shutdown"),
+                                                     _("SVG Uniform Save"),
+                                                     _("Image DPI Scaling"),
+                                                     _("Show Negative Guide"),
+                                                     _("Launch Spooler JobStart"),
+                                                 ])
+
+        self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"),
+                                       choices=[_("mm"), _("cm"), _("inch"), _("mils")],
+                                       majorDimension=1,
                                        style=wx.RA_SPECIFY_ROWS)
-        self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
-        self.combo_svg_ppi = wx.ComboBox(self, wx.ID_ANY,
-                                         choices=[_("96 px/in Inkscape"),
-                                                  _("72 px/in Illustrator"),
-                                                  _("90 px/in Old Inkscape"),
-                                                  _("Custom")], style=wx.CB_DROPDOWN)
-        # self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.checklist_options = wx.CheckListBox(self, wx.ID_ANY, choices=[_("Invert Mouse Wheel Zoom"),
-                                                                           _("Print Shutdown"),
-                                                                           _("SVG Uniform Save"),
-                                                                           _("Image DPI Scaling"),
-                                                                           _("Show Negative Guide"),
-                                                                           _("Launch Spooler JobStart")
-                                                                           ])
+
         from wxMeerK40t import supported_languages
         choices = [language_name for language_code, language_name, language_index in supported_languages]
         self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN)
@@ -47,11 +46,7 @@ class Settings(wx.Frame, Module):
 
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_language, self.combo_language)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi, self.text_svg_ppi)
-        self.Bind(wx.EVT_TEXT, self.on_text_svg_ppi, self.text_svg_ppi)
         self.Bind(wx.EVT_CHECKLISTBOX, self.on_checklist_settings, self.checklist_options)
-
         # end wxGlade
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
@@ -60,41 +55,38 @@ class Settings(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
 
-        self.device.device_root.setting(float, 'svg_ppi', 96.0)
-        self.text_svg_ppi.SetValue(str(self.device.device_root.svg_ppi))
+        self.context.setting(bool, "mouse_zoom_invert", False)
+        self.context.setting(bool, "print_shutdown", False)
+        self.context.setting(bool, "uniform_svg", False)
+        self.context.setting(bool, 'image_dpi', True)
+        self.context.setting(bool, "show_negative_guide", True)
+        self.context.setting(bool, "auto_spooler", True)
+        self.context.setting(int, "language", 0)
+        self.context.setting(str, "units_name", 'mm')
+        self.context.setting(int, "units_marks", 10)
+        self.context.setting(int, "units_index", 0)
 
-        self.device.setting(bool, "mouse_zoom_invert", False)
-        self.device.setting(bool, "print_shutdown", False)
-        self.device.setting(bool, "uniform_svg", False)
-        self.device.setting(bool, 'image_dpi', True)
-        self.device.setting(bool, "show_negative_guide", True)
-        self.device.setting(bool, "auto_spooler", True)
-        self.device.setting(int, "language", 0)
-        self.device.setting(str, "units_name", 'mm')
-        self.device.setting(int, "units_marks", 10)
-        self.device.setting(int, "units_index", 0)
-
-        if self.device.mouse_zoom_invert:
+        if self.context.mouse_zoom_invert:
             self.checklist_options.Check(0, True)
-        if self.device.print_shutdown:
+        if self.context.print_shutdown:
             self.checklist_options.Check(1, True)
-        if self.device.uniform_svg:
+        if self.context.uniform_svg:
             self.checklist_options.Check(2, True)
-        if self.device.image_dpi:
+        if self.context.image_dpi:
             self.checklist_options.Check(3, True)
-        if self.device.show_negative_guide:
+        if self.context.show_negative_guide:
             self.checklist_options.Check(4, True)
-        if self.device.auto_spooler:
+        if self.context.auto_spooler:
             self.checklist_options.Check(5, True)
-        self.radio_units.SetSelection(self.device.units_index)
-        self.combo_language.SetSelection(self.device.language)
+        self.radio_units.SetSelection(self.context.units_index)
+        self.combo_language.SetSelection(self.context.language)
 
     def finalize(self, channel=None):
         try:
@@ -102,7 +94,7 @@ class Settings(wx.Frame, Module):
         except RuntimeError:
             pass
 
-    def shutdown(self, channel=None):
+    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:
@@ -118,77 +110,36 @@ class Settings(wx.Frame, Module):
         self.radio_units.SetToolTip(_("Set default units for guides"))
         self.radio_units.SetSelection(0)
         self.combo_language.SetToolTip(_("Select the desired language to use."))
-        self.combo_svg_ppi.SetToolTip(_("Select the Pixels Per Inch to use when loading an SVG file"))
-        self.text_svg_ppi.SetMinSize((60, 23))
-        self.text_svg_ppi.SetToolTip(_("Custom Pixels Per Inch to use when loading an SVG file"))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Settings.__do_layout
-        sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_gui_options = wx.BoxSizer(wx.VERTICAL)
-        sizer_3 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("SVG Pixel Per Inch")), wx.HORIZONTAL)
+        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_6 = wx.BoxSizer(wx.VERTICAL)
+        sizer_5 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL)
-        sizer_gui_options.Add(self.radio_units, 0, wx.EXPAND, 0)
+        sizer_5.Add(self.radio_units, 0, wx.EXPAND, 0)
         sizer_2.Add(self.combo_language, 0, 0, 0)
-        sizer_gui_options.Add(sizer_2, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.combo_svg_ppi, 0, 0, 0)
-        sizer_3.Add((20, 20), 0, 0, 0)
-        sizer_3.Add(self.text_svg_ppi, 1, 0, 0)
-        sizer_gui_options.Add(sizer_3, 0, wx.EXPAND, 0)
-        sizer_settings.Add(sizer_gui_options, 0, wx.EXPAND, 0)
-        sizer_settings.Add(self.checklist_options, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_settings)
+        sizer_5.Add(sizer_2, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_6.Add(self.checklist_options, 1, wx.EXPAND, 0)
+        sizer_1.Add(sizer_6, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
 
-    def on_combo_svg_ppi(self, event):  # wxGlade: Settings.<event_handler>
-        ppi = self.combo_svg_ppi.GetSelection()
-        if ppi == 0:
-            self.device.device_root.setting(float, 'svg_ppi', 96.0)
-            self.device.device_root.svg_ppi = 96.0
-        elif ppi == 1:
-            self.device.device_root.setting(float, 'svg_ppi', 72.0)
-            self.device.device_root.svg_ppi = 72.0
-        elif ppi == 2:
-            self.device.device_root.setting(float, 'svg_ppi', 90.0)
-            self.device.device_root.svg_ppi = 90.0
-        else:
-            self.device.device_root.setting(float, 'svg_ppi', 96.0)
-            self.device.device_root.svg_ppi = 96.0
-        self.text_svg_ppi.SetValue(str(self.device.device_root.svg_ppi))
-
-    def on_text_svg_ppi(self, event):  # wxGlade: Settings.<event_handler>
-        try:
-            svg_ppi = float(self.text_svg_ppi.GetValue())
-        except ValueError:
-            return
-        if svg_ppi == 96:
-            if self.combo_svg_ppi.GetSelection() != 0:
-                self.combo_svg_ppi.SetSelection(0)
-        elif svg_ppi == 72:
-            if self.combo_svg_ppi.GetSelection() != 1:
-                self.combo_svg_ppi.SetSelection(1)
-        elif svg_ppi == 90:
-            if self.combo_svg_ppi.GetSelection() != 2:
-                self.combo_svg_ppi.SetSelection(2)
-        else:
-            if self.combo_svg_ppi.GetSelection() != 3:
-                self.combo_svg_ppi.SetSelection(3)
-        self.device.device_root.svg_ppi = svg_ppi
-
     def on_checklist_settings(self, event):  # wxGlade: Settings.<event_handler>
-        self.device.mouse_zoom_invert = self.checklist_options.IsChecked(0)
-        self.device.print_shutdown = self.checklist_options.IsChecked(1)
-        self.device.uniform_svg = self.checklist_options.IsChecked(2)
-        self.device.image_dpi = self.checklist_options.IsChecked(3)
-        self.device.show_negative_guide = self.checklist_options.IsChecked(4)
-        self.device.auto_spooler = self.checklist_options.IsChecked(5)
+        self.context.mouse_zoom_invert = self.checklist_options.IsChecked(0)
+        self.context.print_shutdown = self.checklist_options.IsChecked(1)
+        self.context.uniform_svg = self.checklist_options.IsChecked(2)
+        self.context.image_dpi = self.checklist_options.IsChecked(3)
+        self.context.show_negative_guide = self.checklist_options.IsChecked(4)
+        self.context.auto_spooler = self.checklist_options.IsChecked(5)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
-        if lang != -1 and self.device.app is not None:
-            self.device.app.update_language(lang)
+        if lang != -1 and self.context.app is not None:
+            self.context.app.update_language(lang)
 
     def on_radio_units(self, event):  # wxGlade: Preferences.<event_handler>
         if event.Int == 0:
@@ -201,21 +152,21 @@ class Settings(wx.Frame, Module):
             self.set_mil()
 
     def set_inch(self):
-        p = self.device.device_root
+        p = self.context
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1000.0, "inch", 1, 2)
         p.signal('units')
 
     def set_mil(self):
-        p = self.device.device_root
+        p = self.context
         p.units_convert, p.units_name, p.units_marks, p.units_index = (1.0, "mil", 1000, 3)
         p.signal('units')
 
     def set_cm(self):
-        p = self.device.device_root
+        p = self.context
         p.units_convert, p.units_name, p.units_marks, p.units_index = (393.7, "cm", 1, 1)
         p.signal('units')
 
     def set_mm(self):
-        p = self.device.device_root
+        p = self.context
         p.units_convert, p.units_name, p.units_marks, p.units_index = (39.37, "mm", 10, 0)
         p.signal('units')

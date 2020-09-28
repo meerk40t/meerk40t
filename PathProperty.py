@@ -9,11 +9,11 @@ _ = wx.GetTranslation
 
 
 class PathProperty(wx.Frame, Module):
-    def __init__(self, parent, element=None, *args, **kwds):
+    def __init__(self, context, path, parent, element=None, *args, **kwds):
         # begin wxGlade: PathProperty.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((288, 303))
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
@@ -52,11 +52,7 @@ class PathProperty(wx.Frame, Module):
 
         self.__set_properties()
         self.__do_layout()
-        try:
-            if element.id is not None:
-                self.text_name.SetValue(str(element.id))
-        except AttributeError:
-            pass
+
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
@@ -84,7 +80,7 @@ class PathProperty(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def restore(self, parent, element=None, *args, **kwargs):
@@ -92,7 +88,7 @@ class PathProperty(wx.Frame, Module):
         self.set_widgets()
 
     def initialize(self, channel=None):
-        self.device.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
 
     def set_widgets(self):
@@ -187,9 +183,8 @@ class PathProperty(wx.Frame, Module):
 
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
-            self.path_element.id = self.text_name.GetValue()
-            self.path_element.values[SVG_ATTR_ID] = self.path_element.id
-            self.device.signal('element_property_update', self.path_element)
+            self.path_element.name = self.text_name.GetValue()
+            self.context.signal('element_property_update', self.path_element)
         except AttributeError:
             pass
 
@@ -224,6 +219,6 @@ class PathProperty(wx.Frame, Module):
                 self.path_element.altered()
         self.path_element.emphasize()
         self.Refresh()
-        self.device.using('module', 'Console').write('declassify\nclassify\n')
-        self.device.signal('element_property_update', self.path_element)
-        self.device.signal('refresh_scene', 0)
+        self.context.console('declassify\nclassify\n')
+        self.context.signal('element_property_update', self.path_element)
+        self.context.signal('refresh_scene', 0)

@@ -7,11 +7,11 @@ _ = wx.GetTranslation
 
 
 class UsbConnect(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Terminal.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((915, 424))
         self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
         self.text_entry = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB)
@@ -29,16 +29,16 @@ class UsbConnect(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.device.close('window', 'UsbConnect')
+        self.context.close(self.name)
         self.Show()
-        self.device.add_watcher('usb', self.update_text)
+        self.context.active.channel('lhypipe/usb').watch(self.update_text)
 
     def finalize(self, channel=None):
-        self.device.remove_watcher('usb', self.update_text)
+        self.context.active.channel('lhypipe/usb').unwatch(self.update_text)
         try:
             self.Close()
         except RuntimeError:

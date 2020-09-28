@@ -48,7 +48,7 @@ class OperationPreprocessor:
                     if op.operation == "Raster":
                         if len(op) == 1 and isinstance(op[0], SVGImage):
                             continue
-                        renderer = LaserRender(self.device.device_root)
+                        renderer = LaserRender(self.device)
                         bounds = OperationPreprocessor.bounding_box(op)
                         if bounds is None:
                             return None
@@ -192,8 +192,11 @@ class OperationPreprocessor:
 
         pil_image = image_element.image
         image_element.cache = None
-        matrix = image_element.transform
+        m = image_element.transform
         bbox = OperationPreprocessor.bounding_box([image_element])
+        tx = bbox[0]
+        ty = bbox[1]
+        m.post_translate(-tx, -ty)
         element_width = int(ceil(bbox[2] - bbox[0]))
         element_height = int(ceil(bbox[3] - bbox[1]))
         if step_level is None:
@@ -202,22 +205,20 @@ class OperationPreprocessor:
                 step_level = float(image_element.values['raster_step'])
             else:
                 step_level = 1.0
-        step_scale = 1 / float(step_level)
-        tx = bbox[0]
-        ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale, step_scale)  # step level requires the actual image be scaled down.
-        matrix.inverse()
+        step_scale = 1 / step_level
+        m.pre_scale(step_scale, step_scale)
+        # step level requires the actual image be scaled down.
+        m.inverse()
 
-        if (matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
+        if (m.value_skew_y() != 0.0 or m.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
             pil_image = pil_image.convert('RGBA')
 
         pil_image = pil_image.transform((element_width, element_height), Image.AFFINE,
-                                        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                                        (m.a, m.c, m.e, m.b, m.d, m.f),
                                         resample=Image.BICUBIC)
         image_element.image_width, image_element.image_height = (element_width, element_height)
-        matrix.reset()
+        m.reset()
 
         box = pil_image.getbbox()
         width = box[2] - box[0]
@@ -225,10 +226,11 @@ class OperationPreprocessor:
         if width != element_width and height != element_height:
             image_element.image_width, image_element.image_height = (width, height)
             pil_image = pil_image.crop(box)
-            matrix.post_translate(box[0], box[1])
+            box = pil_image.getbbox()
+            m.post_translate(box[0], box[1])
         # step level requires the new actualized matrix be scaled up.
-        matrix.post_scale(step_level, step_level)
-        matrix.post_translate(tx, ty)
+        m.post_scale(step_level, step_level)
+        m.post_translate(tx, ty)
         image_element.image = pil_image
 
     @staticmethod

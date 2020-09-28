@@ -14,14 +14,14 @@ _ = wx.GetTranslation
 
 
 class DeviceManager(wx.Frame, Module):
-    def __init__(self, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: DeviceManager.__init__
         if parent is None:
             wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         else:
             wx.Frame.__init__(self, parent, -1, "",
                               style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        Module.__init__(self)
+        Module.__init__(self, context, path)
         self.SetSize((707, 337))
         self.devices_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.new_device_button = wx.BitmapButton(self, wx.ID_ANY, icons8_plus_50.GetBitmap())
@@ -45,24 +45,24 @@ class DeviceManager(wx.Frame, Module):
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
+        self.context.close(self.name)
+        self.Show()
+        self.context.setting(str, 'list_devices', '')
+        self.refresh_device_list()
+
     def on_close(self, event):
         item = self.devices_list.GetFirstSelected()
         if item != -1:
             uid = self.devices_list.GetItem(item).Text
-            self.device.device_primary = uid
+            self.context.device_primary = uid
 
         if self.state == 5:
             event.Veto()
         else:
             self.state = 5
-            self.device.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
-        self.device.close('window', self.name)
-        self.Show()
-        self.device.setting(str, 'list_devices', '')
-        self.refresh_device_list()
 
     def finalize(self, channel=None):
         try:
@@ -118,18 +118,18 @@ class DeviceManager(wx.Frame, Module):
     def refresh_device_list(self):
         self.devices_list.DeleteAllItems()
         i = 0
-        for device in self.device.derivable():
+        for device in self.context.derivable():
             try:
                 d = int(device)
             except ValueError:
                 continue
-            settings = self.device.derive(device)
+            settings = self.context.derive(device)
             device_name = settings.setting(str, 'device_name', 'Lhystudios')
             autoboot = settings.setting(bool, 'autoboot', True)
             location_name = settings.setting(str, 'location_name', 'Unknown')
             try:
-                device_obj = self.device.instances['device'][device]
-                state = device_obj.state
+                device_obj = self.context._kernel.contexts[device]
+                state = device_obj._state
             except KeyError:
                 state = -1
             m = self.devices_list.InsertItem(i, str(d))
@@ -145,35 +145,19 @@ class DeviceManager(wx.Frame, Module):
 
     def on_list_right_click(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        try:
-            # If the device is booted change the autoboot settings.
-            device_obj = self.device.instances['device'][str(uid)]
-            device_obj.setting(bool, 'autoboot', True)
-            device_obj.autoboot = not device_obj.autoboot
-            device_obj.write_persistent('autoboot', device_obj.autoboot)
-        except KeyError:
-            # If the device is not booted, load a derived settings object
-            settings = self.device.derive(uid)
-            settings.setting(bool, 'autoboot', True)
-            settings.autoboot = not settings.autoboot
-            settings.flush()  # Flush the toggled autoboot.
+        # If the device is booted change the autoboot settings.
+        context_obj = self.context.get_context('/%s' % uid)
+        context_obj.setting(bool, 'autoboot', True)
+        context_obj.autoboot = not context_obj.autoboot
+        context_obj._kernel.write_persistent(context_obj.abs_path('autoboot'), context_obj.autoboot)
         self.refresh_device_list()
 
     def on_list_item_activated(self, event):  # wxGlade: DeviceManager.<event_handler>
         uid = event.GetLabel()
-        try:
-            device = self.device.instances['device'][uid]
-        except KeyError:
-            settings = self.device.derive(str(uid))
-            device_name = settings.setting(str, 'device_name', 'Lhystudios')
-            device = self.device.open('device', device_name, root=self.device, uid=int(uid), instance_name=str(uid))
-        if device.state == STATE_UNKNOWN:
-            device.open('window', "MeerK40t", None)
-            device.boot()
-            try:
-                self.Close()
-            except RuntimeError:
-                pass
+        context = self.context.get_context('/%s' % uid)
+        context_name = context.setting(str, 'device_name', 'Lhystudios')
+        if context._state == STATE_UNKNOWN:
+            context.boot()
         else:
             dlg = wx.MessageDialog(None, _("That device already booted."),
                                    _("Cannot Boot Selected Device"), wx.OK | wx.ICON_WARNING)
@@ -181,7 +165,7 @@ class DeviceManager(wx.Frame, Module):
             dlg.Destroy()
 
     def on_button_new(self, event):  # wxGlade: DeviceManager.<event_handler>
-        names = [name for name in self.device.registered['device']]
+        names = [name[7:] for name in self.context._kernel.match('device')]
         dlg = wx.SingleChoiceDialog(None, _('What type of device is being added?'), _('Device Type'), names)
         dlg.SetSelection(0)
         if dlg.ShowModal() == wx.ID_OK:
@@ -192,16 +176,13 @@ class DeviceManager(wx.Frame, Module):
             return
         dlg.Destroy()
         device_uid = 0
-        settings = None
+        devices = list(self.context.derivable())
         while device_uid <= 100:
             device_uid += 1
-            settings = self.device.derive(str(device_uid))
-            device_match = settings.setting(str, 'device_name', default='')
-            if device_match == '':
+            if str(device_uid) not in devices:
                 break
-        if settings is None:
-            return
-        settings.device_name = device_type
+        settings = self.context.get_context('%d' % device_uid)
+        settings.setting(str, 'device_name', device_type)
         settings.setting(bool, 'autoboot', True)
         settings.flush()
         self.refresh_device_list()
@@ -209,12 +190,12 @@ class DeviceManager(wx.Frame, Module):
     def on_button_remove(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
-        settings = self.device.derive(str(uid))
-        settings.clear_persistent()
+        settings = self.context.derive(str(uid))
+        settings._kernel.clear_persistent(settings._path)
         try:
-            device = self.device.instances['device'][uid]
-            del self.device.instances['device'][uid]
-            device.instances['module']['MeerK40t'].Close()
+            device = self.context._kernel.contexts[uid]
+            del self.context._kernel.contexts[uid]
+            device.opened['window/MeerK40t'].Close()
         except (KeyError, AttributeError):
             pass
 
@@ -223,11 +204,8 @@ class DeviceManager(wx.Frame, Module):
     def on_button_properties(self, event):  # wxGlade: DeviceManager.<event_handler>
         item = self.devices_list.GetFirstSelected()
         uid = self.devices_list.GetItem(item).Text
-        try:
-            dev = self.device.device_root.instances['device'][uid]
-        except KeyError:
-            return
-        dev.open('window', "Preferences", self)
+        context = self.context.get_context('/%s' % uid)
+        context.open('window/Preferences', self)
 
     def on_button_up(self, event):  # wxGlade: DeviceManager.<event_handler>
         print("Event handler 'on_button_up' not implemented!")
