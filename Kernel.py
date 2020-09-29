@@ -568,6 +568,7 @@ class Elemental(Modifier):
 
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
+        self._plan = list()
         self._operations = list()
         self._elements = list()
         self._filenodes = {}

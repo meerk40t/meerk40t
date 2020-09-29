@@ -115,7 +115,7 @@ if args.path is not None:
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
-        kernel_root.elements.add(path)
+        kernel_root.elements.add_elem(path)
     except Exception:
         print("SVG Path Exception to: %s" % ' '.join(sys.argv))
 
