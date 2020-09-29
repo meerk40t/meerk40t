@@ -6810,13 +6810,14 @@ class SVG(Group):
         metadata elements are not processed.
         foreignObject elements are not processed.
 
-        use elements are not processed.
+        Color refers to the value of the current color from the default context. This could be set with some external
+        values that the parsing of the SVG would be unaware. This is the color for the 'currentColor' value.
         """
         root = context
         styles = {}
         stack = []
-        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: color,
-                  SVG_ATTR_STROKE: color}
+        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black",
+                  SVG_ATTR_STROKE: "none"}
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
         for event, elem in SVG.svg_structure_parse(source):

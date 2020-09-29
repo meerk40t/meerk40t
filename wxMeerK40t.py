@@ -2974,7 +2974,10 @@ class wxMeerK40t(wx.App, Module):
         Update language to the requested language.
         """
         device = self.device
-        language_code, language_name, language_index = supported_languages[lang]
+        try:
+            language_code, language_name, language_index = supported_languages[lang]
+        except (IndexError, ValueError):
+            return
         device.language = lang
 
         if self.locale:
@@ -3006,7 +3009,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.6')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.7')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

@@ -23,7 +23,6 @@ class Settings(wx.Frame, Module):
         self.SetSize((455, 183))
         self.radio_units = wx.RadioBox(self, wx.ID_ANY, _("Units"), choices=["mm", "cm", "inch", "mils"], majorDimension=1,
                                        style=wx.RA_SPECIFY_ROWS)
-        self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.combo_svg_ppi = wx.ComboBox(self, wx.ID_ANY,
                                          choices=[_("96 px/in Inkscape"),
                                                   _("72 px/in Illustrator"),
