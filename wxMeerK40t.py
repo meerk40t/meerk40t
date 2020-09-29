@@ -2977,8 +2977,7 @@ class wxMeerK40t(wx.App, Module):
         try:
             language_code, language_name, language_index = supported_languages[lang]
         except (IndexError, ValueError):
-            language_code, language_name, language_index = supported_languages[0]
-            lang = 0  # Language is corrupted. Do not fail launch.
+            return
         device.language = lang
 
         if self.locale:
