@@ -1139,14 +1139,18 @@ class LhystudioController(Module, Pipe):
         self.device.signal('pipe;thread', self.state)
 
     def stop(self):
-        self.quit()
-        self._thread.join()  # Wait until stop completes before continuing.
+        if self._thread is not None and self._thread.is_alive():
+            self.quit()
+            self._thread.join()  # Wait until stop completes before continuing.
 
     def quit(self):
         """
         Writes the quit control to the buffer.
+
+        If the thread is alive.
         """
-        self.write(b'\x18\n')
+        if self._thread is not None and self._thread.is_alive():
+            self.write(b'\x18\n')
 
     def update_usb_state(self, code):
         """
