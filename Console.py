@@ -1931,6 +1931,10 @@ class Console(Module, Pipe):
                 kernel.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements
+        elif command == 'force_rapid':
+            for element in elements.ops():
+                element.rapid = True
+            yield "All operations set to force rapid moves"
         elif command == 'egv':
             if len(args) >= 1:
                 if active_device.device_name != 'Lhystudios':

@@ -48,6 +48,8 @@ class LaserOperation(list):
 
         self.passes_custom = False
         self.passes = 1
+
+        self.rapid = False
         try:
             self.color = Color(kwargs['color'])
         except (ValueError, TypeError, KeyError):
@@ -145,7 +147,10 @@ class LaserOperation(list):
             self.passes_custom = bool(kwargs['passes_custom'])
         except (ValueError, TypeError, KeyError):
             pass
-
+        try:
+            self.rapid = bool(kwargs['rapid'])
+        except (ValueError, TypeError, KeyError):
+            pass
         if self.operation == "Cut":
             if self.speed is None:
                 self.speed = 10.0
@@ -196,6 +201,8 @@ class LaserOperation(list):
 
                 self.passes_custom = obj.passes_custom
                 self.passes = obj.passes
+
+                self.rapid = obj.rapid
 
                 for element in obj:
                     element_copy = copy(element)
@@ -306,10 +313,19 @@ class LaserOperation(list):
                 if isinstance(object_path, SVGImage):
                     box = object_path.bbox()
                     plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
-                    yield COMMAND_PLOT, plot
                 else:
                     plot = abs(object_path)
-                    yield COMMAND_PLOT, plot
+                if hasattr(self, 'rapid') and self.rapid:
+                    try:
+                        first = plot.first_point
+                        x = first[0]
+                        y = first[1]
+                        yield COMMAND_MODE_RAPID
+                        yield COMMAND_MOVE, x, y
+                        yield COMMAND_MODE_PROGRAM
+                    except (IndexError, AttributeError):
+                        pass
+                yield COMMAND_PLOT, plot
             yield COMMAND_MODE_RAPID
         elif self.operation in ("Raster", "Image"):
             yield COMMAND_MODE_RAPID
