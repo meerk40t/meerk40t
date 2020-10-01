@@ -1,7 +1,7 @@
 from copy import copy
 
-from CutCode import LaserSettings, CutCode
-from svgelements import SVGImage, SVGElement, Shape, Color, Path, Polygon
+from CutCode import *
+from svgelements import *
 
 
 class LaserOperation(list):
@@ -159,6 +159,7 @@ class LaserOperation(list):
                     plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
                 else:
                     plot = abs(object_path)
+
                 for segment in plot:
                     if isinstance(segment, Line):
                         c.append(LineCut(segment.start, segment.end))

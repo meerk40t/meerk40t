@@ -184,22 +184,6 @@ class CutCode(list):
             self[q].reverse()
         self[j:k] = self[j:k][::-1]
 
-    def add_path(self, path, settings):
-        for seg in path:
-            if isinstance(seg, Move):
-                pass  # Move operations are ignored.
-            elif isinstance(seg, Close):
-                self.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, Line):
-                self.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, QuadraticBezier):
-                self.append(QuadCut(seg.start[0], seg.start[1], seg.control[0], seg.control[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, CubicBezier):
-                self.append(CubicCut(seg.start[0], seg.start[1], seg.control1[0], seg.control1[1], seg.control2[0], seg.control2[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, Arc):
-                self.append(ArcCut(seg, settings=settings))
-                self.arc_to(seg)
-
     def generate(self):
         if self.operation in ("Cut", "Engrave"):
             yield COMMAND_MODE_RAPID
@@ -355,15 +339,21 @@ class CutObject:
         if settings is None:
             settings = LaserSettings()
         self.settings = settings
+        self._start = None
+        self._end = None
+        self._bounds = None
 
     def start(self):
-        return None
+        return self._start
 
     def end(self):
-        return None
+        return self._end
+
+    def bounds(self):
+        return self._bounds
 
     def reverse(self):
-        raise NotImplemented
+        self._start, self._end = self._end, self._start
 
     def generator(self):
         raise NotImplemented

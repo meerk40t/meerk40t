@@ -2275,6 +2275,35 @@ class Elemental(Modifier):
         for item in self._filtered_list(self._elements, **kwargs):
             yield item
 
+    def plan(self, **kwargs):
+        for item in self._plan:
+            yield item
+
+    def add_path(self, path, settings):
+        for seg in path:
+            if isinstance(seg, Move):
+                pass  # Move operations are ignored.
+            elif isinstance(seg, Close):
+                self._plan.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, Line):
+                self._plan.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, QuadraticBezier):
+                self._plan.append(QuadCut(seg.start[0], seg.start[1], seg.control[0], seg.control[1],
+                                          seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, CubicBezier):
+                self._plan.append(CubicCut(seg.start[0], seg.start[1], seg.control1[0], seg.control1[1],
+                                           seg.control2[0], seg.control2[1], seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, Arc):
+                arc = ArcCut(seg, settings=settings)
+                self._plan.append(arc)
+                # arc.arc_to(seg)
+
+    def add_raster(self, image, settings):
+        self._plan.append(image, settings)
+
+    def add_plan(self, adding_plan):
+        self._plan.extend(adding_plan)
+
     def first_element(self, **kwargs):
         for e in self.elems(**kwargs):
             return e
@@ -2338,6 +2367,9 @@ class Elemental(Modifier):
             self.context.signal('element_removed', e)
         self._elements.clear()
 
+    def clear_plan(self):
+        self._plan.clear()
+
     def clear_files(self):
         self._filenodes.clear()
 
@@ -2346,6 +2378,7 @@ class Elemental(Modifier):
         self.clear_operations()
 
     def clear_all(self):
+        self.clear_plan()
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
