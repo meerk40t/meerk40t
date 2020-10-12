@@ -1,4 +1,613 @@
+from copy import copy
+
+from Kernel import Modifier
+from LaserOperation import *
 from svgelements import *
+from LaserCommandConstants import *
+
+
+class Planner(Modifier):
+    """
+
+    """
+
+    def __init__(self, context, name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, name, channel)
+        self._plan = dict()
+        self._commands = dict()
+
+    def attach(self, channel=None):
+        context = self.context
+        context.planner = self
+
+        kernel = self.context._kernel
+        _ = kernel.translation
+        elements = context.elements
+
+        # REQUIRES CUTPLANNER
+        def optimize(command, *args):
+            if not elements.has_emphasis():
+                yield _('No selected elements.')
+                return
+            elif len(args) == 0:
+                yield _('Optimizations: cut_inner, travel, cut_travel')
+                return
+            elif args[0] == 'cut_inner':
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_cut_inside(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+            elif args[0] == 'travel':
+                yield _('Travel Optimizing: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_travel(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+                yield _('Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+            elif args[0] == 'cut_travel':
+                yield _('Cut Travel Initial: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                for element in elements.elems(emphasized=True):
+                    e = CutPlanner.optimize_general(element)
+                    element.clear()
+                    element += e
+                    element.altered()
+                yield _('Cut Travel Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+            else:
+                yield _('Optimization not found.')
+                return
+
+        kernel.register('command/optimize', optimize)
+
+        # REQUIRES CUTPLANNER
+        def embroider(command, *args):
+            yield _('Embroidery Filling')
+            if len(args) >= 1:
+                angle = Angle.parse(args[0])
+            else:
+                angle = None
+            if len(args) >= 2:
+                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+            else:
+                distance = 16
+            for element in elements.elems(emphasized=True):
+                if not isinstance(element, Path):
+                    continue
+                if angle is not None:
+                    element *= Matrix.rotate(angle)
+                e = CutPlanner.eulerian_fill([abs(element)], distance=distance)
+                element.transform.reset()
+                element.clear()
+                element += e
+                if angle is not None:
+                    element *= Matrix.rotate(-angle)
+                element.altered()
+
+        kernel.register('command/embroider', embroider)
+
+        def plan(command, *args):
+            if len(args) == 0:
+                yield _('----------')
+                yield _('Plan:')
+                for i, plan_name in enumerate(elements._plan):
+                    yield '%d: %s' % (i, plan_name)
+                yield _('----------')
+                return
+            if len(args) <= 1:
+                yield _('Plan <command> <group> (dest)')
+                yield _('load/save/classify/copy/validate/blob/optimize/clear/list/spool/select')
+                return
+            try:
+                plan = self._plan[args[1]]
+            except (KeyError, IndexError):
+                plan = list()
+                self._plan[args[1]] = plan
+            if args[0] == 'load':
+                if args[1] == 'default':
+                    plan.clear()
+                return
+            elif args[0] == 'save':
+                yield _('Saving is not possible.')
+                return
+            elif args[0] == 'classify':
+                elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
+                return
+            elif args[0] == 'copy':
+                for c in elements.ops():
+                    plan.append(copy(c))
+                yield _('Copied Operations.')
+                return
+            elif args[0] == 'validate':
+                return
+            elif args[0] == 'blob':
+                return
+            elif args[0] == 'optimize':
+                return
+            elif args[0] == 'clear':
+                plan.clear()
+                return
+            elif args[0] == 'scale_speed':
+                return
+            elif args[0] == 'list':
+                yield _('----------')
+                yield _('Plan %s:' % args[1])
+                for i, op_name in enumerate(plan):
+                    yield '%d: %s' % (i, op_name)
+                yield _('----------')
+                return
+            elif args[0] == 'spool':
+                context.spooler.jobs(plan)
+                yield _('Spooled Plan.')
+                return
+
+        kernel.register('command/plan', plan)
+
+    def plan(self, **kwargs):
+        for item in self._plan:
+            yield item
+
+    def add_path(self, path, settings):
+        for seg in path:
+            if isinstance(seg, Move):
+                pass  # Move operations are ignored.
+            elif isinstance(seg, Close):
+                self._plan.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, Line):
+                self._plan.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, QuadraticBezier):
+                self._plan.append(QuadCut(seg.start[0], seg.start[1], seg.control[0], seg.control[1],
+                                          seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, CubicBezier):
+                self._plan.append(CubicCut(seg.start[0], seg.start[1], seg.control1[0], seg.control1[1],
+                                           seg.control2[0], seg.control2[1], seg.end[0], seg.end[1], settings=settings))
+            elif isinstance(seg, Arc):
+                arc = ArcCut(seg, settings=settings)
+                self._plan.append(arc)
+                # arc.arc_to(seg)
+
+    def add_raster(self, image, settings):
+        self._plan.append(image, settings)
+
+    def add_plan(self, adding_plan):
+        self._plan.extend(adding_plan)
+
+    def clear_plan(self):
+        self._plan.clear()
+
+    def classify(self, elements, items=None, add_funct=None):
+        """
+        Classify does the initial placement of elements as operations.
+        "Image" is the default for images.
+        If element strokes are red they get classed as cut operations
+        If they are otherwise they get classed as engrave.
+        """
+        if elements is None:
+            return
+        if items is None:
+            items = self.ops()
+        if add_funct is None:
+            add_funct = self.add_op
+        for element in elements:
+            found_color = False
+            try:
+                stroke = element.stroke
+            except AttributeError:
+                stroke = None  # Element has no stroke.
+            try:
+                fill = element.fill
+            except AttributeError:
+                fill = None  # Element has no stroke.
+            for op in items:
+                if op.operation in ("Engrave", "Cut", "Raster") and op.color == stroke:
+                    op.append(element)
+                    found_color = True
+                elif op.operation == 'Image' and isinstance(element, SVGImage):
+                    op.append(element)
+                    found_color = True
+                elif op.operation == 'Raster' and \
+                        not isinstance(element, SVGImage) and \
+                        fill is not None and \
+                        fill.value is not None:
+                    op.append(element)
+                    found_color = True
+            if not found_color:
+                if stroke is not None and stroke.value is not None:
+                    op = LaserOperation(operation="Engrave", color=stroke, speed=35.0)
+                    op.append(element)
+                    add_funct(op)
+
+    def load(self, pathname, **kwargs):
+        kernel = self.context._kernel
+        for loader_name in kernel.match('load'):
+            loader = kernel.registered[loader_name]
+            for description, extensions, mimetype in loader.load_types():
+                if pathname.lower().endswith(extensions):
+                    results = loader.load(self.context, pathname, **kwargs)
+                    if results is None:
+                        continue
+                    elements, ops, note, pathname, basename = results
+                    self._filenodes[pathname] = elements
+                    self.add_elems(elements)
+                    if ops is not None:
+                        self.clear_operations()
+                        self.add_ops(ops)
+                    if note is not None:
+                        self.clear_note()
+                        self.note = note
+                    return elements, pathname, basename
+        return None
+
+    def load_types(self, all=True):
+        kernel = self.context._kernel
+        filetypes = []
+        if all:
+            filetypes.append('All valid types')
+            exts = []
+            for loader_name in kernel.match('load'):
+                loader = kernel.registered[loader_name]
+                for description, extensions, mimetype in loader.load_types():
+                    for ext in extensions:
+                        exts.append('*.%s' % ext)
+            filetypes.append(';'.join(exts))
+        for loader_name in kernel.match('load'):
+            loader = kernel.registered[loader_name]
+            for description, extensions, mimetype in loader.load_types():
+                exts = []
+                for ext in extensions:
+                    exts.append('*.%s' % ext)
+                filetypes.append("%s (%s)" % (description, extensions[0]))
+                filetypes.append(';'.join(exts))
+        return "|".join(filetypes)
+
+    def save(self, pathname):
+        kernel = self.context._kernel
+        for save_name in kernel.match('save'):
+            saver = kernel.registered[save_name]
+            for description, extension, mimetype in saver.save_types():
+                if pathname.lower().endswith(extension):
+                    saver.save(self.context, pathname, 'default')
+                    return True
+        return False
+
+    def save_types(self):
+        kernel = self.context._kernel
+        filetypes = []
+        for save_name in kernel.match('save'):
+            saver = kernel.registered[save_name]
+            for description, extension, mimetype in saver.save_types():
+                filetypes.append("%s (%s)" % (description, extension))
+                filetypes.append("*.%s" % (extension))
+        return "|".join(filetypes)
+
+
+class OperationPreprocessor:
+
+    def __init__(self):
+        self.device = None
+        self.commands = []
+        self.operations = None
+
+    def process(self, operations):
+        self.operations = operations
+        if self.device.rotary:
+            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_actualize_image()
+        self.conditional_jobadd_make_raster()
+        self.conditional_jobadd_optimize_cuts()
+
+    def execute(self):
+        # Using copy of commands, so commands can add ops.
+        commands = self.commands[:]
+        self.commands = []
+        for cmd in commands:
+            cmd()
+
+    def conditional_jobadd_make_raster(self):
+        for op in self.operations:
+            try:
+                if op.operation == "Raster":
+                    if len(op) == 0:
+                        continue
+                    if len(op) == 1 and isinstance(op[0], SVGImage):
+                        continue  # make raster not needed since its a single real raster.
+                    self.jobadd_make_raster()
+                    return True
+            except AttributeError:
+                pass
+        return False
+
+    def jobadd_make_raster(self):
+        def make_image():
+            for op in self.operations:
+                try:
+                    if op.operation == "Raster":
+                        if len(op) == 1 and isinstance(op[0], SVGImage):
+                            continue
+                        renderer = LaserRender(self.device)
+                        bounds = OperationPreprocessor.bounding_box(op)
+                        if bounds is None:
+                            return None
+                        xmin, ymin, xmax, ymax = bounds
+
+                        image = renderer.make_raster(op, bounds, step=op.raster_step)
+                        image_element = SVGImage(image=image)
+                        image_element.transform.post_translate(xmin, ymin)
+                        op.clear()
+                        op.append(image_element)
+                except AttributeError:
+                    pass
+
+        self.commands.append(make_image)
+
+    def conditional_jobadd_optimize_cuts(self):
+        for op in self.operations:
+            try:
+                if op.operation in ("Cut"):
+                    self.jobadd_optimize_cuts()
+                    return
+            except AttributeError:
+                pass
+
+    def jobadd_optimize_cuts(self):
+        def optimize_cuts():
+            for op in self.operations:
+                try:
+                    if op.operation in ("Cut"):
+                        op_cuts = CutPlanner.optimize_cut_inside(op)
+                        op.clear()
+                        op.append(op_cuts)
+                except AttributeError:
+                    pass
+
+        self.commands.append(optimize_cuts)
+
+    def conditional_jobadd_actualize_image(self):
+        for op in self.operations:
+            try:
+                if op.operation == "Raster":
+                    for elem in op:
+                        if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                            self.jobadd_actualize_image()
+                            return
+                if op.operation == "Image":
+                    for elem in op:
+                        if OperationPreprocessor.needs_actualization(elem, None):
+                            self.jobadd_actualize_image()
+                            return
+            except AttributeError:
+                pass
+
+    def jobadd_actualize_image(self):
+        def actualize():
+            for op in self.operations:
+                try:
+                    if op.operation == "Raster":
+                        for elem in op:
+                            if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                                OperationPreprocessor.make_actual(elem, op.raster_step)
+                    if op.operation == "Image":
+                        for elem in op:
+                            if OperationPreprocessor.needs_actualization(elem, None):
+                                OperationPreprocessor.make_actual(elem, None)
+                except AttributeError:
+                    pass
+        self.commands.append(actualize)
+
+    def conditional_jobadd_scale_rotary(self):
+        if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
+            self.jobadd_scale_rotary()
+
+    def jobadd_scale_rotary(self):
+        def scale_for_rotary():
+            p = self.device
+            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
+            for o in self.operations:
+                if isinstance(o, LaserOperation):
+                    for e in o:
+                        try:
+                            e *= scale_str
+                        except AttributeError:
+                            pass
+            self.conditional_jobadd_actualize_image()
+
+        self.commands.append(scale_for_rotary)
+
+    @staticmethod
+    def origin():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MOVE, 0, 0
+
+    @staticmethod
+    def home():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_HOME
+
+    @staticmethod
+    def wait():
+        wait_amount = 5.0
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_WAIT, wait_amount
+
+    @staticmethod
+    def beep():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_BEEP
+
+    @staticmethod
+    def needs_actualization(image_element, step_level=None):
+        if not isinstance(image_element, SVGImage):
+            return False
+        if step_level is None:
+            if 'raster_step' in image_element.values:
+                step_level = float(image_element.values['raster_step'])
+            else:
+                step_level = 1.0
+        m = image_element.transform
+        # Transformation must be uniform to permit native rastering.
+        return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
+
+    @staticmethod
+    def make_actual(image_element, step_level=None):
+        """
+        Makes PIL image actual in that it manipulates the pixels to actually exist
+        rather than simply apply the transform on the image to give the resulting image.
+        Since our goal is to raster the images real pixels this is required.
+
+        SVG matrices are defined as follows.
+        [a c e]
+        [b d f]
+
+        Pil requires a, c, e, b, d, f accordingly.
+        """
+        if not isinstance(image_element, SVGImage):
+            return
+        from PIL import Image
+
+        pil_image = image_element.image
+        image_element.cache = None
+        m = image_element.transform
+        bbox = OperationPreprocessor.bounding_box([image_element])
+        tx = bbox[0]
+        ty = bbox[1]
+        m.post_translate(-tx, -ty)
+        element_width = int(ceil(bbox[2] - bbox[0]))
+        element_height = int(ceil(bbox[3] - bbox[1]))
+        if step_level is None:
+            # If we are not told the step amount either draw it from the object or set it to default.
+            if 'raster_step' in image_element.values:
+                step_level = float(image_element.values['raster_step'])
+            else:
+                step_level = 1.0
+        step_scale = 1 / step_level
+        m.pre_scale(step_scale, step_scale)
+        # step level requires the actual image be scaled down.
+        m.inverse()
+
+        if (m.value_skew_y() != 0.0 or m.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
+            # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
+            pil_image = pil_image.convert('RGBA')
+
+        pil_image = pil_image.transform((element_width, element_height), Image.AFFINE,
+                                        (m.a, m.c, m.e, m.b, m.d, m.f),
+                                        resample=Image.BICUBIC)
+        image_element.image_width, image_element.image_height = (element_width, element_height)
+        m.reset()
+
+        box = pil_image.getbbox()
+        width = box[2] - box[0]
+        height = box[3] - box[1]
+        if width != element_width and height != element_height:
+            image_element.image_width, image_element.image_height = (width, height)
+            pil_image = pil_image.crop(box)
+            box = pil_image.getbbox()
+            m.post_translate(box[0], box[1])
+        # step level requires the new actualized matrix be scaled up.
+        m.post_scale(step_level, step_level)
+        m.post_translate(tx, ty)
+        image_element.image = pil_image
+
+    @staticmethod
+    def reify_matrix(self):
+        """Apply the matrix to the path and reset matrix."""
+        self.element = abs(self.element)
+        self.scene_bounds = None
+
+    @staticmethod
+    def bounding_box(elements):
+        if isinstance(elements, SVGElement):
+            elements = [elements]
+        elif isinstance(elements, list):
+            try:
+                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+            except AttributeError:
+                pass
+        boundary_points = []
+        for e in elements:
+            box = e.bbox(False)
+            if box is None:
+                continue
+            top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+            top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+            bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+            bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+            boundary_points.append(top_left)
+            boundary_points.append(top_right)
+            boundary_points.append(bottom_left)
+            boundary_points.append(bottom_right)
+        if len(boundary_points) == 0:
+            return None
+        xmin = min([e[0] for e in boundary_points])
+        ymin = min([e[1] for e in boundary_points])
+        xmax = max([e[0] for e in boundary_points])
+        ymax = max([e[1] for e in boundary_points])
+        return xmin, ymin, xmax, ymax
+
+    @staticmethod
+    def is_inside(inner_path, outer_path):
+        """
+        Test that path1 is inside path2.
+        :param inner_path: inner path
+        :param outer_path: outer path
+        :return: whether path1 is wholely inside path2.
+        """
+        if not hasattr(inner_path, 'bounding_box'):
+            inner_path.bounding_box = OperationPreprocessor.bounding_box(inner_path)
+        if not hasattr(outer_path, 'bounding_box'):
+            outer_path.bounding_box = OperationPreprocessor.bounding_box(outer_path)
+        if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+            # outer minx > inner minx (is not contained)
+            return False
+        if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+            # outer miny > inner miny (is not contained)
+            return False
+        if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+            # outer maxx < inner maxx (is not contained)
+            return False
+        if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+            # outer maxy < inner maxy (is not contained)
+            return False
+        if outer_path.bounding_box == inner_path.bounding_box:
+            if outer_path == inner_path:  # This is the same object.
+                return False
+        if not hasattr(outer_path, 'vm'):
+            outer_path = Polygon([outer_path.point(i / 100.0, error=1e4) for i in range(101)])
+            vm = VectorMontonizer()
+            vm.add_cluster(outer_path)
+            outer_path.vm = vm
+        for i in range(101):
+            p = inner_path.point(i / 100.0, error=1e4)
+            if not outer_path.vm.is_point_inside(p.x, p.y):
+                return False
+        return True
+
+    @staticmethod
+    def optimize_cut_inside(paths):
+        optimized = Path()
+        if isinstance(paths, Path):
+            paths = [paths]
+        subpaths = []
+        for path in paths:
+            subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
+        for j in range(len(subpaths)):
+            for k in range(j+1, len(subpaths)):
+                if OperationPreprocessor.is_inside(subpaths[k],subpaths[j]):
+                    t = subpaths[j]
+                    subpaths[j] = subpaths[k]
+                    subpaths[k] = t
+        for p in subpaths:
+            optimized += p
+            try:
+                del p.vm
+            except AttributeError:
+                pass
+            try:
+                del p.bounding_box
+            except AttributeError:
+                pass
+        return optimized
 
 
 class CutPlanner:
@@ -1012,6 +1621,164 @@ class VectorMontonizer:
                 self.actives.remove(c)
             else:
                 c.active = True
+                self.actives.append(c)
+
+        self.current = scan
+
+
+class VectorMontonizer_original:
+    def __init__(self, low_value=-float('inf'), high_value=float(inf), start=-float('inf')):
+        self.clusters = []
+        self.dirty_cluster_sort = True
+
+        self.actives = []
+        self.dirty_actives_sort = True
+
+        self.current = start
+        self.dirty_cluster_position = True
+
+        self.valid_low_value = low_value
+        self.valid_high_value = high_value
+        self.cluster_range_index = 0
+        self.cluster_low_value = float('inf')
+        self.cluster_high_value = -float('inf')
+
+    def add_cluster(self, path):
+        self.dirty_cluster_position = True
+        self.dirty_cluster_sort = True
+        self.dirty_actives_sort = True
+        for i in range(len(path)-1):
+            p0 = path[i]
+            p1 = path[i+1]
+            if p0.y > p1.y:
+                high = p0
+                low = p1
+            else:
+                high = p1
+                low = p0
+            try:
+                m = (high.y - low.y) / (high.x - low.x)
+            except ZeroDivisionError:
+                m = float('inf')
+
+            b = low.y - (m * low.x)
+            if self.valid_low_value > high.y:
+                continue  # Cluster before range.
+            if self.valid_high_value < low.y:
+                continue  # Cluster after range.
+            cluster = [False, i, p0, p1, high, low, m, b, path]
+            if self.valid_low_value < low.y:
+                self.clusters.append((low.y, cluster))
+            if self.valid_high_value > high.y:
+                self.clusters.append((high.y, cluster))
+            if high.y >= self.current >= low.y:
+                cluster[0] = True
+                self.actives.append(cluster)
+
+    def valid_range(self):
+        return self.valid_high_value >= self.current >= self.valid_low_value
+
+    def next_intercept(self, delta):
+        self.scanline(self.current + delta)
+        self.sort_actives()
+        return self.valid_range()
+
+    def sort_clusters(self):
+        if not self.dirty_cluster_sort:
+            return
+        self.clusters.sort(key=lambda e: e[0])
+        self.dirty_cluster_sort = False
+
+    def sort_actives(self):
+        if not self.dirty_actives_sort:
+            return
+        self.actives.sort(key=self.intercept)
+        self.dirty_actives_sort = False
+
+    def intercept(self, e, y=None):
+        if y is None:
+            y = self.current
+        m = e[6]
+        b = e[7]
+        if m == float('nan') or m == float('inf'):
+            low = e[5]
+            return low.x
+        return (y - b) / m
+
+    def find_cluster_position(self):
+        if not self.dirty_cluster_position:
+            return
+        self.dirty_cluster_position = False
+        self.sort_clusters()
+
+        self.cluster_range_index = -1
+        self.cluster_high_value = -float('inf')
+        self.increment_cluster()
+
+        while self.is_higher_than_cluster_range(self.current):
+            self.increment_cluster()
+
+    def in_cluster_range(self, v):
+        return not self.is_lower_than_cluster_range(v) and not self.is_higher_than_cluster_range(v)
+
+    def is_lower_than_cluster_range(self, v):
+        return v < self.cluster_low_value
+
+    def is_higher_than_cluster_range(self, v):
+        return v > self.cluster_high_value
+
+    def increment_cluster(self):
+        self.cluster_range_index += 1
+        self.cluster_low_value = self.cluster_high_value
+        if self.cluster_range_index < len(self.clusters):
+            self.cluster_high_value = self.clusters[self.cluster_range_index][0]
+        else:
+            self.cluster_high_value = float('inf')
+        if self.cluster_range_index > 0:
+            return self.clusters[self.cluster_range_index-1][1]
+        else:
+            return None
+
+    def decrement_cluster(self):
+        self.cluster_range_index -= 1
+        self.cluster_high_value = self.cluster_low_value
+        if self.cluster_range_index > 0:
+            self.cluster_low_value = self.clusters[self.cluster_range_index-1][0]
+        else:
+            self.cluster_low_value = -float('inf')
+        return self.clusters[self.cluster_range_index][1]
+
+    def is_point_inside(self, x, y):
+        self.scanline(y)
+        self.sort_actives()
+        for i in range(1, len(self.actives), 2):
+            prior = self.actives[i-1]
+            after = self.actives[i]
+            if self.intercept(prior, y) <= x <= self.intercept(after, y):
+                return True
+        return False
+
+    def scanline(self, scan):
+        self.dirty_actives_sort = True
+        self.sort_clusters()
+        self.find_cluster_position()
+
+        while self.is_lower_than_cluster_range(scan):
+            c = self.decrement_cluster()
+            if c[0]:
+                c[0] = False
+                self.actives.remove(c)
+            else:
+                c[0] = True
+                self.actives.append(c)
+
+        while self.is_higher_than_cluster_range(scan):
+            c = self.increment_cluster()
+            if c[0]:
+                c[0] = False
+                self.actives.remove(c)
+            else:
+                c[0] = True
                 self.actives.append(c)
 
         self.current = scan

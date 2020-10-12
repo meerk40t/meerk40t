@@ -1,8 +1,11 @@
 import argparse
 import sys
 
+from CutPlanner import Planner
 from DefaultModules import *
+from Elements import Elemental
 from GrblDevice import GrblDevice
+from ImageTools import ImageTools
 from LhystudiosDevice import LhystudiosDevice
 from MoshiboardDevice import MoshiboardDevice
 from RasterScripts import RasterScripts
@@ -28,6 +31,9 @@ for full details.
 kernel = Kernel()
 
 Kernel.sub_register(kernel)
+kernel.register('modifier/Elemental', Elemental)
+kernel.register('modifier/Planner', Planner)
+kernel.register('modifier/ImageTools', ImageTools)
 
 def pair(value):
     rv = value.split('=')
@@ -76,6 +82,8 @@ kernel_root = kernel.get_context('/')
 kernel_root.device_version = "0.7.0"
 kernel_root.device_name = "MeerK40t"
 kernel_root.activate('modifier/Elemental')
+kernel_root.activate('modifier/Planner')
+kernel_root.activate('modifier/ImageTools')
 kernel_root.activate('modifier/BindAlias')
 
 if not args.no_gui:

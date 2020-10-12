@@ -24,7 +24,7 @@ from LaserOperation import *
 from LaserRender import *
 from Navigation import Navigation
 from Notes import Notes
-from OperationPreprocessor import OperationPreprocessor
+from CutPlanner import OperationPreprocessor
 from OperationProperty import OperationProperty
 from PathProperty import PathProperty
 from Preferences import Preferences

@@ -3,7 +3,6 @@ import wx
 from Kernel import Module
 from LaserOperation import *
 from icons import icons8_laser_beam_52
-from OperationPreprocessor import OperationPreprocessor
 
 _ = wx.GetTranslation
 
