@@ -114,6 +114,18 @@ class Planner(Modifier):
                     plan.append(copy(c))
                 yield _('Copied Operations.')
                 return
+            elif args[0] == 'command':
+                if args[1] == 'home':
+                    pass
+                elif args[1] == 'origin':
+                    pass
+                elif args[1] == 'wait':
+                    pass
+                elif args[1] == 'beep':
+                    pass
+                elif args[1] == 'interrupt':
+                    # plan/interrupt contains the function needed to be executed here.
+                    pass
             elif args[0] == 'figure':
                 return
             elif args[0] == 'validate':

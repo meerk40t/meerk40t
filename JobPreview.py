@@ -168,23 +168,23 @@ class JobPreview(wx.Frame, Module):
         # end wxGlade
 
     def jobadd_home(self, event=None):
-        self.context.console("plan %s command home\n" % self.plan_name)
+        self.context.console("plan%s command home\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.context.console("plan %s command origin\n" % self.plan_name)
+        self.context.console("plan%s command origin\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_wait(self, event=None):
-        self.context.console("plan %s command wait\n" % self.plan_name)
+        self.context.console("plan%s command wait\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.context.console("plan %s command beep\n" % self.plan_name)
+        self.context.console("plan%s command beep\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.context.console("plan %s command interrupt\n" % self.plan_name)
+        self.context.console("plan%s command interrupt\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_command(self, event):  # wxGlade: Preview.<event_handler>
