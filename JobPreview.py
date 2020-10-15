@@ -187,9 +187,9 @@ class JobPreview(wx.Frame, Module):
         self.context.console("plan%s command interrupt\n" % self.plan_name)
         self.update_gui()
 
-    def jobadd_command(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'jobadd_command' not implemented!")
-        event.Skip()
+    def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
+        self.context.console("plan%s command console\n" % self.plan_name)
+        self.update_gui()
 
     def on_close(self, event):
         if self.state == 5:
@@ -209,38 +209,22 @@ class JobPreview(wx.Frame, Module):
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "autoorigin", False)
         self.context.setting(bool, "autobeep", True)
+        self.context.setting(bool, "opt_reduce_travel", False)
+        self.context.setting(bool, "opt_inner_first", False)
+        self.context.setting(bool, "opt_reduce_directions", False)
+        self.context.setting(bool, "opt_remove_overlap", False)
+        self.context.setting(bool, "opt_reduce_directions", False)
+        self.context.setting(bool, "opt_start_from_position", False)
+        self.context.setting(bool, "opt_rapid_between", False)
+
         self.context.listen('element_property_update', self.on_element_property_update)
 
         self.preview_menu.menu_prehome.Check(self.context.prehome)
         self.preview_menu.menu_autohome.Check(self.context.autohome)
         self.preview_menu.menu_autoorigin.Check(self.context.autoorigin)
         self.preview_menu.menu_autobeep.Check(self.context.autobeep)
-        self.preprocessor.device = self.context
-        operations = list(self.operations)
-        self.operations.clear()
-        if self.context.prehome:
-            if not self.context.rotary:
-                self.jobadd_home()
-            else:
-                self.operations.append(_("Home Before: Disabled (Rotary On)"))
-        for op in operations:
-            if len(op) == 0:
-                continue
-            if not op.output:
-                continue
-            self.operations.append(copy(op))
-        if self.context.autobeep:
-            self.jobadd_beep()
-
-        if self.context.autohome:
-            if not self.context.rotary:
-                self.jobadd_home()
-            else:
-                self.operations.append(_("Home After: Disabled (Rotary On)"))
-        if self.context.autoorigin:
-            self.jobadd_origin()
-
-        self.preprocessor.process(self.operations)
+        self.context.console('plan%s copy\n' % self.plan_name)
+        self.context.console('plan%s preprocess\n' % self.plan_name)
         self.update_gui()
 
     def finalize(self, channel=None):
@@ -272,13 +256,31 @@ class JobPreview(wx.Frame, Module):
     def on_check_beep_after(self, event):  # wxGlade: JobInfo.<event_handler>
         self.context.autobeep = self.preview_menu.menu_autobeep.IsChecked()
 
+    def on_check_reduce_travel(self, event):  # wxGlade: Preview.<event_handler>
+        self.context.reduce_travel = self.check_reduce_travel_time.IsChecked()
+
+    def on_check_inner_first(self, event):  # wxGlade: Preview.<event_handler>
+        self.context.inner_first = self.check_cut_inner_first.IsChecked()
+
+    def on_check_reduce_directions(self, event):  # wxGlade: Preview.<event_handler>
+        self.context.reduce_directions = self.check_reduce_direction_changes.IsChecked()
+
+    def on_check_remove_overlap(self, event):  # wxGlade: Preview.<event_handler>
+        self.context.remove_overlap = self.check_remove_overlap_cuts.IsChecked()
+
+    def on_check_start_from_position(self, event):  # wxGlade: Preview.<event_handler>
+        # self.context.start_position = self.check_start_from_position.IsChecked()
+        pass
+
+    def on_check_rapid_between(self, event):  # wxGlade: Preview.<event_handler>
+        self.context.rapid_between = self.check_rapid_moves_between.IsChecked()
+
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
-        if len(self.preprocessor.commands) == 0:
-            self.spooler.jobs(self.operations)
-            self.context.close(self.name)
-        else:
-            self.preprocessor.execute()
-            self.update_gui()
+        self.context.console("plan%s command validate\n" % self.plan_name)
+        self.context.console("plan%s command optimize\n" % self.plan_name)
+        self.context.console("plan%s command spool\n" % self.plan_name)
+        # TODO: If this spooled the data it should actually close this preview down? Is that still the case?
+        self.update_gui()
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
@@ -311,10 +313,9 @@ class JobPreview(wx.Frame, Module):
                 return str(e)
 
         self.list_operations.Clear()
-        operations = self.operations
-        commands = self.preprocessor.commands
+        operations, commands = self.context.default_plan()
         if operations is not None and len(operations) != 0:
-            self.list_operations.InsertItems([name_str(e) for e in self.operations], 0)
+            self.list_operations.InsertItems([name_str(e) for e in operations], 0)
         if commands is not None and len(commands) != 0:
             # self.commands_listbox.InsertItems([name_str(e) for e in self.preprocessor.commands], 0)
             self.button_start.SetLabelText(_("Execute Commands"))
@@ -323,27 +324,3 @@ class JobPreview(wx.Frame, Module):
             self.button_start.SetLabelText(_("Start Job"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.Refresh()
-
-    def on_check_reduce_travel(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'on_check_reduce_travel' not implemented!")
-        event.Skip()
-
-    def on_check_inner_first(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'on_check_inner_first' not implemented!")
-        event.Skip()
-
-    def on_check_reduce_directions(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'on_check_reduce_directions' not implemented!")
-        event.Skip()
-
-    def on_check_remove_overlap(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'on_check_remove_overlap' not implemented!")
-        event.Skip()
-
-    def on_check_start_from_position(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'on_check_start_from_position' not implemented!")
-        event.Skip()
-
-    def on_check_rapid_between(self, event):  # wxGlade: Preview.<event_handler>
-        print("Event handler 'on_check_rapid_between' not implemented!")
-        event.Skip()

@@ -1,5 +1,3 @@
-from copy import copy
-
 from Kernel import Modifier
 from LaserOperation import *
 from svgelements import *
@@ -16,13 +14,28 @@ class Planner(Modifier):
         self._plan = dict()
         self._default_plan = "0"
 
+    def default_plan(self):
+        try:
+            return self._plan[self._default_plan]
+        except KeyError:
+            plan = list()
+            commands = list()
+            self._plan[self._default_plan] = plan, commands
+            return plan, commands
+
     def attach(self, channel=None):
         context = self.context
         context.planner = self
+        context.default_plan = self.default_plan
 
         kernel = self.context._kernel
         _ = kernel.translation
         elements = context.elements
+        kernel.register('plan/home', self.home)
+        kernel.register('plan/origin', self.origin)
+        kernel.register('plan/wait', self.wait)
+        kernel.register('plan/beep', self.beep)
+        kernel.register('plan/interrupt', self.interrupt)
 
         # REQUIRES CUTPLANNER
         def optimize(command, *args):
@@ -115,20 +128,32 @@ class Planner(Modifier):
                 yield _('Copied Operations.')
                 return
             elif args[0] == 'command':
-                if args[1] == 'home':
-                    pass
-                elif args[1] == 'origin':
-                    pass
-                elif args[1] == 'wait':
-                    pass
-                elif args[1] == 'beep':
-                    pass
-                elif args[1] == 'interrupt':
-                    # plan/interrupt contains the function needed to be executed here.
-                    pass
-            elif args[0] == 'figure':
+                try:
+                    for command_name in self.context.match('plan/%s' % args[1]):
+                        plan_command = self.context.registered[command_name]
+                        plan.append(plan_command)
+                        break
+                except KeyError:
+                    yield _("No plan command found.")
                 return
+            elif args[0] == 'preprocess':
+                if self.context.prehome:
+                    if not self.context.rotary:
+                        plan.insert(0, self.context.registered['plan/home'])
+                    else:
+                        plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+                if self.context.autobeep:
+                    plan.append(self.context.registered['plan/beep'])
+                if self.context.autohome:
+                    if not self.context.rotary:
+                        plan.append(self.context.registered['plan/home'])
+                    else:
+                        plan.append(_("Home After: Disabled (Rotary On)"))
+                if self.context.autoorigin:
+                    plan.append(self.context.registered['plan/origin'])
+                self.process()
             elif args[0] == 'validate':
+                self.execute()
                 return
             elif args[0] == 'blob':
                 return
@@ -142,6 +167,9 @@ class Planner(Modifier):
             elif args[0] == 'list':
                 yield _('----------')
                 yield _('Plan %s:' % self._default_plan)
+                for i, op_name in enumerate(plan):
+                    yield '%d: %s' % (i, op_name)
+                yield _('Commands %s:' % self._default_plan)
                 for i, op_name in enumerate(plan):
                     yield '%d: %s' % (i, op_name)
                 yield _('----------')
@@ -290,17 +318,8 @@ class Planner(Modifier):
                 filetypes.append("*.%s" % (extension))
         return "|".join(filetypes)
 
-
-class OperationPreprocessor:
-
-    def __init__(self):
-        self.device = None
-        self.commands = []
-        self.operations = None
-
-    def process(self, operations):
-        self.operations = operations
-        if self.device.rotary:
+    def process(self):
+        if self.context.rotary:
             self.conditional_jobadd_scale_rotary()
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
@@ -308,13 +327,13 @@ class OperationPreprocessor:
 
     def execute(self):
         # Using copy of commands, so commands can add ops.
-        commands = self.commands[:]
-        self.commands = []
-        for cmd in commands:
+        plan, commands = self.default_plan()
+        for cmd in commands[:]:
             cmd()
 
     def conditional_jobadd_make_raster(self):
-        for op in self.operations:
+        plan, commands = self.default_plan()
+        for op in plan:
             try:
                 if op.operation == "Raster":
                     if len(op) == 0:
@@ -329,29 +348,32 @@ class OperationPreprocessor:
 
     def jobadd_make_raster(self):
         def make_image():
-            for op in self.operations:
-                try:
-                    if op.operation == "Raster":
-                        if len(op) == 1 and isinstance(op[0], SVGImage):
-                            continue
-                        renderer = LaserRender(self.device)
-                        bounds = OperationPreprocessor.bounding_box(op)
-                        if bounds is None:
-                            return None
-                        xmin, ymin, xmax, ymax = bounds
+            plan, commands = self.default_plan()
+            for op in plan:
+                # try:
+                #     if op.operation == "Raster":
+                #         if len(op) == 1 and isinstance(op[0], SVGImage):
+                #             continue
+                #         renderer = LaserRender(self.device)
+                #         bounds = OperationPreprocessor.bounding_box(op)
+                #         if bounds is None:
+                #             return None
+                #         xmin, ymin, xmax, ymax = bounds
+                #
+                #         image = renderer.make_raster(op, bounds, step=op.raster_step)
+                #         image_element = SVGImage(image=image)
+                #         image_element.transform.post_translate(xmin, ymin)
+                #         op.clear()
+                #         op.append(image_element)
+                # except AttributeError:
+                pass
 
-                        image = renderer.make_raster(op, bounds, step=op.raster_step)
-                        image_element = SVGImage(image=image)
-                        image_element.transform.post_translate(xmin, ymin)
-                        op.clear()
-                        op.append(image_element)
-                except AttributeError:
-                    pass
-
-        self.commands.append(make_image)
+        plan, commands = self.default_plan()
+        commands.append(make_image)
 
     def conditional_jobadd_optimize_cuts(self):
-        for op in self.operations:
+        plan, commands = self.default_plan()
+        for op in plan:
             try:
                 if op.operation in ("Cut"):
                     self.jobadd_optimize_cuts()
@@ -361,7 +383,8 @@ class OperationPreprocessor:
 
     def jobadd_optimize_cuts(self):
         def optimize_cuts():
-            for op in self.operations:
+            plan, commands = self.default_plan()
+            for op in plan:
                 try:
                     if op.operation in ("Cut"):
                         op_cuts = CutPlanner.optimize_cut_inside(op)
@@ -370,19 +393,21 @@ class OperationPreprocessor:
                 except AttributeError:
                     pass
 
-        self.commands.append(optimize_cuts)
+        plan, commands = self.default_plan()
+        commands.append(optimize_cuts)
 
     def conditional_jobadd_actualize_image(self):
-        for op in self.operations:
+        plan, commands = self.default_plan()
+        for op in plan:
             try:
                 if op.operation == "Raster":
                     for elem in op:
-                        if OperationPreprocessor.needs_actualization(elem, op.raster_step):
+                        if self.needs_actualization(elem, op.raster_step):
                             self.jobadd_actualize_image()
                             return
                 if op.operation == "Image":
                     for elem in op:
-                        if OperationPreprocessor.needs_actualization(elem, None):
+                        if self.needs_actualization(elem, None):
                             self.jobadd_actualize_image()
                             return
             except AttributeError:
@@ -390,29 +415,33 @@ class OperationPreprocessor:
 
     def jobadd_actualize_image(self):
         def actualize():
-            for op in self.operations:
+            plan, commands = self.default_plan()
+            for op in plan:
                 try:
                     if op.operation == "Raster":
                         for elem in op:
-                            if OperationPreprocessor.needs_actualization(elem, op.raster_step):
-                                OperationPreprocessor.make_actual(elem, op.raster_step)
+                            if self.needs_actualization(elem, op.raster_step):
+                                self.make_actual(elem, op.raster_step)
                     if op.operation == "Image":
                         for elem in op:
-                            if OperationPreprocessor.needs_actualization(elem, None):
-                                OperationPreprocessor.make_actual(elem, None)
+                            if self.needs_actualization(elem, None):
+                                self.make_actual(elem, None)
                 except AttributeError:
                     pass
-        self.commands.append(actualize)
+
+        plan, commands = self.default_plan()
+        commands.append(actualize)
 
     def conditional_jobadd_scale_rotary(self):
-        if self.device.scale_x != 1.0 or self.device.scale_y != 1.0:
+        if self.context.scale_x != 1.0 or self.context.scale_y != 1.0:
             self.jobadd_scale_rotary()
 
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
-            p = self.device
+            p = self.context
             scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
-            for o in self.operations:
+            plan, commands = self.default_plan()
+            for o in plan:
                 if isinstance(o, LaserOperation):
                     for e in o:
                         try:
@@ -421,7 +450,8 @@ class OperationPreprocessor:
                             pass
             self.conditional_jobadd_actualize_image()
 
-        self.commands.append(scale_for_rotary)
+        plan, commands = self.default_plan()
+        commands.append(scale_for_rotary)
 
     @staticmethod
     def origin():
@@ -445,6 +475,12 @@ class OperationPreprocessor:
     def beep():
         yield COMMAND_WAIT_FINISH
         yield COMMAND_BEEP
+
+    @staticmethod
+    def interrupt():
+        def intr():
+            input('waiting for user...')
+        yield COMMAND_FUNCTION, intr
 
     @staticmethod
     def needs_actualization(image_element, step_level=None):

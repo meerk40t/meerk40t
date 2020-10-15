@@ -24,7 +24,6 @@ from LaserOperation import *
 from LaserRender import *
 from Navigation import Navigation
 from Notes import Notes
-from CutPlanner import OperationPreprocessor
 from OperationProperty import OperationProperty
 from PathProperty import PathProperty
 from Preferences import Preferences
@@ -471,8 +470,7 @@ class MeerK40t(wx.Frame, Module, Job):
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_open, id=ID_OPEN)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_save, id=ID_SAVE)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/JobPreview', self, list(self.context.elements.ops())),
-                     id=ID_JOB)
+                     lambda v: self.context.open('window/JobPreview', self, '0'), id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context._kernel.active.open('window/UsbConnect', self), id=ID_USB)
@@ -615,8 +613,7 @@ class MeerK40t(wx.Frame, Module, Job):
                   id=ID_MENU_NOTES)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Navigation', self),
                   id=ID_MENU_NAVIGATION)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self,
-                                                           list(self.context.elements.ops())), id=ID_MENU_JOB)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self, '0'), id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self),
                   id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Preferences', self),
@@ -2684,7 +2681,7 @@ class RootNode(list):
         """
 
         def open_jobinfo_window(event):
-            self.context.open('window/JobPreview', self.gui, list(self.elements.ops(selected=True)))
+            self.context.open('window/JobPreview', self.gui, '0', selected=True)
 
         return open_jobinfo_window
 
