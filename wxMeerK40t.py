@@ -163,6 +163,7 @@ def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
+# TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 class MeerK40t(wx.Frame, Module, Job):
     """
@@ -346,6 +347,19 @@ class MeerK40t(wx.Frame, Module, Job):
         bedheight = context.bed_height
         bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
         self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
+
+        def interrupt(self):
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_FUNCTION, self.interrupt_popup
+
+        def interrupt_popup(self):
+            dlg = wx.MessageDialog(None, _("Spooling Interrupted. Press OK to Continue."),
+                                   _("Interrupt"), wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        context.register("plan/interrupt", interrupt)
+
 
     def __set_ribbonbar(self):
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Home"), icons8_opened_folder_50.GetBitmap(), )

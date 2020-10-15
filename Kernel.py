@@ -1518,12 +1518,11 @@ class Kernel:
 
         def run():
             self.threads[thread_name] = thread
-            # TODO: Restore this.
-            # try:
-            func()
-            # except:
-            #     import sys
-            #     sys.excepthook(*sys.exc_info())
+            try:
+                func()
+            except:
+                import sys
+                sys.excepthook(*sys.exc_info())
             del self.threads[thread_name]
 
         thread.run = run
@@ -2234,6 +2233,15 @@ class Kernel:
             active_context.stop()
             return
         else:
+            for command_re in self.match('command_re/.*'):
+                cmd_re = command_re[11:]
+                match = re.compile(cmd_re)
+                if match.match(command):
+                    command_funct = self.registered[command_re]
+                    for line in command_funct(command, *args):
+                        yield line
+                return
+
             for command_name in self.match('\d+/command/%s' % command):
                 command = self.registered[command_name]
                 try:

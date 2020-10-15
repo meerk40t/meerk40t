@@ -14,7 +14,7 @@ class Planner(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         self._plan = dict()
-        self._commands = dict()
+        self._default_plan = "0"
 
     def attach(self, channel=None):
         context = self.context
@@ -94,29 +94,27 @@ class Planner(Modifier):
                     yield '%d: %s' % (i, plan_name)
                 yield _('----------')
                 return
-            if len(args) <= 1:
-                yield _('Plan <command> <group> (dest)')
-                yield _('load/save/classify/copy/validate/blob/optimize/clear/list/spool/select')
+            if len(args) <= 0:
+                yield _('Plan <command> (dest)')
+                yield _('classify/copy/validate/blob/optimize/clear/list/spool')
                 return
+            if len(command) > 4:
+                self._default_plan = command[4:]
             try:
-                plan = self._plan[args[1]]
+                plan, commands = self._plan[self._default_plan]
             except (KeyError, IndexError):
                 plan = list()
-                self._plan[args[1]] = plan
-            if args[0] == 'load':
-                if args[1] == 'default':
-                    plan.clear()
-                return
-            elif args[0] == 'save':
-                yield _('Saving is not possible.')
-                return
-            elif args[0] == 'classify':
+                commands = list()
+                self._plan[self._default_plan] = plan, commands
+            if args[0] == 'classify':
                 elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
                 return
             elif args[0] == 'copy':
                 for c in elements.ops():
                     plan.append(copy(c))
                 yield _('Copied Operations.')
+                return
+            elif args[0] == 'figure':
                 return
             elif args[0] == 'validate':
                 return
@@ -131,7 +129,7 @@ class Planner(Modifier):
                 return
             elif args[0] == 'list':
                 yield _('----------')
-                yield _('Plan %s:' % args[1])
+                yield _('Plan %s:' % self._default_plan)
                 for i, op_name in enumerate(plan):
                     yield '%d: %s' % (i, op_name)
                 yield _('----------')
@@ -141,7 +139,7 @@ class Planner(Modifier):
                 yield _('Spooled Plan.')
                 return
 
-        kernel.register('command/plan', plan)
+        kernel.register('command_re/plan.*', plan)
 
     def plan(self, **kwargs):
         for item in self._plan:

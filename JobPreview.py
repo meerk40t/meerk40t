@@ -8,13 +8,12 @@ _ = wx.GetTranslation
 
 
 class JobPreview(wx.Frame, Module):
-    def __init__(self, context, path, parent, ops, *args, **kwds):
+    def __init__(self, context, path, parent, plan_name, *args, **kwds):
         # begin wxGlade: Preview.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
         self.SetSize((711, 629))
-        self.spooler = context._kernel.active.spooler
         self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.panel_simulation = wx.Panel(self, wx.ID_ANY)
@@ -89,10 +88,7 @@ class JobPreview(wx.Frame, Module):
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_click, self.list_operations)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick, self.list_operations)
         # end wxGlade
-        self.preprocessor = OperationPreprocessor()
-        if not isinstance(ops, list):
-            ops = [ops]
-        self.operations = ops
+        self.plan_name = plan_name
 
     def __set_properties(self):
         _icon = wx.NullIcon
@@ -172,38 +168,28 @@ class JobPreview(wx.Frame, Module):
         # end wxGlade
 
     def jobadd_home(self, event=None):
-        self.operations.append(OperationPreprocessor.home)
+        self.context.console("plan %s command home\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.operations.append(OperationPreprocessor.origin)
+        self.context.console("plan %s command origin\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_wait(self, event=None):
-        self.operations.append(OperationPreprocessor.wait)
+        self.context.console("plan %s command wait\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.operations.append(OperationPreprocessor.beep)
+        self.context.console("plan %s command beep\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.operations.append(self.interrupt)
+        self.context.console("plan %s command interrupt\n" % self.plan_name)
         self.update_gui()
 
     def jobadd_command(self, event):  # wxGlade: Preview.<event_handler>
         print("Event handler 'jobadd_command' not implemented!")
         event.Skip()
-
-    def interrupt(self):
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_FUNCTION, self.interrupt_popup
-
-    def interrupt_popup(self):
-        dlg = wx.MessageDialog(None, _("Spooling Interrupted. Press OK to Continue."),
-                               _("Interrupt"), wx.OK)
-        dlg.ShowModal()
-        dlg.Destroy()
 
     def on_close(self, event):
         if self.state == 5:
