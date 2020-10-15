@@ -31,6 +31,21 @@ class Planner(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
         elements = context.elements
+        self.context.setting(bool, "rotary", False)
+        self.context.setting(float, "scale_x", 1.0)
+        self.context.setting(float, "scale_y", 1.0)
+        self.context.setting(bool, "prehome", False)
+        self.context.setting(bool, "autohome", False)
+        self.context.setting(bool, "autoorigin", False)
+        self.context.setting(bool, "autobeep", True)
+        self.context.setting(bool, "opt_reduce_travel", True)
+        self.context.setting(bool, "opt_inner_first", True)
+        self.context.setting(bool, "opt_reduce_directions", False)
+        self.context.setting(bool, "opt_remove_overlap", False)
+        self.context.setting(bool, "opt_reduce_directions", False)
+        self.context.setting(bool, "opt_start_from_position", False)
+        self.context.setting(bool, "opt_rapid_between", False)
+
         kernel.register('plan/home', self.home)
         kernel.register('plan/origin', self.origin)
         kernel.register('plan/wait', self.wait)
@@ -103,7 +118,7 @@ class Planner(Modifier):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Plan:')
-                for i, plan_name in enumerate(elements._plan):
+                for i, plan_name in enumerate(self._plan):
                     yield '%d: %s' % (i, plan_name)
                 yield _('----------')
                 return
@@ -157,10 +172,13 @@ class Planner(Modifier):
                 return
             elif args[0] == 'blob':
                 return
+            elif args[0] == 'preopt':
+                return
             elif args[0] == 'optimize':
                 return
             elif args[0] == 'clear':
                 plan.clear()
+                commands.clear()
                 return
             elif args[0] == 'scale_speed':
                 return
@@ -170,8 +188,8 @@ class Planner(Modifier):
                 for i, op_name in enumerate(plan):
                     yield '%d: %s' % (i, op_name)
                 yield _('Commands %s:' % self._default_plan)
-                for i, op_name in enumerate(plan):
-                    yield '%d: %s' % (i, op_name)
+                for i, cmd_name in enumerate(commands):
+                    yield '%d: %s' % (i, cmd_name)
                 yield _('----------')
                 return
             elif args[0] == 'spool':
@@ -328,7 +346,9 @@ class Planner(Modifier):
     def execute(self):
         # Using copy of commands, so commands can add ops.
         plan, commands = self.default_plan()
-        for cmd in commands[:]:
+        cmds = commands[:]
+        commands.clear()
+        for cmd in cmds:
             cmd()
 
     def conditional_jobadd_make_raster(self):
