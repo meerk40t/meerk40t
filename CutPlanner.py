@@ -166,13 +166,26 @@ class Planner(Modifier):
                         plan.append(_("Home After: Disabled (Rotary On)"))
                 if self.context.autoorigin:
                     plan.append(self.context.registered['plan/origin'])
-                self.process()
+                # divide
+                if self.context.rotary:
+                    self.conditional_jobadd_scale_rotary()
+                self.conditional_jobadd_actualize_image()
+                self.conditional_jobadd_make_raster()
+                return
             elif args[0] == 'validate':
                 self.execute()
                 return
             elif args[0] == 'blob':
                 return
             elif args[0] == 'preopt':
+                if self.context.reduce_travel:
+                    self.conditional_jobadd_optimize_travel()
+                if self.context.inner_first:
+                    self.conditional_jobadd_optimize_cuts()
+                if self.context.reduce_directions:
+                    pass
+                if self.context.remove_overlap:
+                    pass
                 return
             elif args[0] == 'optimize':
                 return
@@ -335,13 +348,6 @@ class Planner(Modifier):
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % (extension))
         return "|".join(filetypes)
-
-    def process(self):
-        if self.context.rotary:
-            self.conditional_jobadd_scale_rotary()
-        self.conditional_jobadd_actualize_image()
-        self.conditional_jobadd_make_raster()
-        self.conditional_jobadd_optimize_cuts()
 
     def execute(self):
         # Using copy of commands, so commands can add ops.
