@@ -88,6 +88,7 @@ class JobPreview(wx.Frame, Module):
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_click, self.list_operations)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick, self.list_operations)
         # end wxGlade
+        self.stage = 0
         self.plan_name = plan_name
 
     def __set_properties(self):
@@ -218,6 +219,7 @@ class JobPreview(wx.Frame, Module):
         self.context.setting(bool, "opt_rapid_between", False)
 
         self.context.listen('element_property_update', self.on_element_property_update)
+        self.context.listen('plan', self.plan_update)
 
         self.preview_menu.menu_prehome.Check(self.context.prehome)
         self.preview_menu.menu_autohome.Check(self.context.autohome)
@@ -229,6 +231,7 @@ class JobPreview(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.context.unlisten('element_property_update', self.on_element_property_update)
+        self.context.unlisten('plan', self.plan_update)
         try:
             self.Close()
         except RuntimeError:
@@ -239,6 +242,13 @@ class JobPreview(wx.Frame, Module):
             self.Close()
         except RuntimeError:
             pass
+
+    def plan_update(self, *message):
+        plan_name, stage = message[0], message[1]
+        if stage is not None:
+            self.stage = stage
+        self.plan_name = plan_name
+        self.update_gui()
 
     def on_combo_device(self, event):  # wxGlade: Preview.<event_handler>
         print("Event handler 'on_combo_device' not implemented!")

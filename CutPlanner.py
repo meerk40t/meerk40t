@@ -134,6 +134,9 @@ class Planner(Modifier):
                 plan = list()
                 commands = list()
                 self._plan[self._default_plan] = plan, commands
+            if len(command) > 4:
+                self.context.signal('plan', self._default_plan, None)
+
             if args[0] == 'classify':
                 elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
                 return
@@ -141,6 +144,7 @@ class Planner(Modifier):
                 for c in elements.ops():
                     plan.append(copy(c))
                 yield _('Copied Operations.')
+                self.context.signal('plan', self._default_plan, 1)
                 return
             elif args[0] == 'command':
                 try:
@@ -148,7 +152,8 @@ class Planner(Modifier):
                         plan_command = self.context.registered[command_name]
                         plan.append(plan_command)
                         break
-                except KeyError:
+                    self.context.signal('plan', self._default_plan, None)
+                except (KeyError, IndexError):
                     yield _("No plan command found.")
                 return
             elif args[0] == 'preprocess':
@@ -171,25 +176,32 @@ class Planner(Modifier):
                     self.conditional_jobadd_scale_rotary()
                 self.conditional_jobadd_actualize_image()
                 self.conditional_jobadd_make_raster()
+                self.context.signal('plan', self._default_plan, 2)
                 return
             elif args[0] == 'validate':
                 self.execute()
+                self.context.signal('plan', self._default_plan, 3)
                 return
             elif args[0] == 'blob':
                 blob = CutCode()
+                first_index = None
                 for i, c in enumerate(plan):
                     try:
                         b = c.as_blob()
                         if b is not None:
                             blob.extend(b)
+                            if first_index is None:
+                                first_index = i
                         plan[i] = None
                     except AttributeError:
                         continue
-                plan.append(blob)
+                if first_index is not None:
+                    plan.insert(first_index, blob)
                 for i in range(len(plan)-1, -1, -1):
                     c = plan[i]
                     if c is None:
                         del plan[i]
+                self.context.signal('plan', self._default_plan, 4)
                 return
             elif args[0] == 'preopt':
                 if self.context.opt_reduce_travel:
@@ -200,13 +212,16 @@ class Planner(Modifier):
                     pass
                 if self.context.opt_remove_overlap:
                     pass
+                self.context.signal('plan', self._default_plan, 5)
                 return
             elif args[0] == 'optimize':
                 self.execute()
+                self.context.signal('plan', self._default_plan, 6)
                 return
             elif args[0] == 'clear':
                 plan.clear()
                 commands.clear()
+                self.context.signal('plan', self._default_plan, 0)
                 return
             elif args[0] == 'scale_speed':
                 return
@@ -223,6 +238,7 @@ class Planner(Modifier):
             elif args[0] == 'spool':
                 context.active.spooler.jobs(plan)
                 yield _('Spooled Plan.')
+                self.context.signal('plan', self._default_plan, 6)
                 return
             else:
                 yield _('Unrecognized command.')
