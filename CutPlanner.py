@@ -176,18 +176,33 @@ class Planner(Modifier):
                 self.execute()
                 return
             elif args[0] == 'blob':
+                blob = CutCode()
+                for i, c in enumerate(plan):
+                    try:
+                        b = c.as_blob()
+                        if b is not None:
+                            blob.extend(b)
+                        plan[i] = None
+                    except AttributeError:
+                        continue
+                plan.append(blob)
+                for i in range(len(plan)-1, -1, -1):
+                    c = plan[i]
+                    if c is None:
+                        del plan[i]
                 return
             elif args[0] == 'preopt':
-                if self.context.reduce_travel:
+                if self.context.opt_reduce_travel:
                     self.conditional_jobadd_optimize_travel()
-                if self.context.inner_first:
+                if self.context.opt_inner_first:
                     self.conditional_jobadd_optimize_cuts()
-                if self.context.reduce_directions:
+                if self.context.opt_reduce_directions:
                     pass
-                if self.context.remove_overlap:
+                if self.context.opt_remove_overlap:
                     pass
                 return
             elif args[0] == 'optimize':
+                self.execute()
                 return
             elif args[0] == 'clear':
                 plan.clear()
@@ -206,148 +221,17 @@ class Planner(Modifier):
                 yield _('----------')
                 return
             elif args[0] == 'spool':
-                context.spooler.jobs(plan)
+                context.active.spooler.jobs(plan)
                 yield _('Spooled Plan.')
                 return
+            else:
+                yield _('Unrecognized command.')
 
         kernel.register('command_re/plan.*', plan)
 
     def plan(self, **kwargs):
         for item in self._plan:
             yield item
-
-    def add_path(self, path, settings):
-        for seg in path:
-            if isinstance(seg, Move):
-                pass  # Move operations are ignored.
-            elif isinstance(seg, Close):
-                self._plan.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, Line):
-                self._plan.append(LineCut(seg.start[0], seg.start[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, QuadraticBezier):
-                self._plan.append(QuadCut(seg.start[0], seg.start[1], seg.control[0], seg.control[1],
-                                          seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, CubicBezier):
-                self._plan.append(CubicCut(seg.start[0], seg.start[1], seg.control1[0], seg.control1[1],
-                                           seg.control2[0], seg.control2[1], seg.end[0], seg.end[1], settings=settings))
-            elif isinstance(seg, Arc):
-                arc = ArcCut(seg, settings=settings)
-                self._plan.append(arc)
-                # arc.arc_to(seg)
-
-    def add_raster(self, image, settings):
-        self._plan.append(image, settings)
-
-    def add_plan(self, adding_plan):
-        self._plan.extend(adding_plan)
-
-    def clear_plan(self):
-        self._plan.clear()
-
-    def classify(self, elements, items=None, add_funct=None):
-        """
-        Classify does the initial placement of elements as operations.
-        "Image" is the default for images.
-        If element strokes are red they get classed as cut operations
-        If they are otherwise they get classed as engrave.
-        """
-        if elements is None:
-            return
-        if items is None:
-            items = self.ops()
-        if add_funct is None:
-            add_funct = self.add_op
-        for element in elements:
-            found_color = False
-            try:
-                stroke = element.stroke
-            except AttributeError:
-                stroke = None  # Element has no stroke.
-            try:
-                fill = element.fill
-            except AttributeError:
-                fill = None  # Element has no stroke.
-            for op in items:
-                if op.operation in ("Engrave", "Cut", "Raster") and op.color == stroke:
-                    op.append(element)
-                    found_color = True
-                elif op.operation == 'Image' and isinstance(element, SVGImage):
-                    op.append(element)
-                    found_color = True
-                elif op.operation == 'Raster' and \
-                        not isinstance(element, SVGImage) and \
-                        fill is not None and \
-                        fill.value is not None:
-                    op.append(element)
-                    found_color = True
-            if not found_color:
-                if stroke is not None and stroke.value is not None:
-                    op = LaserOperation(operation="Engrave", color=stroke, speed=35.0)
-                    op.append(element)
-                    add_funct(op)
-
-    def load(self, pathname, **kwargs):
-        kernel = self.context._kernel
-        for loader_name in kernel.match('load'):
-            loader = kernel.registered[loader_name]
-            for description, extensions, mimetype in loader.load_types():
-                if pathname.lower().endswith(extensions):
-                    results = loader.load(self.context, pathname, **kwargs)
-                    if results is None:
-                        continue
-                    elements, ops, note, pathname, basename = results
-                    self._filenodes[pathname] = elements
-                    self.add_elems(elements)
-                    if ops is not None:
-                        self.clear_operations()
-                        self.add_ops(ops)
-                    if note is not None:
-                        self.clear_note()
-                        self.note = note
-                    return elements, pathname, basename
-        return None
-
-    def load_types(self, all=True):
-        kernel = self.context._kernel
-        filetypes = []
-        if all:
-            filetypes.append('All valid types')
-            exts = []
-            for loader_name in kernel.match('load'):
-                loader = kernel.registered[loader_name]
-                for description, extensions, mimetype in loader.load_types():
-                    for ext in extensions:
-                        exts.append('*.%s' % ext)
-            filetypes.append(';'.join(exts))
-        for loader_name in kernel.match('load'):
-            loader = kernel.registered[loader_name]
-            for description, extensions, mimetype in loader.load_types():
-                exts = []
-                for ext in extensions:
-                    exts.append('*.%s' % ext)
-                filetypes.append("%s (%s)" % (description, extensions[0]))
-                filetypes.append(';'.join(exts))
-        return "|".join(filetypes)
-
-    def save(self, pathname):
-        kernel = self.context._kernel
-        for save_name in kernel.match('save'):
-            saver = kernel.registered[save_name]
-            for description, extension, mimetype in saver.save_types():
-                if pathname.lower().endswith(extension):
-                    saver.save(self.context, pathname, 'default')
-                    return True
-        return False
-
-    def save_types(self):
-        kernel = self.context._kernel
-        filetypes = []
-        for save_name in kernel.match('save'):
-            saver = kernel.registered[save_name]
-            for description, extension, mimetype in saver.save_types():
-                filetypes.append("%s (%s)" % (description, extension))
-                filetypes.append("*.%s" % (extension))
-        return "|".join(filetypes)
 
     def execute(self):
         # Using copy of commands, so commands can add ops.
@@ -397,6 +281,15 @@ class Planner(Modifier):
         plan, commands = self.default_plan()
         commands.append(make_image)
 
+    def conditional_jobadd_optimize_travel(self):
+        self.jobadd_optimize_travel()
+
+    def jobadd_optimize_travel(self):
+        def optimize_travel():
+            pass
+        plan, commands = self.default_plan()
+        commands.append(optimize_travel)
+
     def conditional_jobadd_optimize_cuts(self):
         plan, commands = self.default_plan()
         for op in plan:
@@ -413,7 +306,7 @@ class Planner(Modifier):
             for op in plan:
                 try:
                     if op.operation in ("Cut"):
-                        op_cuts = CutPlanner.optimize_cut_inside(op)
+                        op_cuts = self.optimize_cut_inside(op)
                         op.clear()
                         op.append(op_cuts)
                 except AttributeError:
@@ -480,35 +373,6 @@ class Planner(Modifier):
         commands.append(scale_for_rotary)
 
     @staticmethod
-    def origin():
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_MODE_RAPID
-        yield COMMAND_SET_ABSOLUTE
-        yield COMMAND_MOVE, 0, 0
-
-    @staticmethod
-    def home():
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_HOME
-
-    @staticmethod
-    def wait():
-        wait_amount = 5.0
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_WAIT, wait_amount
-
-    @staticmethod
-    def beep():
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_BEEP
-
-    @staticmethod
-    def interrupt():
-        def intr():
-            input('waiting for user...')
-        yield COMMAND_FUNCTION, intr
-
-    @staticmethod
     def needs_actualization(image_element, step_level=None):
         if not isinstance(image_element, SVGImage):
             return False
@@ -541,7 +405,7 @@ class Planner(Modifier):
         pil_image = image_element.image
         image_element.cache = None
         m = image_element.transform
-        bbox = OperationPreprocessor.bounding_box([image_element])
+        bbox = CutPlanner.bounding_box([image_element])
         tx = bbox[0]
         ty = bbox[1]
         m.post_translate(-tx, -ty)
@@ -580,6 +444,35 @@ class Planner(Modifier):
         m.post_scale(step_level, step_level)
         m.post_translate(tx, ty)
         image_element.image = pil_image
+
+    @staticmethod
+    def origin():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_MODE_RAPID
+        yield COMMAND_SET_ABSOLUTE
+        yield COMMAND_MOVE, 0, 0
+
+    @staticmethod
+    def home():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_HOME
+
+    @staticmethod
+    def wait():
+        wait_amount = 5.0
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_WAIT, wait_amount
+
+    @staticmethod
+    def beep():
+        yield COMMAND_WAIT_FINISH
+        yield COMMAND_BEEP
+
+    @staticmethod
+    def interrupt():
+        def intr():
+            input('waiting for user...')
+        yield COMMAND_FUNCTION, intr
 
     @staticmethod
     def reify_matrix(self):
@@ -626,9 +519,9 @@ class Planner(Modifier):
         :return: whether path1 is wholely inside path2.
         """
         if not hasattr(inner_path, 'bounding_box'):
-            inner_path.bounding_box = OperationPreprocessor.bounding_box(inner_path)
+            inner_path.bounding_box = CutPlanner.bounding_box(inner_path)
         if not hasattr(outer_path, 'bounding_box'):
-            outer_path.bounding_box = OperationPreprocessor.bounding_box(outer_path)
+            outer_path.bounding_box = CutPlanner.bounding_box(outer_path)
         if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
             # outer minx > inner minx (is not contained)
             return False
@@ -665,7 +558,7 @@ class Planner(Modifier):
             subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
         for j in range(len(subpaths)):
             for k in range(j+1, len(subpaths)):
-                if OperationPreprocessor.is_inside(subpaths[k],subpaths[j]):
+                if CutPlanner.is_inside(subpaths[k],subpaths[j]):
                     t = subpaths[j]
                     subpaths[j] = subpaths[k]
                     subpaths[k] = t

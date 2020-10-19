@@ -276,9 +276,11 @@ class JobPreview(wx.Frame, Module):
         self.context.rapid_between = self.check_rapid_moves_between.IsChecked()
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.console("plan%s command validate\n" % self.plan_name)
-        self.context.console("plan%s command optimize\n" % self.plan_name)
-        self.context.console("plan%s command spool\n" % self.plan_name)
+        self.context.console("plan%s validate\n" % self.plan_name)
+        self.context.console("plan%s blob\n" % self.plan_name)
+        self.context.console("plan%s preopt\n" % self.plan_name)
+        self.context.console("plan%s optimize\n" % self.plan_name)
+        self.context.console("plan%s spool\n" % self.plan_name)
         # TODO: If this spooled the data it should actually close this preview down? Is that still the case?
         self.update_gui()
 
