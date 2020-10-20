@@ -147,10 +147,6 @@ class LaserOperation(list):
             self.passes_custom = bool(kwargs['passes_custom'])
         except (ValueError, TypeError, KeyError):
             pass
-        try:
-            self.rapid = bool(kwargs['rapid'])
-        except (ValueError, TypeError, KeyError):
-            pass
         if self.operation == "Cut":
             if self.speed is None:
                 self.speed = 10.0
@@ -288,7 +284,7 @@ class LaserOperation(list):
             return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
         return "Unknown"
 
-    def generate(self):
+    def generate(self, rapid=False):
         if self.operation in ("Cut", "Engrave"):
             yield COMMAND_MODE_RAPID
             yield COMMAND_SET_ABSOLUTE
@@ -315,7 +311,7 @@ class LaserOperation(list):
                     plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
                 else:
                     plot = abs(object_path)
-                if hasattr(self, 'rapid') and self.rapid:
+                if rapid:
                     try:
                         first = plot.first_point
                         x = first[0]
