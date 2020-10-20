@@ -1355,7 +1355,10 @@ class LhystudioController(Module, Pipe):
             if len(packet) != 0:
                 if packet.endswith(b'#'):
                     packet = packet[:-1]
-                    c = packet[-1]
+                    try:
+                        c = packet[-1]
+                    except IndexError:
+                        c = b'F'  # Packet was simply #. We can do nothing.
                     packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
                 else:
                     packet += b'F' * (30 - len(packet))  # Padding. '\n'
