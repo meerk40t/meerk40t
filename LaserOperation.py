@@ -2,7 +2,7 @@ from copy import copy
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import SVGImage, SVGElement, Shape, Color, Path, Polygon
+from svgelements import SVGImage, SVGElement, Shape, Color, Path, Polygon, Move
 
 
 class LaserOperation(list):
@@ -313,15 +313,20 @@ class LaserOperation(list):
                     plot = abs(object_path)
                 if rapid:
                     try:
-                        first = plot.first_point
-                        x = first[0]
-                        y = first[1]
-                        yield COMMAND_MODE_RAPID
-                        yield COMMAND_MOVE, x, y
-                        yield COMMAND_MODE_PROGRAM
+                        for subplot in plot.as_subpaths():
+                            first_segment = subplot[0]
+                            first = first_segment.end
+                            x = first[0]
+                            y = first[1]
+                            # yield COMMAND_JOG, x, y
+                            yield COMMAND_MODE_RAPID
+                            yield COMMAND_MOVE, x, y
+                            yield COMMAND_MODE_PROGRAM
+                            yield COMMAND_PLOT, Path(subplot)
                     except (IndexError, AttributeError):
                         pass
-                yield COMMAND_PLOT, plot
+                else:
+                    yield COMMAND_PLOT, plot
             yield COMMAND_MODE_RAPID
         elif self.operation in ("Raster", "Image"):
             yield COMMAND_MODE_RAPID
