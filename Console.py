@@ -492,8 +492,12 @@ class Console(Module, Pipe):
                         yield name
                 yield '----------'
             else:
-                value = args[0]
-                chan = args[1]
+                try:
+                    value = args[0]
+                    chan = args[1]
+                except IndexError:
+                    yield "Syntax Error"
+                    return
                 if value == 'open':
                     if chan == 'console':
                         yield "Infinite Loop Error."
