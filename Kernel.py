@@ -329,6 +329,9 @@ class Interpreter(Module):
             elif command == COMMAND_MOVE:
                 x, y = values
                 self.move(x, y)
+            elif command == COMMAND_JOG:
+                x, y = values
+                self.jog(x, y)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
@@ -462,6 +465,10 @@ class Interpreter(Module):
 
     def laser_enable(self, *values):
         self.laser_enabled = True
+
+    def jog(self, x, y):
+        self.device.current_x = x
+        self.device.current_y = y
 
     def move(self, x, y):
         self.device.current_x = x

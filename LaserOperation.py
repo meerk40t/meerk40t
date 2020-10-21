@@ -318,10 +318,10 @@ class LaserOperation(list):
                             first = first_segment.end
                             x = first[0]
                             y = first[1]
-                            # yield COMMAND_JOG, x, y
-                            yield COMMAND_MODE_RAPID
-                            yield COMMAND_MOVE, x, y
-                            yield COMMAND_MODE_PROGRAM
+                            yield COMMAND_JOG, x, y
+                            # yield COMMAND_MODE_RAPID
+                            # yield COMMAND_MOVE, x, y
+                            # yield COMMAND_MODE_PROGRAM
                             yield COMMAND_PLOT, Path(subplot)
                     except (IndexError, AttributeError):
                         pass

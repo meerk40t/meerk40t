@@ -353,6 +353,22 @@ class LhymicroInterpreter(Interpreter):
     def cut_relative(self, x, y):
         self.goto_relative(x, y, True)
 
+    def jog(self, x, y):
+        if self.is_relative:
+            self.jog_relative(x, y)
+        else:
+            self.jog_absolute(x, y)
+
+    def jog_absolute(self, x, y):
+        self.jog_relative(x - self.device.current_x, y - self.device.current_y)
+
+    def jog_relative(self, dx, dy):
+        self.laser_off()
+        dx = int(round(dx))
+        dy = int(round(dy))
+        if dx != 0 or dy != 0:
+            self.fly_switch_speed(dx, dy)
+
     def move(self, x, y):
         self.goto(x, y, False)
 
@@ -542,9 +558,12 @@ class LhymicroInterpreter(Interpreter):
         self.state = INTERPRETER_STATE_RAPID
         self.device.signal('interpreter;mode', self.state)
 
-    def fly_switch_speed(self):
+    def fly_switch_speed(self, dx=0, dy=0):
+        dx = int(round(dx))
+        dy = int(round(dy))
         controller = self.pipe
-        switch = b'@NSE'
+        self.pipe.write(b'@NSE')
+        self.state = INTERPRETER_STATE_RAPID
         speed_code = LaserSpeed(
             self.device.board,
             self.speed,
@@ -559,11 +578,15 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        switch += speed_code
-        switch += b'N'
-        switch += self.code_declare_directions()
-        switch += b'S1E'
-        controller.write(switch)
+        self.pipe.write(speed_code)
+        if dx != 0:
+            self.goto_x(dx)
+        if dy != 0:
+            self.goto_y(dy)
+        self.pipe.write(b'N')
+        self.pipe.write(self.code_declare_directions())
+        self.pipe.write(b'S1E')
+        self.state = INTERPRETER_STATE_PROGRAM
 
     def ensure_finished_mode(self):
         if self.state == INTERPRETER_STATE_FINISH:
