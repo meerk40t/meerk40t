@@ -1005,6 +1005,7 @@ class LhystudioController(Module, Pipe):
         self.refuse_counts = 0
         self.connection_errors = 0
         self.count = 0
+        self.pre_ok = False
 
         self.abort_waiting = False
         self.send_channel = None
@@ -1395,7 +1396,8 @@ class LhystudioController(Module, Pipe):
 
         if len(packet) == 30:
             # We have a sendable packet.
-            self.wait_until_accepting_packets()
+            if not self.pre_ok:
+                self.wait_until_accepting_packets()
             self.send_packet(packet)
 
             # Packet is sent, trying to confirm.
@@ -1415,6 +1417,7 @@ class LhystudioController(Module, Pipe):
                     continue
                 elif status == STATUS_OK:
                     # Packet was fine.
+                    self.pre_ok = True
                     break
                 elif status == STATUS_BUSY:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
@@ -1463,6 +1466,7 @@ class LhystudioController(Module, Pipe):
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
         self.update_packet(packet)
+        self.pre_ok = False
 
     def update_status(self):
         if self.device.mock:
@@ -1485,7 +1489,10 @@ class LhystudioController(Module, Pipe):
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
-            if status == STATUS_OK or status == STATUS_ERROR:
+            if status == STATUS_OK:
+                self.pre_ok = True
+                break
+            if status == STATUS_ERROR:
                 break
             time.sleep(0.05)
             if self.device is not None:
@@ -1507,7 +1514,7 @@ class LhystudioController(Module, Pipe):
             if status == STATUS_ERROR:
                 self.device.rejected_count += 1
             if status & 0x02 == 0:
-                # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
+                # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100, 236
                 break
             time.sleep(0.05)
             if self.device is not None:
