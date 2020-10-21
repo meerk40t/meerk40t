@@ -312,19 +312,21 @@ class LaserOperation(list):
                 else:
                     plot = abs(object_path)
                 if rapid:
-                    try:
-                        for subplot in plot.as_subpaths():
-                            first_segment = subplot[0]
-                            first = first_segment.end
+                    for subplot in plot.as_subpaths():
+                        try:
+                            p = Path(subplot)
+                            p[0].start = None
+                            first = p.first_point
+                            print(p[0])
                             x = first[0]
                             y = first[1]
                             yield COMMAND_JOG, x, y
-                            # yield COMMAND_MODE_RAPID
-                            # yield COMMAND_MOVE, x, y
-                            # yield COMMAND_MODE_PROGRAM
-                            yield COMMAND_PLOT, Path(subplot)
-                    except (IndexError, AttributeError):
-                        pass
+                            yield COMMAND_PLOT, p
+                        except (IndexError, AttributeError):
+                            pass
+                        # yield COMMAND_MODE_RAPID
+                        # yield COMMAND_MOVE, x, y
+                        # yield COMMAND_MODE_PROGRAM
                 else:
                     yield COMMAND_PLOT, plot
             yield COMMAND_MODE_RAPID

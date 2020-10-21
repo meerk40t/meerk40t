@@ -561,7 +561,6 @@ class LhymicroInterpreter(Interpreter):
     def fly_switch_speed(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        controller = self.pipe
         self.pipe.write(b'@NSE')
         self.state = INTERPRETER_STATE_RAPID
         speed_code = LaserSpeed(
