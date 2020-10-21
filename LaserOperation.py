@@ -284,7 +284,7 @@ class LaserOperation(list):
             return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
         return "Unknown"
 
-    def generate(self, rapid=False):
+    def generate(self, rapid=True, jog=True):
         if self.operation in ("Cut", "Engrave"):
             yield COMMAND_MODE_RAPID
             yield COMMAND_SET_ABSOLUTE
@@ -320,13 +320,16 @@ class LaserOperation(list):
                             print(p[0])
                             x = first[0]
                             y = first[1]
-                            yield COMMAND_JOG, x, y
+                            if jog:
+                                yield COMMAND_JOG, x, y
+                            else:
+                                yield COMMAND_MODE_RAPID
+                                yield COMMAND_MOVE, x, y
+                                yield COMMAND_MODE_PROGRAM
                             yield COMMAND_PLOT, p
                         except (IndexError, AttributeError):
                             pass
-                        # yield COMMAND_MODE_RAPID
-                        # yield COMMAND_MOVE, x, y
-                        # yield COMMAND_MODE_PROGRAM
+
                 else:
                     yield COMMAND_PLOT, plot
             yield COMMAND_MODE_RAPID

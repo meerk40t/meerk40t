@@ -304,7 +304,9 @@ class Interpreter(Module):
             self.spooled_item = element
         else:
             try:
-                self.spooled_item = element.generate(rapid=self.device.opt_rapid_between)
+                self.spooled_item = element.generate(
+                    rapid=self.device.opt_rapid_between,
+                    jog=self.device.opt_jog_rapid)
             except AttributeError:
                 try:
                     self.spooled_item = element()

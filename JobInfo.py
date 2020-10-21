@@ -54,6 +54,8 @@ class JobInfo(wx.Frame, Module):
         wxglade_tmp_menu = wx.Menu()
         self.menu_rapid = wxglade_tmp_menu.Append(wx.ID_ANY, _("Rapid Between"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_rapid, id=self.menu_rapid.GetId())
+        self.menu_jog = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Rapid"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_jog, id=self.menu_jog.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Settings"))
 
         self.SetMenuBar(self.JobInfo_menubar)
@@ -128,7 +130,8 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(bool, "autoorigin", False)
         self.device.setting(bool, "autobeep", True)
         self.device.setting(bool, "autostart", True)
-        self.device.setting(bool, "opt_rapid_between", False)
+        self.device.setting(bool, "opt_rapid_between", True)
+        self.device.setting(bool, "opt_jog_rapid", True)
         self.device.listen('element_property_update', self.on_element_property_update)
 
         self.menu_prehome.Check(self.device.prehome)
@@ -136,6 +139,7 @@ class JobInfo(wx.Frame, Module):
         self.menu_autoorigin.Check(self.device.autoorigin)
         self.menu_autobeep.Check(self.device.autobeep)
         self.menu_autostart.Check(self.device.autostart)
+        self.menu_jog.Check(self.device.opt_jog_rapid)
         self.menu_rapid.Check(self.device.opt_rapid_between)
         self.preprocessor.device = self.device
         operations = list(self.operations)
@@ -210,6 +214,9 @@ class JobInfo(wx.Frame, Module):
 
     def on_check_rapid(self, event):
         self.device.opt_rapid_between = self.menu_rapid.IsChecked()
+
+    def on_check_jog(self, event):
+        self.device.opt_jog_rapid = self.menu_jog.IsChecked()
 
     def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.autostart = self.menu_autostart.IsChecked()
