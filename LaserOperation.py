@@ -317,7 +317,6 @@ class LaserOperation(list):
                             p = Path(subplot)
                             p[0].start = None
                             first = p.first_point
-                            print(p[0])
                             x = first[0]
                             y = first[1]
                             if jog:
