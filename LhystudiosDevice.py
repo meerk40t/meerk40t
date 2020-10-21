@@ -1249,6 +1249,7 @@ class LhystudioController(Module, Pipe):
         """
         self._main_lock.acquire(True)
         self.count = 0
+        self.pre_ok = False
         while self.state != STATE_END and self.state != STATE_TERMINATE:
             if self.state == STATE_INITIALIZE:
                 # If we are initialized. Change that to active since we're running.
@@ -1268,6 +1269,7 @@ class LhystudioController(Module, Pipe):
             except ConnectionRefusedError:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
+                self.pre_ok = False
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
                 if self.refuse_counts >= self.max_attempts:
                     # We were refused too many times, kill the thread.
@@ -1278,6 +1280,7 @@ class LhystudioController(Module, Pipe):
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
                 self.connection_errors += 1
+                self.pre_ok = False
                 time.sleep(0.5)
                 self.close()
                 continue
@@ -1300,6 +1303,7 @@ class LhystudioController(Module, Pipe):
         self._thread = None
         self.update_state(STATE_END)
         self.is_shutdown = False
+        self.pre_ok = False
 
     def process_queue(self):
         """
