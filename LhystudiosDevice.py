@@ -68,7 +68,7 @@ class LhystudiosDevice(Device):
         Device initialize.
 
         :param device:
-        :param name:
+        :param channel:
         :return:
         """
         self.setting(int, 'usb_index', -1)
@@ -1043,7 +1043,7 @@ class LhystudioController(Module, Pipe):
         self.device.control_instance_add("Resume", resume_k40)
 
     def shutdown(self, channel=None):
-        Module.shutdown(channel=channel)
+        Module.shutdown(self, channel=channel)
 
     def __repr__(self):
         return "LhystudioController()"
