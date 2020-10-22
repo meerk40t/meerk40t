@@ -373,10 +373,10 @@ class LhymicroInterpreter(Interpreter):
         dx = int(round(dx))
         dy = int(round(dy))
         self.laser_off()
-        self.pipe.write(b'N')
         self.goto_x(-3)
         self.goto_y(-3)
         self.state = INTERPRETER_STATE_RAPID
+        self.pipe.write(b'N')
         if dx != 0:
             self.goto_x(dx+3)
         if dy != 0:
