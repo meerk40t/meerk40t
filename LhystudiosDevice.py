@@ -367,7 +367,23 @@ class LhymicroInterpreter(Interpreter):
         dx = int(round(dx))
         dy = int(round(dy))
         if dx != 0 or dy != 0:
-            self.fly_switch_speed(dx, dy)
+            self.jog_event(dx, dy)
+
+    def jog_event(self, dx=0, dy=0):
+        dx = int(round(dx))
+        dy = int(round(dy))
+        self.laser_off()
+        self.pipe.write(b'N')
+        self.goto_x(-3)
+        self.goto_y(-3)
+        self.state = INTERPRETER_STATE_RAPID
+        if dx != 0:
+            self.goto_x(dx+3)
+        if dy != 0:
+            self.goto_y(dy+3)
+        self.pipe.write(b'SE')
+        self.pipe.write(self.code_declare_directions())
+        self.state = INTERPRETER_STATE_PROGRAM
 
     def move(self, x, y):
         self.goto(x, y, False)
