@@ -35,6 +35,8 @@ DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
 DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
 DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
 DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
+DIRECTION_START_X = 16
+DIRECTION_START_Y = 32
 
 
 class LhystudiosDevice(Device):
@@ -372,18 +374,18 @@ class LhymicroInterpreter(Interpreter):
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        self.set_prop(DIRECTION_FLAG_TOP)
-        self.set_prop(DIRECTION_FLAG_LEFT)
-        self.pipe.write(self.code_declare_directions())
         self.state = INTERPRETER_STATE_RAPID
         self.laser = False
-        self.pipe.write(b'U')
-        if dx == 0:
-            pass
-        elif dx < 0:
-            self.pipe.write(self.CODE_RIGHT)
-        else:
-            self.pipe.write(self.CODE_LEFT)
+        if self.is_prop(DIRECTION_START_X):
+            if not self.is_left and dx >= 0:
+                self.pipe.write(self.CODE_LEFT)
+            if not self.is_right and dx <= 0:
+                self.pipe.write(self.CODE_RIGHT)
+        if self.is_prop(DIRECTION_START_Y):
+            if not self.is_top and dy >= 0:
+                self.pipe.write(self.CODE_TOP)
+            if not self.is_bottom and dy <= 0:
+                self.pipe.write(self.CODE_BOTTOM)
         self.pipe.write(b'N')
         if dy != 0:
             self.goto_y(dy)
@@ -606,13 +608,13 @@ class LhymicroInterpreter(Interpreter):
             self.goto_x(dx)
         if dy != 0:
             self.goto_y(dy)
-        if self.raster_step == 0:
-            # Must be flagged for RB (Even BR would fail, for jogging)
-            self.unset_prop(DIRECTION_FLAG_LEFT)
-            self.unset_prop(DIRECTION_FLAG_TOP)
-            self.set_prop(DIRECTION_FLAG_X)
-            self.unset_prop(DIRECTION_FLAG_Y)
         self.pipe.write(b'N')
+        if self.is_prop(DIRECTION_FLAG_X):
+            self.set_prop(DIRECTION_START_X)
+            self.unset_prop(DIRECTION_START_Y)
+        else:
+            self.unset_prop(DIRECTION_START_X)
+            self.set_prop(DIRECTION_START_Y)
         self.pipe.write(self.code_declare_directions())
         self.pipe.write(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
@@ -649,14 +651,14 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        if self.raster_step == 0:
-            # Must be flagged for RB (Even BR would fail, for jogging)
-            self.unset_prop(DIRECTION_FLAG_LEFT)
-            self.unset_prop(DIRECTION_FLAG_TOP)
-            self.set_prop(DIRECTION_FLAG_X)
-            self.unset_prop(DIRECTION_FLAG_Y)
         controller.write(speed_code)
         controller.write(b'N')
+        if self.is_prop(DIRECTION_FLAG_X):
+            self.set_prop(DIRECTION_START_X)
+            self.unset_prop(DIRECTION_START_Y)
+        else:
+            self.unset_prop(DIRECTION_START_X)
+            self.set_prop(DIRECTION_START_Y)
         self.declare_directions()
         controller.write(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
