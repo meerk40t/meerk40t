@@ -372,6 +372,10 @@ class LhymicroInterpreter(Interpreter):
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
+        self.goto_x(-3)  # T
+        self.goto_y(-3)  # L
+        dx += 3
+        dy += 3
         self.state = INTERPRETER_STATE_RAPID
         self.laser = False
         self.pipe.write(b'U')
@@ -387,7 +391,7 @@ class LhymicroInterpreter(Interpreter):
         if dx != 0:
             self.goto_x(dx)
         self.pipe.write(b'SE')
-        # self.pipe.write(self.code_declare_directions())
+        self.pipe.write(self.code_declare_directions())
         self.state = INTERPRETER_STATE_PROGRAM
 
     def move(self, x, y):
@@ -640,6 +644,12 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
+        if self.raster_step == 0:
+            # Must be flagged for RB (Even BR would fail, for jogging)
+            self.unset_prop(DIRECTION_FLAG_LEFT)
+            self.unset_prop(DIRECTION_FLAG_TOP)
+            self.set_prop(DIRECTION_FLAG_X)
+            self.unset_prop(DIRECTION_FLAG_Y)
         controller.write(speed_code)
         controller.write(b'N')
         self.declare_directions()
