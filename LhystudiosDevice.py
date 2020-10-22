@@ -372,10 +372,9 @@ class LhymicroInterpreter(Interpreter):
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        self.goto_x(-3)  # T
-        self.goto_y(-3)  # L
-        dx += 3
-        dy += 3
+        self.set_prop(DIRECTION_FLAG_TOP)
+        self.set_prop(DIRECTION_FLAG_LEFT)
+        self.pipe.write(self.code_declare_directions())
         self.state = INTERPRETER_STATE_RAPID
         self.laser = False
         self.pipe.write(b'U')
@@ -607,6 +606,12 @@ class LhymicroInterpreter(Interpreter):
             self.goto_x(dx)
         if dy != 0:
             self.goto_y(dy)
+        if self.raster_step == 0:
+            # Must be flagged for RB (Even BR would fail, for jogging)
+            self.unset_prop(DIRECTION_FLAG_LEFT)
+            self.unset_prop(DIRECTION_FLAG_TOP)
+            self.set_prop(DIRECTION_FLAG_X)
+            self.unset_prop(DIRECTION_FLAG_Y)
         self.pipe.write(b'N')
         self.pipe.write(self.code_declare_directions())
         self.pipe.write(b'S1E')
@@ -742,13 +747,23 @@ class LhymicroInterpreter(Interpreter):
         self.properties = 0
 
     def goto_x(self, dx):
-        if dx > 0:
+        if dx == 0:
+            if self.is_prop(DIRECTION_FLAG_LEFT):
+                self.pipe.write(self.CODE_LEFT)
+            else:
+                self.pipe.write(self.CODE_RIGHT)
+        elif dx > 0:
             self.move_right(dx)
         else:
             self.move_left(dx)
 
     def goto_y(self, dy):
-        if dy > 0:
+        if dy == 0:
+            if self.is_prop(DIRECTION_FLAG_TOP):
+                self.pipe.write(self.CODE_TOP)
+            else:
+                self.pipe.write(self.CODE_BOTTOM)
+        elif dy > 0:
             self.move_bottom(dy)
         else:
             self.move_top(dy)
