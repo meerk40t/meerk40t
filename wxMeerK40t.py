@@ -519,6 +519,7 @@ class MeerK40t(wx.Frame, Module):
         self.root = None
         self.widget_scene = None
         self.pipe_state = None
+        self._rotary_view = False
 
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
@@ -626,6 +627,8 @@ class MeerK40t(wx.Frame, Module):
 
         device.control_instance_add("Crash Thread", test_crash_in_thread)
         device.control_instance_add("Clear Laserpath", self.clear_laserpath)
+        device.control_instance_add("RotaryView", self.toggle_rotary_view)
+        device.control_instance_add("RotaryScale", self.apply_rotary_scale)
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
         self.schedule()
@@ -1536,6 +1539,27 @@ class MeerK40t(wx.Frame, Module):
             kernel.elements.add_elem(p)
             self.device.classify(p)
         dlg.Destroy()
+
+    def apply_rotary_scale(self):
+        kernel = self.device.device_root
+        sx = self.device.scale_x
+        sy = self.device.scale_y
+        p = self.device
+
+        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, p.current_x, p.current_y))
+        for element in kernel.elements.elems():
+            try:
+                element *= mx
+                element.modified()
+            except AttributeError:
+                pass
+
+    def toggle_rotary_view(self):
+        if self._rotary_view:
+            self.widget_scene.rotary_stretch()
+        else:
+            self.widget_scene.rotary_unstretch()
+        self._rotary_view = not self._rotary_view
 
     def run_home_and_dot_test(self):
 

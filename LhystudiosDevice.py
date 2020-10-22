@@ -372,17 +372,22 @@ class LhymicroInterpreter(Interpreter):
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        self.laser_off()
-        self.goto_x(-3)
-        self.goto_y(-3)
         self.state = INTERPRETER_STATE_RAPID
+        self.laser = False
+        self.pipe.write(b'U')
+        if dx == 0:
+            pass
+        elif dx < 0:
+            self.pipe.write(self.CODE_RIGHT)
+        else:
+            self.pipe.write(self.CODE_LEFT)
         self.pipe.write(b'N')
-        if dx != 0:
-            self.goto_x(dx+3)
         if dy != 0:
-            self.goto_y(dy+3)
+            self.goto_y(dy)
+        if dx != 0:
+            self.goto_x(dx)
         self.pipe.write(b'SE')
-        self.pipe.write(self.code_declare_directions())
+        # self.pipe.write(self.code_declare_directions())
         self.state = INTERPRETER_STATE_PROGRAM
 
     def move(self, x, y):
