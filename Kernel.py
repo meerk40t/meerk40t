@@ -253,6 +253,8 @@ class Interpreter(Module):
         Module.attach(self, device, name)
         self.device.setting(int, 'current_x', 0)
         self.device.setting(int, 'current_y', 0)
+        self.device.setting(bool, "opt_rapid_between", True)
+        self.device.setting(int, "opt_jog_mode", 0)
         self.schedule()
 
     def process_spool(self, *args):
@@ -307,7 +309,7 @@ class Interpreter(Module):
             try:
                 self.spooled_item = element.generate(
                     rapid=self.device.opt_rapid_between,
-                    jog=self.device.opt_jog_rapid)
+                    jog=self.device.opt_jog_mode)
             except AttributeError:
                 try:
                     self.spooled_item = element()
@@ -334,7 +336,10 @@ class Interpreter(Module):
                 self.move(x, y)
             elif command == COMMAND_JOG:
                 x, y = values
-                self.jog(x, y)
+                self.jog(x, y, mode=0)
+            elif command == COMMAND_JOG_SWITCH:
+                x, y = values
+                self.jog(x, y, mode=1)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
@@ -469,7 +474,7 @@ class Interpreter(Module):
     def laser_enable(self, *values):
         self.laser_enabled = True
 
-    def jog(self, x, y):
+    def jog(self, x, y, mode=0):
         self.device.current_x = x
         self.device.current_y = y
 

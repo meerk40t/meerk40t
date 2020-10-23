@@ -355,21 +355,24 @@ class LhymicroInterpreter(Interpreter):
     def cut_relative(self, x, y):
         self.goto_relative(x, y, True)
 
-    def jog(self, x, y):
+    def jog(self, x, y, mode=0):
         if self.is_relative:
-            self.jog_relative(x, y)
+            self.jog_relative(x, y, mode=mode)
         else:
-            self.jog_absolute(x, y)
+            self.jog_absolute(x, y, mode=mode)
 
-    def jog_absolute(self, x, y):
-        self.jog_relative(x - self.device.current_x, y - self.device.current_y)
+    def jog_absolute(self, x, y, mode=0):
+        self.jog_relative(x - self.device.current_x, y - self.device.current_y, mode=mode)
 
-    def jog_relative(self, dx, dy):
+    def jog_relative(self, dx, dy, mode=0):
         self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
         if dx != 0 or dy != 0:
-            self.jog_event(dx, dy)
+            if mode == 0:
+                self.jog_event(dx, dy)
+            else:
+                self.fly_switch_speed(dx, dy)
 
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))

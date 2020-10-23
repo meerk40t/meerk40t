@@ -22,6 +22,7 @@ COMMAND_CUT = 11  # Performs a line cut.
 COMMAND_WAIT = 20  # Pauses the given time in seconds. (floats accepted).
 COMMAND_WAIT_FINISH = 21  # WAIT until the buffer is finished.
 COMMAND_JOG = 30  # Jogs the machine in rapid mode.
+COMMAND_JOG_SWITCH = 31  # Jogs the machine in rapid mode.
 
 COMMAND_MODE_RAPID = 50
 COMMAND_MODE_PROGRAM = 51
