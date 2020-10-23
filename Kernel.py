@@ -11,6 +11,7 @@ STATE_ACTIVE = 2
 STATE_BUSY = 3
 STATE_PAUSE = 4
 STATE_END = 5
+STATE_WAIT = 7 # Controller is waiting for something. This could be aborted.
 STATE_TERMINATE = 10
 
 INTERPRETER_STATE_RAPID = 0
@@ -2206,6 +2207,8 @@ class Device(Preferences):
             return _("Pause")
         elif state == STATE_BUSY:
             return _("Busy")
+        elif state == STATE_WAIT:
+            return _("Waiting")
         elif state == STATE_ACTIVE:
             return _("Active")
         elif state == STATE_IDLE:

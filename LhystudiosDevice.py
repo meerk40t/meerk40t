@@ -1556,12 +1556,19 @@ class LhystudioController(Module, Pipe):
 
     def wait_finished(self):
         i = 0
+        original_state = self.state
+        if self.state != STATE_PAUSE:
+            self.pause()
+
         while True:
+            if self.state != STATE_WAIT:
+                self.update_state(STATE_WAIT)
             self.update_status()
             if self.device.mock:  # Mock controller
                 self._status = [255, STATUS_FINISH, 0, 0, 0, 1]
             status = self._status[1]
             if status == 0:
+                self.update_state(original_state)
                 raise ConnectionError
             if status == STATUS_ERROR:
                 self.device.rejected_count += 1
@@ -1574,7 +1581,8 @@ class LhystudioController(Module, Pipe):
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
-                return  # Wait abort was requested.
+                break  # Wait abort was requested.
+        self.update_state(original_state)
 
 
 class EgvLoader:
