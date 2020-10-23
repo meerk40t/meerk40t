@@ -1581,44 +1581,42 @@ class MeerK40t(wx.Frame, Module):
             yield COMMAND_WAIT_FINISH
 
             yield COMMAND_SET_SPEED, 10.0
-            yield COMMAND_MODE_PROGRAM
-            for j in range(9):
-                if j < 3:
-                    jx = 200
-                elif j < 6:
-                    jx = -200
-                else:
-                    jx = 0
-                if j % 3 == 0:
-                    jy = 200
-                elif j % 3 == 1:
-                    jy = -200
-                else:
-                    jy = 0
-                for k in range(9):
-                    if k < 3:
-                        kx = 200
-                    elif k < 6:
-                        kx = -200
-                    else:
-                        kx = 0
-                    if k % 3 == 0:
-                        ky = 200
-                    elif k % 3 == 1:
-                        ky = -200
-                    else:
-                        ky = 0
-                    yield COMMAND_MOVE, 3000, 3000
-                    yield COMMAND_MOVE, 3000+jx, 3000+jy
-                    yield COMMAND_JOG, 3000+jx+kx, 3000+jy+ky
-            yield COMMAND_MOVE, 3000, 3000
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_LASER_ON
-            yield COMMAND_WAIT, 0.05
-            yield COMMAND_LASER_OFF
-            yield COMMAND_WAIT_FINISH
 
+            def pos(i):
+                if i < 3:
+                    x = 200
+                elif i < 6:
+                    x = -200
+                else:
+                    x = 0
+                if i % 3 == 0:
+                    y = 200
+                elif i % 3 == 1:
+                    y = -200
+                else:
+                    y = 0
+                return x, y
+
+            for q in range(8):
+                top = q & 1
+                left = q & 2
+                x_val = q & 3
+                yield COMMAND_SET_DIRECTION, top, left, x_val, not x_val
+                yield COMMAND_MODE_PROGRAM
+                for j in range(9):
+                    jx, jy = pos(j)
+                    for k in range(9):
+                        kx, ky = pos(k)
+                        yield COMMAND_MOVE, 3000, 3000
+                        yield COMMAND_MOVE, 3000+jx, 3000+jy
+                        yield COMMAND_JOG, 3000+jx+kx, 3000+jy+ky
+                yield COMMAND_MOVE, 3000, 3000
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, 0.05
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
         self.device.spooler.job(jog_transition_test)
 
 
