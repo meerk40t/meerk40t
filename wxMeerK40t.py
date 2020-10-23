@@ -617,6 +617,7 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("Stroke", self.open_stroke_dialog)
         device.control_instance_add("FPS", self.open_fps_dialog)
         device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        device.control_instance_add("Jog Transition Test", self.run_jog_transition_test)
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
 
         def test_crash_in_thread():
@@ -1560,6 +1561,66 @@ class MeerK40t(wx.Frame, Module):
         else:
             self.widget_scene.rotary_unstretch()
         self._rotary_view = not self._rotary_view
+
+    def run_jog_transition_test(self):
+        """"
+        The Jog Transition Test is intended to test the jogging
+        """
+
+        def jog_transition_test():
+            yield COMMAND_SET_ABSOLUTE
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_HOME
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_MOVE, 3000, 3000
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_LASER_ON
+            yield COMMAND_WAIT, 0.05
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+
+            yield COMMAND_SET_SPEED, 10.0
+            yield COMMAND_MODE_PROGRAM
+            for j in range(9):
+                if j < 3:
+                    jx = 200
+                elif j < 6:
+                    jx = -200
+                else:
+                    jx = 0
+                if j % 3 == 0:
+                    jy = 200
+                elif j % 3 == 1:
+                    jy = -200
+                else:
+                    jy = 0
+                for k in range(9):
+                    if k < 3:
+                        kx = 200
+                    elif k < 6:
+                        kx = -200
+                    else:
+                        kx = 0
+                    if k % 3 == 0:
+                        ky = 200
+                    elif k % 3 == 1:
+                        ky = -200
+                    else:
+                        ky = 0
+                    yield COMMAND_MOVE, 3000, 3000
+                    yield COMMAND_MOVE, 3000+jx, 3000+jy
+                    yield COMMAND_JOG, 3000+jx+kx, 3000+jy+ky
+            yield COMMAND_MOVE, 3000, 3000
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_LASER_ON
+            yield COMMAND_WAIT, 0.05
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+
+        self.device.spooler.job(jog_transition_test)
+
 
     def run_home_and_dot_test(self):
 
