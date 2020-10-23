@@ -1549,7 +1549,7 @@ class LhystudioController(Module, Pipe):
                 break
             if status == STATUS_ERROR:
                 break
-            # time.sleep(0.05)
+            time.sleep(0.05)
             if self.device is not None:
                 self.device.signal('pipe;wait', STATUS_OK, i)
             i += 1
@@ -1578,7 +1578,6 @@ class LhystudioController(Module, Pipe):
             if status & 0x02 == 0:
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100, 236
                 break
-            # time.sleep(0.05)
             if self.device is not None:
                 self.device.signal('pipe;wait', status, i)
             i += 1
