@@ -124,6 +124,7 @@ class JobInfo(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
+        self.device.device_root.setting(bool, "auto_spooler", True)
         self.device.setting(bool, "rotary", False)
         self.device.setting(float, "scale_x", 1.0)
         self.device.setting(float, "scale_y", 1.0)
