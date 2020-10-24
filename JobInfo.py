@@ -55,8 +55,8 @@ class JobInfo(wx.Frame, Module):
         wxglade_tmp_menu.AppendSeparator()
         self.menu_jog = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Standard"), "", wx.ITEM_RADIO)
         self.Bind(wx.EVT_MENU, self.on_check_jog, id=self.menu_jog.GetId())
-        self.menu_jog2 = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Switch"), "", wx.ITEM_RADIO)
-        self.Bind(wx.EVT_MENU, self.on_check_jog2, id=self.menu_jog2.GetId())
+        # self.menu_jog2 = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Switch"), "", wx.ITEM_RADIO)
+        # self.Bind(wx.EVT_MENU, self.on_check_jog2, id=self.menu_jog2.GetId())
         self.menu_jog3 = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Finish"), "", wx.ITEM_RADIO)
         self.Bind(wx.EVT_MENU, self.on_check_jog3, id=self.menu_jog3.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Settings"))
@@ -142,12 +142,13 @@ class JobInfo(wx.Frame, Module):
         self.menu_autobeep.Check(self.device.autobeep)
         jog_mode = self.device.opt_jog_mode
         self.menu_jog.Check(False)
-        self.menu_jog2.Check(False)
+        # self.menu_jog2.Check(False)
         self.menu_jog3.Check(False)
         if jog_mode == 0:
             self.menu_jog.Check(True)
         elif jog_mode == 1:
-            self.menu_jog2.Check(True)
+            # self.menu_jog2.Check(True)
+            pass
         else:
             self.menu_jog3.Check(True)
         self.menu_rapid.Check(self.device.opt_rapid_between)
@@ -229,9 +230,9 @@ class JobInfo(wx.Frame, Module):
         if self.menu_jog.IsChecked():
             self.device.opt_jog_mode = 0
 
-    def on_check_jog2(self, event):
-        if self.menu_jog2.IsChecked():
-            self.device.opt_jog_mode = 1
+    # def on_check_jog2(self, event):
+    #     if self.menu_jog2.IsChecked():
+    #         self.device.opt_jog_mode = 1
 
     def on_check_jog3(self, event):
         if self.menu_jog3.IsChecked():
