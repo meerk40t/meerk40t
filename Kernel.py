@@ -11,6 +11,7 @@ STATE_ACTIVE = 2
 STATE_BUSY = 3
 STATE_PAUSE = 4
 STATE_END = 5
+STATE_WAIT = 7 # Controller is waiting for something. This could be aborted.
 STATE_TERMINATE = 10
 
 INTERPRETER_STATE_RAPID = 0
@@ -252,6 +253,8 @@ class Interpreter(Module):
         Module.attach(self, device, name)
         self.device.setting(int, 'current_x', 0)
         self.device.setting(int, 'current_y', 0)
+        self.device.setting(bool, "opt_rapid_between", True)
+        self.device.setting(int, "opt_jog_mode", 0)
         self.schedule()
 
     def process_spool(self, *args):
@@ -304,7 +307,9 @@ class Interpreter(Module):
             self.spooled_item = element
         else:
             try:
-                self.spooled_item = element.generate()
+                self.spooled_item = element.generate(
+                    rapid=self.device.opt_rapid_between,
+                    jog=self.device.opt_jog_mode)
             except AttributeError:
                 try:
                     self.spooled_item = element()
@@ -329,6 +334,12 @@ class Interpreter(Module):
             elif command == COMMAND_MOVE:
                 x, y = values
                 self.move(x, y)
+            elif command == COMMAND_JOG:
+                x, y = values
+                self.jog(x, y, mode=0)
+            elif command == COMMAND_JOG_SWITCH:
+                x, y = values
+                self.jog(x, y, mode=1)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
@@ -462,6 +473,10 @@ class Interpreter(Module):
 
     def laser_enable(self, *values):
         self.laser_enabled = True
+
+    def jog(self, x, y, mode=0):
+        self.device.current_x = x
+        self.device.current_y = y
 
     def move(self, x, y):
         self.device.current_x = x
@@ -1354,152 +1369,6 @@ class Elemental(Module):
         return "|".join(filetypes)
 
 
-class Kern:
-    """
-    TODO: Transition.
-
-    The Kernel defines a specific location for functional elements. These are registered and in turn those are
-    subregistered. Every Kernel has a path. These can be derived from one another. Derived paths are stored as specific
-    implemented objects. Kernels can have functionality added to them dynamically. For example calling on the Spooler
-    object will set the .spooler when the spooler is attached. Every opened item has a source and an attached
-    destination. This permits registration of multiple objects to different locations.
-    """
-    def __init__(self, parent=None, path=None):
-        self._parent = parent
-        self._path = path
-        if parent is not None:
-            self.registered = parent.registered
-            self.instances = parent.instances
-        else:
-            self.registered = {}
-            self.instances = {}
-
-    def __str__(self):
-        return "Kern('%s')" % self._path
-
-    __repr__ = __str__
-
-    def abs_path(self, subpath):
-        subpath = str(subpath)
-        current = self
-        if subpath.startswith('../'):
-            if self._parent is None:
-                raise ValueError()
-            current = self._parent
-            subpath = subpath[3:]
-        if subpath.startswith('/') or self._path is None:
-            return subpath
-        else:
-            return "%s/%s" % (current._path, subpath)
-
-    def derive(self, subpath):
-        """
-        Create a sub-object derived from this object.
-
-        :param subpath: subpath underwhich to have the object.
-        :return: Derived Object.
-        """
-        derive = Kern(parent=self, path=self.abs_path(subpath))
-        return derive
-
-    def register(self, path, obj):
-        """
-        Register an element at a given subpath. If this Kern is not root. Then
-        it is registered relative to this location.
-
-        :param path:
-        :param obj:
-        :return:
-        """
-        self.registered[path] = obj
-        try:
-            obj.sub_register(self)
-        except AttributeError:
-            pass
-
-    def find(self, path):
-        """
-        Finds a loaded instance. Or returns None if not such instance.
-
-        Note name is not necessarily the type of instance. It could be the named value of the instance.
-
-        :param path: The type of instance to find.
-        :return: The instance if found, otherwise none.
-        """
-        try:
-            return self.instances[self.abs_path(path)]
-        except KeyError:
-            return None
-
-    def open(self, registered_path, instance_path, *args, **kwargs):
-        """
-        Opens a registered module. If that module already exists it returns the already open module.
-
-        Two special kwargs are passed to this. 'instance_name' and 'sub'. These control the name under which
-        the module is registered. Instance_name replaces the default, which registers the instance under the object_name
-        whereas sub provides a suffixed name 'object_name:sub'.
-
-        If the module already exists, the restore function is called on that object, if it exists, with the same args
-        and kwargs that were intended for the init() routine.
-
-        :param registered_path: path of object being opened.
-        :param instance_path: path of object should be attached.
-        :param args: Args to pass to newly opened module.
-        :param kwargs: Kwargs to pass to newly opened module.
-        :return: Opened module.
-        """
-        instance_path = self.abs_path(instance_path)
-        try:
-            find = self.instances[instance_path]
-            try:
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-        except KeyError:
-            pass
-
-        try:
-            open_object = self.registered[registered_path]
-        except KeyError:
-            raise ValueError
-
-        instance = open_object(*args, **kwargs)
-        try:
-            channel = self.channel_open('open')
-        except AttributeError:
-            channel = None
-
-        try:
-            instance.attach(self, name=instance_path, channel=channel)
-        except AttributeError:
-            pass
-
-        self.instances[instance_path] = instance
-        return instance
-
-    def close(self, instance_path):
-        instance_path = self.abs_path(instance_path)
-        try:
-            instance = self.instances[instance_path]
-        except KeyError:
-            raise ValueError
-        try:
-            instance.close()
-        except AttributeError:
-            pass
-        del self.instances[instance_path]
-        try:
-            channel = self.channel_open('close')
-        except AttributeError:
-            channel = None
-
-        try:
-            instance.detach(self, channel=channel)
-        except AttributeError:
-            pass
-
-
 class Preferences:
     """
     This class is expected to run even if there is no persistent storage.
@@ -2343,6 +2212,8 @@ class Device(Preferences):
             return _("Pause")
         elif state == STATE_BUSY:
             return _("Busy")
+        elif state == STATE_WAIT:
+            return _("Waiting")
         elif state == STATE_ACTIVE:
             return _("Active")
         elif state == STATE_IDLE:
@@ -2394,7 +2265,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.7"
+        self.device_version = "0.6.8"
         self.device_root = self
 
         # Persistent storage if it exists.
@@ -2495,6 +2366,8 @@ class Kernel(Device):
         self.keymap['alt+e'] = 'engrave'
         self.keymap['alt+c'] = 'cut'
         self.keymap['delete'] = 'element delete'
+        self.keymap['control+f3'] = "rotaryview"
+        self.keymap['alt+f3'] = "rotaryscale"
         self.keymap['f4'] = "window open CameraInterface"
         self.keymap['f5'] = "refresh"
         self.keymap['f6'] = "window open JobSpooler"

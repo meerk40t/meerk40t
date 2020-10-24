@@ -385,6 +385,15 @@ class Controller(wx.Frame, Module):
             button.SetLabel(_("LOCKED"))
             button.SetBitmap(icons8_play_50.GetBitmap())
             button.Enable(False)
+        elif state == STATE_WAIT:
+            def f(event):
+                self.device.execute("Wait Abort")
+
+            self.Bind(wx.EVT_BUTTON, f, button)
+            button.SetBackgroundColour("#dddd00")
+            button.SetLabel(_("Force Continue"))
+            button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap())
+            button.Enable(True)
         elif state == STATE_PAUSE:
             def f(event):
                 self.device.interpreter.pipe.resume()

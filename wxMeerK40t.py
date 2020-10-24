@@ -519,6 +519,7 @@ class MeerK40t(wx.Frame, Module):
         self.root = None
         self.widget_scene = None
         self.pipe_state = None
+        self._rotary_view = False
 
     def add_language_menu(self):
         if os.path.exists(resource_path('./locale')):
@@ -616,6 +617,7 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("Stroke", self.open_stroke_dialog)
         device.control_instance_add("FPS", self.open_fps_dialog)
         device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        device.control_instance_add("Jog Transition Test", self.run_jog_transition_test)
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
 
         def test_crash_in_thread():
@@ -626,6 +628,8 @@ class MeerK40t(wx.Frame, Module):
 
         device.control_instance_add("Crash Thread", test_crash_in_thread)
         device.control_instance_add("Clear Laserpath", self.clear_laserpath)
+        device.control_instance_add("RotaryView", self.toggle_rotary_view)
+        device.control_instance_add("RotaryScale", self.apply_rotary_scale)
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
         self.schedule()
@@ -1536,6 +1540,85 @@ class MeerK40t(wx.Frame, Module):
             kernel.elements.add_elem(p)
             self.device.classify(p)
         dlg.Destroy()
+
+    def apply_rotary_scale(self):
+        kernel = self.device.device_root
+        sx = self.device.scale_x
+        sy = self.device.scale_y
+        p = self.device
+
+        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, p.current_x, p.current_y))
+        for element in kernel.elements.elems():
+            try:
+                element *= mx
+                element.modified()
+            except AttributeError:
+                pass
+
+    def toggle_rotary_view(self):
+        if self._rotary_view:
+            self.widget_scene.rotary_stretch()
+        else:
+            self.widget_scene.rotary_unstretch()
+        self._rotary_view = not self._rotary_view
+
+    def run_jog_transition_test(self):
+        """"
+        The Jog Transition Test is intended to test the jogging
+        """
+
+        def jog_transition_test():
+            yield COMMAND_SET_ABSOLUTE
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_HOME
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_MOVE, 3000, 3000
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_LASER_ON
+            yield COMMAND_WAIT, 0.05
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+
+            yield COMMAND_SET_SPEED, 10.0
+
+            def pos(i):
+                if i < 3:
+                    x = 200
+                elif i < 6:
+                    x = -200
+                else:
+                    x = 0
+                if i % 3 == 0:
+                    y = 200
+                elif i % 3 == 1:
+                    y = -200
+                else:
+                    y = 0
+                return x, y
+
+            for q in range(8):
+                top = q & 1
+                left = q & 2
+                x_val = q & 3
+                yield COMMAND_SET_DIRECTION, top, left, x_val, not x_val
+                yield COMMAND_MODE_PROGRAM
+                for j in range(9):
+                    jx, jy = pos(j)
+                    for k in range(9):
+                        kx, ky = pos(k)
+                        yield COMMAND_MOVE, 3000, 3000
+                        yield COMMAND_MOVE, 3000+jx, 3000+jy
+                        yield COMMAND_JOG, 3000+jx+kx, 3000+jy+ky
+                yield COMMAND_MOVE, 3000, 3000
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, 0.05
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
+        self.device.spooler.job(jog_transition_test)
+
 
     def run_home_and_dot_test(self):
 
@@ -3009,7 +3092,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.7')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.8')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

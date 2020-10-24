@@ -5932,6 +5932,17 @@ class Subpath:
         return Subpath(Path(self._path), self._start, self._end)
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            start = index.start
+            stop = index.stop
+            step = index.step
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = len(self)
+            if step is None:
+                step = 1
+            return self._path[self.index_to_path_index(start):self.index_to_path_index(stop):step]
         return self._path[self.index_to_path_index(index)]
 
     def __setitem__(self, index, value):

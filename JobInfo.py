@@ -26,8 +26,6 @@ class JobInfo(wx.Frame, Module):
         # Menu Bar
         self.JobInfo_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        self.menu_autostart = wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
-        self.Bind(wx.EVT_MENU, self.on_check_auto_start_controller, id=self.menu_autostart.GetId())
         self.menu_prehome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home Before"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_home_before, id=self.menu_prehome.GetId())
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
@@ -50,6 +48,19 @@ class JobInfo(wx.Frame, Module):
         t = wxglade_tmp_menu.Append(wx.ID_ANY, _("Interrupt"), "")
         self.Bind(wx.EVT_MENU, self.jobadd_interrupt, id=t.GetId())
         self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Add"))
+
+        wxglade_tmp_menu = wx.Menu()
+        self.menu_rapid = wxglade_tmp_menu.Append(wx.ID_ANY, _("Rapid Between"), "", wx.ITEM_CHECK)
+        self.Bind(wx.EVT_MENU, self.on_check_rapid, id=self.menu_rapid.GetId())
+        wxglade_tmp_menu.AppendSeparator()
+        self.menu_jog = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Standard"), "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, self.on_check_jog, id=self.menu_jog.GetId())
+        # self.menu_jog2 = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Switch"), "", wx.ITEM_RADIO)
+        # self.Bind(wx.EVT_MENU, self.on_check_jog2, id=self.menu_jog2.GetId())
+        self.menu_jog3 = wxglade_tmp_menu.Append(wx.ID_ANY, _("Jog Finish"), "", wx.ITEM_RADIO)
+        self.Bind(wx.EVT_MENU, self.on_check_jog3, id=self.menu_jog3.GetId())
+        self.JobInfo_menubar.Append(wxglade_tmp_menu, _("Settings"))
+
         self.SetMenuBar(self.JobInfo_menubar)
         # Menu Bar end
 
@@ -122,13 +133,26 @@ class JobInfo(wx.Frame, Module):
         self.device.setting(bool, "autoorigin", False)
         self.device.setting(bool, "autobeep", True)
         self.device.setting(bool, "autostart", True)
+        self.device.setting(bool, "opt_rapid_between", True)
+        self.device.setting(int, "opt_jog_mode", 0)
         self.device.listen('element_property_update', self.on_element_property_update)
 
         self.menu_prehome.Check(self.device.prehome)
         self.menu_autohome.Check(self.device.autohome)
         self.menu_autoorigin.Check(self.device.autoorigin)
         self.menu_autobeep.Check(self.device.autobeep)
-        self.menu_autostart.Check(self.device.autostart)
+        jog_mode = self.device.opt_jog_mode
+        self.menu_jog.Check(False)
+        # self.menu_jog2.Check(False)
+        self.menu_jog3.Check(False)
+        if jog_mode == 0:
+            self.menu_jog.Check(True)
+        elif jog_mode == 1:
+            # self.menu_jog2.Check(True)
+            pass
+        else:
+            self.menu_jog3.Check(True)
+        self.menu_rapid.Check(self.device.opt_rapid_between)
         self.preprocessor.device = self.device
         operations = list(self.operations)
         self.operations.clear()
@@ -200,8 +224,20 @@ class JobInfo(wx.Frame, Module):
         self.Centre()
         # end wxGlade
 
-    def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.autostart = self.menu_autostart.IsChecked()
+    def on_check_rapid(self, event):
+        self.device.opt_rapid_between = self.menu_rapid.IsChecked()
+
+    def on_check_jog(self, event):
+        if self.menu_jog.IsChecked():
+            self.device.opt_jog_mode = 0
+
+    # def on_check_jog2(self, event):
+    #     if self.menu_jog2.IsChecked():
+    #         self.device.opt_jog_mode = 1
+
+    def on_check_jog3(self, event):
+        if self.menu_jog3.IsChecked():
+            self.device.opt_jog_mode = 2
 
     def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.prehome = self.menu_prehome.IsChecked()

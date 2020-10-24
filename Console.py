@@ -492,8 +492,12 @@ class Console(Module, Pipe):
                         yield name
                 yield '----------'
             else:
-                value = args[0]
-                chan = args[1]
+                try:
+                    value = args[0]
+                    chan = args[1]
+                except IndexError:
+                    yield "Syntax Error"
+                    return
                 if value == 'open':
                     if chan == 'console':
                         yield "Infinite Loop Error."
@@ -1931,6 +1935,16 @@ class Console(Module, Pipe):
                 kernel.alias[args[0]] = ' '.join(args[1:])
             return
         # Server Misc Command Elements
+        elif command == 'rotaryview':
+            if 'RotaryView' in active_device.instances['control']:
+                active_device.execute('RotaryView')
+            yield "RotaryView Toggled."
+            return
+        elif command == 'rotaryscale':
+            if 'RotaryScale' in active_device.instances['control']:
+                active_device.execute('RotaryScale')
+            yield "Rotary Scale Applied."
+            return
         elif command == 'egv':
             if len(args) >= 1:
                 if active_device.device_name != 'Lhystudios':

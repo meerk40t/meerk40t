@@ -59,11 +59,25 @@ class Scene(Module):
 
     def initialize(self, channel=None):
         self.device.setting(int, "draw_mode", 0)
+        self.device.setting(float, "scale_x", 1.0)
+        self.device.setting(float, "scale_y", 1.0)
 
     def finalize(self, channel=None):
         elements = self.device.device_root.elements
         for e in elements.elems():
             elements.unregister(e)
+
+    def rotary_stretch(self):
+        scale_x = self.device.scale_x
+        scale_y = self.device.scale_y
+        self.widget_root.scene_widget.matrix.post_scale(scale_x, scale_y)
+        self.device.signal('refresh_scene', 0)
+
+    def rotary_unstretch(self):
+        scale_x = self.device.scale_x
+        scale_y = self.device.scale_y
+        self.widget_root.scene_widget.matrix.post_scale(1.0 / scale_x, 1.0 / scale_y)
+        self.device.signal('refresh_scene', 0)
 
     def shutdown(self, channel=None):
         pass
