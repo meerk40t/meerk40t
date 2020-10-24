@@ -26,8 +26,6 @@ class JobInfo(wx.Frame, Module):
         # Menu Bar
         self.JobInfo_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        self.menu_autostart = wxglade_tmp_menu.Append(wx.ID_ANY, _("Start Spooler"), "", wx.ITEM_CHECK)
-        self.Bind(wx.EVT_MENU, self.on_check_auto_start_controller, id=self.menu_autostart.GetId())
         self.menu_prehome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home Before"), "", wx.ITEM_CHECK)
         self.Bind(wx.EVT_MENU, self.on_check_home_before, id=self.menu_prehome.GetId())
         self.menu_autohome = wxglade_tmp_menu.Append(wx.ID_ANY, _("Home After"), "", wx.ITEM_CHECK)
@@ -126,7 +124,6 @@ class JobInfo(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        self.device.device_root.setting(bool, "auto_spooler", True)
         self.device.setting(bool, "rotary", False)
         self.device.setting(float, "scale_x", 1.0)
         self.device.setting(float, "scale_y", 1.0)
@@ -143,7 +140,6 @@ class JobInfo(wx.Frame, Module):
         self.menu_autohome.Check(self.device.autohome)
         self.menu_autoorigin.Check(self.device.autoorigin)
         self.menu_autobeep.Check(self.device.autobeep)
-        self.menu_autostart.Check(self.device.autostart)
         jog_mode = self.device.opt_jog_mode
         self.menu_jog.Check(False)
         self.menu_jog2.Check(False)
@@ -240,9 +236,6 @@ class JobInfo(wx.Frame, Module):
     def on_check_jog3(self, event):
         if self.menu_jog3.IsChecked():
             self.device.opt_jog_mode = 2
-
-    def on_check_auto_start_controller(self, event):  # wxGlade: JobInfo.<event_handler>
-        self.device.autostart = self.menu_autostart.IsChecked()
 
     def on_check_home_before(self, event):  # wxGlade: JobInfo.<event_handler>
         self.device.prehome = self.menu_prehome.IsChecked()
