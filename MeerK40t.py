@@ -129,7 +129,7 @@ if args.path is not None:
     # Force the inclusion of the path.
     from svgelements import Path
     try:
-        kernel.elements.note = args.path
+        kernel.elements.note = '\n'.join(sys.argv)
         path = Path(args.path)
         path.stroke = Color('blue')
         kernel.elements.add_elem(path)
