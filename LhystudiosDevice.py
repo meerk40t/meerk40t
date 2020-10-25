@@ -355,16 +355,16 @@ class LhymicroInterpreter(Interpreter):
     def cut_relative(self, x, y):
         self.goto_relative(x, y, True)
 
-    def jog(self, x, y, mode=0, min_jog=127):
+    def jog(self, x, y, **kwargs):
         if self.is_relative:
-            self.jog_relative(x, y, mode=mode, min_jog=min_jog)
+            self.jog_relative(x, y, **kwargs)
         else:
-            self.jog_absolute(x, y, mode=mode, min_jog=min_jog)
+            self.jog_absolute(x, y, **kwargs)
 
-    def jog_absolute(self, x, y, mode=0, min_jog=127):
-        self.jog_relative(x - self.device.current_x, y - self.device.current_y, mode=mode, min_jog=min_jog)
+    def jog_absolute(self, x, y, **kwargs):
+        self.jog_relative(x - self.device.current_x, y - self.device.current_y, **kwargs)
 
-    def jog_relative(self, dx, dy, mode=0, min_jog=127):
+    def jog_relative(self, dx, dy, mode=0, min_jog=127, direction=None):
         self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
@@ -376,7 +376,7 @@ class LhymicroInterpreter(Interpreter):
             else:
                 self.ensure_rapid_mode()
                 self.move_relative(dx, dy)
-                self.ensure_program_mode()
+                self.ensure_program_mode(direction=direction)
 
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
@@ -638,7 +638,7 @@ class LhymicroInterpreter(Interpreter):
         self.state = INTERPRETER_STATE_FINISH
         self.device.signal('interpreter;mode', self.state)
 
-    def ensure_program_mode(self):
+    def ensure_program_mode(self, direction=None):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
         controller = self.pipe
@@ -660,6 +660,23 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code, 'utf8')
         controller.write(speed_code)
         controller.write(b'N')
+        if direction is not None and direction is not 0:
+            if direction == 1:
+                self.unset_prop(DIRECTION_FLAG_X)
+                self.set_prop(DIRECTION_FLAG_Y)
+                self.set_prop(DIRECTION_FLAG_TOP)
+            if direction == 2:
+                self.set_prop(DIRECTION_FLAG_X)
+                self.unset_prop(DIRECTION_FLAG_Y)
+                self.unset_prop(DIRECTION_FLAG_LEFT)
+            if direction == 3:
+                self.unset_prop(DIRECTION_FLAG_X)
+                self.set_prop(DIRECTION_FLAG_Y)
+                self.unset_prop(DIRECTION_FLAG_TOP)
+            if direction == 4:
+                self.set_prop(DIRECTION_FLAG_X)
+                self.unset_prop(DIRECTION_FLAG_Y)
+                self.set_prop(DIRECTION_FLAG_LEFT)
         if self.is_prop(DIRECTION_FLAG_X):
             self.set_prop(DIRECTION_START_X)
             self.unset_prop(DIRECTION_START_Y)

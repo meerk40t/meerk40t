@@ -336,17 +336,14 @@ class Interpreter(Module):
                 x, y = values
                 self.move(x, y)
             elif command == COMMAND_JOG:
-                minimum = self.device.opt_jog_minimum
                 x, y = values
-                self.jog(x, y, mode=0, min_jog=minimum)
+                self.jog(x, y, mode=0, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_JOG_SWITCH:
-                minimum = self.device.opt_jog_minimum
                 x, y = values
-                self.jog(x, y, mode=1, min_jog=minimum)
+                self.jog(x, y, mode=1, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_JOG_FINISH:
-                minimum = self.device.opt_jog_minimum
                 x, y = values
-                self.jog(x, y, mode=2, min_jog=minimum)
+                self.jog(x, y, mode=2, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
