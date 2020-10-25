@@ -129,6 +129,7 @@ if args.input is not None:
 if args.path is not None:
     # Force the inclusion of the path.
     from svgelements import Path
+    print("Path Check: %s" % args.path)
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
