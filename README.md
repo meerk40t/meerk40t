@@ -68,7 +68,8 @@ Maker Forum MeerK40t category: https://forum.makerforums.info/t/about-the-meerk4
 ## IRC
 * There is an IRC channel #MeerK40t on irc.freenode.net irc://irc.freenode.net:6666
 
-# Help
+
+# Assisting the Project
 
 Open source projects live and die with their support. There are a lots of ways to help the project.
 * Code
