@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-30 14:09-0700\n"
-"PO-Revision-Date: 2020-10-25 00:58-0700\n"
+"PO-Revision-Date: 2020-10-25 01:17-0700\n"
 "Last-Translator: tatarize\n"
 "Language-Team: German\n"
 "Language: de\n"
@@ -139,11 +139,11 @@ msgstr "Ausrichtung."
 
 #: Alignment.py:93 loco:5ed2cbe74d3dd779ce26908e
 msgid "Perform vertical near-far alignment test"
-msgstr "vertikalen Nah-Fern-Ausrichtungstest durchführen."
+msgstr "Vertikalen Nah-Fern-Ausrichtungstest durchführen"
 
 #: Alignment.py:96 loco:5ed2cbe74d3dd779ce26908f
 msgid "Perform a vertical line alignment test"
-msgstr "vertikalen Linienausrichtungstest durchführen."
+msgstr "Vertikalen Linienausrichtungstest durchführen"
 
 #: Alignment.py:99 loco:5ed2cbe74d3dd779ce269090
 msgid "How far down should we move to test?"
@@ -163,11 +163,11 @@ msgstr "Vertikale Ausrichtung ist abgeschlossen."
 
 #: Alignment.py:105 loco:5ed2cbe74d3dd779ce269093
 msgid "Perform horizontal near-far alignment test"
-msgstr "horizontalen Nah-Fern-Ausrichtungstest durchführen."
+msgstr "Horizontalen Nah-Fern-Ausrichtungstest durchführen"
 
 #: Alignment.py:109 loco:5ed2cbe74d3dd779ce269094
 msgid "Perform horizontal line alignment test"
-msgstr "horizontalen Linienausrichtungstest durchführen."
+msgstr "Horizontalen Linienausrichtungstest durchführen"
 
 #: Alignment.py:113 loco:5ed2cbe74d3dd779ce269095
 msgid "How far right should we move to test?"
@@ -179,7 +179,7 @@ msgstr "4-Ecken-Test durchführen"
 
 #: Alignment.py:125 loco:5ed2cbe74d3dd779ce269097
 msgid "Perform square confirmation test"
-msgstr "quadratischen Test durchführen."
+msgstr "Quadratischen Test durchführen"
 
 #: Alignment.py:140 loco:5ed2cbe74d3dd779ce269098
 msgid ""
@@ -2862,7 +2862,7 @@ msgstr "Geben Sie die HTTP- oder RTSP-URL ein"
 
 #: JobInfo.py:34 loco:5f485e022b1acf03fa49f286
 msgid "Return to Origin After"
-msgstr "zurück zur Home-Position nach Abschluss."
+msgstr "Zurück zur Home-Position nach Abschluss"
 
 #: JobInfo.py:163 loco:5f485e022b1acf03fa49f287
 msgid "Home Before: Disabled (Rotary On)"
@@ -3006,7 +3006,7 @@ msgstr "Halbton-Reset"
 
 #: RasterWizard.py:1482 loco:5f95146da939377c3b79c019
 msgid "Use black rather than white dots"
-msgstr "schwarze statt weiße Punkte verwenden."
+msgstr "Schwarze statt weiße Punkte verwenden"
 
 #: RasterWizard.py:1483 loco:5f95146da939377c3b79c01a
 msgid "Sample size for halftone dots"
