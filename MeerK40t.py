@@ -60,6 +60,9 @@ parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x posi
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
+with open("args.txt", 'w') as f:
+    for x in sys.argv:
+        f.write(x + '\n')
 
 args = parser.parse_args(sys.argv[1:])
 kernel.register('static', 'RasterScripts', RasterScripts)
@@ -129,7 +132,6 @@ if args.input is not None:
 if args.path is not None:
     # Force the inclusion of the path.
     from svgelements import Path
-    print("Path Check: %s" % args.path)
     try:
         path = Path(args.path)
         path.stroke = Color('blue')
