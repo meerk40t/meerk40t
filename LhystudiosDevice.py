@@ -371,8 +371,12 @@ class LhymicroInterpreter(Interpreter):
         if abs(dx) >= min_jog or abs(dy) >= min_jog:
             if mode == 0:
                 self.jog_event(dx, dy)
-            else:
+            elif mode == 1:
                 self.fly_switch_speed(dx, dy)
+            else:
+                self.ensure_rapid_mode()
+                self.move_relative(dx, dy)
+                self.ensure_program_mode()
 
     def jog_event(self, dx=0, dy=0):
         dx = int(round(dx))

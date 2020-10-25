@@ -324,9 +324,7 @@ class LaserOperation(list):
                             elif jog == 1:
                                 yield COMMAND_JOG_SWITCH, x, y
                             else:
-                                yield COMMAND_MODE_RAPID
-                                yield COMMAND_MOVE, x, y
-                                yield COMMAND_MODE_PROGRAM
+                                yield COMMAND_JOG_FINISH, x, y
                             yield COMMAND_PLOT, p
                         except (IndexError, AttributeError):
                             pass

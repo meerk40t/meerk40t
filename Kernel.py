@@ -255,6 +255,7 @@ class Interpreter(Module):
         self.device.setting(int, 'current_y', 0)
         self.device.setting(bool, "opt_rapid_between", True)
         self.device.setting(int, "opt_jog_mode", 0)
+        self.device.setting(int, "opt_jog_minimum", 127)
         self.schedule()
 
     def process_spool(self, *args):
@@ -335,11 +336,17 @@ class Interpreter(Module):
                 x, y = values
                 self.move(x, y)
             elif command == COMMAND_JOG:
+                minimum = self.device.opt_jog_minimum
                 x, y = values
-                self.jog(x, y, mode=0, min_jog=127)
+                self.jog(x, y, mode=0, min_jog=minimum)
             elif command == COMMAND_JOG_SWITCH:
+                minimum = self.device.opt_jog_minimum
                 x, y = values
-                self.jog(x, y, mode=1, min_jog=127)
+                self.jog(x, y, mode=1, min_jog=minimum)
+            elif command == COMMAND_JOG_FINISH:
+                minimum = self.device.opt_jog_minimum
+                x, y = values
+                self.jog(x, y, mode=2, min_jog=minimum)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
