@@ -63,7 +63,7 @@ Maker Forum MeerK40t category: https://forum.makerforums.info/t/about-the-meerk4
 
 ## Youtube
 * David Olsen's channel: https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ
-* Milan Karakas' chanenl https://www.youtube.com/channel/UCXhlGsmGJZ3m5GgTE8xuc_Q
+* Milan Karakas' channel https://www.youtube.com/channel/UCXhlGsmGJZ3m5GgTE8xuc_Q
 
 ## IRC
 * There is an IRC channel #MeerK40t on irc.freenode.net irc://irc.freenode.net:6666
