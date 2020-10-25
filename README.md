@@ -48,7 +48,7 @@ https://github.com/meerk40t/meerk40t/wiki/Command-Line-Interface
 
 # Support
 
-If you have a bug, feature request, or other issue raise it here. These are likely to be resolved. Squeeky wheels get the grease.
+If you have a bug, feature request, or other issue raise it here. These are likely to be resolved. Squeaky wheels get the grease.
 https://github.com/meerk40t/meerk40t/issues
 
 ## Wiki
@@ -75,8 +75,10 @@ Open source projects live and die with their support. There are a lots of ways t
 * Code
 * Research ( https://github.com/meerk40t/meerk40t/wiki/Needed_Research )
 * Design ( Good design instincts, smooth out the rough edges)
+* Compile/Testers
 * Provide feedback, criticism is preferable to praise but both are welcome.
 * Edit the Wiki
 * Make helpful support content
-* Provide Translations in other langauges.
+* Make guides ("How to setup cameras?", etc)
+* Provide Translations in other languages.
 * Bounce ideas around
