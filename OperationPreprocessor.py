@@ -14,6 +14,7 @@ class OperationPreprocessor:
 
     def process(self, operations):
         self.operations = operations
+        self.conditional_jobadd_strip_text()
         if self.device.rotary:
             self.conditional_jobadd_scale_rotary()
         self.conditional_jobadd_actualize_image()
@@ -26,6 +27,45 @@ class OperationPreprocessor:
         self.commands = []
         for cmd in commands:
             cmd()
+
+    def conditional_jobadd_strip_text(self):
+        for op in self.operations:
+            try:
+                if op.operation in ("Cut", "Engrave"):
+                    for e in op:
+                        if not isinstance(e, SVGText):
+                            continue  # make raster not needed since its a single real raster.
+                        self.jobadd_strip_text()
+                        return True
+            except AttributeError:
+                pass
+        return False
+
+    def jobadd_strip_text(self):
+        def strip_text():
+            stripped = False
+            for k, op in enumerate(self.operations):
+                try:
+                    if op.operation in ("Cut", "Engrave"):
+                        changed = False
+                        for i, e in enumerate(op):
+                            if isinstance(e, SVGText):
+                                op[i] = None
+                                changed = True
+                        if changed:
+                            p = [q for q in op if q is not None]
+                            op.clear()
+                            op.extend(p)
+                            if len(op) == 0:
+                                self.operations[k] = None
+                                stripped = True
+                except AttributeError:
+                    pass
+            if stripped:
+                p = [q for q in self.operations if q is not None]
+                self.operations.clear()
+                self.operations.extend(p)
+        self.commands.append(strip_text)
 
     def conditional_jobadd_make_raster(self):
         for op in self.operations:
