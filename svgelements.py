@@ -296,6 +296,8 @@ class SVGLexicalParser:
                     coord = self._rcoord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.line(coord, relative=True)
                     if not self._more():
                         break
@@ -304,6 +306,8 @@ class SVGLexicalParser:
                     coord = self._coord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.line(coord, relative=False)
                     if not self._more():
                         break
@@ -312,6 +316,8 @@ class SVGLexicalParser:
                     coord = self._rcoord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.smooth_quad(coord, relative=True)
                     if not self._more():
                         break
@@ -320,6 +326,8 @@ class SVGLexicalParser:
                     coord = self._coord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.smooth_quad(coord, relative=False)
                     if not self._more():
                         break
@@ -350,10 +358,16 @@ class SVGLexicalParser:
                     coord1, coord2, coord3 = self._rcoord(), self._rcoord(), self._rcoord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     if coord3 is None:
                         coord3 = self.inline_close
+                        if coord3 is None:
+                            raise ValueError
                     self.parser.cubic(coord1, coord2, coord3, relative=True)
                     if not self._more():
                         break
@@ -362,10 +376,16 @@ class SVGLexicalParser:
                     coord1, coord2, coord3 = self._coord(), self._coord(), self._coord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     if coord3 is None:
                         coord3 = self.inline_close
+                        if coord3 is None:
+                            raise ValueError
                     self.parser.cubic(coord1, coord2, coord3, relative=False)
                     if not self._more():
                         break
@@ -374,8 +394,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._rcoord(), self._rcoord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.quad(coord1, coord2, relative=True)
                     if not self._more():
                         break
@@ -384,8 +408,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._coord(), self._coord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.quad(coord1, coord2, relative=False)
                     if not self._more():
                         break
@@ -394,8 +422,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._rcoord(), self._rcoord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.smooth_cubic(coord1, coord2, relative=True)
                     if not self._more():
                         break
@@ -404,8 +436,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._coord(), self._coord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.smooth_cubic(coord1, coord2, relative=False)
                     if not self._more():
                         break
@@ -417,6 +453,8 @@ class SVGLexicalParser:
                         raise ValueError
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.arc(rx, ry, rotation, arc, sweep, coord, relative=True)
             elif cmd == 'A':
                 while self._more():
@@ -424,6 +462,8 @@ class SVGLexicalParser:
                         self._number(), self._number(), self._number(), self._flag(), self._flag(), self._coord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.arc(rx, ry, rotation, arc, sweep, coord, relative=False)
         self.parser.end()
 

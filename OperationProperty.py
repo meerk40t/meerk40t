@@ -90,16 +90,7 @@ class OperationProperty(wx.Frame, Module):
     def initialize(self, channel=None):
         self.device.close('window', self.name)
         self.Show()
-        if self.operation.operation is not None:
-            op = self.operation.operation
-            if op == "Engrave":
-                self.combo_type.SetSelection(0)
-            elif op == "Cut":
-                self.combo_type.SetSelection(1)
-            elif op == "Raster":
-                self.combo_type.SetSelection(2)
-            elif op == "Image":
-                self.combo_type.SetSelection(3)
+
         self.set_widgets()
         self.Bind(wx.EVT_BUTTON, self.on_button_add, self.button_add_layer)
         self.Bind(wx.EVT_LISTBOX, self.on_list_layer_click, self.listbox_layer)
@@ -139,6 +130,16 @@ class OperationProperty(wx.Frame, Module):
         self.on_size()
 
     def set_widgets(self):
+        if self.operation.operation is not None:
+            op = self.operation.operation
+            if op == "Engrave":
+                self.combo_type.SetSelection(0)
+            elif op == "Cut":
+                self.combo_type.SetSelection(1)
+            elif op == "Raster":
+                self.combo_type.SetSelection(2)
+            elif op == "Image":
+                self.combo_type.SetSelection(3)
         self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
         if self.operation.speed is not None:
             self.text_speed.SetValue(str(self.operation.speed))

@@ -223,7 +223,7 @@ class ImageLoader:
                 dpi = image.image.info['dpi']
                 if isinstance(dpi, tuple):
                     image *= 'scale(%f,%f)' % (1000.0/dpi[0], 1000.0/dpi[1])
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, AttributeError):
             pass
         return [image], None, None, pathname, basename
 

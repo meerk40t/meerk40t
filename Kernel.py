@@ -255,6 +255,7 @@ class Interpreter(Module):
         self.device.setting(int, 'current_y', 0)
         self.device.setting(bool, "opt_rapid_between", True)
         self.device.setting(int, "opt_jog_mode", 0)
+        self.device.setting(int, "opt_jog_minimum", 127)
         self.schedule()
 
     def process_spool(self, *args):
@@ -336,10 +337,13 @@ class Interpreter(Module):
                 self.move(x, y)
             elif command == COMMAND_JOG:
                 x, y = values
-                self.jog(x, y, mode=0)
+                self.jog(x, y, mode=0, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_JOG_SWITCH:
                 x, y = values
-                self.jog(x, y, mode=1)
+                self.jog(x, y, mode=1, min_jog=self.device.opt_jog_minimum)
+            elif command == COMMAND_JOG_FINISH:
+                x, y = values
+                self.jog(x, y, mode=2, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
@@ -474,7 +478,7 @@ class Interpreter(Module):
     def laser_enable(self, *values):
         self.laser_enabled = True
 
-    def jog(self, x, y, mode=0):
+    def jog(self, x, y, mode=0, min_jog=127):
         self.device.current_x = x
         self.device.current_y = y
 
@@ -2265,7 +2269,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.8"
+        self.device_version = "0.6.9"
         self.device_root = self
 
         # Persistent storage if it exists.

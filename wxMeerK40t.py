@@ -618,6 +618,8 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("FPS", self.open_fps_dialog)
         device.control_instance_add("Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
         device.control_instance_add("Jog Transition Test", self.run_jog_transition_test)
+        device.control_instance_add("Jog Transition Switch Test", self.run_jog_transition_switch_test)
+        device.control_instance_add("Jog Transition Finish Test", self.run_jog_transition_finish_test)
         device.control_instance_add("Home and Dot", self.run_home_and_dot_test)
 
         def test_crash_in_thread():
@@ -1562,7 +1564,13 @@ class MeerK40t(wx.Frame, Module):
             self.widget_scene.rotary_unstretch()
         self._rotary_view = not self._rotary_view
 
-    def run_jog_transition_test(self):
+    def run_jog_transition_finish_test(self):
+        return self.run_jog_transition_test(COMMAND_JOG_FINISH)
+
+    def run_jog_transition_switch_test(self):
+        return self.run_jog_transition_test(COMMAND_JOG_SWITCH)
+
+    def run_jog_transition_test(self, command=COMMAND_JOG):
         """"
         The Jog Transition Test is intended to test the jogging
         """
@@ -1609,7 +1617,7 @@ class MeerK40t(wx.Frame, Module):
                         kx, ky = pos(k)
                         yield COMMAND_MOVE, 3000, 3000
                         yield COMMAND_MOVE, 3000+jx, 3000+jy
-                        yield COMMAND_JOG, 3000+jx+kx, 3000+jy+ky
+                        yield command, 3000+jx+kx, 3000+jy+ky
                 yield COMMAND_MOVE, 3000, 3000
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_WAIT_FINISH
@@ -1618,7 +1626,6 @@ class MeerK40t(wx.Frame, Module):
                 yield COMMAND_LASER_OFF
                 yield COMMAND_WAIT_FINISH
         self.device.spooler.job(jog_transition_test)
-
 
     def run_home_and_dot_test(self):
 
@@ -3092,7 +3099,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.8')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.9')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)

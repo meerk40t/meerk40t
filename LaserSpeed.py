@@ -353,6 +353,10 @@ class LaserSpeed:
 
         This is not fully mapped out but appeared more in line with non-rastering values.
 
+        25.4 cutoff between 1-2 for y-raster
+        60 cutoff between 2-3 for y-raster
+        127 cutoff between 3-5 for y-raster
+
         :param mm_per_second: Speed to find acceleration value for.
         :param raster: Whether this speed is for a rastering.
         :param raster_horizontal: Whether this speed is for horizontal rastering (top-to-bottom, y-axis speed)

@@ -40,9 +40,9 @@ class RotarySettings(wx.Frame, Module):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotary_scale_y, self.spin_rotary_scaley)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotary_scale_y, self.spin_rotary_scaley)
+        self.Bind(wx.EVT_TEXT, self.on_spin_rotary_scale_y, self.spin_rotary_scaley)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotary_scale_x, self.spin_rotary_scalex)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotary_scale_x, self.spin_rotary_scalex)
+        self.Bind(wx.EVT_TEXT, self.on_spin_rotary_scale_x, self.spin_rotary_scalex)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_rotation, self.spin_rotary_rotation)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_rotation, self.spin_rotary_rotation)
@@ -159,10 +159,12 @@ class RotarySettings(wx.Frame, Module):
         self.spin_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_spin_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.device.scale_y = self.spin_rotary_scaley.GetValue()
+        if self.device is not None:
+            self.device.scale_y = self.spin_rotary_scaley.GetValue()
 
     def on_spin_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.device.scale_x = self.spin_rotary_scalex.GetValue()
+        if self.device is not None:
+            self.device.scale_x = self.spin_rotary_scalex.GetValue()
 
     def on_check_rotary_loop(self, event):  # wxGlade: RotarySettings.<event_handler>
         print("Event handler 'on_check_rotary_loop' not implemented!")
