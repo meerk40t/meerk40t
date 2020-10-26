@@ -73,7 +73,7 @@ Maker Forum MeerK40t category: https://forum.makerforums.info/t/about-the-meerk4
 
 Open source projects live and die with their support. There are a lots of ways to help the project.
 * Code
-* Research ( https://github.com/meerk40t/meerk40t/wiki/Needed_Research )
+* Research ( https://github.com/meerk40t/meerk40t/wiki/Needed-Research )
 * Design ( Good design instincts, smooth out the rough edges)
 * Compile/Testers
 * Provide feedback, criticism is preferable to praise but both are welcome.
