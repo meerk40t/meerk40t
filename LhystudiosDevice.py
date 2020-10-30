@@ -1156,6 +1156,7 @@ class LhystudioController(Module, Pipe):
         self._queue += bytes_to_write
         self._queue_lock.release()
         self.start()
+        self.update_buffer()
         return self
 
     def realtime_write(self, bytes_to_write):
@@ -1171,6 +1172,7 @@ class LhystudioController(Module, Pipe):
         self._preempt = bytes_to_write + self._preempt
         self._preempt_lock.release()
         self.start()
+        self.update_buffer()
         return self
 
     def start(self):
@@ -1306,7 +1308,7 @@ class LhystudioController(Module, Pipe):
 
     def update_buffer(self):
         if self.device is not None:
-            self.device.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer))
+            self.device.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer) + len(self._queue))
 
     def update_packet(self, packet):
         if self.device is not None:
