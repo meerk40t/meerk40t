@@ -1,3 +1,5 @@
+from wx import FONTENCODING_SYSTEM
+
 from CutPlanner import CutPlanner
 from svgelements import *
 from LaserCommandConstants import *
@@ -27,6 +29,33 @@ class OperationPreprocessor:
         self.commands = []
         for cmd in commands:
             cmd()
+
+    def conditional_jobadd_vector_text(self):
+        for op in self.operations:
+            try:
+                if op.operation in ("Cut", "Engrave"):
+                    for e in op:
+                        if not isinstance(e, SVGText):
+                            continue  # make raster not needed since its a single real raster.
+                        self.jobadd_vector_text()
+                        return True
+            except AttributeError:
+                pass
+        return False
+
+    def jobadd_vector_text(self):
+        def vector_text():
+            for k, op in enumerate(self.operations):
+                try:
+                    if op.operation in ("Cut", "Engrave"):
+                        for i, e in enumerate(op):
+                            if isinstance(e, SVGText):
+                                # op[i] =
+                                OperationPreprocessor.text_to_path(e)
+                except AttributeError:
+                    pass
+
+        self.commands.append(vector_text)
 
     def conditional_jobadd_strip_text(self):
         for op in self.operations:
@@ -270,6 +299,10 @@ class OperationPreprocessor:
         matrix.post_scale(step_level, step_level)
         matrix.post_translate(tx, ty)
         image_element.image = pil_image
+
+    @staticmethod
+    def text_to_path(text_element):
+        print(text_element.font)
 
     @staticmethod
     def reify_matrix(self):

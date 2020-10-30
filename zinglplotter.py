@@ -20,6 +20,7 @@ class ZinglPlotter:
         :param obj: path or segment to plot.
         :return:
         """
+        print(path)
         if isinstance(path, Path):
             for seg in path:
                 for values in ZinglPlotter.plot_segment(seg):

@@ -368,6 +368,8 @@ class LhymicroInterpreter(Interpreter):
         self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
+        if dx == 108 and dy == 0:
+            print("CRASHY.")
         if abs(dx) >= min_jog or abs(dy) >= min_jog:
             if mode == 0:
                 self.jog_event(dx, dy)

@@ -4931,8 +4931,9 @@ class Path(Shape, MutableSequence):
         self._length = None
         index = len(self._segments) - 1
         self._segments.extend(iterable)
-        self._validate_connection(index)
-        self._validate_subpath(index)
+        if index != -1:
+            self._validate_connection(index)
+            self._validate_subpath(index)
 
     def direct_close(self):
         """Forces close operations to be zero length by introducing a direct
