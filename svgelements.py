@@ -296,6 +296,8 @@ class SVGLexicalParser:
                     coord = self._rcoord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.line(coord, relative=True)
                     if not self._more():
                         break
@@ -304,6 +306,8 @@ class SVGLexicalParser:
                     coord = self._coord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.line(coord, relative=False)
                     if not self._more():
                         break
@@ -312,6 +316,8 @@ class SVGLexicalParser:
                     coord = self._rcoord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.smooth_quad(coord, relative=True)
                     if not self._more():
                         break
@@ -320,6 +326,8 @@ class SVGLexicalParser:
                     coord = self._coord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.smooth_quad(coord, relative=False)
                     if not self._more():
                         break
@@ -350,10 +358,16 @@ class SVGLexicalParser:
                     coord1, coord2, coord3 = self._rcoord(), self._rcoord(), self._rcoord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     if coord3 is None:
                         coord3 = self.inline_close
+                        if coord3 is None:
+                            raise ValueError
                     self.parser.cubic(coord1, coord2, coord3, relative=True)
                     if not self._more():
                         break
@@ -362,10 +376,16 @@ class SVGLexicalParser:
                     coord1, coord2, coord3 = self._coord(), self._coord(), self._coord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     if coord3 is None:
                         coord3 = self.inline_close
+                        if coord3 is None:
+                            raise ValueError
                     self.parser.cubic(coord1, coord2, coord3, relative=False)
                     if not self._more():
                         break
@@ -374,8 +394,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._rcoord(), self._rcoord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.quad(coord1, coord2, relative=True)
                     if not self._more():
                         break
@@ -384,8 +408,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._coord(), self._coord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.quad(coord1, coord2, relative=False)
                     if not self._more():
                         break
@@ -394,8 +422,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._rcoord(), self._rcoord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.smooth_cubic(coord1, coord2, relative=True)
                     if not self._more():
                         break
@@ -404,8 +436,12 @@ class SVGLexicalParser:
                     coord1, coord2 = self._coord(), self._coord()
                     if coord1 is None:
                         coord1 = self.inline_close
+                        if coord1 is None:
+                            raise ValueError
                     if coord2 is None:
                         coord2 = self.inline_close
+                        if coord2 is None:
+                            raise ValueError
                     self.parser.smooth_cubic(coord1, coord2, relative=False)
                     if not self._more():
                         break
@@ -417,6 +453,8 @@ class SVGLexicalParser:
                         raise ValueError
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.arc(rx, ry, rotation, arc, sweep, coord, relative=True)
             elif cmd == 'A':
                 while self._more():
@@ -424,6 +462,8 @@ class SVGLexicalParser:
                         self._number(), self._number(), self._number(), self._flag(), self._flag(), self._coord()
                     if coord is None:
                         coord = self.inline_close
+                        if coord is None:
+                            raise ValueError
                     self.parser.arc(rx, ry, rotation, arc, sweep, coord, relative=False)
         self.parser.end()
 
@@ -2715,6 +2755,11 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
+        if SVG_ATTR_STROKE_WIDTH in self.values:
+            width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
+            t = self.transform
+            det = t.a * t.d - t.c * t.b
+            self.values[SVG_ATTR_STROKE_WIDTH] = width * sqrt(abs(det))
         return self
 
     def render(self, **kwargs):
@@ -4426,6 +4471,8 @@ class Path(Shape, MutableSequence):
 
     def _validate_subpath(self, index):
         """ensure the subpath containing this index is valid."""
+        if index < 0 or index + 1 >= len(self._segments):
+            return  # This connection doesn't exist.
         for j in range(index, len(self._segments)):
             close_search = self._segments[j]
             if isinstance(close_search, Move):
@@ -5251,8 +5298,8 @@ class Rect(Shape):
         Skewed and Rotated rectangles cannot be reified.
         """
         Transformable.reify(self)
-        scale_x = abs(self.transform.value_scale_x())
-        scale_y = abs(self.transform.value_scale_y())
+        scale_x = self.transform.value_scale_x()
+        scale_y = self.transform.value_scale_y()
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if self.transform.value_skew_x() == 0 and self.transform.value_skew_y() == 0 \
@@ -5432,8 +5479,8 @@ class _RoundShape(Shape):
         Skewed and Rotated roundshapes cannot be reified.
         """
         Transformable.reify(self)
-        scale_x = self.transform.value_scale_x()
-        scale_y = self.transform.value_scale_y()
+        scale_x = abs(self.transform.value_scale_x())
+        scale_y = abs(self.transform.value_scale_y())
         translate_x = self.transform.value_trans_x()
         translate_y = self.transform.value_trans_y()
         if self.transform.value_skew_x() == 0 and self.transform.value_skew_y() == 0 \
@@ -5591,14 +5638,6 @@ class _RoundShape(Shape):
         :return: point at t
         """
         return self.point_at_t(tau * position)
-
-    def _ramanujan_length(self):
-        a = self.implicit_rx
-        b = self.implicit_ry
-        if b > a:
-            a, b = b, a
-        h = (a - b) ** 2 / (a + b) ** 2
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
 
 
 class Ellipse(_RoundShape):
@@ -5935,6 +5974,17 @@ class Subpath:
         return Subpath(Path(self._path), self._start, self._end)
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            start = index.start
+            stop = index.stop
+            step = index.step
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = len(self)
+            if step is None:
+                step = 1
+            return self._path[self.index_to_path_index(start):self.index_to_path_index(stop):step]
         return self._path[self.index_to_path_index(index)]
 
     def __setitem__(self, index, value):
@@ -6813,13 +6863,14 @@ class SVG(Group):
         metadata elements are not processed.
         foreignObject elements are not processed.
 
-        use elements are not processed.
+        Color refers to the value of the current color from the default context. This could be set with some external
+        values that the parsing of the SVG would be unaware. This is the color for the 'currentColor' value.
         """
         root = context
         styles = {}
         stack = []
-        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: color,
-                  SVG_ATTR_STROKE: color}
+        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black",
+                  SVG_ATTR_STROKE: "none"}
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
         for event, elem in SVG.svg_structure_parse(source):
@@ -6977,5 +7028,6 @@ class SVG(Group):
                             styles[selector.strip()] = value
                 context, values = stack.pop()
             elif event == 'start-ns':
-                values[elem[0]] = elem[1]
+                if elem[0] != SVG_ATTR_DATA:
+                    values[elem[0]] = elem[1]
         return root
