@@ -15,7 +15,7 @@ _ = wx.GetTranslation
 # end wxGlade
 
 class Settings(wx.Frame, Module):
-    def __init__(self, parent, context, path, *args, **kwds):
+    def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Settings.__init__
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
@@ -59,11 +59,11 @@ class Settings(wx.Frame, Module):
             event.Veto()
         else:
             self.state = 5
-            self.context.close('window', self.name)
+            self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, channel=None):
-        self.context.close('window', self.name)
+        self.context.close(self.name)
         self.Show()
         context_root = self.context.get_context('/')
 

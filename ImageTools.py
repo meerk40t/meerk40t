@@ -86,12 +86,12 @@ class ImageTools(Modifier):
                     except AttributeError:
                         yield _('Element was not locked: %s') % str(element)
                 return
-                elif args[0] == 'threshold':
+            elif args[0] == 'threshold':
                 try:
                     threshold_min = float(args[1])
                     threshold_max = float(args[2])
                 except (ValueError, IndexError):
-                    yield "Threshold values improper."
+                    yield _('Threshold values improper.')
                     return
                 divide = (threshold_max - threshold_min) / 255.0
                 for element in elements.elems(emphasized=True):
@@ -220,13 +220,13 @@ class ImageTools(Modifier):
                         img = element.image
                         try:
                             left = int(
-                                Length(args[1]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                                Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701))
                             upper = int(
-                                Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701))
+                                Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701))
                             right = int(
-                                Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701))
+                                Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701))
                             lower = int(
-                                Length(args[4]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701))
+                                Length(args[4]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701))
                             element.image = img.crop((left, upper, right, lower))
                             element.image_width = right - left
                             element.image_height = lower - upper

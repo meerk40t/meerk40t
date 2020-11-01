@@ -888,7 +888,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.declare_directions()
         controller.write(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
-        self.device.signal('interpreter;mode', self.state)
+        self.context.signal('interpreter;mode', self.state)
 
     def h_switch(self):
         if self.is_prop(DIRECTION_FLAG_LEFT):
