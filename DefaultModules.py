@@ -149,12 +149,20 @@ class SVGLoader:
         context.setting(int, "bed_width", 320)
         context.setting(int, "bed_height", 220)
         elements = []
+        if 'svg_ppi' in kwargs:
+            ppi = float(kwargs['svg_ppi'])
+        else:
+            ppi = 96.0
+        if ppi == 0:
+            ppi = 96.0
         basename = os.path.basename(pathname)
         scale_factor = 1000.0 / 96.0
         svg = SVG.parse(source=pathname,
+                        reify=False,
                         width='%fmm' % (context.bed_width),
                         height='%fmm' % (context.bed_height),
-                        ppi=96.0,
+                        ppi=ppi,
+                        color='none',
                         transform='scale(%f)' % scale_factor)
         ops = None
         note = None
@@ -458,5 +466,9 @@ class DxfLoader:
                 elements.append(element)
             else:
                 elements.append(abs(Path(element)))
+                if len(path) != 0:
+                    if not isinstance(path[0], Move):
+                        path = Move(path.first_point) + path
+                elements.append(path)
 
         return elements, None, None, pathname, basename

@@ -35,7 +35,8 @@ DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
 DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
 DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
 DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
-
+DIRECTION_START_X = 16
+DIRECTION_START_Y = 32
 
 class LhystudiosDevice(Modifier):
     """
@@ -573,6 +574,53 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def cut_relative(self, x, y):
         self.goto_relative(x, y, True)
 
+    def jog(self, x, y, **kwargs):
+        if self.is_relative:
+            self.jog_relative(x, y, **kwargs)
+        else:
+            self.jog_absolute(x, y, **kwargs)
+
+    def jog_absolute(self, x, y, **kwargs):
+        self.jog_relative(x - self.context.current_x, y - self.context.current_y, **kwargs)
+
+    def jog_relative(self, dx, dy, mode=0, min_jog=127, direction=None):
+        self.laser_off()
+        dx = int(round(dx))
+        dy = int(round(dy))
+        if abs(dx) >= min_jog or abs(dy) >= min_jog:
+            if mode == 0:
+                self.jog_event(dx, dy)
+            elif mode == 1:
+                self.fly_switch_speed(dx, dy)
+            else:
+                self.ensure_rapid_mode()
+                self.move_relative(dx, dy)
+                self.ensure_program_mode(direction=direction)
+
+    def jog_event(self, dx=0, dy=0):
+        dx = int(round(dx))
+        dy = int(round(dy))
+        self.state = INTERPRETER_STATE_RAPID
+        self.laser = False
+        if self.is_prop(DIRECTION_START_X):
+            if not self.is_left and dx >= 0:
+                self.pipe.write(self.CODE_LEFT)
+            if not self.is_right and dx <= 0:
+                self.pipe.write(self.CODE_RIGHT)
+        if self.is_prop(DIRECTION_START_Y):
+            if not self.is_top and dy >= 0:
+                self.pipe.write(self.CODE_TOP)
+            if not self.is_bottom and dy <= 0:
+                self.pipe.write(self.CODE_BOTTOM)
+        self.pipe.write(b'N')
+        if dy != 0:
+            self.goto_y(dy)
+        if dx != 0:
+            self.goto_x(dx)
+        self.pipe.write(b'SE')
+        self.pipe.write(self.code_declare_directions())
+        self.state = INTERPRETER_STATE_PROGRAM
+
     def move(self, x, y):
         self.goto(x, y, False)
 
@@ -792,9 +840,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.state = INTERPRETER_STATE_FINISH
         self.context.signal('interpreter;mode', self.state)
 
-    def ensure_program_mode(self):
+    def ensure_program_mode(self, direction=None):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
+        controller = self.pipe
         self.ensure_finished_mode()
 
         speed_code = LaserSpeed(
@@ -811,12 +860,35 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        self.pipe(speed_code)
-        self.pipe(b'N')
+        controller.write(speed_code)
+        controller.write(b'N')
+        if direction is not None and direction is not 0:
+            if direction == 1:
+                self.unset_prop(DIRECTION_FLAG_X)
+                self.set_prop(DIRECTION_FLAG_Y)
+                self.set_prop(DIRECTION_FLAG_TOP)
+            if direction == 2:
+                self.set_prop(DIRECTION_FLAG_X)
+                self.unset_prop(DIRECTION_FLAG_Y)
+                self.unset_prop(DIRECTION_FLAG_LEFT)
+            if direction == 3:
+                self.unset_prop(DIRECTION_FLAG_X)
+                self.set_prop(DIRECTION_FLAG_Y)
+                self.unset_prop(DIRECTION_FLAG_TOP)
+            if direction == 4:
+                self.set_prop(DIRECTION_FLAG_X)
+                self.unset_prop(DIRECTION_FLAG_Y)
+                self.set_prop(DIRECTION_FLAG_LEFT)
+        if self.is_prop(DIRECTION_FLAG_X):
+            self.set_prop(DIRECTION_START_X)
+            self.unset_prop(DIRECTION_START_Y)
+        else:
+            self.unset_prop(DIRECTION_START_X)
+            self.set_prop(DIRECTION_START_Y)
         self.declare_directions()
-        self.pipe(b'S1E')
+        controller.write(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
-        self.context.signal('interpreter;mode', self.state)
+        self.device.signal('interpreter;mode', self.state)
 
     def h_switch(self):
         if self.is_prop(DIRECTION_FLAG_LEFT):
@@ -1110,6 +1182,7 @@ class LhystudioController(Module):
     def __init__(self, context, name, channel=None, *args, **kwargs):
         Module.__init__(self, context, name, channel)
         self.state = STATE_UNKNOWN
+        self.is_shutdown = False
 
         self._thread = None
         self._buffer = b''  # Threadsafe buffered commands to be sent to controller.
@@ -1128,6 +1201,7 @@ class LhystudioController(Module):
         self.refuse_counts = 0
         self.connection_errors = 0
         self.count = 0
+        self.pre_ok = False
 
         self.abort_waiting = False
         self.pipe_channel = context.channel("%s/events" % name)
@@ -1250,6 +1324,7 @@ class LhystudioController(Module):
         self._queue += bytes_to_write
         self._queue_lock.release()
         self.start()
+        self.update_buffer()
         return self
 
     def realtime_write(self, bytes_to_write):
@@ -1265,6 +1340,7 @@ class LhystudioController(Module):
         self._preempt = bytes_to_write + self._preempt
         self._preempt_lock.release()
         self.start()
+        self.update_buffer()
         return self
 
     def start(self):
@@ -1405,6 +1481,7 @@ class LhystudioController(Module):
         """
         self._main_lock.acquire(True)
         self.count = 0
+        self.pre_ok = False
         while self.state != STATE_END and self.state != STATE_TERMINATE:
             if self.state == STATE_INITIALIZE:
                 # If we are initialized. Change that to active since we're running.
@@ -1419,9 +1496,12 @@ class LhystudioController(Module):
                 # We try to process the queue.
                 queue_processed = self.process_queue()
                 self.refuse_counts = 0
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
             except ConnectionRefusedError:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
+                self.pre_ok = False
                 time.sleep(3)  # 3 second sleep on failed connection attempt.
                 if self.refuse_counts >= self.max_attempts:
                     # We were refused too many times, kill the thread.
@@ -1432,6 +1512,7 @@ class LhystudioController(Module):
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
                 self.connection_errors += 1
+                self.pre_ok = False
                 time.sleep(0.5)
                 self.close()
                 continue
@@ -1453,6 +1534,8 @@ class LhystudioController(Module):
         self._main_lock.release()
         self._thread = None
         self.update_state(STATE_END)
+        self.is_shutdown = False
+        self.pre_ok = False
 
     def process_queue(self):
         """
@@ -1526,11 +1609,15 @@ class LhystudioController(Module):
                 packet = packet[:-1]
             elif packet.endswith(b'\x18'):
                 self.state = STATE_TERMINATE
+                self.is_shutdown = True
                 packet = packet[:-1]
             if len(packet) != 0:
                 if packet.endswith(b'#'):
                     packet = packet[:-1]
-                    c = packet[-1]
+                    try:
+                        c = packet[-1]
+                    except IndexError:
+                        c = b'F' # Packet was simply #. We can do nothing.
                     packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
                 else:
                     packet += b'F' * (30 - len(packet))  # Padding. '\n'
@@ -1545,7 +1632,8 @@ class LhystudioController(Module):
 
         if len(packet) == 30:
             # We have a sendable packet.
-            self.wait_until_accepting_packets()
+            if not self.pre_ok:
+                self.wait_until_accepting_packets()
             self.send_packet(packet)
 
             # Packet is sent, trying to confirm.
@@ -1565,6 +1653,7 @@ class LhystudioController(Module):
                     continue
                 elif status == STATUS_OK:
                     # Packet was fine.
+                    self.pre_ok = True
                     break
                 elif status == STATUS_BUSY:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
@@ -1613,6 +1702,7 @@ class LhystudioController(Module):
             packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
         self.update_packet(packet)
+        self.pre_ok = False
 
     def update_status(self):
         if self.context.mock:
@@ -1635,7 +1725,10 @@ class LhystudioController(Module):
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
-            if status == STATUS_OK or status == STATUS_ERROR:
+            if status == STATUS_OK:
+                self.pre_ok = False
+                break
+            if status == STATUS_ERROR:
                 break
             time.sleep(0.05)
             if self.context is not None:
@@ -1647,7 +1740,13 @@ class LhystudioController(Module):
 
     def wait_finished(self):
         i = 0
+        original_state = self.state
+        if self.state != STATE_PAUSE:
+            self.pause()
+
         while True:
+            if self.state != STATE_WAIT:
+                self.update_state(STATE_WAIT)
             self.update_status()
             if self.context.mock:  # Mock controller
                 self._status = [255, STATUS_FINISH, 0, 0, 0, 1]
@@ -1659,13 +1758,13 @@ class LhystudioController(Module):
             if status & 0x02 == 0:
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
                 break
-            time.sleep(0.05)
             if self.context is not None:
                 self.context.signal('pipe;wait', status, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
                 return  # Wait abort was requested.
+        self.update_state(original_state)
 
 
 class EgvBlob:

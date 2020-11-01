@@ -6,7 +6,8 @@ from LaserCommandConstants import *
 
 class Planner(Modifier):
     """
-
+    Planner is a modifier that adds 'plan' commands to the kernel. These are text based versions of the job preview and
+    should be permitted to control the job creation process.
     """
 
     def __init__(self, context, name=None, channel=None, *args, **kwargs):

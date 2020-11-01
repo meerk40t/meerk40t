@@ -944,9 +944,12 @@ class MeerK40t(wx.Frame, Module, Job):
     def load(self, pathname):
         self.context.setting(bool, 'auto_note', True)
         self.context.setting(bool, 'uniform_svg', False)
+        self.context.setting(float, 'svg_ppi', 96.0)
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
-            results = self.context.load(pathname, channel=self.context.channel('load'))
+            results = self.context.load(pathname,
+                                        channel=self.context.channel('load'),
+                                        svg_ppi=self.context.svg_ppi)
             if results is not None:
                 elements, pathname, basename = results
                 self.save_recent(pathname)

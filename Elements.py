@@ -44,15 +44,18 @@ class Elemental(Modifier):
             try:
                 cols = int(args[0])
                 rows = int(args[1])
-                x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-                y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.device.bed_width * 39.3701)
+                y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.device.bed_height * 39.3701)
             except (ValueError, IndexError):
-                yield _("Syntax Error: grid <columns> <rows> <x_distance> <y_distance>")
+                yield "Syntax Error: grid <columns> <rows> <x_distance> <y_distance>"
                 return
             items = list(elements.elems(emphasized=True))
-            y_pos = elements._bounds[1]
+            if items is None or len(items) == 0 or elements._bounds is None:
+                yield 'No item selected.'
+                return
+            y_pos = 0
             for j in range(rows):
-                x_pos = elements._bounds[0]
+                x_pos = 0
                 for k in range(cols):
                     if j != 0 or k != 0:
                         add_elem = list(map(copy, items))

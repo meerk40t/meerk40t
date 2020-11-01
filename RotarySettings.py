@@ -159,10 +159,12 @@ class RotarySettings(wx.Frame, Module):
         self.spin_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_spin_rotary_scale_y(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.context.scale_y = self.spin_rotary_scaley.GetValue()
+        if self.context is not None:
+            self.context.scale_y = self.spin_rotary_scaley.GetValue()
 
     def on_spin_rotary_scale_x(self, event):  # wxGlade: RotarySettings.<event_handler>
-        self.context.scale_x = self.spin_rotary_scalex.GetValue()
+        if self.context is not None:
+            self.context.scale_x = self.spin_rotary_scalex.GetValue()
 
     def on_check_rotary_loop(self, event):  # wxGlade: RotarySettings.<event_handler>
         print("Event handler 'on_check_rotary_loop' not implemented!")
