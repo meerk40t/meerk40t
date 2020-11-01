@@ -316,6 +316,9 @@ class MeerK40t(wx.Frame, Module, Job):
         context.register("control/Stroke", self.open_stroke_dialog)
         context.register("control/FPS", self.open_fps_dialog)
         context.register("control/Speedcode-Gear-Force", self.open_speedcode_gear_dialog)
+        context.register("control/Jog Transition Test", self.run_jog_transition_test)
+        context.register("control/Jog Transition Switch Test", self.run_jog_transition_switch_test)
+        context.register("control/Jog Transition Finish Test", self.run_jog_transition_finish_test)
         context.register("control/Home and Dot", self.run_home_and_dot_test)
 
         def test_crash_in_thread():
@@ -326,6 +329,8 @@ class MeerK40t(wx.Frame, Module, Job):
 
         context.register("control/Crash Thread", test_crash_in_thread)
         context.register("control/Clear Laserpath", self.clear_laserpath)
+        context.register("command/rotaryview", self.toggle_rotary_view)
+        context.register("command/rotaryscale", self.apply_rotary_scale)
         self.SetSize((context.window_width, context.window_height))
         self.interval = 1.0 / float(context.fps)
         self.process()
@@ -1561,6 +1566,90 @@ class MeerK40t(wx.Frame, Module, Job):
             self.context.classify(p)
         dlg.Destroy()
 
+    def apply_rotary_scale(self):
+        kernel = self.device.device_root
+        sx = self.device.scale_x
+        sy = self.device.scale_y
+        p = self.device
+
+        mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, p.current_x, p.current_y))
+        for element in kernel.elements.elems():
+            try:
+                element *= mx
+                element.modified()
+            except AttributeError:
+                pass
+
+    def toggle_rotary_view(self):
+        if self._rotary_view:
+            self.widget_scene.rotary_stretch()
+        else:
+            self.widget_scene.rotary_unstretch()
+        self._rotary_view = not self._rotary_view
+
+    def run_jog_transition_finish_test(self):
+        return self.run_jog_transition_test(COMMAND_JOG_FINISH)
+
+    def run_jog_transition_switch_test(self):
+        return self.run_jog_transition_test(COMMAND_JOG_SWITCH)
+
+    def run_jog_transition_test(self, command=COMMAND_JOG):
+        """"
+        The Jog Transition Test is intended to test the jogging
+        """
+
+        def jog_transition_test():
+            yield COMMAND_SET_ABSOLUTE
+            yield COMMAND_MODE_RAPID
+            yield COMMAND_HOME
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_MOVE, 3000, 3000
+            yield COMMAND_WAIT_FINISH
+            yield COMMAND_LASER_ON
+            yield COMMAND_WAIT, 0.05
+            yield COMMAND_LASER_OFF
+            yield COMMAND_WAIT_FINISH
+
+            yield COMMAND_SET_SPEED, 10.0
+
+            def pos(i):
+                if i < 3:
+                    x = 200
+                elif i < 6:
+                    x = -200
+                else:
+                    x = 0
+                if i % 3 == 0:
+                    y = 200
+                elif i % 3 == 1:
+                    y = -200
+                else:
+                    y = 0
+                return x, y
+
+            for q in range(8):
+                top = q & 1
+                left = q & 2
+                x_val = q & 3
+                yield COMMAND_SET_DIRECTION, top, left, x_val, not x_val
+                yield COMMAND_MODE_PROGRAM
+                for j in range(9):
+                    jx, jy = pos(j)
+                    for k in range(9):
+                        kx, ky = pos(k)
+                        yield COMMAND_MOVE, 3000, 3000
+                        yield COMMAND_MOVE, 3000+jx, 3000+jy
+                        yield command, 3000+jx+kx, 3000+jy+ky
+                yield COMMAND_MOVE, 3000, 3000
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, 0.05
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
+        self.device.spooler.job(jog_transition_test)
+
     def run_home_and_dot_test(self):
 
         def home_dot_test():
@@ -1616,7 +1705,13 @@ class Node(list):
         self.root = root
         self.object = data_object
         if name is None:
-            self.name = str(data_object)
+            if self.name is None:
+                try:
+                    self.name = self.object.id
+                    if self.name is None:
+                        self.name = str(self.object)
+                except AttributeError:
+                    self.name = str(self.object)
         else:
             self.name = name
         self.type = node_type
@@ -1658,9 +1753,13 @@ class Node(list):
         return "Node(%d, %s, %s, %s)" % (self.type, str(self.object), str(self.parent), str(self.root))
 
     def update_name(self):
-        self.name = str(self.object)
-        if len(self.name) >= 27:
-            self.name = self.name[:28] + '...'
+        self.name = None
+        try:
+            self.name = self.object.id
+        except AttributeError:
+            pass
+        if self.name is None:
+            self.name = str(self.object)
         self.root.tree.SetItemText(self.item, self.name)
         try:
             stroke = self.object.values[SVG_ATTR_STROKE]
@@ -3059,7 +3158,10 @@ class wxMeerK40t(wx.App, Module):
         Update language to the requested language.
         """
         context = self.context
-        language_code, language_name, language_index = supported_languages[lang]
+        try:
+            language_code, language_name, language_index = supported_languages[lang]
+        except (IndexError, ValueError):
+            return
         context.language = lang
 
         if self.locale:

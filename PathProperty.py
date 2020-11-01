@@ -52,7 +52,11 @@ class PathProperty(wx.Frame, Module):
 
         self.__set_properties()
         self.__do_layout()
-
+        try:
+            if element.id is not None:
+                self.text_name.SetValue(str(element.id))
+        except AttributeError:
+            pass
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_name)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
@@ -183,7 +187,8 @@ class PathProperty(wx.Frame, Module):
 
     def on_text_name_change(self, event):  # wxGlade: ElementProperty.<event_handler>
         try:
-            self.path_element.name = self.text_name.GetValue()
+            self.path_element.id = self.text_name.GetValue()
+            self.path_element.values[SVG_ATTR_ID] = self.path_element.id
             self.context.signal('element_property_update', self.path_element)
         except AttributeError:
             pass

@@ -184,7 +184,7 @@ class CutCode(list):
             self[q].reverse()
         self[j:k] = self[j:k][::-1]
 
-    def generate(self):
+    def generate(self, rapid=True, jog=0):
         if self.operation in ("Cut", "Engrave"):
             yield COMMAND_MODE_RAPID
             yield COMMAND_SET_ABSOLUTE
@@ -209,9 +209,29 @@ class CutCode(list):
                 if isinstance(object_path, SVGImage):
                     box = object_path.bbox()
                     plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
-                    yield COMMAND_PLOT, plot
+                elif isinstance(object_path, SVGText):
+                    plot = Path()  # SVGText objects cannot be correctly cut/engraved.
                 else:
                     plot = abs(object_path)
+                if rapid:
+                    for subplot in plot.as_subpaths():
+                        try:
+                            p = Path(subplot)
+                            p[0].start = None
+                            first = p.first_point
+                            x = first[0]
+                            y = first[1]
+                            if jog == 0:
+                                yield COMMAND_JOG, x, y
+                            elif jog == 1:
+                                yield COMMAND_JOG_SWITCH, x, y
+                            else:
+                                yield COMMAND_JOG_FINISH, x, y
+                            yield COMMAND_PLOT, p
+                        except (IndexError, AttributeError):
+                            pass
+
+                else:
                     yield COMMAND_PLOT, plot
             yield COMMAND_MODE_RAPID
         elif self.operation in ("Raster", "Image"):

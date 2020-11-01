@@ -137,6 +137,11 @@ class Interpreter:
         self.power = 1000.0
         self.d_ratio = None  # None means to use speedcode default.
         self.acceleration = None  # None means to use speedcode default
+        context.setting(int, 'current_x', 0)
+        context.setting(int, 'current_y', 0)
+        context.setting(bool, "opt_rapid_between", True)
+        context.setting(int, "opt_jog_mode", 0)
+        context.setting(int, "opt_jog_minimum", 127)
 
     def process_spool(self, *args):
         """
@@ -187,7 +192,9 @@ class Interpreter:
             self.spooled_item = element
         else:
             try:
-                self.spooled_item = element.generate()
+                self.spooled_item = element.generate(
+                    rapid=self.context.opt_rapid_between,
+                    jog=self.context.opt_jog_mode)
             except AttributeError:
                 try:
                     self.spooled_item = element()
@@ -212,6 +219,15 @@ class Interpreter:
             elif command == COMMAND_MOVE:
                 x, y = values
                 self.move(x, y)
+            elif command == COMMAND_JOG:
+                x, y = values
+                self.jog(x, y, mode=0, min_jog=self.device.opt_jog_minimum)
+            elif command == COMMAND_JOG_SWITCH:
+                x, y = values
+                self.jog(x, y, mode=1, min_jog=self.device.opt_jog_minimum)
+            elif command == COMMAND_JOG_FINISH:
+                x, y = values
+                self.jog(x, y, mode=2, min_jog=self.device.opt_jog_minimum)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
@@ -345,6 +361,10 @@ class Interpreter:
 
     def laser_enable(self, *values):
         self.plot_planner.laser_enabled = True
+
+    def jog(self, x, y, mode=0, min_jog=127):
+        self.context.current_x = x
+        self.context.current_y = y
 
     def move(self, x, y):
         self.context.current_x = x
@@ -729,6 +749,8 @@ class BindAlias(Modifier):
         self.keymap['alt+e'] = 'engrave'
         self.keymap['alt+c'] = 'cut'
         self.keymap['delete'] = 'element delete'
+        self.keymap['control+f3'] = "rotaryview"
+        self.keymap['alt+f3'] = "rotaryscale"
         self.keymap['f4'] = "window open CameraInterface"
         self.keymap['f5'] = "refresh"
         self.keymap['f6'] = "window open JobSpooler"
