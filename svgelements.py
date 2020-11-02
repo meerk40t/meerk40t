@@ -4471,6 +4471,8 @@ class Path(Shape, MutableSequence):
 
     def _validate_subpath(self, index):
         """ensure the subpath containing this index is valid."""
+        if index < 0 or index + 1 >= len(self._segments):
+            return  # This connection doesn't exist.
         for j in range(index, len(self._segments)):
             close_search = self._segments[j]
             if isinstance(close_search, Move):

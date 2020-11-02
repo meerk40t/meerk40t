@@ -660,7 +660,7 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code, 'utf8')
         controller.write(speed_code)
         controller.write(b'N')
-        if direction is not None and direction is not 0:
+        if direction is not None and direction != 0:
             if direction == 1:
                 self.unset_prop(DIRECTION_FLAG_X)
                 self.set_prop(DIRECTION_FLAG_Y)
@@ -1156,6 +1156,7 @@ class LhystudioController(Module, Pipe):
         self._queue += bytes_to_write
         self._queue_lock.release()
         self.start()
+        self.update_buffer()
         return self
 
     def realtime_write(self, bytes_to_write):
@@ -1171,6 +1172,7 @@ class LhystudioController(Module, Pipe):
         self._preempt = bytes_to_write + self._preempt
         self._preempt_lock.release()
         self.start()
+        self.update_buffer()
         return self
 
     def start(self):
@@ -1306,7 +1308,7 @@ class LhystudioController(Module, Pipe):
 
     def update_buffer(self):
         if self.device is not None:
-            self.device.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer))
+            self.device.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer) + len(self._queue))
 
     def update_packet(self, packet):
         if self.device is not None:

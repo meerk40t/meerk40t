@@ -2,7 +2,7 @@ from copy import copy
 
 from LaserCommandConstants import *
 from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import SVGImage, SVGElement, Shape, Color, Path, Polygon, Move
+from svgelements import SVGImage, SVGElement, Shape, Color, Path, Polygon, Move, SVGText
 
 
 class LaserOperation(list):
@@ -309,6 +309,8 @@ class LaserOperation(list):
                 if isinstance(object_path, SVGImage):
                     box = object_path.bbox()
                     plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
+                elif isinstance(object_path, SVGText):
+                    plot = Path()  # SVGText objects cannot be correctly cut/engraved.
                 else:
                     plot = abs(object_path)
                 if rapid:

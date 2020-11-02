@@ -850,9 +850,12 @@ class Elemental(Module):
                 obj.wx_bitmap_image.UnGetNativePath(obj.wx_bitmap_image.NativePath)
             except AttributeError:
                 pass
-            del obj.wx_bitmap_image
+            try:
+                del obj.wx_bitmap_image
+                del obj.icon
+            except AttributeError:
+                pass
             obj.wx_bitmap_image = None
-            del obj.icon
             obj.icon = None
             obj.bounds = None
             self._bounds = None
@@ -2269,7 +2272,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.9"
+        self.device_version = "0.6.10"
         self.device_root = self
 
         # Persistent storage if it exists.
