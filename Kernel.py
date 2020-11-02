@@ -850,9 +850,12 @@ class Elemental(Module):
                 obj.wx_bitmap_image.UnGetNativePath(obj.wx_bitmap_image.NativePath)
             except AttributeError:
                 pass
-            del obj.wx_bitmap_image
+            try:
+                del obj.wx_bitmap_image
+                del obj.icon
+            except AttributeError:
+                pass
             obj.wx_bitmap_image = None
-            del obj.icon
             obj.icon = None
             obj.bounds = None
             self._bounds = None
