@@ -177,7 +177,17 @@ class LaserRender:
                                                 element.x,
                                                 element.y)
                 element.font_size = 1  # No zero sized fonts.
-            font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+
+            font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+            f = []
+            if element.font_family is not None:
+                f.append(str(element.font_family))
+            if element.font_face is not None:
+                f.append(str(element.font_face))
+            if element.font_weight is not None:
+                f.append(str(element.font_weight))
+            f.append("%d" % element.font_size)
+            font.SetNativeFontInfoUserDesc(' '.join(f))
             element.wxfont = font
 
         gc.PushState()
@@ -194,7 +204,10 @@ class LaserRender:
         x = element.x
         y = element.y
         if text is not None:
+            w, h = element.width, element.height
             element.width, element.height = gc.GetTextExtent(element.text)
+            if w != element.width and h != element.height:
+                element.modified()
             if not hasattr(element, 'anchor') or element.anchor == 'start':
                 y -= element.height
             elif element.anchor == 'middle':
