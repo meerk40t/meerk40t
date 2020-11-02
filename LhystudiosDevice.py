@@ -660,7 +660,7 @@ class LhymicroInterpreter(Interpreter):
             speed_code = bytes(speed_code, 'utf8')
         controller.write(speed_code)
         controller.write(b'N')
-        if direction is not None and direction is not 0:
+        if direction is not None and direction != 0:
             if direction == 1:
                 self.unset_prop(DIRECTION_FLAG_X)
                 self.set_prop(DIRECTION_FLAG_Y)
