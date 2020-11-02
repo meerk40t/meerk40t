@@ -1805,6 +1805,7 @@ class Point:
             n = copy(self)
             n *= other
             return n
+        return NotImplemented
 
     __rmul__ = __mul__
 
@@ -1826,6 +1827,7 @@ class Point:
             n = copy(self)
             n += other
             return n
+        return NotImplemented
 
     __radd__ = __add__
 
@@ -1847,6 +1849,7 @@ class Point:
             n = copy(self)
             n -= other
             return n
+        return NotImplemented
 
     def __rsub__(self, other):
         if isinstance(other, (Point, tuple, list)):
@@ -4566,9 +4569,11 @@ class Path(Shape, MutableSequence):
         return self
 
     def __add__(self, other):
-        n = copy(self)
-        n += other
-        return n
+        if isinstance(other, (str, Path, Subpath, Shape, PathSegment)):
+            n = copy(self)
+            n += other
+            return n
+        return NotImplemented
 
     def __radd__(self, other):
         if isinstance(other, str):
@@ -5639,6 +5644,14 @@ class _RoundShape(Shape):
         """
         return self.point_at_t(tau * position)
 
+    def _ramanujan_length(self):
+        a = self.implicit_rx
+        b = self.implicit_ry
+        if b > a:
+            a, b = b, a
+        h = (a - b) ** 2 / (a + b) ** 2
+        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
+
 
 class Ellipse(_RoundShape):
     """
@@ -6008,9 +6021,11 @@ class Subpath:
         return self
 
     def __add__(self, other):
-        n = copy(self)
-        n += other
-        return n
+        if isinstance(other, (str, Path, PathSegment)):
+            n = copy(self)
+            n += other
+            return n
+        return NotImplemented
 
     def __radd__(self, other):
         if isinstance(other, str):
@@ -6037,6 +6052,7 @@ class Subpath:
             n = copy(self)
             n *= other
             return n
+        return NotImplemented
 
     __rmul__ = __mul__
 

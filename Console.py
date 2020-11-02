@@ -619,7 +619,8 @@ class Console(Module, Pipe):
                                     superelement.stroke = e.stroke
                                 if superelement.fill is None:
                                     superelement.fill = e.fill
-                                superelement += abs(e)
+                                if isinstance(e, Path):
+                                    superelement += abs(e)
                             elements.remove_elements(list(elements.elems(emphasized=True)))
                             elements.add_elem(superelement)
                             superelement.emphasize()
