@@ -3,6 +3,7 @@ import re
 import time
 from threading import Thread, Lock
 
+from CutCode import CutCode
 from LaserCommandConstants import *
 from svgelements import Color
 from zinglplotter import ZinglPlotter
@@ -221,13 +222,13 @@ class Interpreter:
                 self.move(x, y)
             elif command == COMMAND_JOG:
                 x, y = values
-                self.jog(x, y, mode=0, min_jog=self.device.opt_jog_minimum)
+                self.jog(x, y, mode=0, min_jog=self.context.opt_jog_minimum)
             elif command == COMMAND_JOG_SWITCH:
                 x, y = values
-                self.jog(x, y, mode=1, min_jog=self.device.opt_jog_minimum)
+                self.jog(x, y, mode=1, min_jog=self.context.opt_jog_minimum)
             elif command == COMMAND_JOG_FINISH:
                 x, y = values
-                self.jog(x, y, mode=2, min_jog=self.device.opt_jog_minimum)
+                self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
             elif command == COMMAND_HOME:
                 self.home()
             elif command == COMMAND_LOCK:
@@ -235,9 +236,7 @@ class Interpreter:
             elif command == COMMAND_UNLOCK:
                 self.unlock_rail()
             elif command == COMMAND_PLOT:
-                self.plot_path(values[0])
-            elif command == COMMAND_RASTER:
-                self.plot_raster(values[0])
+                self.plot_plot(values[0])
             elif command == COMMAND_SET_SPEED:
                 self.set_speed(values[0])
             elif command == COMMAND_SET_POWER:
@@ -478,6 +477,71 @@ class Interpreter:
             self.unset_prop(mask)
         else:
             self.set_prop(mask)
+
+    @staticmethod
+    def linify(plot):
+        """
+        Converts a generated series of single stepped plots into grouped line plots.
+
+        This is provided as a helper function for laser cutters with line based commands.
+
+        The core methodology here will resemble the linification phase of potrace, and other such algorithms.
+
+        :param plot: single stepped plots to be linified
+        :return:
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def group(plot):
+        """
+        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
+
+        This is provided as a helper function for laser cutters with straight ortho/diag commands.
+
+        :param plot: single stepped plots to be grouped into orth/diag sequences.
+        :return:
+        """
+        group_default = True
+        group_x = None
+        group_y = None
+        group_on = None
+        group_dx = 0
+        group_dy = 0
+        for event in plot:
+            if event is None:
+                if group_x is not None and group_y is not None:
+                    yield group_x, group_y, group_on
+                return
+            if len(event) == 3:
+                x, y, on = event
+            else:
+                x, y = event
+                on = group_default
+            if group_x is None:
+                group_x = x
+            if group_y is None:
+                group_y = y
+            if group_on is None:
+                group_on = on
+            if group_dx == 0 and group_dy == 0:
+                group_dx = x - group_x
+                group_dy = y - group_y
+            if group_dx != 0 or group_dy != 0:
+                if x == group_x + group_dx and y == group_y + group_dy and on == group_on:
+                    # This is an orthogonal/diagonal step along the same path.
+                    group_x = x
+                    group_y = y
+                    continue
+                yield group_x, group_y, group_on
+            group_dx = x - group_x
+            group_dy = y - group_y
+            if abs(group_dx) > 1 or abs(group_dy) > 1:
+                # The last step was not valid.
+                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy))
+            group_x = x
+            group_y = y
+            group_on = on
 
 
 class Spooler(Modifier):

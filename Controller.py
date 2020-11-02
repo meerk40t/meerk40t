@@ -42,7 +42,7 @@ class Controller(wx.Frame, Module):
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_pause = wx.BitmapButton(self, wx.ID_ANY, icons8_pause_50.GetBitmap())
-        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_stop_sign_50.GetBitmap())
+        self.button_stop = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
 
         self.__set_properties()
         self.__do_layout()

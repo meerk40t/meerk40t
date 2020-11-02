@@ -982,9 +982,12 @@ class Elemental(Modifier):
                 obj.cache.UnGetNativePath(obj.cache.NativePath)
             except AttributeError:
                 pass
-            del obj.cache
+            try:
+                del obj.cache
+                del obj.icon
+            except AttributeError:
+                pass
             obj.cache = None
-            del obj.icon
             obj.icon = None
             obj.bounds = None
             self._bounds = None

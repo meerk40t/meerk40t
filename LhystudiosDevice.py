@@ -3,8 +3,7 @@ import threading
 from CH341DriverBase import *
 from Kernel import *
 from LaserSpeed import LaserSpeed
-from svgelements import *
-from zinglplotter import ZinglPlotter
+from svgelements import Length
 
 """
 LhystudiosDevice is the backend for all Lhystudio Devices.
@@ -37,6 +36,7 @@ DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
 DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
 DIRECTION_START_X = 16
 DIRECTION_START_Y = 32
+
 
 class LhystudiosDevice(Modifier):
     """
@@ -494,37 +494,52 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 return
         Interpreter.execute(self)
 
-    def plot_path(self, path):
+    def plot_plot(self, plot):
         """
-        Set the self.plot object with the given path.
+        Plot is a generator of 'x, y, on' plot events that should be executed on the laser.
 
-        If path is an SVGImage the path is the outline.
+        As the Lhystudios board is a diagonal/orthogonal command board it's grouped.
 
-        :param path: svg object
+        :param plot:
         :return:
         """
-        if isinstance(path, Shape) and not isinstance(path, Path):
-            path = Path(path)
-        if isinstance(path, SVGImage):
-            bounds = path.bbox()
-            p = Path()
-            p.move([(bounds[0], bounds[1]),
-                    (bounds[0], bounds[3]),
-                    (bounds[2], bounds[1]),
-                    (bounds[2], bounds[3])])
-            self.plot_planner.add_path(p)
-            self.plot = self.plot_planner
-            return
-        if len(path) == 0:
-            return
-        # first_point = path.first_point
-        # self.move_absolute(first_point[0], first_point[1])
-        self.plot_planner.add_path(path)
-        self.plot = self.plot_planner
+        self.plot = Interpreter.group(plot)
 
-    def plot_raster(self, raster):
-        self.plot_planner.add_plot(raster.plot())
-        self.plot = self.plot_planner
+    # def plot_path(self, path):
+    #     """
+    #     DEPRECATED
+    #     Set the self.plot object with the given path.
+    #
+    #     If path is an SVGImage the path is the outline.
+    #
+    #     :param path: svg object
+    #     :return:
+    #     """
+    #     if isinstance(path, Shape) and not isinstance(path, Path):
+    #         path = Path(path)
+    #     if isinstance(path, SVGImage):
+    #         bounds = path.bbox()
+    #         p = Path()
+    #         p.move([(bounds[0], bounds[1]),
+    #                 (bounds[0], bounds[3]),
+    #                 (bounds[2], bounds[1]),
+    #                 (bounds[2], bounds[3])])
+    #         self.plot_planner.add_path(p)
+    #         self.plot = self.plot_planner
+    #         return
+    #     if len(path) == 0:
+    #         return
+    #     self.plot_planner.add_path(path)
+    #     self.plot = self.plot_planner
+    #
+    # def plot_raster(self, raster):
+    #     """
+    #     DEPRECATED
+    #     :param raster:
+    #     :return:
+    #     """
+    #     self.plot_planner.add_plot(raster.plot())
+    #     self.plot = self.plot_planner
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -807,8 +822,11 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.state = INTERPRETER_STATE_RAPID
         self.context.signal('interpreter;mode', self.state)
 
-    def fly_switch_speed(self):
-        switch = b'@NSE'
+    def fly_switch_speed(self, dx=0, dy=0):
+        dx = int(round(dx))
+        dy = int(round(dy))
+        self.pipe(b'@NSE')
+        self.state = INTERPRETER_STATE_RAPID
         speed_code = LaserSpeed(
             self.context.board,
             self.speed,
@@ -823,11 +841,21 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        switch += speed_code
-        switch += b'N'
-        switch += self.code_declare_directions()
-        switch += b'S1E'
-        self.pipe(switch)
+        self.pipe(speed_code)
+        if dx != 0:
+            self.goto_x(dx)
+        if dy != 0:
+            self.goto_y(dy)
+        self.pipe(b'N')
+        if self.is_prop(DIRECTION_FLAG_X):
+            self.set_prop(DIRECTION_START_X)
+            self.unset_prop(DIRECTION_START_Y)
+        else:
+            self.unset_prop(DIRECTION_START_X)
+            self.set_prop(DIRECTION_START_Y)
+        self.pipe(self.code_declare_directions())
+        self.pipe(b'S1E')
+        self.state = INTERPRETER_STATE_PROGRAM
 
     def ensure_finished_mode(self):
         if self.state == INTERPRETER_STATE_FINISH:
@@ -860,8 +888,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code)
         except TypeError:
             speed_code = bytes(speed_code, 'utf8')
-        controller.write(speed_code)
-        controller.write(b'N')
+        self.pipe(speed_code)
+        self.pipe(b'N')
         if direction is not None and direction is not 0:
             if direction == 1:
                 self.unset_prop(DIRECTION_FLAG_X)
@@ -886,7 +914,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.unset_prop(DIRECTION_START_X)
             self.set_prop(DIRECTION_START_Y)
         self.declare_directions()
-        controller.write(b'S1E')
+        self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
         self.context.signal('interpreter;mode', self.state)
 
@@ -1978,7 +2006,7 @@ class EgvRaster:
 
 class EgvPlotter:
     def __init__(self, x=0, y=0):
-        self.path = Path()
+        self.path = Path() # TODO: This should actually use CutCode.
         self.raster = EgvRaster()
         self.x = x
         self.y = y

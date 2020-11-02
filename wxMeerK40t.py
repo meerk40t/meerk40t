@@ -1704,7 +1704,8 @@ class Node(list):
         self.parent = parent
         self.root = root
         self.object = data_object
-        self.name = None
+        self.type = node_type
+        self.name = name
         if name is None:
             if self.name is None:
                 try:

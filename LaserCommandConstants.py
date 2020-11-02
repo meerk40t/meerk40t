@@ -5,10 +5,8 @@ NOTE: Never use the integer value, only the command name. The integer values are
 permitted to change.
 
 COMMAND_PLOT: takes a plot object to generate simple plot commands.
-COMMAND_RASTER: takes a raster plot object which generates simple raster commands.
 Simple plot values are x, y, on. Where x and y are the position in absolute values and on is whether the laser fires
-for that particular move command. The plot is expected to use svgelements code, passed to zinglplotter code.
-The raster is expected to used RasterBuilder which should be able to plot any raster in any fashion.
+for that particular move command.
 
 A COMMAND_RESUME would have to be issued in realtime since in a paused state the commands are not processed.
 """
@@ -30,7 +28,6 @@ COMMAND_MODE_PROGRAM = 51
 COMMAND_MODE_FINISHED = 52
 
 COMMAND_PLOT = 100  # Takes a plot object
-COMMAND_RASTER = 101  # Takes a raster plot object.
 
 COMMAND_SET_SPEED = 200  # sets the speed for the device
 COMMAND_SET_POWER = 201  # sets the power. Out of 1000. Unknown power method.

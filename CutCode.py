@@ -185,173 +185,48 @@ class CutCode(list):
         self[j:k] = self[j:k][::-1]
 
     def generate(self, rapid=True, jog=0):
-        if self.operation in ("Cut", "Engrave"):
+        for cutobject in self:
+            step = cutobject.settings.raster_step
+            direction = cutobject.settings.raster_direction
+            # top, left, x_dir, y_dir = cutobject.settings.initial_direction()
+            # yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
+            # TODO: Should only return to rapid if a primary setting changes.
             yield COMMAND_MODE_RAPID
             yield COMMAND_SET_ABSOLUTE
-            yield COMMAND_SET_SPEED, self.settings.speed
-            yield COMMAND_SET_STEP, 0
-            yield COMMAND_SET_POWER, self.settings.power
-            if self.settings.dratio is not None and self.settings.dratio_custom:
-                yield COMMAND_SET_D_RATIO, self.settings.dratio
+            yield COMMAND_SET_SPEED, cutobject.settings.speed
+            yield COMMAND_SET_STEP, step
+            yield COMMAND_SET_POWER, cutobject.settings.power
+
+            if cutobject.settings.dratio is not None and cutobject.settings.dratio_custom:
+                yield COMMAND_SET_D_RATIO, cutobject.settings.dratio
             else:
                 yield COMMAND_SET_D_RATIO, None
-            if self.settings.acceleration is not None and self.settings.acceleration_custom:
-                yield COMMAND_SET_ACCELERATION, self.settings.acceleration
+
+            if cutobject.settings.acceleration is not None and cutobject.settings.acceleration_custom:
+                yield COMMAND_SET_ACCELERATION, cutobject.settings.acceleration
             else:
                 yield COMMAND_SET_ACCELERATION, None
             try:
-                first = abs(self[0]).first_point
-                yield COMMAND_MOVE, first[0], first[1]
+                first = cutobject.start()
+                x = first[0]
+                y = first[1]
+                #TODO: Restore jogging for rapid between objects.
+
+                # if rapid:
+                #     if jog == 0:
+                #         yield COMMAND_JOG, x, y
+                #     elif jog == 1:
+                #         yield COMMAND_JOG_SWITCH, x, y
+                #     else:
+                #         yield COMMAND_JOG_FINISH, x, y
+                # else:
+                #     yield COMMAND_MODE_RAPID
+                yield COMMAND_MOVE, x, y
+                #     yield COMMAND_MODE_PROGRAM
             except (IndexError, AttributeError):
                 pass
-            yield COMMAND_MODE_PROGRAM
-            for object_path in self:
-                if isinstance(object_path, SVGImage):
-                    box = object_path.bbox()
-                    plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
-                elif isinstance(object_path, SVGText):
-                    plot = Path()  # SVGText objects cannot be correctly cut/engraved.
-                else:
-                    plot = abs(object_path)
-                if rapid:
-                    for subplot in plot.as_subpaths():
-                        try:
-                            p = Path(subplot)
-                            p[0].start = None
-                            first = p.first_point
-                            x = first[0]
-                            y = first[1]
-                            if jog == 0:
-                                yield COMMAND_JOG, x, y
-                            elif jog == 1:
-                                yield COMMAND_JOG_SWITCH, x, y
-                            else:
-                                yield COMMAND_JOG_FINISH, x, y
-                            yield COMMAND_PLOT, p
-                        except (IndexError, AttributeError):
-                            pass
-
-                else:
-                    yield COMMAND_PLOT, plot
-            yield COMMAND_MODE_RAPID
-        elif self.operation in ("Raster", "Image"):
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_SET_ABSOLUTE
-            yield COMMAND_SET_SPEED, self.settings.speed
-            direction = self.settings.raster_direction
-            yield COMMAND_SET_POWER, self.settings.power
-            yield COMMAND_SET_D_RATIO, None
-            if self.settings.acceleration is not None and self.settings.acceleration_custom:
-                yield COMMAND_SET_ACCELERATION, self.settings.acceleration
-            else:
-                yield COMMAND_SET_ACCELERATION, None
-            crosshatch = False
-            traverse = 0
-            if direction == 0:
-                traverse |= X_AXIS
-                traverse |= TOP
-            elif direction == 1:
-                traverse |= X_AXIS
-                traverse |= BOTTOM
-            elif direction == 2:
-                traverse |= Y_AXIS
-                traverse |= RIGHT
-            elif direction == 3:
-                traverse |= Y_AXIS
-                traverse |= LEFT
-            elif direction == 4:
-                traverse |= X_AXIS
-                traverse |= TOP
-                crosshatch = True
-            if self.settings.raster_swing:
-                traverse |= UNIDIRECTIONAL
-            for svgimage in self:
-                if not isinstance(svgimage, SVGImage):
-                    continue  # We do not raster anything that is not classed properly.
-                if self.operation == "Raster":
-                    step = self.settings.raster_step
-                else:
-                    try:
-                        step = int(svgimage.values['raster_step'])
-                    except (KeyError, ValueError):
-                        step = 1
-                yield COMMAND_SET_STEP, step
-                image = svgimage.image
-                width, height = image.size
-                mode = image.mode
-
-                if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
-                    # Any mode without a filter should get converted.
-                    image = image.convert("RGBA")
-                    mode = image.mode
-                if mode == "1":
-                    def image_filter(pixel):
-                        return (255 - pixel) / 255.0
-                elif mode == "P":
-                    p = image.getpalette()
-
-                    def image_filter(pixel):
-                        v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
-                        return 1.0 - v / 765.0
-                elif mode == "L":
-                    def image_filter(pixel):
-                        return (255 - pixel) / 255.0
-                elif mode == "RGB":
-                    def image_filter(pixel):
-                        return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
-                elif mode == "RGBA":
-                    def image_filter(pixel):
-                        return (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
-                else:
-                    raise ValueError  # this shouldn't happen.
-                m = svgimage.transform
-                data = image.load()
-
-                overscan = self.settings.overscan
-                if overscan is None:
-                    overscan = 20
-                else:
-                    try:
-                        overscan = int(overscan)
-                    except ValueError:
-                        overscan = 20
-                tx = m.value_trans_x()
-                ty = m.value_trans_y()
-                raster = RasterPlotter(data, width, height, traverse, 0, overscan,
-                                       tx,
-                                       ty,
-                                       step, image_filter)
-                yield COMMAND_MODE_RAPID
-                x, y = raster.initial_position_in_scene()
-                yield COMMAND_MOVE, x, y
-                top, left, x_dir, y_dir = raster.initial_direction()
-                yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
-                yield COMMAND_MODE_PROGRAM
-                yield COMMAND_RASTER, raster
-                if crosshatch:
-                    cross_traverse = traverse
-                    cross_traverse ^= Y_AXIS
-                    if traverse & Y_AXIS:
-                        cross_traverse ^= RIGHT
-                        if int(round(width)) & 1 and not traverse & UNIDIRECTIONAL:
-                            cross_traverse ^= BOTTOM
-                    else:
-                        cross_traverse ^= BOTTOM
-                        if int(round(height)) & 1 and not traverse & UNIDIRECTIONAL:
-                            cross_traverse ^= RIGHT
-
-                    cross_raster = RasterPlotter(data, width, height, cross_traverse, 0, overscan,
-                                                 tx,
-                                                 ty,
-                                                 step, image_filter)
-                    yield COMMAND_MODE_RAPID
-                    x, y = cross_raster.initial_position_in_scene()
-                    yield COMMAND_MOVE, x, y
-                    top, left, x_dir, y_dir = cross_raster.initial_direction()
-                    yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
-                    yield COMMAND_MODE_PROGRAM
-                    yield COMMAND_RASTER, cross_raster
-            yield COMMAND_MODE_RAPID
+            yield COMMAND_PLOT, cutobject.generator()
+        yield COMMAND_MODE_RAPID
 
 
 class CutObject:
