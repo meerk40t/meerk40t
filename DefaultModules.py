@@ -150,11 +150,13 @@ class SVGLoader:
             if isinstance(element, SVGText):
                 elements.append(element)
             elif isinstance(element, Path):
-                elements.append(element)
+                if len(element) != 0:
+                    elements.append(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
-                elements.append(e)
+                if len(e) != 0:
+                    elements.append(e)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
