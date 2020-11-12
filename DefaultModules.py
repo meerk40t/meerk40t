@@ -177,11 +177,13 @@ class SVGLoader:
             if isinstance(element, SVGText):
                 elements.append(element)
             elif isinstance(element, Path):
-                elements.append(element)
+                if len(element) != 0:
+                    elements.append(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
-                elements.append(e)
+                if len(e) != 0:
+                    elements.append(e)
             elif isinstance(element, SVGImage):
                 try:
                     element.load(os.path.dirname(pathname))
@@ -286,8 +288,12 @@ class DxfLoader:
             elif entity.dxftype() == 'ARC':
                 circ = Circle(center=entity.dxf.center,
                               r=entity.dxf.radius)
-                element = Path(circ.arc_angle(Angle.degrees(entity.dxf.start_angle),
-                                              Angle.degrees(entity.dxf.end_angle)))
+                start_angle = Angle.degrees(entity.dxf.start_angle)
+                end_angle = Angle.degrees(entity.dxf.end_angle)
+                if end_angle < start_angle:
+                    end_angle += Angle.turns(1)
+                element = Path(circ.arc_angle(start_angle,
+                                              end_angle))
             elif entity.dxftype() == 'ELLIPSE':
 
                 # TODO: needs more math, axis is vector, ratio is to minor.
