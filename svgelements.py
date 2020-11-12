@@ -5545,7 +5545,7 @@ class _RoundShape(Shape):
                    self.implicit_center,
                    rx=self.implicit_rx, ry=self.implicit_ry, rotation=self.rotation, sweep=t1 - t0)
 
-    def arc_angle(self, a0, a1):
+    def arc_angle(self, a0, a1, ccw=None):
         """
         return the arc found between the given angles on the ellipse.
 
@@ -5553,11 +5553,13 @@ class _RoundShape(Shape):
         :param a1: end angle
         :return: arc
         """
+        if ccw is None:
+            ccw = a0 > a1
         return Arc(self.point_at_angle(a0),
                    self.point_at_angle(a1),
                    self.implicit_center,
                    rx=self.implicit_rx, ry=self.implicit_ry,
-                   rotation=self.rotation, ccw=a0 > a1)
+                   rotation=self.rotation, ccw=ccw)
 
     def point_at_angle(self, angle):
         """

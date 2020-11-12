@@ -261,8 +261,12 @@ class DxfLoader:
             elif entity.dxftype() == 'ARC':
                 circ = Circle(center=entity.dxf.center,
                               r=entity.dxf.radius)
-                element = Path(circ.arc_angle(Angle.degrees(entity.dxf.start_angle),
-                                              Angle.degrees(entity.dxf.end_angle)))
+                start_angle = Angle.degrees(entity.dxf.start_angle)
+                end_angle = Angle.degrees(entity.dxf.end_angle)
+                if end_angle < start_angle:
+                    end_angle += Angle.turns(1)
+                element = Path(circ.arc_angle(start_angle,
+                                              end_angle))
             elif entity.dxftype() == 'ELLIPSE':
 
                 # TODO: needs more math, axis is vector, ratio is to minor.
