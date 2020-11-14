@@ -2008,8 +2008,16 @@ class Kernel:
 
     def _console_parse(self, command, *args):
         _ = self.translation
-        active_context = self.active
+
         command = command.lower()
+        if '/' in command:
+            path = command.split('/')
+            p = '/'.join(path[:-1])
+            if len(p) == 0:
+                p = '/'
+            self.active = self.get_context(p)
+            command = path[-1]
+        active_context = self.active
         if command == 'help' or command == '?':
             yield 'loop <command>'
             yield 'end <commmand>'
@@ -2079,15 +2087,10 @@ class Kernel:
                 yield _('----------')
         elif command == 'context':
             if len(args) == 0:
-                for control_name in active_context.match('\d+/control'):
-                    yield control_name
-            else:
-                control_name = ' '.join(args)
-                if control_name in active_context.match('\d+/control'):
-                    active_context.execute(control_name)
-                    yield _("Executed '%s'") % control_name
-                else:
-                    yield _("Control '%s' not found.") % control_name
+                if active_context is not None:
+                    yield "Active Context: %s" % str(active_context)
+                for context_name in self.contexts:
+                    yield context_name
             return
         elif command == 'set':
             if len(args) == 0:
@@ -2322,24 +2325,32 @@ class Kernel:
             active_context.stop()
             return
         else:
+            if active_context is not None:
+                for command_name in self.match('%s/command/%s' % (active_context._path, command)):
+                    command = self.registered[command_name]
+                    try:
+                        for line in command(command_name, *args):
+                            yield line
+                    except TypeError:
+                        pass
+                    return  # Command matched context command.
+                for command_re in self.match('%s/command_re/.*' % active_context._path):
+                    cmd_re = command_re.split('/')[-1]
+                    match = re.compile(cmd_re)
+                    if match.match(command):
+                        command_funct = self.registered[command_re]
+                        for line in command_funct(command, *args):
+                            yield line
+                        return  # Command matched context command_re
             for command_re in self.match('command_re/.*'):
-                cmd_re = command_re[11:]
+                cmd_re = command_re.split('/')[-1]
                 match = re.compile(cmd_re)
                 if match.match(command):
                     command_funct = self.registered[command_re]
                     for line in command_funct(command, *args):
                         yield line
-                    return
-
-            for command_name in self.match('\d+/command/%s' % command):
-                command = self.registered[command_name]
-                try:
-                    for line in command(command_name, *args):
-                        yield line
-                except TypeError:
-                    pass
-                return
-            try:
+                    return  # Context matched global command_re.
+            try:  # Command matches global command.
                 for line in self.registered['command/%s' % command](command, *args):
                     yield line
             except KeyError:

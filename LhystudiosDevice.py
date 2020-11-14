@@ -94,16 +94,17 @@ class LhystudiosDevice(Modifier):
         context = self.context
         kernel = self.context._kernel
         _ = kernel.translation
+        path = context._path
 
         def plus_laser(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LASER_ON)
-        kernel.register('command/+laser', plus_laser)
+        kernel.register('%s/command/+laser' % path, plus_laser)
 
         def minus_laser(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LASER_ON)
-        kernel.register('command/-laser', minus_laser)
+        kernel.register('%s/command/-laser' % path, minus_laser)
 
         def direction(command, *args):
             spooler = kernel.active.spooler
@@ -125,10 +126,10 @@ class LhystudiosDevice(Modifier):
                 elif direction == 'down':
                     self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
                 kernel.queue_command('jog')
-        kernel.register('command/right', direction)
-        kernel.register('command/left', direction)
-        kernel.register('command/up', direction)
-        kernel.register('command/down', direction)
+        kernel.register('%s/command/right' % path, direction)
+        kernel.register('%s/command/left' % path, direction)
+        kernel.register('%s/command/up' % path, direction)
+        kernel.register('%s/command/down' % path, direction)
 
         def jog(command, *args):
             spooler = kernel.active.spooler
@@ -142,7 +143,7 @@ class LhystudiosDevice(Modifier):
                 self.dy -= idy
             else:
                 yield _('Busy Error')
-        kernel.register('command/jog', jog)
+        kernel.register('%s/command/jog' % path, jog)
 
         def move(command, *args):
             spooler = kernel.active.spooler
@@ -151,8 +152,8 @@ class LhystudiosDevice(Modifier):
                     yield _('Busy Error')
             else:
                 yield _('Syntax Error')
-        kernel.register('command/move', move)
-        kernel.register('command/move_absolute', move)
+        kernel.register('%s/command/move' % path, move)
+        kernel.register('%s/command/move_absolute' % path, move)
 
         def move_relative(command, *args):
             spooler = kernel.active.spooler
@@ -161,22 +162,22 @@ class LhystudiosDevice(Modifier):
                     yield _('Busy Error')
             else:
                 yield _('Syntax Error')
-        kernel.register('command/move_relative', move_relative)
+        kernel.register('%s/command/move_relative' % path, move_relative)
 
         def home(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_HOME)
-        kernel.register('command/home', home)
+        kernel.register('%s/command/home' % path, home)
 
         def unlock(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_UNLOCK)
-        kernel.register('command/unlock', unlock)
+        kernel.register('%s/command/unlock' % path, unlock)
 
         def lock(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LOCK)
-        kernel.register('command/lock', lock)
+        kernel.register('%s/command/lock' % path, lock)
 
         self.context.open_as('module/LhystudioController', 'pipe')
         self.context.activate('modifier/LhymicroInterpreter', self.context)
