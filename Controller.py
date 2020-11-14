@@ -389,7 +389,7 @@ class Controller(wx.Frame, Module):
             button.Enable(False)
         elif state == STATE_WAIT:
             def f(event):
-                self.context.execute("Wait Abort")
+                self.context.console("control Wait Abort\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#dddd00")
@@ -407,7 +407,7 @@ class Controller(wx.Frame, Module):
             button.Enable(True)
         elif state == STATE_ACTIVE:
             def f(event):
-                self.context.interpreter.pipe.pause()
+                self.context.console("pause\n")
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ff00")
@@ -416,7 +416,7 @@ class Controller(wx.Frame, Module):
             button.Enable(True)
         elif state == STATE_TERMINATE:
             def f(event):
-                self.context.interpreter.pipe.reset()
+                self.context.console('abort\n')
 
             self.Bind(wx.EVT_BUTTON, f, button)
             button.SetBackgroundColour("#00ffff")

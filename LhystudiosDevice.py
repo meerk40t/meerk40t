@@ -871,7 +871,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def ensure_program_mode(self, direction=None):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
-        controller = self.pipe
         self.ensure_finished_mode()
 
         speed_code = LaserSpeed(
@@ -1283,6 +1282,11 @@ class LhystudioController(Module):
             self.start()
             yield "Lhystudios Channel Resumed."
         self.context.register('command/resume', pipe_resume)
+
+        def pipe_abort(command, *args):
+            self.reset()
+            yield "Lhystudios Channel Aborted."
+        self.context.register('command/resume', pipe_abort)
 
         context.setting(int, 'packet_count', 0)
         context.setting(int, 'rejected_count', 0)

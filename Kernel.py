@@ -2329,7 +2329,7 @@ class Kernel:
                     command_funct = self.registered[command_re]
                     for line in command_funct(command, *args):
                         yield line
-                return
+                    return
 
             for command_name in self.match('\d+/command/%s' % command):
                 command = self.registered[command_name]
