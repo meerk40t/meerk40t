@@ -18,7 +18,7 @@ class CameraInterface(wx.Frame, Module, Job):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
-        Job.__init__(self, name="Camera")
+        Job.__init__(self, job_name="Camera")
         if len(args) > 0 and args[0] >= 1:
             self.settings_value = args[0]
         else:

@@ -1341,7 +1341,7 @@ class Kernel:
         self.channels = {}
 
         self.commands = []
-        self.console_job = Job(name="kernel.console.ticks", process=self._console_tick, interval=0.05)
+        self.console_job = Job(job_name="kernel.console.ticks", process=self._console_tick, interval=0.05)
         self._console_buffer = ''
         self.queue = []
         self._console_channel = self.channel('console')
@@ -1810,11 +1810,11 @@ class Kernel:
         self.state = STATE_END
 
     def schedule(self, job):
-        self.jobs[job.name] = job
+        self.jobs[job.job_name] = job
         return job
 
     def unschedule(self, job):
-        del self.jobs[job.name]
+        del self.jobs[job.job_name]
         return job
 
     def add_job(self, run, name=None, args=(), interval=1.0, times=None):
@@ -1828,7 +1828,7 @@ class Kernel:
         :return: Reference to the job added.
         """
 
-        job = Job(name=name, process=run, args=args, interval=interval, times=times)
+        job = Job(job_name=name, process=run, args=args, interval=interval, times=times)
         return self.schedule(job)
 
     def remove_job(self, job):
@@ -2357,8 +2357,8 @@ class Job:
     and times. This is usually extended directly by a module requiring that functionality.
     """
 
-    def __init__(self, process=None, args=(), interval=1.0, times=None, name=None):
-        self.name = name
+    def __init__(self, process=None, args=(), interval=1.0, times=None, job_name=None):
+        self.job_name = job_name
         self.state = STATE_INITIALIZE
 
         self.process = process
@@ -2369,8 +2369,8 @@ class Job:
         self._next_run = time.time() + self.interval
 
     def __str__(self):
-        if self.name is not None:
-            return self.name
+        if self.job_name is not None:
+            return self.job_name
         else:
             return self.process.__name__
 

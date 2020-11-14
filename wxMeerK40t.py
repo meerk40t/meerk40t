@@ -173,7 +173,7 @@ class MeerK40t(wx.Frame, Module, Job):
         # begin wxGlade: MeerK40t.__init__
         wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE)
         Module.__init__(self, context, path)
-        Job.__init__(self, name="refresh_scene", process=self.refresh_scene)
+        Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
         self.DragAcceptFiles(True)
 
         self._Buffer = None
@@ -695,6 +695,7 @@ class MeerK40t(wx.Frame, Module, Job):
             event.Veto()
         else:
             self.state = 5
+            self.context.close(self.name)
             try:
                 channel = self.context.open_channel('shutdown')
             except AttributeError:

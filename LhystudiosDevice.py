@@ -246,10 +246,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     to write to the usb.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
+        Modifier.__init__(self, context, job_name, channel)
         Interpreter.__init__(self, context=context)
-        Job.__init__(self, name="Lhystudios-spool", process=self.process_spool, interval=0.01)
+        Job.__init__(self, job_name="Lhystudios-spool", process=self.process_spool, interval=0.01)
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
         self.CODE_TOP = b'L'
@@ -890,7 +890,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code, 'utf8')
         self.pipe(speed_code)
         self.pipe(b'N')
-        if direction is not None and direction is not 0:
+        if direction is not None and direction != 0:
             if direction == 1:
                 self.unset_prop(DIRECTION_FLAG_X)
                 self.set_prop(DIRECTION_FLAG_Y)

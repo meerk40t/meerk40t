@@ -88,6 +88,7 @@ class JobPreview(wx.Frame, Module):
         self.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_click, self.list_operations)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick, self.list_operations)
         # end wxGlade
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.stage = 0
         self.plan_name = plan_name
 

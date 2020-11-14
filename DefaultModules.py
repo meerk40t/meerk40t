@@ -471,7 +471,7 @@ class DxfLoader:
             if isinstance(element, SVGText):
                 elements.append(element)
             else:
-                elements.append(abs(Path(element)))
+                path = abs(Path(element))
                 if len(path) != 0:
                     if not isinstance(path[0], Move):
                         path = Move(path.first_point) + path
