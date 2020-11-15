@@ -358,6 +358,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/rotate', rotate)
+        kernel.register('command-help/rotate', 'rotate <angle>')
 
         def scale(command, *args):
             if len(args) == 0:
@@ -414,6 +415,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/scale', scale)
+        kernel.register('command-help/scale', 'scale <scale> [<scale-y>]?')
 
         def translate(command, *args):
             if len(args) == 0:
@@ -451,6 +453,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/translate', translate)
+        kernel.register('command-help/translate', 'translate <tx> <ty>')
 
         def rotate_to(command, *args):
             if len(args) == 0:
@@ -503,6 +506,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/rotate_to', rotate_to)
+        kernel.register('command-help/rotate_to', 'rotate_to <angle>')
 
         def scale_to(command, *args):
             if len(args) == 0:
@@ -562,6 +566,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/scale_to', scale_to)
+        kernel.register('command-help/scale_to', 'scale_to <scale> [<scale-y>]?')
 
         def translate_to(command, *args):
             if len(args) == 0:
@@ -604,6 +609,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/translate_to', translate_to)
+        kernel.register('command-help/translate_to', 'translate_to <tx> <ty>')
 
         def resize(command, *args):
             if len(args) < 4:
@@ -632,6 +638,7 @@ class Elemental(Modifier):
                 return
 
         kernel.register('command/resize', resize)
+        kernel.register('command-help/resize', 'resize <x-pos> <y-pos> <width> <height>')
 
         def matrix(command, *args):
             if len(args) == 0:
@@ -672,6 +679,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/matrix', matrix)
+        kernel.register('command-help/matrix', 'matrix <sx> <kx> <sy> <ky> <tx> <ty>')
 
         def reset(command, *args):
             for element in elements.elems(emphasized=True):
@@ -691,6 +699,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/reset', reset)
+        kernel.register('command-help/reset', 'reset')
 
         def reify(command, *args):
             for element in elements.elems(emphasized=True):
@@ -710,6 +719,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/reify', reify)
+        kernel.register('command-help/reify', 'reify')
 
         def operation(command, *args):
             if len(args) == 0:
@@ -776,6 +786,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/operation', operation)
+        kernel.register('command-help/operation', 'operation <commands>: <#>, *, ~, !, delete, copy')
 
         def classify(command, *args):
             if not elements.has_emphasis():
@@ -785,6 +796,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/classify', classify)
+        kernel.register('command-help/classify', 'classify')
 
         def declassify(command, *args):
             if not elements.has_emphasis():
@@ -794,6 +806,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/declassify', declassify)
+        kernel.register('command-help/declassify', 'declassify')
 
         def note(command, *args):
             if len(args) == 0:
@@ -806,6 +819,7 @@ class Elemental(Modifier):
                 yield _('Note Set.')
 
         kernel.register('command/note', note)
+        kernel.register('command-help/note', 'note <note>')
 
         def cut(command, *args):
             if not elements.has_emphasis():
@@ -818,6 +832,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/cut', cut)
+        kernel.register('command-help/cut', 'cut')
 
         def engrave(command, *args):
             if not elements.has_emphasis():
@@ -830,6 +845,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/engrave', engrave)
+        kernel.register('command-help/engrave', 'engrave')
 
         def raster(command, *args):
             if not elements.has_emphasis():
@@ -842,6 +858,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/raster', raster)
+        kernel.register('command-help/raster', 'raster')
 
         def step(command, *args):
             if len(args) == 0:
@@ -884,6 +901,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/step', step)
+        kernel.register('command-help/step', 'step <step-size>')
 
         def trace_hull(command, *args):
             spooler = context.active.spooler
@@ -914,6 +932,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/trace_hull', trace_hull)
+        kernel.register('command-help/trace_hull', 'trace_hull')
 
         def trace_quick(command, *args):
             spooler = context.active.spooler
@@ -934,6 +953,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/trace_quick', trace_quick)
+        kernel.register('command-help/trace_quick', 'trace_quick')
 
     def add_element(self, element):
         context_root = self.context.get_context('/')
