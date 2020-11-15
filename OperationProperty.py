@@ -140,47 +140,47 @@ class OperationProperty(wx.Frame, Module):
             elif op == "Image":
                 self.combo_type.SetSelection(3)
         self.button_layer_color.SetBackgroundColour(wx.Colour(swizzlecolor(self.operation.color)))
-        if self.operation.speed is not None:
-            self.text_speed.SetValue(str(self.operation.speed))
-        if self.operation.power is not None:
-            self.text_power.SetValue(str(self.operation.power))
-        if self.operation.dratio is not None:
-            self.text_dratio.SetValue(str(self.operation.dratio))
-        if self.operation.dratio_custom is not None:
-            self.check_dratio_custom.SetValue(self.operation.dratio_custom)
-        if self.operation.acceleration is not None:
-            self.slider_accel.SetValue(self.operation.acceleration)
-        if self.operation.acceleration_custom is not None:
-            self.checkbox_custom_accel.SetValue(self.operation.acceleration_custom)
+        if self.operation.settings.speed is not None:
+            self.text_speed.SetValue(str(self.operation.settings.speed))
+        if self.operation.settings.power is not None:
+            self.text_power.SetValue(str(self.operation.settings.power))
+        if self.operation.settings.dratio is not None:
+            self.text_dratio.SetValue(str(self.operation.settings.dratio))
+        if self.operation.settings.dratio_custom is not None:
+            self.check_dratio_custom.SetValue(self.operation.settings.dratio_custom)
+        if self.operation.settings.acceleration is not None:
+            self.slider_accel.SetValue(self.operation.settings.acceleration)
+        if self.operation.settings.acceleration_custom is not None:
+            self.checkbox_custom_accel.SetValue(self.operation.settings.acceleration_custom)
             self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
-        if self.operation.raster_step is not None:
-            self.text_raster_step.SetValue(str(self.operation.raster_step))
-        if self.operation.overscan is not None:
-            self.text_overscan.SetValue(str(self.operation.overscan))
-        if self.operation.raster_direction is not None:
-            self.combo_raster_direction.SetSelection(self.operation.raster_direction)
-        if self.operation.raster_swing is not None:
-            self.radio_directional_raster.SetSelection(self.operation.raster_swing)
-        if self.operation.raster_preference_top is not None:
-            self.slider_top.SetValue(self.operation.raster_preference_top + 1)
-        if self.operation.raster_preference_left is not None:
-            self.slider_left.SetValue(self.operation.raster_preference_left + 1)
-        if self.operation.raster_preference_right is not None:
-            self.slider_right.SetValue(self.operation.raster_preference_right + 1)
-        if self.operation.raster_preference_bottom is not None:
-            self.slider_bottom.SetValue(self.operation.raster_preference_bottom + 1)
-        if self.operation.advanced is not None:
-            self.checkbox_advanced.SetValue(self.operation.advanced)
-        if self.operation.dot_length_custom is not None:
-            self.check_dot_length_custom.SetValue(self.operation.dot_length_custom)
-        if self.operation.dot_length is not None:
-            self.text_dot_length.SetValue(str(self.operation.dot_length))
-        if self.operation.group_pulses is not None:
-            self.check_group_pulse.SetValue(self.operation.group_pulses)
-        if self.operation.passes_custom is not None:
-            self.check_passes.SetValue(self.operation.passes_custom)
-        if self.operation.passes is not None:
-            self.text_passes.SetValue(str(self.operation.passes))
+        if self.operation.settings.raster_step is not None:
+            self.text_raster_step.SetValue(str(self.operation.settings.raster_step))
+        if self.operation.settings.overscan is not None:
+            self.text_overscan.SetValue(str(self.operation.settings.overscan))
+        if self.operation.settings.raster_direction is not None:
+            self.combo_raster_direction.SetSelection(self.operation.settings.raster_direction)
+        if self.operation.settings.raster_swing is not None:
+            self.radio_directional_raster.SetSelection(self.operation.settings.raster_swing)
+        if self.operation.settings.raster_preference_top is not None:
+            self.slider_top.SetValue(self.operation.settings.raster_preference_top + 1)
+        if self.operation.settings.raster_preference_left is not None:
+            self.slider_left.SetValue(self.operation.settings.raster_preference_left + 1)
+        if self.operation.settings.raster_preference_right is not None:
+            self.slider_right.SetValue(self.operation.settings.raster_preference_right + 1)
+        if self.operation.settings.raster_preference_bottom is not None:
+            self.slider_bottom.SetValue(self.operation.settings.raster_preference_bottom + 1)
+        if self.operation.settings.advanced is not None:
+            self.checkbox_advanced.SetValue(self.operation.settings.advanced)
+        if self.operation.settings.dot_length_custom is not None:
+            self.check_dot_length_custom.SetValue(self.operation.settings.dot_length_custom)
+        if self.operation.settings.dot_length is not None:
+            self.text_dot_length.SetValue(str(self.operation.settings.dot_length))
+        if self.operation.settings.group_pulses is not None:
+            self.check_group_pulse.SetValue(self.operation.settings.group_pulses)
+        if self.operation.settings.passes_custom is not None:
+            self.check_passes.SetValue(self.operation.settings.passes_custom)
+        if self.operation.settings.passes is not None:
+            self.text_passes.SetValue(str(self.operation.settings.passes))
         if self.operation.output is not None:
             self.checkbox_output.SetValue(self.operation.output)
         if self.operation.show is not None:
@@ -376,7 +376,7 @@ class OperationProperty(wx.Frame, Module):
         pos = 20
         steps = 20
         try:
-            steps /= self.operation.raster_step
+            steps /= self.operation.settings.raster_step
             steps = int(steps)
         except (ValueError, ZeroDivisionError):
             pass
@@ -493,7 +493,7 @@ class OperationProperty(wx.Frame, Module):
             self.operation.operation = "Raster"
             self.raster_panel.Show(True)
             self.text_raster_step.Enable(True)
-            self.text_raster_step.SetValue(str(self.operation.raster_step))
+            self.text_raster_step.SetValue(str(self.operation.settings.raster_step))
             self.check_dratio_custom.Enable(False)
             self.text_dratio.Enable(False)
             self.Layout()
@@ -517,21 +517,21 @@ class OperationProperty(wx.Frame, Module):
 
     def on_text_speed(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.speed = float(self.text_speed.GetValue())
+            self.operation.settings.speed = float(self.text_speed.GetValue())
         except ValueError:
             return
         self.context.signal('element_property_update', self.operation)
 
     def on_text_power(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.power = float(self.text_power.GetValue())
+            self.operation.settings.power = float(self.text_power.GetValue())
         except ValueError:
             return
         self.context.signal('element_property_update', self.operation)
 
     def on_text_raster_step(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.raster_step = int(self.text_raster_step.GetValue())
+            self.operation.settings.raster_step = int(self.text_raster_step.GetValue())
         except ValueError:
             return
         self.context.signal('element_property_update', self.operation)
@@ -546,38 +546,38 @@ class OperationProperty(wx.Frame, Module):
                 overscan = int(overscan)
             except ValueError:
                 return
-        self.operation.overscan = overscan
+        self.operation.settings.overscan = overscan
         self.context.signal('element_property_update', self.operation)
 
     def on_combo_raster_direction(self, event):  # wxGlade: Preferences.<event_handler>
-        self.operation.raster_direction = self.combo_raster_direction.GetSelection()
-        self.context.raster_direction = self.operation.raster_direction
+        self.operation.settings.raster_direction = self.combo_raster_direction.GetSelection()
+        self.context.raster_direction = self.operation.settings.raster_direction
         self.context.signal('element_property_update', self.operation)
 
     def on_radio_directional(self, event):  # wxGlade: RasterProperty.<event_handler>
-        self.operation.raster_swing = self.radio_directional_raster.GetSelection()
+        self.operation.settings.raster_swing = self.radio_directional_raster.GetSelection()
         self.context.signal('element_property_update', self.operation)
 
     def on_slider_top(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_top = self.slider_top.GetValue() - 1
+        self.operation.settings.raster_preference_top = self.slider_top.GetValue() - 1
         self.context.signal('element_property_update', self.operation)
 
     def on_slider_left(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_left = self.slider_left.GetValue() - 1
+        self.operation.settings.raster_preference_left = self.slider_left.GetValue() - 1
         self.context.signal('element_property_update', self.operation)
 
     def on_slider_right(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_right = self.slider_right.GetValue() - 1
+        self.operation.settings.raster_preference_right = self.slider_right.GetValue() - 1
         self.context.signal('element_property_update', self.operation)
 
     def on_slider_bottom(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
+        self.operation.settings.raster_preference_bottom = self.slider_bottom.GetValue() - 1
         self.context.signal('element_property_update', self.operation)
 
     def on_check_advanced(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_advanced.GetValue()
         self.advanced_panel.Show(on)
-        self.operation.advanced = bool(on)
+        self.operation.settings.advanced = bool(on)
         if on:
             self.SetSize((_advanced_width, 500))
         else:
@@ -586,12 +586,12 @@ class OperationProperty(wx.Frame, Module):
     def on_check_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
-        self.operation.dratio_custom = bool(on)
+        self.operation.settings.dratio_custom = bool(on)
         self.context.signal('element_property_update', self.operation)
 
     def on_text_dratio(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.dratio = float(self.text_dratio.GetValue())
+            self.operation.settings.dratio = float(self.text_dratio.GetValue())
         except ValueError:
             return
         self.context.signal('element_property_update', self.operation)
@@ -599,36 +599,36 @@ class OperationProperty(wx.Frame, Module):
     def on_check_acceleration(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
-        self.operation.acceleration_custom = bool(on)
+        self.operation.settings.acceleration_custom = bool(on)
         self.context.signal('element_property_update', self.operation)
 
     def on_slider_accel(self, event):
-        self.operation.acceleration = self.slider_accel.GetValue()
+        self.operation.settings.acceleration = self.slider_accel.GetValue()
         self.context.signal('element_property_update', self.operation)
 
     def on_check_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
-        self.operation.dot_length_custom = bool(on)
+        self.operation.settings.dot_length_custom = bool(on)
         self.context.signal('element_property_update', self.operation)
 
     def on_text_dot_length(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.dot_length = int(self.text_dot_length.GetValue())
+        self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
         self.context.signal('element_property_update', self.operation)
 
     def on_check_group_pulses(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.group_pulses = bool(self.check_group_pulse.GetValue())
+        self.operation.settings.group_pulses = bool(self.check_group_pulse.GetValue())
         self.context.signal('element_property_update', self.operation)
 
     def on_check_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
-        self.operation.passes_custom = bool(on)
+        self.operation.settings.passes_custom = bool(on)
         self.context.signal('element_property_update', self.operation)
 
     def on_text_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.passes = int(self.text_passes.GetValue())
+            self.operation.settings.passes = int(self.text_passes.GetValue())
         except ValueError:
             return
         self.context.signal('element_property_update', self.operation)

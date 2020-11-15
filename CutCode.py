@@ -222,7 +222,11 @@ class CutCode(list):
                     if accel != new_accel:
                         yield COMMAND_SET_ACCELERATION, new_accel
             settings = cutobject.settings
-
+            speed = new_speed
+            power = new_power
+            dratio = new_dratio
+            accel = new_accel
+            step = new_step
             yield COMMAND_MODE_PROGRAM
             try:
                 first = cutobject.start()
