@@ -1805,6 +1805,7 @@ class Point:
             n = copy(self)
             n *= other
             return n
+        return NotImplemented
 
     __rmul__ = __mul__
 
@@ -1826,6 +1827,7 @@ class Point:
             n = copy(self)
             n += other
             return n
+        return NotImplemented
 
     __radd__ = __add__
 
@@ -1847,6 +1849,7 @@ class Point:
             n = copy(self)
             n -= other
             return n
+        return NotImplemented
 
     def __rsub__(self, other):
         if isinstance(other, (Point, tuple, list)):
@@ -4566,9 +4569,11 @@ class Path(Shape, MutableSequence):
         return self
 
     def __add__(self, other):
-        n = copy(self)
-        n += other
-        return n
+        if isinstance(other, (str, Path, Subpath, Shape, PathSegment)):
+            n = copy(self)
+            n += other
+            return n
+        return NotImplemented
 
     def __radd__(self, other):
         if isinstance(other, str):
@@ -5540,7 +5545,7 @@ class _RoundShape(Shape):
                    self.implicit_center,
                    rx=self.implicit_rx, ry=self.implicit_ry, rotation=self.rotation, sweep=t1 - t0)
 
-    def arc_angle(self, a0, a1):
+    def arc_angle(self, a0, a1, ccw=None):
         """
         return the arc found between the given angles on the ellipse.
 
@@ -5548,11 +5553,13 @@ class _RoundShape(Shape):
         :param a1: end angle
         :return: arc
         """
+        if ccw is None:
+            ccw = a0 > a1
         return Arc(self.point_at_angle(a0),
                    self.point_at_angle(a1),
                    self.implicit_center,
                    rx=self.implicit_rx, ry=self.implicit_ry,
-                   rotation=self.rotation, ccw=a0 > a1)
+                   rotation=self.rotation, ccw=ccw)
 
     def point_at_angle(self, angle):
         """
@@ -5638,6 +5645,14 @@ class _RoundShape(Shape):
         :return: point at t
         """
         return self.point_at_t(tau * position)
+
+    def _ramanujan_length(self):
+        a = self.implicit_rx
+        b = self.implicit_ry
+        if b > a:
+            a, b = b, a
+        h = (a - b) ** 2 / (a + b) ** 2
+        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
 
 
 class Ellipse(_RoundShape):
@@ -6008,9 +6023,11 @@ class Subpath:
         return self
 
     def __add__(self, other):
-        n = copy(self)
-        n += other
-        return n
+        if isinstance(other, (str, Path, PathSegment)):
+            n = copy(self)
+            n += other
+            return n
+        return NotImplemented
 
     def __radd__(self, other):
         if isinstance(other, str):
@@ -6037,6 +6054,7 @@ class Subpath:
             n = copy(self)
             n *= other
             return n
+        return NotImplemented
 
     __rmul__ = __mul__
 

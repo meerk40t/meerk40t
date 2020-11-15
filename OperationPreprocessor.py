@@ -28,7 +28,7 @@ class OperationPreprocessor:
         self.commands = []
         for cmd in commands:
             cmd()
-
+    #
     # def conditional_jobadd_vector_text(self):
     #     for op in self.operations:
     #         try:
@@ -302,6 +302,8 @@ class OperationPreprocessor:
     @staticmethod
     def text_to_path(text_element):
         print(text_element.font)
+        nfi = text_element.font.GetNativeFontInfo()
+        print(nfi)
 
     @staticmethod
     def reify_matrix(self):
