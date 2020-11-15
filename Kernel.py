@@ -2272,7 +2272,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.11"
+        self.device_version = "0.6.12"
         self.device_root = self
 
         # Persistent storage if it exists.
