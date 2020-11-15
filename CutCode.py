@@ -185,27 +185,45 @@ class CutCode(list):
         self[j:k] = self[j:k][::-1]
 
     def generate(self, rapid=True, jog=0):
+        speed = None
+        power = None
+        dratio = None
+        accel = None
+        step = None
+        settings = None
         for cutobject in self:
-            step = cutobject.settings.raster_step
-            direction = cutobject.settings.raster_direction
-            # top, left, x_dir, y_dir = cutobject.settings.initial_direction()
-            # yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
-            # TODO: Should only return to rapid if a primary setting changes.
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_SET_ABSOLUTE
-            yield COMMAND_SET_SPEED, cutobject.settings.speed
-            yield COMMAND_SET_STEP, step
-            yield COMMAND_SET_POWER, cutobject.settings.power
+            if cutobject.settings is not settings:
+                new_step = cutobject.settings.raster_step
+                new_speed = cutobject.settings.speed
+                new_power = cutobject.settings.power
+                if cutobject.settings.dratio_custom:
+                    new_dratio = cutobject.settings.dratio
+                else:
+                    new_dratio = None
+                if cutobject.settings.acceleration_custom:
+                    new_accel = cutobject.settings.acceleration_custom
+                else:
+                    new_accel = None
+                # direction = cutobject.settings.raster_direction
+                # top, left, x_dir, y_dir = cutobject.settings.initial_direction()
+                # yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
+                # TODO: Should only return to rapid if a primary setting changes.
+                if speed != new_speed or step != new_step or power != new_power or dratio != new_dratio or accel != new_accel:
+                    yield COMMAND_MODE_RAPID
+                    yield COMMAND_SET_ABSOLUTE
+                    if speed != new_speed:
+                        yield COMMAND_SET_SPEED, new_speed
+                    if step != new_step:
+                        yield COMMAND_SET_STEP, new_step
+                    if power != new_power:
+                        yield COMMAND_SET_POWER, new_power
+                    if dratio != new_dratio:
+                        yield COMMAND_SET_D_RATIO, new_dratio
+                    if accel != new_accel:
+                        yield COMMAND_SET_ACCELERATION, new_accel
+            settings = cutobject.settings
 
-            if cutobject.settings.dratio is not None and cutobject.settings.dratio_custom:
-                yield COMMAND_SET_D_RATIO, cutobject.settings.dratio
-            else:
-                yield COMMAND_SET_D_RATIO, None
-
-            if cutobject.settings.acceleration is not None and cutobject.settings.acceleration_custom:
-                yield COMMAND_SET_ACCELERATION, cutobject.settings.acceleration
-            else:
-                yield COMMAND_SET_ACCELERATION, None
+            yield COMMAND_MODE_PROGRAM
             try:
                 first = cutobject.start()
                 x = first[0]

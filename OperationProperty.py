@@ -378,7 +378,7 @@ class OperationProperty(wx.Frame, Module):
         try:
             steps /= self.operation.raster_step
             steps = int(steps)
-        except ValueError:
+        except (ValueError, ZeroDivisionError):
             pass
         step = (h - 40) / steps
         right = True
