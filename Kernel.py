@@ -702,7 +702,6 @@ class BindAlias(Modifier):
                     except KeyError:
                         pass
             return
-
         self.context.register('command/bind', bind)
 
         def alias(command, *args):
@@ -724,8 +723,17 @@ class BindAlias(Modifier):
                     return
                 context.alias[args[0]] = ' '.join(args[1:])
             return
-
         self.context.register('command/alias', alias)
+
+        def alias_execute(command, *args):
+            context = self.context
+            if command in self.alias:
+                aliased_command = self.alias[command]
+                for cmd in aliased_command.split(';'):
+                    context.console("%s\n" % cmd)
+            else:
+                raise ValueError  # This is not an alias.
+        self.context.register('command_re/.*', alias_execute)
 
         def server_console(command, *args):
             _ = self.context._kernel.translation
@@ -2051,14 +2059,17 @@ class Kernel:
             yield "--- System Commands ---"
             yield 'loop \t- loop <command>'
             yield 'end  \t- end <commmand>'
-            yield 'timer<?> \t- timer<?> <duration> <iterations>'
-            yield 'device \t- device [<value>]'
+            yield 'timer.* \t- timer<?> <duration> <iterations>'
+            yield 'register \t- register'
+            yield 'context \t- context'
             yield 'set  \t- set [<key> <value>]'
             yield 'control  \t- control [<executive>]'
             yield 'module  \t- module [(open|close) <module_name>]'
             yield 'modifier  \t- modifier [(open|close) <module_name>]'
             yield 'schedule \t- schedule'
             yield 'channel  \t- channel [(open|close|save) <channel_name>]'
+            yield 'device \t- device [<value>]'
+            yield 'flush \t- flush'
             yield 'shutdown \t- shutdown'
             return
         # +- controls.
@@ -2098,7 +2109,6 @@ class Kernel:
             except ValueError:
                 yield _("Syntax Error: timer<name> <times> <interval> <command>")
             return
-
         # Kernel Element commands.
         elif command == 'register':
             if len(args) == 0:
@@ -2362,23 +2372,33 @@ class Kernel:
                         for line in command(command_name, *args):
                             yield line
                     except TypeError:
-                        pass
+                        pass  # Command match is non-generating.
                     return  # Command matched context command.
                 for command_re in self.match('%s/command_re/.*' % active_context._path):
                     cmd_re = command_re.split('/')[-1]
                     match = re.compile(cmd_re)
                     if match.match(command):
                         command_funct = self.registered[command_re]
-                        for line in command_funct(command, *args):
-                            yield line
+                        try:
+                            for line in command_funct(command, *args):
+                                yield line
+                        except TypeError:
+                            pass  # Command match is non-generating.
+                        except ValueError:
+                            continue  # command match rejected.
                         return  # Command matched context command_re
             for command_re in self.match('command_re/.*'):
                 cmd_re = command_re.split('/')[-1]
                 match = re.compile(cmd_re)
                 if match.match(command):
                     command_funct = self.registered[command_re]
-                    for line in command_funct(command, *args):
-                        yield line
+                    try:
+                        for line in command_funct(command, *args):
+                            yield line
+                    except TypeError:
+                        pass # Command match is non-generating.
+                    except ValueError:
+                        continue  # If the command_re raised a value error it rejected the match.
                     return  # Context matched global command_re.
             try:  # Command matches global command.
                 for line in self.registered['command/%s' % command](command, *args):
@@ -2386,7 +2406,7 @@ class Kernel:
             except KeyError:
                 yield _('Error. Command Unrecognized: %s') % command
             except TypeError:
-                pass  # Did not yield anything. Still success. But, not a generator.
+                pass  # Command match is non-generating.
 
 
 class Job:
