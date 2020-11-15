@@ -778,14 +778,14 @@ class BindAlias(Modifier):
     def boot_keymap(self):
         self.keymap.clear()
         prefs = self.context.derive('keymap')
-        prefs._kernel.load_persistent_string_dict(prefs._path, self.keymap)
+        prefs._kernel.load_persistent_string_dict(prefs._path, self.keymap, suffix=True)
         if not len(self.keymap):
             self.default_keymap()
 
     def boot_alias(self):
         self.alias.clear()
         prefs = self.context.derive('alias')
-        prefs._kernel.load_persistent_string_dict(prefs._path, self.alias)
+        prefs._kernel.load_persistent_string_dict(prefs._path, self.alias, suffix=True)
         if not len(self.alias):
             self.default_alias()
 
@@ -1544,11 +1544,14 @@ class Kernel:
             return
         self._config.DeleteEntry(key)
 
-    def load_persistent_string_dict(self, path, dictionary=None):
+    def load_persistent_string_dict(self, path, dictionary=None, suffix=False):
         if dictionary is None:
             dictionary = dict()
         for k in list(self.keylist(path)):
-            dictionary[k] = self.read_item_persistent(k)
+            item = self.read_item_persistent(k)
+            if suffix:
+                k = k.split('/')[-1]
+            dictionary[k] = item
         return dictionary
 
     def keylist(self, path):
@@ -2164,12 +2167,18 @@ class Kernel:
             return
         elif command == 'control':
             if len(args) == 0:
+                for control_name in active_context.match('control'):
+                    yield control_name
                 for control_name in active_context.match('\d+/control'):
                     yield control_name
             else:
                 control_name = ' '.join(args)
-                if control_name in active_context.match('\d+/control'):
+                controls = list(active_context.match('%s/control/.*' % active_context._path, True))
+                if active_context is not None and control_name in controls:
                     active_context.execute(control_name)
+                    yield _("Executed '%s'") % control_name
+                elif control_name in list(active_context.match('control/.*', True)):
+                    self.get_context('/').execute(control_name)
                     yield _("Executed '%s'") % control_name
                 else:
                     yield _("Control '%s' not found.") % control_name
