@@ -2019,17 +2019,47 @@ class Kernel:
             command = path[-1]
         active_context = self.active
         if command == 'help' or command == '?':
-            yield 'loop <command>'
-            yield 'end <commmand>'
-            yield '-------------------'
-            yield 'device [<value>]'
-            yield 'set [<key> <value>]'
-            yield 'control [<executive>]'
-            yield 'module [(open|close) <module_name>]'
-            yield 'modifier [(open|close) <module_name>]'
-            yield 'schedule'
-            yield 'channel [(open|close|save) <channel_name>]'
-            yield 'shutdown'
+            if active_context is not None:
+                yield "--- %s Commands ---" % str(active_context)
+                for command_name in self.match('%s/command/.*' % (active_context._path)):
+                    try:
+                        help = self.registered[command_name.replace('command', 'command-help')]
+                        yield '%s \t- %s' % (command_name.split('/')[-1], help)
+                    except KeyError:
+                        yield command_name.split('/')[-1]
+                for command_re in self.match('%s/command_re/.*' % active_context._path):
+                    cmd_re = command_re.split('/')[-1]
+                    try:
+                        help = self.registered[cmd_re.replace('command', 'command-help')]
+                        yield '%s \t- %s' % (cmd_re, help)
+                    except KeyError:
+                        yield cmd_re
+            yield "--- Global Commands ---"
+            for command_name in self.match('command/.*'):
+                try:
+                    help = self.registered[command_name.replace('command', 'command-help')]
+                    yield '%s \t- %s' % (command_name.split('/')[-1], help)
+                except KeyError:
+                    yield command_name.split('/')[-1]
+            for command_re in self.match('command_re/.*'):
+                cmd_re = command_re.split('/')[-1]
+                try:
+                    help = self.registered[cmd_re.replace('command', 'command-help')]
+                    yield '%s \t- %s' % (cmd_re, help)
+                except KeyError:
+                    yield cmd_re
+            yield "--- System Commands ---"
+            yield 'loop \t- loop <command>'
+            yield 'end  \t- end <commmand>'
+            yield 'timer<?> \t- timer<?> <duration> <iterations>'
+            yield 'device \t- device [<value>]'
+            yield 'set  \t- set [<key> <value>]'
+            yield 'control  \t- control [<executive>]'
+            yield 'module  \t- module [(open|close) <module_name>]'
+            yield 'modifier  \t- modifier [(open|close) <module_name>]'
+            yield 'schedule \t- schedule'
+            yield 'channel  \t- channel [(open|close|save) <channel_name>]'
+            yield 'shutdown \t- shutdown'
             return
         # +- controls.
         elif command == "loop":

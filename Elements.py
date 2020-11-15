@@ -66,6 +66,7 @@ class Elemental(Modifier):
                 y_pos += y_distance
 
         kernel.register('command/grid', grid)
+        kernel.register('command-help/grid', 'grid <columns> <rows> <x_distance> <y_distance>')
 
         def element(command, *args):
             if len(args) == 0:
@@ -152,6 +153,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/element', element)
+        kernel.register('command-help/element', 'element <command>*: <#>, merge, subpath, copy, delete, *, ~, !')
 
         def path(command, *args):
             path_d = ' '.join(args)
@@ -160,6 +162,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/path', path)
+        kernel.register('command-help/path', 'path <svg path>')
 
         def circle(command, *args):
             if len(args) == 3:
@@ -182,6 +185,7 @@ class Elemental(Modifier):
             self.add_element(element)
 
         kernel.register('command/circle', circle)
+        kernel.register('command-help/circle', 'circle <x> <y> <r> or circle <r>')
 
         def ellipse(command, *args):
             if len(args) < 4:
@@ -197,6 +201,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/ellipse', ellipse)
+        kernel.register('command-help/ellipse', 'ellipse <cx> <cy> <rx> <ry>')
 
         def rect(command, *args):
             if len(args) < 4:
@@ -212,6 +217,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/rect', rect)
+        kernel.register('command-help/rect', 'rect <x> <y> <width> <height>')
 
         def text(command, *args):
             text = ' '.join(args)
@@ -219,6 +225,7 @@ class Elemental(Modifier):
             self.add_element(element)
 
         kernel.register('command/text', text)
+        kernel.register('command-help/text', 'text <text>')
 
         def polygon(command, *args):
             element = Polygon(list(map(float, args)))
@@ -227,6 +234,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/polygon', polygon)
+        kernel.register('command-help/polygon', 'polygon (<point>, <point>)*')
 
         def polyline(command, *args):
             element = Polygon(list(map(float, args)))
@@ -235,6 +243,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/polyline', polyline)
+        kernel.register('command-help/polyline', 'polyline (<point>, <point>)*')
 
         def stroke(command, *args):
             if len(args) == 0:
@@ -267,6 +276,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/stroke', stroke)
+        kernel.register('command-help/stroke', 'stroke <svg color>')
 
         def fill(command, *args):
             if len(args) == 0:
@@ -299,6 +309,7 @@ class Elemental(Modifier):
             return
 
         kernel.register('command/fill', fill)
+        kernel.register('command-help/fill', 'fill <svg color>')
 
         def rotate(command, *args):
             if len(args) == 0:

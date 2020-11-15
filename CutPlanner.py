@@ -88,6 +88,7 @@ class Planner(Modifier):
                 return
 
         kernel.register('command/optimize', optimize)
+        kernel.register('command-help/optimize', 'optimize <type>')
 
         # REQUIRES CUTPLANNER
         def embroider(command, *args):
@@ -114,6 +115,7 @@ class Planner(Modifier):
                 element.altered()
 
         kernel.register('command/embroider', embroider)
+        kernel.register('command-help/optimize', 'optimize')
 
         def plan(command, *args):
             if len(args) == 0:
@@ -245,6 +247,7 @@ class Planner(Modifier):
                 yield _('Unrecognized command.')
 
         kernel.register('command_re/plan.*', plan)
+        kernel.register('command-help/plan', 'plan<?> <command>')
 
     def plan(self, **kwargs):
         for item in self._plan:
