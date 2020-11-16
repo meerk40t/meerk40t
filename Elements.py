@@ -1506,7 +1506,10 @@ class Elemental(Modifier):
             loader = kernel.registered[loader_name]
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    results = loader.load(self.context, pathname, **kwargs)
+                    try:
+                        results = loader.load(self.context, pathname, **kwargs)
+                    except FileNotFoundError:
+                        return None
                     if results is None:
                         continue
                     elements, ops, note, pathname, basename = results

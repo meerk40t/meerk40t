@@ -443,7 +443,7 @@ class DxfLoader:
                             (b[2][0], b[2][1]),
                             (b[3][0], b[3][1])
                         )
-                except AttributeError:
+                except (AttributeError, TypeError):
                     # Fallback for versions of EZDXF prior to 0.13
                     element.move(entity.control_points[0])
                     for i in range(1, entity.dxf.n_control_points):
