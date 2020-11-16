@@ -1325,7 +1325,10 @@ class Elemental(Module):
         for loader_name, loader in self.device.registered['load'].items():
             for description, extensions, mimetype in loader.load_types():
                 if pathname.lower().endswith(extensions):
-                    results = loader.load(self.device, pathname, **kwargs)
+                    try:
+                        results = loader.load(self.device, pathname, **kwargs)
+                    except FileNotFoundError:
+                        return None
                     if results is None:
                         continue
                     elements, ops, note, pathname, basename = results
