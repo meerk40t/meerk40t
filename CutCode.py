@@ -130,8 +130,12 @@ class LaserSettings:
         except (ValueError, TypeError, KeyError):
             pass
 
-        if args == 1:
+        if len(args) == 1:
             obj = args[0]
+            try:
+                obj = obj.settings
+            except AttributeError:
+                pass
             if isinstance(obj, LaserSettings):
                 self.speed = obj.speed
                 self.power = obj.power
