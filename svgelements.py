@@ -28,7 +28,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.2.7"
+SVGELEMENTS_VERSION = "1.2.8"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -6552,61 +6552,87 @@ class Viewbox:
 
     def __init__(self, *args, **kwargs):
         """
-        Viewbox(nodes)
+        Viewbox control the scaling between the drawing size view that is observing that drawing.
 
-        If the viewbox is not available or in the nodes data it doesn't need to be expressly defined.
+        The width and height are merely to interpret the meaning of percent values of lengths. Usually this is
+        the size of the physical space being occupied.
 
-        Viewbox control the scaling between the element size and viewbox.
-
-        The given width and height are merely to interpret the meaning of percent values of lengths. Usually this is
-        the size of the physical space being occupied. And the PPI is used to interpret the meaning of physical units
-        if the pixel_per_inch conversion isn't 96.
-
-        :param args: nodes, must contain node values.
-        :param kwargs: ppi, width, height, viewbox
+        :param args: either values, or viewbox attribute.
+        :param kwargs: viewbox, width, height, preserveAspectRatio
         """
+        self.viewbox = None
         self.viewbox_x = None
         self.viewbox_y = None
         self.viewbox_width = None
         self.viewbox_height = None
-        if len(args) == 1:
-            if isinstance(args[0], dict):
-                values = args[0]
-            elif isinstance(args[0], Viewbox):
-                viewbox = args[0]
-                self.viewbox_x = viewbox.viewbox_x
-                self.viewbox_y = viewbox.viewbox_y
-                self.viewbox_width = viewbox.viewbox_width
-                self.viewbox_height = viewbox.viewbox_height
-                self.viewbox = viewbox.viewbox
-                self.physical_width = viewbox.physical_width
-                self.physical_height = viewbox.physical_height
-                self.element_x = viewbox.element_x
-                self.element_y = viewbox.element_y
-                self.element_height = viewbox.element_height
-                self.element_width = viewbox.element_height
-                self.preserve_aspect_ratio = viewbox.preserve_aspect_ratio
-                return
-            else:
-                return
-        else:
-            return
-        if SVG_ATTR_VIEWBOX in kwargs:
-            self.viewbox = kwargs[SVG_ATTR_VIEWBOX]
-        elif SVG_ATTR_VIEWBOX in values:
-            self.viewbox = values[SVG_ATTR_VIEWBOX]
-        else:
-            self.viewbox = None
+        self.element_x = None
+        self.element_y = None
+        self.element_width = None
+        self.element_height = None
+        self.preserve_aspect_ratio = None
+        self.values = None
         if SVG_ATTR_WIDTH in kwargs:
             self.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
+            del kwargs[SVG_ATTR_WIDTH]
         else:
             self.physical_width = None
 
         if SVG_ATTR_HEIGHT in kwargs:
             self.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
+            del kwargs[SVG_ATTR_HEIGHT]
         else:
             self.physical_height = None
 
+        if len(args) >= 1:
+            s = args[0]
+            if isinstance(s, dict):
+                args = args[1:]
+                self.values = dict(s)
+                self.values.update(kwargs)
+            elif isinstance(s, Viewbox):
+                args = args[1:]
+                self.property_by_object(s)
+                self.property_by_args(*args)
+                return
+        if self.values is None:
+            self.values = dict(kwargs)
+        self.property_by_values(self.values)
+        if len(args) != 0:
+            self.property_by_args(*args)
+
+    def __str__(self):
+        return '%s %s %s %s -> %s %s %s %s' % (
+            Length.str(self.element_x),
+            Length.str(self.element_y),
+            Length.str(self.element_width),
+            Length.str(self.element_height),
+            Length.str(self.viewbox_x),
+            Length.str(self.viewbox_y),
+            Length.str(self.viewbox_width),
+            Length.str(self.viewbox_height),
+        )
+
+    def property_by_args(self, *args):
+        pass
+
+    def property_by_object(self, obj):
+        self.values = dict(obj.values)
+        self.viewbox = obj.viewbox
+        self.viewbox_x = obj.viewbox_x
+        self.viewbox_y = obj.viewbox_y
+        self.viewbox_width = obj.viewbox_width
+        self.viewbox_height = obj.viewbox_height
+        self.physical_width = obj.physical_width
+        self.physical_height = obj.physical_height
+        self.element_x = obj.element_x
+        self.element_y = obj.element_y
+        self.element_height = obj.element_height
+        self.element_width = obj.element_height
+        self.preserve_aspect_ratio = obj.preserve_aspect_ratio
+
+    def property_by_values(self, values):
+        if SVG_ATTR_VIEWBOX in values:
+            self.viewbox = values[SVG_ATTR_VIEWBOX]
         if SVG_ATTR_WIDTH in values:
             self.element_width = Length(values[SVG_ATTR_WIDTH]).value(relative_length=self.physical_width)
         else:
@@ -6629,28 +6655,17 @@ class Viewbox:
         self.set_viewbox(self.viewbox)
         if SVG_ATTR_PRESERVEASPECTRATIO in values:
             self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
-        else:
-            self.preserve_aspect_ratio = None
-
-    def __str__(self):
-        return '%s %s %s %s -> %s %s %s %s' % (
-            Length.str(self.element_x),
-            Length.str(self.element_y),
-            Length.str(self.element_width),
-            Length.str(self.element_height),
-            Length.str(self.viewbox_x),
-            Length.str(self.viewbox_y),
-            Length.str(self.viewbox_width),
-            Length.str(self.viewbox_height),
-        )
 
     def set_viewbox(self, viewbox):
         if viewbox is not None and isinstance(viewbox, str):
             dims = list(REGEX_FLOAT.findall(viewbox))
-            self.viewbox_x = float(dims[0])
-            self.viewbox_y = float(dims[1])
-            self.viewbox_width = float(dims[2])
-            self.viewbox_height = float(dims[3])
+            try:
+                self.viewbox_x = float(dims[0])
+                self.viewbox_y = float(dims[1])
+                self.viewbox_width = float(dims[2])
+                self.viewbox_height = float(dims[3])
+            except IndexError:
+                pass
 
     def render(self, width=None, height=None, relative_length=None, **kwargs):
         if width is None and relative_length is not None:
