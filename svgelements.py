@@ -28,6 +28,8 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
+SVGELEMENTS_VERSION = "1.2.7"
+
 MIN_DEPTH = 5
 ERROR = 1e-12
 
@@ -870,6 +872,8 @@ class Length(object):
 
     @staticmethod
     def str(s):
+        if s is None:
+            return "n/a"
         if isinstance(s, Length):
             if s.units == '':
                 s = s.amount
@@ -3672,9 +3676,30 @@ class CubicBezier(PathSegment):
         local_extrema = [self.point(t)[v] for t in local_extremizers]
         return min(local_extrema), max(local_extrema)
 
+    def _derivative(self, t):
+        """returns the nth derivative of the segment at t.
+        Note: Bezier curves can have points where their derivative vanishes.
+        If you are interested in the tangent direction, use the unit_tangent()
+        method instead."""
+        p = [self.start, self.control1, self.control2, self.end]
+        return 3 * (p[1] - p[0]) * (1 - t) ** 2 + 6 * (p[2] - p[1]) * (
+                    1 - t) * t + 3 * (
+                           p[3] - p[2]) * t ** 2
+
+    def _length_scipy(self, error=ERROR):
+        from scipy.integrate import quad
+        return quad(lambda tau: abs(self._derivative(tau)), 0., 1.,
+                    epsabs=error, limit=1000)[0]
+
+    def _length_default(self, error=ERROR, min_depth=MIN_DEPTH):
+        return self._line_length(0, 1, error, min_depth)
+
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         """Calculate the length of the path up to a certain position"""
-        return self._line_length(0, 1, error, min_depth)
+        try:
+            return self._length_scipy(error)
+        except ImportError:
+            return self._length_default(error, min_depth)
 
     def is_smooth_from(self, previous):
         """Checks if this segment would be a smooth segment following the previous"""
