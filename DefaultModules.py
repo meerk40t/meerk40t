@@ -156,7 +156,7 @@ class SVGLoader:
         if ppi == 0:
             ppi = 96.0
         basename = os.path.basename(pathname)
-        scale_factor = 1000.0 / 96.0
+        scale_factor = 1000.0 / ppi
         svg = SVG.parse(source=pathname,
                         reify=False,
                         width='%fmm' % (context.bed_width),
