@@ -407,29 +407,20 @@ class DxfLoader:
                 element.fill = Color('Black')
             elif entity.dxftype() == 'SPLINE':
                 element = Path()
-                # TODO: Additional research.
-                # if entity.dxf.degree == 3:
-                #     element.move(entity.knots[0])
-                #     print(entity.dxf.n_control_points)
-                #     for i in range(1, entity.dxf.n_knots):
-                #         print(entity.knots[i])
-                #         print(entity.control_points[i-1])
-                #         element.quad(
-                #             entity.control_points[i-1],
-                #             entity.knots[i]
-                #         )
-                # elif entity.dxf.degree == 4:
-                #     element.move(entity.knots[0])
-                #     for i in range(1, entity.dxf.n_knots):
-                #         element.quad(
-                #             entity.control_points[2 * i - 2],
-                #             entity.control_points[2 * i - 1],
-                #             entity.knots[i]
-                #         )
-                # else:
-                element.move(entity.control_points[0])
-                for i in range(1, entity.dxf.n_control_points):
-                    element.line(entity.control_points[i])
+                try:
+                    for b in entity.construction_tool().bezier_decomposition():
+                        if len(element) == 0:
+                            element.move((b[0][0],b[0][1]))
+                        element.cubic(
+                            (b[1][0],b[1][1]),
+                            (b[2][0],b[2][1]),
+                            (b[3][0],b[3][1])
+                        )
+                except (AttributeError, TypeError):
+                    # Fallback for versions of EZDXF prior to 0.13
+                    element.move(entity.control_points[0])
+                    for i in range(1, entity.dxf.n_control_points):
+                        element.line(entity.control_points[i])
                 if entity.closed:
                     element.closed()
             else:

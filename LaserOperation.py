@@ -300,7 +300,9 @@ class LaserOperation(list):
             else:
                 yield COMMAND_SET_ACCELERATION, None
             try:
-                first = abs(self[0]).first_point
+                first_path = abs(self[0])
+                first_path[0].start = None
+                first = first_path.first_point
                 yield COMMAND_MOVE, first[0], first[1]
             except (IndexError, AttributeError):
                 pass

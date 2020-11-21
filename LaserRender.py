@@ -44,7 +44,7 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
-    def render(self, elements, gc, draw_mode=None):
+    def render(self, elements, gc, draw_mode=None, zoomscale=1):
         """
         Render scene information.
 
@@ -67,7 +67,7 @@ class LaserRender:
 
         for element in elements:
             try:
-                element.draw(element, gc, draw_mode)
+                element.draw(element, gc, draw_mode, zoomscale=zoomscale)
             except AttributeError:
                 if isinstance(element, Path):
                     element.draw = self.draw_path
@@ -79,7 +79,7 @@ class LaserRender:
                     element.draw = self.draw_group
                 else:
                     continue
-            element.draw(element, gc, draw_mode)
+            element.draw(element, gc, draw_mode, zoomscale=zoomscale)
 
     def make_path(self, gc, path):
         p = gc.CreatePath()
@@ -108,6 +108,8 @@ class LaserRender:
         return p
 
     def set_pen(self, gc, stroke, width=1.0):
+        if width < 1.0:
+            width = 1.0
         c = stroke
         if c is not None and c != 'none':
             swizzle_color = swizzlecolor(c)
@@ -128,22 +130,22 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def draw_group(self, element, gc, draw_mode):
-        pass
-
-    def set_element_pen(self, gc, element):
+    def set_element_pen(self, gc, element, zoomscale=1.0):
         try:
             sw = Length(element.values['stroke-width']).value(ppi=96.0)
-            if sw < 2:
-                sw = 2
-            self.set_pen(gc, element.stroke, width=sw)
+            # if sw < 3.0:
+            #     sw = 3.0
         except KeyError:
-            self.set_pen(gc, element.stroke)
+            sw = 1.0
+        limit = zoomscale**.5
+        if sw < limit:
+            sw = limit
+        self.set_pen(gc, element.stroke, width=sw)
 
     def set_element_brush(self, gc, element):
         self.set_brush(gc, element.fill)
 
-    def draw_path(self, element, gc, draw_mode):
+    def draw_path(self, element, gc, draw_mode, zoomscale=1.0):
         """Default draw routine for the laser path element."""
         try:
             matrix = element.transform
@@ -154,7 +156,7 @@ class LaserRender:
             element.wx_bitmap_image = cache
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element)
+        self.set_element_pen(gc, element,  zoomscale=zoomscale)
         self.set_element_brush(gc, element)
         if draw_mode & DRAW_MODE_FILLS == 0 and element.fill is not None:
             gc.FillPath(element.wx_bitmap_image)
@@ -162,7 +164,7 @@ class LaserRender:
             gc.StrokePath(element.wx_bitmap_image)
         gc.PopState()
 
-    def draw_text(self, element, gc, draw_mode):
+    def draw_text(self, element, gc, draw_mode, zoomscale=1.0):
         try:
             matrix = element.transform
         except AttributeError:
@@ -192,7 +194,7 @@ class LaserRender:
 
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, element)
+        self.set_element_pen(gc, element, zoomscale=zoomscale)
         self.set_element_brush(gc, element)
 
         if element.fill is None or element.fill == 'none':
@@ -219,7 +221,7 @@ class LaserRender:
             gc.DrawText(text, x, y)
         gc.PopState()
 
-    def draw_image(self, node, gc, draw_mode):
+    def draw_image(self, node, gc, draw_mode, zoomscale=1.0):
         try:
             matrix = node.transform
         except AttributeError:
@@ -245,6 +247,9 @@ class LaserRender:
             cache = self.make_thumbnail(node.image)
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
+
+    def draw_group(self, element, gc, draw_mode, zoomscale=1.0):
+        pass
 
     def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
         if bounds is None:

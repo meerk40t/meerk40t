@@ -510,7 +510,10 @@ class ElementsWidget(Widget):
 
     def process_draw(self, gc):
         kernel = self.scene.device.device_root
-        self.renderer.render(kernel.elements.elems(), gc, self.renderer.device.draw_mode)
+        zoom_scale = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        if zoom_scale < 1:
+            zoom_scale = 1
+        self.renderer.render(kernel.elements.elems(), gc, self.renderer.device.draw_mode, zoomscale=zoom_scale)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type in ('leftclick'):
@@ -1037,6 +1040,10 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
+            line_width = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+            if line_width < 1:
+                line_width = 1
+            self.grid_line_pen.SetWidth(line_width)
             gc.SetPen(self.grid_line_pen)
             gc.StrokeLineSegments(starts, ends)
 
