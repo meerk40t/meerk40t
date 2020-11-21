@@ -976,7 +976,7 @@ class GridWidget(Widget):
         self.background = None
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
-        self.grid_line_pen.SetWidth(1)
+        # self.grid_line_pen.SetWidth(1)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
