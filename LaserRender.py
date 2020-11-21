@@ -133,9 +133,11 @@ class LaserRender:
     def set_element_pen(self, gc, element, zoomscale=1.0):
         try:
             sw = Length(element.values['stroke-width']).value(ppi=96.0)
-            self.set_pen(gc, element.stroke, width=sw * zoomscale)
         except KeyError:
-            self.set_pen(gc, element.stroke, width=zoomscale)
+            sw = 1.0
+        if sw * zoomscale < 1.0:
+            sw = zoomscale
+        self.set_pen(gc, element.stroke, width=sw)
 
     def set_element_brush(self, gc, element):
         self.set_brush(gc, element.fill)
