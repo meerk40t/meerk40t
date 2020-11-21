@@ -976,7 +976,7 @@ class GridWidget(Widget):
         self.background = None
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
-        # self.grid_line_pen.SetWidth(1)
+        self.grid_line_pen.SetWidth(1)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == 'hover':
@@ -1037,6 +1037,10 @@ class GridWidget(Widget):
             if self.grid is None:
                 self.calculate_grid()
             starts, ends = self.grid
+            line_width = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+            if line_width < 1:
+                line_width = 1
+            self.grid_line_pen.SetWidth(line_width)
             gc.SetPen(self.grid_line_pen)
             gc.StrokeLineSegments(starts, ends)
 
