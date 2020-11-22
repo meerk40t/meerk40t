@@ -28,6 +28,8 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
+SVGELEMENTS_VERSION = "1.2.10"
+
 MIN_DEPTH = 5
 ERROR = 1e-12
 
@@ -870,6 +872,8 @@ class Length(object):
 
     @staticmethod
     def str(s):
+        if s is None:
+            return "n/a"
         if isinstance(s, Length):
             if s.units == '':
                 s = s.amount
@@ -878,7 +882,10 @@ class Length(object):
                 if '.' in a:
                     a = a.rstrip('0').rstrip('.')
                 return '\'%s%s\'' % (a, s.units)
-        s = '%.12f' % (s)
+        try:
+            s = '%.12f' % (s)
+        except TypeError:
+            return str(s)
         if '.' in s:
             s = s.rstrip('0').rstrip('.')
         return s
@@ -1865,6 +1872,9 @@ class Point:
             return NotImplemented
         return Point(x, y)
 
+    def __complex__(self):
+        return self.x + self.y*1j
+
     def __abs__(self):
         return hypot(self.x, self.y)
 
@@ -2709,6 +2719,8 @@ class Transformable(SVGElement):
     """Any element that is transformable and has a transform property."""
 
     def __init__(self, *args, **kwargs):
+        self._length = None
+        self._lengths = None
         self.transform = None
         self.apply = None
         SVGElement.__init__(self, *args, **kwargs)
@@ -2758,6 +2770,8 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
+        self._lengths = None
+        self._length = None
         if SVG_ATTR_STROKE_WIDTH in self.values:
             width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
             t = self.transform
@@ -2908,6 +2922,65 @@ class Shape(GraphicObject, Transformable):
             self.transform *= other
         self.reify()
         return self
+
+    def _calc_lengths(self, error=ERROR, min_depth=MIN_DEPTH, segments=None):
+        """
+        Calculate the length values for the segments of the Shape.
+
+        :param error: error permitted for length calculations.
+        :param min_depth: minimum depth for the length calculation.
+        :param segments: optional segments to use.
+        :return:
+        """
+        if segments is None:
+            segments = self.segments(False)
+        if self._length is not None:
+            return
+        lengths = [each.length(error=error, min_depth=min_depth) for each in segments]
+        self._length = sum(lengths)
+        if self._length == 0:
+            self._lengths = lengths
+        else:
+            self._lengths = [each / self._length for each in lengths]
+
+    def point(self, position, error=ERROR):
+        """
+        Find a point between 0 and 1 within the Shape, going through the shape with regard to position.
+
+        :param position: value between 0 and 1 within the shape.
+        :param error: Length error permitted.
+        :return: Point at the given location.
+        """
+        segments = self.segments(False)
+        if len(segments) == 0:
+            return None
+        # Shortcuts
+        if position <= 0.0:
+            return segments[0].point(position)
+        if position >= 1.0:
+            return segments[-1].point(position)
+        if self._length is None:
+            self._calc_lengths(error=error, segments=segments)
+
+        if self._length == 0:
+            i = int(round(position * (len(segments) - 1)))
+            return segments[i].point(0.0)
+        # Find which segment the point we search for is located on:
+        segment_start = 0
+        segment_pos = 0
+        segment = segments[0]
+        for index, segment in enumerate(segments):
+            segment_end = segment_start + self._lengths[index]
+            if segment_end >= position:
+                # This is the segment! How far in on the segment is the point?
+                segment_pos = (position - segment_start) / (segment_end - segment_start)
+                break
+            segment_start = segment_end
+        return segment.point(segment_pos)
+
+    def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        self._calc_lengths(error, min_depth)
+        return self._length
 
     def segments(self, transformed=True):
         """
@@ -3672,9 +3745,29 @@ class CubicBezier(PathSegment):
         local_extrema = [self.point(t)[v] for t in local_extremizers]
         return min(local_extrema), max(local_extrema)
 
+    def _length_scipy(self, error=ERROR):
+        from scipy.integrate import quad
+
+        p0 = complex(*self.start)
+        p1 = complex(*self.control1)
+        p2 = complex(*self.control2)
+        p3 = complex(*self.end)
+
+        def _abs_derivative(t):
+            return abs(3 * (p1 - p0) * (1 - t) ** 2 + 6 * (p2 - p1) * (1 - t) * t + 3 \
+                       * (p3 - p2) * t ** 2)
+
+        return quad(_abs_derivative, 0., 1., epsabs=error, limit=1000)[0]
+
+    def _length_default(self, error=ERROR, min_depth=MIN_DEPTH):
+        return self._line_length(0, 1, error, min_depth)
+
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         """Calculate the length of the path up to a certain position"""
-        return self._line_length(0, 1, error, min_depth)
+        try:
+            return self._length_scipy(error)
+        except ImportError:
+            return self._length_default(error, min_depth)
 
     def is_smooth_from(self, previous):
         """Checks if this segment would be a smooth segment following the previous"""
@@ -4432,8 +4525,6 @@ class Path(Shape, MutableSequence):
 
     def __init__(self, *args, **kwargs):
         Shape.__init__(self, *args, **kwargs)
-        self._length = None
-        self._lengths = None
         self._segments = list()
         if len(args) != 1:
             self._segments.extend(args)
@@ -4859,47 +4950,6 @@ class Path(Shape, MutableSequence):
         segment.relative = relative
         self.append(segment)
         return self
-
-    def _calc_lengths(self, error=ERROR, min_depth=MIN_DEPTH):
-        if self._length is not None:
-            return
-        lengths = [each.length(error=error, min_depth=min_depth) for each in self._segments]
-        self._length = sum(lengths)
-        if self._length == 0:
-            self._lengths = lengths
-        else:
-            self._lengths = [each / self._length for each in lengths]
-
-    def point(self, position, error=ERROR):
-        if len(self._segments) == 0:
-            return None
-        # Shortcuts
-        if position <= 0.0:
-            return self._segments[0].point(position)
-        if position >= 1.0:
-            return self._segments[-1].point(position)
-
-        self._calc_lengths(error=error)
-
-        if self._length == 0:
-            i = int(round(position * (len(self._segments) - 1)))
-            return self._segments[i].point(0.0)
-        # Find which segment the point we search for is located on:
-        segment_start = 0
-        segment_pos = 0
-        segment = self._segments[0]
-        for index, segment in enumerate(self._segments):
-            segment_end = segment_start + self._lengths[index]
-            if segment_end >= position:
-                # This is the segment! How far in on the segment is the point?
-                segment_pos = (position - segment_start) / (segment_end - segment_start)
-                break
-            segment_start = segment_end
-        return segment.point(segment_pos)
-
-    def length(self, error=ERROR, min_depth=MIN_DEPTH):
-        self._calc_lengths(error, min_depth)
-        return self._length
 
     def append(self, value):
         if isinstance(value, str):
@@ -5636,7 +5686,7 @@ class _RoundShape(Shape):
         py = cy + a * cosT * sinTheta + b * sinT * cosTheta
         return Point(px, py)
 
-    def point(self, position):
+    def point(self, position, error=ERROR):
         """
         find the point that corresponds to given value [0,1].
         Where t=0 is the first point and t=1 is the final point.
@@ -6527,61 +6577,87 @@ class Viewbox:
 
     def __init__(self, *args, **kwargs):
         """
-        Viewbox(nodes)
+        Viewbox control the scaling between the drawing size view that is observing that drawing.
 
-        If the viewbox is not available or in the nodes data it doesn't need to be expressly defined.
+        The width and height are merely to interpret the meaning of percent values of lengths. Usually this is
+        the size of the physical space being occupied.
 
-        Viewbox control the scaling between the element size and viewbox.
-
-        The given width and height are merely to interpret the meaning of percent values of lengths. Usually this is
-        the size of the physical space being occupied. And the PPI is used to interpret the meaning of physical units
-        if the pixel_per_inch conversion isn't 96.
-
-        :param args: nodes, must contain node values.
-        :param kwargs: ppi, width, height, viewbox
+        :param args: either values, or viewbox attribute.
+        :param kwargs: viewbox, width, height, preserveAspectRatio
         """
+        self.viewbox = None
         self.viewbox_x = None
         self.viewbox_y = None
         self.viewbox_width = None
         self.viewbox_height = None
-        if len(args) == 1:
-            if isinstance(args[0], dict):
-                values = args[0]
-            elif isinstance(args[0], Viewbox):
-                viewbox = args[0]
-                self.viewbox_x = viewbox.viewbox_x
-                self.viewbox_y = viewbox.viewbox_y
-                self.viewbox_width = viewbox.viewbox_width
-                self.viewbox_height = viewbox.viewbox_height
-                self.viewbox = viewbox.viewbox
-                self.physical_width = viewbox.physical_width
-                self.physical_height = viewbox.physical_height
-                self.element_x = viewbox.element_x
-                self.element_y = viewbox.element_y
-                self.element_height = viewbox.element_height
-                self.element_width = viewbox.element_height
-                self.preserve_aspect_ratio = viewbox.preserve_aspect_ratio
-                return
-            else:
-                return
-        else:
-            return
-        if SVG_ATTR_VIEWBOX in kwargs:
-            self.viewbox = kwargs[SVG_ATTR_VIEWBOX]
-        elif SVG_ATTR_VIEWBOX in values:
-            self.viewbox = values[SVG_ATTR_VIEWBOX]
-        else:
-            self.viewbox = None
+        self.element_x = None
+        self.element_y = None
+        self.element_width = None
+        self.element_height = None
+        self.preserve_aspect_ratio = None
+        self.values = None
         if SVG_ATTR_WIDTH in kwargs:
             self.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
+            del kwargs[SVG_ATTR_WIDTH]
         else:
             self.physical_width = None
 
         if SVG_ATTR_HEIGHT in kwargs:
             self.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
+            del kwargs[SVG_ATTR_HEIGHT]
         else:
             self.physical_height = None
 
+        if len(args) >= 1:
+            s = args[0]
+            if isinstance(s, dict):
+                args = args[1:]
+                self.values = dict(s)
+                self.values.update(kwargs)
+            elif isinstance(s, Viewbox):
+                args = args[1:]
+                self.property_by_object(s)
+                self.property_by_args(*args)
+                return
+        if self.values is None:
+            self.values = dict(kwargs)
+        self.property_by_values(self.values)
+        if len(args) != 0:
+            self.property_by_args(*args)
+
+    def __str__(self):
+        return '%s %s %s %s -> %s %s %s %s' % (
+            Length.str(self.element_x),
+            Length.str(self.element_y),
+            Length.str(self.element_width),
+            Length.str(self.element_height),
+            Length.str(self.viewbox_x),
+            Length.str(self.viewbox_y),
+            Length.str(self.viewbox_width),
+            Length.str(self.viewbox_height),
+        )
+
+    def property_by_args(self, *args):
+        pass
+
+    def property_by_object(self, obj):
+        self.values = dict(obj.values)
+        self.viewbox = obj.viewbox
+        self.viewbox_x = obj.viewbox_x
+        self.viewbox_y = obj.viewbox_y
+        self.viewbox_width = obj.viewbox_width
+        self.viewbox_height = obj.viewbox_height
+        self.physical_width = obj.physical_width
+        self.physical_height = obj.physical_height
+        self.element_x = obj.element_x
+        self.element_y = obj.element_y
+        self.element_height = obj.element_height
+        self.element_width = obj.element_height
+        self.preserve_aspect_ratio = obj.preserve_aspect_ratio
+
+    def property_by_values(self, values):
+        if SVG_ATTR_VIEWBOX in values:
+            self.viewbox = values[SVG_ATTR_VIEWBOX]
         if SVG_ATTR_WIDTH in values:
             self.element_width = Length(values[SVG_ATTR_WIDTH]).value(relative_length=self.physical_width)
         else:
@@ -6604,28 +6680,17 @@ class Viewbox:
         self.set_viewbox(self.viewbox)
         if SVG_ATTR_PRESERVEASPECTRATIO in values:
             self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
-        else:
-            self.preserve_aspect_ratio = None
-
-    def __str__(self):
-        return '%s %s %s %s -> %s %s %s %s' % (
-            Length.str(self.element_x),
-            Length.str(self.element_y),
-            Length.str(self.element_width),
-            Length.str(self.element_height),
-            Length.str(self.viewbox_x),
-            Length.str(self.viewbox_y),
-            Length.str(self.viewbox_width),
-            Length.str(self.viewbox_height),
-        )
 
     def set_viewbox(self, viewbox):
         if viewbox is not None and isinstance(viewbox, str):
             dims = list(REGEX_FLOAT.findall(viewbox))
-            self.viewbox_x = float(dims[0])
-            self.viewbox_y = float(dims[1])
-            self.viewbox_width = float(dims[2])
-            self.viewbox_height = float(dims[3])
+            try:
+                self.viewbox_x = float(dims[0])
+                self.viewbox_y = float(dims[1])
+                self.viewbox_width = float(dims[2])
+                self.viewbox_height = float(dims[3])
+            except IndexError:
+                pass
 
     def render(self, width=None, height=None, relative_length=None, **kwargs):
         if width is None and relative_length is not None:
