@@ -28,7 +28,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.2.8"
+SVGELEMENTS_VERSION = "1.2.10"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -882,7 +882,10 @@ class Length(object):
                 if '.' in a:
                     a = a.rstrip('0').rstrip('.')
                 return '\'%s%s\'' % (a, s.units)
-        s = '%.12f' % (s)
+        try:
+            s = '%.12f' % (s)
+        except TypeError:
+            return str(s)
         if '.' in s:
             s = s.rstrip('0').rstrip('.')
         return s
@@ -1869,6 +1872,9 @@ class Point:
             return NotImplemented
         return Point(x, y)
 
+    def __complex__(self):
+        return self.x + self.y*1j
+
     def __abs__(self):
         return hypot(self.x, self.y)
 
@@ -2713,6 +2719,8 @@ class Transformable(SVGElement):
     """Any element that is transformable and has a transform property."""
 
     def __init__(self, *args, **kwargs):
+        self._length = None
+        self._lengths = None
         self.transform = None
         self.apply = None
         SVGElement.__init__(self, *args, **kwargs)
@@ -2762,6 +2770,8 @@ class Transformable(SVGElement):
         The default method will be called by submethods but will only scale properties like stroke_width which should
         scale with the transform.
         """
+        self._lengths = None
+        self._length = None
         if SVG_ATTR_STROKE_WIDTH in self.values:
             width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
             t = self.transform
@@ -2912,6 +2922,65 @@ class Shape(GraphicObject, Transformable):
             self.transform *= other
         self.reify()
         return self
+
+    def _calc_lengths(self, error=ERROR, min_depth=MIN_DEPTH, segments=None):
+        """
+        Calculate the length values for the segments of the Shape.
+
+        :param error: error permitted for length calculations.
+        :param min_depth: minimum depth for the length calculation.
+        :param segments: optional segments to use.
+        :return:
+        """
+        if segments is None:
+            segments = self.segments(False)
+        if self._length is not None:
+            return
+        lengths = [each.length(error=error, min_depth=min_depth) for each in segments]
+        self._length = sum(lengths)
+        if self._length == 0:
+            self._lengths = lengths
+        else:
+            self._lengths = [each / self._length for each in lengths]
+
+    def point(self, position, error=ERROR):
+        """
+        Find a point between 0 and 1 within the Shape, going through the shape with regard to position.
+
+        :param position: value between 0 and 1 within the shape.
+        :param error: Length error permitted.
+        :return: Point at the given location.
+        """
+        segments = self.segments(False)
+        if len(segments) == 0:
+            return None
+        # Shortcuts
+        if position <= 0.0:
+            return segments[0].point(position)
+        if position >= 1.0:
+            return segments[-1].point(position)
+        if self._length is None:
+            self._calc_lengths(error=error, segments=segments)
+
+        if self._length == 0:
+            i = int(round(position * (len(segments) - 1)))
+            return segments[i].point(0.0)
+        # Find which segment the point we search for is located on:
+        segment_start = 0
+        segment_pos = 0
+        segment = segments[0]
+        for index, segment in enumerate(segments):
+            segment_end = segment_start + self._lengths[index]
+            if segment_end >= position:
+                # This is the segment! How far in on the segment is the point?
+                segment_pos = (position - segment_start) / (segment_end - segment_start)
+                break
+            segment_start = segment_end
+        return segment.point(segment_pos)
+
+    def length(self, error=ERROR, min_depth=MIN_DEPTH):
+        self._calc_lengths(error, min_depth)
+        return self._length
 
     def segments(self, transformed=True):
         """
@@ -3676,20 +3745,19 @@ class CubicBezier(PathSegment):
         local_extrema = [self.point(t)[v] for t in local_extremizers]
         return min(local_extrema), max(local_extrema)
 
-    def _derivative(self, t):
-        """returns the nth derivative of the segment at t.
-        Note: Bezier curves can have points where their derivative vanishes.
-        If you are interested in the tangent direction, use the unit_tangent()
-        method instead."""
-        p = [self.start, self.control1, self.control2, self.end]
-        return 3 * (p[1] - p[0]) * (1 - t) ** 2 + 6 * (p[2] - p[1]) * (
-                    1 - t) * t + 3 * (
-                           p[3] - p[2]) * t ** 2
-
     def _length_scipy(self, error=ERROR):
         from scipy.integrate import quad
-        return quad(lambda tau: abs(self._derivative(tau)), 0., 1.,
-                    epsabs=error, limit=1000)[0]
+
+        p0 = complex(*self.start)
+        p1 = complex(*self.control1)
+        p2 = complex(*self.control2)
+        p3 = complex(*self.end)
+
+        def _abs_derivative(t):
+            return abs(3 * (p1 - p0) * (1 - t) ** 2 + 6 * (p2 - p1) * (1 - t) * t + 3 \
+                       * (p3 - p2) * t ** 2)
+
+        return quad(_abs_derivative, 0., 1., epsabs=error, limit=1000)[0]
 
     def _length_default(self, error=ERROR, min_depth=MIN_DEPTH):
         return self._line_length(0, 1, error, min_depth)
@@ -4457,8 +4525,6 @@ class Path(Shape, MutableSequence):
 
     def __init__(self, *args, **kwargs):
         Shape.__init__(self, *args, **kwargs)
-        self._length = None
-        self._lengths = None
         self._segments = list()
         if len(args) != 1:
             self._segments.extend(args)
@@ -4884,47 +4950,6 @@ class Path(Shape, MutableSequence):
         segment.relative = relative
         self.append(segment)
         return self
-
-    def _calc_lengths(self, error=ERROR, min_depth=MIN_DEPTH):
-        if self._length is not None:
-            return
-        lengths = [each.length(error=error, min_depth=min_depth) for each in self._segments]
-        self._length = sum(lengths)
-        if self._length == 0:
-            self._lengths = lengths
-        else:
-            self._lengths = [each / self._length for each in lengths]
-
-    def point(self, position, error=ERROR):
-        if len(self._segments) == 0:
-            return None
-        # Shortcuts
-        if position <= 0.0:
-            return self._segments[0].point(position)
-        if position >= 1.0:
-            return self._segments[-1].point(position)
-
-        self._calc_lengths(error=error)
-
-        if self._length == 0:
-            i = int(round(position * (len(self._segments) - 1)))
-            return self._segments[i].point(0.0)
-        # Find which segment the point we search for is located on:
-        segment_start = 0
-        segment_pos = 0
-        segment = self._segments[0]
-        for index, segment in enumerate(self._segments):
-            segment_end = segment_start + self._lengths[index]
-            if segment_end >= position:
-                # This is the segment! How far in on the segment is the point?
-                segment_pos = (position - segment_start) / (segment_end - segment_start)
-                break
-            segment_start = segment_end
-        return segment.point(segment_pos)
-
-    def length(self, error=ERROR, min_depth=MIN_DEPTH):
-        self._calc_lengths(error, min_depth)
-        return self._length
 
     def append(self, value):
         if isinstance(value, str):
@@ -5661,7 +5686,7 @@ class _RoundShape(Shape):
         py = cy + a * cosT * sinTheta + b * sinT * cosTheta
         return Point(px, py)
 
-    def point(self, position):
+    def point(self, position, error=ERROR):
         """
         find the point that corresponds to given value [0,1].
         Where t=0 is the first point and t=1 is the final point.

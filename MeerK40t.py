@@ -25,7 +25,7 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
 """
-
+MEERK40T_VERSION = '0.6.13'
 kernel = Kernel()
 kernel.open('module', 'Signaler')
 kernel.open('module', 'Elemental')
@@ -40,6 +40,7 @@ def pair(value):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input', nargs='?', type=argparse.FileType('r'), help='input file')
+parser.add_argument('-V', '--version', action='store_true', help='MeerK40t version')
 parser.add_argument('-z', '--no_gui', action='store_true', help='run without gui')
 parser.add_argument('-c', '--console', action='store_true', help='start as console')
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
@@ -61,6 +62,11 @@ parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y posi
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
 args = parser.parse_args(sys.argv[1:])
+
+if args.version:
+    print("MeerK40t %s" % MEERK40T_VERSION)
+    exit(0)
+
 kernel.register('static', 'RasterScripts', RasterScripts)
 kernel.register('module', 'Console', Console)
 kernel.register('module', 'LaserServer', LaserServer)
