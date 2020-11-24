@@ -16,6 +16,23 @@ try:
 except ImportError:
     tau = pi * 2
 
+try:
+    import numpy as np
+    _NUMPY = True
+
+    import contextlib
+
+    @contextlib.contextmanager
+    def disable_numpy():
+        """Utility to temporarily disable numpy optimisation. Mostly useful for testing
+        purposes."""
+        global _NUMPY
+        _NUMPY = False
+        yield
+        _NUMPY = True
+except ImportError:
+    _NUMPY = False
+
 """
 The path elements are derived from regebro's svg.path project ( https://github.com/regebro/svg.path ) with
 some of the math from mathandy's svgpathtools project ( https://github.com/mathandy/svgpathtools ).
@@ -28,7 +45,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.2.10"
+SVGELEMENTS_VERSION = "1.3.0"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1735,27 +1752,13 @@ class Point:
         return hash(self.__key())
 
     def __eq__(self, other):
-        a0 = self[0]
-        a1 = self[1]
-        if isinstance(other, str):
-            try:
-                other = Point(other)
-            except IndexError:  # This string doesn't parse to a point.
-                return False
-        if isinstance(other, (Point, list, tuple)):
-            b0 = other[0]
-            b1 = other[1]
-        elif isinstance(other, complex):
-            b0 = other.real
-            b1 = other.imag
-        else:
-            return NotImplemented
         try:
-            c0 = abs(a0 - b0) <= ERROR
-            c1 = abs(a1 - b1) <= ERROR
-        except TypeError:
-            return False
-        return c0 and c1
+            if not isinstance(other, Point):
+                other = Point(other)
+        except Exception:
+            return NotImplemented
+
+        return abs(self.x - other.x) <= ERROR and abs(self.y - other.y) <= ERROR
 
     def __ne__(self, other):
         return not self == other
@@ -1785,7 +1788,10 @@ class Point:
         return Point(self.x, self.y)
 
     def __str__(self):
-        x_str = ('%.12G' % (self.x))
+        try:
+            x_str = ('%.12G' % (self.x))
+        except TypeError:
+            return self.__repr__()
         if '.' in x_str:
             x_str = x_str.rstrip('0').rstrip('.')
         y_str = ('%.12G' % (self.y))
@@ -2943,6 +2949,47 @@ class Shape(GraphicObject, Transformable):
         else:
             self._lengths = [each / self._length for each in lengths]
 
+    def npoint(self, positions, error=ERROR):
+        """
+        Find a points between 0 and 1 within the shape. Numpy acceleration allows points to be an array of floats.
+        """
+        if not _NUMPY:
+            return [self.point(pos) for pos in positions]
+
+        segments = self.segments(False)
+        if len(segments) == 0:
+            return None
+        # Shortcuts
+        if self._length is None:
+            self._calc_lengths(error=error, segments=segments)
+        xy = np.empty((len(positions), 2), dtype=float)
+        if self._length == 0:
+            i = int(round(positions * (len(segments) - 1)))
+            point = segments[i].point(0.0)
+            xy[:] = point
+            return xy
+
+        # Find which segment the point we search for is located on:
+        segment_start = 0
+        for index, segment in enumerate(segments):
+            segment_end = segment_start + self._lengths[index]
+            position_subset = ((segment_start <= positions) & (positions < segment_end))
+            v0 = positions[position_subset]
+            if not len(v0):
+                continue  # Nothing matched.
+            d = segment_end - segment_start
+            if d == 0:  # This segment is 0 length.
+                segment_pos = 0.0
+            else:
+                segment_pos = (v0 - segment_start) / d
+            c = segment.npoint(segment_pos)
+            xy[position_subset] = c[:]
+            segment_start = segment_end
+
+        # the loop above will miss position == 1
+        xy[positions == 1] = np.array(list(segments[-1].end))
+        return xy
+
     def point(self, position, error=ERROR):
         """
         Find a point between 0 and 1 within the Shape, going through the shape with regard to position.
@@ -2955,10 +3002,14 @@ class Shape(GraphicObject, Transformable):
         if len(segments) == 0:
             return None
         # Shortcuts
-        if position <= 0.0:
-            return segments[0].point(position)
-        if position >= 1.0:
-            return segments[-1].point(position)
+        try:
+            if position <= 0.0:
+                return segments[0].point(position)
+            if position >= 1.0:
+                return segments[-1].point(position)
+        except ValueError:
+            return self.npoint([position], error=error)[0]
+
         if self._length is None:
             self._calc_lengths(error=error, segments=segments)
 
@@ -3201,9 +3252,17 @@ class PathSegment:
         """
         Returns the point at a given amount through the path segment.
         :param position:  t value between 0 and 1
-        :return:
+        :return: Point instance
         """
-        return self.end
+        return Point(self.npoint([position])[0])
+
+    def npoint(self, positions):
+        """
+        Returns the points at given positions along the path segment
+        :param positions: N-sized sequence of t value between 0 and 1
+        :return: N-sized sequence of 2-sized sequence of float
+        """
+        return [self.end] * len(positions)
 
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         """
@@ -3317,20 +3376,26 @@ class Move(PathSegment):
         return 'm %s' % (self.end - current_point)
 
 
-class Close(PathSegment):
-    """Represents close commands. If this exists at the end of the shape then the shape is closed.
-    the methodology of a single flag close fails in a couple ways. You can have multi-part shapes
-    which can close or not close several times.
-    """
+class Linear(PathSegment):
+    """Represents line commands."""
 
     def __init__(self, start=None, end=None, **kwargs):
         PathSegment.__init__(self, **kwargs)
-        self.end = None
-        self.start = None
-        if start is not None:
-            self.start = Point(start)
-        if end is not None:
-            self.end = Point(end)
+        self.start = Point(start) if start is not None else None
+        self.end = Point(end) if end is not None else None
+
+    def __copy__(self):
+        return self.__class__(self.start, self.end, relative=self.relative)
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self.start == other.start and self.end == other.end
+
+    def __ne__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return not self == other
 
     def __imul__(self, other):
         if isinstance(other, str):
@@ -3341,30 +3406,6 @@ class Close(PathSegment):
             if self.end is not None:
                 self.end *= other
         return self
-
-    def __repr__(self):
-        if self.start is None and self.end is None:
-            return 'Close()'
-        s = self.start
-        if s is not None:
-            s = repr(s)
-        e = self.end
-        if e is not None:
-            e = repr(e)
-        return 'Close(start=%s, end=%s)' % (s, e)
-
-    def __copy__(self):
-        return Close(self.start, self.end, relative=self.relative)
-
-    def __eq__(self, other):
-        if not isinstance(other, Close):
-            return NotImplemented
-        return self.start == other.start and self.end == other.end
-
-    def __ne__(self, other):
-        if not isinstance(other, Close):
-            return NotImplemented
-        return not self == other
 
     def __len__(self):
         return 2
@@ -3377,78 +3418,20 @@ class Close(PathSegment):
         else:
             raise IndexError
 
-    def point(self, position):
-        return Point.towards(self.start, self.end, position)
+    def npoint(self, positions):
+        if _NUMPY:
+            xy = np.empty(shape=(len(positions), 2), dtype=float)
+            xy[:, 0] = np.interp(positions, [0, 1], [self.start.x, self.end.x])
+            xy[:, 1] = np.interp(positions, [0, 1], [self.start.y, self.end.y])
+            return xy
+        else:
+            return [Point.towards(self.start, self.end, pos) for pos in positions]
 
     def length(self, error=None, min_depth=None):
         if self.start is not None and self.end is not None:
             return Point.distance(self.end, self.start)
         else:
             return 0
-
-    def d(self, current_point=None, relative=None, smooth=None):
-        if current_point is None or (relative is None and self.relative) or (relative is not None and not relative):
-            return 'Z'
-        else:
-            return 'z'
-
-
-class Line(PathSegment):
-    """Represents line commands."""
-
-    def __init__(self, start, end, **kwargs):
-        PathSegment.__init__(self, **kwargs)
-        self.end = None
-        self.start = None
-        if start is not None:
-            self.start = Point(start)
-        if end is not None:
-            self.end = Point(end)
-
-    def __repr__(self):
-        if self.start is None:
-            return 'Line(end=%s)' % (repr(self.end))
-        return 'Line(start=%s, end=%s)' % (repr(self.start), repr(self.end))
-
-    def __copy__(self):
-        return Line(self.start, self.end, relative=self.relative)
-
-    def __eq__(self, other):
-        if not isinstance(other, Line):
-            return NotImplemented
-        return self.start == other.start and self.end == other.end
-
-    def __ne__(self, other):
-        if not isinstance(other, Line):
-            return NotImplemented
-        return not self == other
-
-    def __imul__(self, other):
-        if isinstance(other, str):
-            other = Matrix(other)
-        if isinstance(other, Matrix):
-            if self.start is not None:
-                self.start *= other
-            if self.end is not None:
-                self.end *= other
-        return self
-
-    def __len__(self):
-        return 2
-
-    def __getitem__(self, item):
-        if item == 0:
-            return self.start
-        elif item == 1:
-            return self.end
-        else:
-            raise IndexError
-
-    def point(self, position):
-        return Point.towards(self.start, self.end, position)
-
-    def length(self, error=None, min_depth=None):
-        return Point.distance(self.end, self.start)
 
     def closest_segment_point(self, p, respect_bounds=True):
         """ Gives the t value of the point on the line closest to the given point. """
@@ -3469,6 +3452,42 @@ class Line(PathSegment):
             if amount < 0:
                 amount = 0
         return self.point(amount)
+
+    def d(self, current_point=None, relative=None, smooth=None):
+        raise NotImplementedError
+
+
+class Close(Linear):
+    """Represents close commands. If this exists at the end of the shape then the shape is closed.
+    the methodology of a single flag close fails in a couple ways. You can have multi-part shapes
+    which can close or not close several times.
+    """
+
+    def __repr__(self):
+        if self.start is None and self.end is None:
+            return 'Close()'
+        s = self.start
+        if s is not None:
+            s = repr(s)
+        e = self.end
+        if e is not None:
+            e = repr(e)
+        return 'Close(start=%s, end=%s)' % (s, e)
+
+    def d(self, current_point=None, relative=None, smooth=None):
+        if current_point is None or (relative is None and self.relative) or (relative is not None and not relative):
+            return 'Z'
+        else:
+            return 'z'
+
+
+class Line(Linear):
+    """Represents line commands."""
+
+    def __repr__(self):
+        if self.start is None:
+            return 'Line(end=%s)' % (repr(self.end))
+        return 'Line(start=%s, end=%s)' % (repr(self.start), repr(self.end))
 
     def d(self, current_point=None, relative=None, smooth=None):
         if current_point is None or (relative is None and self.relative) or (relative is not None and not relative):
@@ -3534,14 +3553,29 @@ class QuadraticBezier(PathSegment):
             return self.end
         raise IndexError
 
-    def point(self, position):
-        """Calculate the x,y position at a certain position of the path"""
+    def npoint(self, positions):
+        """Calculate the x,y position at a certain position of the path. `pos` may be a
+        float or a NumPy array."""
         x0, y0 = self.start
         x1, y1 = self.control
         x2, y2 = self.end
-        x = (1 - position) * (1 - position) * x0 + 2 * (1 - position) * position * x1 + position * position * x2
-        y = (1 - position) * (1 - position) * y0 + 2 * (1 - position) * position * y1 + position * position * y2
-        return Point(x, y)
+
+        def _compute_point(position):
+            # compute factors
+            n_pos = 1 - position
+            pos_2 = position ** 2
+            n_pos_2 = n_pos ** 2
+            n_pos_pos = n_pos * position
+
+            return (n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
+                    n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2)
+
+        if _NUMPY and len(positions) > 1:
+            xy = np.empty(shape=(len(positions), 2))
+            xy[:, 0], xy[:, 1] = _compute_point(np.array(positions))
+            return xy
+        else:
+            return [Point(*_compute_point(position)) for position in positions]
 
     def bbox(self):
         """
@@ -3693,21 +3727,30 @@ class CubicBezier(PathSegment):
         self.control2 = self.control1
         self.control1 = c2
 
-    def point(self, position):
-        """Calculate the x,y position at a certain position of the path"""
+    def npoint(self, positions):
+        """Calculate the x,y position at a certain position of the path. `pos` may be a
+        float or a NumPy array."""
         x0, y0 = self.start
         x1, y1 = self.control1
         x2, y2 = self.control2
         x3, y3 = self.end
-        x = (1 - position) * (1 - position) * (1 - position) * x0 + \
-            3 * (1 - position) * (1 - position) * position * x1 + \
-            3 * (1 - position) * position * position * x2 + \
-            position * position * position * x3
-        y = (1 - position) * (1 - position) * (1 - position) * y0 + \
-            3 * (1 - position) * (1 - position) * position * y1 + \
-            3 * (1 - position) * position * position * y2 + \
-            position * position * position * y3
-        return Point(x, y)
+
+        def _compute_point(position):
+            # compute factors
+            pos_3 = position ** 3
+            n_pos = 1 - position
+            n_pos_3 = n_pos ** 3
+            pos_2_n_pos = position * position * n_pos
+            n_pos_2_pos = n_pos * n_pos * position
+            return (n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
+                    n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3)
+
+        if _NUMPY and len(positions) > 1:
+            xy = np.empty(shape=(len(positions), 2))
+            xy[:, 0], xy[:, 1] = _compute_point(np.array(positions))
+            return xy
+        else:
+            return [Point(*_compute_point(position)) for position in positions]
 
     def bbox(self):
         """returns the tight fitting bounding box of the bezier curve.
@@ -4095,13 +4138,49 @@ class Arc(PathSegment):
         PathSegment.reverse(self)
         self.sweep = -self.sweep
 
-    def point(self, position):
+    def npoint(self, positions):
+        if _NUMPY:
+            return self._points_numpy(np.array(positions))
+
         if self.start == self.end and self.sweep == 0:
             # This is equivalent of omitting the segment
-            return self.start
+            return [self.start] * len(positions)
 
-        t = self.get_start_t() + self.sweep * position
-        return self.point_at_t(t)
+        start_t = self.get_start_t()
+        return [self.start if pos == 0 else self.end if pos == 1 else
+                self.point_at_t(start_t + self.sweep * pos) for pos in positions]
+
+    def _points_numpy(self, positions):
+        """Vectorized version of `point()`.
+
+        :param positions: 1D numpy array of float in [0, 1]
+        :return: 1D numpy array of complex
+        """
+
+        xy = np.empty((len(positions), 2), dtype=float)
+
+        if self.start == self.end and self.sweep == 0:
+            xy[:, 0], xy[:, 1] = self.start
+        else:
+            t = self.get_start_t() + self.sweep * positions
+
+            rotation = self.get_rotation()
+            a = self.rx
+            b = self.ry
+            cx = self.center[0]
+            cy = self.center[1]
+            cos_rot = cos(rotation)
+            sin_rot = sin(rotation)
+            cos_t = np.cos(t)
+            sin_t = np.sin(t)
+            xy[:, 0] = cx + a * cos_t * cos_rot - b * sin_t * sin_rot
+            xy[:, 1] = cy + a * cos_t * sin_rot + b * sin_t * cos_rot
+
+            # ensure clean endings
+            xy[positions == 0, :] = list(self.start)
+            xy[positions == 1, :] = list(self.end)
+
+        return xy
 
     def _integral_length(self):
         def ellipse_part_integral(t1, t2, a, b, n=100000):
@@ -4525,6 +4604,8 @@ class Path(Shape, MutableSequence):
 
     def __init__(self, *args, **kwargs):
         Shape.__init__(self, *args, **kwargs)
+        self._length = None
+        self._lengths = None
         self._segments = list()
         if len(args) != 1:
             self._segments.extend(args)
