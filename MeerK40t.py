@@ -65,6 +65,7 @@ args = parser.parse_args(sys.argv[1:])
 
 if args.version:
     print("MeerK40t %s" % MEERK40T_VERSION)
+    import sys
     exit(0)
 
 kernel.register('static', 'RasterScripts', RasterScripts)
