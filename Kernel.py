@@ -1303,11 +1303,13 @@ class Elemental(Module):
                         continue  # already added to an image operation, is not added her.
                     if op.color == element.stroke:
                         op.append(element)
+                        was_classified = True
                     elif isinstance(element, SVGImage):
                         op.append(element)
+                        was_classified = True
                     elif element.fill is not None and element.fill.value is not None:
                         op.append(element)
-                    was_classified = True
+                        was_classified = True
                 elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
                     op.append(element)
                     was_classified = True
