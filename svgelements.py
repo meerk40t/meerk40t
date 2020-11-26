@@ -45,7 +45,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.3.0"
+SVGELEMENTS_VERSION = "1.3.2"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1762,6 +1762,9 @@ class Point:
 
     def __ne__(self, other):
         return not self == other
+
+    def __len__(self):
+        return 2
 
     def __getitem__(self, item):
         if item == 0:
@@ -7013,8 +7016,8 @@ class SVG(Group):
     def parse(source,
               reify=True,
               ppi=DEFAULT_PPI,
-              width=1,
-              height=1,
+              width=1000,
+              height=1000,
               color="black",
               transform=None,
               context=None):
@@ -7033,8 +7036,8 @@ class SVG(Group):
         root = context
         styles = {}
         stack = []
-        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black",
-                  SVG_ATTR_STROKE: "none"}
+        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black", SVG_ATTR_STROKE: "none",
+                  SVG_ATTR_HEIGHT: "100%", SVG_ATTR_WIDTH: "100%"}
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
         for event, elem in SVG.svg_structure_parse(source):
@@ -7122,7 +7125,13 @@ class SVG(Group):
                     s.render(ppi=ppi, width=width, height=height)
 
                     # viewbox was rendered here.
-                    viewport_transform = s.viewbox.transform()
+                    try:
+                        viewport_transform = s.viewbox.transform()
+                    except ZeroDivisionError:
+                        # The width or height was zero.
+                        # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
+                        # "A value of zero disables rendering of the element."
+                        return s  # No more parsing will be done.
                     if SVG_ATTR_TRANSFORM in values:
                         # transform on SVG element applied as if svg had parent with transform.
                         values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
