@@ -1303,11 +1303,13 @@ class Elemental(Module):
                         continue  # already added to an image operation, is not added her.
                     if op.color == element.stroke:
                         op.append(element)
+                        was_classified = True
                     elif isinstance(element, SVGImage):
                         op.append(element)
+                        was_classified = True
                     elif element.fill is not None and element.fill.value is not None:
                         op.append(element)
-                    was_classified = True
+                        was_classified = True
                 elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
                     op.append(element)
                     was_classified = True
@@ -2275,7 +2277,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = "0.6.12"
+        self.device_version = '0.6.13'
         self.device_root = self
 
         # Persistent storage if it exists.
