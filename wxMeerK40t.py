@@ -392,38 +392,38 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.AddButton(ID_TERMINAL, _("Terminal"), icons8_console_50.GetBitmap(), "")
         windows.AddButton(ID_ROTARY, _("Rotary"), icons8_roll_50.GetBitmap(), "")
         windows.AddButton(ID_RASTER, _("RasterWizard"), icons8_fantasy_50.GetBitmap(), "")
-        home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(), )
-
-        align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
-                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        align = RB.RibbonButtonBar(align_panel)
-        align.AddButton(ID_DEVICES, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
-        align.AddButton(ID_DEVICES, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
-        align.AddButton(ID_DEVICES, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
-        align.AddButton(ID_DEVICES, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
-
-        flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
-                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        flip = RB.RibbonButtonBar(flip_panel)
-        flip.AddButton(ID_DEVICES, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
-        flip.AddButton(ID_DEVICES, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
-
-        group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
-                                     style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        group = RB.RibbonButtonBar(group_panel)
-        group.AddButton(ID_DEVICES, _("Group"), icons8_group_objects_50.GetBitmap(), "")
-        group.AddButton(ID_DEVICES, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
-
-        tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
-                                    style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        tool = RB.RibbonButtonBar(tool_panel)
-        tool.AddButton(ID_DEVICES, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
-        tool.AddButton(ID_DEVICES, _("Oval"), icons8_oval_50.GetBitmap(), "")
-        tool.AddButton(ID_DEVICES, _("Circle"), icons8_circle_50.GetBitmap(), "")
-        tool.AddButton(ID_DEVICES, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
-        tool.AddButton(ID_DEVICES, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
-        tool.AddButton(ID_DEVICES, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
-        tool.AddButton(ID_DEVICES, _("Text"), icons8_type_50.GetBitmap(), "")
+        # home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(), )
+        #
+        # align_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Align"), icons8_opened_folder_50.GetBitmap(),
+        #                              style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        # align = RB.RibbonButtonBar(align_panel)
+        # align.AddButton(ID_DEVICES, _("Align Left"), icons8_align_left_50.GetBitmap(), "")
+        # align.AddButton(ID_DEVICES, _("Align Right"), icons8_align_right_50.GetBitmap(), "")
+        # align.AddButton(ID_DEVICES, _("Align Top"), icons8_align_top_50.GetBitmap(), "")
+        # align.AddButton(ID_DEVICES, _("Align Bottom"), icons8_align_bottom_50.GetBitmap(), "")
+        #
+        # flip_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Flip"), icons8_opened_folder_50.GetBitmap(),
+        #                             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        # flip = RB.RibbonButtonBar(flip_panel)
+        # flip.AddButton(ID_DEVICES, _("Flip Horizontal"), icons8_flip_horizontal_50.GetBitmap(), "")
+        # flip.AddButton(ID_DEVICES, _("Flip Vertical"), icons8_flip_vertical_50.GetBitmap(), "")
+        #
+        # group_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Group"), icons8_opened_folder_50.GetBitmap(),
+        #                              style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        # group = RB.RibbonButtonBar(group_panel)
+        # group.AddButton(ID_DEVICES, _("Group"), icons8_group_objects_50.GetBitmap(), "")
+        # group.AddButton(ID_DEVICES, _("Ungroup"), icons8_ungroup_objects_50.GetBitmap(), "")
+        #
+        # tool_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Tools"), icons8_opened_folder_50.GetBitmap(),
+        #                             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        # tool = RB.RibbonButtonBar(tool_panel)
+        # tool.AddButton(ID_DEVICES, _("Set Position"), icons8_place_marker_50.GetBitmap(), "")
+        # tool.AddButton(ID_DEVICES, _("Oval"), icons8_oval_50.GetBitmap(), "")
+        # tool.AddButton(ID_DEVICES, _("Circle"), icons8_circle_50.GetBitmap(), "")
+        # tool.AddButton(ID_DEVICES, _("Polygon"), icons8_polygon_50.GetBitmap(), "")
+        # tool.AddButton(ID_DEVICES, _("Polyline"), icons8_polyline_50.GetBitmap(), "")
+        # tool.AddButton(ID_DEVICES, _("Rectangle"), icons8_rectangular_50.GetBitmap(), "")
+        # tool.AddButton(ID_DEVICES, _("Text"), icons8_type_50.GetBitmap(), "")
 
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Position"), icons8_opened_folder_50.GetBitmap(), )
         position_panel = RB.RibbonPanel(home, wx.ID_ANY, _("Position"), icons8_opened_folder_50.GetBitmap(),
