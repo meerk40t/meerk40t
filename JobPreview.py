@@ -7,7 +7,7 @@ from icons import icons8_laser_beam_52
 _ = wx.GetTranslation
 
 
-class Preview(wx.Frame, Module):
+class JobPreview(wx.Frame, Module):
     def __init__(self, context, path, parent, plan_name, *args, **kwds):
         # begin wxGlade: Preview.__init__
         wx.Frame.__init__(self, parent, -1, "",
