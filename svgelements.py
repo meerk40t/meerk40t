@@ -28,7 +28,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.3.5"
+SVGELEMENTS_VERSION = "1.4.0"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -68,6 +68,7 @@ SVG_TAG_DESC = 'desc'
 SVG_TAG_STYLE = 'style'
 SVG_TAG_DEFS = 'defs'
 SVG_TAG_USE = 'use'
+SVG_TAG_CLIPPATH = 'clipPath'
 SVG_STRUCT_ATTRIB = 'attributes'
 SVG_ATTR_ID = 'id'
 SVG_ATTR_DATA = 'd'
@@ -79,6 +80,9 @@ SVG_ATTR_STROKE_WIDTH = 'stroke-width'
 SVG_ATTR_TRANSFORM = 'transform'
 SVG_ATTR_STYLE = 'style'
 SVG_ATTR_CLASS = 'class'
+SVG_ATTR_CLIP_PATH = 'clip-path'
+SVG_ATTR_CLIP_RULE = 'clip-rule'
+SVG_ATTR_CLIP_UNIT_TYPE = 'clipPathUnits'
 SVG_ATTR_CENTER_X = 'cx'
 SVG_ATTR_CENTER_Y = 'cy'
 SVG_ATTR_RADIUS_X = 'rx'
@@ -104,6 +108,12 @@ SVG_ATTR_FONT_SIZE = 'font-size'
 SVG_ATTR_FONT_WEIGHT = 'font-weight'  # normal, bold, bolder, lighter, 100-900
 SVG_ATTR_TEXT_ANCHOR = 'text-anchor'
 
+SVG_UNIT_TYPE_USERSPACEONUSE = 'userSpaceOnUse'
+SVG_UNIT_TYPE_OBJECTBOUNDINGBOX = 'objectBoundingBox'
+
+SVG_RULE_NONZERO = 'nonzero'
+SVG_RULE_EVENODD = 'evenodd'
+
 SVG_TRANSFORM_MATRIX = 'matrix'
 SVG_TRANSFORM_TRANSLATE = 'translate'
 SVG_TRANSFORM_SCALE = 'scale'
@@ -115,6 +125,7 @@ SVG_TRANSFORM_TRANSLATE_X = 'translatex'
 SVG_TRANSFORM_TRANSLATE_Y = 'translatey'
 SVG_TRANSFORM_SCALE_X = 'scalex'
 SVG_TRANSFORM_SCALE_Y = 'scaley'
+
 SVG_VALUE_NONE = 'none'
 SVG_VALUE_CURRENT_COLOR = 'currentColor'
 
@@ -143,6 +154,7 @@ PATTERN_TRANSFORM_UNITS = PATTERN_LENGTH_UNITS + '|' \
                           + PATTERN_ANGLE_UNITS + '|' \
                           + PATTERN_PERCENT
 
+REGEX_IRI = re.compile('url\((.*)\)')
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile('(%s)%s(%s)' % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT))
 REGEX_TRANSFORM_TEMPLATE = re.compile('(?u)(%s)%s\(([^)]+)\)' % (PATTERN_TRANSFORM, PATTERN_WS))
@@ -260,7 +272,7 @@ class SVGLexicalParser:
         current_pos = self.parser.current_point
         if current_pos is None:
             return position
-        return position[0] + current_pos[0], position[1] + current_pos[1]
+        return position[0] + current_pos.x, position[1] + current_pos.y
 
     def parse(self, parser, pathd):
         self.parser = parser
@@ -1708,24 +1720,28 @@ class Point:
         if x is not None and y is None:
             if isinstance(x, str):
                 string_x, string_y = REGEX_COORD_PAIR.findall(x)[0]
-                x = float(string_x)
-                y = float(string_y)
-            else:
-                try:  # try subscription.
-                    y = x[1]
-                    x = x[0]
-                except TypeError:
-                    try:  # Try .x .y
-                        y = x.y
-                        x = x.x
-                    except AttributeError:
-                        try:  # try .imag .real complex values.
-                            y = x.imag
-                            x = x.real
-                        except AttributeError:
-                            # Unknown.
-                            x = 0
-                            y = 0
+                self.x = float(string_x)
+                self.y = float(string_y)
+                return
+            try:  # Try .x .y
+                self.y = x.y
+                self.x = x.x
+                return
+            except AttributeError:
+                pass
+            try:  # try subscription.
+                self.y = x[1]
+                self.x = x[0]
+                return
+            except TypeError:
+                pass
+            try:  # try .imag .real complex values.
+                self.y = x.imag
+                self.x = x.real
+                return
+            except AttributeError:
+                # Unknown.
+                raise TypeError
         self.x = x
         self.y = y
 
@@ -1793,82 +1809,187 @@ class Point:
             other = Matrix(other)
         if isinstance(other, Matrix):
             v = other.point_in_matrix_space(self)
-            self[0] = v[0]
-            self[1] = v[1]
-        elif isinstance(other, (int, float)):  # Emulates complex point multiplication by real.
+            self.x = v.x
+            self.y = v.y
+            return self
+        try:
+            c = complex(self) * complex(other.x, other.y)
+            self.x = c.real
+            self.y = c.imag
+            return self
+        except AttributeError:
+            pass
+        try:
+            c = complex(self) * complex(other[0], other[1])
+            self.x = c.real
+            self.y = c.imag
+            return self
+        except (TypeError, IndexError):
+            pass
+        try:
+            c = complex(self) * complex(other.real, other.imag)
+            self.x = c.real
+            self.y = c.imag
+            return self
+        except AttributeError:
+            pass
+        try:
             self.x *= other
             self.y *= other
-        else:
+            return self
+        except Exception:
             return NotImplemented
-        return self
 
     def __mul__(self, other):
-        if isinstance(other, (Matrix, str, int, float)):
-            n = copy(self)
-            n *= other
-            return n
-        return NotImplemented
+        if isinstance(other, str):
+            other = Matrix(other)
+        if isinstance(other, Matrix):
+            return other.point_in_matrix_space(self)
+        try:
+            return Point(complex(self) * complex(other.x,other.y))
+        except AttributeError:
+            pass
+        try:
+            return Point(complex(self) * complex(other[0], other[1]))
+        except (TypeError, IndexError):
+            pass
+        try:
+            return Point(complex(self) * complex(other.real, other.imag))
+        except AttributeError:
+            pass
+        try:
+            return Point(self.x * other, self.y * other)
+        except Exception:
+            return NotImplemented
 
     __rmul__ = __mul__
 
     def __iadd__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            self[0] += other[0]
-            self[1] += other[1]
-        elif isinstance(other, complex):
-            self[0] += other.real
-            self[1] += other.imag
-        elif isinstance(other, (float, int)):
-            self[0] += other
-        else:
+        try:
+            self.x += other.x
+            self.y += other.y
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.y += other[1]
+            self.x += other[0]
+            return self
+        except (TypeError, IndexError):
+            pass
+        try:
+            self.x += other.real
+            self.y += other.imag
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.x += other
+            return self
+        except Exception:
             return NotImplemented
-        return self
 
     def __add__(self, other):
-        if isinstance(other, (Point, tuple, list, complex, int, float)):
-            n = copy(self)
-            n += other
-            return n
+        try:
+            x = self.x + other.x
+            y = self.y + other.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        try:
+            y = self.y + other[1]
+            x = self.x + other[0]
+            return Point(x, y)
+        except (TypeError, IndexError):
+            pass
+        try:
+            x = self.x + other.real
+            y = self.y + other.imag
+            return Point(x, y)
+        except AttributeError:
+            pass
+        if isinstance(other, (float, int)):
+            x = self.x + other
+            return Point(x, self.y)
         return NotImplemented
 
     __radd__ = __add__
 
     def __isub__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            self[0] -= other[0]
-            self[1] -= other[1]
-        elif isinstance(other, complex):
-            self[0] -= other.real
-            self[1] -= other.imag
-        elif isinstance(other, (float, int)):
-            self[0] -= other
-        else:
+        try:
+            self.x -= other.x
+            self.y -= other.y
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.y -= other[1]
+            self.x -= other[0]
+            return self
+        except (TypeError, IndexError):
+            pass
+        try:
+            self.x -= other.real
+            self.y -= other.imag
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.x -= other
+            return self
+        except Exception:
             return NotImplemented
-        return self
 
     def __sub__(self, other):
-        if isinstance(other, (Point, tuple, list, complex, int, float)):
-            n = copy(self)
-            n -= other
-            return n
+        try:
+            x = self.x - other.x
+            y = self.y - other.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        try:
+            y = self.y - other[1]
+            x = self.x - other[0]
+            return Point(x, y)
+        except (TypeError, IndexError):
+            pass
+        try:
+            x = self.x - other.real
+            y = self.y - other.imag
+            return Point(x, y)
+        except AttributeError:
+            pass
+        if isinstance(other, (float, int)):
+            x = self.x - other
+            return Point(x, self.y)
         return NotImplemented
 
     def __rsub__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            x = other[0] - self[0]
-            y = other[1] - self[1]
-        elif isinstance(other, complex):
-            x = other.real - self[0]
-            y = other.imag - self[1]
-        elif isinstance(other, (float, int)):
-            x = other - self[0]
-            y = self[1]
-        else:
-            return NotImplemented
-        return Point(x, y)
+        try:
+            x = other.x - self.x
+            y = other.y - self.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        try:
+            y = other[1] - self.y
+            x = other[0] - self.x
+            return Point(x, y)
+        except (TypeError, IndexError):
+            pass
+        try:
+            x = other.real - self.x
+            y = other.imag - self.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        if isinstance(other, (float, int)):
+            x = other - self.x
+            return Point(x, self.y)
+        return NotImplemented
 
     def __complex__(self):
-        return self.x + self.y*1j
+        return self.x + self.y * 1j
 
     def __abs__(self):
         return hypot(self.x, self.y)
@@ -1898,35 +2019,29 @@ class Point:
         return self.y
 
     def matrix_transform(self, matrix):
-        v = matrix.point_in_matrix_space(self)
-        self[0] = v[0]
-        self[1] = v[1]
+        self *= matrix
         return self
 
     def move_towards(self, p2, amount=1):
         if not isinstance(p2, Point):
             p2 = Point(p2)
-        self.x = amount * (p2[0] - self[0]) + self[0]
-        self.y = amount * (p2[1] - self[1]) + self[1]
+        self += amount * (p2 - self)
 
     def distance_to(self, p2):
-        if not isinstance(p2, Point):
-            p2 = Point(p2)
-        return Point.distance(self, p2)
+        return abs(self - p2)
 
     def angle_to(self, p2):
-        if not isinstance(p2, Point):
-            p2 = Point(p2)
-        return Point.angle(self, p2)
+        p = p2 - self
+        return Angle.radians(atan2(p.y, p.x))
 
     def polar_to(self, angle, distance):
-        return Point.polar(self, angle, distance)
+        q =  Point.polar(self, angle, distance)
+        self.x = q.x
+        self.y = q.y
+        return self
 
     def reflected_across(self, p):
-        m = Point(p)
-        m += p
-        m -= self
-        return m
+        return (p + (p - self))
 
     @staticmethod
     def orientation(p, q, r):
@@ -2667,50 +2782,7 @@ class SVGElement(object):
         self.id = values.get(SVG_ATTR_ID)
 
 
-class Group(SVGElement, list):
-    """
-    Group Container element can have children.
-    SVG 2.0 <g> are defined in:
-    5.2. Grouping: the g element
-    """
-
-    # TODO: SVG group objects must actually possess transformation matrices.
-
-    def __init__(self, *args, **kwargs):
-        SVGElement.__init__(self, *args, **kwargs)
-        list.__init__(self)
-        if len(args) >= 1:
-            s = args[0]
-            if isinstance(s, Group):
-                self.extend(list(map(copy, s)))
-                return
-
-    def __copy__(self):
-        return Group(self)
-
-    def select(self, conditional=None):
-        """
-        Finds all flattened subobjects of this group for which the conditional returns
-        true.
-
-        :param conditional: function taking element and returns True or False if matching
-        """
-        if conditional is None:
-            def conditional(item):
-                return True
-        for subitem in self:
-            if not conditional(subitem):
-                continue
-            yield subitem
-            if isinstance(subitem, Group):
-                for s in subitem.select(conditional):
-                    yield s
-
-    def reify(self):
-        pass
-
-
-class Transformable(SVGElement):
+class Transformable:
     """Any element that is transformable and has a transform property."""
 
     def __init__(self, *args, **kwargs):
@@ -2718,17 +2790,14 @@ class Transformable(SVGElement):
         self._lengths = None
         self.transform = None
         self.apply = None
-        SVGElement.__init__(self, *args, **kwargs)
 
     def property_by_object(self, s):
-        SVGElement.property_by_object(self, s)
         self.transform = Matrix(s.transform)
         self.apply = s.apply
 
     def property_by_values(self, values):
-        SVGElement.property_by_values(self, values)
-        self.transform = Matrix(self.values.get(SVG_ATTR_TRANSFORM, ''))
-        self.apply = bool(self.values.get('apply', True))
+        self.transform = Matrix(values.get(SVG_ATTR_TRANSFORM, ''))
+        self.apply = bool(values.get('apply', True))
 
     def __mul__(self, other):
         if isinstance(other, (Matrix, str)):
@@ -2767,11 +2836,15 @@ class Transformable(SVGElement):
         """
         self._lengths = None
         self._length = None
-        if SVG_ATTR_STROKE_WIDTH in self.values:
-            width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
-            t = self.transform
-            det = t.a * t.d - t.c * t.b
-            self.values[SVG_ATTR_STROKE_WIDTH] = width * sqrt(abs(det))
+        try:
+            if self.stroke_width is not None:
+                width = self.stroke_width
+                t = self.transform
+                det = t.a * t.d - t.c * t.b
+                self.stroke_width = width * sqrt(abs(det))
+        except AttributeError:
+            # Stroke Width isn't on this object type. Skip that transform.
+            pass
         return self
 
     def render(self, **kwargs):
@@ -2802,40 +2875,41 @@ class Transformable(SVGElement):
         return origin.angle_to(prx)
 
 
-class GraphicObject(SVGElement):
+class GraphicObject:
     """Any drawn element."""
 
     def __init__(self, *args, **kwargs):
         self.stroke = None
         self.fill = None
-        SVGElement.__init__(self, *args, **kwargs)
+        self.stroke_width = None
+        self.clip_path = None
 
     def property_by_object(self, s):
-        if s.fill is None:
-            self.fill = None
-        else:
-            self.fill = Color(s.fill)
-        if s.stroke is None:
-            self.stroke = None
-        else:
-            self.stroke = Color(s.stroke)
+        self.fill = Color(s.fill) if s.fill is not None else None
+        self.stroke = Color(s.stroke) if s.stroke is not None else None
+        self.stroke_width = Length(s.stroke_width).value() if s.stroke_width is not None else None
+        self.clip_path = ClipPath(s.clip_path) if s.clip_path is not None else None
 
     def property_by_values(self, values):
-        if SVG_ATTR_STROKE in values:
-            stroke = values[SVG_ATTR_STROKE]
-            if stroke is None:
-                self.stroke = None
-            else:
-                self.stroke = Color(stroke)
-        if SVG_ATTR_FILL in values:
-            fill = values[SVG_ATTR_FILL]
-            if fill is None:
-                self.fill = None
-            else:
-                self.fill = Color(fill)
+        stroke = values.get(SVG_ATTR_STROKE)
+        self.stroke = Color(stroke) if stroke is not None else None
+        fill = values.get(SVG_ATTR_FILL)
+        self.fill = Color(fill) if fill is not None else None
+        self.stroke_width = Length(values.get(SVG_ATTR_STROKE_WIDTH)).value()
+        clip_path = values.get(SVG_TAG_CLIPPATH)
+        self.clip_path = ClipPath(clip_path) if clip_path is not None else None
+
+    def render(self, width=None, height=None, relative_length=None, **kwargs):
+        if width is None and relative_length is not None:
+            width = relative_length
+        if height is None and relative_length is not None:
+            height = relative_length
+        if isinstance(self.stroke_width, Length):
+            self.stroke_width = self.stroke_width.value(relative_length=sqrt(width * width + height * height), **kwargs)
+            # A percentage stroke_width is always computed as a percentage of the normalized viewBox diagonal length.
 
 
-class Shape(GraphicObject, Transformable):
+class Shape(SVGElement, GraphicObject, Transformable):
     """
     SVG Shapes are several SVG items defined in SVG 1.1 9.1
     https://www.w3.org/TR/SVG11/shapes.html
@@ -2858,17 +2932,21 @@ class Shape(GraphicObject, Transformable):
     apply: Determine whether transform should be applied. (Transformable)
     fill: SVG color of the shape fill. (GraphicObject)
     stroke: SVG color of the shape stroke. (GraphicObject)
+    stroke_width: Stroke width of the stroke. (GraphicObject)
     """
 
     def __init__(self, *args, **kwargs):
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+        SVGElement.__init__(self, *args, **kwargs)  # Must go last, triggers, by_object, by_value, by_arg functions.
 
     def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
         GraphicObject.property_by_object(self, s)
 
     def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
 
@@ -2876,6 +2954,8 @@ class Shape(GraphicObject, Transformable):
         if not isinstance(other, Shape):
             return NotImplemented
         if self.fill != other.fill or self.stroke != other.stroke:
+            return False
+        if self.stroke_width != other.stroke_width:
             return False
         first = self
         if not isinstance(first, Path):
@@ -3223,8 +3303,8 @@ class PathSegment:
         """returns the bounding box for the segment.
         xmin, ymin, xmax, ymax
         """
-        xs = [p[0] for p in self if p is not None]
-        ys = [p[1] for p in self if p is not None]
+        xs = [p.x for p in self if p is not None]
+        ys = [p.y for p in self if p is not None]
         xmin = min(xs)
         xmax = max(xs)
         ymin = min(ys)
@@ -3429,10 +3509,10 @@ class Linear(PathSegment):
         """ Gives the t value of the point on the line closest to the given point. """
         a = self.start
         b = self.end
-        vAPx = p[0] - a[0]
-        vAPy = p[1] - a[1]
-        vABx = b[0] - a[0]
-        vABy = b[1] - a[1]
+        vAPx = p[0] - a.x
+        vAPy = p[1] - a.y
+        vABx = b.x - a.x
+        vABy = b.y - a.y
         sqDistanceAB = vABx * vABx + vABy * vABy
         ABAPproduct = vABx * vAPx + vABy * vAPy
         if sqDistanceAB == 0:
@@ -3561,6 +3641,7 @@ class QuadraticBezier(PathSegment):
 
             return (n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
                     n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2)
+
         try:
             import numpy as np
             xy = np.empty(shape=(len(positions), 2))
@@ -3573,26 +3654,26 @@ class QuadraticBezier(PathSegment):
         """
         Returns the bounding box for the quadratic bezier curve.
         """
-        n = self.start[0] - self.control[0]
-        d = self.start[0] - 2 * self.control[0] + self.end[0]
+        n = self.start.x - self.control.x
+        d = self.start.x - 2 * self.control.x + self.end.x
         if d != 0:
             t = n / d
         else:
             t = 0.5
         if 0 < t < 1:
-            x_values = [self.start[0], self.end[0], self.point(t)[0]]
+            x_values = [self.start.x, self.end.x, self.point(t).x]
         else:
-            x_values = [self.start[0], self.end[0]]
-        n = self.start[1] - self.control[1]
-        d = self.start[1] - 2 * self.control[1] + self.end[1]
+            x_values = [self.start.x, self.end.x]
+        n = self.start.y - self.control.y
+        d = self.start.y - 2 * self.control.y + self.end.y
         if d != 0:
             t = n / d
         else:
             t = 0.5
         if 0 < t < 1:
-            y_values = [self.start[1], self.end[1], self.point(t)[1]]
+            y_values = [self.start.y, self.end.y, self.point(t).y]
         else:
-            y_values = [self.start[1], self.end[1]]
+            y_values = [self.start.y, self.end.y]
         return min(x_values), min(y_values), max(x_values), max(y_values)
 
     def length(self, error=None, min_depth=None):
@@ -3736,6 +3817,7 @@ class CubicBezier(PathSegment):
             n_pos_2_pos = n_pos * n_pos * position
             return (n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
                     n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3)
+
         try:
             import numpy as np
             xy = np.empty(shape=(len(positions), 2))
@@ -3862,7 +3944,6 @@ class Arc(PathSegment):
 
         start_t + sweep = end_t
         """
-
         PathSegment.__init__(self, **kwargs)
         self.start = None
         self.end = None
@@ -3889,8 +3970,8 @@ class Arc(PathSegment):
             self.center = Point((left + right) / 2.0, (top + bottom) / 2.0)
             rx = (right - left) / 2.0
             ry = (bottom - top) / 2.0
-            self.prx = Point(self.center[0] + rx, self.center[1])
-            self.pry = Point(self.center[0], self.center[1] + ry)
+            self.prx = Point(self.center.x + rx, self.center.y)
+            self.pry = Point(self.center.x, self.center.y + ry)
         len_args = len(args)
         if len_args > 0:
             if args[0] is not None:
@@ -3943,70 +4024,70 @@ class Arc(PathSegment):
                 delta_a = control - self.start
                 delta_b = self.end - control
                 try:
-                    slope_a = delta_a[1] / delta_a[0]
+                    slope_a = delta_a.y / delta_a.x
                 except ZeroDivisionError:
                     slope_a = float('inf')
                 try:
-                    slope_b = delta_b[1] / delta_b[0]
+                    slope_b = delta_b.y / delta_b.x
                 except ZeroDivisionError:
                     slope_b = float('inf')
                 ab_mid = Point.towards(self.start, control, 0.5)
                 bc_mid = Point.towards(control, self.end, 0.5)
-                if delta_a[1] == 0:  # slope_a == 0
-                    cx = ab_mid[0]
-                    if delta_b[0] == 0:  # slope_b == inf
-                        cy = bc_mid[1]
+                if delta_a.y == 0:  # slope_a == 0
+                    cx = ab_mid.x
+                    if delta_b.x == 0:  # slope_b == inf
+                        cy = bc_mid.y
                     else:
-                        cy = bc_mid[1] + (bc_mid.x - cx) / slope_b
-                elif delta_b[1] == 0:  # slope_b == 0
-                    cx = bc_mid[0]
-                    if delta_a[1] == 0:  # slope_a == inf
-                        cy = ab_mid[1]
+                        cy = bc_mid.y + (bc_mid.x - cx) / slope_b
+                elif delta_b.y == 0:  # slope_b == 0
+                    cx = bc_mid.x
+                    if delta_a.y == 0:  # slope_a == inf
+                        cy = ab_mid.y
                     else:
-                        cy = ab_mid[1] + (ab_mid[0] - cx) / slope_a
-                elif delta_a[0] == 0:  # slope_a == inf
-                    cy = ab_mid[1]
-                    cx = slope_b * (bc_mid[1] - cy) + bc_mid[0]
-                elif delta_b[0] == 0:  # slope_b == inf
-                    cy = bc_mid[1]
-                    cx = slope_a * (ab_mid[1] - cy) + ab_mid[0]
+                        cy = ab_mid.y + (ab_mid.x - cx) / slope_a
+                elif delta_a.x == 0:  # slope_a == inf
+                    cy = ab_mid.y
+                    cx = slope_b * (bc_mid.y - cy) + bc_mid.x
+                elif delta_b.x == 0:  # slope_b == inf
+                    cy = bc_mid.y
+                    cx = slope_a * (ab_mid.y - cy) + ab_mid.x
                 elif slope_a == slope_b:
-                    cx = ab_mid[0]
-                    cy = ab_mid[1]
+                    cx = ab_mid.x
+                    cy = ab_mid.y
                 else:
-                    cx = (slope_a * slope_b * (ab_mid[1] - bc_mid[1])
-                          - slope_a * bc_mid[0]
-                          + slope_b * ab_mid[0]) / (slope_b - slope_a)
-                    cy = ab_mid[1] - (cx - ab_mid[0]) / slope_a
+                    cx = (slope_a * slope_b * (ab_mid.y - bc_mid.y)
+                          - slope_a * bc_mid.x
+                          + slope_b * ab_mid.x) / (slope_b - slope_a)
+                    cy = ab_mid.y - (cx - ab_mid.x) / slope_a
                 self.center = Point(cx, cy)
                 cw = bool(Point.orientation(self.start, control, self.end) == 2)
             elif 'r' in kwargs:
                 r = kwargs['r']
-                mid = Point((self.start[0] + self.end[0]) / 2.0, (self.start[1] + self.end[1]) / 2.0)
+                mid = Point((self.start.x + self.end.x) / 2.0, (self.start.y + self.end.y) / 2.0)
                 q = Point.distance(self.start, self.end)
                 hq = q / 2.0
                 if r < hq:
                     kwargs['r'] = r = hq  # Correct potential math domain error.
                 self.center = Point(
-                    mid[0] + sqrt(r ** 2 - hq ** 2) * (self.start[1] - self.end[1]) / q,
-                    mid[1] + sqrt(r ** 2 - hq ** 2) * (self.end[0] - self.start[0]) / q
+                    mid.x + sqrt(r ** 2 - hq ** 2) * (self.start.y - self.end.y) / q,
+                    mid.y + sqrt(r ** 2 - hq ** 2) * (self.end.x - self.start.x) / q
                 )
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
                 if 'ccw' in kwargs and kwargs['ccw'] and cw or not cw:
                     # ccw arg exists, is true, and we found the cw center, or we didn't find the cw center.
                     self.center = Point(
-                        mid[0] - sqrt(r ** 2 - hq ** 2) * (self.start[1] - self.end[1]) / q,
-                        mid[1] - sqrt(r ** 2 - hq ** 2) * (self.end[0] - self.start[0]) / q
+                        mid.x - sqrt(r ** 2 - hq ** 2) * (self.start.y - self.end.y) / q,
+                        mid.y - sqrt(r ** 2 - hq ** 2) * (self.end.x - self.start.x) / q
                     )
             elif 'rx' in kwargs and 'ry' in kwargs:
                 # This formulation will assume p1 and p2 are both axis aligned.
                 rx = kwargs['rx']
                 ry = kwargs['ry']
-                # We will assume rx == abs(self.start[0] - self.end[0])
-                self.center = Point(self.start[0], self.end[1])
+                # We will assume rx == abs(self.start.x - self.end.x)
+                self.center = Point(self.start.x, self.end.y)
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
                 if 'ccw' in kwargs and kwargs['ccw'] and cw or not cw:
-                    self.center = Point(self.end[0], self.start[1])
+                    self.center = Point(self.end.x, self.start.y)
                 self.sweep = tau / 4.0
 
         if self.center is None:
@@ -4014,9 +4095,9 @@ class Arc(PathSegment):
         if 'r' in kwargs:
             r = kwargs['r']
             if self.prx is None:
-                self.prx = Point(self.center[0] + r, self.center[1])
+                self.prx = Point(self.center.x + r, self.center.y)
             if self.pry is None:
-                self.pry = Point(self.center[0], self.center[1] + r)
+                self.pry = Point(self.center.x, self.center.y + r)
         if 'rx' in kwargs:
             rx = kwargs['rx']
             if self.prx is None:
@@ -4024,7 +4105,7 @@ class Arc(PathSegment):
                     theta = kwargs['rotation']
                     self.prx = Point.polar(self.center, theta, rx)
                 else:
-                    self.prx = Point(self.center[0] + rx, self.center[1])
+                    self.prx = Point(self.center.x + rx, self.center.y)
         if 'ry' in kwargs:
             ry = kwargs['ry']
             if self.pry is None:
@@ -4033,15 +4114,15 @@ class Arc(PathSegment):
                     theta += tau / 4.0
                     self.pry = Point.polar(self.center, theta, ry)
                 else:
-                    self.pry = Point(self.center[0], self.center[1] + ry)
+                    self.pry = Point(self.center.x, self.center.y + ry)
         if self.start is not None and (self.prx is None or self.pry is None):
             radius_s = Point.distance(self.center, self.start)
-            self.prx = Point(self.center[0] + radius_s, self.center[1])
-            self.pry = Point(self.center[0], self.center[1] + radius_s)
+            self.prx = Point(self.center.x + radius_s, self.center.y)
+            self.pry = Point(self.center.x, self.center.y + radius_s)
         if self.end is not None and (self.prx is None or self.pry is None):
             radius_e = Point.distance(self.center, self.end)
-            self.prx = Point(self.center[0] + radius_e, self.center[1])
-            self.pry = Point(self.center[0], self.center[1] + radius_e)
+            self.prx = Point(self.center.x + radius_e, self.center.y)
+            self.pry = Point(self.center.x, self.center.y + radius_e)
         if self.sweep is None and self.start is not None and self.end is not None:
             start_t = self.get_start_t()
             end_t = self.get_end_t()
@@ -4141,7 +4222,7 @@ class Arc(PathSegment):
 
             start_t = self.get_start_t()
             return [self.start if pos == 0 else self.end if pos == 1 else
-                    self.point_at_t(start_t + self.sweep * pos) for pos in positions]
+            self.point_at_t(start_t + self.sweep * pos) for pos in positions]
 
     def _points_numpy(self, positions):
         """Vectorized version of `point()`.
@@ -4160,8 +4241,8 @@ class Arc(PathSegment):
             rotation = self.get_rotation()
             a = self.rx
             b = self.ry
-            cx = self.center[0]
-            cy = self.center[1]
+            cx = self.center.x
+            cy = self.center.y
             cos_rot = cos(rotation)
             sin_rot = sin(rotation)
             cos_t = np.cos(t)
@@ -4310,11 +4391,11 @@ class Arc(PathSegment):
         # built parameters, delta, theta, center
 
         rotate_matrix = Matrix()
-        rotate_matrix.post_rotate(Angle.degrees(rotation).as_radians, center[0], center[1])
+        rotate_matrix.post_rotate(Angle.degrees(rotation).as_radians, center.x, center.y)
 
         self.center = center
-        self.prx = Point(center[0] + rx, center[1])
-        self.pry = Point(center[0], center[1] + ry)
+        self.prx = Point(center.x + rx, center.y)
+        self.pry = Point(center.x, center.y + ry)
 
         self.prx.matrix_transform(rotate_matrix)
         self.pry.matrix_transform(rotate_matrix)
@@ -4337,8 +4418,8 @@ class Arc(PathSegment):
 
         a = self.rx
         b = self.ry
-        cx = self.center[0]
-        cy = self.center[1]
+        cx = self.center.x
+        cy = self.center.y
 
         for i in range(0, arc_required):
             next_t = current_t + t_slice
@@ -4368,8 +4449,8 @@ class Arc(PathSegment):
         ry = self.ry
         p_start = self.start
         current_t = self.get_start_t()
-        x0 = self.center[0]
-        y0 = self.center[1]
+        x0 = self.center.x
+        y0 = self.center.y
         cos_theta = cos(theta)
         sin_theta = sin(theta)
 
@@ -4515,8 +4596,8 @@ class Arc(PathSegment):
         rotation = self.get_rotation()
         a = self.rx
         b = self.ry
-        cx = self.center[0]
-        cy = self.center[1]
+        cx = self.center.x
+        cy = self.center.y
         cos_rot = cos(rotation)
         sin_rot = sin(rotation)
         cos_t = cos(t)
@@ -4547,16 +4628,16 @@ class Arc(PathSegment):
         def angle_inv(ang, k):  # inverse of angle from Arc.derivative()
             return ((ang + pi * k) * (360 / (2 * pi)) - self.theta) / self.delta
 
-        xtrema = [self.start[0], self.end[0]]
-        ytrema = [self.start[1], self.end[1]]
+        xtrema = [self.start.x, self.end.x]
+        ytrema = [self.start.y, self.end.y]
 
         for k in range(-4, 5):
             tx = angle_inv(atan_x, k)
             ty = angle_inv(atan_y, k)
             if 0 <= tx <= 1:
-                xtrema.append(self.point(tx)[0])
+                xtrema.append(self.point(tx).x)
             if 0 <= ty <= 1:
-                ytrema.append(self.point(ty)[1])
+                ytrema.append(self.point(ty).y)
 
         return min(xtrema), min(ytrema), max(xtrema), max(ytrema)
 
@@ -4947,9 +5028,9 @@ class Path(Shape, MutableSequence):
     def vertical(self, *y_points, relative=False):
         start_pos = self.current_point
         if relative:
-            segment = Line(start_pos, Point(start_pos[0], start_pos[1] + y_points[0]))
+            segment = Line(start_pos, Point(start_pos.x, start_pos.y + y_points[0]))
         else:
-            segment = Line(start_pos, Point(start_pos[0], y_points[0]))
+            segment = Line(start_pos, Point(start_pos.x, y_points[0]))
         segment.relative = relative
         self.append(segment)
         if len(y_points) > 1:
@@ -4959,10 +5040,10 @@ class Path(Shape, MutableSequence):
     def horizontal(self, *x_points, relative=False):
         start_pos = self.current_point
         if relative:
-            segment = Line(start_pos, Point(start_pos[0] + x_points[0], start_pos[1]))
+            segment = Line(start_pos, Point(start_pos.x + x_points[0], start_pos.y))
             segment.relative = relative
         else:
-            segment = Line(start_pos, Point(x_points[0], start_pos[1]))
+            segment = Line(start_pos, Point(x_points[0], start_pos.y))
             segment.relative = relative
         self.append(segment)
         if len(x_points) > 1:
@@ -5715,7 +5796,7 @@ class _RoundShape(Shape):
         m.post_scale(self.implicit_rx, self.implicit_ry)
         m.post_rotate(self.rotation)
         center = self.implicit_center
-        m.post_translate(center[0], center[1])
+        m.post_translate(center.x, center.y)
         return m
 
     def arc_t(self, t0, t1):
@@ -5812,8 +5893,8 @@ class _RoundShape(Shape):
         a = self.implicit_rx
         b = self.implicit_ry
         center = self.implicit_center
-        cx = center[0]
-        cy = center[1]
+        cx = center.x
+        cy = center.y
         cosTheta = cos(rotation)
         sinTheta = sin(rotation)
         cosT = cos(t)
@@ -5838,7 +5919,7 @@ class _RoundShape(Shape):
         if b > a:
             a, b = b, a
         h = (a - b) ** 2 / (a + b) ** 2
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
+        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
 class Ellipse(_RoundShape):
@@ -5941,25 +6022,25 @@ class SimpleLine(Shape):
     def implicit_x1(self):
         point = Point(self.x1, self.y1)
         point *= self.transform
-        return point[0]
+        return point.x
 
     @property
     def implicit_y1(self):
         point = Point(self.x1, self.y1)
         point *= self.transform
-        return point[1]
+        return point.y
 
     @property
     def implicit_x2(self):
         point = Point(self.x2, self.y2)
         point *= self.transform
-        return point[0]
+        return point.x
 
     @property
     def implicit_y2(self):
         point = Point(self.x2, self.y2)
         point *= self.transform
-        return point[1]
+        return point.y
 
     def segments(self, transformed=True):
         """
@@ -5988,13 +6069,13 @@ class SimpleLine(Shape):
         matrix = self.transform
         p = Point(self.x1, self.y1)
         p *= matrix
-        self.x1 = p[0]
-        self.y1 = p[1]
+        self.x1 = p.x
+        self.y1 = p.y
 
         p = Point(self.x2, self.y2)
         p *= matrix
-        self.x2 = p[0]
-        self.y2 = p[1]
+        self.x2 = p.x
+        self.y2 = p.y
 
         matrix.reset()
         return self
@@ -6366,7 +6447,75 @@ class Subpath:
         return self
 
 
-class SVGText(GraphicObject, Transformable):
+class Group(SVGElement, Transformable, list):
+    """
+    Group Container element can have children.
+    SVG 2.0 <g> are defined in:
+    5.2. Grouping: the g element
+    """
+    # TODO: This should override the Transformable math and propagate to children.
+    def __init__(self, *args, **kwargs):
+        Transformable.__init__(self, *args, **kwargs)
+        list.__init__(self)
+        if len(args) >= 1:
+            s = args[0]
+            if isinstance(s, Group):
+                self.extend(list(map(copy, s)))
+                return
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def __copy__(self):
+        return Group(self)
+
+    def select(self, conditional=None):
+        """
+        Finds all flattened subobjects of this group for which the conditional returns
+        true.
+
+        :param conditional: function taking element and returns True or False if matching
+        """
+        if conditional is None:
+            def conditional(item):
+                return True
+        for subitem in self:
+            if not conditional(subitem):
+                continue
+            yield subitem
+            if isinstance(subitem, Group):
+                for s in subitem.select(conditional):
+                    yield s
+
+    def reify(self):
+        pass
+
+
+class ClipPath(SVGElement, list):
+    """
+    clipPath elements are defined in svg 14.3.5
+    https://www.w3.org/TR/SVG11/masking.html#ClipPathElement
+
+    Clip paths conceptually define a 1 bit mask for images these are usually defined within
+    def blocks and do not render themselves but rather are attached by IRI references to the
+    """
+
+    def __init__(self, *args, **kwargs):
+        list.__init__(self)
+        self.clip_rule = SVG_RULE_NONZERO
+        self.unit_type = SVG_UNIT_TYPE_USERSPACEONUSE
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        self.clip_rule = s.clip_rule
+        self.unit_type = s.unit_type
+
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+        self.clip_rule = self.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
+        self.unit_type = self.values.get(SVG_ATTR_CLIP_UNIT_TYPE, SVG_UNIT_TYPE_USERSPACEONUSE)
+
+
+class SVGText(SVGElement, GraphicObject, Transformable):
     """
     SVG Text are defined in SVG 2.0 Chapter 11
 
@@ -6397,6 +6546,7 @@ class SVGText(GraphicObject, Transformable):
         self.path = None
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+        SVGElement.__init__(self, *args, **kwargs)
 
     def __str__(self):
         parts = list()
@@ -6504,6 +6654,7 @@ class SVGText(GraphicObject, Transformable):
             width = relative_length
         if height is None and relative_length is not None:
             height = relative_length
+        GraphicObject.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
         self.transform.render(width=width, height=height, relative_length=relative_length, **kwargs)
         if isinstance(self.x, Length):
             self.x = self.x.value(relative_length=width, **kwargs)
@@ -6561,7 +6712,7 @@ class SVGDesc:
             self.desc = values
 
 
-class SVGImage(GraphicObject, Transformable):
+class SVGImage(SVGElement, GraphicObject, Transformable):
     """
     SVG Images are defined in SVG 2.0 12.3
 
@@ -6597,8 +6748,10 @@ class SVGImage(GraphicObject, Transformable):
             self.viewbox.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
         if SVG_ATTR_HEIGHT in kwargs:
             self.viewbox.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
+        SVGElement.__init__(self, *args, **kwargs)
 
     def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
         GraphicObject.property_by_object(self, s)
         self.url = s.url
@@ -6609,6 +6762,7 @@ class SVGImage(GraphicObject, Transformable):
         self.image_height = s.image_height
 
     def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
         if XLINK_HREF in values:
@@ -6690,7 +6844,7 @@ class SVGImage(GraphicObject, Transformable):
         if self.image_width is None or self.image_height is None:
             p = Point(0, 0)
             p *= self.transform
-            return p[0], p[1], p[0], p[1]
+            return p.x, p.y, p.x, p.y
         width = self.image_width
         height = self.image_height
         if transformed:
@@ -6703,8 +6857,8 @@ class SVGImage(GraphicObject, Transformable):
                  Point(width, 0),
                  Point(width, height),
                  Point(0, height))
-        x_vals = list(s[0] for s in p)
-        y_vals = list(s[1] for s in p)
+        x_vals = list(s.x for s in p)
+        y_vals = list(s.y for s in p)
         min_x = min(x_vals)
         min_y = min(y_vals)
         max_x = max(x_vals)
@@ -6821,15 +6975,21 @@ class Viewbox:
             self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
 
     def set_viewbox(self, viewbox):
-        if viewbox is not None and isinstance(viewbox, str):
-            dims = list(REGEX_FLOAT.findall(viewbox))
-            try:
-                self.viewbox_x = float(dims[0])
-                self.viewbox_y = float(dims[1])
-                self.viewbox_width = float(dims[2])
-                self.viewbox_height = float(dims[3])
-            except IndexError:
-                pass
+        if viewbox is not None:
+            if isinstance(viewbox, str):
+                dims = list(REGEX_FLOAT.findall(viewbox))
+                try:
+                    self.viewbox_x = float(dims[0])
+                    self.viewbox_y = float(dims[1])
+                    self.viewbox_width = float(dims[2])
+                    self.viewbox_height = float(dims[3])
+                except IndexError:
+                    pass
+        else:
+            self.viewbox_x = self.element_x
+            self.viewbox_y = self.element_y
+            self.viewbox_width = self.element_width
+            self.viewbox_height = self.element_height
 
     def render(self, width=None, height=None, relative_length=None, **kwargs):
         if width is None and relative_length is not None:
@@ -6852,6 +7012,15 @@ class Viewbox:
             self.element_width = self.element_width.value(relative_length=width, **kwargs)
         if isinstance(self.element_height, Length):
             self.element_height = self.element_height.value(relative_length=height, **kwargs)
+
+        if isinstance(self.viewbox_x, Length):
+            self.viewbox_x = self.viewbox_x.value(relative_length=width, **kwargs)
+        if isinstance(self.viewbox_y, Length):
+            self.viewbox_y = self.viewbox_y.value(relative_length=height, **kwargs)
+        if isinstance(self.viewbox_width, Length):
+            self.viewbox_width = self.viewbox_width.value(relative_length=width, **kwargs)
+        if isinstance(self.viewbox_height, Length):
+            self.viewbox_height = self.viewbox_height.value(relative_length=height, **kwargs)
         return self
 
     def transform(self):
@@ -6976,98 +7145,6 @@ class SVG(Group):
             yield q
 
     @staticmethod
-    def _shadow_iter(elem, children):
-        yield 'start', elem
-        for e, c in children:
-            for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
-                yield shadow_event, shadow_elem
-        yield 'end', elem
-
-    @staticmethod
-    def svg_structure_parse(source):
-        """
-        SVG Structure parsing parses the svg file such that it creates the structure implied by reused objects in a more
-        generalized context. Objects ids are read, and put into a shadow tree. <defs> objects are omitted from the
-        structure of the objects. And <use> objects seamlessly replaced with their definitions.
-
-        :param source: svg file source.
-        :generates: iterparse 'start' and 'end' values restructured.
-        """
-        defs = {}
-        parent = None
-        children = list()
-        def_depth = 0
-
-        for event, elem in iterparse(source, events=('start', 'end', 'start-ns')):
-            if event == 'start':
-                tag = elem.tag
-                if tag.startswith('{http://www.w3.org/2000/svg'):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                    elem.tag = tag
-                attributes = elem.attrib
-                # New node.
-                siblings = children  # Parent's children are now my siblings.
-                parent = (parent, children)  # parent is now previous node context
-                children = list()  # new node has no children.
-                node = (elem, children)  # define this node.
-                siblings.append(node)  # siblings now includes this node.
-
-                if SVG_TAG_USE == tag:
-                    url = None
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
-                    if url is not None:
-                        transform = False
-                        try:
-                            transform = True
-                            x = attributes[SVG_ATTR_X]
-                            del attributes[SVG_ATTR_X]
-                        except KeyError:
-                            x = '0'
-                        try:
-                            transform = True
-                            y = attributes[SVG_ATTR_Y]
-                            del attributes[SVG_ATTR_Y]
-                        except KeyError:
-                            y = '0'
-                        if transform:
-                            try:
-                                attributes[SVG_ATTR_TRANSFORM] = '%s translate(%s, %s)' % \
-                                                                 (attributes[SVG_ATTR_TRANSFORM], x, y)
-                            except KeyError:
-                                attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
-                        yield event, elem
-                        try:
-                            s_elem, s_children = defs[url[1:]]  # Shadow node.
-                        except KeyError:
-                            continue
-                        for shadow_event, shadow_elem in SVG._shadow_iter(s_elem, s_children):
-                            yield shadow_event, shadow_elem
-                        continue
-                if SVG_ATTR_ID in attributes:  # If we have an ID, save the node.
-                    defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
-                if tag == SVG_TAG_DEFS:
-                    def_depth += 1
-            elif event == 'end':
-                tag = elem.tag
-                if tag.startswith('{http://www.w3.org/2000/svg'):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                    elem.tag = tag
-                attributes = elem.attrib
-                # event is 'end', pop values.
-                parent, children = parent  # Pop off previous context.
-                if tag == SVG_TAG_DEFS:
-                    def_depth -= 1
-                    continue
-            elif event == "start-ns":
-                yield event, elem
-                continue
-            if def_depth == 0 or elem.tag == SVG_TAG_STYLE:
-                yield event, elem
-
-    @staticmethod
     def parse(source,
               reify=True,
               ppi=DEFAULT_PPI,
@@ -7092,183 +7169,272 @@ class SVG(Group):
         styles = {}
         stack = []
 
+        defs = {}
+        parent = None  # Define Root Node.
+        children = list()
+        def_depth = 0
+
         values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black", SVG_ATTR_STROKE: "none",
                   SVG_ATTR_HEIGHT: "100%", SVG_ATTR_WIDTH: "100%"}
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
-        for event, elem in SVG.svg_structure_parse(source):
-            # print("%d tag: %s is %s" % (len(stack), elem.tag, event))
+
+        for event, elem in iterparse(source, events=('start', 'end', 'start-ns')):
+            """
+            SVG structure pass parses the svg file such that it creates the structure implied by reused objects in a
+            generalized context. Objects ids are read and put into a shadow tree. <use> objects seamlessly contain
+            their definitions.
+            """
+            subitems = [(event, elem)]  # Default we are going to process this element.
             if event == 'start':
-                stack.append((context, values))
-                if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
-                    continue  # Values has a display=none. Do not render anything.
-                current_values = values
-                values = {}
-                values.update(current_values)  # copy of dictionary
                 tag = elem.tag
+                if tag.startswith('{http://www.w3.org/2000/svg'):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                    elem.tag = tag
+                attributes = elem.attrib
+                # Create new node.
+                siblings = children  # Parent's children are now my siblings.
+                parent = (parent, children)  # parent is now previous node context
+                children = list()  # new node has no children.
+                node = (elem, children)  # define this node.
+                siblings.append(node)  # siblings now includes this node.
 
-                # Non-propagating values.
-                if SVG_ATTR_PRESERVEASPECTRATIO in values:
-                    del values[SVG_ATTR_PRESERVEASPECTRATIO]
-                if SVG_ATTR_VIEWBOX in values:
-                    del values[SVG_ATTR_VIEWBOX]
-                if SVG_ATTR_ID in values:
-                    del values[SVG_ATTR_ID]
+                if SVG_TAG_DEFS == tag:
+                    # This is a defs tag start. Increase the depth.
+                    def_depth += 1
+                    continue
+                elif SVG_TAG_USE == tag:
+                    url = None
+                    if XLINK_HREF in attributes:
+                        url = attributes[XLINK_HREF]
+                    if SVG_HREF in attributes:
+                        url = attributes[SVG_HREF]
+                    if url is not None:
+                        transform = False
+                        try:
+                            x = attributes[SVG_ATTR_X]
+                            del attributes[SVG_ATTR_X]
+                            transform = True
+                        except KeyError:
+                            x = '0'
+                        try:
+                            y = attributes[SVG_ATTR_Y]
+                            del attributes[SVG_ATTR_Y]
+                            transform = True
+                        except KeyError:
+                            y = '0'
+                        if transform:
+                            try:
+                                attributes[SVG_ATTR_TRANSFORM] = '%s translate(%s, %s)' % \
+                                                                 (attributes[SVG_ATTR_TRANSFORM], x, y)
+                            except KeyError:
+                                attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
+                        try:
+                            shadow_node = defs[url[1:]]
+                            children.append(shadow_node)   # Shadow children are children of the use.
+                        except KeyError:
+                            # linking of shadow node failed.
+                            continue
+                        subitems.extend(SVG._shadow_iter(*shadow_node))  # Use element's shadow nodes must be applied.
+                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
+                    defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
+            elif event == 'end':
+                tag = elem.tag
+                if tag.startswith('{http://www.w3.org/2000/svg'):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                    elem.tag = tag
+                # event is 'end', pop values.
+                parent, children = parent  # Parent is now node.
+                if tag == SVG_TAG_DEFS:
+                    # This is a defs tag end. Decrease the depth.
+                    def_depth -= 1
+                    continue
+            for event, elem in subitems:
+                """
+                SVG element parsing parses the job compiling any parsed elements into their compiled object forms. 
+                """
+                if def_depth:
+                    continue
+                if event == 'start':
+                    stack.append((context, values))
+                    if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
+                        continue  # Values has a display=none. Do not render anything.
+                    current_values = values
+                    values = {}
+                    values.update(current_values)  # copy of dictionary
+                    tag = elem.tag
 
-                attributes = elem.attrib  # priority; lowest
-                attributes[SVG_ATTR_TAG] = tag
+                    # Non-propagating values.
+                    if SVG_ATTR_PRESERVEASPECTRATIO in values:
+                        del values[SVG_ATTR_PRESERVEASPECTRATIO]
+                    if SVG_ATTR_VIEWBOX in values:
+                        del values[SVG_ATTR_VIEWBOX]
+                    if SVG_ATTR_ID in values:
+                        del values[SVG_ATTR_ID]
 
-                # Split any Style block elements into parts; priority medium
-                style = ''
-                if '*' in styles:  # Select all.
-                    style += styles['*']
-                if tag in styles:  # selector type
-                    style += styles[tag]
-                if SVG_ATTR_ID in attributes:  # Selector id #id
-                    svg_id = attributes[SVG_ATTR_ID]
-                    css_tag = '#%s' % svg_id
-                    if css_tag in styles:
-                        if len(style) != 0:
-                            style += ';'
-                        style += styles[css_tag]
-                if SVG_ATTR_CLASS in attributes:  # Selector class .class
-                    for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
-                        css_tag = '.%s' % svg_class
+                    attributes = elem.attrib  # priority; lowest
+                    attributes[SVG_ATTR_TAG] = tag
+
+                    # Split any Style block elements into parts; priority medium
+                    style = ''
+                    if '*' in styles:  # Select all.
+                        style += styles['*']
+                    if tag in styles:  # selector type
+                        style += styles[tag]
+                    if SVG_ATTR_ID in attributes:  # Selector id #id
+                        svg_id = attributes[SVG_ATTR_ID]
+                        css_tag = '#%s' % svg_id
                         if css_tag in styles:
                             if len(style) != 0:
                                 style += ';'
                             style += styles[css_tag]
-                        css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
-                        if css_tag in styles:
-                            if len(style) != 0:
-                                style += ';'
-                            style += styles[css_tag]
-                # Split style element into parts; priority highest
-                if SVG_ATTR_STYLE in attributes:
-                    style += attributes[SVG_ATTR_STYLE]
+                    if SVG_ATTR_CLASS in attributes:  # Selector class .class
+                        for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
+                            css_tag = '.%s' % svg_class
+                            if css_tag in styles:
+                                if len(style) != 0:
+                                    style += ';'
+                                style += styles[css_tag]
+                            css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
+                            if css_tag in styles:
+                                if len(style) != 0:
+                                    style += ';'
+                                style += styles[css_tag]
+                    # Split style element into parts; priority highest
+                    if SVG_ATTR_STYLE in attributes:
+                        style += attributes[SVG_ATTR_STYLE]
 
-                # Process style tag left to right.
-                for equate in style.split(";"):
-                    equal_item = equate.split(":")
-                    if len(equal_item) == 2:
-                        key = str(equal_item[0]).strip()
-                        value = str(equal_item[1]).strip()
-                        attributes[key] = value
-                if SVG_ATTR_FILL in attributes and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR:
-                    if SVG_ATTR_COLOR in attributes:
-                        attributes[SVG_ATTR_FILL] = attributes[SVG_ATTR_COLOR]
-                    else:
-                        attributes[SVG_ATTR_FILL] = values[SVG_ATTR_COLOR]
+                    # Process style tag left to right.
+                    for equate in style.split(";"):
+                        equal_item = equate.split(":")
+                        if len(equal_item) == 2:
+                            key = str(equal_item[0]).strip()
+                            value = str(equal_item[1]).strip()
+                            attributes[key] = value
+                    if SVG_ATTR_FILL in attributes and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR:
+                        if SVG_ATTR_COLOR in attributes:
+                            attributes[SVG_ATTR_FILL] = attributes[SVG_ATTR_COLOR]
+                        else:
+                            attributes[SVG_ATTR_FILL] = values[SVG_ATTR_COLOR]
 
-                if SVG_ATTR_STROKE in attributes and attributes[SVG_ATTR_STROKE] == SVG_VALUE_CURRENT_COLOR:
-                    if SVG_ATTR_COLOR in attributes:
-                        attributes[SVG_ATTR_STROKE] = attributes[SVG_ATTR_COLOR]
-                    else:
-                        attributes[SVG_ATTR_STROKE] = values[SVG_ATTR_COLOR]
+                    if SVG_ATTR_STROKE in attributes and attributes[SVG_ATTR_STROKE] == SVG_VALUE_CURRENT_COLOR:
+                        if SVG_ATTR_COLOR in attributes:
+                            attributes[SVG_ATTR_STROKE] = attributes[SVG_ATTR_COLOR]
+                        else:
+                            attributes[SVG_ATTR_STROKE] = values[SVG_ATTR_COLOR]
 
-                if SVG_ATTR_TRANSFORM in attributes:
-                    # If transform is already in values, append the new value.
-                    if SVG_ATTR_TRANSFORM in values:
-                        attributes[SVG_ATTR_TRANSFORM] = values[SVG_ATTR_TRANSFORM] + \
-                                                         " " + \
-                                                         attributes[SVG_ATTR_TRANSFORM]
-                    else:
-                        attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
-                values.update(attributes)
-                if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
-                    continue  # If the attributes we just flags our values to display=none, stop rendering.
-                if SVG_NAME_TAG == tag:
-                    # The ordering for transformations on the SVG object are:
-                    # explicit transform, parent transforms, attribute transforms, viewport transforms
-                    s = SVG(values)
-                    s.render(ppi=ppi, width=width, height=height)
+                    if SVG_ATTR_TRANSFORM in attributes:
+                        # If transform is already in values, append the new value.
+                        if SVG_ATTR_TRANSFORM in values:
+                            attributes[SVG_ATTR_TRANSFORM] = values[SVG_ATTR_TRANSFORM] + \
+                                                             " " + \
+                                                             attributes[SVG_ATTR_TRANSFORM]
+                        else:
+                            attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
+                    values.update(attributes)
+                    if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
+                        continue  # If the attributes we just flags our values to display=none, stop rendering.
+                    if SVG_NAME_TAG == tag:
+                        # The ordering for transformations on the SVG object are:
+                        # explicit transform, parent transforms, attribute transforms, viewport transforms
+                        s = SVG(values)
+                        s.render(ppi=ppi, width=width, height=height)
 
-                    # viewbox was rendered here.
-                    try:
-                        if s.viewbox.element_height == 0 or s.viewbox.element_width == 0:
-                            return s
-                        viewport_transform = s.viewbox.transform()
-                    except ZeroDivisionError:
-                        # The width or height was zero.
-                        # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
-                        # "A value of zero disables rendering of the element."
-                        return s  # No more parsing will be done.
+                        # viewbox was rendered here.
+                        try:
+                            if s.viewbox.element_height == 0 or s.viewbox.element_width == 0:
+                                return s
+                            viewport_transform = s.viewbox.transform()
+                        except ZeroDivisionError:
+                            # The width or height was zero.
+                            # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
+                            # "A value of zero disables rendering of the element."
+                            return s  # No more parsing will be done.
 
-                    if SVG_ATTR_TRANSFORM in values:
-                        # transform on SVG element applied as if svg had parent with transform.
-                        values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
-                    else:
-                        values[SVG_ATTR_TRANSFORM] = viewport_transform
-                    width = s.viewbox.viewbox_width
-                    height = s.viewbox.viewbox_height
-                    if context is None:
-                        stack[-1] = (context, values)
-                    if context is not None:
-                        context.append(s)
-                    context = s
-                    if root is None:
-                        root = s
-                    continue
-                elif SVG_TAG_GROUP == tag:
-                    s = Group(values)
-                    context.append(s)
-                    context = s
-                    continue
-                elif SVG_TAG_PATH == tag:
-                    try:
-                        s = Path(values)
-                    except ValueError:
+                        if SVG_ATTR_TRANSFORM in values:
+                            # transform on SVG element applied as if svg had parent with transform.
+                            values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
+                        else:
+                            values[SVG_ATTR_TRANSFORM] = viewport_transform
+                        width = s.viewbox.viewbox_width if s.viewbox.viewbox_width is not None else width
+                        height = s.viewbox.viewbox_height if s.viewbox.viewbox_height is not None else height
+                        if context is None:
+                            stack[-1] = (context, values)
+                        if context is not None:
+                            context.append(s)
+                        context = s
+                        if root is None:
+                            root = s
                         continue
-                elif SVG_TAG_CIRCLE == tag:
-                    s = Circle(values)
-                elif SVG_TAG_ELLIPSE == tag:
-                    s = Ellipse(values)
-                elif SVG_TAG_LINE == tag:
-                    s = SimpleLine(values)
-                elif SVG_TAG_POLYLINE == tag:
-                    s = Polyline(values)
-                elif SVG_TAG_POLYGON == tag:
-                    s = Polygon(values)
-                elif SVG_TAG_RECT == tag:
-                    s = Rect(values)
-                elif SVG_TAG_IMAGE == tag:
-                    s = SVGImage(values)
-                elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC):
-                    # <style>, <text>, <desc>
-                    continue
-                else:
-                    s = SVGElement(values)  # SVG Unknown object return as element.
-                    context.append(s)
-                    continue
-                s.render(ppi=ppi, width=width, height=height)
-                if reify:
-                    s.reify()
-                context.append(s)
-            elif event == 'end':  # End event.
-                # The iterparse spec makes it clear that internal text data is undefined except at the end.
-                tag = elem.tag
-                if SVG_TAG_TEXT == tag:
-                    s = SVGText(values, text=elem.text)
+                    elif SVG_TAG_GROUP == tag:
+                        s = Group(values)
+                        context.append(s)
+                        context = s
+                        continue
+                    elif SVG_TAG_PATH == tag:
+                        try:
+                            s = Path(values)
+                        except ValueError:
+                            continue
+                    elif SVG_TAG_CIRCLE == tag:
+                        s = Circle(values)
+                    elif SVG_TAG_ELLIPSE == tag:
+                        s = Ellipse(values)
+                    elif SVG_TAG_LINE == tag:
+                        s = SimpleLine(values)
+                    elif SVG_TAG_POLYLINE == tag:
+                        s = Polyline(values)
+                    elif SVG_TAG_POLYGON == tag:
+                        s = Polygon(values)
+                    elif SVG_TAG_RECT == tag:
+                        s = Rect(values)
+                    elif SVG_TAG_IMAGE == tag:
+                        s = SVGImage(values)
+                    elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC):
+                        # <style>, <text>, <desc>
+                        continue
+                    else:
+                        s = SVGElement(values)  # SVG Unknown object return as element.
+                        context.append(s)
+                        continue
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
                     context.append(s)
-                elif SVG_TAG_TSPAN == tag:
-                    s = SVGText(values, text=elem.text)
-                    context.append(s)
-                    s.render(ppi=ppi, width=width, height=height)
-                elif SVG_TAG_DESC == tag:
-                    s = SVGDesc(values, desc=elem.text)
-                    context.append(s)
-                elif SVG_TAG_STYLE == tag:
-                    assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
-                    for key, value in assignments:
-                        key = key.strip()
-                        value = value.strip()
-                        for selector in key.split(','):  # Can comma select subitems.
-                            styles[selector.strip()] = value
-                context, values = stack.pop()
-            elif event == 'start-ns':
-                if elem[0] != SVG_ATTR_DATA:
-                    values[elem[0]] = elem[1]
+                elif event == 'end':  # End event.
+                    # The iterparse spec makes it clear that internal text data is undefined except at the end.
+                    tag = elem.tag
+                    if SVG_TAG_TEXT == tag:
+                        s = SVGText(values, text=elem.text)
+                        s.render(ppi=ppi, width=width, height=height)
+                        if reify:
+                            s.reify()
+                        context.append(s)
+                    elif SVG_TAG_TSPAN == tag:
+                        s = SVGText(values, text=elem.text)
+                        context.append(s)
+                        s.render(ppi=ppi, width=width, height=height)
+                    elif SVG_TAG_DESC == tag:
+                        s = SVGDesc(values, desc=elem.text)
+                        context.append(s)
+                    elif SVG_TAG_STYLE == tag:
+                        assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
+                        for key, value in assignments:
+                            key = key.strip()
+                            value = value.strip()
+                            for selector in key.split(','):  # Can comma select subitems.
+                                styles[selector.strip()] = value
+                    context, values = stack.pop()
+                elif event == 'start-ns':
+                    if elem[0] != SVG_ATTR_DATA:
+                        values[elem[0]] = elem[1]
         return root
+
+
+    @staticmethod
+    def _shadow_iter(elem, children):
+        yield 'start', elem
+        for e, c in children:
+            for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
+                yield shadow_event, shadow_elem
+        yield 'end', elem

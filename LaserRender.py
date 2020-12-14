@@ -132,8 +132,8 @@ class LaserRender:
 
     def set_element_pen(self, gc, element, zoomscale=1.0):
         try:
-            sw = Length(element.values['stroke-width']).value(ppi=96.0)
-        except KeyError:
+            sw = element.stroke_width if element.stroke_width is not None else 1.0
+        except AttributeError:
             sw = 1.0
         limit = zoomscale**.5
         if sw < limit:

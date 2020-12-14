@@ -1,4 +1,3 @@
-from copy import copy
 
 from Kernel import Modifier
 from LaserOperation import *
