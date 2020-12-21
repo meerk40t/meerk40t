@@ -65,17 +65,23 @@ SVG_TAG_TEXT = 'text'
 SVG_TAG_TSPAN = 'tspan'
 SVG_TAG_IMAGE = 'image'
 SVG_TAG_DESC = 'desc'
+SVG_TAG_TITLE = 'title'
+SVG_TAG_METADATA = 'metadata'
 SVG_TAG_STYLE = 'style'
 SVG_TAG_DEFS = 'defs'
 SVG_TAG_USE = 'use'
 SVG_TAG_CLIPPATH = 'clipPath'
+SVG_TAG_PATTERN = 'pattern'
+
 SVG_STRUCT_ATTRIB = 'attributes'
 SVG_ATTR_ID = 'id'
 SVG_ATTR_DATA = 'd'
 SVG_ATTR_DISPLAY = 'display'
 SVG_ATTR_COLOR = 'color'
 SVG_ATTR_FILL = 'fill'
+SVG_ATTR_FILL_OPACITY = 'fill-opacity'
 SVG_ATTR_STROKE = 'stroke'
+SVG_ATTR_STROKE_OPACITY = 'stroke-opacity'
 SVG_ATTR_STROKE_WIDTH = 'stroke-width'
 SVG_ATTR_TRANSFORM = 'transform'
 SVG_ATTR_STYLE = 'style'
@@ -107,6 +113,11 @@ SVG_ATTR_FONT_FACE = 'font-face'
 SVG_ATTR_FONT_SIZE = 'font-size'
 SVG_ATTR_FONT_WEIGHT = 'font-weight'  # normal, bold, bolder, lighter, 100-900
 SVG_ATTR_TEXT_ANCHOR = 'text-anchor'
+SVG_ATTR_PATTERN_CONTENT_UNITS = "patternContentUnits"
+SVG_ATTR_PATTERN_TRANSFORM = "patternTransform"
+SVG_ATTR_PATTERN_UNITS = "patternUnits"
+
+SVG_ATTR_VECTOR_EFFECT = 'vector-effect'
 
 SVG_UNIT_TYPE_USERSPACEONUSE = 'userSpaceOnUse'
 SVG_UNIT_TYPE_OBJECTBOUNDINGBOX = 'objectBoundingBox'
@@ -128,6 +139,8 @@ SVG_TRANSFORM_SCALE_Y = 'scaley'
 
 SVG_VALUE_NONE = 'none'
 SVG_VALUE_CURRENT_COLOR = 'currentColor'
+
+SVG_VALUE_NON_SCALING_STROKE = 'non-scaling-stroke'
 
 PATTERN_WS = r'[\s\t\n]*'
 PATTERN_COMMA = r'(?:\s*,\s*|\s+|(?=-))'
@@ -154,7 +167,7 @@ PATTERN_TRANSFORM_UNITS = PATTERN_LENGTH_UNITS + '|' \
                           + PATTERN_ANGLE_UNITS + '|' \
                           + PATTERN_PERCENT
 
-REGEX_IRI = re.compile('url\((.*)\)')
+REGEX_IRI = re.compile('url\(#?(.*)\)')
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile('(%s)%s(%s)' % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT))
 REGEX_TRANSFORM_TEMPLATE = re.compile('(?u)(%s)%s\(([^)]+)\)' % (PATTERN_TRANSFORM, PATTERN_WS))
@@ -815,7 +828,7 @@ class Length(object):
         v = value / ppi
         return Length("%sin" % (Length.str(v)))
 
-    def value(self, ppi=None, relative_length=None, font_size=None, font_height=None, viewbox=None):
+    def value(self, ppi=None, relative_length=None, font_size=None, font_height=None, viewbox=None, **kwargs):
         if self.amount is None:
             return None
         if self.units == '%':
@@ -860,23 +873,23 @@ class Length(object):
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            return self.amount * v.viewbox_width / 100.0
+            return self.amount * v.width / 100.0
         if self.units == 'vh':
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            return self.amount * v.viewbox_height / 100.0
+            return self.amount * v.height / 100.0
         if self.units == 'vmin':
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            m = min(v.viewbox_height, v.viewbox_height)
+            m = min(v.height, v.height)
             return self.amount * m / 100.0
         if self.units == 'vmax':
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            m = max(v.viewbox_height, v.viewbox_height)
+            m = max(v.height, v.height)
             return self.amount * m / 100.0
         try:
             return float(self)
@@ -2424,20 +2437,22 @@ class Matrix:
         Provides values to turn trans_x and trans_y values into user units floats rather
         than Lengths by giving the required information to perform the conversions.
         """
-
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-
         if isinstance(self.e, Length):
+            if width is None and relative_length is not None:
+                width = relative_length
             self.e = self.e.value(ppi=ppi, relative_length=width, font_size=font_size,
                                   font_height=font_height, viewbox=viewbox)
 
         if isinstance(self.f, Length):
+            if height is None and relative_length is not None:
+                height = relative_length
             self.f = self.f.value(ppi=ppi, relative_length=height, font_size=font_size,
                                   font_height=font_height, viewbox=viewbox)
         return self
+
+    @property
+    def determinant(self):
+        return self.a * self.d - self.c * self.b
 
     def value_trans_x(self):
         return self.e
@@ -2739,6 +2754,148 @@ class Matrix:
         return float(r0[0]), float(r1[0]), float(r0[1]), float(r1[1]), r0[2], r1[2]
 
 
+class Viewbox:
+
+    def __init__(self, viewbox, preserve_aspect_ratio=None):
+        """
+        Viewbox controls the scaling between the drawing size view that is observing that drawing.
+
+        :param viewbox: either values or viewbox attribute or a Viewbox object
+        :param preserve_aspect_ratio: preserveAspectRatio
+        """
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.preserve_aspect_ratio = preserve_aspect_ratio
+        if isinstance(viewbox, dict):
+            self.property_by_values(viewbox)
+        elif isinstance(viewbox, Viewbox):
+            self.property_by_object(viewbox)
+        else:
+            self.set_viewbox(viewbox)
+
+    def __str__(self):
+        return '%s %s %s %s' % (
+            Length.str(self.x),
+            Length.str(self.y),
+            Length.str(self.width),
+            Length.str(self.height),
+        )
+
+    def property_by_object(self, obj):
+        self.x = obj.x
+        self.y = obj.y
+        self.width = obj.width
+        self.height = obj.height
+        self.preserve_aspect_ratio = obj.preserve_aspect_ratio
+
+    def property_by_values(self, values):
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        if viewbox is not None:
+            self.set_viewbox(viewbox)
+        if SVG_ATTR_PRESERVEASPECTRATIO in values:
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+
+    def set_viewbox(self, viewbox):
+        if viewbox is not None:
+            dims = list(REGEX_FLOAT.findall(viewbox))
+            try:
+                self.x = float(dims[0])
+                self.y = float(dims[1])
+                self.width = float(dims[2])
+                self.height = float(dims[3])
+            except IndexError:
+                pass
+
+    def transform(self, element):
+        return Viewbox.viewbox_transform(
+            element.x, element.y, element.width, element.height,
+            self.x, self.y, self.width, self.height,
+            self.preserve_aspect_ratio)
+
+    @staticmethod
+    def viewbox_transform(e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect):
+        """
+        SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
+        With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+
+        It creates transform commands equal to that viewport expected.
+
+        :param svg_node: dict containing the relevant svg entries.
+        :return: string of the SVG transform commands to account for the viewbox.
+        """
+
+        # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+
+        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
+        # width and height values of the viewBox attribute respectively.
+
+        # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+        # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+        # or if meetOrSlice is missing from this value.
+        if e_x is None or e_y is None or e_width is None or e_height is None or \
+                vb_x is None or vb_y is None or vb_width is None or vb_height is None:
+            return ''
+        if aspect is not None:
+            aspect_slice = aspect.split(' ')
+            try:
+                align = aspect_slice[0]
+            except IndexError:
+                align = 'xMidyMid'
+            try:
+                meet_or_slice = aspect_slice[1]
+            except IndexError:
+                meet_or_slice = 'meet'
+        else:
+            align = 'xMidyMid'
+            meet_or_slice = 'meet'
+        # Initialize scale-x to e-width/vb-width.
+        scale_x = e_width / vb_width
+        # Initialize scale-y to e-height/vb-height.
+        scale_y = e_height / vb_height
+
+        # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
+        if align != SVG_VALUE_NONE and meet_or_slice == 'meet':
+            scale_x = scale_y = min(scale_x, scale_y)
+        # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
+        elif align != SVG_VALUE_NONE and meet_or_slice == 'slice':
+            scale_x = scale_y = max(scale_x, scale_y)
+        # Initialize translate-x to e-x - (vb-x * scale-x).
+        translate_x = e_x - (vb_x * scale_x)
+        # Initialize translate-y to e-y - (vb-y * scale-y)
+        translate_y = e_y - (vb_y * scale_y)
+        # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+        align = align.lower()
+        if 'xmid' in align:
+            translate_x += (e_width - vb_width * scale_x) / 2.0
+        # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
+        if 'xmax' in align:
+            translate_x += e_width - vb_width * scale_x
+        # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+        if 'ymid' in align:
+            translate_y += (e_height - vb_height * scale_y) / 2.0
+        # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
+        if 'ymax' in align:
+            translate_y += (e_height - vb_height * scale_y)
+        # The transform applied to content contained by the element is given by:
+        # translate(translate-x, translate-y) scale(scale-x, scale-y)
+        if isinstance(scale_x, Length) or isinstance(scale_y, Length):
+            raise ValueError
+        if translate_x == 0 and translate_y == 0:
+            if scale_x == 1 and scale_y == 1:
+                return ""  # Nothing happens.
+            else:
+                return "scale(%s, %s)" % (Length.str(scale_x), Length.str(scale_y))
+        else:
+            if scale_x == 1 and scale_y == 1:
+                return "translate(%s, %s)" % (Length.str(translate_x), Length.str(translate_y))
+            else:
+                return "translate(%s, %s) scale(%s, %s)" % \
+                       (Length.str(translate_x), Length.str(translate_y),
+                        Length.str(scale_x), Length.str(scale_y))
+
+
 class SVGElement(object):
     """
     Any element within the SVG namespace.
@@ -2780,6 +2937,20 @@ class SVGElement(object):
 
     def property_by_values(self, values):
         self.id = values.get(SVG_ATTR_ID)
+
+    def render(self, **kwargs):
+        """
+        Render changes any length/percent values or attributes into real usable limits if
+        given the information required to change such parameters.
+
+        :param kwargs: various other properties to be rendered with.
+        :return:
+        """
+        pass
+
+    def set(self, key, value):
+        self.values[key] = value
+        return self
 
 
 class Transformable:
@@ -2836,23 +3007,14 @@ class Transformable:
         """
         self._lengths = None
         self._length = None
-        try:
-            if self.stroke_width is not None:
-                width = self.stroke_width
-                t = self.transform
-                det = t.a * t.d - t.c * t.b
-                self.stroke_width = width * sqrt(abs(det))
-        except AttributeError:
-            # Stroke Width isn't on this object type. Skip that transform.
-            pass
-        return self
 
     def render(self, **kwargs):
         """
         Renders the transformable by performing any required length conversion operations into pixels. The element
         will be the pixel-length form.
         """
-        self.transform.render(**kwargs)
+        if self.transform is not None:
+            self.transform.render(**kwargs)
         return self
 
     def bbox(self, transformed=True):
@@ -2882,31 +3044,67 @@ class GraphicObject:
         self.stroke = None
         self.fill = None
         self.stroke_width = None
-        self.clip_path = None
 
     def property_by_object(self, s):
         self.fill = Color(s.fill) if s.fill is not None else None
         self.stroke = Color(s.stroke) if s.stroke is not None else None
         self.stroke_width = Length(s.stroke_width).value() if s.stroke_width is not None else None
-        self.clip_path = ClipPath(s.clip_path) if s.clip_path is not None else None
 
     def property_by_values(self, values):
         stroke = values.get(SVG_ATTR_STROKE)
         self.stroke = Color(stroke) if stroke is not None else None
+        stroke_opacity = values.get(SVG_ATTR_STROKE_OPACITY)
+        if stroke_opacity is not None and self.stroke is not None:
+            try:
+                self.stroke.opacity = float(stroke_opacity)
+            except ValueError:
+                pass
         fill = values.get(SVG_ATTR_FILL)
         self.fill = Color(fill) if fill is not None else None
-        self.stroke_width = Length(values.get(SVG_ATTR_STROKE_WIDTH)).value()
-        clip_path = values.get(SVG_TAG_CLIPPATH)
-        self.clip_path = ClipPath(clip_path) if clip_path is not None else None
+        fill_opacity = values.get(SVG_ATTR_FILL_OPACITY)
+        if fill_opacity is not None and self.fill is not None:
+            try:
+                self.fill.opacity = float(fill_opacity)
+            except ValueError:
+                pass
+        self.stroke_width = Length(values.get(SVG_ATTR_STROKE_WIDTH, 1.0)).value()
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
+    def render(self, **kwargs):
         if isinstance(self.stroke_width, Length):
+            width = kwargs.get('width', kwargs.get('relative_length'))
+            height = kwargs.get('height', kwargs.get('relative_length'))
+            try:
+                del kwargs['relative_length']
+            except KeyError:
+                pass
             self.stroke_width = self.stroke_width.value(relative_length=sqrt(width * width + height * height), **kwargs)
             # A percentage stroke_width is always computed as a percentage of the normalized viewBox diagonal length.
+
+    def reify(self):
+        """
+        Realizes the transform to the attributes. Such that the attributes become actualized and the transform
+        simplifies towards the identity matrix. In many cases it will become the identity matrix. In other cases the
+        transformed shape cannot be represented through the properties alone. And shall keep those parts of the
+        transform required preserve equivalency.
+        """
+        self.stroke_width = self.implicit_stroke_width
+        return self
+
+    @property
+    def implicit_stroke_width(self):
+        try:
+            if not self.apply:
+                return self.stroke_width
+            if self.stroke_width is not None:
+                if hasattr(self, 'values') and \
+                        SVG_ATTR_VECTOR_EFFECT in self.values and \
+                        SVG_VALUE_NON_SCALING_STROKE in self.values[SVG_ATTR_VECTOR_EFFECT]:
+                    return self.stroke_width  # we are not to scale the stroke.
+                width = self.stroke_width
+                det = self.transform.determinant
+                return width * sqrt(abs(det))
+        except AttributeError:
+            return self.stroke_width
 
 
 class Shape(SVGElement, GraphicObject, Transformable):
@@ -2950,12 +3148,15 @@ class Shape(SVGElement, GraphicObject, Transformable):
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
 
+    def render(self, **kwargs):
+        SVGElement.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+        GraphicObject.render(self, **kwargs)
+
     def __eq__(self, other):
         if not isinstance(other, Shape):
             return NotImplemented
         if self.fill != other.fill or self.stroke != other.stroke:
-            return False
-        if self.stroke_width != other.stroke_width:
             return False
         first = self
         if not isinstance(first, Path):
@@ -3178,6 +3379,8 @@ class Shape(SVGElement, GraphicObject, Transformable):
             values.append('stroke=\'%s\'' % self.stroke)
         if self.fill is not None:
             values.append('fill=\'%s\'' % self.fill)
+        if self.stroke_width is not None and self.stroke_width != 1.0:
+            values.append('stroke_width=\'%s\'' % str(self.stroke_width))
         if self.apply is not None and not self.apply:
             values.append('apply=%s' % self.apply)
         if self.id is not None:
@@ -3447,6 +3650,15 @@ class Move(PathSegment):
         return 'm %s' % (self.end - current_point)
 
 
+class Curve(PathSegment):
+    """Represents curve commands"""
+
+    def __init__(self, start=None, end=None, **kwargs):
+        PathSegment.__init__(self, **kwargs)
+        self.start = Point(start) if start is not None else None
+        self.end = Point(end) if end is not None else None
+
+
 class Linear(PathSegment):
     """Represents line commands."""
 
@@ -3506,7 +3718,7 @@ class Linear(PathSegment):
             return 0
 
     def closest_segment_point(self, p, respect_bounds=True):
-        """ Gives the t value of the point on the line closest to the given point. """
+        """ Gives the point on the line closest to the given point. """
         a = self.start
         b = self.end
         vAPx = p[0] - a.x
@@ -3568,20 +3780,12 @@ class Line(Linear):
             return 'l %s' % (self.end - current_point)
 
 
-class QuadraticBezier(PathSegment):
+class QuadraticBezier(Curve):
     """Represents Quadratic Bezier commands."""
 
     def __init__(self, start, control, end, **kwargs):
-        PathSegment.__init__(self, **kwargs)
-        self.end = None
-        self.control = None
-        self.start = None
-        if start is not None:
-            self.start = Point(start)
-        if control is not None:
-            self.control = Point(control)
-        if end is not None:
-            self.end = Point(end)
+        Curve.__init__(self, start, end, **kwargs)
+        self.control = Point(control) if control is not None else None
 
     def __repr__(self):
         return 'QuadraticBezier(start=%s, control=%s, end=%s)' % (
@@ -3728,23 +3932,13 @@ class QuadraticBezier(PathSegment):
                 return 'q %s %s' % (self.control - current_point, self.end - current_point)
 
 
-class CubicBezier(PathSegment):
+class CubicBezier(Curve):
     """Represents Cubic Bezier commands."""
 
     def __init__(self, start, control1, control2, end, **kwargs):
-        PathSegment.__init__(self, **kwargs)
-        self.end = None
-        self.control1 = None
-        self.control2 = None
-        self.start = None
-        if start is not None:
-            self.start = Point(start)
-        if control1 is not None:
-            self.control1 = Point(control1)
-        if control2 is not None:
-            self.control2 = Point(control2)
-        if end is not None:
-            self.end = Point(end)
+        Curve.__init__(self, start, end, **kwargs)
+        self.control1 = Point(control1) if control1 is not None else None
+        self.control2 = Point(control2) if control1 is not None else None
 
     def __repr__(self):
         return 'CubicBezier(start=%s, control1=%s, control2=%s, end=%s)' % (
@@ -3908,7 +4102,7 @@ class CubicBezier(PathSegment):
                     self.control1 - current_point, self.control2 - current_point, self.end - current_point)
 
 
-class Arc(PathSegment):
+class Arc(Curve):
     def __init__(self, *args, **kwargs):
         """
         Represents Arc commands.
@@ -3944,9 +4138,7 @@ class Arc(PathSegment):
 
         start_t + sweep = end_t
         """
-        PathSegment.__init__(self, **kwargs)
-        self.start = None
-        self.end = None
+        Curve.__init__(self, **kwargs)
         self.center = None
         self.prx = None
         self.pry = None
@@ -4091,7 +4283,7 @@ class Arc(PathSegment):
                 self.sweep = tau / 4.0
 
         if self.center is None:
-            return  # Center must be solvable.
+            raise ValueError("Not enough values to solve for center.")
         if 'r' in kwargs:
             r = kwargs['r']
             if self.prx is None:
@@ -4873,6 +5065,8 @@ class Path(Shape, MutableSequence):
         for s, o in zip(q._segments, p._segments):
             if not s == o:
                 return False
+        if p.stroke_width != q.stroke_width:
+            return False
         return True
 
     def __ne__(self, other):
@@ -5256,6 +5450,7 @@ class Path(Shape, MutableSequence):
 
         Path objects reify perfectly.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         if isinstance(self.transform, Matrix):
             for e in self._segments:
@@ -5535,7 +5730,7 @@ class Rect(Shape):
         width = self.width
         height = self.height
         if width == 0 or height == 0:
-            return ''  # a computed value of zero for either dimension disables rendering.
+            return ()  # a computed value of zero for either dimension disables rendering.
         rx = self.rx
         ry = self.ry
         if rx == ry == 0:
@@ -5569,6 +5764,7 @@ class Rect(Shape):
 
         Skewed and Rotated rectangles cannot be reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
@@ -5588,12 +5784,14 @@ class Rect(Shape):
             self.transform *= Matrix.scale(1.0 / scale_x, 1.0 / scale_y)
         return self
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        Shape.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        Shape.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.x, Length):
             self.x = self.x.value(relative_length=width, **kwargs)
         if isinstance(self.y, Length):
@@ -5731,13 +5929,19 @@ class _RoundShape(Shape):
             step_size = -step_size
         t_start = 0
         t_end = step_size
+        # zero for either dimension, or a computed value of auto for both dimensions, disables rendering of the element.
+        rx = self.implicit_rx
+        ry = self.implicit_ry
+        if rx == 0 or ry == 0:
+            return ()
+        center = self.implicit_center
         path.move((self.point_at_t(0)))
         for i in range(steps):
             path += Arc(
                 self.point_at_t(t_start),
                 self.point_at_t(t_end),
-                self.implicit_center,
-                rx=self.implicit_rx, ry=self.implicit_ry, rotation=self.rotation, sweep=step_size)
+                center,
+                rx=rx, ry=ry, rotation=self.rotation, sweep=step_size)
             t_start = t_end
             t_end += step_size
         path.closed()
@@ -5750,6 +5954,7 @@ class _RoundShape(Shape):
 
         Skewed and Rotated roundshapes cannot be reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         scale_x = abs(self.transform.value_scale_x())
         scale_y = abs(self.transform.value_scale_y())
@@ -5767,12 +5972,14 @@ class _RoundShape(Shape):
             self.transform *= Matrix.scale(1.0 / scale_x, 1.0 / scale_y)
         return self
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        Shape.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        Shape.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.cx, Length):
             self.cx = self.cx.value(relative_length=width, **kwargs)
         if isinstance(self.cy, Length):
@@ -6065,6 +6272,7 @@ class SimpleLine(Shape):
 
         SimpleLines are perfectly reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         matrix = self.transform
         p = Point(self.x1, self.y1)
@@ -6080,12 +6288,14 @@ class SimpleLine(Shape):
         matrix.reset()
         return self
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        Shape.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        Shape.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.x1, Length):
             self.x1 = self.x1.value(relative_length=width, **kwargs)
         if isinstance(self.y1, Length):
@@ -6196,6 +6406,7 @@ class _Polyshape(Shape):
 
         Polyshapes are perfectly reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         matrix = self.transform
         for p in self:
@@ -6464,6 +6675,9 @@ class Group(SVGElement, Transformable, list):
                 return
         SVGElement.__init__(self, *args, **kwargs)
 
+    def render(self, **kwargs):
+        Transformable.render(self, **kwargs)
+
     def __copy__(self):
         return Group(self)
 
@@ -6500,19 +6714,95 @@ class ClipPath(SVGElement, list):
 
     def __init__(self, *args, **kwargs):
         list.__init__(self)
-        self.clip_rule = SVG_RULE_NONZERO
         self.unit_type = SVG_UNIT_TYPE_USERSPACEONUSE
         SVGElement.__init__(self, *args, **kwargs)
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
-        self.clip_rule = s.clip_rule
         self.unit_type = s.unit_type
 
     def property_by_values(self, values):
         SVGElement.property_by_values(self, values)
-        self.clip_rule = self.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
         self.unit_type = self.values.get(SVG_ATTR_CLIP_UNIT_TYPE, SVG_UNIT_TYPE_USERSPACEONUSE)
+
+
+class Pattern(SVGElement, list):
+    def __init__(self, *args, **kwargs):
+        self.viewbox = None
+        self.preserve_aspect_ratio = None
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.href = None
+        self.pattern_content_units = None  # UserSpaceOnUse default
+        self.pattern_transform = None
+        self.pattern_units = None
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def __int__(self):
+        return 0
+
+    @property
+    def viewbox_transform(self):
+        if self.viewbox is None:
+            return ''
+        return self.viewbox.transform(self)
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        self.viewbox = s.viewbox
+        self.preserve_aspect_ratio = s.preserve_aspect_ratio
+
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+        self.href = s.href
+        self.pattern_content_units = s.pattern_contents_units
+        self.pattern_transform = Matrix(s.pattern_transform) if s.pattern_transform is not None else None
+        self.pattern_units = s.pattern_units
+
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+        if XLINK_HREF in values:
+            self.href = values[XLINK_HREF]
+        elif SVG_HREF in values:
+            self.href = values[SVG_HREF]
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        if viewbox is not None:
+            self.viewbox = Viewbox(viewbox)
+        if SVG_ATTR_PRESERVEASPECTRATIO in values:
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, '100%')).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, '100%')).value()
+        if SVG_ATTR_PATTERN_CONTENT_UNITS in values:
+            self.pattern_content_units = values[SVG_ATTR_PATTERN_CONTENT_UNITS]
+        if SVG_ATTR_PATTERN_TRANSFORM in values:
+            self.pattern_transform = Matrix(values[SVG_ATTR_PATTERN_TRANSFORM])
+        if SVG_ATTR_PATTERN_UNITS in values:
+            self.pattern_units = values[SVG_ATTR_PATTERN_UNITS]
+
+    def render(self, **kwargs):
+        if self.pattern_transform is not None:
+            self.pattern_transform.render(**kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
+        if isinstance(self.x, Length):
+            self.x = self.x.value(relative_length=width, **kwargs)
+        if isinstance(self.y, Length):
+            self.y = self.y.value(relative_length=height, **kwargs)
+        if isinstance(self.width, Length):
+            self.width = self.width.value(relative_length=width, **kwargs)
+        if isinstance(self.height, Length):
+            self.height = self.height.value(relative_length=height, **kwargs)
+        return self
 
 
 class SVGText(SVGElement, GraphicObject, Transformable):
@@ -6646,16 +6936,19 @@ class SVGText(SVGElement, GraphicObject, Transformable):
         self.dx = Length(values.get(SVG_ATTR_DX, self.dx)).value()
         self.dy = Length(values.get(SVG_ATTR_DY, self.dy)).value()
 
-    def __copy__(self):
-        return SVGText(self)
+    def reify(self):
+        GraphicObject.reify(self)
+        Transformable.reify(self)
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        GraphicObject.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
-        self.transform.render(width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        GraphicObject.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.x, Length):
             self.x = self.x.value(relative_length=width, **kwargs)
         if isinstance(self.y, Length):
@@ -6665,6 +6958,9 @@ class SVGText(SVGElement, GraphicObject, Transformable):
         if isinstance(self.dy, Length):
             self.dy = self.dy.value(relative_length=height, **kwargs)
         return self
+
+    def __copy__(self):
+        return SVGText(self)
 
     def bbox(self, transformed=True):
         """
@@ -6698,38 +6994,30 @@ class SVGText(SVGElement, GraphicObject, Transformable):
         return xmin, ymin, xmax, ymax
 
 
-class SVGDesc:
-    """
-    SVG Desc are just desc data.
-
-    This is a stub element.
-    """
-
-    def __init__(self, values, desc=None):
-        if isinstance(values, dict):
-            self.desc = desc
-        else:
-            self.desc = values
-
-
 class SVGImage(SVGElement, GraphicObject, Transformable):
     """
     SVG Images are defined in SVG 2.0 12.3
 
     This class is called SVG Image rather than image as a guard against many Image objects
     which are quite useful and would be ideal for reading the linked or contained data.
-
     """
 
     def __init__(self, *args, **kwargs):
         self.url = None
         self.data = None
         self.viewbox = None
+        self.preserve_aspect_ratio = None
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+
         self.image = None
         self.image_width = None
         self.image_height = None
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+        SVGElement.__init__(self, *args, **kwargs)  # Dataurl requires this be processed first.
 
         if self.url is not None:
             if self.url.startswith("data:image/"):
@@ -6744,12 +7032,6 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
                 elif self.url.startswith("data:image/svg+xml;base64,"):
                     self.data = b64decode(self.url[26:])
 
-        if SVG_ATTR_WIDTH in kwargs:
-            self.viewbox.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
-        if SVG_ATTR_HEIGHT in kwargs:
-            self.viewbox.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
-        SVGElement.__init__(self, *args, **kwargs)
-
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
@@ -6757,6 +7039,13 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         self.url = s.url
         self.data = s.data
         self.viewbox = s.viewbox
+        self.preserve_aspect_ratio = s.preserve_aspect_ratio
+
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+
         self.image = s.image
         self.image_width = s.image_width
         self.image_height = s.image_height
@@ -6769,10 +7058,37 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
             self.url = values[XLINK_HREF]
         elif SVG_HREF in values:
             self.url = values[SVG_HREF]
-        self.viewbox = Viewbox(values)
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        if viewbox is not None:
+            self.viewbox = Viewbox(viewbox)
+        if SVG_ATTR_PRESERVEASPECTRATIO in values:
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, '100%')).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, '100%')).value()
         if 'image' in values:
             self.image = values['image']
             self.image_width, self.image_height = self.image.size
+
+    def render(self, **kwargs):
+        GraphicObject.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
+        if isinstance(self.x, Length):
+            self.x = self.x.value(relative_length=width, **kwargs)
+        if isinstance(self.y, Length):
+            self.y = self.y.value(relative_length=height, **kwargs)
+        if isinstance(self.width, Length):
+            self.width = self.width.value(relative_length=width, **kwargs)
+        if isinstance(self.height, Length):
+            self.height = self.height.value(relative_length=height, **kwargs)
+        return self
 
     def __copy__(self):
         """
@@ -6781,6 +7097,12 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         be required to either say self.image = self.image.copy() or call .load() again.
         """
         return SVGImage(self)
+
+    @property
+    def viewbox_transform(self):
+        if self.viewbox is None:
+            return ''
+        return self.viewbox.transform(self)
 
     def load(self, directory=None):
         try:
@@ -6831,11 +7153,8 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
             self.image_height = self.image.height
         else:
             return
-        viewbox = "0 0 %d %d" % (self.image_width, self.image_height)
-        self.viewbox.set_viewbox(viewbox)
-        self.viewbox.render(width=self.image_width, height=self.image_height)
-        viewbox_transform = self.viewbox.transform()
-        self.transform = Matrix(viewbox_transform) * self.transform
+        self.viewbox = Viewbox("0 0 %d %d" % (self.image_width, self.image_height), self.preserve_aspect_ratio)
+        self.transform = Matrix(self.viewbox_transform) * self.transform
 
     def bbox(self, transformed=True):
         """
@@ -6866,249 +7185,37 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
         return min_x, min_y, max_x, max_y
 
 
-class Viewbox:
-
-    def __init__(self, *args, **kwargs):
-        """
-        Viewbox control the scaling between the drawing size view that is observing that drawing.
-
-        The width and height are merely to interpret the meaning of percent values of lengths. Usually this is
-        the size of the physical space being occupied.
-
-        :param args: either values, or viewbox attribute.
-        :param kwargs: viewbox, width, height, preserveAspectRatio
-        """
-        self.viewbox = None
-        self.viewbox_x = None
-        self.viewbox_y = None
-        self.viewbox_width = None
-        self.viewbox_height = None
-        self.element_x = None
-        self.element_y = None
-        self.element_width = None
-        self.element_height = None
-        self.preserve_aspect_ratio = None
-        self.values = None
-        if SVG_ATTR_WIDTH in kwargs:
-            self.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
-            del kwargs[SVG_ATTR_WIDTH]
-        else:
-            self.physical_width = None
-
-        if SVG_ATTR_HEIGHT in kwargs:
-            self.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
-            del kwargs[SVG_ATTR_HEIGHT]
-        else:
-            self.physical_height = None
-
-        if len(args) >= 1:
-            s = args[0]
-            if isinstance(s, dict):
-                args = args[1:]
-                self.values = dict(s)
-                self.values.update(kwargs)
-            elif isinstance(s, Viewbox):
-                args = args[1:]
-                self.property_by_object(s)
-                self.property_by_args(*args)
-                return
-        if self.values is None:
-            self.values = dict(kwargs)
-        self.property_by_values(self.values)
-        if len(args) != 0:
-            self.property_by_args(*args)
-
-    def __str__(self):
-        return '%s %s %s %s -> %s %s %s %s' % (
-            Length.str(self.element_x),
-            Length.str(self.element_y),
-            Length.str(self.element_width),
-            Length.str(self.element_height),
-            Length.str(self.viewbox_x),
-            Length.str(self.viewbox_y),
-            Length.str(self.viewbox_width),
-            Length.str(self.viewbox_height),
-        )
-
-    def property_by_args(self, *args):
-        pass
+class Desc(SVGElement):
+    def __init__(self, values, desc=None):
+        self.desc = desc
+        SVGElement.__init__(self, **values)
 
     def property_by_object(self, obj):
-        self.values = dict(obj.values)
-        self.viewbox = obj.viewbox
-        self.viewbox_x = obj.viewbox_x
-        self.viewbox_y = obj.viewbox_y
-        self.viewbox_width = obj.viewbox_width
-        self.viewbox_height = obj.viewbox_height
-        self.physical_width = obj.physical_width
-        self.physical_height = obj.physical_height
-        self.element_x = obj.element_x
-        self.element_y = obj.element_y
-        self.element_height = obj.element_height
-        self.element_width = obj.element_height
-        self.preserve_aspect_ratio = obj.preserve_aspect_ratio
+        SVGElement.property_by_object(self, obj)
+        self.desc = obj.desc
 
     def property_by_values(self, values):
-        if SVG_ATTR_VIEWBOX in values:
-            self.viewbox = values[SVG_ATTR_VIEWBOX]
-        if SVG_ATTR_WIDTH in values:
-            self.element_width = Length(values[SVG_ATTR_WIDTH]).value(relative_length=self.physical_width)
-        else:
-            self.element_width = self.physical_width
+        SVGElement.property_by_values(self, values)
+        if SVG_TAG_DESC in values:
+            self.desc = values[SVG_TAG_DESC]
 
-        if SVG_ATTR_HEIGHT in values:
-            self.element_height = Length(values[SVG_ATTR_HEIGHT]).value(relative_length=self.physical_height)
-        else:
-            self.element_height = self.physical_height
 
-        if SVG_ATTR_X in values:
-            self.element_x = Length(values[SVG_ATTR_X]).value(relative_length=self.physical_width)
-        else:
-            self.element_x = 0
+SVGDesc = Desc
 
-        if SVG_ATTR_Y in values:
-            self.element_y = Length(values[SVG_ATTR_Y]).value(relative_length=self.physical_height)
-        else:
-            self.element_y = 0
-        self.set_viewbox(self.viewbox)
-        if SVG_ATTR_PRESERVEASPECTRATIO in values:
-            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
 
-    def set_viewbox(self, viewbox):
-        if viewbox is not None:
-            if isinstance(viewbox, str):
-                dims = list(REGEX_FLOAT.findall(viewbox))
-                try:
-                    self.viewbox_x = float(dims[0])
-                    self.viewbox_y = float(dims[1])
-                    self.viewbox_width = float(dims[2])
-                    self.viewbox_height = float(dims[3])
-                except IndexError:
-                    pass
-        else:
-            self.viewbox_x = self.element_x
-            self.viewbox_y = self.element_y
-            self.viewbox_width = self.element_width
-            self.viewbox_height = self.element_height
+class Title(SVGElement):
+    def __init__(self, values, title=None):
+        self.title = title
+        SVGElement.__init__(self,**values)
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        if isinstance(self.physical_width, Length):
-            self.physical_width = self.physical_width.value(relative_length=width, **kwargs)
-        if isinstance(self.physical_height, Length):
-            self.physical_height = self.physical_height.value(relative_length=height, **kwargs)
-        if self.physical_width is not None:
-            width = self.physical_width
-        if self.physical_height is not None:
-            height = self.physical_height
-        if isinstance(self.element_x, Length):
-            self.element_x = self.element_x.value(relative_length=width, **kwargs)
-        if isinstance(self.element_y, Length):
-            self.element_y = self.element_y.value(relative_length=height, **kwargs)
-        if isinstance(self.element_width, Length):
-            self.element_width = self.element_width.value(relative_length=width, **kwargs)
-        if isinstance(self.element_height, Length):
-            self.element_height = self.element_height.value(relative_length=height, **kwargs)
+    def property_by_object(self, obj):
+        SVGElement.property_by_object(self, obj)
+        self.title = obj.title
 
-        if isinstance(self.viewbox_x, Length):
-            self.viewbox_x = self.viewbox_x.value(relative_length=width, **kwargs)
-        if isinstance(self.viewbox_y, Length):
-            self.viewbox_y = self.viewbox_y.value(relative_length=height, **kwargs)
-        if isinstance(self.viewbox_width, Length):
-            self.viewbox_width = self.viewbox_width.value(relative_length=width, **kwargs)
-        if isinstance(self.viewbox_height, Length):
-            self.viewbox_height = self.viewbox_height.value(relative_length=height, **kwargs)
-        return self
-
-    def transform(self):
-        return Viewbox.viewbox_transform(
-            self.element_x, self.element_y, self.element_width, self.element_height,
-            self.viewbox_x, self.viewbox_y, self.viewbox_width, self.viewbox_height,
-            self.preserve_aspect_ratio)
-
-    @staticmethod
-    def viewbox_transform(e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect):
-        """
-        SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
-        With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
-
-        It creates transform commands equal to that viewport expected.
-
-        :param svg_node: dict containing the relevant svg entries.
-        :return: string of the SVG transform commands to account for the viewbox.
-        """
-
-        # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
-
-        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
-        # width and height values of the viewBox attribute respectively.
-
-        # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
-        # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
-        # or if meetOrSlice is missing from this value.
-        if e_x is None or e_y is None or e_width is None or e_height is None or \
-                vb_x is None or vb_y is None or vb_width is None or vb_height is None:
-            return ''
-        if aspect is not None:
-            aspect_slice = aspect.split(' ')
-            try:
-                align = aspect_slice[0]
-            except IndexError:
-                align = 'xMidyMid'
-            try:
-                meet_or_slice = aspect_slice[1]
-            except IndexError:
-                meet_or_slice = 'meet'
-        else:
-            align = 'xMidyMid'
-            meet_or_slice = 'meet'
-        # Initialize scale-x to e-width/vb-width.
-        scale_x = e_width / vb_width
-        # Initialize scale-y to e-height/vb-height.
-        scale_y = e_height / vb_height
-
-        # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
-        if align != SVG_VALUE_NONE and meet_or_slice == 'meet':
-            scale_x = scale_y = min(scale_x, scale_y)
-        # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
-        elif align != SVG_VALUE_NONE and meet_or_slice == 'slice':
-            scale_x = scale_y = max(scale_x, scale_y)
-        # Initialize translate-x to e-x - (vb-x * scale-x).
-        translate_x = e_x - (vb_x * scale_x)
-        # Initialize translate-y to e-y - (vb-y * scale-y)
-        translate_y = e_y - (vb_y * scale_y)
-        # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
-        align = align.lower()
-        if 'xmid' in align:
-            translate_x += (e_width - vb_width * scale_x) / 2.0
-        # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
-        if 'xmax' in align:
-            translate_x += e_width - vb_width * scale_x
-        # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
-        if 'ymid' in align:
-            translate_y += (e_height - vb_height * scale_y) / 2.0
-        # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
-        if 'ymax' in align:
-            translate_y += (e_height - vb_height * scale_y)
-        # The transform applied to content contained by the element is given by:
-        # translate(translate-x, translate-y) scale(scale-x, scale-y)
-        if isinstance(scale_x, Length) or isinstance(scale_y, Length):
-            raise ValueError
-        if translate_x == 0 and translate_y == 0:
-            if scale_x == 1 and scale_y == 1:
-                return ""  # Nothing happens.
-            else:
-                return "scale(%s, %s)" % (Length.str(scale_x), Length.str(scale_y))
-        else:
-            if scale_x == 1 and scale_y == 1:
-                return "translate(%s, %s)" % (Length.str(translate_x), Length.str(translate_y))
-            else:
-                return "translate(%s, %s) scale(%s, %s)" % \
-                       (Length.str(translate_x), Length.str(translate_y),
-                        Length.str(scale_x), Length.str(scale_y))
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+        if SVG_TAG_TITLE in values:
+            self.title = values[SVG_TAG_TITLE]
 
 
 class SVG(Group):
@@ -7118,79 +7225,101 @@ class SVG(Group):
     SVG is the SVG main object and also the embedded SVGs within it. It's a subtype of Group. The SVG has a viewbox,
     and parsing methods which can be used if given a stream, path, or svg string.
     """
-
     def __init__(self, *args, **kwargs):
-        Group.__init__(self, *args, **kwargs)
+        self.objects = {}
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
         self.viewbox = None
-        values = None
-        if len(args) == 1:
-            if isinstance(args[0], dict):
-                values = args[0]
-            elif isinstance(args[0], SVG):
-                s = args[0]
-                self.viewbox = Viewbox(s.viewbox)
-                return
-        if values is not None:
-            self.viewbox = Viewbox(values)
-        else:
-            self.viewbox = Viewbox(kwargs)
+        Group.__init__(self, *args, **kwargs)
 
-    def render(self, ppi=None, width=None, height=None):
-        self.viewbox.render(ppi=ppi, width=width, height=height)
+    def property_by_object(self, s):
+        Group.property_by_object(self, s)
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+        self.viewbox = Viewbox(s.viewbox) if s.viewbox is not None else None
+
+    def property_by_values(self, values):
+        Group.property_by_values(self, values)
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, '100%')).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, '100%')).value()
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        par = values.get(SVG_ATTR_PRESERVEASPECTRATIO)
+        self.viewbox = Viewbox(viewbox, par) if viewbox is not None else None
+
+    def get_element_by_id(self, id):
+        return self.objects.get(id)
+
+    def get_element_by_url(self, url):
+        for _id in REGEX_IRI.findall(url):
+            return self.get_element_by_id(_id)
+
+    def render(self, **kwargs):
+        Group.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
+        self.width = Length(self.width).value(relative_length=width, **kwargs)
+        self.height = Length(self.height).value(relative_length=height, **kwargs)
+        self.x = Length(self.x).value(relative_length=width, **kwargs)
+        self.y = Length(self.y).value(relative_length=height, **kwargs)
 
     def elements(self, conditional=None):
         yield self
-        yield self.viewbox
         for q in self.select(conditional):
             yield q
 
+    @property
+    def viewbox_transform(self):
+        if self.viewbox is None:
+            return ''
+        return self.viewbox.transform(self)
+
     @staticmethod
-    def parse(source,
-              reify=True,
-              ppi=DEFAULT_PPI,
-              width=1000,
-              height=1000,
-              color="black",
-              transform=None,
-              context=None):
+    def _shadow_iter(elem, children):
+        yield 'start', elem
+        try:
+            for e, c in children:
+                for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
+                    yield shadow_event, shadow_elem
+        except RecursionError:
+            """
+            Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
+            we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
+            """
+            pass
+        yield 'end', elem
+
+    @staticmethod
+    def _use_structure_parse(source):
         """
-        Parses the SVG file.
-        Style elements are split into their proper values.
-
-        switch elements are not processed.
-        title elements are not processed.
-        metadata elements are not processed.
-        foreignObject elements are not processed.
-
-        Color refers to the value of the current color from the default context. This could be set with some external
-        values that the parsing of the SVG would be unaware. This is the color for the 'currentColor' value.
+        SVG structure pass: parses the svg file such that it creates the structure implied by reused objects in a
+        generalized context. Objects ids are read and put into an unparsed shadow tree. <use> objects seamlessly contain
+        their definitions.
         """
-        root = context
-        styles = {}
-        stack = []
-
         defs = {}
         parent = None  # Define Root Node.
         children = list()
-        def_depth = 0
-
-        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black", SVG_ATTR_STROKE: "none",
-                  SVG_ATTR_HEIGHT: "100%", SVG_ATTR_WIDTH: "100%"}
-        if transform is not None:
-            values[SVG_ATTR_TRANSFORM] = transform
 
         for event, elem in iterparse(source, events=('start', 'end', 'start-ns')):
-            """
-            SVG structure pass parses the svg file such that it creates the structure implied by reused objects in a
-            generalized context. Objects ids are read and put into a shadow tree. <use> objects seamlessly contain
-            their definitions.
-            """
-            subitems = [(event, elem)]  # Default we are going to process this element.
-            if event == 'start':
+            try:
                 tag = elem.tag
                 if tag.startswith('{http://www.w3.org/2000/svg'):
                     tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
                     elem.tag = tag
+            except AttributeError:
+                yield event, elem
+                continue
+
+            if event == 'start':
                 attributes = elem.attrib
                 # Create new node.
                 siblings = children  # Parent's children are now my siblings.
@@ -7199,11 +7328,7 @@ class SVG(Group):
                 node = (elem, children)  # define this node.
                 siblings.append(node)  # siblings now includes this node.
 
-                if SVG_TAG_DEFS == tag:
-                    # This is a defs tag start. Increase the depth.
-                    def_depth += 1
-                    continue
-                elif SVG_TAG_USE == tag:
+                if SVG_TAG_USE == tag:
                     url = None
                     if XLINK_HREF in attributes:
                         url = attributes[XLINK_HREF]
@@ -7229,122 +7354,156 @@ class SVG(Group):
                                                                  (attributes[SVG_ATTR_TRANSFORM], x, y)
                             except KeyError:
                                 attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
+                        yield event, elem
                         try:
                             shadow_node = defs[url[1:]]
-                            children.append(shadow_node)   # Shadow children are children of the use.
+                            children.append(shadow_node)  # Shadow children are children of the use.
+                            for n in SVG._shadow_iter(*shadow_node):
+                                yield n
                         except KeyError:
-                            # linking of shadow node failed.
-                            continue
-                        subitems.extend(SVG._shadow_iter(*shadow_node))  # Use element's shadow nodes must be applied.
+                            pass  # Failed to find link.
+                else:
+                    yield event, elem
                 if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
                     defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
             elif event == 'end':
-                tag = elem.tag
-                if tag.startswith('{http://www.w3.org/2000/svg'):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                    elem.tag = tag
+                yield event, elem
                 # event is 'end', pop values.
                 parent, children = parent  # Parent is now node.
-                if tag == SVG_TAG_DEFS:
-                    # This is a defs tag end. Decrease the depth.
-                    def_depth -= 1
-                    continue
-            for event, elem in subitems:
-                """
-                SVG element parsing parses the job compiling any parsed elements into their compiled object forms. 
-                """
-                if def_depth:
-                    continue
-                if event == 'start':
-                    stack.append((context, values))
-                    if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
-                        continue  # Values has a display=none. Do not render anything.
-                    current_values = values
-                    values = {}
-                    values.update(current_values)  # copy of dictionary
-                    tag = elem.tag
 
-                    # Non-propagating values.
-                    if SVG_ATTR_PRESERVEASPECTRATIO in values:
-                        del values[SVG_ATTR_PRESERVEASPECTRATIO]
-                    if SVG_ATTR_VIEWBOX in values:
-                        del values[SVG_ATTR_VIEWBOX]
-                    if SVG_ATTR_ID in values:
-                        del values[SVG_ATTR_ID]
+    @staticmethod
+    def parse(source,
+              reify=True,
+              ppi=DEFAULT_PPI,
+              width=1000,
+              height=1000,
+              color="black",
+              transform=None,
+              context=None):
+        """
+        Parses the SVG file. All attributes are things which the SVG document itself could not be aware of, such as
+        the real size of pixels and the size of the viewport (as opposed to the viewbox).
 
-                    attributes = elem.attrib  # priority; lowest
-                    attributes[SVG_ATTR_TAG] = tag
+        :param source: Source svg file or stream.
+        :param reify: Should the Geometry sized or have lazy matrices.
+        :param ppi: How many physical pixels per inch are there in this view.
+        :param width: The physical width of the viewport
+        :param height: The physical height of the viewport
+        :param color: the `currentColor` value from outside the current scope.
+        :param transform: Any required transformations to be pre-applied to this document
+        :param context: Any existing document context.
+        :return:
+        """
+        clip = 0
+        root = context
+        styles = {}
+        stack = []
 
-                    # Split any Style block elements into parts; priority medium
-                    style = ''
-                    if '*' in styles:  # Select all.
-                        style += styles['*']
-                    if tag in styles:  # selector type
-                        style += styles[tag]
-                    if SVG_ATTR_ID in attributes:  # Selector id #id
-                        svg_id = attributes[SVG_ATTR_ID]
-                        css_tag = '#%s' % svg_id
+        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black", SVG_ATTR_STROKE: "none"}
+
+        if transform is not None:
+            values[SVG_ATTR_TRANSFORM] = transform
+
+        for event, elem in SVG._use_structure_parse(source):
+            """
+            SVG element parsing parses the job compiling any parsed elements into their compiled object forms. 
+            """
+            # print(event, elem)
+            if event == 'start':
+                stack.append((context, values))
+                if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
+                    continue  # Values has a display=none. Do not render anything. No Shadow Dom.
+                current_values = values
+                values = {}
+                values.update(current_values)  # copy of dictionary
+                tag = elem.tag
+
+                # Non-propagating values.
+                if SVG_ATTR_PRESERVEASPECTRATIO in values:
+                    del values[SVG_ATTR_PRESERVEASPECTRATIO]
+                if SVG_ATTR_VIEWBOX in values:
+                    del values[SVG_ATTR_VIEWBOX]
+                if SVG_ATTR_ID in values:
+                    del values[SVG_ATTR_ID]
+                if SVG_ATTR_CLIP_PATH in values:
+                    del values[SVG_ATTR_CLIP_PATH]
+
+                attributes = elem.attrib  # priority; lowest
+                attributes[SVG_ATTR_TAG] = tag
+
+                # Split any Style block elements into parts; priority medium
+                style = ''
+                if '*' in styles:  # Select all.
+                    style += styles['*']
+                if tag in styles:  # selector type
+                    style += styles[tag]
+                if SVG_ATTR_ID in attributes:  # Selector id #id
+                    svg_id = attributes[SVG_ATTR_ID]
+                    css_tag = '#%s' % svg_id
+                    if css_tag in styles:
+                        if len(style) != 0:
+                            style += ';'
+                        style += styles[css_tag]
+                if SVG_ATTR_CLASS in attributes:  # Selector class .class
+                    for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
+                        css_tag = '.%s' % svg_class
                         if css_tag in styles:
                             if len(style) != 0:
                                 style += ';'
                             style += styles[css_tag]
-                    if SVG_ATTR_CLASS in attributes:  # Selector class .class
-                        for svg_class in attributes[SVG_ATTR_CLASS].split(' '):
-                            css_tag = '.%s' % svg_class
-                            if css_tag in styles:
-                                if len(style) != 0:
-                                    style += ';'
-                                style += styles[css_tag]
-                            css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
-                            if css_tag in styles:
-                                if len(style) != 0:
-                                    style += ';'
-                                style += styles[css_tag]
-                    # Split style element into parts; priority highest
-                    if SVG_ATTR_STYLE in attributes:
-                        style += attributes[SVG_ATTR_STYLE]
+                        css_tag = '%s.%s' % (tag, svg_class)  # Selector type/class type.class
+                        if css_tag in styles:
+                            if len(style) != 0:
+                                style += ';'
+                            style += styles[css_tag]
+                # Split style element into parts; priority highest
+                if SVG_ATTR_STYLE in attributes:
+                    style += attributes[SVG_ATTR_STYLE]
 
-                    # Process style tag left to right.
-                    for equate in style.split(";"):
-                        equal_item = equate.split(":")
-                        if len(equal_item) == 2:
-                            key = str(equal_item[0]).strip()
-                            value = str(equal_item[1]).strip()
-                            attributes[key] = value
-                    if SVG_ATTR_FILL in attributes and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR:
-                        if SVG_ATTR_COLOR in attributes:
-                            attributes[SVG_ATTR_FILL] = attributes[SVG_ATTR_COLOR]
-                        else:
-                            attributes[SVG_ATTR_FILL] = values[SVG_ATTR_COLOR]
+                # Process style tag left to right.
+                for equate in style.split(";"):
+                    equal_item = equate.split(":")
+                    if len(equal_item) == 2:
+                        key = str(equal_item[0]).strip()
+                        value = str(equal_item[1]).strip()
+                        attributes[key] = value
+                if SVG_ATTR_FILL in attributes and attributes[SVG_ATTR_FILL] == SVG_VALUE_CURRENT_COLOR:
+                    if SVG_ATTR_COLOR in attributes:
+                        attributes[SVG_ATTR_FILL] = attributes[SVG_ATTR_COLOR]
+                    else:
+                        attributes[SVG_ATTR_FILL] = values[SVG_ATTR_COLOR]
 
-                    if SVG_ATTR_STROKE in attributes and attributes[SVG_ATTR_STROKE] == SVG_VALUE_CURRENT_COLOR:
-                        if SVG_ATTR_COLOR in attributes:
-                            attributes[SVG_ATTR_STROKE] = attributes[SVG_ATTR_COLOR]
-                        else:
-                            attributes[SVG_ATTR_STROKE] = values[SVG_ATTR_COLOR]
+                if SVG_ATTR_STROKE in attributes and attributes[SVG_ATTR_STROKE] == SVG_VALUE_CURRENT_COLOR:
+                    if SVG_ATTR_COLOR in attributes:
+                        attributes[SVG_ATTR_STROKE] = attributes[SVG_ATTR_COLOR]
+                    else:
+                        attributes[SVG_ATTR_STROKE] = values[SVG_ATTR_COLOR]
 
-                    if SVG_ATTR_TRANSFORM in attributes:
-                        # If transform is already in values, append the new value.
-                        if SVG_ATTR_TRANSFORM in values:
-                            attributes[SVG_ATTR_TRANSFORM] = values[SVG_ATTR_TRANSFORM] + \
-                                                             " " + \
-                                                             attributes[SVG_ATTR_TRANSFORM]
-                        else:
-                            attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
-                    values.update(attributes)
-                    if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
-                        continue  # If the attributes we just flags our values to display=none, stop rendering.
-                    if SVG_NAME_TAG == tag:
-                        # The ordering for transformations on the SVG object are:
-                        # explicit transform, parent transforms, attribute transforms, viewport transforms
-                        s = SVG(values)
-                        s.render(ppi=ppi, width=width, height=height)
+                if SVG_ATTR_TRANSFORM in attributes:
+                    # If transform is already in values, append the new value.
+                    if SVG_ATTR_TRANSFORM in values:
+                        attributes[SVG_ATTR_TRANSFORM] = values[SVG_ATTR_TRANSFORM] + \
+                                                         " " + \
+                                                         attributes[SVG_ATTR_TRANSFORM]
+                    else:
+                        attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
 
-                        # viewbox was rendered here.
+                # All class and attribute properties are compiled.
+
+                values.update(attributes)
+                if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
+                    continue  # If the attributes flags our values to display=none, stop rendering.
+                if SVG_NAME_TAG == tag:
+                    # The ordering for transformations on the SVG object are:
+                    # explicit transform, parent transforms, attribute transforms, viewport transforms
+                    s = SVG(values)
+                    s.render(ppi=ppi, width=width, height=height)
+                    height, width = s.width, s.height
+                    if s.viewbox is not None:
                         try:
-                            if s.viewbox.element_height == 0 or s.viewbox.element_width == 0:
+                            if s.height == 0 or s.width == 0:
                                 return s
-                            viewport_transform = s.viewbox.transform()
+                            viewport_transform = s.viewbox_transform
                         except ZeroDivisionError:
                             # The width or height was zero.
                             # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
@@ -7356,85 +7515,129 @@ class SVG(Group):
                             values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
                         else:
                             values[SVG_ATTR_TRANSFORM] = viewport_transform
-                        width = s.viewbox.viewbox_width if s.viewbox.viewbox_width is not None else width
-                        height = s.viewbox.viewbox_height if s.viewbox.viewbox_height is not None else height
-                        if context is None:
-                            stack[-1] = (context, values)
-                        if context is not None:
-                            context.append(s)
-                        context = s
-                        if root is None:
-                            root = s
-                        continue
-                    elif SVG_TAG_GROUP == tag:
-                        s = Group(values)
+                        width, height = s.viewbox.width, s.viewbox.height
+                    if context is None:
+                        stack[-1] = (context, values)
+                    if context is not None:
                         context.append(s)
-                        context = s
-                        continue
-                    elif SVG_TAG_PATH == tag:
-                        try:
+                    context = s
+                    if root is None:
+                        root = s
+                elif SVG_TAG_GROUP == tag:
+                    s = Group(values)
+                    context.append(s)
+                    context = s
+                    s.render(ppi=ppi, width=width, height=height)
+                elif SVG_TAG_DEFS == tag:
+                    s = Group(values)
+                    context = s  # Non-Rendered
+                    s.render(ppi=ppi, width=width, height=height)
+                elif SVG_TAG_CLIPPATH == tag:
+                    s = ClipPath(values)
+                    context = s  # Non-Rendered
+                    s.render(ppi=ppi, width=width, height=height)
+                    clip += 1
+                elif SVG_TAG_PATTERN == tag:
+                    s = Pattern(values)
+                    context = s  # Non-rendered
+                    s.render(ppi=ppi, width=width, height=height)
+                elif tag in (SVG_TAG_PATH, SVG_TAG_CIRCLE, SVG_TAG_ELLIPSE, SVG_TAG_LINE,  # Shapes
+                             SVG_TAG_POLYLINE, SVG_TAG_POLYGON, SVG_TAG_RECT, SVG_TAG_IMAGE):
+                    try:
+                        if SVG_TAG_PATH == tag:
                             s = Path(values)
-                        except ValueError:
-                            continue
-                    elif SVG_TAG_CIRCLE == tag:
-                        s = Circle(values)
-                    elif SVG_TAG_ELLIPSE == tag:
-                        s = Ellipse(values)
-                    elif SVG_TAG_LINE == tag:
-                        s = SimpleLine(values)
-                    elif SVG_TAG_POLYLINE == tag:
-                        s = Polyline(values)
-                    elif SVG_TAG_POLYGON == tag:
-                        s = Polygon(values)
-                    elif SVG_TAG_RECT == tag:
-                        s = Rect(values)
-                    elif SVG_TAG_IMAGE == tag:
-                        s = SVGImage(values)
-                    elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC):
-                        # <style>, <text>, <desc>
-                        continue
-                    else:
-                        s = SVGElement(values)  # SVG Unknown object return as element.
-                        context.append(s)
+                        elif SVG_TAG_CIRCLE == tag:
+                            s = Circle(values)
+                        elif SVG_TAG_ELLIPSE == tag:
+                            s = Ellipse(values)
+                        elif SVG_TAG_LINE == tag:
+                            s = SimpleLine(values)
+                        elif SVG_TAG_POLYLINE == tag:
+                            s = Polyline(values)
+                        elif SVG_TAG_POLYGON == tag:
+                            s = Polygon(values)
+                        elif SVG_TAG_RECT == tag:
+                            s = Rect(values)
+                        else:  # SVG_TAG_IMAGE == tag:
+                            s = SVGImage(values)
+                    except ValueError:
                         continue
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
                     context.append(s)
-                elif event == 'end':  # End event.
-                    # The iterparse spec makes it clear that internal text data is undefined except at the end.
-                    tag = elem.tag
-                    if SVG_TAG_TEXT == tag:
-                        s = SVGText(values, text=elem.text)
-                        s.render(ppi=ppi, width=width, height=height)
-                        if reify:
-                            s.reify()
-                        context.append(s)
-                    elif SVG_TAG_TSPAN == tag:
-                        s = SVGText(values, text=elem.text)
-                        context.append(s)
-                        s.render(ppi=ppi, width=width, height=height)
-                    elif SVG_TAG_DESC == tag:
-                        s = SVGDesc(values, desc=elem.text)
-                        context.append(s)
-                    elif SVG_TAG_STYLE == tag:
-                        assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
-                        for key, value in assignments:
-                            key = key.strip()
-                            value = value.strip()
-                            for selector in key.split(','):  # Can comma select subitems.
-                                styles[selector.strip()] = value
-                    context, values = stack.pop()
-                elif event == 'start-ns':
-                    if elem[0] != SVG_ATTR_DATA:
-                        values[elem[0]] = elem[1]
+                elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC, SVG_TAG_TITLE, SVG_TAG_TSPAN):
+                    # <style>, <text>, <desc>, <title>
+                    continue
+                else:
+                    s = SVGElement(values)  # SVG Unknown object return as element.
+                    context.append(s)
+
+                # Assign optional linked properties.
+                try:
+                    clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
+                    if clip_path_url is not None:
+                        clip_path = root.get_element_by_url(clip_path_url)
+                        s.clip_path = clip_path
+                except AttributeError:
+                    pass
+                if clip != 0:
+                    try:
+                        clip_rule = s.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
+                        if clip_rule is not None:
+                            s.clip_rule = clip_rule
+                    except AttributeError:
+                        pass
+                if SVG_ATTR_ID in values and root is not None:
+                    root.objects[attributes[SVG_ATTR_ID]] = s
+            elif event == 'end':  # End event.
+                # The iterparse spec makes it clear that internal text data is undefined except at the end.
+                s = None
+                tag = elem.tag
+                if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN, SVG_TAG_DESC, SVG_TAG_TITLE, SVG_TAG_STYLE):
+                    attributes = elem.attrib
+                    if SVG_ATTR_ID in values and root is not None:
+                        root.objects[attributes[SVG_ATTR_ID]] = s
+                if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
+                    s = SVGText(values, text=elem.text)
+                    s.render(ppi=ppi, width=width, height=height)
+                    if reify:
+                        s.reify()
+                    context.append(s)
+                elif SVG_TAG_DESC == tag:
+                    s = Desc(values, desc=elem.text)
+                    context.append(s)
+                elif SVG_TAG_TITLE == tag:
+                    s = Title(values, title=elem.text)
+                    context.append(s)
+                elif SVG_TAG_STYLE == tag:
+                    assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
+                    for key, value in assignments:
+                        key = key.strip()
+                        value = value.strip()
+                        for selector in key.split(','):  # Can comma select subitems.
+                            styles[selector.strip()] = value
+                elif SVG_TAG_CLIPPATH == tag:
+                    clip -= 1
+                if s is not None:
+                    # Assign optional linked properties.
+                    try:
+                        clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
+                        if clip_path_url is not None:
+                            clip_path = root.get_element_by_url(clip_path_url)
+                            s.clip_path = clip_path
+                    except AttributeError:
+                        pass
+                    if clip != 0:
+                        try:
+                            clip_rule = s.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
+                            if clip_rule is not None:
+                                s.clip_rule = clip_rule
+                        except AttributeError:
+                            pass
+
+                context, values = stack.pop()
+            elif event == 'start-ns':
+                if elem[0] != SVG_ATTR_DATA:
+                    values[elem[0]] = elem[1]
         return root
-
-
-    @staticmethod
-    def _shadow_iter(elem, children):
-        yield 'start', elem
-        for e, c in children:
-            for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
-                yield shadow_event, shadow_elem
-        yield 'end', elem

@@ -115,7 +115,7 @@ else:
     device.activate('device/Lhystudios')
 
 if args.verbose:
-    kernel_root.execute('Debug Device')
+    kernel_root._process_spooled_item('Debug Device')
 
 if args.input is not None:
     import os

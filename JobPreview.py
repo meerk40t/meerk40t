@@ -241,15 +241,25 @@ class JobPreview(wx.Frame, Module):
         event.Skip()
 
     def on_button_start(self, event):  # wxGlade: Preview.<event_handler>
-        self.context.console("plan%s validate\n" % self.plan_name)
-        self.context.console("plan%s blob\n" % self.plan_name)
-        self.context.console("plan%s preopt\n" % self.plan_name)
-        self.context.console("plan%s optimize\n" % self.plan_name)
-        self.context.console("plan%s spool\n" % self.plan_name)
-        # TODO: If this spooled the data it should actually close this preview down? Is that still the case?
+        if self.stage == 0:
+            self.context.console('plan%s copy\n' % self.plan_name)
+        elif self.stage == 1:
+            self.context.console('plan%s preprocess\n' % self.plan_name)
+        elif self.stage == 2:
+            self.context.console("plan%s validate\n" % self.plan_name)
+        elif self.stage == 3:
+            self.context.console("plan%s blob\n" % self.plan_name)
+        elif self.stage == 4:
+            self.context.console("plan%s preopt\n" % self.plan_name)
+        elif self.stage == 5:
+            self.context.console("plan%s optimize\n" % self.plan_name)
+        elif self.stage == 6:
+            self.context.console("plan%s spool\n" % self.plan_name)
+            self.Close()
         self.update_gui()
 
     def on_close(self, event):
+        self.context.console("plan%s clear\n" % self.plan_name)
         if self.state == 5:
             event.Veto()
         else:
@@ -285,8 +295,6 @@ class JobPreview(wx.Frame, Module):
         self.preview_menu.menu_autohome.Check(self.context.autohome)
         self.preview_menu.menu_autoorigin.Check(self.context.autoorigin)
         self.preview_menu.menu_autobeep.Check(self.context.autobeep)
-        self.context.console('plan%s copy\n' % self.plan_name)
-        self.context.console('plan%s preprocess\n' % self.plan_name)
         self.update_gui()
 
     def finalize(self, channel=None):
@@ -308,6 +316,7 @@ class JobPreview(wx.Frame, Module):
         if stage is not None:
             self.stage = stage
         self.plan_name = plan_name
+        print(stage)
         self.update_gui()
 
     def on_element_property_update(self, *args):
@@ -326,9 +335,25 @@ class JobPreview(wx.Frame, Module):
             self.list_operations.InsertItems([name_str(e) for e in operations], 0)
         if commands is not None and len(commands) != 0:
             self.list_command.InsertItems([name_str(e) for e in commands], 0)
-            self.button_start.SetLabelText(_("Execute Commands"))
+        if self.stage == 0:
+            self.button_start.SetLabelText(_("Copy Operations"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 102))
-        else:
-            self.button_start.SetLabelText(_("Start Job"))
+        elif self.stage == 1:
+            self.button_start.SetLabelText(_("Preprocess Operations"))
+            self.button_start.SetBackgroundColour(wx.Colour(102, 255, 255))
+        elif self.stage == 2:
+            self.button_start.SetLabelText(_("Validate"))
+            self.button_start.SetBackgroundColour(wx.Colour(255, 102, 255))
+        elif self.stage == 3:
+            self.button_start.SetLabelText(_("Blob"))
+            self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
+        elif self.stage == 4:
+            self.button_start.SetLabelText(_("Validate Optimizations"))
+            self.button_start.SetBackgroundColour(wx.Colour(255, 102, 102))
+        elif self.stage == 5:
+            self.button_start.SetLabelText(_("Optimize"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 255, 102))
+        elif self.stage == 6:
+            self.button_start.SetLabelText(_("Spool"))
+            self.button_start.SetBackgroundColour(wx.Colour(255, 255, 255))
         self.Refresh()

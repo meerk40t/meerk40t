@@ -1,5 +1,4 @@
 from CutCode import *
-from queue import Queue
 
 """
 
@@ -24,13 +23,17 @@ of zero will remain zero.
 * Shift moves isolated single-on values to be adjacent to other on-values.
 * Groups manipulates the output as max-length changeless orthogonal/diagonal positions.
 """
+
+
 class PlotPlanner:
-    def __init__(self):
+    def __init__(self, settings):
+        # TODO: Plot planner should solve for initial directionality of new compact event.
+        self.settings = settings
+        self.group_enabled = True  # Required for Lhymicro-gl.
+
+        self.current = None
         self.flushed = True
-        self.current = []
-        self.current_on = None
-        self.position = 0
-        self.queue = Queue()
+        self.queue = []
 
         self.x = None
         self.y = None
@@ -40,19 +43,16 @@ class PlotPlanner:
         self.single_y = None
 
         self.ppi_total = 0
-        self.ppi_enabled = True
         self.ppi = 1000.0
-        self.dot_length = 1
+
         self.dot_left = 0
 
-        self.group_enabled = True
         self.group_x = None
         self.group_y = None
         self.group_on = None
         self.group_dx = 0
         self.group_dy = 0
 
-        self.shift_enabled = False
         self.shift_buffer = []
         self.shift_pixels = 0
 
@@ -65,164 +65,21 @@ class PlotPlanner:
 
         :return:
         """
-        while len(self.current) <= self.position:
-            self.current.clear()
-            self.position = 0
-            if self.queue.empty():
-                if self.flushed:
-                    raise StopIteration
-                self.current.extend(self.process(None))
-                self.flushed = True
-                if len(self.current) == 0:
-                    raise StopIteration
-            else:
-                plot, self.single_default = self.queue.get()
-                self.current.extend(self.process(plot))
-        c = self.current[self.position]
-        self.position += 1
-        return c
+        if self.current is None and len(self.queue) == 0 and self.flushed:
+            raise StopIteration
+        if self.current is None:
+            self.current = self.queue.pop(0)
+        if self.current is None:
+            self.flushed = True
+            return self.process(None)
+        try:
+            return self.process(self.current)
+        except StopIteration:
+            self.current = None
+            return next(self)
 
-    def add_plot(self, plot, on=1):
-        """
-        Add a given plot to the queue. The plot is unrolled in order to ensure movement to the first position and to
-        update the position to the last position.
-
-        :param plot: Plot to be added.
-        :param on: Default on-value for this plot if none is provided.
-        :return:
-        """
-        plot = [c for c in plot]
-        if len(plot) == 0:
-            return
-        start = plot[0]
-        self.move_to(start[0], start[1])
-        self.queue.put((plot, on))
-        end = plot[-1]
-        self.x = end[0]
-        self.y = end[1]
-        self.flushed = False
-
-    def add_path(self, path):
-        """
-        Adds an svgelements path command of segments to the current queue.
-
-        :param path:
-        :return:
-        """
-        if isinstance(path, Path):
-            for seg in path:
-                self.add_segment(seg)
-        else:
-            self.add_segment(path)
-
-    def add_segment(self, seg):
-        """
-        Adds an svgelement pathsegment to as a graphics plot to the current queue.
-
-        :param seg:
-        :return:
-        """
-        if isinstance(seg, Move):
-            if seg.start is not None:
-                self.move_to(seg.end[0], seg.end[1], start_x=seg.start[0], start_y=seg.start[1])
-            else:
-                self.move_to(seg.end[0], seg.end[1], start_x=self.x, start_y=self.y)
-        elif isinstance(seg, Close):
-            self.line_to(seg.end[0], seg.end[1])
-        elif isinstance(seg, Line):
-            self.line_to(seg.end[0], seg.end[1])
-        elif isinstance(seg, QuadraticBezier):
-            self.quad_to(seg.control[0], seg.control[1], seg.end[0], seg.end[1])
-        elif isinstance(seg, CubicBezier):
-            self.curve_to(seg.control1[0], seg.control1[1], seg.control2[0], seg.control2[1], seg.end[0], seg.end[1])
-        elif isinstance(seg, Arc):
-            self.arc_to(seg)
-        else:
-            raise ValueError
-
-    def move_to(self, x, y, start_x=None, start_y=None):
-        """
-        Moves to the given position. If no position is current set, and no start position is given. This exists at the
-        destination.
-        :param x: x coordinate destination
-        :param y: y coordinate destination
-        :param start_x: optional start x coordinate.
-        :param start_y: optional start y coordinate
-        :return:
-        """
-        if self.x == x and self.y == y:
-            return  # We are already there.
-        if start_x is None or start_y is None:
-            self.queue.put(([[round(x), round(y)]], 0))
-        else:
-            self.x = start_x
-            self.y = start_y
-            self.line_to(x, y, 0)
-        self.x = x
-        self.y = y
-        self.flushed = False
-
-    def line_to(self, x, y, on=1):
-        """
-        Lines to the given position. Appending that to the queue.
-
-        :param x: x coordinate destination
-        :param y: y coordinate destination
-        :param on: Default on-value for this plot if none is provided.
-        :return:
-        """
-        self.queue.put((ZinglPlotter.plot_line(self.x, self.y, x, y), on))
-        self.x = x
-        self.y = y
-        self.flushed = False
-
-    def curve_to(self, cx0, cy0, cx1, cy1, x, y, on=1):
-        """
-        Cubic bezier curve to the destination with the given control points.
-
-        :param cx0: first control point x
-        :param cy0: first control point y
-        :param cx1: second control point x
-        :param cy1: second control point y
-        :param x: x coordinate destination
-        :param y: y coordinate destination
-        :param on: Default on-value for this plot if none is provided.
-        :return:
-        """
-        self.queue.put((ZinglPlotter.plot_cubic_bezier(self.x, self.y, cx0, cy0, cx1, cy1, x, y), on))
-        self.x = x
-        self.y = y
-        self.flushed = False
-
-    def quad_to(self, cx, cy, x, y, on=1):
-        """
-        Quadratic bezier curve to the destination with the given control point.
-
-        :param cx: control point x
-        :param cy: control point y
-        :param x: x coordinate destination
-        :param y: y coordinate destination
-        :param on: Default on-value for this plot if none is provided.
-        :return:
-        """
-        self.queue.put((ZinglPlotter.plot_quad_bezier(self.x, self.y, cx, cy, x, y), on))
-        self.x = x
-        self.y = y
-        self.flushed = False
-
-    def arc_to(self, arc, on=1):
-        """
-        Arc to a given destination.
-
-        :param arc: SVG arc element.
-        :param on: Default on-value for this plot if none is provided.
-        :return:
-        """
-        self.queue.put((ZinglPlotter.plot_arc(arc), on))
-        end = arc.end
-        self.x = end[0]
-        self.y = end[1]
-        self.flushed = False
+    def push(self, plot):
+        self.queue.append(plot)
 
     def process(self, plot):
         """
@@ -236,10 +93,10 @@ class PlotPlanner:
         :param plot: plottable element that should be wrapped
         :return: generator to produce plottable elements.
         """
-        plot = self.single(plot)
-        if self.ppi_enabled:
+        plot = self.single(plot.generator())
+        if self.settings.ppi_enabled:
             plot = self.apply_ppi(plot)
-        if self.shift_enabled:
+        if self.settings.shift_enabled:
             plot = self.shift(plot)
         if self.group_enabled:
             plot = self.group(plot)
@@ -294,6 +151,70 @@ class PlotPlanner:
             for p in interpolated:
                 yield p
 
+    def apply_ppi(self, plot):
+        """
+        Converts single stepped plots, to apply PPI.
+
+        Implements PPI power modulation.
+
+        :param plot: generator of single stepped plots
+        :return:
+        """
+        if plot is None:
+            yield None
+            return
+        for event in plot:
+            if event is None:
+                yield None
+                return
+            x, y, on = event
+            self.ppi_total += self.ppi * on
+            if on and self.dot_left > 0:
+                self.dot_left -= 1
+                on = 1
+            else:
+                if self.ppi_total >= 1000.0:
+                    on = 1
+                    self.ppi_total -= 1000.0 * self.settings.dot_length
+                    self.dot_left = self.settings.dot_length - 1
+                else:
+                    on = 0
+                if on:
+                    self.dot_left = self.settings.dot_length - 1
+            yield x, y, on
+
+    def shift(self, plot):
+        """
+        Tweaks on-values to simplify them into more coherent subsections.
+
+        :param plot: generator of single stepped plots
+        :return:
+        """
+        for event in plot:
+            if event is None:
+                while len(self.shift_buffer) > 0:
+                    self.shift_pixels <<= 1
+                    bx, by = self.shift_buffer.pop()
+                    bon = (self.shift_pixels >> 3) & 1
+                    yield bx, by, bon
+                yield None
+                return
+            x, y, on = event
+            self.shift_pixels <<= 1
+            if on:
+                self.shift_pixels |= 1
+            self.shift_pixels &= 0b1111
+
+            self.shift_buffer.insert(0, (x, y))
+            if self.shift_pixels == 0b0101:
+                self.shift_pixels = 0b0011
+            elif self.shift_pixels == 0b1010:
+                self.shift_pixels = 0b1100
+            if len(self.shift_buffer) >= 4:
+                bx, by = self.shift_buffer.pop()
+                bon = (self.shift_pixels >> 3) & 1
+                yield bx, by, bon
+
     def group(self, plot):
         """
         Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
@@ -333,67 +254,3 @@ class PlotPlanner:
             self.group_x = x
             self.group_y = y
             self.group_on = on
-
-    def apply_ppi(self, plot):
-        """
-        Converts single stepped plots, to apply PPI.
-
-        Implements PPI power modulation.
-
-        :param plot: generator of single stepped plots
-        :return:
-        """
-        if plot is None:
-            yield None
-            return
-        for event in plot:
-            if event is None:
-                yield None
-                return
-            x, y, on = event
-            self.ppi_total += self.ppi * on
-            if on and self.dot_left > 0:
-                self.dot_left -= 1
-                on = 1
-            else:
-                if self.ppi_total >= 1000.0:
-                    on = 1
-                    self.ppi_total -= 1000.0 * self.dot_length
-                    self.dot_left = self.dot_length - 1
-                else:
-                    on = 0
-                if on:
-                    self.dot_left = self.dot_length - 1
-            yield x, y, on
-
-    def shift(self, plot):
-        """
-        Tweaks on-values to simplify them into more coherent subsections.
-
-        :param plot: generator of single stepped plots
-        :return:
-        """
-        for event in plot:
-            if event is None:
-                while len(self.shift_buffer) > 0:
-                    self.shift_pixels <<= 1
-                    bx, by = self.shift_buffer.pop()
-                    bon = (self.shift_pixels >> 3) & 1
-                    yield bx, by, bon
-                yield None
-                return
-            x, y, on = event
-            self.shift_pixels <<= 1
-            if on:
-                self.shift_pixels |= 1
-            self.shift_pixels &= 0b1111
-
-            self.shift_buffer.insert(0, (x, y))
-            if self.shift_pixels == 0b0101:
-                self.shift_pixels = 0b0011
-            elif self.shift_pixels == 0b1010:
-                self.shift_pixels = 0b1100
-            if len(self.shift_buffer) >= 4:
-                bx, by = self.shift_buffer.pop()
-                bon = (self.shift_pixels >> 3) & 1
-                yield bx, by, bon

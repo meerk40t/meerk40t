@@ -3,10 +3,9 @@ import re
 import time
 from threading import Thread, Lock
 
-from CutCode import CutCode
+from CutCode import LaserSettings
 from LaserCommandConstants import *
 from svgelements import Color
-from zinglplotter import ZinglPlotter
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -21,6 +20,7 @@ STATE_TERMINATE = 10
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
 INTERPRETER_STATE_PROGRAM = 2
+INTERPRETER_STATE_MODECHANGE = 3
 
 
 class Modifier:
@@ -123,65 +123,85 @@ class Interpreter:
 
     def __init__(self, context):
         self.context = context
+        self.settings = LaserSettings()
+
         self.process_item = None
         self.spooled_item = None
-        self.extra_hold = None
+        self.holds = []
+        self.temp_holds = []
 
         self.state = INTERPRETER_STATE_RAPID
-        self.plot_planner = ZinglPlotter()
         self.properties = 0
         self.is_relative = False
         self.laser = False
-        self.raster_step = 0
-        self.overscan = 20
-        self.speed = 30
-        self.power = 1000.0
-        self.d_ratio = None  # None means to use speedcode default.
-        self.acceleration = None  # None means to use speedcode default
         context.setting(int, 'current_x', 0)
         context.setting(int, 'current_y', 0)
         context.setting(bool, "opt_rapid_between", True)
         context.setting(int, "opt_jog_mode", 0)
         context.setting(int, "opt_jog_minimum", 127)
+        self.rapid = self.context.opt_rapid_between
+        self.jog = self.context.opt_jog_mode
 
-    def process_spool(self, *args):
+    def interpret(self, *args):
         """
+        Fetch and Execute.
+
         Get next spooled element if needed.
+
         Calls execute.
 
         :param args:
         :return:
         """
         if self.spooled_item is None:
-            self.fetch_next_item()
-        if self.spooled_item is not None:
-            self.execute()
-        else:
+            self._fetch_next_item_from_spooler()
+        if self.spooled_item is None:
+            # There is no data to interpret. Fetch Failed.
             if self.context.quit:
                 self.context.stop()
+            return
+        self._process_spooled_item()
 
-    def execute(self):
+    def device_process(self):
         """
-        Default process to run entire command as a single call.
+        Executes the device specific processing.
+
+        :return: if execute tick was processed.
+        """
+        return False
+
+    def _process_spooled_item(self):
+        """
+        Default command loop. Processes the spooled item. If the spooled_item is a command it is executed.
+        If it is a generator, it should generate commands, which are then executed.
         """
         if self.hold():
             return
-        if self.spooled_item is None:
+        if self.device_process():
             return
-        if isinstance(self.spooled_item, tuple):
-            self.command(self.spooled_item[0], *self.spooled_item[1:])
+        if self.spooled_item is None:
+            return  # Fetch Next.
+
+        # We have a spooled item to process.
+        if self.command(self.spooled_item):
             self.spooled_item = None
             return
+
+        # We are dealing with an iterator/generator
         try:
             e = next(self.spooled_item)
-            if isinstance(e, int):
-                self.command(e)
-            else:
-                self.command(e[0], *e[1:])
+            if not self.command(e):
+                raise ValueError
         except StopIteration:
+            # The spooled item is finished.
             self.spooled_item = None
 
-    def fetch_next_item(self):
+    def _fetch_next_item_from_spooler(self):
+        """
+        Fetches the next item from the spooler.
+
+        :return:
+        """
         element = self.context.spooler.peek()
         if element is None:
             return  # Spooler is empty.
@@ -192,10 +212,10 @@ class Interpreter:
         elif isinstance(element, tuple):
             self.spooled_item = element
         else:
+            self.rapid = self.context.opt_rapid_between
+            self.jog = self.context.opt_jog_mode
             try:
-                self.spooled_item = element.generate(
-                    rapid=self.context.opt_rapid_between,
-                    jog=self.context.opt_jog_mode)
+                self.spooled_item = element.generate()
             except AttributeError:
                 try:
                     self.spooled_item = element()
@@ -205,6 +225,12 @@ class Interpreter:
 
     def command(self, command, *values):
         """Commands are middle language LaserCommandConstants there values are given."""
+        if isinstance(command, tuple):
+            values = command[1:]
+            command = command[0]
+        if not isinstance(command, int):
+            return False # Command type is not recognized.
+
         try:
             if command == COMMAND_LASER_OFF:
                 self.laser_off()
@@ -297,6 +323,7 @@ class Interpreter:
                     self.context.signal(values[0], *values[1:])
         except AttributeError:
             pass
+        return True
 
     def realtime_command(self, command, *values):
         """Asks for the execution of a realtime command. Unlike the spooled commands these
@@ -342,11 +369,28 @@ class Interpreter:
             pass  # Method doesn't exist.
 
     def hold(self):
-        if self.extra_hold is not None:
-            if self.extra_hold():
-                return True
+        """
+        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
+        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
+        as soon as it does not hold the data.
+
+        :return: Whether data interpretation should hold.
+        """
+        temp_hold = False
+        fail_hold = False
+        for i, hold in enumerate(self.temp_holds):
+            if not hold():
+                self.temp_holds[i] = None
+                fail_hold = True
             else:
-                self.extra_hold = None
+                temp_hold = True
+        if fail_hold:
+            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
+        if temp_hold:
+            return True
+        for hold in self.holds:
+            if hold():
+                return True
         return False
 
     def laser_off(self, *values):
@@ -356,10 +400,10 @@ class Interpreter:
         self.laser = True
 
     def laser_disable(self, *values):
-        self.plot_planner.laser_enabled = False
+        self.settings.laser_enabled = False
 
     def laser_enable(self, *values):
-        self.plot_planner.laser_enabled = True
+        self.settings.laser_enabled = True
 
     def jog(self, x, y, mode=0, min_jog=127):
         self.context.current_x = x
@@ -396,40 +440,40 @@ class Interpreter:
         self.context.signal('interpreter;mode', self.state)
 
     def set_speed(self, speed=None):
-        self.speed = speed
+        self.settings.speed = speed
 
     def set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.settings.power = power
+        if self.settings.power > 1000.0:
+            self.settings.power = 1000.0
+        if self.settings.power <= 0:
+            self.settings.power = 0.0
 
     def set_ppi(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.settings.power = power
+        if self.settings.power > 1000.0:
+            self.settings.power = 1000.0
+        if self.settings.power <= 0:
+            self.settings.power = 0.0
 
     def set_pwm(self, power=1000.0):
-        self.power = power
+        self.settings.power = power
         if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+            self.settings.power = 1000.0
+        if self.settings.power <= 0:
+            self.settings.power = 0.0
 
     def set_d_ratio(self, d_ratio=None):
-        self.d_ratio = d_ratio
+        self.settings.d_ratio = d_ratio
 
     def set_acceleration(self, accel=None):
-        self.acceleration = accel
+        self.settings.acceleration = accel
 
     def set_step(self, step=None):
-        self.raster_step = step
+        self.settings.raster_step = step
 
     def set_overscan(self, overscan=None):
-        self.overscan = overscan
+        self.settings.overscan = overscan
 
     def set_incremental(self, *values):
         self.is_relative = True
@@ -446,20 +490,22 @@ class Interpreter:
 
     def wait_finish(self, *values):
         """Adds an additional holding requirement if the pipe has any data."""
-        self.extra_hold = lambda: len(self.pipe) != 0
+
+        # TODO: len(self.pipe) is no longer meaningful.
+        self.temp_holds.append(lambda: len(self.pipe) != 0)
 
     def reset(self):
         self.spooled_item = None
         self.context.spooler.clear_queue()
         self.spooled_item = None
-        self.extra_hold = None
+        self.temp_holds.clear()
 
     def status(self):
         parts = list()
         parts.append("x=%f" % self.context.current_x)
         parts.append("y=%f" % self.context.current_y)
-        parts.append("speed=%f" % self.speed)
-        parts.append("power=%d" % self.power)
+        parts.append("speed=%f" % self.settings.speed)
+        parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
         self.context.signal('interpreter;status', status)
 
@@ -477,71 +523,6 @@ class Interpreter:
             self.unset_prop(mask)
         else:
             self.set_prop(mask)
-
-    @staticmethod
-    def linify(plot):
-        """
-        Converts a generated series of single stepped plots into grouped line plots.
-
-        This is provided as a helper function for laser cutters with line based commands.
-
-        The core methodology here will resemble the linification phase of potrace, and other such algorithms.
-
-        :param plot: single stepped plots to be linified
-        :return:
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def group(plot):
-        """
-        Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
-
-        This is provided as a helper function for laser cutters with straight ortho/diag commands.
-
-        :param plot: single stepped plots to be grouped into orth/diag sequences.
-        :return:
-        """
-        group_default = True
-        group_x = None
-        group_y = None
-        group_on = None
-        group_dx = 0
-        group_dy = 0
-        for event in plot:
-            if event is None:
-                if group_x is not None and group_y is not None:
-                    yield group_x, group_y, group_on
-                return
-            if len(event) == 3:
-                x, y, on = event
-            else:
-                x, y = event
-                on = group_default
-            if group_x is None:
-                group_x = x
-            if group_y is None:
-                group_y = y
-            if group_on is None:
-                group_on = on
-            if group_dx == 0 and group_dy == 0:
-                group_dx = x - group_x
-                group_dy = y - group_y
-            if group_dx != 0 or group_dy != 0:
-                if x == group_x + group_dx and y == group_y + group_dy and on == group_on:
-                    # This is an orthogonal/diagonal step along the same path.
-                    group_x = x
-                    group_y = y
-                    continue
-                yield group_x, group_y, group_on
-            group_dx = x - group_x
-            group_dy = y - group_y
-            if abs(group_dx) > 1 or abs(group_dy) > 1:
-                # The last step was not valid.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy))
-            group_x = x
-            group_y = y
-            group_on = on
 
 
 class Spooler(Modifier):

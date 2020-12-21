@@ -18,6 +18,7 @@ are references to settings which may be shared by all CutObjects created by a La
 
 class LaserSettings:
     def __init__(self, *args, **kwargs):
+        self.laser_enabled = True
         self.speed = 20.0
         self.power = 1000.0
         self.dratio_custom = False
@@ -36,10 +37,14 @@ class LaserSettings:
 
         self.advanced = False
 
+        self.ppi_enabled = True  # May require kwargs
+
         self.dot_length_custom = False
         self.dot_length = 1
 
+        self.shift_enabled = False # May require kwargs
         self.group_pulses = False
+        self.group_enabled = True
 
         self.passes_custom = False
         self.passes = 1
@@ -162,10 +167,39 @@ class LaserSettings:
                 self.passes_custom = obj.passes_custom
                 self.passes = obj.passes
 
+    @property
+    def implicit_accel(self):
+        if not self.acceleration_custom:
+            return None
+        return self.acceleration
+
+    @property
+    def implicit_d_ratio(self):
+        if not self.dratio_custom:
+            return None
+        return self.dratio
+
+    @property
+    def implicit_dotlength(self):
+        if not self.dot_length_custom:
+            return 1
+        return self.dot_length
+
+    @property
+    def implicit_passes(self):
+        if not self.passes_custom:
+            return 1
+        return self.passes
+
 
 class CutCode(list):
     def __init__(self):
         list.__init__(self)
+
+    def __str__(self):
+        parts = list()
+        parts.append("%d items" % len(self))
+        return 'CutCode(%s)' % ' '.join(parts)
 
     def as_svg(self):
         svg = []
@@ -188,71 +222,9 @@ class CutCode(list):
             self[q].reverse()
         self[j:k] = self[j:k][::-1]
 
-    def generate(self, rapid=True, jog=0):
-        speed = None
-        power = None
-        dratio = None
-        accel = None
-        step = None
-        settings = None
+    def generate(self):
         for cutobject in self:
-            if cutobject.settings is not settings:
-                new_step = cutobject.settings.raster_step
-                new_speed = cutobject.settings.speed
-                new_power = cutobject.settings.power
-                if cutobject.settings.dratio_custom:
-                    new_dratio = cutobject.settings.dratio
-                else:
-                    new_dratio = None
-                if cutobject.settings.acceleration_custom:
-                    new_accel = cutobject.settings.acceleration_custom
-                else:
-                    new_accel = None
-                # direction = cutobject.settings.raster_direction
-                # top, left, x_dir, y_dir = cutobject.settings.initial_direction()
-                # yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
-                # TODO: Should only return to rapid if a primary setting changes.
-                if speed != new_speed or step != new_step or power != new_power or dratio != new_dratio or accel != new_accel:
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_SET_ABSOLUTE
-                    if speed != new_speed:
-                        yield COMMAND_SET_SPEED, new_speed
-                    if step != new_step:
-                        yield COMMAND_SET_STEP, new_step
-                    if power != new_power:
-                        yield COMMAND_SET_POWER, new_power
-                    if dratio != new_dratio:
-                        yield COMMAND_SET_D_RATIO, new_dratio
-                    if accel != new_accel:
-                        yield COMMAND_SET_ACCELERATION, new_accel
-            settings = cutobject.settings
-            speed = new_speed
-            power = new_power
-            dratio = new_dratio
-            accel = new_accel
-            step = new_step
-            yield COMMAND_MODE_PROGRAM
-            try:
-                first = cutobject.start()
-                x = first[0]
-                y = first[1]
-                #TODO: Restore jogging for rapid between objects.
-
-                # if rapid:
-                #     if jog == 0:
-                #         yield COMMAND_JOG, x, y
-                #     elif jog == 1:
-                #         yield COMMAND_JOG_SWITCH, x, y
-                #     else:
-                #         yield COMMAND_JOG_FINISH, x, y
-                # else:
-                #     yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, x, y
-                #     yield COMMAND_MODE_PROGRAM
-            except (IndexError, AttributeError):
-                pass
-            yield COMMAND_PLOT, cutobject.generator()
-        yield COMMAND_MODE_RAPID
+            yield COMMAND_PLOT, cutobject
 
 
 class CutObject:

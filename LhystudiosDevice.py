@@ -3,7 +3,9 @@ import threading
 from CH341DriverBase import *
 from Kernel import *
 from LaserSpeed import LaserSpeed
+from PlotPlanner import PlotPlanner
 from svgelements import Length
+from zinglplotter import ZinglPlotter
 
 """
 LhystudiosDevice is the backend for all Lhystudio Devices.
@@ -245,12 +247,14 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     """
     LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend
     to write to the usb.
+
+    The interpret() ticks to process additional data.
     """
 
     def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, job_name, channel)
         Interpreter.__init__(self, context=context)
-        Job.__init__(self, job_name="Lhystudios-spool", process=self.process_spool, interval=0.01)
+        Job.__init__(self, job_name="Lhystudios-spool", process=self.interpret, interval=0.01)
         self.CODE_RIGHT = b'B'
         self.CODE_LEFT = b'T'
         self.CODE_TOP = b'L'
@@ -259,8 +263,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.CODE_LASER_ON = b'D'
         self.CODE_LASER_OFF = b'U'
 
+        self.plot_planner = PlotPlanner(self.settings)
+
         self.plot = None
-        self.group_modulation = False
 
         self.next_x = None
         self.next_y = None
@@ -274,6 +279,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
         self.pipe = self.context.channel('pipe/send')
         self.realtime_pipe = self.context.channel('pipe/send_realtime')
+
+        # TODO: Len(self.pipe) is no longer a reasonable criteria.
+        self.holds.append(lambda: self.context.buffer_limit and len(self.pipe) > self.context.buffer_max)
 
     def attach(self, channel=None):
         kernel = self.context._kernel
@@ -373,6 +381,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.setting(int, 'current_x', 0)
         self.context.setting(int, 'current_y', 0)
 
+        self.context.setting(bool, "strict", False)
         self.context.setting(bool, "swap_xy", False)
         self.context.setting(bool, "flip_x", False)
         self.context.setting(bool, "flip_y", False)
@@ -384,6 +393,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.setting(bool, "buffer_limit", True)
         self.context.setting(int, "current_x", 0)
         self.context.setting(int, "current_y", 0)
+
+        self.context.setting(bool, "opt_rapid_between", True)
+        self.context.setting(int, "opt_jog_mode", 0)
+        self.context.setting(int, "opt_jog_minimum", 127)
 
         self.update_codes()
 
@@ -427,43 +440,36 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.CODE_TOP = self.CODE_BOTTOM
             self.CODE_BOTTOM = q
 
-    def hold(self):
-        """Holds the data flow if needed."""
-        if self.extra_hold is not None:
-            # Has an additional hold requirement.
-            if self.extra_hold():
-                return True
-            else:
-                self.extra_hold = None
-        return self.context.buffer_limit and len(self.pipe) > self.context.buffer_max
+    def device_process(self):
+        """
+        Executes the self.plot values. Getting all relevant (x,y,on) plot values and performing the cardinal movements.
 
-    def execute(self):
-        if self.hold():
-            return
+        :return:
+        """
         while self.plot is not None:
             if self.hold():
-                return
+                return True
             sx = self.context.current_x
             sy = self.context.current_y
             try:
                 x, y, on = next(self.plot)
                 dx = x - sx
                 dy = y - sy
-                if self.raster_step != 0:
+                if self.settings.raster_step != 0:
                     if self.is_prop(DIRECTION_FLAG_X):
                         if dy != 0:
                             if self.is_prop(DIRECTION_FLAG_TOP):
-                                if abs(dy) > self.raster_step:
+                                if abs(dy) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(0, dy + self.raster_step)
+                                    self.move_relative(0, dy + self.settings.raster_step)
                                     self.set_prop(DIRECTION_FLAG_X)
                                     self.unset_prop(DIRECTION_FLAG_Y)
                                     self.ensure_program_mode()
                                 self.h_switch()
                             else:
-                                if abs(dy) > self.raster_step:
+                                if abs(dy) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(0, dy - self.raster_step)
+                                    self.move_relative(0, dy - self.settings.raster_step)
                                     self.set_prop(DIRECTION_FLAG_X)
                                     self.unset_prop(DIRECTION_FLAG_Y)
                                     self.ensure_program_mode()
@@ -471,17 +477,17 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     elif self.is_prop(DIRECTION_FLAG_Y):
                         if dx != 0:
                             if self.is_prop(DIRECTION_FLAG_LEFT):
-                                if abs(dx) > self.raster_step:
+                                if abs(dx) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(dx + self.raster_step, 0)
+                                    self.move_relative(dx + self.settings.raster_step, 0)
                                     self.set_prop(DIRECTION_FLAG_Y)
                                     self.unset_prop(DIRECTION_FLAG_X)
                                     self.ensure_program_mode()
                                 self.v_switch()
                             else:
-                                if abs(dx) > self.raster_step:
+                                if abs(dx) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(dx - self.raster_step, 0)
+                                    self.move_relative(dx - self.settings.raster_step, 0)
                                     self.set_prop(DIRECTION_FLAG_Y)
                                     self.unset_prop(DIRECTION_FLAG_X)
                                     self.ensure_program_mode()
@@ -489,58 +495,56 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.goto_octent_abs(x, y, on)
             except StopIteration:
                 self.plot = None
-                return
+                return False
             except RuntimeError:
                 self.plot = None
-                return
-        Interpreter.execute(self)
+                return False
+        return False
 
     def plot_plot(self, plot):
         """
-        Plot is a generator of 'x, y, on' plot events that should be executed on the laser.
-
-        As the Lhystudios board is a diagonal/orthogonal command board it's grouped.
-
         :param plot:
         :return:
         """
-        self.plot = Interpreter.group(plot)
+        p_set = plot.settings
+        s_set = self.settings
+        # direction = cutobject.settings.raster_direction
+        # top, left, x_dir, y_dir = cutobject.settings.initial_direction()
+        # yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
+        # TODO: Setting directionality based eventual direction, unless in strict-mode.
+        if p_set.power != s_set.power:
+            self.set_power(p_set.power)
+        if p_set.raster_step != s_set.raster_step or p_set.speed != s_set.speed or \
+                s_set.implicit_d_ratio != p_set.implicit_d_ratio or s_set.implicit_accel != p_set.implicit_accel:
+            self.plot_planner.flush()  # TODO: we must flush the plot_planner for the start of a new cut.
+            self.set_speed(p_set.speed)
+            self.set_step(p_set.raster_step)
+            self.set_acceleration(p_set.implicit_accel)
+            self.set_d_ratio(p_set.implicit_d_ratio)
 
-    # def plot_path(self, path):
-    #     """
-    #     DEPRECATED
-    #     Set the self.plot object with the given path.
-    #
-    #     If path is an SVGImage the path is the outline.
-    #
-    #     :param path: svg object
-    #     :return:
-    #     """
-    #     if isinstance(path, Shape) and not isinstance(path, Path):
-    #         path = Path(path)
-    #     if isinstance(path, SVGImage):
-    #         bounds = path.bbox()
-    #         p = Path()
-    #         p.move([(bounds[0], bounds[1]),
-    #                 (bounds[0], bounds[3]),
-    #                 (bounds[2], bounds[1]),
-    #                 (bounds[2], bounds[3])])
-    #         self.plot_planner.add_path(p)
-    #         self.plot = self.plot_planner
-    #         return
-    #     if len(path) == 0:
-    #         return
-    #     self.plot_planner.add_path(path)
-    #     self.plot = self.plot_planner
-    #
-    # def plot_raster(self, raster):
-    #     """
-    #     DEPRECATED
-    #     :param raster:
-    #     :return:
-    #     """
-    #     self.plot_planner.add_plot(raster.plot())
-    #     self.plot = self.plot_planner
+            self.ensure_rapid_mode()
+            self.is_relative = False
+
+        try:
+            first = plot.start()
+            x = first[0]
+            y = first[1]
+
+            if self.context.opt_rapid_between:
+                self.jog_absolute(x, y,
+                                  mode=self.context.opt_jog_mode,
+                                  min_jog=self.context.opt_jog_minimum)
+            else:
+                self.ensure_rapid_mode()
+            self.move(x,y)
+            self.ensure_program_mode()
+        except (IndexError, AttributeError):
+            pass
+        self.ensure_program_mode()
+        self.plot_planner.push(plot)
+        if self.plot is None:
+            self.plot = self.plot_planner
+        self.plot = Interpreter.group(plot)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -605,7 +609,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         dy = int(round(dy))
         if abs(dx) >= min_jog or abs(dy) >= min_jog:
             if mode == 0:
-                self.jog_event(dx, dy)
+                self._program_mode_jog_event(dx, dy)
             elif mode == 1:
                 self.fly_switch_speed(dx, dy)
             else:
@@ -613,7 +617,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.move_relative(dx, dy)
                 self.ensure_program_mode(direction=direction)
 
-    def jog_event(self, dx=0, dy=0):
+    def _program_mode_jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
         self.state = INTERPRETER_STATE_RAPID
@@ -708,6 +712,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             if dy != 0:
                 self.goto_y(dy)
             self.pipe(b'N')
+        elif self.state == INTERPRETER_STATE_MODECHANGE:
+            self.fly_switch_speed(dx, dy)
         self.check_bounds()
         self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
                                                      self.context.current_x - dx, self.context.current_y - dy))
@@ -733,48 +739,28 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                                                      self.context.current_x - dx, self.context.current_y - dy))
 
     def set_speed(self, speed=None):
-        change = False
-        if self.speed != speed:
-            change = True
-            self.speed = speed
-        if not change:
-            return
-        if self.state == INTERPRETER_STATE_PROGRAM:
-            # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.fly_switch_speed()
+        if self.settings.speed != speed:
+            self.settings.speed = speed
+            if self.state == INTERPRETER_STATE_PROGRAM:
+                self.state = INTERPRETER_STATE_MODECHANGE
 
     def set_d_ratio(self, d_ratio=None):
-        change = False
-        if self.d_ratio != d_ratio:
-            change = True
-            self.d_ratio = d_ratio
-        if not change:
-            return
-        if self.state == INTERPRETER_STATE_PROGRAM:
-            # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.fly_switch_speed()
+        if self.settings.d_ratio != d_ratio:
+            self.settings.d_ratio = d_ratio
+            if self.state == INTERPRETER_STATE_PROGRAM:
+                self.state = INTERPRETER_STATE_MODECHANGE
 
     def set_acceleration(self, accel=None):
-        change = False
-        if self.acceleration != accel:
-            change = True
-            self.acceleration = accel
-        if not change:
-            return
-        if self.state == INTERPRETER_STATE_PROGRAM:
-            # Compact mode means it's currently slowed. To make the change have an effect, compact must be exited.
-            self.fly_switch_speed()
+        if self.settings.acceleration != accel:
+            self.settings.acceleration = accel
+            if self.state == INTERPRETER_STATE_PROGRAM:
+                self.state = INTERPRETER_STATE_MODECHANGE
 
     def set_step(self, step=None):
-        change = False
-        if self.raster_step != step:
-            change = True
-            self.raster_step = step
-        if not change:
-            return
-        if self.state == INTERPRETER_STATE_PROGRAM:
-            # Compact mode means it's currently slowed. To make the speed have an effect, compact must be exited.
-            self.fly_switch_speed()
+        if self.settings.raster_step != step:
+            self.settings.raster_step = step
+            if self.state == INTERPRETER_STATE_PROGRAM:
+                self.state = INTERPRETER_STATE_MODECHANGE
 
     def laser_off(self):
         if not self.laser:
@@ -817,7 +803,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.pipe(b'S1P\n')
             if not self.context.autolock:
                 self.pipe(b'IS2P\n')
-        elif self.state == INTERPRETER_STATE_PROGRAM:
+        elif self.state == INTERPRETER_STATE_PROGRAM or self.state == INTERPRETER_STATE_MODECHANGE:
             self.pipe(b'FNSE-\n')
             self.reset_modes()
         self.state = INTERPRETER_STATE_RAPID
@@ -830,10 +816,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.state = INTERPRETER_STATE_RAPID
         speed_code = LaserSpeed(
             self.context.board,
-            self.speed,
-            self.raster_step,
-            d_ratio=self.d_ratio,
-            acceleration=self.acceleration,
+            self.settings.speed,
+            self.settings.raster_step,
+            d_ratio=self.settings.implicit_d_ratio,
+            acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             fix_speeds=False,
@@ -861,7 +847,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def ensure_finished_mode(self):
         if self.state == INTERPRETER_STATE_FINISH:
             return
-        if self.state == INTERPRETER_STATE_PROGRAM:
+        if self.state == INTERPRETER_STATE_PROGRAM or self.state == INTERPRETER_STATE_MODECHANGE:
             self.pipe(b'@NSE')
             self.reset_modes()
         elif self.state == INTERPRETER_STATE_RAPID:
@@ -876,10 +862,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
         speed_code = LaserSpeed(
             self.context.board,
-            self.speed,
-            self.raster_step,
-            d_ratio=self.d_ratio,
-            acceleration=self.acceleration,
+            self.settings.speed,
+            self.settings.raster_step,
+            d_ratio=self.settings.implicit_d_ratio,
+            acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             fix_speeds=False,
@@ -926,9 +912,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.pipe(self.CODE_LEFT)
             self.set_prop(DIRECTION_FLAG_LEFT)
         if self.is_prop(DIRECTION_FLAG_TOP):
-            self.context.current_y -= self.raster_step
+            self.context.current_y -= self.settings.raster_step
         else:
-            self.context.current_y += self.raster_step
+            self.context.current_y += self.settings.raster_step
         self.laser = False
 
     def v_switch(self):
@@ -939,9 +925,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.pipe(self.CODE_TOP)
             self.set_prop(DIRECTION_FLAG_TOP)
         if self.is_prop(DIRECTION_FLAG_LEFT):
-            self.context.current_x -= self.raster_step
+            self.context.current_x -= self.settings.raster_step
         else:
-            self.context.current_x += self.raster_step
+            self.context.current_x += self.settings.raster_step
         self.laser = False
 
     def calc_home_position(self):
@@ -2011,7 +1997,7 @@ class EgvRaster:
 
 class EgvPlotter:
     def __init__(self, x=0, y=0):
-        self.path = Path() # TODO: This should actually use CutCode.
+        self.path = Path()  # TODO: This should actually use CutCode.
         self.raster = EgvRaster()
         self.x = x
         self.y = y

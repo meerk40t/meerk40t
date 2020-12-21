@@ -151,7 +151,7 @@ class GRBLInterpreter(Interpreter):
         self.pipe.write(' '.join(line) + self.context.line_end)
         Interpreter.move(self, x, y)
 
-    def execute(self):
+    def execute_deprecated(self):
         if self.hold():
             return
         while self.plot is not None:
@@ -170,7 +170,7 @@ class GRBLInterpreter(Interpreter):
             except RuntimeError:
                 self.plot = None
                 return
-        Interpreter.execute(self)
+        Interpreter._process_spooled_item(self)
 
 
 class GRBLEmulator(Module):

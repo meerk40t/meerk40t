@@ -162,11 +162,9 @@ class LaserOperation(list):
                     if isinstance(seg, Move):
                         pass  # Move operations are ignored.
                     elif isinstance(seg, Close):
-                        c.append(
-                            LineCut(seg.start, seg.end, settings=settings))
+                        c.append(LineCut(seg.start, seg.end, settings=settings))
                     elif isinstance(seg, Line):
-                        c.append(
-                            LineCut(seg.start, seg.end, settings=settings))
+                        c.append(LineCut(seg.start, seg.end, settings=settings))
                     elif isinstance(seg, QuadraticBezier):
                         c.append(QuadCut(seg.start, seg.control, seg.end, settings=settings))
                     elif isinstance(seg, CubicBezier):

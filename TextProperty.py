@@ -11,7 +11,7 @@ _ = wx.GetTranslation
 class TextProperty(wx.Frame,  Module):
     def __init__(self, context, path, parent, element, *args, **kwds):
         # begin wxGlade: TextProperty.__init__
-        wx.Frame.__init__(self, context, parent, -1, "",
+        wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
         self.SetSize((317, 360))

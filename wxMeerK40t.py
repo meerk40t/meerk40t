@@ -1649,7 +1649,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 yield COMMAND_WAIT, 0.05
                 yield COMMAND_LASER_OFF
                 yield COMMAND_WAIT_FINISH
-        self.device.spooler.job(jog_transition_test)
+        self.context.spooler.job(jog_transition_test)
 
     def run_home_and_dot_test(self):
 
@@ -2390,7 +2390,7 @@ class RootNode(list):
                 for i in range(1, 10):
                     menu_item = raster_step_menu.Append(wx.ID_ANY, _("Step %d") % i, "", wx.ITEM_RADIO)
                     gui.Bind(wx.EVT_MENU, self.menu_raster_step_operation(node, i), menu_item)
-                    step = float(node.object.raster_step)
+                    step = float(node.object.settings.raster_step)
                     if i == step:
                         menu_item.Check(True)
                 menu.AppendSubMenu(raster_step_menu, _("Step"))

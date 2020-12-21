@@ -27,7 +27,7 @@ COMMAND_MODE_RAPID = 50
 COMMAND_MODE_PROGRAM = 51
 COMMAND_MODE_FINISHED = 52
 
-COMMAND_PLOT = 100  # Takes a plot object
+COMMAND_PLOT = 100  # Takes a cutobject
 
 COMMAND_SET_SPEED = 200  # sets the speed for the device
 COMMAND_SET_POWER = 201  # sets the power. Out of 1000. Unknown power method.
