@@ -28,7 +28,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.0"
+SVGELEMENTS_VERSION = "1.4.1"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -3054,7 +3054,7 @@ class GraphicObject:
         stroke = values.get(SVG_ATTR_STROKE)
         self.stroke = Color(stroke) if stroke is not None else None
         stroke_opacity = values.get(SVG_ATTR_STROKE_OPACITY)
-        if stroke_opacity is not None and self.stroke is not None:
+        if stroke_opacity is not None and self.stroke is not None and self.stroke.value is not None:
             try:
                 self.stroke.opacity = float(stroke_opacity)
             except ValueError:
@@ -3062,7 +3062,7 @@ class GraphicObject:
         fill = values.get(SVG_ATTR_FILL)
         self.fill = Color(fill) if fill is not None else None
         fill_opacity = values.get(SVG_ATTR_FILL_OPACITY)
-        if fill_opacity is not None and self.fill is not None:
+        if fill_opacity is not None and self.fill is not None and self.fill.value is not None:
             try:
                 self.fill.opacity = float(fill_opacity)
             except ValueError:

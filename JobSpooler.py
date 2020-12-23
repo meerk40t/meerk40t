@@ -39,7 +39,6 @@ class JobSpooler(wx.Frame, Module):
         self.list_lookup = {}
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
-
     def __set_properties(self):
         # begin wxGlade: Spooler.__set_properties
         _icon = wx.NullIcon

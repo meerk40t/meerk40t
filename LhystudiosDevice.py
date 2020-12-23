@@ -440,19 +440,44 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.CODE_TOP = self.CODE_BOTTOM
             self.CODE_BOTTOM = q
 
-    def device_process(self):
+    def plotplanner_process(self):
         """
-        Executes the self.plot values. Getting all relevant (x,y,on) plot values and performing the cardinal movements.
+        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
+        movements. Or updating the laser state based on the settings of the cutcode.
 
         :return:
         """
-        while self.plot is not None:
+        if self.plot is not None:
             if self.hold():
                 return True
             sx = self.context.current_x
             sy = self.context.current_y
-            try:
-                x, y, on = next(self.plot)
+            for x, y, on in self.plot.gen():
+                if on & 4:  # Plot planner settings have changed.
+                    p_set = self.plot.settings
+                    s_set = self.settings
+                    if p_set.power != s_set.power:
+                        self.set_power(p_set.power)
+                    if p_set.raster_step != s_set.raster_step or \
+                            p_set.speed != s_set.speed or \
+                            s_set.implicit_d_ratio != p_set.implicit_d_ratio or \
+                            s_set.implicit_accel != p_set.implicit_accel:
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step)
+                        self.set_acceleration(p_set.implicit_accel)
+                        self.set_d_ratio(p_set.implicit_d_ratio)
+                if on & 2:  # Plot planner requires a jog.
+                    if self.state == INTERPRETER_STATE_PROGRAM:
+                        if self.context.opt_rapid_between:
+                            self.jog_absolute(x, y,
+                                              mode=self.context.opt_jog_mode,
+                                              min_jog=self.context.opt_jog_minimum)
+                    else:
+                        self.ensure_rapid_mode()
+                    self.move_absolute(x, y)
+                    continue
+                else:
+                    self.ensure_program_mode()
                 dx = x - sx
                 dy = y - sy
                 if self.settings.raster_step != 0:
@@ -492,13 +517,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                                     self.unset_prop(DIRECTION_FLAG_X)
                                     self.ensure_program_mode()
                                 self.v_switch()
-                self.goto_octent_abs(x, y, on)
-            except StopIteration:
-                self.plot = None
-                return False
-            except RuntimeError:
-                self.plot = None
-                return False
+                self.goto_octent_abs(x, y, on & 1)
+            self.plot = None
         return False
 
     def plot_plot(self, plot):
@@ -506,45 +526,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         :param plot:
         :return:
         """
-        p_set = plot.settings
-        s_set = self.settings
-        # direction = cutobject.settings.raster_direction
-        # top, left, x_dir, y_dir = cutobject.settings.initial_direction()
-        # yield COMMAND_SET_DIRECTION, top, left, x_dir, y_dir
-        # TODO: Setting directionality based eventual direction, unless in strict-mode.
-        if p_set.power != s_set.power:
-            self.set_power(p_set.power)
-        if p_set.raster_step != s_set.raster_step or p_set.speed != s_set.speed or \
-                s_set.implicit_d_ratio != p_set.implicit_d_ratio or s_set.implicit_accel != p_set.implicit_accel:
-            self.plot_planner.flush()  # TODO: we must flush the plot_planner for the start of a new cut.
-            self.set_speed(p_set.speed)
-            self.set_step(p_set.raster_step)
-            self.set_acceleration(p_set.implicit_accel)
-            self.set_d_ratio(p_set.implicit_d_ratio)
-
-            self.ensure_rapid_mode()
-            self.is_relative = False
-
-        try:
-            first = plot.start()
-            x = first[0]
-            y = first[1]
-
-            if self.context.opt_rapid_between:
-                self.jog_absolute(x, y,
-                                  mode=self.context.opt_jog_mode,
-                                  min_jog=self.context.opt_jog_minimum)
-            else:
-                self.ensure_rapid_mode()
-            self.move(x,y)
-            self.ensure_program_mode()
-        except (IndexError, AttributeError):
-            pass
-        self.ensure_program_mode()
         self.plot_planner.push(plot)
         if self.plot is None:
             self.plot = self.plot_planner
-        self.plot = Interpreter.group(plot)
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -578,6 +562,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         # self.pipe._queue = b''
         # self.context.signal('pipe;buffer', 0)
         self.plot = None
+        self.plot_planner.clear()
         self.realtime_pipe(b'I*\n')
         self.laser = False
         self.properties = 0
@@ -624,21 +609,21 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.laser = False
         if self.is_prop(DIRECTION_START_X):
             if not self.is_left and dx >= 0:
-                self.pipe.write(self.CODE_LEFT)
+                self.pipe(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
-                self.pipe.write(self.CODE_RIGHT)
+                self.pipe(self.CODE_RIGHT)
         if self.is_prop(DIRECTION_START_Y):
             if not self.is_top and dy >= 0:
-                self.pipe.write(self.CODE_TOP)
+                self.pipe(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
-                self.pipe.write(self.CODE_BOTTOM)
-        self.pipe.write(b'N')
+                self.pipe(self.CODE_BOTTOM)
+        self.pipe(b'N')
         if dy != 0:
             self.goto_y(dy)
         if dx != 0:
             self.goto_x(dx)
-        self.pipe.write(b'SE')
-        self.pipe.write(self.code_declare_directions())
+        self.pipe(b'SE')
+        self.pipe(self.code_declare_directions())
         self.state = INTERPRETER_STATE_PROGRAM
 
     def move(self, x, y):
@@ -733,8 +718,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.goto_angle(dx, dy)
         elif dx != 0:
             self.goto_x(dx)
+            if dy != 0:
+                raise ValueError("Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)" % (str(dx), str(dy)))
         else:
             self.goto_y(dy)
+            if dx != 0:
+                raise ValueError("Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)" % (str(dx), str(dy)))
         self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
                                                      self.context.current_x - dx, self.context.current_y - dy))
 
@@ -744,9 +733,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             if self.state == INTERPRETER_STATE_PROGRAM:
                 self.state = INTERPRETER_STATE_MODECHANGE
 
-    def set_d_ratio(self, d_ratio=None):
-        if self.settings.d_ratio != d_ratio:
-            self.settings.d_ratio = d_ratio
+    def set_d_ratio(self, dratio=None):
+        if self.settings.dratio != dratio:
+            self.settings.dratio = dratio
             if self.state == INTERPRETER_STATE_PROGRAM:
                 self.state = INTERPRETER_STATE_MODECHANGE
 

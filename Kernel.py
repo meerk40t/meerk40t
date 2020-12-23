@@ -162,7 +162,7 @@ class Interpreter:
             return
         self._process_spooled_item()
 
-    def device_process(self):
+    def plotplanner_process(self):
         """
         Executes the device specific processing.
 
@@ -177,7 +177,7 @@ class Interpreter:
         """
         if self.hold():
             return
-        if self.device_process():
+        if self.plotplanner_process():
             return
         if self.spooled_item is None:
             return  # Fetch Next.

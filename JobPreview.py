@@ -316,7 +316,6 @@ class JobPreview(wx.Frame, Module):
         if stage is not None:
             self.stage = stage
         self.plan_name = plan_name
-        print(stage)
         self.update_gui()
 
     def on_element_property_update(self, *args):
@@ -330,13 +329,14 @@ class JobPreview(wx.Frame, Module):
                 return str(e)
 
         self.list_operations.Clear()
+        self.list_command.Clear()
         operations, commands = self.context.default_plan()
         if operations is not None and len(operations) != 0:
             self.list_operations.InsertItems([name_str(e) for e in operations], 0)
         if commands is not None and len(commands) != 0:
             self.list_command.InsertItems([name_str(e) for e in commands], 0)
         if self.stage == 0:
-            self.button_start.SetLabelText(_("Copy Operations"))
+            self.button_start.SetLabelText(_("Copy"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 255, 102))
         elif self.stage == 1:
             self.button_start.SetLabelText(_("Preprocess Operations"))
@@ -348,7 +348,7 @@ class JobPreview(wx.Frame, Module):
             self.button_start.SetLabelText(_("Blob"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
         elif self.stage == 4:
-            self.button_start.SetLabelText(_("Validate Optimizations"))
+            self.button_start.SetLabelText(_("Preprocess Optimizations"))
             self.button_start.SetBackgroundColour(wx.Colour(255, 102, 102))
         elif self.stage == 5:
             self.button_start.SetLabelText(_("Optimize"))

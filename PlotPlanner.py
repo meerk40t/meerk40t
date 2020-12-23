@@ -31,14 +31,13 @@ class PlotPlanner:
         self.settings = settings
         self.group_enabled = True  # Required for Lhymicro-gl.
 
+        self.flush = None
+        self.jog = None
         self.current = None
-        self.flushed = True
+
         self.queue = []
 
-        self.x = None
-        self.y = None
-
-        self.single_default = 0
+        self.single_default = 1
         self.single_x = None
         self.single_y = None
 
@@ -56,32 +55,69 @@ class PlotPlanner:
         self.shift_buffer = []
         self.shift_pixels = 0
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
+    def gen(self):
         """
         Main method of generating the plot stream.
 
         :return:
         """
-        if self.current is None and len(self.queue) == 0 and self.flushed:
-            raise StopIteration
-        if self.current is None:
-            self.current = self.queue.pop(0)
-        if self.current is None:
-            self.flushed = True
-            return self.process(None)
-        try:
-            return self.process(self.current)
-        except StopIteration:
-            self.current = None
-            return next(self)
+        while True:
+            if self.flush is not None:  # First flush any buffer.
+                # Buffer is flushing.
+                for n in self.flush:
+                    yield n
+                self.flush = None
+
+            if self.jog is not None:  # Perform any would-be jogs.
+                sx, sy, on = self.jog
+                self.single_x = sx
+                self.single_y = sy
+                self.group_x = sx
+                self.group_y = sy
+                self.jog = None
+                yield sx, sy, on
+
+            if self.current is not None:  # Process the current data.
+                # Current is plotting
+                for n in self.current:
+                    yield n
+                self.current = None
+
+            if self.current is None:
+                if len(self.queue) == 0:
+                    for n in self.wrap(None):  # Process flush, and finish.
+                        yield n
+                    return
+                cut = self.queue.pop(0)
+                self.current = self.wrap(cut.generator())  # Wrap current cut
+
+                p_set = cut.settings
+                s_set = self.settings
+
+                self.settings = cut.settings
+
+                start = cut.start()
+                sx = int(start.x)
+                sy = int(start.y)
+
+                flush = False
+                jog = 0
+                if self.single_x != sx or self.single_y != sy:
+                    # If this location is disjointed. We must flush and jog to the new location.
+                    flush = True
+                    jog |= 2  # new location required.
+                if p_set is not s_set:
+                    flush = True  # Laser Setting has changed, we must flush the buffer.
+                    jog |= 4  # New settings required.
+                if flush:
+                    self.flush = self.wrap(None)  # Wrap flush.
+                if jog:
+                    self.jog = sx, sy, jog
 
     def push(self, plot):
         self.queue.append(plot)
 
-    def process(self, plot):
+    def wrap(self, plot):
         """
         Converts a series of inputs into a series of outputs. There is not a 1:1 input to output conversion.
         Processes can buffer data and return None. Processes are required to surrender any buffer they have if the
@@ -93,7 +129,7 @@ class PlotPlanner:
         :param plot: plottable element that should be wrapped
         :return: generator to produce plottable elements.
         """
-        plot = self.single(plot.generator())
+        plot = self.single(plot)
         if self.settings.ppi_enabled:
             plot = self.apply_ppi(plot)
         if self.settings.shift_enabled:
@@ -142,6 +178,8 @@ class PlotPlanner:
                 dy = 0
             total_dx = x - self.single_x
             total_dy = y - self.single_y
+            if total_dx == 0 and total_dy == 0:
+                continue
             if total_dy * dx != total_dx * dy:
                 raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
             count = max(abs(total_dx), abs(total_dy)) + 1
@@ -254,3 +292,7 @@ class PlotPlanner:
             self.group_x = x
             self.group_y = y
             self.group_on = on
+
+    def clear(self):
+        # TODO: Properly reset cut planner.
+        self.queue.clear()

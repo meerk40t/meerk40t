@@ -108,7 +108,7 @@ class Controller(wx.Frame, Module):
 
     def device_execute(self, control_name):
         def menu_element(event):
-            self.context._process_spooled_item(control_name)
+            self.context.execute(control_name)
 
         return menu_element
 
@@ -117,7 +117,7 @@ class Controller(wx.Frame, Module):
         menu = wx.Menu()
         path_scale_sub_menu = wx.Menu()
         for control_name in self.context.match('control'):
-            gui.Bind(wx.EVT_MENU, self.context._process_spooled_item(control_name),
+            gui.Bind(wx.EVT_MENU, self.context.execute(control_name),
                      path_scale_sub_menu.Append(wx.ID_ANY, list(control_name.split('/'))[-1], "", wx.ITEM_NORMAL))
         menu.Append(wx.ID_ANY, _("Kernel Force Event"), path_scale_sub_menu)
         if menu.MenuItemCount != 0:
@@ -285,7 +285,7 @@ class Controller(wx.Frame, Module):
 
     def on_button_pause_resume(self, event):  # wxGlade: Controller.<event_handler>
         try:
-            self.context._process_spooled_item("Realtime Pause_Resume")
+            self.context.execute("Realtime Pause_Resume")
         except AttributeError:
             pass
 
@@ -346,14 +346,14 @@ class Controller(wx.Frame, Module):
             state = state[0]
         if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK, None):
             try:
-                self.context._process_spooled_item("Connect_USB")
+                self.context.execute("Connect_USB")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(None, _("Connection Refused. See USB Log for detailed information."),
                                        _("Manual Connection"), wx.OK | wx.ICON_WARNING)
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in (STATE_CONNECTED, STATE_USB_CONNECTED):
-            self.context._process_spooled_item("Disconnect_USB")
+            self.context.execute("Disconnect_USB")
 
     def on_buffer_update(self, value, *args):
         if self.gui_update:
