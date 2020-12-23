@@ -1,6 +1,7 @@
 import threading
 
 import wx
+import time
 
 from Kernel import Module
 from LaserRender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
@@ -580,18 +581,28 @@ class CameraInterface(wx.Frame, Module):
         if self.device is None:
             self.camera_lock.release()
             return
-        ret = self.capture.grab()
-        if not ret:
-            wx.CallAfter(self.camera_error_webcam)
-            self.capture = None
-            self.camera_lock.release()
-            return
-        ret, frame = self.capture.retrieve()
-        if not ret or frame is None:
-            wx.CallAfter(self.camera_error_webcam)
-            self.capture = None
-            self.camera_lock.release()
-            return
+        for i in range(10):
+            ret = self.capture.grab()
+            if not ret:
+                if i >= 9:
+                    self.capture = None
+                    wx.CallAfter(self.camera_error_webcam)
+                    self.camera_lock.release()
+                    return
+                time.sleep(0.05)
+            else:
+                break
+        for i in range(10):
+            ret, frame = self.capture.retrieve()
+            if not ret or frame is None:
+                if i >= 9:
+                    wx.CallAfter(self.camera_error_webcam)
+                    self.capture = None
+                    self.camera_lock.release()
+                    return
+                time.sleep(0.05)
+            else:
+                break
         if not raw and \
                 self.fisheye_k is not None and \
                 self.fisheye_d is not None and \
