@@ -29,7 +29,7 @@ class PlotPlanner:
     def __init__(self, settings):
         # TODO: Plot planner should solve for initial directionality of new compact event.
         self.settings = settings
-        self.group_enabled = True  # Required for Lhymicro-gl.
+        self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
 
         self.flush = None
         self.jog = None
@@ -70,12 +70,12 @@ class PlotPlanner:
 
             if self.jog is not None:  # Perform any would-be jogs.
                 sx, sy, on = self.jog
+                yield sx, sy, on
                 self.single_x = sx
                 self.single_y = sy
                 self.group_x = sx
                 self.group_y = sy
                 self.jog = None
-                yield sx, sy, on
 
             if self.current is not None:  # Process the current data.
                 # Current is plotting
@@ -87,7 +87,7 @@ class PlotPlanner:
                 if len(self.queue) == 0:
                     for n in self.wrap(None):  # Process flush, and finish.
                         yield n
-                    yield None, None, 8
+                    yield None, None, 256
                     return
                 cut = self.queue.pop(0)
                 self.current = self.wrap(cut.generator())  # Wrap current cut
@@ -104,12 +104,24 @@ class PlotPlanner:
                 flush = False
                 jog = 0
                 if self.single_x != sx or self.single_y != sy:
-                    # If this location is disjointed. We must flush and jog to the new location.
-                    flush = True
-                    jog |= 2  # new location required.
+                    # If this location is disjointed.
+                    # We must flush get to the new location.
+                    if self.single_x is None:
+                        flush = True
+                        jog |= 4  # Request rapid move new location
+                    else:
+                        distance = self.settings.jog_distance
+                        if (abs(self.single_x - sx) < distance and abs(self.single_y - sx) < distance) \
+                                or not p_set.jog_enable:
+                            for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y, sx, sy)):
+                                yield n  # Walk there.
+                        else:
+                            flush = True
+                            jog |= 2  # Request jog new location required.
+
                 if p_set is not s_set:
                     flush = True  # Laser Setting has changed, we must flush the buffer.
-                    jog |= 4  # New settings required.
+                    jog |= 128  # New settings required.
                 if flush:
                     self.flush = self.wrap(None)  # Wrap flush.
                 if jog:

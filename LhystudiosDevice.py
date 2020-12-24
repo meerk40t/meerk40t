@@ -453,10 +453,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             sx = self.context.current_x
             sy = self.context.current_y
             for x, y, on in self.plot.gen():
-                if on & 8:  # Plot planner is shutdown.
+                if on & 256:  # Plot planner is ending.
                     self.ensure_rapid_mode()
                     continue
-                if on & 4:  # Plot planner settings have changed.
+                if on & 128:  # Plot planner settings have changed.
                     p_set = self.plot.settings
                     s_set = self.settings
                     if p_set.power != s_set.power:
@@ -469,15 +469,14 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                         self.set_step(p_set.raster_step)
                         self.set_acceleration(p_set.implicit_accel)
                         self.set_d_ratio(p_set.implicit_d_ratio)
-                if on & 2:  # Plot planner requires a jog.
-                    if self.state == INTERPRETER_STATE_PROGRAM:
-                        if self.context.opt_rapid_between:
-                            self.jog_absolute(x, y,
-                                              mode=self.context.opt_jog_mode,
-                                              min_jog=self.context.opt_jog_minimum)
-                    else:
+                if on & 6:  # Plot planner requests position change.
+                    if on & 4 or self.state != INTERPRETER_STATE_PROGRAM:
+                        # Perform a rapid position change.
                         self.ensure_rapid_mode()
-                    self.move_absolute(x, y)
+                        self.move_absolute(x, y)
+                        continue
+                    # Jog is performable and requested.
+                    self.jog_absolute(x, y, mode=self.context.opt_jog_mode)
                     continue
                 else:
                     self.ensure_program_mode()
@@ -593,19 +592,18 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def jog_absolute(self, x, y, **kwargs):
         self.jog_relative(x - self.context.current_x, y - self.context.current_y, **kwargs)
 
-    def jog_relative(self, dx, dy, mode=0, min_jog=127, direction=None):
+    def jog_relative(self, dx, dy, mode=0, direction=None):
         self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
-        if abs(dx) >= min_jog or abs(dy) >= min_jog:
-            if mode == 0:
-                self._program_mode_jog_event(dx, dy)
-            elif mode == 1:
-                self.fly_switch_speed(dx, dy)
-            else:
-                self.ensure_rapid_mode()
-                self.move_relative(dx, dy)
-                self.ensure_program_mode(direction=direction)
+        if mode == 0:
+            self._program_mode_jog_event(dx, dy)
+        elif mode == 1:
+            self.fly_switch_speed(dx, dy)
+        else:
+            self.ensure_rapid_mode()
+            self.move_relative(dx, dy)
+            self.ensure_program_mode(direction=direction)
 
     def _program_mode_jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
@@ -1332,6 +1330,8 @@ class LhystudioController(Module):
         :param bytes_to_write: data to write to the queue.
         :return:
         """
+        if b'aa' in self._queue:
+            print("Why?!")
         self.pipe_channel("write(%s)" % str(bytes_to_write))
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write

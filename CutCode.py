@@ -37,104 +37,26 @@ class LaserSettings:
 
         self.advanced = False
 
-        self.ppi_enabled = True  # May require kwargs
+        self.ppi_enabled = True
 
         self.dot_length_custom = False
         self.dot_length = 1
 
-        self.shift_enabled = False # May require kwargs
+        self.shift_enabled = False
         self.group_pulses = False
         self.group_enabled = True
 
         self.passes_custom = False
         self.passes = 1
 
-        try:
-            self.speed = float(kwargs['speed'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.power = float(kwargs['power'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.dratio = float(kwargs['dratio'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.dratio_custom = bool(kwargs['dratio_custom'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.acceleration = int(kwargs['acceleration'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.acceleration_custom = bool(kwargs['acceleration_custom'])
-        except (ValueError, TypeError, KeyError):
-            pass
+        self.jog_distance = 255
+        self.jog_enable = True
 
-        try:
-            self.raster_step = int(kwargs['raster_step'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.raster_direction = int(kwargs['raster_direction'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.raster_swing = bool(kwargs['raster_swing'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.raster_preference_top = int(kwargs['raster_preference_top'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.raster_preference_right = int(kwargs['raster_preference_right'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.raster_preference_left = int(kwargs['raster_preference_left'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.raster_preference_bottom = int(kwargs['raster_preference_bottom'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.overscan = int(kwargs['overscan'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.dot_length = int(kwargs['dot_length'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.dot_length_custom = bool(kwargs['dot_length_custom'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        try:
-            self.group_pulses = bool(kwargs['group_pulses'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.passes = int(kwargs['passes'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.passes_custom = bool(kwargs['passes_custom'])
-        except (ValueError, TypeError, KeyError):
-            pass
-
+        for k in kwargs:
+            value = kwargs[k]
+            if hasattr(self, k):
+                t = type(getattr(self, k))
+                setattr(self, k, t(value))
         if len(args) == 1:
             obj = args[0]
             try:
@@ -142,30 +64,15 @@ class LaserSettings:
             except AttributeError:
                 pass
             if isinstance(obj, LaserSettings):
-                self.speed = obj.speed
-                self.power = obj.power
-                self.dratio_custom = obj.dratio_custom
-                self.dratio = obj.dratio
-                self.acceleration_custom = obj.acceleration_custom
-                self.acceleration = obj.acceleration
-                self.raster_step = obj.raster_step
-                self.raster_direction = obj.raster_direction
-                self.raster_swing = obj.raster_swing
-                self.overscan = obj.overscan
+                self.set_values(obj)
 
-                self.raster_preference_top = obj.raster_preference_top
-                self.raster_preference_right = obj.raster_preference_right
-                self.raster_preference_left = obj.raster_preference_left
-                self.raster_preference_bottom = obj.raster_preference_bottom
-
-                self.advanced = obj.advanced
-                self.dot_length_custom = obj.dot_length_custom
-                self.dot_length = obj.dot_length
-
-                self.group_pulses = obj.group_pulses
-
-                self.passes_custom = obj.passes_custom
-                self.passes = obj.passes
+    def set_values(self, obj):
+        for q in dir(obj):
+            if q.startswith('_') or q.startswith('implicit'):
+                continue
+            value = getattr(obj, q)
+            if isinstance(value, (int, float, bool, str)):
+                setattr(self, q, value)
 
     @property
     def implicit_accel(self):
