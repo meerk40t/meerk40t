@@ -519,7 +519,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                                     self.unset_prop(DIRECTION_FLAG_X)
                                     self.ensure_program_mode()
                                 self.v_switch()
-                self.goto_octent_abs(x, y, on & 1)
+                else:
+                    self.goto_octent_abs(x, y, on & 1)
             self.plot = None
         return False
 

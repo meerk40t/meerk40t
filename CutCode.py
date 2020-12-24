@@ -42,9 +42,7 @@ class LaserSettings:
         self.dot_length_custom = False
         self.dot_length = 1
 
-        self.shift_enabled = False
-        self.group_pulses = False
-        self.group_enabled = True
+        self.shift_enabled = True
 
         self.passes_custom = False
         self.passes = 1
@@ -250,7 +248,10 @@ class RasterCut(CutObject):
         self.image = image
 
     def start(self):
-        return None
+        m = self.image.transform
+        tx = m.value_trans_x()
+        ty = m.value_trans_y()
+        return Point(tx, ty)
 
     def end(self):
         return None
@@ -322,4 +323,4 @@ class RasterCut(CutObject):
         return RasterPlotter(data, width, height, traverse, 0, overscan,
                              tx,
                              ty,
-                             step, image_filter)
+                             step, image_filter).plot()
