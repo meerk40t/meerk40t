@@ -87,6 +87,10 @@ class PlotPlanner:
                 if len(self.queue) == 0:
                     for n in self.wrap(None):  # Process flush, and finish.
                         yield n
+                    self.single_x = None
+                    self.single_y = None
+                    self.group_x = None
+                    self.group_y = None
                     yield None, None, 256
                     return
                 cut = self.queue.pop(0)
@@ -219,7 +223,7 @@ class PlotPlanner:
                 yield None
                 return
             x, y, on = event
-            self.ppi_total += self.ppi * on
+            self.ppi_total += self.settings.power * on
             if on and self.dot_left > 0:
                 self.dot_left -= 1
                 on = 1

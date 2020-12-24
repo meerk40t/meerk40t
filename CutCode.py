@@ -42,7 +42,7 @@ class LaserSettings:
         self.dot_length_custom = False
         self.dot_length = 1
 
-        self.shift_enabled = True
+        self.shift_enabled = False
 
         self.passes_custom = False
         self.passes = 1

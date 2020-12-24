@@ -32,7 +32,6 @@ class Elemental(Modifier):
         context.save_types = self.save_types
         context.load = self.load
         context.load_types = self.load_types
-        self.add_elem(Rect(0,0,1000,1000, stroke='black'))
 
         context = self.context
         kernel = self.context._kernel

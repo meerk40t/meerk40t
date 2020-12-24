@@ -52,7 +52,7 @@ class OperationProperty(wx.Frame, Module):
         self.slider_accel = wx.Slider(self.advanced_panel, wx.ID_ANY, 1, 1, 4, style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         self.check_dot_length_custom = wx.CheckBox(self.advanced_panel, wx.ID_ANY, _("Dot Length (mils)"))
         self.text_dot_length = wx.TextCtrl(self.advanced_panel, wx.ID_ANY, "1")
-        self.check_group_pulse = wx.CheckBox(self.advanced_panel, wx.ID_ANY, _("Group Pulses"))
+        self.check_shift_enabled = wx.CheckBox(self.advanced_panel, wx.ID_ANY, _("Group Pulses"))
         self.check_passes = wx.CheckBox(self.advanced_panel, wx.ID_ANY, _("Passes"))
         self.text_passes = wx.TextCtrl(self.advanced_panel, wx.ID_ANY, "1")
 
@@ -122,7 +122,7 @@ class OperationProperty(wx.Frame, Module):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
         self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_shift_enabled)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
         self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -175,8 +175,8 @@ class OperationProperty(wx.Frame, Module):
             self.check_dot_length_custom.SetValue(self.operation.settings.dot_length_custom)
         if self.operation.settings.dot_length is not None:
             self.text_dot_length.SetValue(str(self.operation.settings.dot_length))
-        if self.operation.settings.group_pulses is not None:
-            self.check_group_pulse.SetValue(self.operation.settings.group_pulses)
+        if self.operation.settings.shift_enabled is not None:
+            self.check_shift_enabled.SetValue(self.operation.settings.shift_enabled)
         if self.operation.settings.passes_custom is not None:
             self.check_passes.SetValue(self.operation.settings.passes_custom)
         if self.operation.settings.passes is not None:
@@ -232,17 +232,13 @@ class OperationProperty(wx.Frame, Module):
         self.slider_accel.SetToolTip(_("Acceleration Factor Override"))
         self.check_dot_length_custom.SetToolTip(_("Enable Dot Length Feature"))
         self.text_dot_length.SetToolTip(_("PPI minimum on length for making dash patterns"))
-        self.check_group_pulse.SetToolTip(_("Attempts to adjust the pulse grouping for data efficiency."))
+        self.check_shift_enabled.SetToolTip(_("Attempts to adjust the pulse grouping for data efficiency."))
         self.check_passes.SetToolTip(_("Enable Passes"))
         self.text_passes.SetToolTip(_("Run operation how many times?"))
         # end wxGlade
 
         # 0.6.1 freeze, drops.
-
         self.radio_directional_raster.Enable(False)
-        self.check_group_pulse.Enable(False)
-        self.check_dot_length_custom.Enable(False)
-        self.text_dot_length.Enable(False)
         self.slider_top.Enable(False)
         self.slider_right.Enable(False)
         self.slider_left.Enable(False)
@@ -327,7 +323,7 @@ class OperationProperty(wx.Frame, Module):
         sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
         sizer_20.Add(self.text_dot_length, 1, 0, 0)
         sizer_19.Add(sizer_20, 1, wx.EXPAND, 0)
-        sizer_19.Add(self.check_group_pulse, 0, 0, 0)
+        sizer_19.Add(self.check_shift_enabled, 0, 0, 0)
         advanced_ppi_sizer.Add(sizer_19, 1, wx.EXPAND, 0)
         extras_sizer.Add(advanced_ppi_sizer, 0, wx.EXPAND, 0)
         sizer_22.Add(self.check_passes, 1, 0, 0)
@@ -617,7 +613,7 @@ class OperationProperty(wx.Frame, Module):
         self.context.signal('element_property_update', self.operation)
 
     def on_check_group_pulses(self, event):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.group_pulses = bool(self.check_group_pulse.GetValue())
+        self.operation.settings.shift_enabled = bool(self.check_shift_enabled.GetValue())
         self.context.signal('element_property_update', self.operation)
 
     def on_check_passes(self, event):  # wxGlade: OperationProperty.<event_handler>
