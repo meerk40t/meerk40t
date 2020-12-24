@@ -28,7 +28,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.1"
+SVGELEMENTS_VERSION = "1.4.2"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -7148,12 +7148,12 @@ class SVGImage(SVGElement, GraphicObject, Transformable):
             pass
 
     def set_values_by_image(self):
-        if self.image is not None:
-            self.image_width = self.image.width
-            self.image_height = self.image.height
-        else:
-            return
+        if self.image is None:
+            return  # No image to set values by.
+        self.image_width = self.image.width
+        self.image_height = self.image.height
         self.viewbox = Viewbox("0 0 %d %d" % (self.image_width, self.image_height), self.preserve_aspect_ratio)
+        self.render(width=self.image_width, height=self.image_height)
         self.transform = Matrix(self.viewbox_transform) * self.transform
 
     def bbox(self, transformed=True):
