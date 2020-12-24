@@ -87,6 +87,7 @@ class PlotPlanner:
                 if len(self.queue) == 0:
                     for n in self.wrap(None):  # Process flush, and finish.
                         yield n
+                    yield None, None, 8
                     return
                 cut = self.queue.pop(0)
                 self.current = self.wrap(cut.generator())  # Wrap current cut

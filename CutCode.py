@@ -225,6 +225,7 @@ class CutCode(list):
     def generate(self):
         for cutobject in self:
             yield COMMAND_PLOT, cutobject
+        yield COMMAND_PLOT_START
 
 
 class CutObject:

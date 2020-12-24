@@ -453,6 +453,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             sx = self.context.current_x
             sy = self.context.current_y
             for x, y, on in self.plot.gen():
+                if on & 8:  # Plot planner is shutdown.
+                    self.ensure_rapid_mode()
+                    continue
                 if on & 4:  # Plot planner settings have changed.
                     p_set = self.plot.settings
                     s_set = self.settings
@@ -527,6 +530,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         :return:
         """
         self.plot_planner.push(plot)
+
+    def plot_start(self):
         if self.plot is None:
             self.plot = self.plot_planner
 

@@ -263,6 +263,8 @@ class Interpreter:
                 self.unlock_rail()
             elif command == COMMAND_PLOT:
                 self.plot_plot(values[0])
+            elif command == COMMAND_PLOT_START:
+                self.plot_start()
             elif command == COMMAND_SET_SPEED:
                 self.set_speed(values[0])
             elif command == COMMAND_SET_POWER:
