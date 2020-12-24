@@ -26,7 +26,7 @@ class LaserSettings:
         self.acceleration_custom = False
         self.acceleration = 1
 
-        self.raster_step = 0
+        self.raster_step = 1
         self.raster_direction = 0
         self.raster_swing = False  # False = bidirectional, True = Unidirectional
         self.raster_preference_top = 0
@@ -258,6 +258,8 @@ class RasterCut(CutObject):
 
     def generator(self):
         step = self.settings.raster_step
+        if step < 0:
+            step = 1
         direction = self.settings.raster_direction
         traverse = 0
         if direction == 0:
