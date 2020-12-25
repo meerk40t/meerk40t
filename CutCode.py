@@ -134,13 +134,12 @@ class CutCode(list):
 
 
 class CutObject:
-    def __init__(self, settings=None):
+    def __init__(self, start=None, end=None, settings=None):
         if settings is None:
             settings = LaserSettings()
         self.settings = settings
-        self._start = None
-        self._end = None
-        self._bounds = None
+        self._start = start
+        self._end = end
 
     def start(self):
         return self._start
@@ -148,8 +147,29 @@ class CutObject:
     def end(self):
         return self._end
 
-    def bounds(self):
-        return self._bounds
+    def major_axis(self):
+        start = self.start()
+        end = self.end()
+        if (start.x - end.x) - (start.y - end.y) < 0:
+            return 1
+        else:
+            return 0
+
+    def x_dir(self):
+        start = self.start()
+        end = self.end()
+        if start.x < end.x:
+            return 1
+        else:
+            return 0
+
+    def y_dir(self):
+        start = self.start()
+        end = self.end()
+        if start.y < end.y:
+            return 1
+        else:
+            return 0
 
     def reverse(self):
         self._start, self._end = self._end, self._start
@@ -160,68 +180,38 @@ class CutObject:
 
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None):
-        CutObject.__init__(self, settings=settings)
-        self.start_point = start_point
-        self.end_point = end_point
-
-    def start(self):
-        return self.start_point
-
-    def end(self):
-        return self.end_point
-
-    def reverse(self):
-        self.start_point, self.end_point = self.end_point, self.start_point
+        CutObject.__init__(self, start_point, end_point, settings=settings)
 
     def generator(self):
-        return ZinglPlotter.plot_line(self.start_point[0], self.start_point[1], self.end_point[0], self.end_point[1])
+        return ZinglPlotter.plot_line(self._start[0], self._start[1], self._end[0], self._end[1])
 
 
 class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None):
-        CutObject.__init__(self, settings=settings)
-        self.start_point = start_point
-        self.control_point = control_point
-        self.end_point = end_point
-
-    def start(self):
-        return self.start_point
-
-    def end(self):
-        return self.end_point
-
-    def reverse(self):
-        self.start_point, self.end_point = self.end_point, self.start_point
+        CutObject.__init__(self, start_point, end_point, settings=settings)
+        self.control = control_point
 
     def generator(self):
-        return ZinglPlotter.plot_quad_bezier(self.start_point[0], self.start_point[1],
-                                             self.control_point[0], self.control_point[1],
-                                             self.end_point[0], self.end_point[1])
+        return ZinglPlotter.plot_quad_bezier(self._start[0], self._start[1],
+                                             self.control[0], self.control[1],
+                                             self._end[0], self._end[1])
 
 
 class CubicCut(CutObject):
     def __init__(self, start_point, control1, control2, end_point, settings=None):
-        CutObject.__init__(self, settings=settings)
-        self.start_point = start_point
+        CutObject.__init__(self, start_point, end_point, settings=settings)
         self.control1 = control1
         self.control2 = control2
-        self.end_point = end_point
-
-    def start(self):
-        return self.start_point
-
-    def end(self):
-        return self.end_point
 
     def reverse(self):
         self.control1, self.control2 = self.control2, self.control1
-        self.start_point, self.end_point = self.end_point, self.start_point
+        CutObject.reverse(self)
 
     def generator(self):
-        return ZinglPlotter.plot_cubic_bezier(self.start_point[0], self.start_point[1],
+        return ZinglPlotter.plot_cubic_bezier(self._start[0], self._start[1],
                                               self.control1[0], self.control1[1],
                                               self.control2[0], self.control2[1],
-                                              self.end_point[0], self.end_point[1])
+                                              self._end[0], self._end[1])
 
 
 class ArcCut(CutObject):
@@ -254,7 +244,22 @@ class RasterCut(CutObject):
         return Point(tx, ty)
 
     def end(self):
-        return None
+        m = self.image.transform
+        tx = m.value_trans_x() + self.image.image_width
+        ty = m.value_trans_y() + self.image.image_height
+        return Point(tx, ty)
+
+    def major_axis(self):
+        direction = self.settings.raster_direction
+        return 0 if direction == 0 or direction == 1 or direction == 4 else 1
+
+    def x_dir(self):
+        direction = self.settings.raster_direction
+        return 0 if direction != 2 else 1
+
+    def y_dir(self):
+        direction = self.settings.raster_direction
+        return 0 if direction != 1 else 1
 
     def generator(self):
         step = self.settings.raster_step

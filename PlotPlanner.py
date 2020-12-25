@@ -27,13 +27,8 @@ of zero will remain zero.
 
 class PlotPlanner:
     def __init__(self, settings):
-        # TODO: Plot planner should solve for initial directionality of new compact event.
         self.settings = settings
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
-
-        self.flush = None
-        self.jog = None
-        self.current = None
 
         self.queue = []
 
@@ -62,74 +57,70 @@ class PlotPlanner:
         :return:
         """
         while True:
-            if self.flush is not None:  # First flush any buffer.
-                # Buffer is flushing.
-                for n in self.flush:
+            if len(self.queue) == 0:
+                for n in self.wrap(None):  # flush, and finish.
                     yield n
-                self.flush = None
+                self.single_x = None
+                self.single_y = None
+                self.group_x = None
+                self.group_y = None
+                yield None, None, 256
+                return
+            cut = self.queue.pop(0)
+            current = self.wrap(cut.generator())  # Wrap current cut
 
-            if self.jog is not None:  # Perform any would-be jogs.
-                sx, sy, on = self.jog
-                yield sx, sy, on
-                self.single_x = sx
-                self.single_y = sy
-                self.group_x = sx
-                self.group_y = sy
-                self.jog = None
+            p_set = cut.settings
+            s_set = self.settings
 
-            if self.current is not None:  # Process the current data.
-                # Current is plotting
-                for n in self.current:
-                    yield n
-                self.current = None
+            self.settings = cut.settings
 
-            if self.current is None:
-                if len(self.queue) == 0:
-                    for n in self.wrap(None):  # Process flush, and finish.
-                        yield n
-                    self.single_x = None
-                    self.single_y = None
-                    self.group_x = None
-                    self.group_y = None
-                    yield None, None, 256
-                    return
-                cut = self.queue.pop(0)
-                self.current = self.wrap(cut.generator())  # Wrap current cut
+            start = cut.start()
+            new_start_x = int(start.x)
+            new_start_y = int(start.y)
 
-                p_set = cut.settings
-                s_set = self.settings
-
-                self.settings = cut.settings
-
-                start = cut.start()
-                sx = int(start.x)
-                sy = int(start.y)
-
-                flush = False
-                jog = 0
-                if self.single_x != sx or self.single_y != sy:
-                    # If this location is disjointed.
-                    # We must flush get to the new location.
-                    if self.single_x is None:
-                        flush = True
-                        jog |= 4  # Request rapid move new location
+            flush = False
+            jog = 0
+            if self.single_x != new_start_x or self.single_y != new_start_y:
+                # If this location is disjointed.
+                # We must flush get to the new location.
+                if self.single_x is None:
+                    # Request rapid move new location
+                    flush = True
+                    jog |= 4
+                else:
+                    distance = self.settings.jog_distance
+                    if (abs(self.single_x - new_start_x) < distance and
+                        abs(self.single_y - new_start_x) < distance) or \
+                            not p_set.jog_enable:  # Jog distance smaller than threshold, or jog is disallowed.
+                        for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y, new_start_x, new_start_y)):
+                            yield n  # Walk there.
                     else:
-                        distance = self.settings.jog_distance
-                        if (abs(self.single_x - sx) < distance and abs(self.single_y - sx) < distance) \
-                                or not p_set.jog_enable:
-                            for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y, sx, sy)):
-                                yield n  # Walk there.
-                        else:
-                            flush = True
-                            jog |= 2  # Request jog new location required.
+                        # Request jog new location required.
+                        flush = True
+                        jog |= 2
 
-                if p_set is not s_set:
-                    flush = True  # Laser Setting has changed, we must flush the buffer.
-                    jog |= 128  # New settings required.
-                if flush:
-                    self.flush = self.wrap(None)  # Wrap flush.
-                if jog:
-                    self.jog = sx, sy, jog
+            if p_set is not s_set:
+                flush = True  # Laser Setting has changed, we must flush the buffer.
+
+            if flush:  # Flush if needed.
+                for n in self.wrap(None):
+                    yield n
+
+            if jog:  # Jog if needed.
+                yield new_start_x, new_start_y, jog
+                self.single_x = new_start_x
+                self.single_y = new_start_y
+                self.group_x = new_start_x
+                self.group_y = new_start_y
+
+            if p_set is not s_set:
+                yield None, None, 128
+            # set the directions.
+            yield cut.major_axis(), None, 64
+            yield cut.x_dir(), cut.y_dir(), 32
+            # Plot the current.
+            for n in current:
+                yield n
 
     def push(self, plot):
         self.queue.append(plot)
@@ -146,6 +137,7 @@ class PlotPlanner:
         :param plot: plottable element that should be wrapped
         :return: generator to produce plottable elements.
         """
+        # TODO: Wrap may require banking the current settings for the cuts so the PPI is correct for the last plots
         plot = self.single(plot)
         if self.settings.ppi_enabled:
             plot = self.apply_ppi(plot)

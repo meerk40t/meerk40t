@@ -49,6 +49,8 @@ class LhystudiosDevice(Modifier):
         Modifier.__init__(self, context, name, channel)
         self.device_name = "Lhystudios"
         self.device_location = "USB"
+        context.current_x = 0
+        context.current_y = 0
         self.current_x = 0
         self.current_y = 0
 
@@ -450,9 +452,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if self.plot is not None:
             if self.hold():
                 return True
-            sx = self.context.current_x
-            sy = self.context.current_y
             for x, y, on in self.plot.gen():
+                sx = self.context.current_x
+                sy = self.context.current_y
                 if on & 256:  # Plot planner is ending.
                     self.ensure_rapid_mode()
                     continue
@@ -469,6 +471,26 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                         self.set_step(p_set.raster_step)
                         self.set_acceleration(p_set.implicit_accel)
                         self.set_d_ratio(p_set.implicit_d_ratio)
+                    self.settings.set_values(p_set)
+                    continue
+                if on & 64:
+                    if x == 0:
+                        self.set_prop(DIRECTION_FLAG_X)
+                        self.unset_prop(DIRECTION_FLAG_Y)
+                    else:
+                        self.set_prop(DIRECTION_FLAG_Y)
+                        self.unset_prop(DIRECTION_FLAG_X)
+                    continue
+                if on & 32:
+                    if y == 0:
+                        self.unset_prop(DIRECTION_FLAG_LEFT)
+                    else:
+                        self.set_prop(DIRECTION_FLAG_LEFT)
+                    if y == 0:
+                        self.unset_prop(DIRECTION_FLAG_TOP)
+                    else:
+                        self.set_prop(DIRECTION_FLAG_TOP)
+                    continue
                 if on & 6:  # Plot planner requests position change.
                     if on & 4 or self.state != INTERPRETER_STATE_PROGRAM:
                         # Perform a rapid position change.
@@ -519,8 +541,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                                     self.unset_prop(DIRECTION_FLAG_X)
                                     self.ensure_program_mode()
                                 self.v_switch()
-                else:
-                    self.goto_octent_abs(x, y, on & 1)
+                self.goto_octent_abs(x, y, on & 1)
             self.plot = None
         return False
 

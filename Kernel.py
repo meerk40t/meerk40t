@@ -139,6 +139,8 @@ class Interpreter:
         context.setting(bool, "opt_rapid_between", True)
         context.setting(int, "opt_jog_mode", 0)
         context.setting(int, "opt_jog_minimum", 127)
+        context.current_x = 0
+        context.current_y = 0
         self.rapid = self.context.opt_rapid_between
         self.jog = self.context.opt_jog_mode
 
