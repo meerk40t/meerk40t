@@ -90,7 +90,7 @@ class Preferences(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
 
@@ -134,13 +134,7 @@ class Preferences(wx.Frame, Module):
         self.spin_home_x.SetValue(self.context.home_adjust_x)
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

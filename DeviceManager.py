@@ -64,13 +64,7 @@ class DeviceManager(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

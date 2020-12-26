@@ -24,7 +24,7 @@ class Elemental(Modifier):
         self.note = None
         self._bounds = None
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         context = self.context
         context.elements = self
         context.classify = self.classify
@@ -953,6 +953,40 @@ class Elemental(Modifier):
         kernel.register('command/trace_quick', trace_quick)
         kernel.register('command-help/trace_quick', 'trace_quick')
 
+    def detach(self, *a, **kwargs):
+        context = self.context
+        settings = context.derive('operations')
+        settings.clear_persistent()
+        for i, op in enumerate(self.ops()):
+            op_set = settings.derive(str(i))
+            for key in dir(op):
+                if key.startswith('_'):
+                    continue
+                value = getattr(op, key)
+                if value is None:
+                    continue
+                if isinstance(value, Color):
+                    value = value.value
+                op_set.write_persistent(key, value)
+
+    def boot(self, *a, **kwargs):
+        settings = self.context.derive('operations')
+        subitems = list(settings.derivable())
+        ops = [None] * len(subitems)
+        for i, v in enumerate(subitems):
+            op_set = settings.derive(v)
+            op = LaserOperation()
+            op_set.load_persistent_object(op)
+            try:
+                ops[i] = op
+            except (ValueError, IndexError):
+                ops.append(op)
+        if not len(ops):
+            self.load_default()
+            return
+        self.add_ops([o for o in ops if o is not None])
+        self.context.signal('rebuild_tree')
+
     def add_element(self, element):
         context_root = self.context.get_context('/')
         element.stroke = Color('black')
@@ -1078,40 +1112,6 @@ class Elemental(Modifier):
         self.add_op(LaserOperation(operation="Engrave", color="yellow", speed=35.0))
         self.add_op(LaserOperation(operation="Cut", color="red", speed=10.0))
         self.classify(self.elems())
-
-    def finalize(self, channel=None):
-        context = self.context
-        settings = context.derive('operations')
-        settings.clear_persistent()
-        for i, op in enumerate(self.ops()):
-            op_set = settings.derive(str(i))
-            for key in dir(op):
-                if key.startswith('_'):
-                    continue
-                value = getattr(op, key)
-                if value is None:
-                    continue
-                if isinstance(value, Color):
-                    value = value.value
-                op_set.write_persistent(key, value)
-
-    def boot(self, channel=None):
-        settings = self.context.derive('operations')
-        subitems = list(settings.derivable())
-        ops = [None] * len(subitems)
-        for i, v in enumerate(subitems):
-            op_set = settings.derive(v)
-            op = LaserOperation()
-            op_set.load_persistent_object(op)
-            try:
-                ops[i] = op
-            except (ValueError, IndexError):
-                ops.append(op)
-        if not len(ops):
-            self.load_default()
-            return
-        self.add_ops([o for o in ops if o is not None])
-        self.context.signal('rebuild_tree')
 
     def items(self, **kwargs):
         def combined(*args):

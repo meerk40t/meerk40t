@@ -71,7 +71,7 @@ class Controller(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
 
@@ -89,18 +89,12 @@ class Controller(wx.Frame, Module):
         self.text_device.SetValue(self.context.device_name)
         self.text_location.SetValue(self.context.device_location)
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.context.unlisten('pipe;status', self.update_status)
         self.context.unlisten('pipe;packet_text', self.update_packet_text)
         self.context.unlisten('pipe;buffer', self.on_buffer_update)
         self.context.unlisten('pipe;usb_state', self.on_connection_state_change)
         self.context.unlisten('pipe;thread', self.on_control_state)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

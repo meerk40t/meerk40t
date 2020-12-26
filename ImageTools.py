@@ -12,7 +12,7 @@ class ImageTools(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         context = self.context
         kernel = context._kernel
         elements = context.elements

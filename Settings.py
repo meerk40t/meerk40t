@@ -62,7 +62,7 @@ class Settings(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         context_root = self.context.get_context('/')
@@ -96,13 +96,7 @@ class Settings(wx.Frame, Module):
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

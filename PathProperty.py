@@ -91,7 +91,7 @@ class PathProperty(wx.Frame, Module):
         self.path_element = element
         self.set_widgets()
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
 
@@ -104,13 +104,7 @@ class PathProperty(wx.Frame, Module):
             pass
         self.Refresh()
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

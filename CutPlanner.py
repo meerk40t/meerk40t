@@ -24,7 +24,7 @@ class Planner(Modifier):
             self._plan[self._default_plan] = plan, commands
             return plan, commands
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         context = self.context
         context.planner = self
         context.default_plan = self.default_plan

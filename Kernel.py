@@ -25,10 +25,13 @@ INTERPRETER_STATE_MODECHANGE = 3
 
 class Modifier:
     """
-    A modifier alters a given context with some additional functionality set during attachment and detachment.
+    A modifier alters a context with some additional functionality set during attachment and detachment.
 
     These are also booted and shutdown with the kernel. The modifications to the kernel are not expected to be undone.
     Rather the detach should kill any secondary processes the modifier may possess.
+
+    At detach the assumption is that the Modifier's ecosystem is the same.
+
     """
 
     def __init__(self, context, name=None, channel=None):
@@ -36,16 +39,15 @@ class Modifier:
         self.name = name
         self.state = STATE_INITIALIZE
 
-    def boot(self, channel=None):
+    def boot(self, *args, **kwargs):
         """
-        Called when a kernel is booted, to boot the respective modifiers.
-        :return:
+        Called when the context the modifier attached to is booted. This is typical for devices.
         """
         pass
 
-    def attach(self, channel=None):
+    def attach(self, *args, **kwargs):
         """
-        Called by open to attach module to device.
+        Called by activate to attach module to device.
 
         This should be overloaded when making a specific module type for reuse, where using init would require specific
         subclassing, or for modules that are intended to expand the functionality of a device rather than compliment
@@ -53,16 +55,12 @@ class Modifier:
         """
         pass
 
-    def shutdown(self, channel=None):
+    def detach(self, *args, **kwargs):
         """
-        Called when a kernel is shutdown, to shutdown the respective modifiers.
-        :return:
-        """
-        pass
+        Called by deactivate to detach the module from device.
 
-    def detach(self, channel=None):
-        """
-        Called by close to detach the module from device.
+        Devices are not expected to undo all changes they made. This would typically only happen on the closing of a
+        particular context.
 
         :param device:
         :param channel:
@@ -74,38 +72,30 @@ class Modifier:
 class Module:
     """
     Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
-    context, the module is opened. When close() is called on the context, it will close and delete refrences to the
-    opened module, and call finalize. When the kernel is shutting down the shutdown() event is called.
+    a context. When close() is called on the context, it will close and delete references to the opened module and call
+    finalize().
 
-    If a module is attempted to be open() a second time in a context, and was never closed. The device restore()
+    If an opened module is tries to open() a second time in a context and it was never closed. The device restore()
     function is called for the device, with the same args and kwargs that would have been called on __init__().
-
-    A module always has an understanding of its current state within the context, and is notified of any changes in this
-    state.
-
-    All life cycles events are provided channels. These can be used calling channel(string) to notify the channel of
-    any relevant information.
     """
 
-    def __init__(self, context, name=None, channel=None):
+    def __init__(self, context, name=None, *args, **kwargs):
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
 
-    def initialize(self, channel=None):
-        """Called when device is registered and module is named. On a freshly opened module."""
+    def initialize(self, *args, **kwargs):
+        """Initialize() is called after open() to setup the module and allow it to register various hooks into the
+        kernelspace."""
         pass
 
     def restore(self, *args, **kwargs):
-        """Called if a second open attempt is made for this module."""
+        """Called with the same values of __init()__ on an attempted reopen."""
         pass
 
-    def finalize(self, channel=None):
-        """Called when the module is being closed."""
-        pass
-
-    def shutdown(self, channel=None):
-        """Called during the shutdown process to notify the module that it should stop working."""
+    def finalize(self, *args, **kwargs):
+        """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
+        shutdown or if this individual module is being closed on its own."""
         pass
 
 
@@ -553,7 +543,7 @@ class Spooler(Modifier):
     def __repr__(self):
         return "Spooler()"
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         """Overloaded attach to demand .spooler attribute."""
         self.context.spooler = self
 
@@ -640,7 +630,7 @@ class BindAlias(Modifier):
         self.keymap = {}
         self.alias = {}
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         self.context.keymap = self.keymap
         self.context.alias = self.alias
         self.context.default_keymap = self.default_keymap
@@ -736,11 +726,11 @@ class BindAlias(Modifier):
             return
         self.context.register('command/consoleserver', server_console)
 
-    def boot(self, channel=None):
+    def boot(self, *args, **kwargs):
         self.boot_keymap()
         self.boot_alias()
 
-    def shutdown(self, channel=None):
+    def detach(self, *args, **kwargs):
         self.save_keymap_alias()
 
     def save_keymap_alias(self):
@@ -880,8 +870,6 @@ class Context:
         :param channel:
         :return:
         """
-        for opened_name in self.opened:
-            opened = self.opened[opened_name]
         for attached_name in self.attached:
             attached = self.attached[attached_name]
             attached.boot(channel=channel)
@@ -1076,7 +1064,7 @@ class Context:
         self.opened[instance_path] = instance
         return instance
 
-    def close(self, instance_path):
+    def close(self, instance_path, *args, **kwargs):
         """
         Closes an opened instance. Located at the instance_path location.
 
@@ -1089,12 +1077,14 @@ class Context:
         try:
             instance = self.opened[instance_path]
         except KeyError:
-            return  # Nothing to close. Return.
+            return  # Nothing to close.
+
         try:
             instance.close()
         except AttributeError:
             pass
-        instance.finalize(self._kernel.channel('close'))
+
+        instance.finalize(*args, **kwargs)
         try:
             del self.opened[instance_path]
         except KeyError:
@@ -1120,23 +1110,23 @@ class Context:
         try:
             instance = open_object(self, registered_path, *args, **kwargs)
             self.attached[registered_path] = instance
-            instance.attach(self)
+            instance.attach(self, *args, **kwargs)
             return instance
         except AttributeError:
             return None
 
-    def deactivate(self, instance_path):
+    def deactivate(self, instance_path, *args, **kwargs):
         """
         Deactivate a modifier attached to this context.
-        The modifier is deleted from the list of attached and detach() is called on the modifier.
+        The detach() is called on the modifier and modifier is deleted from the list of attached.
 
         :param instance_path: Attached path location.
         :return:
         """
         try:
             instance = self.attached[instance_path]
+            instance.detach(self, *args, **kwargs)
             del self.attached[instance_path]
-            instance.detach(self)
         except (KeyError, AttributeError):
             pass
 
@@ -1540,6 +1530,12 @@ class Kernel:
         return dictionary
 
     def keylist(self, path):
+        """
+        Get all keys located at the given path location. The keys are listed in absolute path locations.
+
+        :param path:
+        :return:
+        """
         if self._config is None:
             return
         self._config.SetPath(path)
@@ -1550,6 +1546,11 @@ class Kernel:
         self._config.SetPath('/')
 
     def derivable(self, path):
+        """
+        Finds all derivable paths within the config from the set path location.
+        :param path:
+        :return:
+        """
         if self._config is None:
             return
         self._config.SetPath(path)
@@ -1636,6 +1637,16 @@ class Kernel:
             self.device_boot(d)
 
     def device_boot(self, d, device_name=None, autoboot=True):
+        """
+        Device boot sequence. This is called on individual devices the kernel reads automatically the device_name and
+        the  autoboot setting. If autoboot is set then the device is activated at the boot location. The context 'd'
+        is activated with the correct device name registered in device/<device_name>
+
+        :param d:
+        :param device_name:
+        :param autoboot:
+        :return:
+        """
         device_str = str(d)
         if device_str in self.devices:
             return self.devices[device_str]
@@ -1652,50 +1663,63 @@ class Kernel:
             self.set_active(boot_device)
 
     def set_active(self, active):
+        """
+        Changes the active context.
+
+        :param active:
+        :return:
+        """
         old_active = self.active
         self.active = active
         self.signal('active', old_active, self.active)
 
     def shutdown(self, channel=None):
         """
-        Starts full shutdown procedure. Each registered context is shutdown.
+        Starts full shutdown procedure.
+
+        Suspends all signals.
+        Each initialized context is flushed and shutdown.
+        Each opened module within the context is stopped and closed.
+        Each attached modifier is shutdown and deactivate.
+
+        All threads are stopped.
+
+        Any residual attached listeners are made warnings.
+
+        There's no way to unattach listners without the signal process running in the scheduler.
 
         :param channel:
         :return:
         """
         _ = self.translation
 
+        # Suspend Signals
         def signal(code, *message):
             channel(_("Suspended Signal: %s for %s" % (code, message)))
-
         self.signal = signal
 
+        # Close.
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
-            channel(_("Context Shutdown Started: '%s'") % str(context))
-            context.flush()
-            channel(_("Saving Context State: '%s'") % str(context))
-            # Stop all instances
             for opened_name in list(context.opened):
                 obj = context.opened[opened_name]
-                try:
-                    obj.stop()
-                    channel(_("Stopping %s: %s") % (opened_name, str(obj)))
-                except AttributeError:
-                    pass
-                channel(_("Closing %s: %s") % (opened_name, str(obj)))
-                context.close(opened_name)
+                channel(_("Finalizing Module %s: %s") % (opened_name, str(obj)))
+                context.close(opened_name, channel=channel)
+
+        # Detaching
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
 
             for attached_name in list(context.attached):
                 obj = context.attached[attached_name]
-                try:
-                    obj.shutdown(channel=channel)
-                    channel(_("Shutdown-modifier %s: %s") % (attached_name, str(obj)))
-                except AttributeError:
-                    pass
                 channel(_("Detaching %s: %s") % (attached_name, str(obj)))
-                context.deactivate(attached_name)
+                context.deactivate(attached_name, channel=channel)
 
+        # Context Ending.
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+            channel(_("Saving Context State: '%s'") % str(context))
+            context.flush()
             del self.contexts[context_name]
             channel(_("Context Shutdown Finished: '%s'") % str(context))
         channel(_("Shutting down."))

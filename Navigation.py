@@ -348,7 +348,7 @@ class Navigation(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         context = self.context
         context_root = self.context.get_context('/')
         context.close(self.name)
@@ -366,16 +366,10 @@ class Navigation(wx.Frame, Module):
         self.update_matrix_text()
         self.SetFocus()
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         context_root = self.context.get_context('/')
         context_root.unlisten('emphasized', self.on_emphasized_elements_changed)
         self.context.unlisten('interpreter;position', self.on_position_update)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

@@ -267,7 +267,7 @@ class JobPreview(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         self.context.setting(bool, "rotary", False)
@@ -297,15 +297,9 @@ class JobPreview(wx.Frame, Module):
         self.preview_menu.menu_autobeep.Check(self.context.autobeep)
         self.update_gui()
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.context.unlisten('element_property_update', self.on_element_property_update)
         self.context.unlisten('plan', self.plan_update)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

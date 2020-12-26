@@ -94,7 +94,7 @@ class LhystudiosDevice(Modifier):
 
         return move
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         context = self.context
         kernel = self.context._kernel
         _ = kernel.translation
@@ -217,7 +217,7 @@ class LhystudiosDevice(Modifier):
 
         self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
 
-    def detach(self, channel=None):
+    def detach(self, *args, **kwargs):
         self.context.unlisten('interpreter;mode', self.on_mode_change)
 
     def on_mode_change(self, *args):
@@ -285,7 +285,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         # TODO: Len(self.pipe) is no longer a reasonable criteria.
         self.holds.append(lambda: self.context.buffer_limit and len(self.pipe) > self.context.buffer_max)
 
-    def attach(self, channel=None):
+    def attach(self, *a, **kwargs):
         kernel = self.context._kernel
         _ = kernel.translation
 
@@ -1240,7 +1240,7 @@ class LhystudioController(Module):
         send.__len__ = lambda: len(self._buffer) + len(self._queue)
         context.channel('%s/send_realtime' % name).watch(self.realtime_write)
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         context = self.context
 
         def egv(command, *args):
@@ -1312,8 +1312,7 @@ class LhystudioController(Module):
 
         context.register("control/Resume", resume_k40)
 
-    def shutdown(self, channel=None):
-        # Module.shutdown(channel=channel)
+    def finalize(self, *args, **kwargs):
         pass
 
     def __repr__(self):

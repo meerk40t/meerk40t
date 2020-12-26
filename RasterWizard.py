@@ -112,7 +112,7 @@ class RasterWizard(wx.Frame, Module):
         if len(args) >= 2:
             self.set_wizard_script(args[1])
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         if self.script is not None:
             self.set_wizard_script(self.script)
@@ -124,17 +124,11 @@ class RasterWizard(wx.Frame, Module):
         self.context.listen('RasterWizard-Image', self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         context_root = self.context.get_context('/')
         context_root.unlisten('emphasized', self.on_emphasis_change)
         self.context.unlisten('RasterWizard-Refresh', self.on_raster_wizard_refresh_signal)
         self.context.unlisten('RasterWizard-Image', self.on_raster_wizard_image_signal)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

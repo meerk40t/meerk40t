@@ -39,20 +39,14 @@ class Terminal(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         self.context.channel('console').watch(self.update_text)
         self.text_entry.SetFocus()
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.context.channel('console').unwatch(self.update_text)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
         try:
             self.Close()
         except RuntimeError:

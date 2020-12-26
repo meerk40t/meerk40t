@@ -742,7 +742,7 @@ class MeerK40t(wx.Frame, Module, Job):
             self.window_button_bar.EnableButton(ID_SPOOLER, False)
             self.window_button_bar.EnableButton(ID_USB, False)
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         context = self.context
 
         if context.print_shutdown:
@@ -764,12 +764,6 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
         context.unlisten('refresh_scene', self.on_refresh_scene)
         context.unlisten('element_property_update', self.on_element_update)
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:
@@ -3102,7 +3096,7 @@ class wxMeerK40t(wx.App, Module):
         else:
             wx.CallAfter(command, *args)
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         context = self.context
         wx.Locale.AddCatalogLookupPathPrefix(resource_path('locale'))
         context._kernel.run_later = self.run_later

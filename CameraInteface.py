@@ -182,7 +182,7 @@ class CameraInterface(wx.Frame, Module, Job):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         self.context.setting(bool, 'mouse_zoom_invert', False)
@@ -215,7 +215,7 @@ class CameraInterface(wx.Frame, Module, Job):
         self.context.listen('camera_frame_raw', self.on_camera_frame_raw)
         self.set_camera_checks()
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.setting.flush()
         self.camera_setting.flush()
         self.context.unlisten('camera_uri_changed', self.on_camera_uri_change)
@@ -227,13 +227,7 @@ class CameraInterface(wx.Frame, Module, Job):
             self.fetch_job.cancel()
         try:
             self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
-        try:
-            self.Close()
-            self.quit_thread = True
+            self.quit_thread = True # was shutdown value
         except RuntimeError:
             pass
 
@@ -1056,21 +1050,15 @@ class CameraURI(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         self.camera_setting = self.context.get_context('/camera')
         self.camera_dict = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path)
         self.on_list_refresh()
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.commit()
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
         try:
             self.Close()
         except RuntimeError:

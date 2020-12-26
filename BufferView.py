@@ -30,7 +30,7 @@ class BufferView(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
 
@@ -54,13 +54,7 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_length = self.text_buffer_length.SetValue(str(len(buffer_str)))
         self.text_buffer_info = self.text_buffer_info.SetValue(buffer_str)
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

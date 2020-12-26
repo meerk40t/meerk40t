@@ -87,7 +87,7 @@ class OperationProperty(wx.Frame, Module):
         self.set_widgets()
         self.on_size()
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         self.set_widgets()
@@ -188,13 +188,7 @@ class OperationProperty(wx.Frame, Module):
         self.on_check_advanced()
         self.on_combo_operation()
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self, channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

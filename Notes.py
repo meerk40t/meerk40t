@@ -35,7 +35,7 @@ class Notes(wx.Frame, Module):
             self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.setting(bool, 'auto_note', True)
         self.context.close(self.name)
         self.check_auto_open_notes.SetValue(self.context.auto_note)
@@ -43,13 +43,7 @@ class Notes(wx.Frame, Module):
             self.text_notes.SetValue(self.context.elements.note)
         self.Show()
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

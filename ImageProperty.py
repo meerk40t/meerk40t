@@ -53,7 +53,7 @@ class ImageProperty(wx.Frame, Module):
         self.image_element = element
         self.set_widgets()
 
-    def initialize(self, channel=None):
+    def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
         self.set_widgets()
@@ -78,13 +78,7 @@ class ImageProperty(wx.Frame, Module):
         except AttributeError:
             pass
 
-    def finalize(self, channel=None):
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
-
-    def shutdown(self,  channel=None):
+    def finalize(self, *args, **kwargs):
         try:
             self.Close()
         except RuntimeError:

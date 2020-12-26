@@ -32,15 +32,12 @@ class UDPServer(Module):
         self.socket.bind(('', self.port))
         self.context.threaded(self.run_udp_listener, thread_name=path)
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.context.channel('%s/send' % self.name).unwatch(self.send)  # We stop watching the send channel
         self.server_channel("Shutting down server.")
         if self.socket is not None:
             self.socket.close()
             self.socket = None
-
-    def shutdown(self, channel=None):
-        self.finalize()
 
     def send(self, message):
         if self.udp_address is None:
@@ -83,14 +80,11 @@ class TCPServer(Module):
         self.server_channel = self.context.channel('server')
         self.context.threaded(self.run_tcp_delegater)
 
-    def finalize(self, channel=None):
+    def finalize(self, *args, **kwargs):
         self.server_channel("Shutting down server.")
         if self.socket is not None:
             self.socket.close()
             self.socket = None
-
-    def shutdown(self,  channel=None):
-        self.finalize()
 
     def run_tcp_delegater(self):
         """
