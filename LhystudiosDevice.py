@@ -36,8 +36,8 @@ STATE_X_FORWARD_LEFT = 1  # Direction is flagged left rather than right.
 STATE_Y_FORWARD_TOP = 2  # Direction is flagged top rather than bottom.
 STATE_X_STEPPER_ENABLE = 4  # X-stepper motor is engaged.
 STATE_Y_STEPPER_ENABLE = 8  # Y-stepper motor is engaged.
-DIRECTION_START_X = 16
-DIRECTION_START_Y = 32
+STATE_X_MAJOR_AXIS = 16
+STATE_Y_MAJOR_AXIS = 32
 
 
 class LhystudiosDevice(Modifier):
@@ -584,9 +584,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def reset(self):
         Interpreter.reset(self)
-        # self.pipe._buffer = b''
-        # self.pipe._queue = b''
-        # self.context.signal('pipe;buffer', 0)
+        self.context.signal('pipe;buffer', 0)
         self.plot = None
         self.plot_planner.clear()
         self.realtime_pipe(b'I*\n')
@@ -632,12 +630,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         dy = int(round(dy))
         self.state = INTERPRETER_STATE_RAPID
         self.laser = False
-        if self.is_prop(DIRECTION_START_X):
+        if self.is_prop(STATE_X_MAJOR_AXIS):
             if not self.is_left and dx >= 0:
                 self.pipe(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
                 self.pipe(self.CODE_RIGHT)
-        if self.is_prop(DIRECTION_START_Y):
+        if self.is_prop(STATE_Y_MAJOR_AXIS):
             if not self.is_top and dy >= 0:
                 self.pipe(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
@@ -849,11 +847,11 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.goto_y(dy)
         self.pipe(b'N')
         if self.is_prop(STATE_X_STEPPER_ENABLE):
-            self.set_prop(DIRECTION_START_X)
-            self.unset_prop(DIRECTION_START_Y)
+            self.set_prop(STATE_X_MAJOR_AXIS)
+            self.unset_prop(STATE_Y_MAJOR_AXIS)
         else:
-            self.unset_prop(DIRECTION_START_X)
-            self.set_prop(DIRECTION_START_Y)
+            self.unset_prop(STATE_X_MAJOR_AXIS)
+            self.set_prop(STATE_Y_MAJOR_AXIS)
         self.pipe(self.code_declare_directions())
         self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
@@ -908,11 +906,11 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.unset_prop(STATE_Y_STEPPER_ENABLE)
                 self.set_prop(STATE_X_FORWARD_LEFT)
         if self.is_prop(STATE_X_STEPPER_ENABLE):
-            self.set_prop(DIRECTION_START_X)
-            self.unset_prop(DIRECTION_START_Y)
+            self.set_prop(STATE_X_MAJOR_AXIS)
+            self.unset_prop(STATE_Y_MAJOR_AXIS)
         else:
-            self.unset_prop(DIRECTION_START_X)
-            self.set_prop(DIRECTION_START_Y)
+            self.unset_prop(STATE_X_MAJOR_AXIS)
+            self.set_prop(STATE_Y_MAJOR_AXIS)
         self.declare_directions()
         self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM

@@ -131,13 +131,13 @@ class LaserRender:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
     def set_element_pen(self, gc, element, zoomscale=1.0):
-        # try:
-        sw = element.stroke_width if element.stroke_width is not None else 1.0
-        # except AttributeError:
-        #     sw = 1.0
+        try:
+            sw = element.stroke_width if element.stroke_width is not None else 1.0
+        except AttributeError:
+            sw = 1.0
         limit = zoomscale**.5
-        # if sw < limit:
-        #     sw = limit  # TODO: Restore.
+        if sw < limit:
+            sw = limit
         self.set_pen(gc, element.stroke, width=sw)
 
     def set_element_brush(self, gc, element):

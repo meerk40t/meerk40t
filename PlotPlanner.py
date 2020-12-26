@@ -66,13 +66,11 @@ class PlotPlanner:
                 self.group_y = None
                 yield None, None, 256
                 return
+
             cut = self.queue.pop(0)
-            current = self.wrap(cut.generator())  # Wrap current cut
 
-            p_set = cut.settings
-            s_set = self.settings
-
-            self.settings = cut.settings
+            cut_set = cut.settings
+            cur_set = self.settings
 
             start = cut.start()
             new_start_x = int(start.x)
@@ -81,28 +79,30 @@ class PlotPlanner:
             flush = False
             jog = 0
             if self.single_x != new_start_x or self.single_y != new_start_y:
-                # If this location is disjointed.
-                # We must flush get to the new location.
+                # This location is disjointed. We must flush and jog.
+                # Jog is executed in current settings.
                 if self.single_x is None:
                     # Request rapid move new location
                     flush = True
                     jog |= 4
                 else:
-                    distance = self.settings.jog_distance
+                    distance = cur_set.jog_distance
                     if (abs(self.single_x - new_start_x) < distance and
                         abs(self.single_y - new_start_x) < distance) or \
-                            not p_set.jog_enable:  # Jog distance smaller than threshold, or jog is disallowed.
-                        for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y, new_start_x, new_start_y)):
+                            not cur_set.jog_enable:  # Jog distance smaller than threshold, or jog is disallowed.
+                        for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y,
+                                                                  new_start_x, new_start_y)):
                             yield n  # Walk there.
                     else:
                         # Request jog new location required.
                         flush = True
                         jog |= 2
 
-            if p_set is not s_set:
+            if cut_set is not cur_set:
                 flush = True  # Laser Setting has changed, we must flush the buffer.
 
             if flush:  # Flush if needed.
+                # Flush executed in current settings.
                 for n in self.wrap(None):
                     yield n
 
@@ -113,13 +113,16 @@ class PlotPlanner:
                 self.group_x = new_start_x
                 self.group_y = new_start_y
 
-            if p_set is not s_set:
+            if cut_set is not cur_set:
                 yield None, None, 128
             # set the directions.
             yield cut.major_axis(), None, 64
             yield cut.x_dir(), cut.y_dir(), 32
+
             # Plot the current.
-            for n in current:
+            # Current is executed in cut settings.
+            self.settings = cut.settings
+            for n in self.wrap(cut.generator()):
                 yield n
 
     def push(self, plot):
@@ -137,7 +140,6 @@ class PlotPlanner:
         :param plot: plottable element that should be wrapped
         :return: generator to produce plottable elements.
         """
-        # TODO: Wrap may require banking the current settings for the cuts so the PPI is correct for the last plots
         plot = self.single(plot)
         if self.settings.ppi_enabled:
             plot = self.apply_ppi(plot)
@@ -303,5 +305,6 @@ class PlotPlanner:
             self.group_on = on
 
     def clear(self):
-        # TODO: Properly reset cut planner.
         self.queue.clear()
+        for n in self.gen():
+            continue
