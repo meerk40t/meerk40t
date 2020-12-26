@@ -236,32 +236,6 @@ class RasterCut(CutObject):
     def __init__(self, image, settings=None):
         CutObject.__init__(self, settings=settings)
         self.image = image
-
-    def start(self):
-        m = self.image.transform
-        tx = m.value_trans_x()
-        ty = m.value_trans_y()
-        return Point(tx, ty)
-
-    def end(self):
-        m = self.image.transform
-        tx = m.value_trans_x() + self.image.image_width
-        ty = m.value_trans_y() + self.image.image_height
-        return Point(tx, ty)
-
-    def major_axis(self):
-        direction = self.settings.raster_direction
-        return 0 if direction == 0 or direction == 1 or direction == 4 else 1
-
-    def x_dir(self):
-        direction = self.settings.raster_direction
-        return 0 if direction != 2 else 1
-
-    def y_dir(self):
-        direction = self.settings.raster_direction
-        return 0 if direction != 1 else 1
-
-    def generator(self):
         step = self.settings.raster_step
         if step < 0:
             step = 1
@@ -327,7 +301,28 @@ class RasterCut(CutObject):
                 overscan = 20
         tx = m.value_trans_x()
         ty = m.value_trans_y()
-        return RasterPlotter(data, width, height, traverse, 0, overscan,
+        self.plot = RasterPlotter(data, width, height, traverse, 0, overscan,
                              tx,
                              ty,
-                             step, image_filter).plot()
+                             step, image_filter)
+
+    def start(self):
+        return Point(self.plot.initial_position_in_scene())
+
+    def end(self):
+        return Point(self.plot.final_position_in_scene())
+
+    def major_axis(self):
+        right, bottom, x_axis, y_axis = self.plot.initial_direction()
+        return 0 if x_axis else 1
+
+    def x_dir(self):
+        right, bottom, x_axis, y_axis = self.plot.initial_direction()
+        return 1 if right else 0
+
+    def y_dir(self):
+        right, bottom, x_axis, y_axis = self.plot.initial_direction()
+        return 1 if bottom else 0
+
+    def generator(self):
+        return self.plot.plot()

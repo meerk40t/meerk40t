@@ -1,3 +1,4 @@
+
 X_AXIS = 0
 TOP = 0
 LEFT = 0
@@ -6,6 +7,7 @@ Y_AXIS = 1
 BOTTOM = 2
 RIGHT = 4
 UNIDIRECTIONAL = 8
+
 
 """
 The RasterPlotter is a plotter that maps particular raster pixels to directional and raster
@@ -75,6 +77,7 @@ class RasterPlotter:
         self.main_filter = filter
         self.alt_filter = alt_filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
+        self.final_x, self.final_y = self.calculate_last_pixel()
 
     def swap(self):
         """
@@ -296,7 +299,7 @@ class RasterPlotter:
         """
         Find the first non-skipped pixel in the rastering.
 
-        This takes into account the traversal values of X_AXIS or Y_AXIS.
+        This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
         The start edge and the start point.
 
         :return: x,y coordinates of first pixel.
@@ -318,6 +321,31 @@ class RasterPlotter:
             x, y = self.calculate_next_horizontal_pixel(y, dy, bool(self.traversal & RIGHT))
             return x, y
 
+    def calculate_last_pixel(self):
+        """
+        Find the last non-skipped pixel in the rastering.
+
+        This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
+
+        :return: x,y coordinates of last pixel.
+        """
+        if self.traversal & Y_AXIS:
+            x = 0
+            dx = 1
+            if not (self.traversal & RIGHT) and self.height & 1:
+                x = self.width - 1
+                dx = -1
+            x, y = self.calculate_next_vertical_pixel(x, dx, not bool(self.traversal & BOTTOM))
+            return x, y
+        else:
+            y = 0
+            dy = 1
+            if not (self.traversal & BOTTOM) and self.width & 1:
+                y = self.height - 1
+                dy = -1
+            x, y = self.calculate_next_horizontal_pixel(y, dy, not bool(self.traversal & RIGHT))
+            return x, y
+
     def initial_position(self):
         """
         Returns raw initial position for the relevant pixel within the data.
@@ -333,6 +361,16 @@ class RasterPlotter:
         if self.initial_x is None:  # image is blank.
             return self.offset_x, self.offset_y
         return self.offset_x + self.initial_x * self.step, self.offset_y + self.initial_y * self.step
+
+    def final_position_in_scene(self):
+        """
+        Returns best guess of final position relative to the scene offset. Taking into account start corner, and parity
+        of the width and height.
+        :return:
+        """
+        if self.final_x is None:  # image is blank.
+            return self.offset_x, self.offset_y
+        return self.offset_x + self.final_x * self.step, self.offset_y + self.final_y * self.step
 
     def initial_direction(self):
         """

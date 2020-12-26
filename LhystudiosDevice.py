@@ -32,10 +32,10 @@ STATUS_BUSY = 238
 # 0xEE, 11101110
 STATUS_POWER = 239
 
-DIRECTION_FLAG_LEFT = 1  # Direction is flagged left rather than right.
-DIRECTION_FLAG_TOP = 2  # Direction is flagged top rather than bottom.
-DIRECTION_FLAG_X = 4  # X-stepper motor is engaged.
-DIRECTION_FLAG_Y = 8  # Y-stepper motor is engaged.
+STATE_X_FORWARD_LEFT = 1  # Direction is flagged left rather than right.
+STATE_Y_FORWARD_TOP = 2  # Direction is flagged top rather than bottom.
+STATE_X_STEPPER_ENABLE = 4  # X-stepper motor is engaged.
+STATE_Y_STEPPER_ENABLE = 8  # Y-stepper motor is engaged.
 DIRECTION_START_X = 16
 DIRECTION_START_Y = 32
 
@@ -475,21 +475,21 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     continue
                 if on & 64:
                     if x == 0:
-                        self.set_prop(DIRECTION_FLAG_X)
-                        self.unset_prop(DIRECTION_FLAG_Y)
+                        self.set_prop(STATE_X_STEPPER_ENABLE)
+                        self.unset_prop(STATE_Y_STEPPER_ENABLE)
                     else:
-                        self.set_prop(DIRECTION_FLAG_Y)
-                        self.unset_prop(DIRECTION_FLAG_X)
+                        self.set_prop(STATE_Y_STEPPER_ENABLE)
+                        self.unset_prop(STATE_X_STEPPER_ENABLE)
                     continue
                 if on & 32:
                     if y == 0:
-                        self.unset_prop(DIRECTION_FLAG_LEFT)
+                        self.unset_prop(STATE_X_FORWARD_LEFT)
                     else:
-                        self.set_prop(DIRECTION_FLAG_LEFT)
+                        self.set_prop(STATE_X_FORWARD_LEFT)
                     if y == 0:
-                        self.unset_prop(DIRECTION_FLAG_TOP)
+                        self.unset_prop(STATE_Y_FORWARD_TOP)
                     else:
-                        self.set_prop(DIRECTION_FLAG_TOP)
+                        self.set_prop(STATE_Y_FORWARD_TOP)
                     continue
                 if on & 6:  # Plot planner requests position change.
                     if on & 4 or self.state != INTERPRETER_STATE_PROGRAM:
@@ -505,40 +505,40 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 dx = x - sx
                 dy = y - sy
                 if self.settings.raster_step != 0:
-                    if self.is_prop(DIRECTION_FLAG_X):
+                    if self.is_prop(STATE_X_STEPPER_ENABLE):
                         if dy != 0:
-                            if self.is_prop(DIRECTION_FLAG_TOP):
+                            if self.is_prop(STATE_Y_FORWARD_TOP):
                                 if abs(dy) > self.settings.raster_step:
                                     self.ensure_finished_mode()
                                     self.move_relative(0, dy + self.settings.raster_step)
-                                    self.set_prop(DIRECTION_FLAG_X)
-                                    self.unset_prop(DIRECTION_FLAG_Y)
+                                    self.set_prop(STATE_X_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                     self.ensure_program_mode()
                                 self.h_switch()
                             else:
                                 if abs(dy) > self.settings.raster_step:
                                     self.ensure_finished_mode()
                                     self.move_relative(0, dy - self.settings.raster_step)
-                                    self.set_prop(DIRECTION_FLAG_X)
-                                    self.unset_prop(DIRECTION_FLAG_Y)
+                                    self.set_prop(STATE_X_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                     self.ensure_program_mode()
                                 self.h_switch()
-                    elif self.is_prop(DIRECTION_FLAG_Y):
+                    elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                         if dx != 0:
-                            if self.is_prop(DIRECTION_FLAG_LEFT):
+                            if self.is_prop(STATE_X_FORWARD_LEFT):
                                 if abs(dx) > self.settings.raster_step:
                                     self.ensure_finished_mode()
                                     self.move_relative(dx + self.settings.raster_step, 0)
-                                    self.set_prop(DIRECTION_FLAG_Y)
-                                    self.unset_prop(DIRECTION_FLAG_X)
+                                    self.set_prop(STATE_Y_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_X_STEPPER_ENABLE)
                                     self.ensure_program_mode()
                                 self.v_switch()
                             else:
                                 if abs(dx) > self.settings.raster_step:
                                     self.ensure_finished_mode()
                                     self.move_relative(dx - self.settings.raster_step, 0)
-                                    self.set_prop(DIRECTION_FLAG_Y)
-                                    self.unset_prop(DIRECTION_FLAG_X)
+                                    self.set_prop(STATE_Y_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_X_STEPPER_ENABLE)
                                     self.ensure_program_mode()
                                 self.v_switch()
                 self.goto_octent_abs(x, y, on & 1)
@@ -560,13 +560,13 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         # Left, Top, X-Momentum, Y-Momentum
         self.properties = 0
         if left:
-            self.set_prop(DIRECTION_FLAG_LEFT)
+            self.set_prop(STATE_X_FORWARD_LEFT)
         if top:
-            self.set_prop(DIRECTION_FLAG_TOP)
+            self.set_prop(STATE_Y_FORWARD_TOP)
         if x_dir:
-            self.set_prop(DIRECTION_FLAG_X)
+            self.set_prop(STATE_X_STEPPER_ENABLE)
         if y_dir:
-            self.set_prop(DIRECTION_FLAG_Y)
+            self.set_prop(STATE_Y_STEPPER_ENABLE)
 
     def pause_resume(self, *values):
         if self.is_paused:
@@ -848,7 +848,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if dy != 0:
             self.goto_y(dy)
         self.pipe(b'N')
-        if self.is_prop(DIRECTION_FLAG_X):
+        if self.is_prop(STATE_X_STEPPER_ENABLE):
             self.set_prop(DIRECTION_START_X)
             self.unset_prop(DIRECTION_START_Y)
         else:
@@ -892,22 +892,22 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.pipe(b'N')
         if direction is not None and direction != 0:
             if direction == 1:
-                self.unset_prop(DIRECTION_FLAG_X)
-                self.set_prop(DIRECTION_FLAG_Y)
-                self.set_prop(DIRECTION_FLAG_TOP)
+                self.unset_prop(STATE_X_STEPPER_ENABLE)
+                self.set_prop(STATE_Y_STEPPER_ENABLE)
+                self.set_prop(STATE_Y_FORWARD_TOP)
             if direction == 2:
-                self.set_prop(DIRECTION_FLAG_X)
-                self.unset_prop(DIRECTION_FLAG_Y)
-                self.unset_prop(DIRECTION_FLAG_LEFT)
+                self.set_prop(STATE_X_STEPPER_ENABLE)
+                self.unset_prop(STATE_Y_STEPPER_ENABLE)
+                self.unset_prop(STATE_X_FORWARD_LEFT)
             if direction == 3:
-                self.unset_prop(DIRECTION_FLAG_X)
-                self.set_prop(DIRECTION_FLAG_Y)
-                self.unset_prop(DIRECTION_FLAG_TOP)
+                self.unset_prop(STATE_X_STEPPER_ENABLE)
+                self.set_prop(STATE_Y_STEPPER_ENABLE)
+                self.unset_prop(STATE_Y_FORWARD_TOP)
             if direction == 4:
-                self.set_prop(DIRECTION_FLAG_X)
-                self.unset_prop(DIRECTION_FLAG_Y)
-                self.set_prop(DIRECTION_FLAG_LEFT)
-        if self.is_prop(DIRECTION_FLAG_X):
+                self.set_prop(STATE_X_STEPPER_ENABLE)
+                self.unset_prop(STATE_Y_STEPPER_ENABLE)
+                self.set_prop(STATE_X_FORWARD_LEFT)
+        if self.is_prop(STATE_X_STEPPER_ENABLE):
             self.set_prop(DIRECTION_START_X)
             self.unset_prop(DIRECTION_START_Y)
         else:
@@ -919,26 +919,26 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.signal('interpreter;mode', self.state)
 
     def h_switch(self):
-        if self.is_prop(DIRECTION_FLAG_LEFT):
+        if self.is_prop(STATE_X_FORWARD_LEFT):
             self.pipe(self.CODE_RIGHT)
-            self.unset_prop(DIRECTION_FLAG_LEFT)
+            self.unset_prop(STATE_X_FORWARD_LEFT)
         else:
             self.pipe(self.CODE_LEFT)
-            self.set_prop(DIRECTION_FLAG_LEFT)
-        if self.is_prop(DIRECTION_FLAG_TOP):
+            self.set_prop(STATE_X_FORWARD_LEFT)
+        if self.is_prop(STATE_Y_FORWARD_TOP):
             self.context.current_y -= self.settings.raster_step
         else:
             self.context.current_y += self.settings.raster_step
         self.laser = False
 
     def v_switch(self):
-        if self.is_prop(DIRECTION_FLAG_TOP):
+        if self.is_prop(STATE_Y_FORWARD_TOP):
             self.pipe(self.CODE_BOTTOM)
-            self.unset_prop(DIRECTION_FLAG_TOP)
+            self.unset_prop(STATE_Y_FORWARD_TOP)
         else:
             self.pipe(self.CODE_TOP)
-            self.set_prop(DIRECTION_FLAG_TOP)
-        if self.is_prop(DIRECTION_FLAG_LEFT):
+            self.set_prop(STATE_Y_FORWARD_TOP)
+        if self.is_prop(STATE_X_FORWARD_LEFT):
             self.context.current_x -= self.settings.raster_step
         else:
             self.context.current_x += self.settings.raster_step
@@ -1011,24 +1011,24 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def goto_angle(self, dx, dy):
         if abs(dx) != abs(dy):
             raise ValueError('abs(dx) must equal abs(dy)')
-        self.set_prop(DIRECTION_FLAG_X)  # Set both on
-        self.set_prop(DIRECTION_FLAG_Y)
+        self.set_prop(STATE_X_STEPPER_ENABLE)  # Set both on
+        self.set_prop(STATE_Y_STEPPER_ENABLE)
         if dx > 0:  # Moving right
-            if self.is_prop(DIRECTION_FLAG_LEFT):
+            if self.is_prop(STATE_X_FORWARD_LEFT):
                 self.pipe(self.CODE_RIGHT)
-                self.unset_prop(DIRECTION_FLAG_LEFT)
+                self.unset_prop(STATE_X_FORWARD_LEFT)
         else:  # Moving left
-            if not self.is_prop(DIRECTION_FLAG_LEFT):
+            if not self.is_prop(STATE_X_FORWARD_LEFT):
                 self.pipe(self.CODE_LEFT)
-                self.set_prop(DIRECTION_FLAG_LEFT)
+                self.set_prop(STATE_X_FORWARD_LEFT)
         if dy > 0:  # Moving bottom
-            if self.is_prop(DIRECTION_FLAG_TOP):
+            if self.is_prop(STATE_Y_FORWARD_TOP):
                 self.pipe(self.CODE_BOTTOM)
-                self.unset_prop(DIRECTION_FLAG_TOP)
+                self.unset_prop(STATE_Y_FORWARD_TOP)
         else:  # Moving top
-            if not self.is_prop(DIRECTION_FLAG_TOP):
+            if not self.is_prop(STATE_Y_FORWARD_TOP):
                 self.pipe(self.CODE_TOP)
-                self.set_prop(DIRECTION_FLAG_TOP)
+                self.set_prop(STATE_Y_FORWARD_TOP)
         self.context.current_x += dx
         self.context.current_y += dy
         self.check_bounds()
@@ -1040,67 +1040,67 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.pipe(self.code_declare_directions())
 
     def code_declare_directions(self):
-        if self.is_prop(DIRECTION_FLAG_LEFT):
+        if self.is_prop(STATE_X_FORWARD_LEFT):
             x_dir = self.CODE_LEFT
         else:
             x_dir = self.CODE_RIGHT
-        if self.is_prop(DIRECTION_FLAG_TOP):
+        if self.is_prop(STATE_Y_FORWARD_TOP):
             y_dir = self.CODE_TOP
         else:
             y_dir = self.CODE_BOTTOM
-        if self.is_prop(DIRECTION_FLAG_X):  # FLAG_Y is assumed to be !FLAG_X
+        if self.is_prop(STATE_X_STEPPER_ENABLE):  # FLAG_Y is assumed to be !FLAG_X
             return y_dir + x_dir
         else:
             return x_dir + y_dir
 
     @property
     def is_left(self):
-        return self.is_prop(DIRECTION_FLAG_X) and \
-               not self.is_prop(DIRECTION_FLAG_Y) and \
-               self.is_prop(DIRECTION_FLAG_LEFT)
+        return self.is_prop(STATE_X_STEPPER_ENABLE) and \
+               not self.is_prop(STATE_Y_STEPPER_ENABLE) and \
+               self.is_prop(STATE_X_FORWARD_LEFT)
 
     @property
     def is_right(self):
-        return self.is_prop(DIRECTION_FLAG_X) and \
-               not self.is_prop(DIRECTION_FLAG_Y) and \
-               not self.is_prop(DIRECTION_FLAG_LEFT)
+        return self.is_prop(STATE_X_STEPPER_ENABLE) and \
+               not self.is_prop(STATE_Y_STEPPER_ENABLE) and \
+               not self.is_prop(STATE_X_FORWARD_LEFT)
 
     @property
     def is_top(self):
-        return not self.is_prop(DIRECTION_FLAG_X) and \
-               self.is_prop(DIRECTION_FLAG_Y) and \
-               self.is_prop(DIRECTION_FLAG_TOP)
+        return not self.is_prop(STATE_X_STEPPER_ENABLE) and \
+               self.is_prop(STATE_Y_STEPPER_ENABLE) and \
+               self.is_prop(STATE_Y_FORWARD_TOP)
 
     @property
     def is_bottom(self):
-        return not self.is_prop(DIRECTION_FLAG_X) and \
-               self.is_prop(DIRECTION_FLAG_Y) and \
-               not self.is_prop(DIRECTION_FLAG_TOP)
+        return not self.is_prop(STATE_X_STEPPER_ENABLE) and \
+               self.is_prop(STATE_Y_STEPPER_ENABLE) and \
+               not self.is_prop(STATE_Y_FORWARD_TOP)
 
     @property
     def is_angle(self):
-        return self.is_prop(DIRECTION_FLAG_Y) and \
-               self.is_prop(DIRECTION_FLAG_X)
+        return self.is_prop(STATE_Y_STEPPER_ENABLE) and \
+               self.is_prop(STATE_X_STEPPER_ENABLE)
 
     def set_left(self):
-        self.set_prop(DIRECTION_FLAG_X)
-        self.unset_prop(DIRECTION_FLAG_Y)
-        self.set_prop(DIRECTION_FLAG_LEFT)
+        self.set_prop(STATE_X_STEPPER_ENABLE)
+        self.unset_prop(STATE_Y_STEPPER_ENABLE)
+        self.set_prop(STATE_X_FORWARD_LEFT)
 
     def set_right(self):
-        self.set_prop(DIRECTION_FLAG_X)
-        self.unset_prop(DIRECTION_FLAG_Y)
-        self.unset_prop(DIRECTION_FLAG_LEFT)
+        self.set_prop(STATE_X_STEPPER_ENABLE)
+        self.unset_prop(STATE_Y_STEPPER_ENABLE)
+        self.unset_prop(STATE_X_FORWARD_LEFT)
 
     def set_top(self):
-        self.unset_prop(DIRECTION_FLAG_X)
-        self.set_prop(DIRECTION_FLAG_Y)
-        self.set_prop(DIRECTION_FLAG_TOP)
+        self.unset_prop(STATE_X_STEPPER_ENABLE)
+        self.set_prop(STATE_Y_STEPPER_ENABLE)
+        self.set_prop(STATE_Y_FORWARD_TOP)
 
     def set_bottom(self):
-        self.unset_prop(DIRECTION_FLAG_X)
-        self.set_prop(DIRECTION_FLAG_Y)
-        self.unset_prop(DIRECTION_FLAG_TOP)
+        self.unset_prop(STATE_X_STEPPER_ENABLE)
+        self.set_prop(STATE_Y_STEPPER_ENABLE)
+        self.unset_prop(STATE_Y_FORWARD_TOP)
 
     def move_right(self, dx=0):
         self.context.current_x += dx
@@ -1501,7 +1501,7 @@ class LhystudioController(Module):
 
     def update_buffer(self):
         if self.context is not None:
-            self.context.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer))
+            self.context.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer) + len(self._queue))
 
     def update_packet(self, packet):
         if self.context is not None:
