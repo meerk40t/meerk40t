@@ -1067,8 +1067,10 @@ class MeerK40t(wx.Frame, Module):
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
-
-        dm = self.device.draw_mode
+        try:
+            dm = self.device.draw_mode
+        except AttributeError:
+            dm = 0  # rare race condition.
         if self._Buffer is None or self._Buffer.GetSize() != self.scene.ClientSize:
             self.set_buffer()
         dc = wx.MemoryDC()
