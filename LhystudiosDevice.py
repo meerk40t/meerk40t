@@ -1350,7 +1350,7 @@ class LhystudioController(Module):
         :return:
         """
         if b'aa' in self._queue:
-            print("Why?!")
+            pass
         self.pipe_channel("write(%s)" % str(bytes_to_write))
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
