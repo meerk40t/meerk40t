@@ -61,7 +61,9 @@ parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x posi
 parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
 parser.add_argument('-rs', '--ruida', action='store_true', help='run ruida-emulator')
 
-args = parser.parse_args(sys.argv[1:])
+
+argv = sys.argv[1:]
+args = parser.parse_args(argv)
 
 if args.version:
     print("MeerK40t %s" % MEERK40T_VERSION)
@@ -117,7 +119,6 @@ else:
                 #  Set device to kernel and start the DeviceManager
                 device = kernel
                 kernel.open('window', "DeviceManager", None)
-
 
     if args.verbose:
         # Debug the device.

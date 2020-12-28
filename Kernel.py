@@ -270,10 +270,12 @@ class Interpreter(Module):
             self.fetch_next_item()
         if self.spooled_item is not None:
             self.execute()
-        else:
-            if self.device.quit:
-                self.device.interpreter.pipe.stop()
-                self.device.stop()
+        elif self.device.quit:
+                self.console = self.device.using('module', 'Console')
+                self.console.write("element * remove\n")
+                self.console.write("shutdown\n")
+                # self.device.interpreter.pipe.stop()
+                # self.device.stop()
 
     def execute(self):
         """

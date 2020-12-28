@@ -1878,6 +1878,26 @@ class Console(Module, Pipe):
             else:
                 yield "Image command unrecognized."
                 return
+        elif command == 'plan':
+            if len(args) <= 0:
+                yield "plan <start|fulfill|default>"
+                return
+            if args[0] == "fulfill":
+                ops = list(elements.ops())
+                spooler.jobs(ops)
+                active_device.setting(bool, 'quit', True)
+                active_device.quit = True
+                return
+            elif args[0] == "start":
+                ops = list(elements.ops())
+                spooler.jobs(ops)
+                return
+            elif args[0] == "default":
+                elements.load_default()
+                return
+            else:
+                yield "Command Unrecognized."
+                return
         # Alias / Bind Command Elements.
         elif command == 'bind':
             if len(args) == 0:
