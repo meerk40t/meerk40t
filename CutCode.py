@@ -237,8 +237,6 @@ class RasterCut(CutObject):
         CutObject.__init__(self, settings=settings)
         self.image = image
         step = self.settings.raster_step
-        if step <= 0:
-            step = 1
         direction = self.settings.raster_direction
         traverse = 0
         if direction == 0:

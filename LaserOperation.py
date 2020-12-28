@@ -35,22 +35,6 @@ class LaserOperation(list):
             self.show = bool(kwargs['show'])
         except (ValueError, TypeError, KeyError):
             pass
-        
-        if self.operation == "Cut":
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-        if self.operation == "Engrave":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-        if self.operation == "Raster":
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
@@ -67,6 +51,23 @@ class LaserOperation(list):
                 for element in obj:
                     element_copy = copy(element)
                     self.append(element_copy)
+        if self.operation == "Cut":
+            if self.settings.speed is None:
+                self.settings.speed = 10.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        if self.operation == "Engrave":
+            if self.settings.speed is None:
+                self.settings.speed = 35.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+        if self.operation == "Raster":
+            if self.settings.raster_step == 0:
+                self.settings.raster_step = 1
+            if self.settings.speed is None:
+                self.settings.speed = 150.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
 
     def __str__(self):
         op = self.operation

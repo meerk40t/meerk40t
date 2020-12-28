@@ -37,6 +37,7 @@ from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget
     LaserPathWidget, RectSelectWidget
 from icons import *
 from svgelements import *
+from CutPlanner import CutPlanner
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
@@ -2608,10 +2609,12 @@ class RootNode(list):
             elements = context.elements
             renderer = self.renderer
             child_objects = list(node.objects_of_children(SVGElement))
-            bounds = OperationPreprocessor.bounding_box(child_objects)
+            bounds = CutPlanner.bounding_box(child_objects)
             if bounds is None:
                 return None
-            step = float(node.object.raster_step)
+            step = float(node.object.settings.raster_step)
+            if step == 0:
+                step = 1.0
             xmin, ymin, xmax, ymax = bounds
 
             image = renderer.make_raster(child_objects, bounds, width=(xmax - xmin), height=(ymax - ymin), step=step)

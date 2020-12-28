@@ -297,7 +297,7 @@ class PlotPlanner:
                     self.group_y = y
                     continue
                 yield self.group_x, self.group_y, self.group_on
-            self.group_dx = x - self.group_x
+            self.group_dx = x - self.group_x  # TODO: Type error here, x was None. During reset.
             self.group_dy = y - self.group_y
             if abs(self.group_dx) > 1 or abs(self.group_dy) > 1:
                 # The last step was not valid.

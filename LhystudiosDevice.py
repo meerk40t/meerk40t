@@ -1349,8 +1349,6 @@ class LhystudioController(Module):
         :param bytes_to_write: data to write to the queue.
         :return:
         """
-        if b'aa' in self._queue:
-            print("aa in queue.")
         self.pipe_channel("write(%s)" % str(bytes_to_write))
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
