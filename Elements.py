@@ -1463,38 +1463,38 @@ class Elemental(Modifier):
         If element strokes are red they get classed as cut operations
         If they are otherwise they get classed as engrave.
         """
-        if elements is None:
-            return
         if items is None:
-            items = self.ops()
+            items = list(self.ops())
         if add_funct is None:
             add_funct = self.add_op
+        if elements is None:
+            return
         for element in elements:
-            found_color = False
-            try:
-                stroke = element.stroke
-            except AttributeError:
-                stroke = None  # Element has no stroke.
-            try:
-                fill = element.fill
-            except AttributeError:
-                fill = None  # Element has no stroke.
+            was_classified = False
+            image_added = False
             for op in items:
-                if op.operation in ("Engrave", "Cut", "Raster") and op.color == stroke:
+                if op.operation == "Raster":
+                    if image_added:
+                        continue  # already added to an image operation, is not added her.
+                    if op.color == element.stroke:
+                        op.append(element)
+                        was_classified = True
+                    elif isinstance(element, SVGImage):
+                        op.append(element)
+                        was_classified = True
+                    elif element.fill is not None and element.fill.value is not None:
+                        op.append(element)
+                        was_classified = True
+                elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
                     op.append(element)
-                    found_color = True
+                    was_classified = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
                     op.append(element)
-                    found_color = True
-                elif op.operation == 'Raster' and \
-                        not isinstance(element, SVGImage) and \
-                        fill is not None and \
-                        fill.value is not None:
-                    op.append(element)
-                    found_color = True
-            if not found_color:
-                if stroke is not None and stroke.value is not None:
-                    op = LaserOperation(operation="Engrave", color=stroke, speed=35.0)
+                    was_classified = True
+                    image_added = True
+            if not was_classified:
+                if element.stroke is not None and element.stroke.value is not None:
+                    op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
                     op.append(element)
                     add_funct(op)
 
