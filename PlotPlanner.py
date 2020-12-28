@@ -115,9 +115,11 @@ class PlotPlanner:
 
             if cut_set is not cur_set:
                 yield None, None, 128
-            # set the directions.
-            yield cut.major_axis(), None, 64
-            yield cut.x_dir(), cut.y_dir(), 32
+
+            if jog:
+                # set the directions. Post Jog, Post Settings.
+                yield cut.major_axis(), None, 64
+                yield cut.x_dir(), cut.y_dir(), 32
 
             # Plot the current.
             # Current is executed in cut settings.
