@@ -220,6 +220,19 @@ class SVGLoader:
                                         pass
                                 elif type_v == bool:
                                     setattr(op, key, str(element.values[key]).lower() in ("true", "1"))
+                        for key in dir(op.settings):
+                            if key.startswith('_'):
+                                continue
+                            v = getattr(op.settings, key)
+                            if key in element.values:
+                                type_v = type(v)
+                                if type_v in (str, int, float, Color):
+                                    try:
+                                        setattr(op.settings, key, type_v(element.values[key]))
+                                    except (ValueError, KeyError):
+                                        pass
+                                elif type_v == bool:
+                                    setattr(op.settings, key, str(element.values[key]).lower() in ("true", "1"))
                         if ops is None:
                             ops = list()
                         ops.append(op)
