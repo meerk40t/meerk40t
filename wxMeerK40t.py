@@ -700,12 +700,8 @@ class MeerK40t(wx.Frame, Module, Job):
             event.Veto()
         else:
             self.state = 5
-            self.context.close(self.name)
-            try:
-                channel = self.context.open_channel('shutdown')
-            except AttributeError:
-                channel = print
-            self.context._kernel.shutdown(channel)
+            self.context.console("shutdown\n")
+            # self.context.close(self.name)
             event.Skip()  # Call destroy as regular.
 
     def on_active_change(self, old_active, context_active):
@@ -754,7 +750,7 @@ class MeerK40t(wx.Frame, Module, Job):
             context.channel('shutdown').watch(print)
 
         context.unschedule(self)
-        self.screen_refresh_lock.acquire()
+        self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
 
         context.unlisten('element_added', self.on_rebuild_tree_request)
         context.unlisten('operation_added', self.on_rebuild_tree_request)
@@ -1057,13 +1053,19 @@ class MeerK40t(wx.Frame, Module, Job):
 
     def request_refresh_for_animation(self):
         """Called on the various signals trying to animate the screen."""
-        if self.context.draw_mode & DRAW_MODE_ANIMATE == 0:
-            self.request_refresh()
+        try:
+            if self.context.draw_mode & DRAW_MODE_ANIMATE == 0:
+                self.request_refresh()
+        except AttributeError:
+            pass
 
     def request_refresh(self):
         """Request an update to the scene."""
-        if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
-            self.screen_refresh_is_requested = True
+        try:
+            if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
+                self.screen_refresh_is_requested = True
+        except AttributeError:
+            pass
 
     def refresh_scene(self):
         """Called by the Scheduler at a given the specified framerate."""
@@ -3148,7 +3150,6 @@ class wxMeerK40t(wx.App, Module):
             yield _('Refreshed.')
             return
         context.register('command/refresh', refresh)
-
 
     def clear_control(self):
         kernel = self.context._kernel

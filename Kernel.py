@@ -323,17 +323,16 @@ class Context:
             instance = self.opened[instance_path]
         except KeyError:
             return  # Nothing to close.
+        try:
+            del self.opened[instance_path]
+        except KeyError:
+            pass
 
         try:
             instance.close()
         except AttributeError:
             pass
-
         instance.finalize(*args, **kwargs)
-        try:
-            del self.opened[instance_path]
-        except KeyError:
-            pass
 
     def activate(self, registered_path, *args, **kwargs):
         """
@@ -471,64 +470,6 @@ class Context:
         self._kernel.threaded(func, thread_name=thread_name)
 
 
-class ConsoleFunction:
-    def __init__(self, context, data):
-        self.context = context
-        self.data = data
-
-    def __call__(self, *args, **kwargs):
-        self.context.console(self.data)
-
-    def __repr__(self):
-        return self.data.replace('\n', '')
-
-
-class Channel:
-    def __init__(self, name, buffer_size=0, line_end=None):
-        self.watchers = []
-        self.greet = None
-        self.name = name
-        self.buffer_size = buffer_size
-        self.line_end = line_end
-        if buffer_size == 0:
-            self.buffer = None
-        else:
-            self.buffer = list()
-
-    def __call__(self, message, *args, **kwargs):
-        if self.line_end is not None:
-            message = message + self.line_end
-        for w in self.watchers:
-            w(message)
-        if self.buffer is not None:
-            self.buffer.append(message)
-            if len(self.buffer) + 10 > self.buffer_size:
-                self.buffer = self.buffer[-self.buffer_size:]
-
-    def __len__(self):
-        return self.buffer_size
-
-    def __iadd__(self, other):
-        self.watch(monitor_function=other)
-
-    def __isub__(self, other):
-        self.unwatch(monitor_function=other)
-
-    def watch(self, monitor_function):
-        for q in self.watchers:
-            if q is monitor_function:
-                return  # This is already being watched by that.
-        self.watchers.append(monitor_function)
-        if self.greet is not None:
-            monitor_function(self.greet)
-        if self.buffer is not None:
-            for line in self.buffer:
-                monitor_function(line)
-
-    def unwatch(self, monitor_function):
-        self.watchers.remove(monitor_function)
-
-
 class Kernel:
     """
     The Kernel serves as the central hub of communication between different objects within the system. These are mapped
@@ -659,6 +600,184 @@ class Kernel:
                     continue
                 setattr(obj, attr, debug(fn, obj))
 
+    # Lifecycle processes.
+
+    def boot(self):
+        """
+        Kernel boot sequence. This should be called after all the registered devices are established.
+
+        :return:
+        """
+        self.thread = self.threaded(self.run, 'Scheduler')
+        self.signal_job = self.add_job(run=self.delegate_messages, name='kernel.signals', interval=0.005)
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+            try:
+                context.boot()
+            except AttributeError:
+                pass
+        self.set_active(None)
+        for device in self.derivable('/'):
+            try:
+                d = int(device)
+            except ValueError:
+                # Devices are marked as integers.
+                continue
+            self.device_boot(d)
+
+    def shutdown(self, channel=None):
+        """
+        Starts full shutdown procedure.
+
+        Suspends all signals.
+        Each initialized context is flushed and shutdown.
+        Each opened module within the context is stopped and closed.
+        Each attached modifier is shutdown and deactivate.
+
+        All threads are stopped.
+
+        Any residual attached listeners are made warnings.
+
+        There's no way to unattach listeners without the signal process running in the scheduler.
+
+        :param channel:
+        :return:
+        """
+        _ = self.translation
+        if channel is None:
+            channel = self.get_context('/').channel('shutdown')
+
+        self.state = STATE_END
+
+        # Suspend Signals
+        def signal(code, *message):
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
+        self.signal = signal
+
+        # Close Modules
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+            for opened_name in list(context.opened):
+                obj = context.opened[opened_name]
+                channel(_("Finalizing Module %s: %s") % (opened_name, str(obj)))
+                context.close(opened_name, channel=channel)
+
+        # Detach Modifiers
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+
+            for attached_name in list(context.attached):
+                obj = context.attached[attached_name]
+                channel(_("Detaching %s: %s") % (attached_name, str(obj)))
+                context.deactivate(attached_name, channel=channel)
+
+        # Context Flush and Shutdown
+        for context_name in list(self.contexts):
+            context = self.contexts[context_name]
+            channel(_("Saving Context State: '%s'") % str(context))
+            context.flush()
+            del self.contexts[context_name]
+            channel(_("Context Shutdown Finished: '%s'") % str(context))
+        channel(_("Shutting down."))
+
+        # Stop/Wait for all threads
+        thread_count = 0
+        for thread_name in list(self.threads):
+            thread_count += 1
+            try:
+                thread = self.threads[thread_name]
+            except KeyError:
+                channel(_("Thread %s exited safely") % (thread_name))
+                continue
+
+            if not thread.is_alive:
+                channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
+                continue
+
+            channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+            try:
+                if thread is self.thread:
+                    channel(_("%s is the current shutdown thread") % (thread_name))
+                    continue
+                channel(_("Asking thread to stop."))
+                thread.stop()
+            except AttributeError:
+                pass
+            channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+            thread.join()
+            channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
+        if thread_count == 0:
+            channel(_("No threads required halting."))
+
+        for key, listener in self.listeners.items():
+            if len(listener):
+                if channel is not None:
+                    channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
+        self.last_message = {}
+        self.listeners = {}
+        self.state = STATE_TERMINATE
+        self.thread.join()
+        channel(_("Shutdown."))
+
+    # Device Lifecycle
+
+    def device_boot(self, d, device_name=None, autoboot=True):
+        """
+        Device boot sequence. This is called on individual devices the kernel reads automatically the device_name and
+        the  autoboot setting. If autoboot is set then the device is activated at the boot location. The context 'd'
+        is activated with the correct device name registered in device/<device_name>
+
+        :param d:
+        :param device_name:
+        :param autoboot:
+        :return:
+        """
+        device_str = str(d)
+        if device_str in self.devices:
+            return self.devices[device_str]
+        boot_device = self.get_context(device_str)
+        boot_device.setting(str, 'device_name', device_name)
+        boot_device.setting(bool, 'autoboot', autoboot)
+        if boot_device.autoboot and boot_device.device_name is not None:
+            boot_device.activate("device/%s" % boot_device.device_name)
+            try:
+                boot_device.boot()
+            except AttributeError:
+                pass
+            self.devices[device_str] = boot_device
+            self.set_active(boot_device)
+
+    # Registration
+
+    def match(self, matchtext):
+        """
+        Lists all registered paths that regex match the given matchtext
+
+        :param matchtext: match text to match.
+        :return:
+        """
+        match = re.compile(matchtext)
+        for r in self.registered:
+            if match.match(r):
+                yield r
+
+    def register(self, path, obj):
+        """
+        Register an element at a given subpath. If this Kernel is not root. Then
+        it is registered relative to this location.
+
+        :param path:
+        :param obj:
+        :return:
+        """
+        self.registered[path] = obj
+        try:
+            obj.sub_register(self)
+        except AttributeError:
+            pass
+
+    # Persistent Object processing.
+
     def get_context(self, path):
         """
         Create a context derived from this kernel, at the given path.
@@ -676,17 +795,20 @@ class Kernel:
         self.contexts[path] = derive
         return derive
 
-    def match(self, matchtext):
+    def derivable(self, path):
         """
-        Lists all registered paths that regex match the given matchtext
-
-        :param matchtext: match text to match.
+        Finds all derivable paths within the config from the set path location.
+        :param path:
         :return:
         """
-        match = re.compile(matchtext)
-        for r in self.registered:
-            if match.match(r):
-                yield r
+        if self._config is None:
+            return
+        self._config.SetPath(path)
+        more, value, index = self._config.GetFirstGroup()
+        while more:
+            yield value
+            more, value, index = self._config.GetNextGroup(index)
+        self._config.SetPath('/')
 
     def read_item_persistent(self, key):
         """Directly read from persistent storage the value of an item."""
@@ -785,21 +907,6 @@ class Kernel:
             more, value, index = self._config.GetNextEntry(index)
         self._config.SetPath('/')
 
-    def derivable(self, path):
-        """
-        Finds all derivable paths within the config from the set path location.
-        :param path:
-        :return:
-        """
-        if self._config is None:
-            return
-        self._config.SetPath(path)
-        more, value, index = self._config.GetFirstGroup()
-        while more:
-            yield value
-            more, value, index = self._config.GetNextGroup(index)
-        self._config.SetPath('/')
-
     def set_config(self, config):
         """
         Set the config object.
@@ -811,20 +918,7 @@ class Kernel:
             return
         self._config = config
 
-    def register(self, path, obj):
-        """
-        Register an element at a given subpath. If this Kernel is not root. Then
-        it is registered relative to this location.
-
-        :param path:
-        :param obj:
-        :return:
-        """
-        self.registered[path] = obj
-        try:
-            obj.sub_register(self)
-        except AttributeError:
-            pass
+    # Threads processing.
 
     def threaded(self, func, thread_name=None):
         """
@@ -853,55 +947,6 @@ class Kernel:
         thread.start()
         return thread
 
-    def boot(self):
-        """
-        Kernel boot sequence. This should be called after all the registered devices are established.
-
-        :return:
-        """
-        self.thread = self.threaded(self.run, 'Scheduler')
-        self.signal_job = self.add_job(run=self.delegate_messages, name='kernel.signals', interval=0.005)
-        for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-            try:
-                context.boot()
-            except AttributeError:
-                pass
-        self.set_active(None)
-        for device in self.derivable('/'):
-            try:
-                d = int(device)
-            except ValueError:
-                # Devices are marked as integers.
-                continue
-            self.device_boot(d)
-
-    def device_boot(self, d, device_name=None, autoboot=True):
-        """
-        Device boot sequence. This is called on individual devices the kernel reads automatically the device_name and
-        the  autoboot setting. If autoboot is set then the device is activated at the boot location. The context 'd'
-        is activated with the correct device name registered in device/<device_name>
-
-        :param d:
-        :param device_name:
-        :param autoboot:
-        :return:
-        """
-        device_str = str(d)
-        if device_str in self.devices:
-            return self.devices[device_str]
-        boot_device = self.get_context(device_str)
-        boot_device.setting(str, 'device_name', device_name)
-        boot_device.setting(bool, 'autoboot', autoboot)
-        if boot_device.autoboot and boot_device.device_name is not None:
-            boot_device.activate("device/%s" % boot_device.device_name)
-            try:
-                boot_device.boot()
-            except AttributeError:
-                pass
-            self.devices[device_str] = boot_device
-            self.set_active(boot_device)
-
     def set_active(self, active):
         """
         Changes the active context.
@@ -912,96 +957,6 @@ class Kernel:
         old_active = self.active
         self.active = active
         self.signal('active', old_active, self.active)
-
-    def shutdown(self, channel=None):
-        """
-        Starts full shutdown procedure.
-
-        Suspends all signals.
-        Each initialized context is flushed and shutdown.
-        Each opened module within the context is stopped and closed.
-        Each attached modifier is shutdown and deactivate.
-
-        All threads are stopped.
-
-        Any residual attached listeners are made warnings.
-
-        There's no way to unattach listners without the signal process running in the scheduler.
-
-        :param channel:
-        :return:
-        """
-        _ = self.translation
-
-        # Suspend Signals
-        def signal(code, *message):
-            channel(_("Suspended Signal: %s for %s" % (code, message)))
-        self.signal = signal
-
-        # Close.
-        for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-            for opened_name in list(context.opened):
-                obj = context.opened[opened_name]
-                channel(_("Finalizing Module %s: %s") % (opened_name, str(obj)))
-                context.close(opened_name, channel=channel)
-
-        # Detaching
-        for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-
-            for attached_name in list(context.attached):
-                obj = context.attached[attached_name]
-                channel(_("Detaching %s: %s") % (attached_name, str(obj)))
-                context.deactivate(attached_name, channel=channel)
-
-        # Context Ending.
-        for context_name in list(self.contexts):
-            context = self.contexts[context_name]
-            channel(_("Saving Context State: '%s'") % str(context))
-            context.flush()
-            del self.contexts[context_name]
-            channel(_("Context Shutdown Finished: '%s'") % str(context))
-        channel(_("Shutting down."))
-
-        # Stop/Wait for all threads
-        thread_count = 0
-        for thread_name in list(self.threads):
-            thread_count += 1
-            try:
-                thread = self.threads[thread_name]
-            except KeyError:
-                channel(_("Thread %s exited safely") % (thread_name))
-                continue
-
-            if not thread.is_alive:
-                channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
-                continue
-
-            channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
-            try:
-                if thread is self.thread:
-                    channel(_("%s is the current shutdown thread") % (thread_name))
-                    continue
-                channel(_("Asking thread to stop."))
-                thread.stop()
-            except AttributeError:
-                pass
-            channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
-            thread.join()
-            channel(_("Thread %s has finished. %s") % (thread_name, str(thread)))
-        if thread_count == 0:
-            channel(_("No threads required halting."))
-
-        for key, listener in self.listeners.items():
-            if len(listener):
-                if channel is not None:
-                    channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
-        self.last_message = {}
-        self.listeners = {}
-        self.state = STATE_TERMINATE
-        self.thread.join()
-        channel(_("Shutdown."))
 
     def get_text_thread_state(self, state):
         _ = self.translation
@@ -1023,6 +978,8 @@ class Kernel:
             return _("Idle")
         elif state == STATE_UNKNOWN:
             return _("Unknown")
+
+    # Scheduler processing.
 
     def run(self):
         """
@@ -1075,7 +1032,7 @@ class Kernel:
 
     def unschedule(self, job):
         try:
-            del self.jobs[job.job_name]  # Kernel.console.ticks failed to unsched
+            del self.jobs[job.job_name]
         except KeyError:
             pass # No such job.
         return job
@@ -1227,6 +1184,11 @@ class Kernel:
                 self._console_channel(response)
 
     def _console_job_tick(self):
+        """
+        Processses the console_job ticks. This executes any outstanding queued commands and any looped commands.
+
+        :return:
+        """
         for command in self.commands:
             for e in self._console_interface(command):
                 if self._console_channel is not None:
@@ -1624,7 +1586,8 @@ class Kernel:
             active_context.flush()
             yield _('Persistent settings force saved.')
         elif command == 'shutdown':
-            active_context.stop()
+            if self.state not in (STATE_END, STATE_TERMINATE):
+                self.shutdown()
             return
         else:
             if active_context is not None:
@@ -1669,6 +1632,64 @@ class Kernel:
                 yield _('Error. Command Unrecognized: %s') % command
             except TypeError:
                 pass  # Command match is non-generating.
+
+
+class ConsoleFunction:
+    def __init__(self, context, data):
+        self.context = context
+        self.data = data
+
+    def __call__(self, *args, **kwargs):
+        self.context.console(self.data)
+
+    def __repr__(self):
+        return self.data.replace('\n', '')
+
+
+class Channel:
+    def __init__(self, name, buffer_size=0, line_end=None):
+        self.watchers = []
+        self.greet = None
+        self.name = name
+        self.buffer_size = buffer_size
+        self.line_end = line_end
+        if buffer_size == 0:
+            self.buffer = None
+        else:
+            self.buffer = list()
+
+    def __call__(self, message, *args, **kwargs):
+        if self.line_end is not None:
+            message = message + self.line_end
+        for w in self.watchers:
+            w(message)
+        if self.buffer is not None:
+            self.buffer.append(message)
+            if len(self.buffer) + 10 > self.buffer_size:
+                self.buffer = self.buffer[-self.buffer_size:]
+
+    def __len__(self):
+        return self.buffer_size
+
+    def __iadd__(self, other):
+        self.watch(monitor_function=other)
+
+    def __isub__(self, other):
+        self.unwatch(monitor_function=other)
+
+    def watch(self, monitor_function):
+        for q in self.watchers:
+            if q is monitor_function:
+                return  # This is already being watched by that.
+        self.watchers.append(monitor_function)
+        if self.greet is not None:
+            monitor_function(self.greet)
+        if self.buffer is not None:
+            for line in self.buffer:
+                monitor_function(line)
+
+    def unwatch(self, monitor_function):
+        self.watchers.remove(monitor_function)
 
 
 class Job:
