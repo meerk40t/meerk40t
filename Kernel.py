@@ -647,12 +647,7 @@ class Kernel:
         if channel is None:
             channel = self.get_context('/').channel('shutdown')
 
-        self.state = STATE_END
-
-        # Suspend Signals
-        def signal(code, *message):
-            channel(_("Suspended Signal: %s for %s" % (code, message)))
-        self.signal = signal
+        self.state = STATE_END # Terminates the Scheduler.
 
         # Close Modules
         for context_name in list(self.contexts):
@@ -670,6 +665,12 @@ class Kernel:
                 obj = context.attached[attached_name]
                 channel(_("Detaching %s: %s") % (attached_name, str(obj)))
                 context.deactivate(attached_name, channel=channel)
+
+        # Suspend Signals
+        def signal(code, *message):
+            channel(_("Suspended Signal: %s for %s" % (code, message)))
+        self.signal = signal
+        self.process_queue()  # Process last events.
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
