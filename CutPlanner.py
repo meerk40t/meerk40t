@@ -175,6 +175,7 @@ class Planner(Modifier):
                 if self.context.autoorigin:
                     plan.append(self.context.registered['plan/origin'])
                 # divide
+                self.conditional_jobadd_strip_text()
                 if self.context.rotary:
                     self.conditional_jobadd_scale_rotary()
                 self.conditional_jobadd_actualize_image()
@@ -261,6 +262,48 @@ class Planner(Modifier):
         for cmd in cmds:
             cmd()
 
+    def conditional_jobadd_strip_text(self):
+        plan, commands = self.default_plan()
+        for op in plan:
+            try:
+                if op.operation in ("Cut", "Engrave"):
+                    for e in op:
+                        if not isinstance(e, SVGText):
+                            continue  # make raster not needed since its a single real raster.
+                        self.jobadd_strip_text()
+                        return True
+            except AttributeError:
+                pass
+        return False
+
+    def jobadd_strip_text(self):
+        plan, commands = self.default_plan()
+
+        def strip_text():
+            stripped = False
+            for k, op in enumerate(plan):
+                try:
+                    if op.operation in ("Cut", "Engrave"):
+                        changed = False
+                        for i, e in enumerate(op):
+                            if isinstance(e, SVGText):
+                                op[i] = None
+                                changed = True
+                        if changed:
+                            p = [q for q in op if q is not None]
+                            op.clear()
+                            op.extend(p)
+                            if len(op) == 0:
+                                plan[k] = None
+                                stripped = True
+                except AttributeError:
+                    pass
+            if stripped:
+                p = [q for q in plan if q is not None]
+                plan.clear()
+                plan.extend(p)
+        commands.append(strip_text)
+
     def conditional_jobadd_make_raster(self):
         plan, commands = self.default_plan()
         for op in plan:
@@ -277,29 +320,46 @@ class Planner(Modifier):
         return False
 
     def jobadd_make_raster(self):
+        make_raster = self.context.registered['render-op/make_raster']
+
+        def strip_rasters():
+            stripped = False
+            for k, op in enumerate(plan):
+                try:
+                    if op.operation in ("Raster"):
+                        plan[k] = None
+                        stripped = True
+                except AttributeError:
+                    pass
+            if stripped:
+                p = [q for q in plan if q is not None]
+                plan.clear()
+                plan.extend(p)
+
         def make_image():
-            plan, commands = self.default_plan()
             for op in plan:
-                # try:
-                #     if op.operation == "Raster":
-                #         if len(op) == 1 and isinstance(op[0], SVGImage):
-                #             continue
-                #         renderer = LaserRender(self.device)
-                #         bounds = OperationPreprocessor.bounding_box(op)
-                #         if bounds is None:
-                #             return None
-                #         xmin, ymin, xmax, ymax = bounds
-                #
-                #         image = renderer.make_raster(op, bounds, step=op.raster_step)
-                #         image_element = SVGImage(image=image)
-                #         image_element.transform.post_translate(xmin, ymin)
-                #         op.clear()
-                #         op.append(image_element)
-                # except AttributeError:
-                pass
+                try:
+                    if op.operation == "Raster":
+                        if len(op) == 1 and isinstance(op[0], SVGImage):
+                            continue
+                        bounds = CutPlanner.bounding_box(op)
+                        if bounds is None:
+                            return None
+                        xmin, ymin, xmax, ymax = bounds
+
+                        image = make_raster(op, bounds, step=op.settings.raster_step)
+                        image_element = SVGImage(image=image)
+                        image_element.transform.post_translate(xmin, ymin)
+                        op.clear()
+                        op.append(image_element)
+                except AttributeError:
+                    continue
 
         plan, commands = self.default_plan()
-        commands.append(make_image)
+        if make_raster is None:
+            commands.append(strip_rasters)
+        else:
+            commands.append(make_image)
 
     def conditional_jobadd_optimize_travel(self):
         self.jobadd_optimize_travel()
@@ -341,7 +401,7 @@ class Planner(Modifier):
             try:
                 if op.operation == "Raster":
                     for elem in op:
-                        if self.needs_actualization(elem, op.raster_step):
+                        if self.needs_actualization(elem, op.settings.raster_step):
                             self.jobadd_actualize_image()
                             return
                 if op.operation == "Image":
@@ -359,8 +419,8 @@ class Planner(Modifier):
                 try:
                     if op.operation == "Raster":
                         for elem in op:
-                            if self.needs_actualization(elem, op.raster_step):
-                                self.make_actual(elem, op.raster_step)
+                            if self.needs_actualization(elem, op.settings.raster_step):
+                                self.make_actual(elem, op.settings.raster_step)
                     if op.operation == "Image":
                         for elem in op:
                             if self.needs_actualization(elem, None):

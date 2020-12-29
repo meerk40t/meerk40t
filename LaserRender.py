@@ -256,6 +256,20 @@ class LaserRender:
         gc.PopState()
 
     def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
+        """
+        Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
+        the step size etc.
+
+        This function requires both wxPython and Pillow.
+
+        :param elements: elements to render.
+        :param bounds: bounds of those elements for the viewport.
+        :param width: desired width of the resulting raster
+        :param height: desired height of the resulting raster
+        :param bitmap: bitmap to use rather than provisioning
+        :param step: raster step rate, int scale rate of the image.
+        :return:
+        """
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds

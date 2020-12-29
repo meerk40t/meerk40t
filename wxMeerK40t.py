@@ -353,17 +353,20 @@ class MeerK40t(wx.Frame, Module, Job):
         bbox = (0, 0, bedwidth * MILS_IN_MM, bedheight * MILS_IN_MM)
         self.widget_scene.widget_root.focus_viewport_scene(bbox, self.scene.ClientSize, 0.1)
 
-        def interrupt_popup(self):
+        def interrupt_popup():
             dlg = wx.MessageDialog(None, _("Spooling Interrupted. Press OK to Continue."),
                                    _("Interrupt"), wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
 
-        def interrupt(self):
+        def interrupt():
             yield COMMAND_WAIT_FINISH
             yield COMMAND_FUNCTION, interrupt_popup
 
         context.register("plan/interrupt", interrupt)
+
+        # Registers the render-op make_raster.
+        context.register("render-op/make_raster", self.renderer.make_raster)
 
     def __set_ribbonbar(self):
         home = RB.RibbonPage(self._ribbon, wx.ID_ANY, _("Home"), icons8_opened_folder_50.GetBitmap(), )

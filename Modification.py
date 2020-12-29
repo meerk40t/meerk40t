@@ -97,22 +97,23 @@ class MakeImage(Modification):
         self.step = step
 
     def get(self):
-        from LaserRender import LaserRender
-
-        elems = [e.get() for e in self if e.provides('element')]
-
-        from OperationPreprocessor import OperationPreprocessor
-        bounds = OperationPreprocessor.bounding_box(elems)
-        if bounds is None:
-            return None
-        xmin, ymin, xmax, ymax = bounds
-
-        renderer = LaserRender(self.context)
-        image = renderer.make_raster(self, bounds, step=self.step)
-        image_element = SVGImage(image=image)
-        image_element.transform.post_translate(xmin, ymin)
-        self.object = image_element
-        return self.object
+        pass
+        # from LaserRender import LaserRender
+        #
+        # elems = [e.get() for e in self if e.provides('element')]
+        #
+        # from OperationPreprocessor import OperationPreprocessor
+        # bounds = OperationPreprocessor.bounding_box(elems)
+        # if bounds is None:
+        #     return None
+        # xmin, ymin, xmax, ymax = bounds
+        #
+        # renderer = LaserRender(self.context)
+        # image = renderer.make_raster(self, bounds, step=self.step)
+        # image_element = SVGImage(image=image)
+        # image_element.transform.post_translate(xmin, ymin)
+        # self.object = image_element
+        # return self.object
 
 
 

@@ -863,7 +863,7 @@ class Elemental(Modifier):
                 found = False
                 for op in elements.ops(emphasized=True):
                     if op.operation in ("Raster", "Image"):
-                        step = op.raster_step
+                        step = op.settings.raster_step
                         yield _('Step for %s is currently: %d') % (str(op), step)
                         found = True
                 for element in elements.elems(emphasized=True):
@@ -884,7 +884,7 @@ class Elemental(Modifier):
                 return
             for op in elements.ops(emphasized=True):
                 if op.operation in ("Raster", "Image"):
-                    op.raster_step = step
+                    op.settings.raster_step = step
                     self.context.signal('element_property_update', op)
             for element in elements.elems(emphasized=True):
                 element.values['raster_step'] = str(step)
