@@ -116,20 +116,21 @@ class LhystudiosDevice(Modifier):
             if spooler is None:
                 yield _('Device has no spooler.')
                 return
-            if len(args) == 1:
-                max_bed_height = active.bed_height * 39.3701
-                max_bed_width = active.bed_width * 39.3701
-                direction = command
+            if len(args) == 0:
+                amount = '1mm'
+            else:
                 amount = args[0]
-                if direction == 'right':
-                    self.dx += Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
-                elif direction == 'left':
-                    self.dx -= Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
-                elif direction == 'up':
-                    self.dy -= Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
-                elif direction == 'down':
-                    self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
-                kernel.queue_command('jog')
+            max_bed_height = active.bed_height * 39.3701
+            max_bed_width = active.bed_width * 39.3701
+            if command.endswith('right'):
+                self.dx += Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+            elif command.endswith('left'):
+                self.dx -= Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
+            elif command.endswith('up'):
+                self.dy -= Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+            elif command.endswith('down'):
+                self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
+            kernel._console_queue('jog')
         kernel.register('%s/command/right' % path, direction)
         kernel.register('%s/command/left' % path, direction)
         kernel.register('%s/command/up' % path, direction)

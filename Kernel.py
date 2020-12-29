@@ -1324,7 +1324,7 @@ class Kernel:
         self.channels = {}
 
         self.commands = []
-        self.console_job = Job(job_name="kernel.console.ticks", process=self._console_tick, interval=0.05)
+        self.console_job = Job(job_name="kernel.console.ticks", process=self._console_job_tick, interval=0.05)
         self._console_buffer = ''
         self.queue = []
         self._console_channel = self.channel('console')
@@ -1834,7 +1834,10 @@ class Kernel:
         return job
 
     def unschedule(self, job):
-        del self.jobs[job.job_name]  # Kernel.console.ticks failed to unsched
+        try:
+            del self.jobs[job.job_name]  # Kernel.console.ticks failed to unsched
+        except KeyError:
+            pass # No such job.
         return job
 
     def add_job(self, run, name=None, args=(), interval=1.0, times=None):
@@ -1847,7 +1850,6 @@ class Kernel:
         :param times: limit on number of executions.
         :return: Reference to the job added.
         """
-
         job = Job(job_name=name, process=run, args=args, interval=interval, times=times)
         return self.schedule(job)
 
@@ -1984,7 +1986,7 @@ class Kernel:
             for response in self._console_interface(command):
                 self._console_channel(response)
 
-    def _console_tick(self):
+    def _console_job_tick(self):
         for command in self.commands:
             for e in self._console_interface(command):
                 if self._console_channel is not None:
@@ -1996,24 +1998,25 @@ class Kernel:
                         self._console_channel(e)
             self.queue.clear()
         if len(self.commands) == 0 and len(self.queue) == 0:
-            self.remove_job(self.console_job)
+            self.unschedule(self.console_job)
 
     def _console_queue(self, command):
         self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
         self.queue.append(command)
         if self.console_job not in self.jobs:
-            self.jobs.append(self.console_job)
+            self.add_job(self.console_job)
+            # self.jobs.append(self.console_job)
 
     def _tick_command(self, command):
         self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
         self.commands.append(command)
         if self.console_job not in self.jobs:
-            self.jobs.append(self.console_job)
+            self.schedule(self.console_job)
 
     def _untick_command(self, command):
         self.commands = [c for c in self.commands if c != command]
         if len(self.commands) == 0:
-            self.remove_job(self.console_job)
+            self.unschedule(self.console_job)
 
     def _console_file_write(self, v):
         if self.console_channel_file is not None:
@@ -2091,9 +2094,10 @@ class Kernel:
         elif command == "end":
             if len(args) == 0:
                 self.commands.clear()
-                self.remove_job(self.console_job)
+                self.schedule(self.console_job)
             else:
                 self._untick_command(' '.join(args))
+            return
         elif command.startswith("timer"):
             name = command[5:]
             if len(args) == 0:
@@ -2384,7 +2388,7 @@ class Kernel:
             return
         else:
             if active_context is not None:
-                for command_name in self.match('%s/command/%s' % (active_context._path, command)):
+                for command_name in self.match('%s/command/%s' % (active_context._path, command.replace('+', '\+'))):
                     command = self.registered[command_name]
                     try:
                         for line in command(command_name, *args):
@@ -2414,7 +2418,7 @@ class Kernel:
                         for line in command_funct(command, *args):
                             yield line
                     except TypeError:
-                        pass # Command match is non-generating.
+                        pass  # Command match is non-generating.
                     except ValueError:
                         continue  # If the command_re raised a value error it rejected the match.
                     return  # Context matched global command_re.
@@ -2447,11 +2451,17 @@ class Job:
         self._last_run = None
         self._next_run = time.time() + self.interval
 
+    def __call__(self, *args, **kwargs):
+        self.process(*args, **kwargs)
+
     def __str__(self):
         if self.job_name is not None:
             return self.job_name
         else:
-            return self.process.__name__
+            try:
+                return self.process.__name__
+            except AttributeError:
+                return object.__str__(self)
 
     @property
     def scheduled(self):
