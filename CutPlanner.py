@@ -145,6 +145,8 @@ class Planner(Modifier):
                 return
             elif args[0] == 'copy':
                 for c in elements.ops():
+                    if not c.output:
+                        continue
                     plan.append(copy(c))
                 yield _('Copied Operations.')
                 self.context.signal('plan', self._default_plan, 1)
@@ -347,7 +349,7 @@ class Planner(Modifier):
                             continue
                         bounds = CutPlanner.bounding_box(op)
                         if bounds is None:
-                            return None
+                            continue
                         xmin, ymin, xmax, ymax = bounds
 
                         image = make_raster(op, bounds, step=op.settings.raster_step)
