@@ -8,6 +8,7 @@ from DefaultModules import *
 from Elements import Elemental
 from GrblDevice import GrblDevice
 from ImageTools import ImageTools
+from LaserCommandConstants import *
 from LhystudiosDevice import LhystudiosDevice
 from MoshiboardDevice import MoshiboardDevice
 from RasterScripts import RasterScripts
@@ -112,7 +113,6 @@ for dev in kernel_root.derivable():
 if len(device_entries) != 0:
     device = kernel_root.derive(str(device_entries[0]))
     device_name = device.setting(str, 'device_name', 'Lhystudios')
-    device.activate('device/%s' % device_name)
 else:
     device = kernel_root.derive('1')
     device.activate('device/Lhystudios')

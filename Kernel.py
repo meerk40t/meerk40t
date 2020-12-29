@@ -647,14 +647,18 @@ class Kernel:
         if channel is None:
             channel = self.get_context('/').channel('shutdown')
 
-        self.state = STATE_END # Terminates the Scheduler.
+        self.state = STATE_END  # Terminates the Scheduler.
+
+        self.set_active(None)  # Change active device to None
+        self.process_queue()  # Notify listeners of state.
+
 
         # Close Modules
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             for opened_name in list(context.opened):
                 obj = context.opened[opened_name]
-                channel(_("Finalizing Module %s: %s") % (opened_name, str(obj)))
+                channel(_("%s: Finalizing Module %s: %s") % (str(context), opened_name, str(obj)))
                 context.close(opened_name, channel=channel)
 
         # Detach Modifiers
@@ -663,7 +667,7 @@ class Kernel:
 
             for attached_name in list(context.attached):
                 obj = context.attached[attached_name]
-                channel(_("Detaching %s: %s") % (attached_name, str(obj)))
+                channel(_("%s: Detaching %s: %s") % (str(context), attached_name, str(obj)))
                 context.deactivate(attached_name, channel=channel)
 
         # Suspend Signals

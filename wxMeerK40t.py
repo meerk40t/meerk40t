@@ -765,6 +765,8 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
         context.unlisten('refresh_scene', self.on_refresh_scene)
         context.unlisten('element_property_update', self.on_element_update)
+
+        context.unlisten('active', self.on_active_change)
         try:
             self.Close()
         except RuntimeError:
