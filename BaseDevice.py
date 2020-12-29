@@ -396,12 +396,9 @@ class Interpreter:
 
     def wait_finish(self, *values):
         """Adds an additional holding requirement if the pipe has any data."""
-
-        # TODO: len(self.pipe) is no longer meaningful.
-        self.temp_holds.append(lambda: len(self.pipe) != 0)
+        self.temp_holds.append(lambda: self.context._buffer_size != 0)
 
     def reset(self):
-        self.spooled_item = None
         self.context.spooler.clear_queue()
         self.spooled_item = None
         self.temp_holds.clear()

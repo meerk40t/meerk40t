@@ -7,6 +7,7 @@ import wx
 
 from CH341DriverBase import *
 from Kernel import *
+from LaserCommandConstants import REALTIME_RESET
 from LhystudiosDevice import get_code_string_from_code
 from icons import *
 

@@ -271,6 +271,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.plot_planner = PlotPlanner(self.settings)
 
         self.plot = None
+        self.plot_gen = None
 
         self.next_x = None
         self.next_y = None
@@ -281,12 +282,19 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.start_x = None
         self.start_y = None
         self.is_paused = False
+        self.context._buffer_size = 0
 
         self.pipe = self.context.channel('pipe/send')
         self.realtime_pipe = self.context.channel('pipe/send_realtime')
 
         # TODO: Len(self.pipe) is no longer a reasonable criteria.
-        self.holds.append(lambda: self.context.buffer_limit and len(self.pipe) > self.context.buffer_max)
+        def primary_hold():
+            buffer = self.context._buffer_size
+            if buffer is None:
+                return False
+            return self.context.buffer_limit and buffer > self.context.buffer_max
+
+        self.holds.append(primary_hold)
 
     def attach(self, *a, **kwargs):
         kernel = self.context._kernel
@@ -453,16 +461,20 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         :return:
         """
         if self.plot is not None:
-            if self.hold():
-                return True
-            for x, y, on in self.plot.gen():
+            while True:
+                try:
+                    if self.hold():
+                        return True
+                    x, y, on = next(self.plot)
+                except StopIteration:
+                    break
                 sx = self.context.current_x
                 sy = self.context.current_y
                 if on & 256:  # Plot planner is ending.
                     self.ensure_rapid_mode()
                     continue
                 if on & 128:  # Plot planner settings have changed.
-                    p_set = self.plot.settings
+                    p_set = self.plot_planner.settings
                     s_set = self.settings
                     if p_set.power != s_set.power:
                         self.set_power(p_set.power)
@@ -557,7 +569,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def plot_start(self):
         if self.plot is None:
-            self.plot = self.plot_planner
+            self.plot = self.plot_planner.gen()
 
     def set_directions(self, left, top, x_dir, y_dir):
         # Left, Top, X-Momentum, Y-Momentum
@@ -1218,6 +1230,7 @@ class LhystudioController(Module):
         self._realtime_buffer = b''  # Threadsafe realtime buffered commands to be sent to the controller.
         self._queue = b''  # Thread-unsafe additional commands to append.
         self._preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
+        self.context._buffer_size = 0
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
@@ -1434,7 +1447,6 @@ class LhystudioController(Module):
 
     def reset(self):
         self.update_state(STATE_INITIALIZE)
-        self.context.signal('pipe;thread', self.state)
 
     def stop(self):
         self.abort()
@@ -1499,7 +1511,9 @@ class LhystudioController(Module):
 
     def update_buffer(self):
         if self.context is not None:
-            self.context.signal('pipe;buffer', len(self._realtime_buffer) + len(self._buffer) + len(self._queue))
+            self.context._buffer_size = len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
+            self.context.signal('pipe;buffer', self.context._buffer_size)
+
 
     def update_packet(self, packet):
         if self.context is not None:
