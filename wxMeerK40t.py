@@ -365,7 +365,7 @@ class MeerK40t(wx.Frame, Module, Job):
 
         context.register("plan/interrupt", interrupt)
 
-        # Registers the render-op make_raster.
+        # Registers the render-op make_raster. This is used to do cut planning.
         context.register("render-op/make_raster", self.renderer.make_raster)
 
     def __set_ribbonbar(self):

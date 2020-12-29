@@ -320,13 +320,16 @@ class Planner(Modifier):
         return False
 
     def jobadd_make_raster(self):
-        make_raster = self.context.registered['render-op/make_raster']
+        make_raster = self.context.registered.get('render-op/make_raster')
+        plan, commands = self.default_plan()
 
         def strip_rasters():
             stripped = False
             for k, op in enumerate(plan):
                 try:
                     if op.operation in ("Raster"):
+                        if len(op) == 1 and isinstance(op[0], SVGImage):
+                            continue
                         plan[k] = None
                         stripped = True
                 except AttributeError:
@@ -355,7 +358,6 @@ class Planner(Modifier):
                 except AttributeError:
                     continue
 
-        plan, commands = self.default_plan()
         if make_raster is None:
             commands.append(strip_rasters)
         else:
