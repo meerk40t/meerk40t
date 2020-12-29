@@ -113,6 +113,7 @@ class PlotPlanner:
                 self.group_x = new_start_x
                 self.group_y = new_start_y
 
+            self.settings = cut.settings
             if cut_set is not cur_set:
                 yield None, None, 128
 
@@ -123,7 +124,6 @@ class PlotPlanner:
 
             # Plot the current.
             # Current is executed in cut settings.
-            self.settings = cut.settings
             for n in self.wrap(cut.generator()):
                 yield n
 
