@@ -1,3 +1,4 @@
+from BaseDevice import Interpreter
 from Kernel import *
 
 from CH341DriverBase import *

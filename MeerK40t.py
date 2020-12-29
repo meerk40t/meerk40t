@@ -1,6 +1,8 @@
 import argparse
 import sys
 
+from BaseDevice import Spooler
+from BindAlias import BindAlias
 from CutPlanner import Planner
 from DefaultModules import *
 from Elements import Elemental
@@ -30,7 +32,8 @@ for full details.
 MEERK40T_VERSION = '0.7.0'
 kernel = Kernel()
 
-Kernel.sub_register(kernel)
+kernel.register('modifier/Spooler', Spooler)
+kernel.register('modifier/BindAlias', BindAlias)
 kernel.register('modifier/Elemental', Elemental)
 kernel.register('modifier/Planner', Planner)
 kernel.register('modifier/ImageTools', ImageTools)

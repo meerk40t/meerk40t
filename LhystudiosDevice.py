@@ -1,7 +1,9 @@
 import threading
 
+from BaseDevice import *
 from CH341DriverBase import *
 from Kernel import *
+from LaserCommandConstants import *
 from LaserSpeed import LaserSpeed
 from PlotPlanner import PlotPlanner
 from svgelements import Length

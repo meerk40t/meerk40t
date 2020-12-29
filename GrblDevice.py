@@ -1,6 +1,7 @@
 import os
 
-from Kernel import Kernel, Module, Interpreter, INTERPRETER_STATE_PROGRAM
+from BaseDevice import *
+from Kernel import Kernel, Module
 from LaserCommandConstants import *
 from svgelements import *
 
