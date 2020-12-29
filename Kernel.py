@@ -1834,7 +1834,7 @@ class Kernel:
         return job
 
     def unschedule(self, job):
-        del self.jobs[job.job_name]
+        del self.jobs[job.job_name]  # Kernel.console.ticks failed to unsched
         return job
 
     def add_job(self, run, name=None, args=(), interval=1.0, times=None):

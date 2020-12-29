@@ -181,6 +181,7 @@ class CutObject:
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None):
         CutObject.__init__(self, start_point, end_point, settings=settings)
+        settings.raster_step = 0
 
     def generator(self):
         return ZinglPlotter.plot_line(self._start[0], self._start[1], self._end[0], self._end[1])
@@ -189,6 +190,7 @@ class LineCut(CutObject):
 class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None):
         CutObject.__init__(self, start_point, end_point, settings=settings)
+        settings.raster_step = 0
         self.control = control_point
 
     def generator(self):
@@ -200,6 +202,7 @@ class QuadCut(CutObject):
 class CubicCut(CutObject):
     def __init__(self, start_point, control1, control2, end_point, settings=None):
         CutObject.__init__(self, start_point, end_point, settings=settings)
+        settings.raster_step = 0
         self.control1 = control1
         self.control2 = control2
 
@@ -217,6 +220,7 @@ class CubicCut(CutObject):
 class ArcCut(CutObject):
     def __init__(self, arc, settings=None):
         CutObject.__init__(self, settings=settings)
+        settings.raster_step = 0
         self.arc = arc
 
     def start(self):
