@@ -1070,7 +1070,7 @@ class MeerK40t(wx.Frame, Module):
         try:
             dm = self.device.draw_mode
         except AttributeError:
-            dm = 0  # rare race condition.
+            return  # Abort in a race condition. Do no draw the scene.
         if self._Buffer is None or self._Buffer.GetSize() != self.scene.ClientSize:
             self.set_buffer()
         dc = wx.MemoryDC()
