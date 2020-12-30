@@ -173,7 +173,7 @@ class LaserOperation(list):
                     elif isinstance(seg, Arc):
                         arc = ArcCut(seg, settings=settings)
                         c.append(arc)
-        elif self.operation in ("Raster", "Image"):
+        elif self.operation == "Raster":
             direction = settings.raster_direction
             settings.crosshatch = False
             if direction == 4:
@@ -184,6 +184,22 @@ class LaserOperation(list):
                     c.append(RasterCut(object_image, cross_settings))
             else:
                 for object_image in self:
+                    c.append(RasterCut(object_image, settings))
+        elif self.operation == "Image":
+            for object_image in self:
+                settings = LaserSettings(self.settings)
+                try:
+                    settings.raster_step = int(object_image.values['raster_step'])
+                except KeyError:
+                    settings.raster_step = 1
+                direction = settings.raster_direction
+                settings.crosshatch = False
+                if direction == 4:
+                    cross_settings = LaserSettings(settings)
+                    cross_settings.crosshatch = True
+                    c.append(RasterCut(object_image, settings))
+                    c.append(RasterCut(object_image, cross_settings))
+                else:
                     c.append(RasterCut(object_image, settings))
         if len(c) == 0:
             return None

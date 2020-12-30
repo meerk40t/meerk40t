@@ -304,9 +304,9 @@ class RasterCut(CutObject):
         tx = m.value_trans_x()
         ty = m.value_trans_y()
         self.plot = RasterPlotter(data, width, height, traverse, 0, overscan,
-                             tx,
-                             ty,
-                             step, image_filter)
+                                  tx,
+                                  ty,
+                                  step, image_filter)
 
     def start(self):
         return Point(self.plot.initial_position_in_scene())
