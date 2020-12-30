@@ -81,23 +81,23 @@ class PlotPlanner:
             if self.single_x != new_start_x or self.single_y != new_start_y:
                 # This location is disjointed. We must flush and jog.
                 # Jog is executed in current settings.
-                if self.single_x is None:
+                if self.single_x is None or cur_set.raster_step != 0:
+                    # First movement or raster_step we must rapid_jog.
                     # Request rapid move new location
                     flush = True
                     jog |= 4
                 else:
                     distance = cur_set.jog_distance
-                    if cur_set.raster_step == 0 and\
-                            abs(self.single_x - new_start_x) < distance and abs(self.single_y - new_start_x) < distance\
-                            and cur_set.jog_enable:
-                        # Jog distance smaller than threshold, jog is allowed and we are not dealing with a raster.
-                        self.single_default = 0  # Turn laser off for the travel.
+                    if (abs(self.single_x - new_start_x) < distance and abs(self.single_y - new_start_x) < distance) \
+                            or not cur_set.jog_enable:
+                        # Jog distance smaller than threshold. Or jog isn't allowed
+                        self.single_default = 0  # Turn laser off for movement.
                         for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y,
                                                                   new_start_x, new_start_y)):
                             yield n  # Walk there.
                         self.single_default = 1
                     else:
-                        # Request jog new location required.
+                        # Request standard jog new location required.
                         flush = True
                         jog |= 2
 

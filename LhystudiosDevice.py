@@ -38,8 +38,7 @@ STATE_X_FORWARD_LEFT = 1  # Direction is flagged left rather than right.
 STATE_Y_FORWARD_TOP = 2  # Direction is flagged top rather than bottom.
 STATE_X_STEPPER_ENABLE = 4  # X-stepper motor is engaged.
 STATE_Y_STEPPER_ENABLE = 8  # Y-stepper motor is engaged.
-STATE_X_MAJOR_AXIS = 16
-STATE_Y_MAJOR_AXIS = 32
+STATE_HORIZONTAL_MAJOR = 16
 
 
 class LhystudiosDevice(Modifier):
@@ -465,7 +464,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 try:
                     if self.hold():
                         return True
-                    x, y, on = next(self.plot)
+                    x, y, on = next(self.plot)  # TODO: Reset of controller can cause error here when plot is none-type.
                 except StopIteration:
                     break
                 sx = self.context.current_x
@@ -488,23 +487,22 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.set_values(p_set)
                     continue
-                if on & 64:
-                    if x == 0:
-                        self.set_prop(STATE_X_STEPPER_ENABLE)
-                        self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                    else:
-                        self.set_prop(STATE_Y_STEPPER_ENABLE)
-                        self.unset_prop(STATE_X_STEPPER_ENABLE)
+                if on & 64:  # Major Axis.
+                    if x == 0:  # X Major / Horizontal.
+                        self.set_prop(STATE_HORIZONTAL_MAJOR)
+                    else:  # Y Major / Vertical
+                        self.unset_prop(STATE_HORIZONTAL_MAJOR)
                     continue
                 if on & 32:
-                    if y == 0:
+                    if x == 1:  # Moving Right. +x
                         self.unset_prop(STATE_X_FORWARD_LEFT)
-                    else:
+                    else:  # Moving Left -x
                         self.set_prop(STATE_X_FORWARD_LEFT)
-                    if y == 0:
+                    if y == 1:  # Moving Bottom +y
                         self.unset_prop(STATE_Y_FORWARD_TOP)
-                    else:
+                    else:  # Moving Top. -y
                         self.set_prop(STATE_Y_FORWARD_TOP)
+
                     continue
                 if on & 6:  # Plot planner requests position change.
                     if on & 4 or self.state != INTERPRETER_STATE_PROGRAM or self.settings.raster_step != 0:
@@ -572,18 +570,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if self.plot is None:
             self.plot = self.plot_planner.gen()
 
-    def set_directions(self, left, top, x_dir, y_dir):
-        # Left, Top, X-Momentum, Y-Momentum
-        self.properties = 0
-        if left:
-            self.set_prop(STATE_X_FORWARD_LEFT)
-        if top:
-            self.set_prop(STATE_Y_FORWARD_TOP)
-        if x_dir:
-            self.set_prop(STATE_X_STEPPER_ENABLE)
-        if y_dir:
-            self.set_prop(STATE_Y_STEPPER_ENABLE)
-
     def pause_resume(self, *values):
         if self.is_paused:
             self.resume(*values)
@@ -628,7 +614,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def jog_absolute(self, x, y, **kwargs):
         self.jog_relative(x - self.context.current_x, y - self.context.current_y, **kwargs)
 
-    def jog_relative(self, dx, dy, mode=0, direction=None):
+    def jog_relative(self, dx, dy, mode=0):
         self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
@@ -639,19 +625,19 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         else:
             self.ensure_rapid_mode()
             self.move_relative(dx, dy)
-            self.ensure_program_mode(direction=direction)
+            self.ensure_program_mode()
 
     def _program_mode_jog_event(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
         self.state = INTERPRETER_STATE_RAPID
         self.laser = False
-        if self.is_prop(STATE_X_MAJOR_AXIS):
+        if self.is_prop(STATE_HORIZONTAL_MAJOR):
             if not self.is_left and dx >= 0:
                 self.pipe(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
                 self.pipe(self.CODE_RIGHT)
-        if self.is_prop(STATE_Y_MAJOR_AXIS):
+        else:
             if not self.is_top and dy >= 0:
                 self.pipe(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
@@ -833,7 +819,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.pipe(b'IS2P\n')
         elif self.state == INTERPRETER_STATE_PROGRAM or self.state == INTERPRETER_STATE_MODECHANGE:
             self.pipe(b'FNSE-\n')
-            self.reset_modes()
+            self.laser = False
         self.state = INTERPRETER_STATE_RAPID
         self.context.signal('interpreter;mode', self.state)
 
@@ -862,12 +848,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if dy != 0:
             self.goto_y(dy)
         self.pipe(b'N')
-        if self.is_prop(STATE_X_STEPPER_ENABLE):
-            self.set_prop(STATE_X_MAJOR_AXIS)
-            self.unset_prop(STATE_Y_MAJOR_AXIS)
-        else:
-            self.unset_prop(STATE_X_MAJOR_AXIS)
-            self.set_prop(STATE_Y_MAJOR_AXIS)
         self.pipe(self.code_declare_directions())
         self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
@@ -877,13 +857,13 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             return
         if self.state == INTERPRETER_STATE_PROGRAM or self.state == INTERPRETER_STATE_MODECHANGE:
             self.pipe(b'@NSE')
-            self.reset_modes()
+            self.laser = False
         elif self.state == INTERPRETER_STATE_RAPID:
             self.pipe(b'I')
         self.state = INTERPRETER_STATE_FINISH
         self.context.signal('interpreter;mode', self.state)
 
-    def ensure_program_mode(self, direction=None):
+    def ensure_program_mode(self):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
         self.ensure_finished_mode()
@@ -904,29 +884,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code, 'utf8')
         self.pipe(speed_code)
         self.pipe(b'N')
-        if direction is not None and direction != 0:
-            if direction == 1:
-                self.unset_prop(STATE_X_STEPPER_ENABLE)
-                self.set_prop(STATE_Y_STEPPER_ENABLE)
-                self.set_prop(STATE_Y_FORWARD_TOP)
-            if direction == 2:
-                self.set_prop(STATE_X_STEPPER_ENABLE)
-                self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                self.unset_prop(STATE_X_FORWARD_LEFT)
-            if direction == 3:
-                self.unset_prop(STATE_X_STEPPER_ENABLE)
-                self.set_prop(STATE_Y_STEPPER_ENABLE)
-                self.unset_prop(STATE_Y_FORWARD_TOP)
-            if direction == 4:
-                self.set_prop(STATE_X_STEPPER_ENABLE)
-                self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                self.set_prop(STATE_X_FORWARD_LEFT)
-        if self.is_prop(STATE_X_STEPPER_ENABLE):
-            self.set_prop(STATE_X_MAJOR_AXIS)
-            self.unset_prop(STATE_Y_MAJOR_AXIS)
-        else:
-            self.unset_prop(STATE_X_MAJOR_AXIS)
-            self.set_prop(STATE_Y_MAJOR_AXIS)
         self.declare_directions()
         self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
@@ -975,7 +932,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         old_y = self.context.current_y
         self.context.current_x = x
         self.context.current_y = y
-        self.reset_modes()
+        self.laser = False
+        self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
         adjust_x = self.context.home_adjust_x
         adjust_y = self.context.home_adjust_y
@@ -1005,10 +963,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.min_y = min(self.min_y, self.context.current_y)
         self.max_x = max(self.max_x, self.context.current_x)
         self.max_y = max(self.max_y, self.context.current_y)
-
-    def reset_modes(self):
-        self.laser = False
-        self.properties = 0
 
     def goto_x(self, dx):
         if dx > 0:
@@ -1054,17 +1008,15 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.pipe(self.code_declare_directions())
 
     def code_declare_directions(self):
-        if self.is_prop(STATE_X_FORWARD_LEFT):
-            x_dir = self.CODE_LEFT
-        else:
-            x_dir = self.CODE_RIGHT
-        if self.is_prop(STATE_Y_FORWARD_TOP):
-            y_dir = self.CODE_TOP
-        else:
-            y_dir = self.CODE_BOTTOM
-        if self.is_prop(STATE_X_STEPPER_ENABLE):  # FLAG_Y is assumed to be !FLAG_X
+        x_dir = self.CODE_LEFT if self.is_prop(STATE_X_FORWARD_LEFT) else self.CODE_RIGHT
+        y_dir = self.CODE_TOP if self.is_prop(STATE_Y_FORWARD_TOP) else self.CODE_BOTTOM
+        if self.is_prop(STATE_HORIZONTAL_MAJOR):
+            self.set_prop(STATE_X_STEPPER_ENABLE)
+            self.unset_prop(STATE_Y_STEPPER_ENABLE)
             return y_dir + x_dir
         else:
+            self.unset_prop(STATE_X_STEPPER_ENABLE)
+            self.set_prop(STATE_Y_STEPPER_ENABLE)
             return x_dir + y_dir
 
     @property

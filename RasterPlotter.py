@@ -8,6 +8,11 @@ BOTTOM = 2
 RIGHT = 4
 UNIDIRECTIONAL = 8
 
+NE_CORNER = TOP | RIGHT
+NW_CORNER = TOP | LEFT
+SE_CORNER = BOTTOM | RIGHT
+SW_CORNER = BOTTOM | LEFT
+
 
 """
 The RasterPlotter is a plotter that maps particular raster pixels to directional and raster
@@ -372,13 +377,147 @@ class RasterPlotter:
             return self.offset_x, self.offset_y
         return self.offset_x + self.final_x * self.step, self.offset_y + self.final_y * self.step
 
-    def initial_direction(self):
+    @property
+    def top(self):
+        return not bool(self.traversal & BOTTOM)
+
+    @property
+    def bottom(self):
+        return bool(self.traversal & BOTTOM)
+
+    @property
+    def right(self):
+        return bool(self.traversal & RIGHT)
+
+    @property
+    def left(self):
+        return not bool(self.traversal & RIGHT)
+
+    @property
+    def horizontal(self):
         """
-        Returns the initial direction in the form of Left, Top, X-Momentum, Y-Momentum
-        If we are not rastering in the y-axis direction, the x-direction will have momentum.
+        Major raster axis is horizontal
+        :return:
         """
-        t = self.traversal
-        return bool(t & RIGHT), bool(t & BOTTOM), not bool(t & Y_AXIS), bool(t & Y_AXIS)
+        return not bool(self.traversal & Y_AXIS)
+
+    @property
+    def vertical(self):
+        """
+        Major raster axis is vertical
+        :return:
+        """
+        return bool(self.traversal & Y_AXIS)
+
+    @property
+    def rightward(self):
+        """
+        Raster will progress towards right
+        :return:
+        """
+        return self.left  # starting on left and moving horizontal.
+
+    @property
+    def leftward(self):
+        """
+        Raster will progress towards left
+        :return:
+        """
+        return self.right
+
+    @property
+    def topward(self):
+        """
+        Raster will progress towards top
+        :return:
+        """
+        return self.bottom
+
+    @property
+    def bottomward(self):
+        """
+        Raster will progress towards bottom
+        :return:
+        """
+        return self.top
+
+    @property
+    def rightward_major(self):
+        """
+        Raster major movements are right.
+        :return:
+        """
+        return self.left and self.horizontal  # starting on left and moving horizontal.
+
+    @property
+    def leftward_major(self):
+        """
+        Raster major movements are left
+        :return:
+        """
+        return self.right and self.horizontal
+
+    @property
+    def topward_major(self):
+        """
+        Raster major movements are top
+        :return:
+        """
+        return self.bottom and self.vertical
+
+    @property
+    def bottomward_major(self):
+        """
+        Raster major movements are bottom.
+        :return:
+        """
+        return self.top and self.vertical
+
+    @property
+    def rightward_minor(self):
+        """
+        Raster minor scanline ticks are right.
+        :return:
+        """
+        return self.left and self.vertical  # starting on left and moving horizontal.
+
+    @property
+    def leftward_minor(self):
+        """
+        Raster minor scanline ticks are left.
+        :return:
+        """
+        return self.right and self.vertical
+
+    @property
+    def topward_minor(self):
+        """
+        Raster minor scanline ticks are top.
+        :return:
+        """
+        return self.bottom and self.horizontal
+
+    @property
+    def bottomward_minor(self):
+        """
+        Raster minor scanline ticks are bottom.
+        :return:
+        """
+        return self.top and self.horizontal
+
+
+    @property
+    def corner(self):
+        if self.top:
+            if self.left:
+                return 0
+            else:
+                return 1
+        else:
+            if self.left:
+                return 2
+            else:
+                return 3
 
     def plot(self):
         """

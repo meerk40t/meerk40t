@@ -150,10 +150,10 @@ class CutObject:
     def major_axis(self):
         start = self.start()
         end = self.end()
-        if (start.x - end.x) - (start.y - end.y) < 0:
-            return 1
+        if abs(start.x - end.x) > abs(start.y - end.y):
+            return 0  # X-Axis
         else:
-            return 0
+            return 1  # Y-Axis
 
     def x_dir(self):
         start = self.start()
@@ -161,7 +161,7 @@ class CutObject:
         if start.x < end.x:
             return 1
         else:
-            return 0
+            return -1
 
     def y_dir(self):
         start = self.start()
@@ -169,7 +169,7 @@ class CutObject:
         if start.y < end.y:
             return 1
         else:
-            return 0
+            return -1
 
     def reverse(self):
         self._start, self._end = self._end, self._start
@@ -315,16 +315,13 @@ class RasterCut(CutObject):
         return Point(self.plot.final_position_in_scene())
 
     def major_axis(self):
-        right, bottom, x_axis, y_axis = self.plot.initial_direction()
-        return 0 if x_axis else 1
+        return 0 if self.plot.horizontal else 1
 
     def x_dir(self):
-        right, bottom, x_axis, y_axis = self.plot.initial_direction()
-        return 1 if right else 0
+        return 1 if self.plot.rightward else -1
 
     def y_dir(self):
-        right, bottom, x_axis, y_axis = self.plot.initial_direction()
-        return 1 if bottom else 0
+        return 1 if self.plot.bottomward else -1
 
     def generator(self):
         return self.plot.plot()
