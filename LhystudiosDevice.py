@@ -507,8 +507,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                         self.set_prop(STATE_Y_FORWARD_TOP)
                     continue
                 if on & 6:  # Plot planner requests position change.
-                    if on & 4 or self.state != INTERPRETER_STATE_PROGRAM:
+                    if on & 4 or self.state != INTERPRETER_STATE_PROGRAM or self.settings.raster_step != 0:
                         # Perform a rapid position change.
+                        # Always perform this for raster moves.
                         self.ensure_rapid_mode()
                         self.move_absolute(x, y)
                         continue
