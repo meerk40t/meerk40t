@@ -90,9 +90,11 @@ class PlotPlanner:
                     if (abs(self.single_x - new_start_x) < distance and
                         abs(self.single_y - new_start_x) < distance) or \
                             not cur_set.jog_enable:  # Jog distance smaller than threshold, or jog is disallowed.
+                        self.single_default = 0  # Turn laser off for the travel.
                         for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y,
                                                                   new_start_x, new_start_y)):
                             yield n  # Walk there.
+                        self.single_default = 1
                     else:
                         # Request jog new location required.
                         flush = True
