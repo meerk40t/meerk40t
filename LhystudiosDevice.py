@@ -1282,7 +1282,8 @@ class LhystudioController(Module):
         context.register("control/Resume", resume_k40)
 
     def finalize(self, *args, **kwargs):
-        pass
+        if self._thread is not None:
+            self.write(b'\x18\n')
 
     def __repr__(self):
         return "LhystudioController()"
@@ -1467,7 +1468,6 @@ class LhystudioController(Module):
             self.context._buffer_size = len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
             self.context.signal('pipe;buffer', self.context._buffer_size)
 
-
     def update_packet(self, packet):
         if self.context is not None:
             self.context.signal('pipe;packet', convert_to_list_bytes(packet))
@@ -1482,6 +1482,7 @@ class LhystudioController(Module):
         self._main_lock.acquire(True)
         self.count = 0
         self.pre_ok = False
+        self.is_shutdown = False
         while self.state != STATE_END and self.state != STATE_TERMINATE:
             if self.state == STATE_INITIALIZE:
                 # If we are initialized. Change that to active since we're running.
@@ -1531,11 +1532,11 @@ class LhystudioController(Module):
                 time.sleep(0.02 * self.count)
                 # will tick up to 1 second waits if there's never a queue.
                 self.count += 1
-        self._main_lock.release()
         self._thread = None
-        self.update_state(STATE_END)
         self.is_shutdown = False
+        self.update_state(STATE_END)
         self.pre_ok = False
+        self._main_lock.release()
 
     def process_queue(self):
         """
