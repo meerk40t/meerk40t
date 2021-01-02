@@ -973,7 +973,9 @@ class MeerK40t(wx.Frame, Module):
             if self._Buffer is None:
                 self.update_buffer_ui_thread()
             wx.BufferedPaintDC(self.scene, self._Buffer)
-        except RuntimeError:
+        except (RuntimeError, TypeError):
+            # RuntimeError if the DC is deleted.
+            # TypeError if the buffer didn't get added because it aborted early.
             pass
 
     def set_buffer(self):
