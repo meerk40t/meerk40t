@@ -91,6 +91,33 @@ class Module:
         pass
 
 
+def console_command(context, path=None, regex=False, hidden=False, help=None):
+    def decorator(func):
+        try:
+            kernel = context._kernel
+            subpath = context._path
+        except AttributeError:
+            kernel = context
+            subpath = ''
+        cmd = 'command_re' if regex else 'command'
+        cmd_path = "%s/%s" % (subpath, cmd)
+        while cmd_path.startswith('/'):
+            cmd_path = cmd_path[1:]
+        if isinstance(path, tuple):
+            for subitem in path:
+                p = '%s/%s' % (cmd_path, subitem)
+                kernel.register(p, func)
+        else:
+            p = '%s/%s' % (cmd_path, path)
+            kernel.register(p, func)
+        func.long_help = func.__doc__
+        func.help = help
+        func.hidden = hidden
+        return func
+
+    return decorator
+
+
 class Context:
     """
     Contexts serve as path relevant snapshots of the kernel. These are are the primary interaction between the modules
@@ -346,6 +373,15 @@ class Context:
         :param kwargs: kwargs to call the modifier
         :return: Modifier object.
         """
+        try:
+            find = self.attached[registered_path]
+            try:
+                find.restore(*args, **kwargs)
+            except AttributeError:
+                pass
+            return find
+        except KeyError:
+            pass
         try:
             open_object = self._kernel.registered[registered_path]
         except KeyError:
@@ -608,6 +644,7 @@ class Kernel:
 
         :return:
         """
+        self.command_boot()
         self.thread = self.threaded(self.run, 'Scheduler')
         self.signal_job = self.add_job(run=self.delegate_messages, name='kernel.signals', interval=0.005)
         for context_name in list(self.contexts):
@@ -651,7 +688,6 @@ class Kernel:
 
         self.set_active(None)  # Change active device to None
         self.process_queue()  # Notify listeners of state.
-
 
         # Close Modules
         for context_name in list(self.contexts):
@@ -775,6 +811,12 @@ class Kernel:
         :param obj:
         :return:
         """
+        # try:
+        #     old_obj = self.registered[path]
+        #     print(old_obj)
+        #     print(path)
+        # except KeyError:
+        #     pass
         self.registered[path] = obj
         try:
             obj.sub_register(self)
@@ -1059,9 +1101,6 @@ class Kernel:
         return self.unschedule(job)
 
     def set_timer(self, command, name=None, times=1, interval=1.0):
-        def timer():
-            self.console("%s\n" % command)
-
         if name is None or len(name) == 0:
             i = 1
             while 'timer%d' % i in self.jobs:
@@ -1069,7 +1108,9 @@ class Kernel:
             name = 'timer%d' % i
         if not name.startswith('timer'):
             name = 'timer' + name
-        self.add_job(timer, name=name, interval=interval, times=times)
+        if times == 0:
+            times = None
+        self.schedule(ConsoleFunction(self.get_context('/'), command, interval=interval, times=times, job_name=name))
 
     # Signal processing.
 
@@ -1236,104 +1277,138 @@ class Kernel:
         for e in self._console_parse(*args):
             yield e
 
-    def _console_parse(self, command, *args):
+    def command_boot(self):
         _ = self.translation
-
-        command = command.lower()
-        if '/' in command:
-            path = command.split('/')
-            p = '/'.join(path[:-1])
-            if len(p) == 0:
-                p = '/'
-            self.active = self.get_context(p)
-            command = path[-1]
         active_context = self.active
-        if command == 'help' or command == '?':
-            if active_context is not None:
-                yield "--- %s Commands ---" % str(active_context)
-                for command_name in self.match('%s/command/.*' % (active_context._path)):
-                    try:
-                        help = self.registered[command_name.replace('command', 'command-help')]
+
+        @console_command(self, ('help','?'), hidden=True, help="help <help>")
+        def help(command, *args):
+            if len(args) >= 1:
+                extended_help = args[0]
+                if self.active is not None:
+                    for command_name in self.match('%s/command/%s' % (self.active._path, extended_help)):
+                        command_func = self.registered[command_name]
+                        yield command_func.long_help
+                        return
+                    for command_name in self.match('command/%s' % extended_help):
+                        command_func = self.registered[command_name]
+                        yield command_func.long_help
+                        return
+                yield _("No extended help for: %s") % extended_help
+                return
+            if self.active is not None:
+                yield "--- %s Commands ---" % str(self.active)
+                for command_name in self.match('%s/command/.*' % (self.active._path)):
+                    command_func = self.registered[command_name]
+                    help = command_func.help
+                    if command_func.hidden:
+                        continue
+                    if help is not None:
                         yield '%s \t- %s' % (command_name.split('/')[-1], help)
-                    except KeyError:
+                    else:
                         yield command_name.split('/')[-1]
-                for command_re in self.match('%s/command_re/.*' % active_context._path):
+                for command_re in self.match('%s/command_re/.*' % self.active._path):
+                    command_func = self.registered[command_re]
+                    help = command_func.help
+                    if command_func.hidden:
+                        continue
                     cmd_re = command_re.split('/')[-1]
-                    try:
-                        help = self.registered[cmd_re.replace('command', 'command-help')]
+                    if help is not None:
                         yield '%s \t- %s' % (cmd_re, help)
-                    except KeyError:
+                    else:
                         yield cmd_re
             yield "--- Global Commands ---"
             for command_name in self.match('command/.*'):
-                try:
-                    help = self.registered[command_name.replace('command', 'command-help')]
+                command_func = self.registered[command_name]
+                help = command_func.help
+                if command_func.hidden:
+                    continue
+                if help is not None:
                     yield '%s \t- %s' % (command_name.split('/')[-1], help)
-                except KeyError:
+                else:
                     yield command_name.split('/')[-1]
             for command_re in self.match('command_re/.*'):
+                command_func = self.registered[command_re]
+                help = command_func.help
+                if command_func.hidden:
+                    continue
                 cmd_re = command_re.split('/')[-1]
-                try:
-                    help = self.registered[cmd_re.replace('command', 'command-help')]
+                if help is not None:
                     yield '%s \t- %s' % (cmd_re, help)
-                except KeyError:
+                else:
                     yield cmd_re
-            yield "--- System Commands ---"
-            yield 'loop \t- loop <command>'
-            yield 'end  \t- end <commmand>'
-            yield 'timer.* \t- timer<?> <duration> <iterations>'
-            yield 'register \t- register'
-            yield 'context \t- context'
-            yield 'set  \t- set [<key> <value>]'
-            yield 'control  \t- control [<executive>]'
-            yield 'module  \t- module [(open|close) <module_name>]'
-            yield 'modifier  \t- modifier [(open|close) <module_name>]'
-            yield 'schedule \t- schedule'
-            yield 'channel  \t- channel [(open|close|save) <channel_name>]'
-            yield 'device \t- device [<value>]'
-            yield 'flush \t- flush'
-            yield 'shutdown \t- shutdown'
             return
-        # +- controls.
-        elif command == "loop":
+
+        @console_command(self, 'loop', help="loop <command>")
+        def loop(command, *args):
             self._tick_command(' '.join(args))
-            return
-        elif command == "end":
+
+        @console_command(self, 'end', help="end <commmand>")
+        def end(command, *args):
             if len(args) == 0:
                 self.commands.clear()
                 self.schedule(self.console_job)
             else:
                 self._untick_command(' '.join(args))
-            return
-        elif command.startswith("timer"):
+
+        @console_command(self, 'timer.*', regex=True, help="timer<?> <duration> <iterations>")
+        def timer(command, *args):
             name = command[5:]
             if len(args) == 0:
                 yield _('----------')
                 yield _('Timers:')
-                for i, job_name in enumerate(self.jobs):
+                i = 0
+                for job_name in self.jobs:
                     if not job_name.startswith('timer'):
                         continue
-                    obj = self.jobs[job_name]
-                    yield _('%d: %s %s') % (i + 1, job_name, str(obj))
+                    i += 1
+                    job = self.jobs[job_name]
+                    parts = list()
+                    parts.append('%d:' % i)
+                    parts.append(job_name)
+                    parts.append('"%s"' % str(job))
+                    if job.times is None:
+                        parts.append(_('forever,'))
+                    else:
+                        parts.append(_('%d times,') % job.times)
+                    if job.interval is None:
+                        parts.append(_('never'))
+                    else:
+                        parts.append(_('each %f seconds') % job.interval)
+                    yield ' '.join(parts)
                 yield _('----------')
                 return
             if len(args) == 1:
                 if args[0] == 'off':
-                    obj = self.jobs[command]
-                    obj.cancel()
-                    self.unschedule(obj)
-                    yield _("timer %s canceled." % command)
+                    if name == "*":
+                        for job_name in self.jobs:
+                            if not job_name.startswith('timer'):
+                                continue
+                            job = self.jobs[job_name]
+                            job.cancel()
+                            self.unschedule(job)
+                        yield _("All timers canceled.")
+                        return
+                    try:
+                        obj = self.jobs[command]
+                        obj.cancel()
+                        self.unschedule(obj)
+                        yield _("Timer %s canceled." % name)
+                    except KeyError:
+                        yield _("Timer %s does not exist." % name)
                 return
-            if len(args) == 2:
+            if len(args) <= 3:
                 yield _("Syntax Error: timer<name> <times> <interval> <command>")
                 return
             try:
-                self.set_timer(' '.join(args[2:]), name=name, times=int(args[0]), interval=float(args[1]))
+                timer_command = ' '.join(args[2:])
+                self.set_timer(timer_command + '\n', name=name, times=int(args[0]), interval=float(args[1]))
             except ValueError:
                 yield _("Syntax Error: timer<name> <times> <interval> <command>")
             return
-        # Kernel Element commands.
-        elif command == 'register':
+
+        @console_command(self, 'register', help="register")
+        def register(command, *args):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Objects Registered:')
@@ -1348,14 +1423,18 @@ class Kernel:
                     obj = self.registered[name]
                     yield '%d: %s type of %s' % (i + 1, name, str(obj))
                 yield _('----------')
-        elif command == 'context':
+
+        @console_command(self, 'context', help="context")
+        def context(command, *args):
             if len(args) == 0:
                 if active_context is not None:
                     yield "Active Context: %s" % str(active_context)
                 for context_name in self.contexts:
                     yield context_name
             return
-        elif command == 'set':
+
+        @console_command(self, 'set', help="set [<key> <value>]")
+        def set(command, *args):
             if len(args) == 0:
                 for attr in dir(active_context):
                     v = getattr(active_context, attr)
@@ -1385,7 +1464,9 @@ class Kernel:
                 except ValueError:
                     yield _('Attempt failed. Produced a value error.')
             return
-        elif command == 'control':
+
+        @console_command(self, 'control', help="control [<executive>]")
+        def control(command, *args):
             if len(args) == 0:
                 for control_name in active_context.match('control'):
                     yield control_name
@@ -1403,7 +1484,9 @@ class Kernel:
                 else:
                     yield _("Control '%s' not found.") % control_name
             return
-        elif command == 'module':
+
+        @console_command(self, 'module', help="module [(open|close) <module_name>]")
+        def module(command, *args):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Modules Registered:')
@@ -1440,7 +1523,9 @@ class Kernel:
                     else:
                         yield _("Module '%s' not found.") % index
             return
-        elif command == 'modifier':
+
+        @console_command(self, 'modifier', help="modifier [(open|close) <module_name>]")
+        def modifier(command, *args):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Modifiers Registered:')
@@ -1472,7 +1557,9 @@ class Kernel:
                     else:
                         yield _("Modifier '%s' not found.") % index
             return
-        elif command == 'schedule':
+
+        @console_command(self, 'schedule', help="schedule")
+        def schedule(command, *args):
             yield _('----------')
             yield _('Scheduled Processes:')
             for i, job_name in enumerate(self.jobs):
@@ -1481,17 +1568,19 @@ class Kernel:
                 parts.append('%d:' % (i + 1))
                 parts.append(str(job))
                 if job.times is None:
-                    parts.append(_('forever'))
+                    parts.append(_('forever,'))
                 else:
-                    parts.append(_('%d times') % job.times)
+                    parts.append(_('%d times,') % job.times)
                 if job.interval is None:
                     parts.append(_('never'))
                 else:
-                    parts.append(_(', each %f seconds') % job.interval)
+                    parts.append(_('each %f seconds') % job.interval)
                 yield ' '.join(parts)
             yield _('----------')
             return
-        elif command == 'channel':
+
+        @console_command(self, 'channel', help="channel [(open|close|save) <channel_name>]")
+        def channel(command, *args):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Channels Active:')
@@ -1526,7 +1615,9 @@ class Kernel:
                     yield _('Recording Channel: %s') % chan
                     active_context.channel(chan).watch(self._console_file_write)
             return
-        elif command == 'device':
+
+        @console_command(self, 'device', help="device [<value>]")
+        def device(command, *args):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Backends permitted:')
@@ -1587,37 +1678,41 @@ class Kernel:
                               (active_context.device_name, active_context.device_location)
                         break
             return
-        elif command == 'flush':
+
+        @console_command(self, 'flush', help="flush")
+        def flush(command, *args):
             active_context.flush()
             yield _('Persistent settings force saved.')
-        elif command == 'shutdown':
+
+        @console_command(self, 'shutdown', help="shutdown")
+        def shutdown(command, *args):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
             return
-        else:
-            if active_context is not None:
-                for command_name in self.match('%s/command/%s' % (active_context._path, command.replace('+', '\+'))):
-                    command = self.registered[command_name]
-                    try:
-                        for line in command(command_name, *args):
-                            yield line
-                    except TypeError:
-                        pass  # Command match is non-generating.
-                    return  # Command matched context command.
-                for command_re in self.match('%s/command_re/.*' % active_context._path):
-                    cmd_re = command_re.split('/')[-1]
-                    match = re.compile(cmd_re)
-                    if match.match(command):
-                        command_funct = self.registered[command_re]
-                        try:
-                            for line in command_funct(command, *args):
-                                yield line
-                        except TypeError:
-                            pass  # Command match is non-generating.
-                        except ValueError:
-                            continue  # command match rejected.
-                        return  # Command matched context command_re
-            for command_re in self.match('command_re/.*'):
+
+    def _console_parse(self, command, *args):
+        _ = self.translation
+        active_context = self.active
+
+        command = command.lower()
+        if '/' in command:
+            path = command.split('/')
+            p = '/'.join(path[:-1])
+            if len(p) == 0:
+                p = '/'
+            self.active = self.get_context(p)
+            command = path[-1]
+
+        if active_context is not None:
+            for command_name in self.match('%s/command/%s' % (active_context._path, command.replace('+', '\+'))):
+                command = self.registered[command_name]
+                try:
+                    for line in command(command_name, *args):
+                        yield line
+                except TypeError:
+                    pass  # Command match is non-generating.
+                return  # Command matched context command.
+            for command_re in self.match('%s/command_re/.*' % active_context._path):
                 cmd_re = command_re.split('/')[-1]
                 match = re.compile(cmd_re)
                 if match.match(command):
@@ -1628,27 +1723,28 @@ class Kernel:
                     except TypeError:
                         pass  # Command match is non-generating.
                     except ValueError:
-                        continue  # If the command_re raised a value error it rejected the match.
-                    return  # Context matched global command_re.
-            try:  # Command matches global command.
-                for line in self.registered['command/%s' % command](command, *args):
-                    yield line
-            except KeyError:
-                yield _('Error. Command Unrecognized: %s') % command
-            except TypeError:
-                pass  # Command match is non-generating.
-
-
-class ConsoleFunction:
-    def __init__(self, context, data):
-        self.context = context
-        self.data = data
-
-    def __call__(self, *args, **kwargs):
-        self.context.console(self.data)
-
-    def __repr__(self):
-        return self.data.replace('\n', '')
+                        continue  # command match rejected.
+                    return  # Command matched context command_re
+        for command_re in self.match('command_re/.*'):
+            cmd_re = command_re.split('/')[-1]
+            match = re.compile(cmd_re)
+            if match.match(command):
+                command_funct = self.registered[command_re]
+                try:
+                    for line in command_funct(command, *args):
+                        yield line
+                except TypeError:
+                    pass  # Command match is non-generating.
+                except ValueError:
+                    continue  # If the command_re raised a value error it rejected the match.
+                return  # Context matched global command_re.
+        try:  # Command matches global command.
+            for line in self.registered['command/%s' % command](command, *args):
+                yield line
+        except KeyError:
+            yield _('Error. Command Unrecognized: %s') % command
+        except TypeError:
+            pass  # Command match is non-generating.
 
 
 class Channel:
@@ -1735,3 +1831,16 @@ class Job:
 
     def cancel(self):
         self.times = -1
+
+
+class ConsoleFunction(Job):
+    def __init__(self, context, data, interval=1.0, times=None, job_name=None):
+        Job.__init__(self, self.__call__, None, interval, times, job_name)
+        self.context = context
+        self.data = data
+
+    def __call__(self, *args, **kwargs):
+        self.context.console(self.data)
+
+    def __str__(self):
+        return self.data.replace('\n', '')

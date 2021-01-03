@@ -331,8 +331,15 @@ class MeerK40t(wx.Frame, Module, Job):
 
         context.register("control/Crash Thread", test_crash_in_thread)
         context.register("control/Clear Laserpath", self.clear_laserpath)
-        context.register("command/rotaryview", self.toggle_rotary_view)
-        context.register("command/rotaryscale", self.apply_rotary_scale)
+
+        @console_command(context, 'rotaryview', help='Rotary View of Scene')
+        def toggle_rotary_view(*args, **kwargs):
+            self.toggle_rotary_view()
+
+        @console_command(context, 'rotaryscale', help='Rotary Scale selected elements')
+        def toggle_rotary_view(*args, **kwargs):
+            self.apply_rotary_scale()
+
         self.SetSize((context.window_width, context.window_height))
         self.interval = 1.0 / float(context.fps)
         self.process()
@@ -850,6 +857,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.request_refresh_for_animation()
 
     def on_background_signal(self, background):
+        background = wx.Bitmap.FromBuffer(*background)
         self.widget_scene.signal('background', background)
         self.request_refresh()
 
@@ -3095,7 +3103,6 @@ class wxMeerK40t(wx.App, Module):
         device.register('window/UsbConnect', UsbConnect)
         device.register('window/Navigation', Navigation)
         device.register('window/Notes', Notes)
-        device.register('window/Controller', Controller)
         device.register('window/JobSpooler', JobSpooler)
         device.register('window/JobPreview', JobPreview)
         device.register('window/BufferView', BufferView)
@@ -3121,6 +3128,7 @@ class wxMeerK40t(wx.App, Module):
         if language is not None and language != 0:
             self.update_language(language)
 
+        @console_command(context, 'window', help='wxMeerK40 window information')
         def window(command, *args):
             context = self.context
             _ = self.context._kernel.translation
@@ -3144,14 +3152,13 @@ class wxMeerK40t(wx.App, Module):
                     module = context.active.opened[name]
                     yield _('%d: %s as type of %s') % (i + 1, name, type(module))
                 yield _('----------')
-        context.register('command/window', window)
 
+        @console_command(context, 'refresh', help='wxMeerK40 refresh')
         def refresh(command, *args):
             context.signal('refresh_scene')
             context.signal('rebuild_tree')
             yield _('Refreshed.')
             return
-        context.register('command/refresh', refresh)
 
     def clear_control(self):
         kernel = self.context._kernel

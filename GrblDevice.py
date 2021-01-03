@@ -1,7 +1,7 @@
 import os
 
 from BaseDevice import *
-from Kernel import Kernel, Module
+from Kernel import Kernel, Module, console_command
 from LaserCommandConstants import *
 from svgelements import *
 
@@ -39,6 +39,7 @@ class GrblDevice:
         kernel.register('load/GCodeLoader', GCodeLoader)
         kernel.register('module/GRBLEmulator', GRBLEmulator)
 
+        @console_command(kernel, 'grblserver', help='activate the grblserver.')
         def grblserver(command, *args):
             active_context = kernel.active
             _ = kernel.translation
@@ -58,7 +59,7 @@ class GrblDevice:
             except OSError:
                 yield _('Server failed on port: %d') % port
             return
-        kernel.register('command/grblserver', grblserver)
+
 
     def initialize(self, device, channel=None):
         """

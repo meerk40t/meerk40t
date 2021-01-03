@@ -445,7 +445,7 @@ class CameraInterface(wx.Frame, Module, Job):
 
         :return:
         """
-        self.unschedule()
+        self.context.unschedule(self)
         if self.capture is not None:
             self.capture.release()
             self.capture = None

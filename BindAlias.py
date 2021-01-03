@@ -1,4 +1,4 @@
-from Kernel import Modifier
+from Kernel import Modifier, console_command
 
 
 class BindAlias(Modifier):
@@ -18,7 +18,11 @@ class BindAlias(Modifier):
         self.context.default_keymap = self.default_keymap
         self.context.default_alias = self.default_alias
 
+        @console_command(self.context, 'bind', help='bind <key> <console command>')
         def bind(command, *args):
+            """
+            Binds a key to a given keyboard keystroke.
+            """
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
@@ -59,8 +63,8 @@ class BindAlias(Modifier):
                     except KeyError:
                         pass
             return
-        self.context.register('command/bind', bind)
 
+        @console_command(self.context, 'alias', help='alias <alias> <console commands[;console command]*>')
         def alias(command, *args):
             context = self.context
             _ = self.context._kernel.translation
@@ -80,8 +84,8 @@ class BindAlias(Modifier):
                     return
                 context.alias[args[0]] = ' '.join(args[1:])
             return
-        self.context.register('command/alias', alias)
 
+        @console_command(self.context, '.*', regex=True, hidden=True)
         def alias_execute(command, *args):
             context = self.context
             if command in self.alias:
@@ -90,8 +94,8 @@ class BindAlias(Modifier):
                     context.console("%s\n" % cmd)
             else:
                 raise ValueError  # This is not an alias.
-        self.context.register('command_re/.*', alias_execute)
 
+        @console_command(self.context, 'consoleserver', help='starts a console_server on port 23 (telnet)')
         def server_console(command, *args):
             _ = self.context._kernel.translation
             port = 23
@@ -106,7 +110,6 @@ class BindAlias(Modifier):
             except OSError:
                 yield _('Server failed on port: %d') % port
             return
-        self.context.register('command/consoleserver', server_console)
 
     def boot(self, *args, **kwargs):
         self.boot_keymap()

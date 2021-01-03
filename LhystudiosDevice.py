@@ -101,16 +101,17 @@ class LhystudiosDevice(Modifier):
         _ = kernel.translation
         path = context._path
 
+        @console_command(self.context, '+laser', hidden=True, help='turn laser on in place')
         def plus_laser(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LASER_ON)
-        kernel.register('%s/command/+laser' % path, plus_laser)
 
+        @console_command(self.context, '-laser', hidden=True, help='turn laser off in place')
         def minus_laser(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LASER_ON)
-        kernel.register('%s/command/-laser' % path, minus_laser)
 
+        @console_command(self.context, ('left', 'right', 'up', 'down'), help='<direction> <amount>')
         def direction(command, *args):
             spooler = kernel.active.spooler
             active = kernel.active
@@ -132,11 +133,8 @@ class LhystudiosDevice(Modifier):
             elif command.endswith('down'):
                 self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
             kernel._console_queue('jog')
-        kernel.register('%s/command/right' % path, direction)
-        kernel.register('%s/command/left' % path, direction)
-        kernel.register('%s/command/up' % path, direction)
-        kernel.register('%s/command/down' % path, direction)
 
+        @console_command(self.context, 'jog', hidden=True, help='executes outstanding jog buffer')
         def jog(command, *args):
             spooler = kernel.active.spooler
             idx = int(self.dx)
@@ -149,8 +147,8 @@ class LhystudiosDevice(Modifier):
                 self.dy -= idy
             else:
                 yield _('Busy Error')
-        kernel.register('%s/command/jog' % path, jog)
 
+        @console_command(self.context, ('move', 'move_absolute'), help='move <x> <y>: move to position.')
         def move(command, *args):
             spooler = kernel.active.spooler
             if len(args) == 2:
@@ -158,9 +156,8 @@ class LhystudiosDevice(Modifier):
                     yield _('Busy Error')
             else:
                 yield _('Syntax Error')
-        kernel.register('%s/command/move' % path, move)
-        kernel.register('%s/command/move_absolute' % path, move)
 
+        @console_command(self.context, 'move_relative', help='move_relative <dx> <dy>')
         def move_relative(command, *args):
             spooler = kernel.active.spooler
             if len(args) == 2:
@@ -168,22 +165,21 @@ class LhystudiosDevice(Modifier):
                     yield _('Busy Error')
             else:
                 yield _('Syntax Error')
-        kernel.register('%s/command/move_relative' % path, move_relative)
 
+        @console_command(self.context, 'home', help='home the laser')
         def home(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_HOME)
-        kernel.register('%s/command/home' % path, home)
 
+        @console_command(self.context, 'unlock', help='unlock the rail')
         def unlock(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_UNLOCK)
-        kernel.register('%s/command/unlock' % path, unlock)
 
+        @console_command(self.context, 'lock', help='lock the rail')
         def lock(command, *args):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LOCK)
-        kernel.register('%s/command/lock' % path, lock)
 
         self.context.open_as('module/LhystudioController', 'pipe')
         self.context.activate('modifier/LhymicroInterpreter', self.context)
@@ -299,6 +295,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
+        @console_command(self.context, 'pulse', help='pulse <time>: Pulse the laser in place.')
         def pulse(command, *args):
             if len(args) == 0:
                 yield _('Must specify a pulse time in milliseconds.')
@@ -327,8 +324,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             else:
                 yield _('Pulse laser failed: Busy')
             return
-        kernel.register('command/pulse', pulse)
 
+        @console_command(self.context, 'speed', help='Set Speed in Interpreter.')
         def speed(command, *args):
             if len(args) == 0:
                 yield _('Speed set at: %f mm/s') % self.speed
@@ -355,8 +352,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 s = self.speed * (s / 100.0)
             self.set_speed(s)
             yield _('Speed set at: %f mm/s') % self.speed
-        kernel.register('command/speed', speed)
 
+        @console_command(self.context, 'power', help='Set Interpreter Power')
         def power(command, *args):
             if len(args) == 0:
                 yield _('Power set at: %d pulses per inch') % self.power
@@ -365,8 +362,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     self.set_power(int(args[0]))
                 except ValueError:
                     pass
-        kernel.register('command/power', power)
 
+        @console_command(self.context, 'acceleration', help='Set Interpreter Acceleration [1-4]')
         def acceleration(command, *args):
             if len(args) == 0:
                 if self.acceleration is None:
@@ -386,7 +383,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 except ValueError:
                     yield _('Invalid Acceleration [1-4].')
                     return
-        kernel.register('command/acceleration', acceleration)
 
         self.context.interpreter = self
 
@@ -1212,49 +1208,49 @@ class LhystudioController(Module):
     def initialize(self, *args, **kwargs):
         context = self.context
 
+        @console_command(self.context, 'egv', help='Lhystudios Engrave Code Sender. egv <lhymicro-gl>')
         def egv(command, *args):
             if len(args) == 0:
                 yield "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
             else:
                 self.write(bytes(args[0].replace('$', '\n'), "utf8"))
-        self.context.register('command/egv', egv)
 
+        @console_command(self.context, 'usb_connect', help='Connect USB')
         def usb_connect(command, *args):
             try:
                 self.open()
             except ConnectionRefusedError:
                 yield "Connection Refused."
-        self.context.register('command/usb_connect', usb_connect)
 
+        @console_command(self.context, 'usb_disconnect', help='Disconnect USB')
         def usb_disconnect(command, *args):
             if self.driver is not None:
                 self.close()
             else:
                 yield "Usb is not connected."
-        self.context.register('command/usb_disconnect', usb_disconnect)
 
+        @console_command(self.context, 'start', help='Start Pipe to Controller')
         def pipe_start(command, *args):
             self.update_state(STATE_ACTIVE)
             self.start()
             yield "Lhystudios Channel Started."
-        self.context.register('command/start', pipe_start)
 
+        @console_command(self.context, 'pause', help='Pause Controller')
         def pipe_pause(command, *args):
             self.update_state(STATE_PAUSE)
             self.pause()
             yield "Lhystudios Channel Paused."
-        self.context.register('command/pause', pipe_pause)
 
+        @console_command(self.context, 'resume', help='Resume Controller')
         def pipe_resume(command, *args):
             self.update_state(STATE_ACTIVE)
             self.start()
             yield "Lhystudios Channel Resumed."
-        self.context.register('command/resume', pipe_resume)
 
+        @console_command(self.context, 'abort', help='Abort Job')
         def pipe_abort(command, *args):
             self.reset()
             yield "Lhystudios Channel Aborted."
-        self.context.register('command/resume', pipe_abort)
 
         context.setting(int, 'packet_count', 0)
         context.setting(int, 'rejected_count', 0)

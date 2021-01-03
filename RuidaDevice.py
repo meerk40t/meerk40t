@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 
 from BaseDevice import Interpreter
-from Kernel import Module
+from Kernel import Module, Context, console_command
 from svgelements import Color, Path
 
 STATE_ABORT = -1
@@ -41,6 +41,7 @@ class RuidaDevice:
         kernel.register('load/RDLoader', RDLoader)
         kernel.register('module/RuidaEmulator', RuidaEmulator)
 
+        @console_command(kernel, 'ruidaserver', help='activate the ruidaserver.')
         def ruidaserver(command, *args):
             c = kernel.active
             _ = kernel.translation
@@ -65,7 +66,6 @@ class RuidaDevice:
             except OSError:
                 yield _('Server failed.')
             return
-        kernel.register('command/ruidaserver', ruidaserver)
 
     def initialize(self, context, channel=None):
         """

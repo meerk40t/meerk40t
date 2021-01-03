@@ -1,5 +1,5 @@
 
-from Kernel import Modifier
+from Kernel import Modifier, Context, console_command
 from svgelements import *
 
 
@@ -18,6 +18,7 @@ class ImageTools(Modifier):
         elements = context.elements
         _ = kernel.translation
 
+        @console_command(self.context, 'image', help='image <operation>')
         def image(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -519,14 +520,14 @@ class ImageTools(Modifier):
                 yield _('Image command unrecognized.')
                 return
 
-        kernel.register('command/image', image)
-
+        @console_command(self.context, 'halftone', help='image halftone <diameter> <scale> <angle>')
         def halftone(command, *args):
-            '''Returns list of half-tone images for cmyk image. sample (pixels),
-               determines the sample box size from the original image. The maximum
-               output dot diameter is given by sample * scale (which is also the number
-               of possible dot sizes). So sample=1 will presevere the original image
-               resolution, but scale must be >1 to allow variation in dot size.'''
+            '''
+            Returns list of half-tone images for cmyk image. sample (pixels),
+            determines the sample box size from the original image. The maximum
+            output dot diameter is given by sample * scale (which is also the number
+            of possible dot sizes). So sample=1 will presevere the original image
+            resolution, but scale must be >1 to allow variation in dot size.'''
             from PIL import Image, ImageDraw, ImageStat
             oversample = 2
             sample = 10
@@ -560,5 +561,3 @@ class ImageTools(Modifier):
             element.image = half_tone
             element.altered()
 
-        kernel.register('command/halftone', halftone)
-        kernel.register('command-help/halftone', 'image halftone <diameter> <scale> <angle> ')

@@ -1,4 +1,4 @@
-from Kernel import Modifier
+from Kernel import Modifier, console_command
 from LaserOperation import *
 from svgelements import *
 from LaserCommandConstants import *
@@ -54,6 +54,8 @@ class Planner(Modifier):
         kernel.register('plan/interrupt', self.interrupt)
 
         # REQUIRES CUTPLANNER
+
+        @console_command(self.context, 'optimize', help='optimize <type>')
         def optimize(command, *args):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
@@ -87,10 +89,9 @@ class Planner(Modifier):
                 yield _('Optimization not found.')
                 return
 
-        kernel.register('command/optimize', optimize)
-        kernel.register('command-help/optimize', 'optimize <type>')
-
         # REQUIRES CUTPLANNER
+
+        @console_command(self.context, 'embroider', help='embroider <angle> <distance>')
         def embroider(command, *args):
             yield _('Embroidery Filling')
             if len(args) >= 1:
@@ -114,9 +115,7 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.altered()
 
-        kernel.register('command/embroider', embroider)
-        kernel.register('command-help/optimize', 'optimize')
-
+        @console_command(self.context, 'plan.*', help='plan<?> <command>', regex=True)
         def plan(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -248,9 +247,6 @@ class Planner(Modifier):
                 return
             else:
                 yield _('Unrecognized command.')
-
-        kernel.register('command_re/plan.*', plan)
-        kernel.register('command-help/plan', 'plan<?> <command>')
 
     def plan(self, **kwargs):
         for item in self._plan:

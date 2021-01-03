@@ -1,5 +1,5 @@
 
-from Kernel import Modifier
+from Kernel import Modifier, Context, console_command
 from LaserOperation import *
 from svgelements import *
 from LaserCommandConstants import *
@@ -38,6 +38,7 @@ class Elemental(Modifier):
         elements = self
         _ = kernel.translation
 
+        @console_command(self.context, 'grid', help='grid <columns> <rows> <x_distance> <y_distance>')
         def grid(command, *args):
             try:
                 cols = int(args[0])
@@ -63,9 +64,8 @@ class Elemental(Modifier):
                     x_pos += x_distance
                 y_pos += y_distance
 
-        kernel.register('command/grid', grid)
-        kernel.register('command-help/grid', 'grid <columns> <rows> <x_distance> <y_distance>')
-
+        @console_command(self.context, 'element',
+                                  help='element <command>*: <#>, merge, subpath, copy, delete, *, ~, !')
         def element(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -150,18 +150,14 @@ class Elemental(Modifier):
                         yield _('index %d out of range') % value
             return
 
-        kernel.register('command/element', element)
-        kernel.register('command-help/element', 'element <command>*: <#>, merge, subpath, copy, delete, *, ~, !')
-
+        @console_command(self.context, 'path', help='path <svg path>')
         def path(command, *args):
             path_d = ' '.join(args)
             element = Path(path_d)
             self.add_element(element)
             return
 
-        kernel.register('command/path', path)
-        kernel.register('command-help/path', 'path <svg path>')
-
+        @console_command(self.context, 'circle', help='circle <x> <y> <r> or circle <r>')
         def circle(command, *args):
             if len(args) == 3:
                 x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -182,9 +178,7 @@ class Elemental(Modifier):
             element = Path(element)
             self.add_element(element)
 
-        kernel.register('command/circle', circle)
-        kernel.register('command-help/circle', 'circle <x> <y> <r> or circle <r>')
-
+        @console_command(self.context, 'ellipse', help='ellipse <cx> <cy> <rx> <ry>')
         def ellipse(command, *args):
             if len(args) < 4:
                 yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
@@ -198,9 +192,7 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        kernel.register('command/ellipse', ellipse)
-        kernel.register('command-help/ellipse', 'ellipse <cx> <cy> <rx> <ry>')
-
+        @console_command(self.context, 'rect', help='rect <x> <y> <width> <height>')
         def rect(command, *args):
             if len(args) < 4:
                 yield _("Too few arguments (needs x, y, width, height)")
@@ -214,35 +206,28 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        kernel.register('command/rect', rect)
-        kernel.register('command-help/rect', 'rect <x> <y> <width> <height>')
 
+        @console_command(self.context, 'text', help='text <text>')
         def text(command, *args):
             text = ' '.join(args)
             element = SVGText(text)
             self.add_element(element)
 
-        kernel.register('command/text', text)
-        kernel.register('command-help/text', 'text <text>')
-
+        @console_command(self.context, 'polygon', help='polygon (<point>, <point>)*')
         def polygon(command, *args):
             element = Polygon(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return
 
-        kernel.register('command/polygon', polygon)
-        kernel.register('command-help/polygon', 'polygon (<point>, <point>)*')
-
+        @console_command(self.context, 'polyline', help='polyline (<point>, <point>)*')
         def polyline(command, *args):
             element = Polygon(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return
 
-        kernel.register('command/polyline', polyline)
-        kernel.register('command-help/polyline', 'polyline (<point>, <point>)*')
-
+        @console_command(self.context, 'stroke', help='stroke <svg color>')
         def stroke(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -273,9 +258,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/stroke', stroke)
-        kernel.register('command-help/stroke', 'stroke <svg color>')
-
+        @console_command(self.context, 'fill', help='fill <svg color>')
         def fill(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -306,9 +289,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/fill', fill)
-        kernel.register('command-help/fill', 'fill <svg color>')
-
+        @console_command(self.context, 'rotate', help='rotate <angle>')
         def rotate(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -355,9 +336,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/rotate', rotate)
-        kernel.register('command-help/rotate', 'rotate <angle>')
-
+        @console_command(self.context, 'scale', help='scale <scale> [<scale-y>]?')
         def scale(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -412,9 +391,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/scale', scale)
-        kernel.register('command-help/scale', 'scale <scale> [<scale-y>]?')
-
+        @console_command(self.context, 'translate', help='translate <tx> <ty>')
         def translate(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -450,9 +427,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/translate', translate)
-        kernel.register('command-help/translate', 'translate <tx> <ty>')
-
+        @console_command(self.context, 'rotate_to', help='rotate_to <angle>')
         def rotate_to(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -503,9 +478,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/rotate_to', rotate_to)
-        kernel.register('command-help/rotate_to', 'rotate_to <angle>')
-
+        @console_command(self.context, 'scale_to', help='scale_to <scale> [<scale-y>]?')
         def scale_to(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -563,9 +536,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/scale_to', scale_to)
-        kernel.register('command-help/scale_to', 'scale_to <scale> [<scale-y>]?')
-
+        @console_command(self.context, 'translate_to', help='translate_to <tx> <ty>')
         def translate_to(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -606,9 +577,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/translate_to', translate_to)
-        kernel.register('command-help/translate_to', 'translate_to <tx> <ty>')
-
+        @console_command(self.context, 'resize', help='resize <x-pos> <y-pos> <width> <height>')
         def resize(command, *args):
             if len(args) < 4:
                 yield _('Too few arguments (needs x, y, width, height)')
@@ -635,9 +604,7 @@ class Elemental(Modifier):
             except (ValueError, ZeroDivisionError):
                 return
 
-        kernel.register('command/resize', resize)
-        kernel.register('command-help/resize', 'resize <x-pos> <y-pos> <width> <height>')
-
+        @console_command(self.context, 'matrix', help='matrix <sx> <kx> <sy> <ky> <tx> <ty>')
         def matrix(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -676,9 +643,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/matrix', matrix)
-        kernel.register('command-help/matrix', 'matrix <sx> <kx> <sy> <ky> <tx> <ty>')
-
+        @console_command(self.context, 'reset', help='reset affine transformations')
         def reset(command, *args):
             for element in elements.elems(emphasized=True):
                 try:
@@ -696,9 +661,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/reset', reset)
-        kernel.register('command-help/reset', 'reset')
-
+        @console_command(self.context, 'reify', help='reify affine transformations')
         def reify(command, *args):
             for element in elements.elems(emphasized=True):
                 try:
@@ -716,9 +679,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        kernel.register('command/reify', reify)
-        kernel.register('command-help/reify', 'reify')
-
+        @console_command(self.context, 'operation', help='operation <commands>: <#>, *, ~, !, delete, copy')
         def operation(command, *args):
             if len(args) == 0:
                 yield _('----------')
@@ -783,9 +744,7 @@ class Elemental(Modifier):
                         yield _('index %d out of range') % value
             return
 
-        kernel.register('command/operation', operation)
-        kernel.register('command-help/operation', 'operation <commands>: <#>, *, ~, !, delete, copy')
-
+        @console_command(self.context, 'classify', help='classify elements into operations')
         def classify(command, *args):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
@@ -793,9 +752,7 @@ class Elemental(Modifier):
             elements.classify(list(elements.elems(emphasized=True)))
             return
 
-        kernel.register('command/classify', classify)
-        kernel.register('command-help/classify', 'classify')
-
+        @console_command(self.context, 'declassify', help='declassify selected elements')
         def declassify(command, *args):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
@@ -803,9 +760,7 @@ class Elemental(Modifier):
             elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
             return
 
-        kernel.register('command/declassify', declassify)
-        kernel.register('command-help/declassify', 'declassify')
-
+        @console_command(self.context, 'note', help='note <note>')
         def note(command, *args):
             if len(args) == 0:
                 if elements.note is None:
@@ -816,9 +771,7 @@ class Elemental(Modifier):
                 elements.note = ' '.join(args)
                 yield _('Note Set.')
 
-        kernel.register('command/note', note)
-        kernel.register('command-help/note', 'note <note>')
-
+        @console_command(self.context, 'cut', help='group current elements into cut operation')
         def cut(command, *args):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
@@ -829,9 +782,7 @@ class Elemental(Modifier):
             elements.add_op(op)
             return
 
-        kernel.register('command/cut', cut)
-        kernel.register('command-help/cut', 'cut')
-
+        @console_command(self.context, 'engrave', help='group current elements into engrave operation')
         def engrave(command, *args):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
@@ -842,9 +793,7 @@ class Elemental(Modifier):
             elements.add_op(op)
             return
 
-        kernel.register('command/engrave', engrave)
-        kernel.register('command-help/engrave', 'engrave')
-
+        @console_command(self.context, 'raster', help='group current elements into raster operation')
         def raster(command, *args):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
@@ -855,9 +804,7 @@ class Elemental(Modifier):
             elements.add_op(op)
             return
 
-        kernel.register('command/raster', raster)
-        kernel.register('command-help/raster', 'raster')
-
+        @console_command(self.context, 'step', help='step <raster-step-size>')
         def step(command, *args):
             if len(args) == 0:
                 found = False
@@ -898,9 +845,7 @@ class Elemental(Modifier):
                 self.context.signal('refresh_scene')
             return
 
-        kernel.register('command/step', step)
-        kernel.register('command-help/step', 'step <step-size>')
-
+        @console_command(self.context, 'trace_hull', help='trace the convex hull of current elements')
         def trace_hull(command, *args):
             spooler = context.active.spooler
             pts = []
@@ -929,9 +874,7 @@ class Elemental(Modifier):
             spooler.job(trace_hull)
             return
 
-        kernel.register('command/trace_hull', trace_hull)
-        kernel.register('command-help/trace_hull', 'trace_hull')
-
+        @console_command(self.context, 'trace_quick', help='quick trace the bounding box of current elements')
         def trace_quick(command, *args):
             spooler = context.active.spooler
             bbox = elements.bounds()
@@ -949,9 +892,6 @@ class Elemental(Modifier):
 
             spooler.job(trace_quick)
             return
-
-        kernel.register('command/trace_quick', trace_quick)
-        kernel.register('command-help/trace_quick', 'trace_quick')
 
     def detach(self, *a, **kwargs):
         context = self.context

@@ -39,6 +39,7 @@ kernel.register('modifier/Elemental', Elemental)
 kernel.register('modifier/Planner', Planner)
 kernel.register('modifier/ImageTools', ImageTools)
 
+
 def pair(value):
     rv = value.split('=')
     if len(rv) != 2:
@@ -94,6 +95,17 @@ else:
     kernel_root.activate('modifier/ImageTools')
     kernel_root.activate('modifier/BindAlias')
 
+    try:
+        from Camera import CameraHub
+
+        kernel.register('modifier/CameraHub', CameraHub)
+        camera_root = kernel_root.derive('camera')
+        camera_root.activate('modifier/CameraHub')
+
+    except ImportError:
+        # OpenCV or Numpy not found. This module cannot be loaded.
+        pass
+
     if not args.no_gui:
         from wxMeerK40t import wxMeerK40t
 
@@ -117,7 +129,7 @@ else:
         device.activate('device/Lhystudios')
 
     if args.verbose:
-        kernel_root._process_spooled_item('Debug Device')
+        kernel_root.execute('Debug Device')
 
     if args.input is not None:
         import os
