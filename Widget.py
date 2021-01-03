@@ -978,7 +978,7 @@ class GridWidget(Widget):
             wmils = context.bed_width * MILS_IN_MM
             hmils = context.bed_height * MILS_IN_MM
         else:
-            wmils = 320 * MILS_IN_MM
+            wmils = 310 * MILS_IN_MM
             hmils = 220 * MILS_IN_MM
 
         kernel_root = self.scene.context.get_context('/')

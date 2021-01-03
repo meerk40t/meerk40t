@@ -296,7 +296,7 @@ class MeerK40t(wx.Frame, Module, Job):
         context.listen('rebuild_tree', self.on_rebuild_tree_signal)
         context.listen('refresh_scene', self.on_refresh_scene)
         context.listen('element_property_update', self.on_element_update)
-        context.setting(int, "bed_width", 320)  # Default Value
+        context.setting(int, "bed_width", 310)  # Default Value
         context.setting(int, "bed_height", 220)  # Default Value
 
         context.listen('active', self.on_active_change)

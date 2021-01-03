@@ -211,7 +211,7 @@ class LhystudiosDevice(Modifier):
         self.context.setting(bool, "rotary", False)
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
-        self.context.setting(int, "bed_width", 320)
+        self.context.setting(int, "bed_width", 310)
         self.context.setting(int, "bed_height", 220)
         self.dx = 0
         self.dy = 0
