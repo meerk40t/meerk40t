@@ -30,7 +30,7 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        device.setting(int, "bed_width", 320)
+        device.setting(int, "bed_width", 310)
         device.setting(int, "bed_height", 220)
         mm_width = device.bed_width
         mm_height = device.bed_height
@@ -120,7 +120,7 @@ class SVGLoader:
 
     @staticmethod
     def load(kernel, pathname, **kwargs):
-        kernel.setting(int, "bed_width", 320)
+        kernel.setting(int, "bed_width", 310)
         kernel.setting(int, "bed_height", 220)
         elements = []
         if 'svg_ppi' in kwargs:
@@ -243,7 +243,7 @@ class DxfLoader:
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        kernel.setting(int, "bed_width", 320)
+        kernel.setting(int, "bed_width", 310)
         kernel.setting(int, "bed_height", 220)
 
         import ezdxf

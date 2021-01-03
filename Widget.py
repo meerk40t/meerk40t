@@ -993,7 +993,7 @@ class GridWidget(Widget):
             wmils = v.bed_width * MILS_IN_MM
             hmils = v.bed_height * MILS_IN_MM
         else:
-            wmils = 320 * MILS_IN_MM
+            wmils = 310 * MILS_IN_MM
             hmils = 220 * MILS_IN_MM
 
         p = self.scene.device.device_root

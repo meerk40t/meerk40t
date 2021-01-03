@@ -567,7 +567,7 @@ class MeerK40t(wx.Frame, Module):
         device.setting(int, 'fps', 40)
 
         if device is not None:
-            device.setting(int, "bed_width", 320)  # Default Value
+            device.setting(int, "bed_width", 310)  # Default Value
             device.setting(int, "bed_height", 220)  # Default Value
 
         kernel.listen('element_added', self.on_rebuild_tree_request)
