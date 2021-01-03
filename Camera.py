@@ -73,8 +73,6 @@ class CameraHub(Modifier):
             elif args[0] == "export":
                 camera_context.export()
 
-        # kernel.register('command_re/camera.*', camera)
-
     def detach(self, *args, **kwargs):
         pass
 

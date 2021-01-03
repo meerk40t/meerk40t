@@ -1296,6 +1296,7 @@ class Kernel:
                         return
                 yield _("No extended help for: %s") % extended_help
                 return
+
             if self.active is not None:
                 yield "--- %s Commands ---" % str(self.active)
                 for command_name in self.match('%s/command/.*' % (self.active._path)):
@@ -1304,7 +1305,7 @@ class Kernel:
                     if command_func.hidden:
                         continue
                     if help is not None:
-                        yield '%s \t- %s' % (command_name.split('/')[-1], help)
+                        yield '%s %s' % (command_name.split('/')[-1].ljust(15), help)
                     else:
                         yield command_name.split('/')[-1]
                 for command_re in self.match('%s/command_re/.*' % self.active._path):
@@ -1314,7 +1315,7 @@ class Kernel:
                         continue
                     cmd_re = command_re.split('/')[-1]
                     if help is not None:
-                        yield '%s \t- %s' % (cmd_re, help)
+                        yield '%s %s' % (cmd_re.ljust(15), help)
                     else:
                         yield cmd_re
             yield "--- Global Commands ---"
@@ -1324,7 +1325,7 @@ class Kernel:
                 if command_func.hidden:
                     continue
                 if help is not None:
-                    yield '%s \t- %s' % (command_name.split('/')[-1], help)
+                    yield '%s %s' % (command_name.split('/')[-1].ljust(15), help)
                 else:
                     yield command_name.split('/')[-1]
             for command_re in self.match('command_re/.*'):
@@ -1334,7 +1335,7 @@ class Kernel:
                     continue
                 cmd_re = command_re.split('/')[-1]
                 if help is not None:
-                    yield '%s \t- %s' % (cmd_re, help)
+                    yield '%s %s' % (cmd_re.ljust(15), help)
                 else:
                     yield cmd_re
             return

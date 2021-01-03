@@ -104,6 +104,7 @@ else:
 
     except ImportError:
         # OpenCV or Numpy not found. This module cannot be loaded.
+        print("Module Not Loaded.")
         pass
 
     if not args.no_gui:
