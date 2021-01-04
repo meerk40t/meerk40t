@@ -1003,7 +1003,8 @@ class Kernel:
         """
         old_active = self.active
         self.active = active
-        self.signal('active', old_active, self.active)
+        if self.active is not old_active:
+            self.signal('active', old_active, self.active)
 
     def get_text_thread_state(self, state):
         _ = self.translation
@@ -1218,70 +1219,10 @@ class Kernel:
 
     # Console Processing.
 
-    def console(self, data):
-        if isinstance(data, bytes):
-            data = data.decode()
-        self._console_buffer += data
-        while '\n' in self._console_buffer:
-            pos = self._console_buffer.find('\n')
-            command = self._console_buffer[0:pos].strip('\r')
-            self._console_buffer = self._console_buffer[pos + 1:]
-            for response in self._console_interface(command):
-                self._console_channel(response)
-
-    def _console_job_tick(self):
-        """
-        Processses the console_job ticks. This executes any outstanding queued commands and any looped commands.
-
-        :return:
-        """
-        for command in self.commands:
-            for e in self._console_interface(command):
-                if self._console_channel is not None:
-                    self._console_channel(e)
-        if len(self.queue):
-            for command in self.queue:
-                for e in self._console_interface(command):
-                    if self._console_channel is not None:
-                        self._console_channel(e)
-            self.queue.clear()
-        if len(self.commands) == 0 and len(self.queue) == 0:
-            self.unschedule(self.console_job)
-
-    def _console_queue(self, command):
-        self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
-        self.queue.append(command)
-        if self.console_job not in self.jobs:
-            self.add_job(self.console_job)
-            # self.jobs.append(self.console_job)
-
-    def _tick_command(self, command):
-        self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
-        self.commands.append(command)
-        if self.console_job not in self.jobs:
-            self.schedule(self.console_job)
-
-    def _untick_command(self, command):
-        self.commands = [c for c in self.commands if c != command]
-        if len(self.commands) == 0:
-            self.unschedule(self.console_job)
-
-    def _console_file_write(self, v):
-        if self.console_channel_file is not None:
-            self.console_channel_file.write('%s\r\n' % v)
-            self.console_channel_file.flush()
-
-    def _console_interface(self, command):
-        yield command
-        args = str(command).split(' ')
-        for e in self._console_parse(*args):
-            yield e
-
     def command_boot(self):
         _ = self.translation
-        active_context = self.active
 
-        @console_command(self, ('help','?'), hidden=True, help="help <help>")
+        @console_command(self, ('help', '?'), hidden=True, help="help <help>")
         def help(command, *args):
             if len(args) >= 1:
                 extended_help = args[0]
@@ -1382,10 +1323,13 @@ class Kernel:
             if len(args) == 1:
                 if args[0] == 'off':
                     if name == "*":
-                        for job_name in self.jobs:
+                        for job_name in list(self.jobs):
                             if not job_name.startswith('timer'):
                                 continue
-                            job = self.jobs[job_name]
+                            try:
+                                job = self.jobs[job_name]
+                            except KeyError:
+                                continue
                             job.cancel()
                             self.unschedule(job)
                         yield _("All timers canceled.")
@@ -1427,6 +1371,7 @@ class Kernel:
 
         @console_command(self, 'context', help="context")
         def context(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 if active_context is not None:
                     yield "Active Context: %s" % str(active_context)
@@ -1436,6 +1381,7 @@ class Kernel:
 
         @console_command(self, 'set', help="set [<key> <value>]")
         def set(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 for attr in dir(active_context):
                     v = getattr(active_context, attr)
@@ -1468,6 +1414,7 @@ class Kernel:
 
         @console_command(self, 'control', help="control [<executive>]")
         def control(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 for control_name in active_context.match('control'):
                     yield control_name
@@ -1488,6 +1435,7 @@ class Kernel:
 
         @console_command(self, 'module', help="module [(open|close) <module_name>]")
         def module(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 yield _('----------')
                 yield _('Modules Registered:')
@@ -1527,6 +1475,7 @@ class Kernel:
 
         @console_command(self, 'modifier', help="modifier [(open|close) <module_name>]")
         def modifier(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 yield _('----------')
                 yield _('Modifiers Registered:')
@@ -1582,6 +1531,7 @@ class Kernel:
 
         @console_command(self, 'channel', help="channel [(open|close|save) <channel_name>]")
         def channel(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 yield _('----------')
                 yield _('Channels Active:')
@@ -1619,6 +1569,7 @@ class Kernel:
 
         @console_command(self, 'device', help="device [<value>]")
         def device(command, *args):
+            active_context = self.active
             if len(args) == 0:
                 yield _('----------')
                 yield _('Backends permitted:')
@@ -1682,6 +1633,7 @@ class Kernel:
 
         @console_command(self, 'flush', help="flush")
         def flush(command, *args):
+            active_context = self.active
             active_context.flush()
             yield _('Persistent settings force saved.')
 
@@ -1691,9 +1643,70 @@ class Kernel:
                 self.shutdown()
             return
 
+    def console(self, data):
+        if isinstance(data, bytes):
+            data = data.decode()
+        self._console_buffer += data
+        while '\n' in self._console_buffer:
+            pos = self._console_buffer.find('\n')
+            command = self._console_buffer[0:pos].strip('\r')
+            self._console_buffer = self._console_buffer[pos + 1:]
+            for response in self._console_interface(command):
+                self._console_channel(response)
+
+    def _console_job_tick(self):
+        """
+        Processses the console_job ticks. This executes any outstanding queued commands and any looped commands.
+
+        :return:
+        """
+        for command in self.commands:
+            for e in self._console_interface(command):
+                if self._console_channel is not None:
+                    self._console_channel(e)
+        if len(self.queue):
+            for command in self.queue:
+                for e in self._console_interface(command):
+                    if self._console_channel is not None:
+                        self._console_channel(e)
+            self.queue.clear()
+        if len(self.commands) == 0 and len(self.queue) == 0:
+            self.unschedule(self.console_job)
+
+    def _console_queue(self, command):
+        self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
+        self.queue.append(command)
+        if self.console_job not in self.jobs:
+            self.add_job(self.console_job)
+            # self.jobs.append(self.console_job)
+
+    def _tick_command(self, command):
+        self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
+        self.commands.append(command)
+        if self.console_job not in self.jobs:
+            self.schedule(self.console_job)
+
+    def _untick_command(self, command):
+        self.commands = [c for c in self.commands if c != command]
+        if len(self.commands) == 0:
+            self.unschedule(self.console_job)
+
+    def _console_file_write(self, v):
+        if self.console_channel_file is not None:
+            self.console_channel_file.write('%s\r\n' % v)
+            self.console_channel_file.flush()
+
+    def _console_interface(self, command):
+        if command.startswith('.'):
+            command = command[1:]
+        else:
+            yield command
+        args = str(command).split(' ')
+        for e in self._console_parse(*args):
+            yield e
+
     def _console_parse(self, command, *args):
         _ = self.translation
-        active_context = self.active
 
         command = command.lower()
         if '/' in command:
@@ -1703,6 +1716,8 @@ class Kernel:
                 p = '/'
             self.active = self.get_context(p)
             command = path[-1]
+
+        active_context = self.active
 
         if active_context is not None:
             for command_name in self.match('%s/command/%s' % (active_context._path, command.replace('+', '\+'))):

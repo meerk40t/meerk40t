@@ -35,7 +35,7 @@ class CameraHub(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @console_command(self.context, 'camera.*', regex=True, help="camera commands and modifiers.")
+        @console_command(kernel, 'camera.*', regex=True, help="camera commands and modifiers.")
         def camera(command, *args):
             if len(command) > 6:
                 self.current_camera = command[6:]
@@ -276,6 +276,7 @@ class Camera(Modifier):
         return True
 
     def threaded_image_fetcher(self):
+        channel = self.context.channel('camera')
         self.quit_thread = True  # If another thread exists this will let it die gracefully.
         with self.camera_lock:
             self.quit_thread = False
@@ -284,11 +285,13 @@ class Camera(Modifier):
                 uri = int(uri)  # URI is an index.
             except ValueError:
                 pass
-
+            channel("URI: %s" % str(uri))
             if uri is None:
                 return
+            channel("Connecting %s" % str(uri))
             self.context.signal("camera_state", 1)
             self.capture = cv2.VideoCapture(uri)
+            channel("Capture: %s" % str(self.capture))
             while not self.quit_thread:
                 if self.connection_attempts > 50:
                     return  # Too many connection attempts.
@@ -296,36 +299,46 @@ class Camera(Modifier):
                     return  # No capture the thread dies.
 
                 try:
+                    channel("Grabbing Frame: %s" % str(uri))
                     ret = self.capture.grab()
                 except AttributeError:
+                    channel("Trying to reconnect: %s" % str(uri))
                     if self._attempt_recovery():
                         continue
                     else:
                         return
 
                 for i in range(10):
+                    channel("Retrieving Frame: %s" % str(uri))
                     ret, frame = self.capture.retrieve()
                     if not ret or frame is None:
+                        channel("Failed Retry: %s" % str(uri))
                         time.sleep(0.05)
                     else:
                         break
                 if not ret:  # Try auto-reconnect.
+                    channel("Trying to reconnect2: %s" % str(uri))
                     if self._attempt_recovery():
                         continue
                     else:
                         return
+                channel("Frame Success: %s" % str(uri))
                 self.connection_attempts = 0
 
                 self.last_raw = self.current_raw
                 self.current_raw = frame
                 self.frame_index += 1
                 self.process_frame()
+                channel("Processing Frame: %s" % str(uri))
 
             if self.capture is not None:
+                channel("Releasing Capture: %s" % str(uri))
                 self.capture.release()
                 self.capture = None
+                channel("Released: %s" % str(uri))
         if self.context is not None:
             self.context.signal("camera_state", 0)
+        channel("Camera Thread Exiting: %s" % str(uri))
 
     def reset_perspective(self):
         """
