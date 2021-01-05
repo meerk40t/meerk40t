@@ -1,5 +1,6 @@
 import re
 import time
+import functools
 from threading import Thread, Lock
 
 from svgelements import Color
@@ -91,8 +92,24 @@ class Module:
         pass
 
 
-def console_command(context, path=None, regex=False, hidden=False, help=None):
+def console_command(context, path=None, regex=False, hidden=False, help=None, arguments=None, options=None):
     def decorator(func):
+
+        @functools.wraps(func)
+        def inner(command, remainder):
+            kwargs = dict()
+            if remainder is not None:
+                args = remainder.split(' ')
+                if arguments is not None:
+                    for i, arg in enumerate(arguments):
+                        t = arg['type']
+                        args[i] = t(args[i])
+                args = tuple(args)
+            else:
+                args = tuple()
+            value = func(command, *args, **kwargs)
+            return value
+
         try:
             kernel = context._kernel
             subpath = context._path
@@ -106,14 +123,14 @@ def console_command(context, path=None, regex=False, hidden=False, help=None):
         if isinstance(path, tuple):
             for subitem in path:
                 p = '%s/%s' % (cmd_path, subitem)
-                kernel.register(p, func)
+                kernel.register(p, inner)
         else:
             p = '%s/%s' % (cmd_path, path)
-            kernel.register(p, func)
-        func.long_help = func.__doc__
-        func.help = help
-        func.hidden = hidden
-        return func
+            kernel.register(p, inner)
+        inner.long_help = func.__doc__
+        inner.help = help
+        inner.hidden = hidden
+        return inner
 
     return decorator
 
@@ -811,12 +828,6 @@ class Kernel:
         :param obj:
         :return:
         """
-        # try:
-        #     old_obj = self.registered[path]
-        #     print(old_obj)
-        #     print(path)
-        # except KeyError:
-        #     pass
         self.registered[path] = obj
         try:
             obj.sub_register(self)
@@ -1644,6 +1655,15 @@ class Kernel:
             return
 
     def console(self, data):
+        """
+        Console accepts console data information. When a '\n' is seen
+        it will execute that in the console_parser. This works like a
+        terminal, where each letter of data can be sent to the console and
+        execution will occur at the carriage return.
+
+        :param data:
+        :return:
+        """
         if isinstance(data, bytes):
             data = data.decode()
         self._console_buffer += data
@@ -1651,7 +1671,7 @@ class Kernel:
             pos = self._console_buffer.find('\n')
             command = self._console_buffer[0:pos].strip('\r')
             self._console_buffer = self._console_buffer[pos + 1:]
-            for response in self._console_interface(command):
+            for response in self._console_parse(command):
                 self._console_channel(response)
 
     def _console_job_tick(self):
@@ -1661,12 +1681,12 @@ class Kernel:
         :return:
         """
         for command in self.commands:
-            for e in self._console_interface(command):
+            for e in self._console_parse(command):
                 if self._console_channel is not None:
                     self._console_channel(e)
         if len(self.queue):
             for command in self.queue:
-                for e in self._console_interface(command):
+                for e in self._console_parse(command):
                     if self._console_channel is not None:
                         self._console_channel(e)
             self.queue.clear()
@@ -1678,7 +1698,6 @@ class Kernel:
         self.queue.append(command)
         if self.console_job not in self.jobs:
             self.add_job(self.console_job)
-            # self.jobs.append(self.console_job)
 
     def _tick_command(self, command):
         self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
@@ -1697,15 +1716,24 @@ class Kernel:
             self.console_channel_file.flush()
 
     def _console_interface(self, command):
+        pass
+
+    def _console_parse(self, command):
+        """
+        Console parse takes single line console commands. These are checked
+        for the . silence syntax and are
+        """
         if command.startswith('.'):
             command = command[1:]
         else:
             yield command
-        args = str(command).split(' ')
-        for e in self._console_parse(*args):
-            yield e
+        pos = command.find(' ')
+        if pos != -1:
+            remainder = command[pos + 1:]
+            command = command[0:pos]
+        else:
+            remainder = None
 
-    def _console_parse(self, command, *args):
         _ = self.translation
 
         command = command.lower()
@@ -1723,7 +1751,7 @@ class Kernel:
             for command_name in self.match('%s/command/%s' % (active_context._path, command.replace('+', '\+'))):
                 command = self.registered[command_name]
                 try:
-                    for line in command(command_name, *args):
+                    for line in command(command_name, remainder):
                         yield line
                 except TypeError:
                     pass  # Command match is non-generating.
@@ -1734,7 +1762,7 @@ class Kernel:
                 if match.match(command):
                     command_funct = self.registered[command_re]
                     try:
-                        for line in command_funct(command, *args):
+                        for line in command_funct(command, remainder):
                             yield line
                     except TypeError:
                         pass  # Command match is non-generating.
@@ -1747,7 +1775,7 @@ class Kernel:
             if match.match(command):
                 command_funct = self.registered[command_re]
                 try:
-                    for line in command_funct(command, *args):
+                    for line in command_funct(command, remainder):
                         yield line
                 except TypeError:
                     pass  # Command match is non-generating.
@@ -1755,7 +1783,7 @@ class Kernel:
                     continue  # If the command_re raised a value error it rejected the match.
                 return  # Context matched global command_re.
         try:  # Command matches global command.
-            for line in self.registered['command/%s' % command](command, *args):
+            for line in self.registered['command/%s' % command](command, remainder):
                 yield line
         except KeyError:
             yield _('Error. Command Unrecognized: %s') % command

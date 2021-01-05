@@ -94,18 +94,18 @@ else:
     kernel_root.activate('modifier/Planner')
     kernel_root.activate('modifier/ImageTools')
     kernel_root.activate('modifier/BindAlias')
+    #
+    # try:
+    from Camera import CameraHub
 
-    try:
-        from Camera import CameraHub
-
-        kernel.register('modifier/CameraHub', CameraHub)
-        camera_root = kernel_root.derive('camera')
-        camera_root.activate('modifier/CameraHub')
-
-    except ImportError:
-        # OpenCV or Numpy not found. This module cannot be loaded.
-        print("Module Not Loaded.")
-        pass
+    kernel.register('modifier/CameraHub', CameraHub)
+    camera_root = kernel_root.derive('camera')
+    camera_root.activate('modifier/CameraHub')
+    #
+    # except ImportError:
+    #     # OpenCV or Numpy not found. This module cannot be loaded.
+    #     print("Module Not Loaded.")
+    #     pass
 
     if not args.no_gui:
         from wxMeerK40t import wxMeerK40t

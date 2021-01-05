@@ -291,7 +291,6 @@ class CameraInterface(wx.Frame, Module, Job):
         frame = self.last_frame
         if frame is None:
             return
-        print("%d vs %d" % (self.last_frame_index, self.frame_index))
         if self.frame_index == self.last_frame_index:
             return
         else:
