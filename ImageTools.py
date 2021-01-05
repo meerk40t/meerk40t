@@ -19,7 +19,7 @@ class ImageTools(Modifier):
         _ = kernel.translation
 
         @console_command(self.context, 'image', help='image <operation>')
-        def image(command, *args):
+        def image(command, *args, **kwargs):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Images:')
@@ -521,7 +521,7 @@ class ImageTools(Modifier):
                 return
 
         @console_command(self.context, 'halftone', help='image halftone <diameter> <scale> <angle>')
-        def halftone(command, *args):
+        def halftone(command, *args, **kwargs):
             '''
             Returns list of half-tone images for cmyk image. sample (pixels),
             determines the sample box size from the original image. The maximum

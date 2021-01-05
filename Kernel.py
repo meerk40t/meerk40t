@@ -97,16 +97,41 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, ar
 
         @functools.wraps(func)
         def inner(command, remainder):
+            if remainder is None:
+                return func(command)
             kwargs = dict()
-            if remainder is not None:
-                args = remainder.split(' ')
+            args = list()
+
+            cmd_parse = [
+                ('OPT', r'-([a-zA-Z]+)'),
+                ('PARAM', r'([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
+                ('LONG', r'--([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
+                ('SKIP', r'[ ,\t\n\x09\x0A\x0C\x0D]+')
+            ]
+            cmd_re = re.compile('|'.join('(?P<%s>%s)' % pair for pair in cmd_parse))
+            pos = 0
+            limit = len(remainder)
+            text = remainder
+            while pos < limit:
+                match = cmd_re.match(text, pos)
+                if match is None:
+                    break  # No more matches.
+                kind = match.lastgroup
+                pos = match.end()
+                if kind == 'SKIP':
+                    continue
+                if kind == 'OPT':
+                    for c in str(match.group(2)):
+                        kwargs[c] = True
+                if kind == 'LONG':
+                    kwargs[match.group(1)] = True
+                if kind == 'PARAM':
+                    args.append(match.group())
                 if arguments is not None:
                     for i, arg in enumerate(arguments):
                         t = arg['type']
                         args[i] = t(args[i])
-                args = tuple(args)
-            else:
-                args = tuple()
+            args = tuple(args)
             value = func(command, *args, **kwargs)
             return value
 
@@ -1234,7 +1259,7 @@ class Kernel:
         _ = self.translation
 
         @console_command(self, ('help', '?'), hidden=True, help="help <help>")
-        def help(command, *args):
+        def help(command, *args, **kwargs):
             if len(args) >= 1:
                 extended_help = args[0]
                 if self.active is not None:
@@ -1293,11 +1318,11 @@ class Kernel:
             return
 
         @console_command(self, 'loop', help="loop <command>")
-        def loop(command, *args):
+        def loop(command, *args, **kwargs):
             self._tick_command(' '.join(args))
 
         @console_command(self, 'end', help="end <commmand>")
-        def end(command, *args):
+        def end(command, *args, **kwargs):
             if len(args) == 0:
                 self.commands.clear()
                 self.schedule(self.console_job)
@@ -1305,7 +1330,7 @@ class Kernel:
                 self._untick_command(' '.join(args))
 
         @console_command(self, 'timer.*', regex=True, help="timer<?> <duration> <iterations>")
-        def timer(command, *args):
+        def timer(command, *args, **kwargs):
             name = command[5:]
             if len(args) == 0:
                 yield _('----------')
@@ -1364,7 +1389,7 @@ class Kernel:
             return
 
         @console_command(self, 'register', help="register")
-        def register(command, *args):
+        def register(command, *args, **kwargs):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Objects Registered:')
@@ -1381,7 +1406,7 @@ class Kernel:
                 yield _('----------')
 
         @console_command(self, 'context', help="context")
-        def context(command, *args):
+        def context(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 if active_context is not None:
@@ -1391,7 +1416,7 @@ class Kernel:
             return
 
         @console_command(self, 'set', help="set [<key> <value>]")
-        def set(command, *args):
+        def set(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 for attr in dir(active_context):
@@ -1424,7 +1449,7 @@ class Kernel:
             return
 
         @console_command(self, 'control', help="control [<executive>]")
-        def control(command, *args):
+        def control(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 for control_name in active_context.match('control'):
@@ -1445,7 +1470,7 @@ class Kernel:
             return
 
         @console_command(self, 'module', help="module [(open|close) <module_name>]")
-        def module(command, *args):
+        def module(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 yield _('----------')
@@ -1485,7 +1510,7 @@ class Kernel:
             return
 
         @console_command(self, 'modifier', help="modifier [(open|close) <module_name>]")
-        def modifier(command, *args):
+        def modifier(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 yield _('----------')
@@ -1520,7 +1545,7 @@ class Kernel:
             return
 
         @console_command(self, 'schedule', help="schedule")
-        def schedule(command, *args):
+        def schedule(command, *args, **kwargs):
             yield _('----------')
             yield _('Scheduled Processes:')
             for i, job_name in enumerate(self.jobs):
@@ -1541,7 +1566,7 @@ class Kernel:
             return
 
         @console_command(self, 'channel', help="channel [(open|close|save) <channel_name>]")
-        def channel(command, *args):
+        def channel(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 yield _('----------')
@@ -1579,7 +1604,7 @@ class Kernel:
             return
 
         @console_command(self, 'device', help="device [<value>]")
-        def device(command, *args):
+        def device(command, *args, **kwargs):
             active_context = self.active
             if len(args) == 0:
                 yield _('----------')
@@ -1643,13 +1668,13 @@ class Kernel:
             return
 
         @console_command(self, 'flush', help="flush")
-        def flush(command, *args):
+        def flush(command, *args, **kwargs):
             active_context = self.active
             active_context.flush()
             yield _('Persistent settings force saved.')
 
         @console_command(self, 'shutdown', help="shutdown")
-        def shutdown(command, *args):
+        def shutdown(command, *args, **kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
             return
