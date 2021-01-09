@@ -632,6 +632,8 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("Clear Laserpath", self.clear_laserpath)
         device.control_instance_add("RotaryView", self.toggle_rotary_view)
         device.control_instance_add("RotaryScale", self.apply_rotary_scale)
+        device.control_instance_add("egv export", self.egv_export)
+        device.control_instance_add("egv import", self.egv_import)
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
         self.schedule()
@@ -1546,6 +1548,35 @@ class MeerK40t(wx.Frame, Module):
             kernel.elements.add_elem(p)
             self.device.classify(p)
         dlg.Destroy()
+
+    def egv_import(self):
+        pathname = None
+        files = "*.egv"
+        with wx.FileDialog(self, _("Import EGV"), wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+        if pathname is None:
+            return
+        with wx.BusyInfo(_("Loading File...")):
+            console = self.device.using('module', 'Console')
+            console.write("egv_import %s\n" % pathname)
+            return
+
+    def egv_export(self):
+        pathname = None
+        files = "*.egv"
+        with wx.FileDialog(self, _("Export EGV"), wildcard=files, style=wx.FD_SAVE) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+        if pathname is None:
+            return
+        with wx.BusyInfo(_("Saving File...")):
+            console = self.device.using('module', 'Console')
+            console.write("egv_export %s\n" % pathname)
+            return
 
     def apply_rotary_scale(self):
         kernel = self.device.device_root

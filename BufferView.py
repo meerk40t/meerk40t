@@ -16,6 +16,17 @@ class BufferView(wx.Frame, Module):
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE)
 
+        # Menu Bar
+        self.BufferView_menubar = wx.MenuBar()
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Export EGV", "Export Engrave Data")
+        self.Bind(wx.EVT_MENU, self.on_menu_export, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, "Import EGV", "Import Engrave Data")
+        self.Bind(wx.EVT_MENU, self.on_menu_import, id=item.GetId())
+        self.BufferView_menubar.Append(wxglade_tmp_menu, "File")
+        self.SetMenuBar(self.BufferView_menubar)
+        # Menu Bar end
+
         self.__set_properties()
         self.__do_layout()
         # end wxGlade
@@ -89,3 +100,10 @@ class BufferView(wx.Frame, Module):
         # end wxGlade
 
 # end of class BufferView
+
+    def on_menu_export(self, event):  # wxGlade: BufferView.<event_handler>
+        self.device.execute("egv export")
+
+    def on_menu_import(self, event):  # wxGlade: BufferView.<event_handler>
+        self.device.execute("egv import")
+

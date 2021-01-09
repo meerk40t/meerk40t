@@ -1971,6 +1971,50 @@ class Console(Module, Pipe):
                 if active_device.device_name != 'Lhystudios':
                     yield 'Device cannot send egv data.'
                 active_device.interpreter.pipe.write(bytes(args[0].replace('$', '\n'), "utf8"))
+        elif command == 'egv_import':
+            def skip(read, byte, count):
+                """Skips forward in the file until we find <count> instances of <byte>"""
+                pos = read.tell()
+                while count > 0:
+                    char = read.read(1)
+                    if char == byte:
+                        count -= 1
+                    if char is None or len(char) == 0:
+                        read.seek(pos, 0)
+                        # If we didn't skip the right stuff, reset the position.
+                        break
+
+            def skip_header(file):
+                skip(file, '\n', 3)
+                skip(file, '%', 5)
+
+            if len(args) >= 1:
+                if active_device.device_name != 'Lhystudios':
+                    yield 'Device cannot send egv data.'
+                buffer = b'\n'
+                with open(args[0], "r") as f:
+                    skip_header(f)
+                    while True:
+                        data = f.read(1024)
+                        if not data:
+                            break
+                        buffer = bytes(data, "utf8")
+                        active_device.interpreter.pipe.write(buffer)
+                    active_device.interpreter.pipe.write(b'\n')
+        elif command == 'egv_export':
+            if len(args) >= 1:
+                if active_device.device_name != 'Lhystudios':
+                    yield 'Device has no egv data.'
+                with open(args[0], "w") as f:
+                    f.write("Document type : LHYMICRO-GL file\n")
+                    f.write("File version: 1.0.01\n")
+                    f.write("Copyright: Unknown\n")
+                    f.write("Creator-Software: MeerK40t v0.6.15\n")
+                    f.write("\n")
+                    f.write("%0%0%0%0%\n")
+                    buffer = active_device.interpreter.pipe._buffer
+                    buffer += active_device.interpreter.pipe._queue
+                    f.write(buffer.decode("utf-8"))
         elif command == "grblserver":
             port = 23
             tcp = True
