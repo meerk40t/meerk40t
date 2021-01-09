@@ -1018,6 +1018,8 @@ class GridWidget(Widget):
         self.grid = starts, ends
 
     def process_draw(self, gc):
+        if self.scene.device.draw_mode is None:
+            return
         if self.scene.device.draw_mode & DRAW_MODE_BACKGROUND == 0:
             device = self.scene.device
             if device is not None:

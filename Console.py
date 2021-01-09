@@ -1991,7 +1991,6 @@ class Console(Module, Pipe):
             if len(args) >= 1:
                 if active_device.device_name != 'Lhystudios':
                     yield 'Device cannot send egv data.'
-                buffer = b'\n'
                 with open(args[0], "r") as f:
                     skip_header(f)
                     while True:

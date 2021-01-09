@@ -54,6 +54,7 @@ parser.add_argument('-H', '--home', action='store_true', help="prehome the devic
 parser.add_argument('-O', '--origin', action='store_true', help="return back to 0,0 on finish")
 parser.add_argument('-b', '--batch', type=argparse.FileType('r'), help='console batch file')
 parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
+parser.add_argument('-x', '--execute', type=str, help='direct execute egv file')
 parser.add_argument('-gs', '--grbl', type=int, help='run grbl-emulator on given port.')
 parser.add_argument('-gy', '--flip_y', action='store_true', help="grbl y-flip")
 parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
@@ -183,13 +184,13 @@ else:
                 device.grbl_home_y = args.adjust_y
             if args.adjust_x is not None:
                 device.grbl_home_x = args.adjust_x
-            console = device.using('module', 'Console').write('grblserver\n')
+            device.using('module', 'Console').write('grblserver\n')
 
         if args.ruida:
-            console = device.using('module', 'Console').write('ruidaserver\n')
+            device.using('module', 'Console').write('ruidaserver\n')
 
         if args.home:
-            console = device.using('module', 'Console').write('home\n')
+            device.using('module', 'Console').write('home\n')
             device.setting(bool, 'quit', True)
             device.quit = True
 
@@ -204,6 +205,15 @@ else:
             device.spooler.jobs(ops)
             device.setting(bool, 'quit', True)
             device.quit = True
+
+        if args.execute:
+            egv_file = args.execute
+            device.setting(bool, 'quit', True)
+            device.quit = True
+            try:
+                device.using('module', 'Console').write('egv_import %s\n' % egv_file)
+            except FileNotFoundError:
+                pass
 
         if args.origin:
             def origin():
