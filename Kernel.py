@@ -1304,7 +1304,7 @@ class Elemental(Module):
                     if image_added:
                         continue  # already added to an image operation, is not added her.
                     if op.color is not None and op.color.value is not None and \
-                            element.stroke is not None and element.stroke.color is not None and \
+                            element.stroke is not None and element.stroke.value is not None and \
                             op.color.red == element.stroke.red and \
                             op.color.green == element.stroke.green and \
                             op.color.blue == element.stroke.blue:
@@ -1318,7 +1318,7 @@ class Elemental(Module):
                         was_classified = True
                 elif op.operation in ("Engrave", "Cut") and \
                         op.color is not None and op.color.value is not None and \
-                        element.stroke is not None and element.stroke.color is not None and \
+                        element.stroke is not None and element.stroke.value is not None and \
                         op.color.red == element.stroke.red and \
                         op.color.green == element.stroke.green and \
                         op.color.blue == element.stroke.blue:
