@@ -1303,7 +1303,9 @@ class Elemental(Module):
                 if op.operation == "Raster":
                     if image_added:
                         continue  # already added to an image operation, is not added her.
-                    if op.color == element.stroke:
+                    if op.color.red == element.stroke.red and \
+                            op.color.green == element.stroke.green and \
+                            op.color.blue == element.stroke.blue:
                         op.append(element)
                         was_classified = True
                     elif isinstance(element, SVGImage):
@@ -1312,7 +1314,10 @@ class Elemental(Module):
                     elif element.fill is not None and element.fill.value is not None:
                         op.append(element)
                         was_classified = True
-                elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
+                elif op.operation in ("Engrave", "Cut") and \
+                        op.color.red == element.stroke.red and \
+                        op.color.green == element.stroke.green and \
+                        op.color.blue == element.stroke.blue:
                     op.append(element)
                     was_classified = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
