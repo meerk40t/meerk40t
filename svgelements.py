@@ -993,6 +993,12 @@ class Color(object):
     def __ne__(self, other):
         return not self == other
 
+    def __abs__(self):
+        # Return opaque color.
+        if self.value is None:
+            return Color(self.value)
+        return Color(self.red, self.green, self.blue)
+
     @staticmethod
     def rgb_to_int(r, g, b, opacity=1.0):
         if opacity > 1:
