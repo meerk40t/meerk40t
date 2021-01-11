@@ -1,5 +1,5 @@
 
-from Kernel import Modifier, Context, console_command
+from Kernel import Modifier, Context, console_command, console_argument, console_option
 from LaserOperation import *
 from svgelements import *
 from LaserCommandConstants import *
@@ -157,57 +157,43 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
+        @console_argument('x_pos', type=Length, omit=True)
+        @console_argument('y_pos', type=Length, omit=True)
+        @console_argument('r_pos', type=Length)
         @console_command(self.context, 'circle', help='circle <x> <y> <r> or circle <r>')
-        def circle(command, *args, **kwargs):
-            if len(args) == 3:
-                x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-                y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
-                r_pos = Length(args[2]).value(ppi=1000.0,
-                                              relative_length=min(self.context.bed_height,
-                                                                  self.context.bed_width) * 39.3701)
-            elif len(args) == 1:
-                x_pos = 0
-                y_pos = 0
-                r_pos = Length(args[0]).value(ppi=1000.0,
-                                              relative_length=min(self.context.bed_height,
-                                                                  self.context.bed_width) * 39.3701)
-            else:
-                yield _('Circle <x> <y> <r> or circle <r>')
-                return
-            element = Circle(cx=x_pos, cy=y_pos, r=r_pos)
-            element = Path(element)
-            self.add_element(element)
+        def circle(command, x_pos=0, y_pos=0, r_pos=0, **kwargs):
+            circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
+            circ.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
+            circ = Path(circ)
+            self.add_element(circ)
 
+        @console_argument('x_pos', type=Length)
+        @console_argument('y_pos', type=Length)
+        @console_argument('rx_pos', type=Length)
+        @console_argument('ry_pos', type=Length)
         @console_command(self.context, 'ellipse', help='ellipse <cx> <cy> <rx> <ry>')
-        def ellipse(command, *args, **kwargs):
-            if len(args) < 4:
-                yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
-                return
-            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
-            rx_pos = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-            ry_pos = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
-            element = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
-            element = Path(element)
-            self.add_element(element)
+        def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, **kwargs):
+            # if len(args) < 4:
+            #     yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
+            #     return
+            ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
+            ellip.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
+            ellip = Path(ellip)
+            self.add_element(ellip)
             return
 
-        @console_command(self.context, 'rect', help='rect <x> <y> <width> <height>')
-        def rect(command, *args, **kwargs):
-            if len(args) < 4:
-                yield _("Too few arguments (needs x, y, width, height)")
-                return
-            x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-            y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
-            width = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-            height = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
-            if 'r' in kwargs:
-                r = Length(args[4]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
-                element = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=r, ry=r)
-            else:
-                element = Rect(x=x_pos, y=y_pos, width=width, height=height)
-            element = Path(element)
-            self.add_element(element)
+        @console_argument('x_pos', type=Length)
+        @console_argument('y_pos', type=Length)
+        @console_argument('width', type=Length)
+        @console_argument('height', type=Length)
+        @console_option('ry', type=Length)
+        @console_option('rx', type=Length)
+        @console_command(self.context, 'rect', help='adds rectangle to scene')
+        def rect(command, x_pos, y_pos, width, height, rx=None, ry=None):
+            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
+            rect.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
+            rect = Path(rect)
+            self.add_element(rect)
             return
 
         @console_command(self.context, 'text', help='text <text>')
@@ -931,6 +917,8 @@ class Elemental(Modifier):
         self.context.signal('rebuild_tree')
 
     def add_element(self, element):
+        if len(element) == 0:
+            return  # No empty elements.
         context_root = self.context.get_context('/')
         element.stroke = Color('black')
         context_root.elements.add_elem(element)

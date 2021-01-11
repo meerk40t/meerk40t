@@ -92,7 +92,22 @@ class Module:
         pass
 
 
-def console_command(context, path=None, regex=False, hidden=False, help=None, arguments=None, options=None):
+def console_option(*argargs, **argkeys):
+    def decor(func):
+        func.options.insert(0, (argargs, argkeys))
+        return func
+    return decor
+
+
+def console_argument(*argargs, **argkeys):
+    def decor(func):
+        func.arguments.insert(0, (argargs, argkeys))
+        return func
+    return decor
+
+
+def console_command(context, path=None, regex=False, hidden=False, help=None):
+
     def decorator(func):
 
         @functools.wraps(func)
@@ -100,7 +115,6 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, ar
             if remainder is None:
                 return func(command)
             kwargs = dict()
-            args = list()
 
             cmd_parse = [
                 ('OPT', r'-([a-zA-Z]+)'),
@@ -112,6 +126,10 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, ar
             pos = 0
             limit = len(remainder)
             text = remainder
+            option = None
+            arguments = inner.arguments
+            options = inner.options
+            args = list()
             while pos < limit:
                 match = cmd_re.match(text, pos)
                 if match is None:
@@ -120,19 +138,38 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, ar
                 pos = match.end()
                 if kind == 'SKIP':
                     continue
-                if kind == 'OPT':
-                    for c in str(match.group(2)):
-                        kwargs[c] = True
-                if kind == 'LONG':
-                    kwargs[match.group(1)] = True
-                if kind == 'PARAM':
-                    args.append(match.group())
-                if arguments is not None:
-                    for i, arg in enumerate(arguments):
-                        t = arg['type']
-                        args[i] = t(args[i])
-            args = tuple(args)
-            value = func(command, *args, **kwargs)
+                elif kind == 'OPT':
+                    v = match.group(2)
+                    for pargs, pkwargs in options:
+                        if v == pargs[0]:
+                            option = (pargs, pkwargs)
+                            kwargs[v] = True
+                elif kind == 'LONG':
+                    v = match.group(1)
+                    for pargs, pkwargs in options:
+                        if v == pargs[0]:
+                            option = (pargs, pkwargs)
+                            kwargs[pargs[0]] = True
+                elif kind == 'PARAM':
+                    v = match.group()
+                    if option is not None:
+                        pargs, pkwargs = option
+                        option = None
+                        if 'type' in pkwargs:
+                            v = pkwargs['type'](v)
+                        kwargs[pargs[0]] = v
+                    else:
+                        args.append(v)
+            for i in range(len(arguments)):
+                pargs, pkwargs = arguments[i]
+                try:
+                    v = args[i]
+                except IndexError:
+                    v = pkwargs.get('default')
+                if 'type' in pkwargs:
+                    v = pkwargs['type'](v)
+                kwargs[pargs[0]] = v
+            value = func(command, **kwargs)
             return value
 
         try:
@@ -155,6 +192,8 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, ar
         inner.long_help = func.__doc__
         inner.help = help
         inner.hidden = hidden
+        inner.arguments = list()
+        inner.options = list()
         return inner
 
     return decorator
@@ -429,13 +468,10 @@ class Context:
         except KeyError:
             raise ValueError
 
-        try:
-            instance = open_object(self, registered_path, *args, **kwargs)
-            self.attached[registered_path] = instance
-            instance.attach(self, *args, **kwargs)
-            return instance
-        except AttributeError:
-            return None
+        instance = open_object(self, registered_path, *args, **kwargs)
+        self.attached[registered_path] = instance
+        instance.attach(self, *args, **kwargs)
+        return instance
 
     def deactivate(self, instance_path, *args, **kwargs):
         """
