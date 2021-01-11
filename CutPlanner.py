@@ -56,12 +56,12 @@ class Planner(Modifier):
         # REQUIRES CUTPLANNER
 
         @console_command(self.context, 'optimize', help='optimize <type>')
-        def optimize(command, args=tuple(), **kwargs):
+        def optimize(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             elif len(args) == 0:
-                yield _('Optimizations: cut_inner, travel, cut_travel')
+                channel(_('Optimizations: cut_inner, travel, cut_travel'))
                 return
             elif args[0] == 'cut_inner':
                 for element in elements.elems(emphasized=True):
@@ -70,30 +70,30 @@ class Planner(Modifier):
                     element += e
                     element.altered()
             elif args[0] == 'travel':
-                yield _('Travel Optimizing: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                channel(_('Travel Optimizing: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_travel(element)
                     element.clear()
                     element += e
                     element.altered()
-                yield _('Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                channel(_('Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
             elif args[0] == 'cut_travel':
-                yield _('Cut Travel Initial: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                channel(_('Cut Travel Initial: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_general(element)
                     element.clear()
                     element += e
                     element.altered()
-                yield _('Cut Travel Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True))
+                channel(_('Cut Travel Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
             else:
-                yield _('Optimization not found.')
+                channel(_('Optimization not found.'))
                 return
 
         # REQUIRES CUTPLANNER
 
         @console_command(self.context, 'embroider', help='embroider <angle> <distance>')
-        def embroider(command, args=tuple(), **kwargs):
-            yield _('Embroidery Filling')
+        def embroider(command, channel, _, args=tuple(), **kwargs):
+            channel(_('Embroidery Filling'))
             if len(args) >= 1:
                 angle = Angle.parse(args[0])
             else:
@@ -116,17 +116,17 @@ class Planner(Modifier):
                 element.altered()
 
         @console_command(self.context, 'plan.*', help='plan<?> <command>', regex=True)
-        def plan(command, args=tuple(), **kwargs):
+        def plan(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Plan:')
+                channel(_('----------'))
+                channel(_('Plan:'))
                 for i, plan_name in enumerate(self._plan):
-                    yield '%d: %s' % (i, plan_name)
-                yield _('----------')
+                    channel('%d: %s' % (i, plan_name))
+                channel(_('----------'))
                 return
             if len(args) <= 0:
-                yield _('Plan <command> (dest)')
-                yield _('classify/copy/validate/blob/optimize/clear/list/spool')
+                channel(_('Plan <command> (dest)'))
+                channel(_('classify/copy/validate/blob/optimize/clear/list/spool'))
                 return
             if len(command) > 4:
                 self._default_plan = command[4:]
@@ -147,7 +147,7 @@ class Planner(Modifier):
                     if not c.output:
                         continue
                     plan.append(copy(c))
-                yield _('Copied Operations.')
+                channel(_('Copied Operations.'))
                 self.context.signal('plan', self._default_plan, 1)
                 return
             elif args[0] == 'command':
@@ -158,7 +158,7 @@ class Planner(Modifier):
                         break
                     self.context.signal('plan', self._default_plan, None)
                 except (KeyError, IndexError):
-                    yield _("No plan command found.")
+                    channel(_("No plan command found."))
                 return
             elif args[0] == 'preprocess':
                 if self.context.prehome:
@@ -231,22 +231,22 @@ class Planner(Modifier):
             elif args[0] == 'scale_speed':
                 return
             elif args[0] == 'list':
-                yield _('----------')
-                yield _('Plan %s:' % self._default_plan)
+                channel(_('----------'))
+                channel(_('Plan %s:' % self._default_plan))
                 for i, op_name in enumerate(plan):
-                    yield '%d: %s' % (i, op_name)
-                yield _('Commands %s:' % self._default_plan)
+                    channel('%d: %s' % (i, op_name))
+                channel(_('Commands %s:' % self._default_plan))
                 for i, cmd_name in enumerate(commands):
-                    yield '%d: %s' % (i, cmd_name)
-                yield _('----------')
+                    channel('%d: %s' % (i, cmd_name))
+                channel(_('----------'))
                 return
             elif args[0] == 'spool':
                 context.active.spooler.jobs(plan)
-                yield _('Spooled Plan.')
+                channel(_('Spooled Plan.'))
                 self.context.signal('plan', self._default_plan, 6)
                 return
             else:
-                yield _('Unrecognized command.')
+                channel(_('Unrecognized command.'))
 
     def plan(self, **kwargs):
         for item in self._plan:

@@ -102,21 +102,21 @@ class LhystudiosDevice(Modifier):
         path = context._path
 
         @console_command(self.context, '+laser', hidden=True, help='turn laser on in place')
-        def plus_laser(command, args=tuple(), **kwargs):
+        def plus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LASER_ON)
 
         @console_command(self.context, '-laser', hidden=True, help='turn laser off in place')
-        def minus_laser(command, args=tuple(), **kwargs):
+        def minus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LASER_ON)
 
         @console_command(self.context, ('left', 'right', 'up', 'down'), help='<direction> <amount>')
-        def direction(command, args=tuple(), **kwargs):
+        def direction(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             active = kernel.active
             if spooler is None:
-                yield _('Device has no spooler.')
+                channel(_('Device has no spooler.'))
                 return
             if len(args) == 0:
                 amount = '1mm'
@@ -135,49 +135,49 @@ class LhystudiosDevice(Modifier):
             kernel._console_queue('jog')
 
         @console_command(self.context, 'jog', hidden=True, help='executes outstanding jog buffer')
-        def jog(command, args=tuple(), **kwargs):
+        def jog(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             idx = int(self.dx)
             idy = int(self.dy)
             if idx == 0 and idy == 0:
                 return
             if spooler.job_if_idle(self.execute_relative_position(idx, idy)):
-                yield _('Position moved: %d %d') % (idx, idy)
+                channel(_('Position moved: %d %d') % (idx, idy))
                 self.dx -= idx
                 self.dy -= idy
             else:
-                yield _('Busy Error')
+                channel(_('Busy Error'))
 
         @console_command(self.context, ('move', 'move_absolute'), help='move <x> <y>: move to position.')
-        def move(command, args=tuple(), **kwargs):
+        def move(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_absolute_position(*args)):
-                    yield _('Busy Error')
+                    channel(_('Busy Error'))
             else:
-                yield _('Syntax Error')
+                channel(_('Syntax Error'))
 
         @console_command(self.context, 'move_relative', help='move_relative <dx> <dy>')
-        def move_relative(command, args=tuple(), **kwargs):
+        def move_relative(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_relative_position(*args)):
-                    yield _('Busy Error')
+                    channel(_('Busy Error'))
             else:
-                yield _('Syntax Error')
+                channel(_('Syntax Error'))
 
         @console_command(self.context, 'home', help='home the laser')
-        def home(command, args=tuple(), **kwargs):
+        def home(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_HOME)
 
         @console_command(self.context, 'unlock', help='unlock the rail')
-        def unlock(command, args=tuple(), **kwargs):
+        def unlock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_UNLOCK)
 
         @console_command(self.context, 'lock', help='lock the rail')
-        def lock(command, args=tuple(), **kwargs):
+        def lock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active.spooler
             spooler.job(COMMAND_LOCK)
 
@@ -296,17 +296,17 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         _ = kernel.translation
 
         @console_command(self.context, 'pulse', help='pulse <time>: Pulse the laser in place.')
-        def pulse(command, args=tuple(), **kwargs):
+        def pulse(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('Must specify a pulse time in milliseconds.')
+                channel(_('Must specify a pulse time in milliseconds.'))
                 return
             try:
                 value = float(args[0]) / 1000.0
             except ValueError:
-                yield _('"%s" not a valid pulse time in milliseconds') % (args[0])
+                channel(_('"%s" not a valid pulse time in milliseconds') % (args[0]))
                 return
             if value > 1.0:
-                yield _('"%s" exceeds 1 second limit to fire a standing laser.') % (args[0])
+                channel(_('"%s" exceeds 1 second limit to fire a standing laser.') % (args[0]))
                 try:
                     if args[1] != "idonotlovemyhouse":
                         return
@@ -320,15 +320,15 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 yield COMMAND_LASER_OFF
 
             if self.context.spooler.job_if_idle(timed_fire):
-                yield _('Pulse laser for %f milliseconds') % (value * 1000.0)
+                channel(_('Pulse laser for %f milliseconds') % (value * 1000.0))
             else:
-                yield _('Pulse laser failed: Busy')
+                channel(_('Pulse laser failed: Busy'))
             return
 
         @console_command(self.context, 'speed', help='Set Speed in Interpreter.')
-        def speed(command, args=tuple(), **kwargs):
+        def speed(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('Speed set at: %f mm/s') % self.speed
+                channel(_('Speed set at: %f mm/s') % self.speed)
                 return
             inc = False
             percent = False
@@ -342,7 +342,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             try:
                 s = float(speed)
             except ValueError:
-                yield _('Not a valid speed or percent.')
+                channel(_('Not a valid speed or percent.'))
                 return
             if percent and inc:
                 s = self.speed + self.speed * (s / 100.0)
@@ -351,12 +351,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             elif percent:
                 s = self.speed * (s / 100.0)
             self.set_speed(s)
-            yield _('Speed set at: %f mm/s') % self.speed
+            channel(_('Speed set at: %f mm/s') % self.speed)
 
         @console_command(self.context, 'power', help='Set Interpreter Power')
-        def power(command, args=tuple(), **kwargs):
+        def power(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('Power set at: %d pulses per inch') % self.power
+                channel(_('Power set at: %d pulses per inch') % self.power)
             else:
                 try:
                     self.set_power(int(args[0]))
@@ -364,24 +364,24 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     pass
 
         @console_command(self.context, 'acceleration', help='Set Interpreter Acceleration [1-4]')
-        def acceleration(command, args=tuple(), **kwargs):
+        def acceleration(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 if self.acceleration is None:
-                    yield _('Acceleration is set to default.')
+                    channel(_('Acceleration is set to default.'))
                 else:
-                    yield _('Acceleration: %d') % self.acceleration
+                    channel(_('Acceleration: %d') % self.acceleration)
 
             else:
                 try:
                     v = int(args[0])
                     if v not in (1, 2, 3, 4):
                         self.set_acceleration(None)
-                        yield _('Acceleration is set to default.')
+                        channel(_('Acceleration is set to default.'))
                         return
                     self.set_acceleration(v)
-                    yield _('Acceleration: %d') % self.acceleration
+                    channel(_('Acceleration: %d') % self.acceleration)
                 except ValueError:
-                    yield _('Invalid Acceleration [1-4].')
+                    channel(_('Invalid Acceleration [1-4].'))
                     return
 
         self.context.interpreter = self
@@ -1209,48 +1209,48 @@ class LhystudioController(Module):
         context = self.context
 
         @console_command(self.context, 'egv', help='Lhystudios Engrave Code Sender. egv <lhymicro-gl>')
-        def egv(command, args=tuple(), **kwargs):
+        def egv(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
                 self.write(bytes(args[0].replace('$', '\n'), "utf8"))
 
         @console_command(self.context, 'usb_connect', help='Connect USB')
-        def usb_connect(command, args=tuple(), **kwargs):
+        def usb_connect(command, channel, _, args=tuple(), **kwargs):
             try:
                 self.open()
             except ConnectionRefusedError:
-                yield "Connection Refused."
+                channel("Connection Refused.")
 
         @console_command(self.context, 'usb_disconnect', help='Disconnect USB')
-        def usb_disconnect(command, args=tuple(), **kwargs):
+        def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
             if self.driver is not None:
                 self.close()
             else:
-                yield "Usb is not connected."
+                channel("Usb is not connected.")
 
         @console_command(self.context, 'start', help='Start Pipe to Controller')
-        def pipe_start(command, args=tuple(), **kwargs):
+        def pipe_start(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
             self.start()
-            yield "Lhystudios Channel Started."
+            channel("Lhystudios Channel Started.")
 
         @console_command(self.context, 'pause', help='Pause Controller')
-        def pipe_pause(command, args=tuple(), **kwargs):
+        def pipe_pause(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_PAUSE)
             self.pause()
-            yield "Lhystudios Channel Paused."
+            channel("Lhystudios Channel Paused.")
 
         @console_command(self.context, 'resume', help='Resume Controller')
-        def pipe_resume(command, args=tuple(), **kwargs):
+        def pipe_resume(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
             self.start()
-            yield "Lhystudios Channel Resumed."
+            channel("Lhystudios Channel Resumed.")
 
         @console_command(self.context, 'abort', help='Abort Job')
-        def pipe_abort(command, args=tuple(), **kwargs):
+        def pipe_abort(command, channel, _, args=tuple(), **kwargs):
             self.reset()
-            yield "Lhystudios Channel Aborted."
+            channel("Lhystudios Channel Aborted.")
 
         context.setting(int, 'packet_count', 0)
         context.setting(int, 'rejected_count', 0)

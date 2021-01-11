@@ -36,13 +36,13 @@ class CameraHub(Modifier):
         _ = kernel.translation
 
         @console_command(kernel, 'camera.*', regex=True, help="camera commands and modifiers.")
-        def camera(command, args=tuple(), **kwargs):
+        def camera(command, channel, _, args=tuple(), **kwargs):
             args = kwargs.get('args', tuple())
             if len(command) > 6:
                 self.current_camera = command[6:]
                 self.context.signal('current_camera', self.current_camera)
             if len(args) == 0:
-                yield _('Too few arguments')
+                channel(_('Too few arguments'))
                 return
             camera_context = self.context.derive(self.current_camera)
             camera_context.activate('modifier/Camera')
@@ -52,7 +52,7 @@ class CameraHub(Modifier):
                 camera_context.close_camera()
             elif args[0] == "fisheye":
                 if len(args) == 1:
-                    yield _('Too few arguments')
+                    channel(_('Too few arguments'))
                     return
                 elif args[1] == "capture":
                     camera_context.fisheye_capture()
@@ -60,11 +60,11 @@ class CameraHub(Modifier):
                     camera_context.reset_fisheye()
             elif args[0] == "perspective":
                 if len(args) <= 1:
-                    yield _('Too few arguments')
+                    channel(_('Too few arguments'))
                     return
                 elif args[1] == "set":
                     if len(args) <= 3:
-                        yield _('Too few arguments')
+                        channel(_('Too few arguments'))
                         return
                     camera_context.perspective[int(args[2])] = float(args[3]), float(args[4])
                 elif args[1] == "reset":

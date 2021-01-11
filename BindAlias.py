@@ -19,7 +19,7 @@ class BindAlias(Modifier):
         self.context.default_alias = self.default_alias
 
         @console_command(self.context, 'bind', help='bind <key> <console command>')
-        def bind(command, **kwargs):
+        def bind(command, channel, _, **kwargs):
             """
             Binds a key to a given keyboard keystroke.
             """
@@ -27,18 +27,18 @@ class BindAlias(Modifier):
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
-                yield _('----------')
-                yield _('Binds:')
+                channel(_('----------'))
+                channel(_('Binds:'))
                 for i, key in enumerate(context.keymap):
                     value = context.keymap[key]
-                    yield _('%d: key %s -> %s') % (i, key, value)
-                yield _('----------')
+                    channel(_('%d: key %s -> %s') % (i, key, value))
+                channel(_('----------'))
             else:
                 key = args[0].lower()
                 if key == 'default':
                     context.keymap = dict()
                     context.default_keymap()
-                    yield _('Set default keymap.')
+                    channel(_('Set default keymap.'))
                     return
                 command_line = ' '.join(args[1:])
                 f = command_line.find('bind')
@@ -60,34 +60,34 @@ class BindAlias(Modifier):
                 else:
                     try:
                         del context.keymap[key]
-                        yield _('Unbound %s') % key
+                        channel(_('Unbound %s') % key)
                     except KeyError:
                         pass
             return
 
         @console_command(self.context, 'alias', help='alias <alias> <console commands[;console command]*>')
-        def alias(command, args=tuple(), **kwargs):
+        def alias(command, channel, _, args=tuple(), **kwargs):
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
-                yield _('----------')
-                yield _('Aliases:')
+                channel(_('----------'))
+                channel(_('Aliases:'))
                 for i, key in enumerate(context.alias):
                     value = context.alias[key]
-                    yield ('%d: %s -> %s') % (i, key, value)
-                yield _('----------')
+                    channel(('%d: %s -> %s') % (i, key, value))
+                channel(_('----------'))
             else:
                 key = args[0].lower()
                 if key == 'default':
                     context.alias = dict()
                     context.default_alias()
-                    yield _('Set default aliases.')
+                    channel(_('Set default aliases.'))
                     return
                 context.alias[args[0]] = ' '.join(args[1:])
             return
 
         @console_command(self.context, '.*', regex=True, hidden=True)
-        def alias_execute(command, args=tuple(), **kwargs):
+        def alias_execute(command, channel, _, args=tuple(), **kwargs):
             context = self.context
             if command in self.alias:
                 aliased_command = self.alias[command]
@@ -97,7 +97,7 @@ class BindAlias(Modifier):
                 raise ValueError  # This is not an alias.
 
         @console_command(self.context, 'consoleserver', help='starts a console_server on port 23 (telnet)')
-        def server_console(command, args=tuple(), **kwargs):
+        def server_console(command, channel, _, args=tuple(), **kwargs):
             _ = self.context._kernel.translation
             port = 23
             try:
@@ -109,7 +109,7 @@ class BindAlias(Modifier):
                 recv.watch(self.context.console)
                 self.context.channel('console').watch(send)
             except OSError:
-                yield _('Server failed on port: %d') % port
+                channel(_('Server failed on port: %d') % port)
             return
 
     def boot(self, *args, **kwargs):

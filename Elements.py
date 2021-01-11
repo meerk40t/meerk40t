@@ -39,18 +39,17 @@ class Elemental(Modifier):
         _ = kernel.translation
 
         @console_command(self.context, 'grid', help='grid <columns> <rows> <x_distance> <y_distance>')
-        def grid(command,  args=tuple(), **kwargs):
+        def grid(command, channel, _, args=tuple(), **kwargs):
             try:
                 cols = int(args[0])
                 rows = int(args[1])
                 x_distance = Length(args[2]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
                 y_distance = Length(args[3]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
             except (ValueError, IndexError):
-                yield _("Syntax Error: grid <columns> <rows> <x_distance> <y_distance>")
-                return
+                raise SyntaxError
             items = list(elements.elems(emphasized=True))
             if items is None or len(items) == 0 or elements._bounds is None:
-                yield _('No item selected.')
+                channel(_('No item selected.'))
                 return
             y_pos = 0
             for j in range(rows):
@@ -66,40 +65,40 @@ class Elemental(Modifier):
 
         @console_command(self.context, 'element',
                                   help='element <command>*: <#>, merge, subpath, copy, delete, *, ~, !')
-        def element(command, args=tuple(), **kwargs):
+        def element(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Graphical Elements:')
+                channel(_('----------'))
+                channel(_('Graphical Elements:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
                     if element.emphasized:
-                        yield '%d: * %s' % (i, name)
+                        channel('%d: * %s' % (i, name))
                     else:
-                        yield '%d: %s' % (i, name)
+                        channel('%d: %s' % (i, name))
                     i += 1
-                yield _('----------')
+                channel('----------')
             else:
                 for value in args:
                     try:
                         value = int(value)
                     except ValueError:
                         if value == "*":
-                            yield _('Selecting all elements.')
+                            channel(_('Selecting all elements.'))
                             elements.set_selected(list(elements.elems()))
                             continue
                         elif value == "~":
-                            yield _('Invert selection.')
+                            channel(_('Invert selection.'))
                             elements.set_selected(list(elements.elems(emphasized=False)))
                             continue
                         elif value == "!":
-                            yield _('Select none')
+                            channel(_('Select none'))
                             elements.set_selected(None)
                             continue
                         elif value == "delete":
-                            yield _('deleting.')
+                            channel(_('deleting.'))
                             elements.remove_elements(list(elements.elems(emphasized=True)))
                             self.context.signal('refresh_scene', 0)
                             continue
@@ -131,7 +130,7 @@ class Elemental(Modifier):
                                     add.append(subelement)
                                 elements.add_elems(add)
                             continue
-                        yield _('Value Error: %s is not an integer') % value
+                        channel(_('Value Error: %s is not an integer') % value)
                         continue
                     try:
                         element = elements.get_elem(value)
@@ -141,17 +140,17 @@ class Elemental(Modifier):
                         if element.selected:
                             element.unselect()
                             element.unemphasize()
-                            yield _('Deselecting item %d called %s') % (value, name)
+                            channel(_('Deselecting item %d called %s') % (value, name))
                         else:
                             element.select()
                             element.emphasize()
-                            yield _('Selecting item %d called %s') % (value, name)
+                            channel(_('Selecting item %d called %s') % (value, name))
                     except IndexError:
-                        yield _('index %d out of range') % value
+                        channel(_('index %d out of range') % value)
             return
 
         @console_command(self.context, 'path', help='path <svg path>')
-        def path(command, args=tuple(), **kwargs):
+        def path(command, channel, _, args=tuple(), **kwargs):
             args = kwargs.get('args', tuple())
             path_d = ' '.join(args)
             element = Path(path_d)
@@ -183,7 +182,7 @@ class Elemental(Modifier):
         def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, args=tuple(),**kwargs):
             if ry_pos is None:
                 raise SyntaxError
-                # yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
+                # channel(_('Too few arguments (needs center_x, center_y, radius_x, radius_y)'))
                 # return
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             ellip.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
@@ -195,24 +194,28 @@ class Elemental(Modifier):
         @console_argument('y_pos', type=Length)
         @console_argument('width', type=Length)
         @console_argument('height', type=Length)
-        @console_argument('ry', type=Length)
-        @console_argument('rx', type=Length)
+        @console_option('ry', 'y', type=Length)
+        @console_option('rx', 'x', type=Length)
+        @console_option('stroke', 's', type=Color)
+        @console_option('fill', 'f', type=Color)
         @console_command(self.context, 'rect', help='adds rectangle to scene')
-        def rect(command, x_pos, y_pos, width, height, rx=None, ry=None, args=tuple(), **kwargs):
+        def rect(command, x_pos, y_pos, width, height, rx=None, ry=None, stroke=None, fill=None, args=tuple(), **kwargs):
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             rect.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
             rect = Path(rect)
+            rect.stroke = stroke
+            rect.fill = fill
             self.add_element(rect)
-            return
+            return rect
 
         @console_command(self.context, 'text', help='text <text>')
-        def text(command, args=tuple(), **kwargs):
+        def text(command, channel, _, args=tuple(), **kwargs):
             text = ' '.join(args)
             element = SVGText(text)
             self.add_element(element)
 
         @console_command(self.context, 'polygon', help='polygon (<point>, <point>)*')
-        def polygon(command, args=tuple(), **kwargs):
+        def polygon(command, channel, _, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
@@ -226,24 +229,24 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'stroke', help='stroke <svg color>')
-        def stroke(command,  args=tuple(), **kwargs):
+        def stroke(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Stroke Values:')
+                channel(_('----------'))
+                channel(_('Stroke Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
                     if element.stroke is None or element.stroke == 'none':
-                        yield _('%d: stroke = none - %s') % (i, name)
+                        channel(_('%d: stroke = none - %s') % (i, name))
                     else:
-                        yield _('%d: stroke = %s - %s') % (i, element.stroke.hex, name)
+                        channel(_('%d: stroke = %s - %s') % (i, element.stroke.hex, name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _("No selected elements.")
+                channel(_("No selected elements."))
                 return
             if args[0] == 'none':
                 for element in elements.elems(emphasized=True):
@@ -257,24 +260,24 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'fill', help='fill <svg color>')
-        def fill(command, args=tuple(), **kwargs):
+        def fill(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Fill Values:')
+                channel(_('----------'))
+                channel(_('Fill Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
                     if element.fill is None or element.fill == 'none':
-                        yield _('%d: fill = none - %s') % (i, name)
+                        channel(_('%d: fill = none - %s') % (i, name))
                     else:
-                        yield _('%d: fill = %s - %s') % (i, element.fill.hex, name)
+                        channel(_('%d: fill = %s - %s') % (i, element.fill.hex, name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             if args[0] == 'none':
                 for element in elements.elems(emphasized=True):
@@ -288,22 +291,21 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'rotate', help='rotate <angle>')
-        def rotate(command, args=tuple(), **kwargs):
+        def rotate(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Rotate Values:')
+                channel(_('----------'))
+                channel(_('Rotate Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield _('%d: rotate(%fturn) - %s') % \
-                          (i, element.rotation.as_turns, name)
+                    channel(_('%d: rotate(%fturn) - %s') % (i, element.rotation.as_turns, name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             bounds = elements.bounds()
             if len(args) >= 1:
@@ -330,27 +332,26 @@ class Elemental(Modifier):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'scale', help='scale <scale> [<scale-y>]?')
-        def scale(command, args=tuple(), **kwargs):
+        def scale(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Scale Values:')
+                channel(_('----------'))
+                channel(_('Scale Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: scale(%f, %f) - %s' % \
-                          (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name)
+                    channel('%d: scale(%f, %f) - %s' % (i, element.transform.value_scale_x(), element.transform.value_scale_x(), name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             bounds = elements.bounds()
 
@@ -371,7 +372,7 @@ class Elemental(Modifier):
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if sx == 0 or sy == 0:
-                yield _('Scaling by Zero Error')
+                channel(_('Scaling by Zero Error'))
                 return
             matrix = Matrix('scale(%f,%f,%f,%f)' % (sx, sy, center_x, center_y))
             try:
@@ -385,27 +386,27 @@ class Elemental(Modifier):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'translate', help='translate <tx> <ty>')
-        def translate(command,  args=tuple(), **kwargs):
+        def translate(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Translate Values:')
+                channel(_('----------'))
+                channel(_('Translate Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield _('%d: translate(%f, %f) - %s') % \
-                          (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
+                    channel(_('%d: translate(%f, %f) - %s') %
+                            (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             if len(args) >= 1:
                 tx = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -421,33 +422,32 @@ class Elemental(Modifier):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'rotate_to', help='rotate_to <angle>')
-        def rotate_to(command, args=tuple(), **kwargs):
+        def rotate_to(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Rotate Values:')
+                channel(_('----------'))
+                channel(_('Rotate Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield _('%d: rotate(%fturn) - %s') % \
-                          (i, element.rotation.as_turns, name)
+                    channel(_('%d: rotate(%fturn) - %s') % (i, element.rotation.as_turns, name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             bounds = elements.bounds()
             try:
                 end_angle = Angle.parse(args[0])
             except ValueError:
-                yield _('Invalid Value.')
+                channel(_('Invalid Value.'))
                 return
             if len(args) >= 2:
                 center_x = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
@@ -472,27 +472,26 @@ class Elemental(Modifier):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'scale_to', help='scale_to <scale> [<scale-y>]?')
-        def scale_to(command, args=tuple(), **kwargs):
+        def scale_to(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Scale Values:')
+                channel(_('----------'))
+                channel(_('Scale Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield _('%d: scale(%f, %f) - %s') % \
-                          (i, element.transform.value_scale_x(), element.transform.value_scale_y(), name)
+                    channel(_('%d: scale(%f, %f) - %s') % (i, element.transform.value_scale_x(), element.transform.value_scale_y(), name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             bounds = elements.bounds()
             if len(args) >= 1:
@@ -522,7 +521,7 @@ class Elemental(Modifier):
                     osx = element.transform.value_scale_x()
                     osy = element.transform.value_scale_y()
                     if sx == 0 or sy == 0:
-                        yield _('Scaling by Zero Error')
+                        channel(_('Scaling by Zero Error'))
                         return
                     nsx = sx / osx
                     nsy = sy / osy
@@ -530,27 +529,26 @@ class Elemental(Modifier):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'translate_to', help='translate_to <tx> <ty>')
-        def translate_to(command, args=tuple(), **kwargs):
+        def translate_to(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Translate Values:')
+                channel(_('----------'))
+                channel(_('Translate Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield _('%d: translate(%f, %f) - %s') % \
-                          (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name)
+                    channel(_('%d: translate(%f, %f) - %s') % (i, element.transform.value_trans_x(), element.transform.value_trans_y(), name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
 
             if len(args) >= 1:
@@ -571,15 +569,14 @@ class Elemental(Modifier):
                     element *= matrix
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'resize', help='resize <x-pos> <y-pos> <width> <height>')
         def resize(command,  args=tuple(),**kwargs):
             if len(args) < 4:
-                yield _('Too few arguments (needs x, y, width, height)')
-                return
+                raise SyntaxError
             try:
                 x_pos = Length(args[0]).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
                 y_pos = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
@@ -603,25 +600,24 @@ class Elemental(Modifier):
                 return
 
         @console_command(self.context, 'matrix', help='matrix <sx> <kx> <sy> <ky> <tx> <ty>')
-        def matrix(command, args=tuple(), **kwargs):
+        def matrix(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Matrix Values:')
+                channel(_('----------'))
+                channel(_('Matrix Values:'))
                 i = 0
                 for element in elements.elems():
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: %s - %s' % \
-                          (i, str(element.transform), name)
+                    channel('%d: %s - %s' % (i, str(element.transform), name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             if len(args) != 6:
-                yield _('Requires six matrix parameters')
+                channel(_('Requires six matrix parameters'))
                 return
             try:
                 matrix = Matrix(float(args[0]), float(args[1]), float(args[2]), float(args[3]),
@@ -637,12 +633,12 @@ class Elemental(Modifier):
                     element.transform = Matrix(matrix)
                     element.modified()
             except ValueError:
-                yield _('Invalid value')
+                channel(_('Invalid value'))
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'reset', help='reset affine transformations')
-        def reset(command, args=tuple(), **kwargs):
+        def reset(command, channel, _, args=tuple(), **kwargs):
             for element in elements.elems(emphasized=True):
                 try:
                     if element.lock:
@@ -653,14 +649,14 @@ class Elemental(Modifier):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield _('reset - %s') % name
+                channel(_('reset - %s') % name)
                 element.transform.reset()
                 element.modified()
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'reify', help='reify affine transformations')
-        def reify(command, args=tuple(), **kwargs):
+        def reify(command, channel, _, args=tuple(), **kwargs):
             for element in elements.elems(emphasized=True):
                 try:
                     if element.lock:
@@ -671,17 +667,17 @@ class Elemental(Modifier):
                 name = str(element)
                 if len(name) > 50:
                     name = name[:50] + '...'
-                yield _('reified - %s') % name
+                channel(_('reified - %s') % name)
                 element.reify()
                 element.altered()
             context.signal('refresh_scene')
             return
 
         @console_command(self.context, 'operation', help='operation <commands>: <#>, *, ~, !, delete, copy')
-        def operation(command, args=tuple(), **kwargs):
+        def operation(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Operations:')
+                channel(_('----------'))
+                channel(_('Operations:'))
                 i = 0
 
                 for operation in elements.ops():
@@ -690,30 +686,30 @@ class Elemental(Modifier):
                     if len(name) > 50:
                         name = name[:50] + '...'
                     if selected:
-                        yield '%d: * %s' % (i, name)
+                        channel('%d: * %s' % (i, name))
                     else:
-                        yield '%d: %s' % (i, name)
+                        channel('%d: %s' % (i, name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
             else:
                 for value in args:
                     try:
                         value = int(value)
                     except ValueError:
                         if value == "*":
-                            yield _('Selecting all operations.')
+                            channel(_('Selecting all operations.'))
                             elements.set_selected(list(elements.ops()))
                             continue
                         elif value == "~":
-                            yield _('Invert selection.')
+                            channel(_('Invert selection.'))
                             elements.set_selected(list(elements.ops(emphasized=False)))
                             continue
                         elif value == "!":
-                            yield _('Select none')
+                            channel(_('Select none'))
                             elements.set_selected(None)
                             continue
                         elif value == "delete":
-                            yield _('Deleting.')
+                            channel(_('Deleting.'))
                             elements.remove_operations(list(elements.ops(emphasized=True)))
                             continue
                         elif value == "copy":
@@ -723,7 +719,7 @@ class Elemental(Modifier):
                                 e.select()
                                 e.emphasize()
                             continue
-                        yield _('Value Error: %s is not an integer') % value
+                        channel(_('Value Error: %s is not an integer') % value)
                         continue
                     try:
                         operation = elements.get_op(value)
@@ -733,47 +729,47 @@ class Elemental(Modifier):
                         if operation.emphasized:
                             operation.unemphasize()
                             operation.unselect()
-                            yield _('Deselecting operation %d called %s') % (value, name)
+                            channel(_('Deselecting operation %d called %s') % (value, name))
                         else:
                             operation.emphasize()
                             operation.select()
-                            yield _('Selecting operation %d called %s') % (value, name)
+                            channel(_('Selecting operation %d called %s') % (value, name))
                     except IndexError:
-                        yield _('index %d out of range') % value
+                        channel(_('index %d out of range') % value)
             return
 
         @console_command(self.context, 'classify', help='classify elements into operations')
-        def classify(command, args=tuple(), **kwargs):
+        def classify(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             elements.classify(list(elements.elems(emphasized=True)))
             return
 
         @console_command(self.context, 'declassify', help='declassify selected elements')
-        def declassify(command, args=tuple(), **kwargs):
+        def declassify(command, channel, _, args=tuple(), **kwargs):
             args = kwargs.get('args', tuple())
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
             return
 
         @console_command(self.context, 'note', help='note <note>')
-        def note(command, args=tuple(), **kwargs):
+        def note(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 if elements.note is None:
-                    yield _('No Note.')
+                    channel(_('No Note.'))
                 else:
-                    yield str(elements.note)
+                    channel(str(elements.note))
             else:
                 elements.note = ' '.join(args)
-                yield _('Note Set.')
+                channel(_('Note Set.'))
 
         @console_command(self.context, 'cut', help='group current elements into cut operation')
-        def cut(command, args=tuple(), **kwargs):
+        def cut(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             op = LaserOperation()
             op.operation = "Cut"
@@ -782,9 +778,9 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'engrave', help='group current elements into engrave operation')
-        def engrave(command, args=tuple(), **kwargs):
+        def engrave(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             op = LaserOperation()
             op.operation = "Engrave"
@@ -793,9 +789,9 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'raster', help='group current elements into raster operation')
-        def raster(command, args=tuple(), **kwargs):
+        def raster(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
-                yield _('No selected elements.')
+                channel(_('No selected elements.'))
                 return
             op = LaserOperation()
             op.operation = "Raster"
@@ -804,13 +800,13 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'step', help='step <raster-step-size>')
-        def step(command, args=tuple(), **kwargs):
+        def step(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 found = False
                 for op in elements.ops(emphasized=True):
                     if op.operation in ("Raster", "Image"):
                         step = op.settings.raster_step
-                        yield _('Step for %s is currently: %d') % (str(op), step)
+                        channel(_('Step for %s is currently: %d') % (str(op), step))
                         found = True
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
@@ -818,15 +814,15 @@ class Elemental(Modifier):
                             step = element.values['raster_step']
                         except KeyError:
                             step = 1
-                        yield _('Image step for %s is currently: %s') % (str(element), step)
+                        channel(_('Image step for %s is currently: %s') % (str(element), step))
                         found = True
                 if not found:
-                    yield _('No raster operations selected.')
+                    channel(_('No raster operations selected.'))
                 return
             try:
                 step = int(args[0])
             except ValueError:
-                yield _('Not integer value for raster step.')
+                channel(_('Not integer value for raster step.'))
                 return
             for op in elements.ops(emphasized=True):
                 if op.operation in ("Raster", "Image"):
@@ -845,7 +841,7 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'trace_hull', help='trace the convex hull of current elements')
-        def trace_hull(command, args=tuple(), **kwargs):
+        def trace_hull(command, channel, _, args=tuple(), **kwargs):
             spooler = context.active.spooler
             pts = []
             for obj in elements.elems(emphasized=True):
@@ -860,7 +856,7 @@ class Elemental(Modifier):
                             (bounds[2], bounds[3])]
             hull = [p for p in Point.convex_hull(pts)]
             if len(hull) == 0:
-                yield _('No elements bounds to trace.')
+                channel(_('No elements bounds to trace.'))
                 return
             hull.append(hull[0])  # loop
 
@@ -874,11 +870,11 @@ class Elemental(Modifier):
             return
 
         @console_command(self.context, 'trace_quick', help='quick trace the bounding box of current elements')
-        def trace_quick(command, args=tuple(), **kwargs):
+        def trace_quick(command, channel, _, args=tuple(), **kwargs):
             spooler = context.active.spooler
             bbox = elements.bounds()
             if bbox is None:
-                yield _('No elements bounds to trace.')
+                channel(_('No elements bounds to trace.'))
                 return
 
             def trace_quick():
@@ -930,7 +926,8 @@ class Elemental(Modifier):
         if len(element) == 0:
             return  # No empty elements.
         context_root = self.context.get_context('/')
-        element.stroke = Color('black')
+        if element.stroke is None:
+            element.stroke = Color('black')
         context_root.elements.add_elem(element)
         context_root.elements.set_selected([element])
 

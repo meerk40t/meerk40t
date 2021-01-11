@@ -92,89 +92,139 @@ class Module:
         pass
 
 
-def console_option(*argargs, **argkeys):
+def console_option(name, short=None, **kwargs):
     def decor(func):
-        func.options.insert(0, (argargs, argkeys))
+        kwargs['name'] = name
+        kwargs['short'] = short
+        func.options.insert(0, kwargs)
         return func
     return decor
 
 
-def console_argument(*argargs, **argkeys):
+def console_argument(name, **kwargs):
     def decor(func):
-        func.arguments.insert(0, (argargs, argkeys))
+        kwargs['name'] = name
+        func.arguments.insert(0, kwargs)
         return func
     return decor
 
 
 _cmd_parse = [
     ('OPT', r'-([a-zA-Z]+)'),
-    ('PARAM', r'([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
     ('LONG', r'--([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
+    ('PARAM', r'([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
     ('SKIP', r'[ ,\t\n\x09\x0A\x0C\x0D]+')
 ]
 _CMD_RE = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _cmd_parse))
 
 
-def console_command(context, path=None, regex=False, hidden=False, help=None):
+def _cmd_parser(text):
+    pos = 0
+    limit = len(text)
+    while pos < limit:
+        match = _CMD_RE.match(text, pos)
+        if match is None:
+            break  # No more matches.
+        kind = match.lastgroup
+        start = pos
+        pos = match.end()
+        if kind == 'SKIP':
+            continue
+        if kind == 'PARAM':
+            value = match.group()
+            yield kind, value, start, pos
+        elif kind == 'LONG':
+            value = match.group()
+            yield kind, value[2:], start, pos
+        elif kind == 'OPT':
+            value = match.group()
+            for letter in value[1:]:
+                yield kind, letter, start, start+1
+                start += 1
+
+
+def console_command(context, path=None, regex=False, hidden=False, help=None, data_type=None):
 
     def decorator(func):
 
         @functools.wraps(func)
-        def inner(command, remainder):
-            if remainder is None:
-                return func(command)
-            kwargs = dict()
-            pos = 0
-            limit = len(remainder)
-            text = remainder
-            option = None
-            arguments = inner.arguments
+        def inner(command, remainder, channel, **ik):
+            if remainder is None or len(remainder) == 0:
+                value = func(command, remainder=remainder, channel=channel, **ik)
+                return value, remainder
             options = inner.options
-            args = list()
-            while pos < limit:
-                match = _CMD_RE.match(text, pos)
-                if match is None:
-                    break  # No more matches.
-                kind = match.lastgroup
-                pos = match.end()
-                if kind == 'SKIP':
-                    continue
-                elif kind == 'OPT':
-                    v = match.group(2)
-                    for pargs, pkwargs in options:
-                        if v == pargs[0]:
-                            option = (pargs, pkwargs)
-                            kwargs[v] = True
-                elif kind == 'LONG':
-                    v = match.group(1)
-                    for pargs, pkwargs in options:
-                        if v == pargs[0]:
-                            option = (pargs, pkwargs)
-                            kwargs[pargs[0]] = True
-                elif kind == 'PARAM':
-                    v = match.group()
-                    if option is not None:
-                        pargs, pkwargs = option
-                        option = None
-                        if 'type' in pkwargs and v is not None:
-                            v = pkwargs['type'](v)
-                        kwargs[pargs[0]] = v
+            arguments = inner.arguments
+            stack = list()
+            stack.extend(arguments)
+            kwargs = dict()
+            argument_index = 0
+            opt_index = 0
+            pos = 0
+            for kind, value, start, pos in _cmd_parser(remainder):
+                if kind == 'PARAM':
+                    if argument_index == len(stack):
+                        pos = start
+                        break  # Nothing else is expected.
+                    k = stack[argument_index]
+                    argument_index += 1
+                    if 'type' in k and value is not None:
+                        value = k['type'](value)
+                    key = k['name']
+                    current = kwargs.get(key, True)
+                    if current is True:
+                        kwargs[key] = [value]
                     else:
-                        args.append(v)
-            for i in range(len(arguments)):
-                pargs, pkwargs = arguments[i]
-                try:
-                    v = args[i]
-                except IndexError:
-                    v = pkwargs.get('default')
-                if 'type' in pkwargs and v is not None:
-                    v = pkwargs['type'](v)
-                kwargs[pargs[0]] = v
-            if len(args) > len(arguments):
-                kwargs['args'] = args[len(arguments):]
-            value = func(command, **kwargs)
-            return value
+                        kwargs[key].append(value)
+                    opt_index = argument_index
+                elif kind == 'LONG':
+                    for pk in options:
+                        if value == pk['name']:
+                            if pk.get('action') != 'store_true':
+                                count = pk.get('nargs', 1)
+                                for i in range(count):
+                                    stack.insert(opt_index, pk)
+                                    opt_index += 1
+                            kwargs[value] = True
+                            break
+                    opt_index = argument_index
+                elif kind == 'OPT':
+                    for pk in options:
+                        if value == pk['short']:
+                            if pk.get('action') != 'store_true':
+                                stack.insert(opt_index, pk)
+                                opt_index += 1
+                            kwargs[pk['name']] = True
+                            break
 
+            # Any singleton list arguments should become their only element.
+            for i in range(argument_index):
+                k = stack[i]
+                key = k['name']
+                current = kwargs.get(key)
+                if isinstance(current, list):
+                    if len(current) == 1:
+                        kwargs[key] = current[0]
+
+            # Any unprocessed positional arguments get default values.
+            for i in range(argument_index, len(stack)):
+                k = stack[i]
+                value = k.get('default')
+                if 'type' in k and value is not None:
+                    value = k['type'](value)
+                key = k['name']
+                current = kwargs.get(key)
+                if current is None:
+                    kwargs[key] = [value]
+                else:
+                    kwargs[key].append(value)
+            remainder = remainder[pos:]
+            if len(remainder) > 0:
+                kwargs['remainder'] = remainder
+                kwargs['args'] = remainder.split()
+            value = func(command, channel=channel, **ik, **kwargs)
+            return value, remainder
+
+        # Main Decorator
         try:
             kernel = context._kernel
             subpath = context._path
@@ -196,6 +246,7 @@ def console_command(context, path=None, regex=False, hidden=False, help=None):
         inner.help = help
         inner.regex = regex
         inner.hidden = hidden
+        inner.data_type = data_type if data_type is not None else type(None)
         inner.arguments = list()
         inner.options = list()
         return inner
@@ -1299,32 +1350,32 @@ class Kernel:
         _ = self.translation
 
         @console_command(self, ('help', '?'), hidden=True, help="help <help>")
-        def help(command, args=tuple(), **kwargs):
+        def help(command, channel, _, args=tuple(), **kwargs):
             if len(args) >= 1:
                 extended_help = args[0]
                 if self.active is not None:
                     for command_name in self.match('%s/command/%s' % (self.active._path, extended_help)):
                         command_func = self.registered[command_name]
-                        yield command_func.long_help
+                        channel(command_func.long_help)
                         return
                     for command_name in self.match('command/%s' % extended_help):
                         command_func = self.registered[command_name]
-                        yield command_func.long_help
+                        channel(command_func.long_help)
                         return
-                yield _("No extended help for: %s") % extended_help
+                channel(_("No extended help for: %s") % extended_help)
                 return
 
             if self.active is not None:
-                yield "--- %s Commands ---" % str(self.active)
+                channel("--- %s Commands ---" % str(self.active))
                 for command_name in self.match('%s/command/.*' % (self.active._path)):
                     command_func = self.registered[command_name]
                     help = command_func.help
                     if command_func.hidden:
                         continue
                     if help is not None:
-                        yield '%s %s' % (command_name.split('/')[-1].ljust(15), help)
+                        channel('%s %s' % (command_name.split('/')[-1].ljust(15), help))
                     else:
-                        yield command_name.split('/')[-1]
+                        channel(command_name.split('/')[-1])
                 for command_re in self.match('%s/command_re/.*' % self.active._path):
                     command_func = self.registered[command_re]
                     help = command_func.help
@@ -1332,19 +1383,19 @@ class Kernel:
                         continue
                     cmd_re = command_re.split('/')[-1]
                     if help is not None:
-                        yield '%s %s' % (cmd_re.ljust(15), help)
+                        channel('%s %s' % (cmd_re.ljust(15), help))
                     else:
-                        yield cmd_re
-            yield "--- Global Commands ---"
+                        channel(cmd_re)
+            channel("--- Global Commands ---")
             for command_name in self.match('command/.*'):
                 command_func = self.registered[command_name]
                 help = command_func.help
                 if command_func.hidden:
                     continue
                 if help is not None:
-                    yield '%s %s' % (command_name.split('/')[-1].ljust(15), help)
+                    channel('%s %s' % (command_name.split('/')[-1].ljust(15), help))
                 else:
-                    yield command_name.split('/')[-1]
+                    channel(command_name.split('/')[-1])
             for command_re in self.match('command_re/.*'):
                 command_func = self.registered[command_re]
                 help = command_func.help
@@ -1352,17 +1403,17 @@ class Kernel:
                     continue
                 cmd_re = command_re.split('/')[-1]
                 if help is not None:
-                    yield '%s %s' % (cmd_re.ljust(15), help)
+                    channel('%s %s' % (cmd_re.ljust(15), help))
                 else:
-                    yield cmd_re
+                    channel(cmd_re)
             return
 
         @console_command(self, 'loop', help="loop <command>")
-        def loop(command, args=tuple(), **kwargs):
+        def loop(command, channel, _, args=tuple(), **kwargs):
             self._tick_command(' '.join(args))
 
         @console_command(self, 'end', help="end <commmand>")
-        def end(command, args=tuple(), **kwargs):
+        def end(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 self.commands.clear()
                 self.schedule(self.console_job)
@@ -1370,11 +1421,11 @@ class Kernel:
                 self._untick_command(' '.join(args))
 
         @console_command(self, 'timer.*', regex=True, help="timer<?> <duration> <iterations>")
-        def timer(command, args=tuple(), **kwargs):
+        def timer(command, channel, _, args=tuple(), **kwargs):
             name = command[5:]
             if len(args) == 0:
-                yield _('----------')
-                yield _('Timers:')
+                channel(_('----------'))
+                channel(_('Timers:'))
                 i = 0
                 for job_name in self.jobs:
                     if not job_name.startswith('timer'):
@@ -1393,8 +1444,8 @@ class Kernel:
                         parts.append(_('never'))
                     else:
                         parts.append(_('each %f seconds') % job.interval)
-                    yield ' '.join(parts)
-                yield _('----------')
+                    channel(' '.join(parts))
+                channel(_('----------'))
                 return
             if len(args) == 1:
                 if args[0] == 'off':
@@ -1408,62 +1459,62 @@ class Kernel:
                                 continue
                             job.cancel()
                             self.unschedule(job)
-                        yield _("All timers canceled.")
+                        channel(_("All timers canceled."))
                         return
                     try:
                         obj = self.jobs[command]
                         obj.cancel()
                         self.unschedule(obj)
-                        yield _("Timer %s canceled." % name)
+                        channel(_("Timer %s canceled." % name))
                     except KeyError:
-                        yield _("Timer %s does not exist." % name)
+                        channel(_("Timer %s does not exist." % name))
                 return
             if len(args) <= 3:
-                yield _("Syntax Error: timer<name> <times> <interval> <command>")
+                channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
                 return
             try:
                 timer_command = ' '.join(args[2:])
                 self.set_timer(timer_command + '\n', name=name, times=int(args[0]), interval=float(args[1]))
             except ValueError:
-                yield _("Syntax Error: timer<name> <times> <interval> <command>")
+                channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
             return
 
         @console_command(self, 'register', help="register")
-        def register(command, args=tuple(), **kwargs):
+        def register(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Objects Registered:')
+                channel(_('----------'))
+                channel(_('Objects Registered:'))
                 for i, name in enumerate(self.match('.*')):
                     obj = self.registered[name]
-                    yield _('%d: %s type of %s') % (i + 1, name, str(obj))
-                yield _('----------')
+                    channel(_('%d: %s type of %s') % (i + 1, name, str(obj)))
+                channel(_('----------'))
             if len(args) == 1:
-                yield _('----------')
-                yield 'Objects Registered:'
+                channel(_('----------'))
+                channel('Objects Registered:')
                 for i, name in enumerate(self.match('%s.*' % args[0])):
                     obj = self.registered[name]
-                    yield '%d: %s type of %s' % (i + 1, name, str(obj))
-                yield _('----------')
+                    channel('%d: %s type of %s' % (i + 1, name, str(obj)))
+                channel(_('----------'))
 
         @console_command(self, 'context', help="context")
-        def context(command, args=tuple(), **kwargs):
+        def context(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
                 if active_context is not None:
-                    yield "Active Context: %s" % str(active_context)
+                    channel("Active Context: %s" % str(active_context))
                 for context_name in self.contexts:
                     yield context_name
             return
 
         @console_command(self, 'set', help="set [<key> <value>]")
-        def set(command, args=tuple(), **kwargs):
+        def set(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
                 for attr in dir(active_context):
                     v = getattr(active_context, attr)
                     if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                         continue
-                    yield '"%s" := %s' % (attr, str(v))
+                    channel('"%s" := %s' % (attr, str(v)))
                 return
             if len(args) >= 2:
                 attr = args[0]
@@ -1483,50 +1534,50 @@ class Kernel:
                         elif isinstance(v, str):
                             setattr(active_context, attr, str(value))
                 except RuntimeError:
-                    yield _('Attempt failed. Produced a runtime error.')
+                    channel(_('Attempt failed. Produced a runtime error.'))
                 except ValueError:
-                    yield _('Attempt failed. Produced a value error.')
+                    channel(_('Attempt failed. Produced a value error.'))
             return
 
         @console_command(self, 'control', help="control [<executive>]")
-        def control(command, args=tuple(), **kwargs):
+        def control(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
                 for control_name in active_context.match('control'):
-                    yield control_name
+                    channel(control_name)
                 for control_name in active_context.match('\d+/control'):
-                    yield control_name
+                    channel(control_name)
             else:
                 control_name = ' '.join(args)
                 controls = list(active_context.match('%s/control/.*' % active_context._path, True))
                 if active_context is not None and control_name in controls:
                     active_context.execute(control_name)
-                    yield _("Executed '%s'") % control_name
+                    channel(_("Executed '%s'") % control_name)
                 elif control_name in list(active_context.match('control/.*', True)):
                     self.get_context('/').execute(control_name)
-                    yield _("Executed '%s'") % control_name
+                    channel(_("Executed '%s'") % control_name)
                 else:
-                    yield _("Control '%s' not found.") % control_name
+                    channel(_("Control '%s' not found.") % control_name)
             return
 
         @console_command(self, 'module', help="module [(open|close) <module_name>]")
-        def module(command, args=tuple(), **kwargs):
+        def module(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
-                yield _('----------')
-                yield _('Modules Registered:')
+                channel(_('----------'))
+                channel(_('Modules Registered:'))
                 for i, name in enumerate(self.match('module')):
-                    yield '%d: %s' % (i + 1, name)
-                yield _('----------')
+                    channel('%d: %s' % (i + 1, name))
+                channel(_('----------'))
                 for i, name in enumerate(self.contexts):
                     context = self.contexts[name]
                     if len(context.opened) == 0:
                         continue
-                    yield _('Loaded Modules in Context %s:') % str(context._path)
+                    channel(_('Loaded Modules in Context %s:') % str(context._path))
                     for i, name in enumerate(context.opened):
                         module = context.opened[name]
-                        yield _('%d: %s as type of %s') % (i + 1, name, type(module))
-                    yield _('----------')
+                        channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
+                    channel(_('----------'))
             else:
                 value = args[0]
                 if value == 'open':
@@ -1540,34 +1591,34 @@ class Kernel:
                         else:
                             active_context.open(index)
                     else:
-                        yield _("Module '%s' not found.") % index
+                        channel(_("Module '%s' not found.") % index)
                 elif value == 'close':
                     index = args[1]
                     if index in active_context.opened:
                         active_context.close(index)
                     else:
-                        yield _("Module '%s' not found.") % index
+                        channel(_("Module '%s' not found.") % index)
             return
 
         @console_command(self, 'modifier', help="modifier [(open|close) <module_name>]")
-        def modifier(command, args=tuple(), **kwargs):
+        def modifier(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
-                yield _('----------')
-                yield _('Modifiers Registered:')
+                channel(_('----------'))
+                channel(_('Modifiers Registered:'))
                 for i, name in enumerate(self.match('modifier')):
-                    yield '%d: %s' % (i + 1, name)
-                yield _('----------')
-                yield _('Loaded Modifiers in Context %s:') % str(active_context._path)
+                    channel('%d: %s' % (i + 1, name))
+                channel(_('----------'))
+                channel(_('Loaded Modifiers in Context %s:') % str(active_context._path))
                 for i, name in enumerate(active_context.attached):
                     modifier = active_context.attached[name]
-                    yield _('%d: %s as type of %s') % (i + 1, name, type(modifier))
-                yield _('----------')
-                yield _('Loaded Modifiers in Device %s:') % str(active_context._path)
+                    channel(_('%d: %s as type of %s') % (i + 1, name, type(modifier)))
+                channel(_('----------'))
+                channel(_('Loaded Modifiers in Device %s:') % str(active_context._path))
                 for i, name in enumerate(active_context.attached):
                     modifier = active_context.attached[name]
-                    yield _('%d: %s as type of %s') % (i + 1, name, type(modifier))
-                yield _('----------')
+                    channel(_('%d: %s as type of %s') % (i + 1, name, type(modifier)))
+                channel(_('----------'))
             else:
                 value = args[0]
                 if value == 'open':
@@ -1575,19 +1626,19 @@ class Kernel:
                     if index in self.registered:
                         active_context.activate(index)
                     else:
-                        yield _("Modifier '%s' not found.") % index
+                        channel(_("Modifier '%s' not found.") % index)
                 elif value == 'close':
                     index = args[1]
                     if index in active_context.attached:
                         active_context.deactivate(index)
                     else:
-                        yield _("Modifier '%s' not found.") % index
+                        channel(_("Modifier '%s' not found.") % index)
             return
 
         @console_command(self, 'schedule', help="schedule")
-        def schedule(command, args=tuple(), **kwargs):
-            yield _('----------')
-            yield _('Scheduled Processes:')
+        def schedule(command, channel, _, args=tuple(), **kwargs):
+            channel(_('----------'))
+            channel(_('Scheduled Processes:'))
             for i, job_name in enumerate(self.jobs):
                 job = self.jobs[job_name]
                 parts = list()
@@ -1601,58 +1652,58 @@ class Kernel:
                     parts.append(_('never'))
                 else:
                     parts.append(_('each %f seconds') % job.interval)
-                yield ' '.join(parts)
-            yield _('----------')
+                channel(' '.join(parts))
+            channel(_('----------'))
             return
 
         @console_command(self, 'channel', help="channel [(open|close|save) <channel_name>]")
-        def channel(command, args=tuple(), **kwargs):
+        def channel(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
-                yield _('----------')
-                yield _('Channels Active:')
+                channel(_('----------'))
+                channel(_('Channels Active:'))
                 for i, name in enumerate(self.channels):
                     channel = self.channels[name]
                     if self._console_channel in channel.watchers:
                         is_watched = '* '
                     else:
                         is_watched = ''
-                    yield '%s%d: %s' % (is_watched, i + 1, name)
+                    channel('%s%d: %s' % (is_watched, i + 1, name))
             else:
                 value = args[0]
                 chan = args[1]
                 if value == 'open':
                     if chan == 'console':
-                        yield _('Infinite Loop Error.')
+                        channel(_('Infinite Loop Error.'))
                     else:
                         active_context.channel(chan).watch(self._console_channel)
-                        yield _('Watching Channel: %s') % chan
+                        channel(_('Watching Channel: %s') % chan)
                 elif value == 'close':
                     try:
                         active_context.channel(chan).unwatch(self._console_channel)
-                        yield _('No Longer Watching Channel: %s') % chan
+                        channel(_('No Longer Watching Channel: %s') % chan)
                     except KeyError:
-                        yield _('Channel %s is not opened.') % chan
+                        channel(_('Channel %s is not opened.') % chan)
                 elif value == 'save':
                     from datetime import datetime
                     if self.console_channel_file is None:
                         filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
-                        yield _('Opening file: %s') % filename
+                        channel(_('Opening file: %s') % filename)
                         self.console_channel_file = open(filename, "a")
-                    yield _('Recording Channel: %s') % chan
+                    channel(_('Recording Channel: %s') % chan)
                     active_context.channel(chan).watch(self._console_file_write)
             return
 
         @console_command(self, 'device', help="device [<value>]")
-        def device(command, args=tuple(), **kwargs):
+        def device(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             if len(args) == 0:
-                yield _('----------')
-                yield _('Backends permitted:')
+                channel(_('----------'))
+                channel(_('Backends permitted:'))
                 for i, name in enumerate(self.match('device/')):
-                    yield '%d: %s' % (i + 1, name)
-                yield _('----------')
-                yield _('Existing Device:')
+                    channel('%d: %s' % (i + 1, name))
+                channel(_('----------'))
+                channel(_('Existing Device:'))
 
                 for device in list(active_context.derivable()):
                     try:
@@ -1663,13 +1714,13 @@ class Kernel:
                         settings = active_context.derive(device)
                         device_name = settings.setting(str, 'device_name', 'Lhystudios')
                         autoboot = settings.setting(bool, 'autoboot', True)
-                        yield _('Device %d. "%s" -- Boots: %s') % (d, device_name, autoboot)
+                        channel(_('Device %d. "%s" -- Boots: %s') % (d, device_name, autoboot))
                     except ValueError:
                         break
                     except AttributeError:
                         break
-                yield _('----------')
-                yield _('Devices Instances:')
+                channel(_('----------'))
+                channel(_('Devices Instances:'))
                 try:
                     device_name = active_context.device_name
                 except AttributeError:
@@ -1690,8 +1741,8 @@ class Kernel:
                         device_location = device.device_location
                     except AttributeError:
                         device_location = "Unknown"
-                    yield _('%d: %s on %s') % (i + 1, device_name, device_location)
-                yield _('----------')
+                    channel(_('%d: %s on %s') % (i + 1, device_name, device_location))
+                channel(_('----------'))
             else:
                 value = args[0]
                 try:
@@ -1702,19 +1753,19 @@ class Kernel:
                     if i + 1 == value:
                         self.active = self.devices[name]
                         active_context.setting(str, 'device_location', 'Unknown')
-                        yield _('Device set: %s on %s') % \
-                              (active_context.device_name, active_context.device_location)
+                        channel(_('Device set: %s on %s') %
+                              (active_context.device_name, active_context.device_location))
                         break
             return
 
         @console_command(self, 'flush', help="flush")
-        def flush(command, args=tuple(), **kwargs):
+        def flush(command, channel, _, args=tuple(), **kwargs):
             active_context = self.active
             active_context.flush()
-            yield _('Persistent settings force saved.')
+            channel(_('Persistent settings force saved.'))
 
         @console_command(self, 'shutdown', help="shutdown")
-        def shutdown(command, args=tuple(), **kwargs):
+        def shutdown(command, channel, _, args=tuple(), **kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
             return
@@ -1736,8 +1787,7 @@ class Kernel:
             pos = self._console_buffer.find('\n')
             command = self._console_buffer[0:pos].strip('\r')
             self._console_buffer = self._console_buffer[pos + 1:]
-            for response in self._console_parse(command):
-                self._console_channel(response)
+            self._console_parse(command, channel=self._console_channel)
 
     def _console_job_tick(self):
         """
@@ -1746,14 +1796,10 @@ class Kernel:
         :return:
         """
         for command in self.commands:
-            for e in self._console_parse(command):
-                if self._console_channel is not None:
-                    self._console_channel(e)
+            self._console_parse(command, channel=self._console_channel)
         if len(self.queue):
             for command in self.queue:
-                for e in self._console_parse(command):
-                    if self._console_channel is not None:
-                        self._console_channel(e)
+                self._console_parse(command, channel=self._console_channel)
             self.queue.clear()
         if len(self.commands) == 0 and len(self.queue) == 0:
             self.unschedule(self.console_job)
@@ -1783,15 +1829,16 @@ class Kernel:
     def _console_interface(self, command):
         pass
 
-    def _console_parse(self, command):
+    def _console_parse(self, command, channel=None):
         """
         Console parse takes single line console commands.
         """
+        # TODO: Make this a for loop to parse all remaining text as additional commands.
         # Silence Echo.
         if command.startswith('.'):
             command = command[1:]
         else:
-            yield command
+            channel(command)
 
         # Divide command from remainder.
         pos = command.find(' ')
@@ -1812,6 +1859,8 @@ class Kernel:
             self.active = self.get_context(p)
             command = path[-1]
 
+        data = None  # Initial data is null
+
         # Process all commands in the active_context
         paths = ['command/%s' % command.replace('+', '\+')]
         if self.active is not None:
@@ -1819,9 +1868,11 @@ class Kernel:
         for match_text in paths:
             # Process command matches.
             for command_name in self.match(match_text):
-                # TODO: Make sure +right works correctly.
+                # TODO: Make sure +right works correctly. it doesn't
                 command_funct = self.registered[command_name]
                 cmd_re = command_name.split('/')[-1]
+                if type(data) != command_funct.data_type:
+                    continue  # We much match the input type.
                 if command_funct.regex:
                     match = re.compile(cmd_re)
                     if not match.match(command):
@@ -1830,12 +1881,9 @@ class Kernel:
                     if cmd_re != command:
                         continue
                 try:
-                    for line in command_funct(command, remainder):
-                        yield line
+                    data, remainder = command_funct(command, remainder, channel, data=data, _=_)
                 except SyntaxError:
-                    yield _("Syntax Error: %s") % command_funct.help
-                except TypeError:
-                    pass  # Command match is non-generating.
+                    channel(_("Syntax Error: %s") % command_funct.help)
                 except ValueError:
                     continue  # command match rejected.
                 return

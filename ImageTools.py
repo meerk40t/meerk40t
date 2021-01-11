@@ -19,10 +19,10 @@ class ImageTools(Modifier):
         _ = kernel.translation
 
         @console_command(self.context, 'image', help='image <operation>')
-        def image(command, args=tuple(), **kwargs):
+        def image(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                yield _('----------')
-                yield _('Images:')
+                channel(_('----------'))
+                channel(_('Images:'))
                 i = 0
                 for element in elements.elems():
                     if not isinstance(element, SVGImage):
@@ -30,16 +30,16 @@ class ImageTools(Modifier):
                     name = str(element)
                     if len(name) > 50:
                         name = name[:50] + '...'
-                    yield '%d: (%d, %d) %s, %s' % (i,
+                    yield channel('%d: (%d, %d) %s, %s' % (i,
                                                    element.image_width,
                                                    element.image_height,
                                                    element.image.mode,
-                                                   name)
+                                                   name))
                     i += 1
-                yield _('----------')
+                channel(_('----------'))
                 return
             if not elements.has_emphasis():
-                yield _('No selected images.')
+                channel(_('No selected images.'))
                 return
             elif args[0] == 'path':
                 for element in list(elements.elems(emphasized=True)):
@@ -56,14 +56,14 @@ class ImageTools(Modifier):
                 if len(args) == 1:
                     try:
                         for script_name in context.match('raster_script', True):
-                            yield _('Raster Script: %s') % script_name
+                            channel(_('Raster Script: %s') % script_name)
                     except KeyError:
-                        yield _('No Raster Scripts Found.')
+                        channel(_('No Raster Scripts Found.'))
                     return
                 try:
                     script = context.registered['raster_script/%s' % args[1]]
                 except KeyError:
-                    yield _('Raster Script %s is not registered.') % args[1]
+                    channel(_('Raster Script %s is not registered.') % args[1])
                     return
                 from RasterScripts import RasterScripts
                 for element in elements.elems(emphasized=True):
@@ -76,23 +76,23 @@ class ImageTools(Modifier):
                         element.altered()
                 return
             elif args[0] == 'unlock':
-                yield _('Unlocking Elements...')
+                channel(_('Unlocking Elements...'))
                 for element in elements.elems(emphasized=True):
                     try:
                         if element.lock:
-                            yield "Unlocked: %s" % str(element)
+                            channel("Unlocked: %s" % str(element))
                             element.lock = False
                         else:
-                            yield _('Element was not locked: %s') % str(element)
+                            channel(_('Element was not locked: %s') % str(element))
                     except AttributeError:
-                        yield _('Element was not locked: %s') % str(element)
+                        channel(_('Element was not locked: %s') % str(element))
                 return
             elif args[0] == 'threshold':
                 try:
                     threshold_min = float(args[1])
                     threshold_max = float(args[2])
                 except (ValueError, IndexError):
-                    yield _('Threshold values improper.')
+                    channel(_('Threshold values improper.'))
                     return
                 divide = (threshold_max - threshold_min) / 255.0
                 for element in elements.elems(emphasized=True):
@@ -103,7 +103,7 @@ class ImageTools(Modifier):
                     try:
                         from OperationPreprocessor import OperationPreprocessor
                     except ImportError:
-                        yield "No Render Engine Installed."
+                        channel("No Render Engine Installed.")
                         return
                     if OperationPreprocessor.needs_actualization(image_element):
                         OperationPreprocessor.make_actual(image_element)
@@ -145,7 +145,7 @@ class ImageTools(Modifier):
                         element.altered()
             elif args[0] == 'remove':
                 if len(args) == 1:
-                    yield _('Must specify a color, and optionally a distance.')
+                    channel(_('Must specify a color, and optionally a distance.'))
                     return
                 distance = 50.0
                 color = "White"
@@ -154,13 +154,13 @@ class ImageTools(Modifier):
                 try:
                     color = Color(color)
                 except ValueError:
-                    yield _('Color Invalid.')
+                    channel(_('Color Invalid.'))
                     return
                 if len(args) >= 3:
                     try:
                         distance = float(args[2])
                     except ValueError:
-                        yield _('Color distance is invalid.')
+                        channel(_('Color distance is invalid.'))
                         return
                 distance_sq = distance * distance
 
@@ -188,7 +188,7 @@ class ImageTools(Modifier):
                     element.altered()
             elif args[0] == 'add':
                 if len(args) == 1:
-                    yield _('Must specify a color, to add.')
+                    channel(_('Must specify a color, to add.'))
                     return
                 color = "White"
                 if len(args) >= 2:
@@ -196,7 +196,7 @@ class ImageTools(Modifier):
                 try:
                     color = Color(color)
                 except ValueError:
-                    yield _('Color Invalid.')
+                    channel(_('Color Invalid.'))
                     return
                 pix = (color.red, color.green, color.blue, color.alpha)
                 for element in elements.elems(emphasized=True):
@@ -233,7 +233,7 @@ class ImageTools(Modifier):
                             element.image_height = lower - upper
                             element.altered()
                         except (KeyError, ValueError):
-                            yield _('image crop <left> <upper> <right> <lower>')
+                            channel(_('image crop <left> <upper> <right> <lower>'))
                 return
             elif args[0] == 'contrast':
                 for element in elements.elems(emphasized=True):
@@ -246,9 +246,9 @@ class ImageTools(Modifier):
                             enhancer = ImageEnhance.Contrast(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield _('Image Contrast Factor: %f') % factor
+                            channel(_('Image Contrast Factor: %f') % factor)
                         except (IndexError, ValueError):
-                            yield _('image contrast <factor>')
+                            channel(_('image contrast <factor>'))
                 return
             elif args[0] == 'brightness':
                 for element in elements.elems(emphasized=True):
@@ -260,9 +260,9 @@ class ImageTools(Modifier):
                             enhancer = ImageEnhance.Brightness(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield _('Image Brightness Factor: %f') % factor
+                            channel(_('Image Brightness Factor: %f') % factor)
                         except (IndexError, ValueError):
-                            yield _('image brightness <factor>')
+                            channel(_('image brightness <factor>'))
                 return
             elif args[0] == 'color':
                 for element in elements.elems(emphasized=True):
@@ -274,9 +274,9 @@ class ImageTools(Modifier):
                             enhancer = ImageEnhance.Color(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield _('Image Color Factor: %f') % factor
+                            channel(_('Image Color Factor: %f') % factor)
                         except (IndexError, ValueError):
-                            yield _('image color <factor>')
+                            channel(_('image color <factor>'))
                 return
             elif args[0] == 'sharpness':
                 for element in elements.elems(emphasized=True):
@@ -288,9 +288,9 @@ class ImageTools(Modifier):
                             enhancer = ImageEnhance.Sharpness(img)
                             element.image = enhancer.enhance(factor)
                             element.altered()
-                            yield _('Image Sharpness Factor: %f') % factor
+                            channel(_('Image Sharpness Factor: %f') % factor)
                         except (IndexError, ValueError):
-                            yield _('image sharpness <factor>')
+                            channel(_('image sharpness <factor>'))
                 return
             elif args[0] == 'blur':
                 from PIL import ImageFilter
@@ -299,7 +299,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.BLUR)
                         element.altered()
-                        yield _('Image Blurred.')
+                        channel(_('Image Blurred.'))
                 return
             elif args[0] == 'sharpen':
                 from PIL import ImageFilter
@@ -308,7 +308,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.SHARPEN)
                         element.altered()
-                        yield _('Image Sharpened.')
+                        channel(_('Image Sharpened.'))
                 return
             elif args[0] == 'edge_enhance':
                 from PIL import ImageFilter
@@ -317,7 +317,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
                         element.altered()
-                        yield _('Image Edges Enhanced.')
+                        channel(_('Image Edges Enhanced.'))
                 return
             elif args[0] == 'find_edges':
                 from PIL import ImageFilter
@@ -326,7 +326,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.FIND_EDGES)
                         element.altered()
-                        yield _('Image Edges Found.')
+                        channel(_('Image Edges Found.'))
                 return
             elif args[0] == 'emboss':
                 from PIL import ImageFilter
@@ -335,7 +335,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.EMBOSS)
                         element.altered()
-                        yield _('Image Embossed.')
+                        channel(_('Image Embossed.'))
                 return
             elif args[0] == 'smooth':
                 from PIL import ImageFilter
@@ -344,7 +344,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.SMOOTH)
                         element.altered()
-                        yield _('Image Smoothed.')
+                        channel(_('Image Smoothed.'))
                 return
             elif args[0] == 'contour':
                 from PIL import ImageFilter
@@ -353,7 +353,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.CONTOUR)
                         element.altered()
-                        yield _('Image Contoured.')
+                        channel(_('Image Contoured.'))
                 return
             elif args[0] == 'detail':
                 from PIL import ImageFilter
@@ -362,7 +362,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = img.filter(filter=ImageFilter.DETAIL)
                         element.altered()
-                        yield _('Image Detailed.')
+                        channel(_('Image Detailed.'))
                 return
             elif args[0] == 'quantize':
                 for element in elements.elems(emphasized=True):
@@ -372,9 +372,9 @@ class ImageTools(Modifier):
                             img = element.image
                             element.image = img.quantize(colors=colors)
                             element.altered()
-                            yield _('Image Quantized to %d colors.') % colors
+                            channel(_('Image Quantized to %d colors.') % colors)
                         except (IndexError, ValueError):
-                            yield _('image quantize <colors>')
+                            channel(_('image quantize <colors>'))
                 return
             elif args[0] == 'solarize':
                 from PIL import ImageOps
@@ -385,9 +385,9 @@ class ImageTools(Modifier):
                             img = element.image
                             element.image = ImageOps.solarize(img, threshold=threshold)
                             element.altered()
-                            yield _('Image Solarized at %d gray.') % threshold
+                            channel(_('Image Solarized at %d gray.') % threshold)
                         except (IndexError, ValueError):
-                            yield _('image solarize <threshold>')
+                            channel(_('image solarize <threshold>'))
                 return
             elif args[0] == 'invert':
                 from PIL import ImageOps
@@ -402,9 +402,9 @@ class ImageTools(Modifier):
                             if original_mode == '1':
                                 element.image = element.image.convert('1')
                             element.altered()
-                            yield _('Image Inverted.')
+                            channel(_('Image Inverted.'))
                         except OSError:
-                            yield _('Image type cannot be converted. %s') % img.mode
+                            channel(_('Image type cannot be converted. %s') % img.mode)
                 return
             elif args[0] == 'flip':
                 from PIL import ImageOps
@@ -413,7 +413,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = ImageOps.flip(img)
                         element.altered()
-                        yield _('Image Flipped.')
+                        channel(_('Image Flipped.'))
                 return
             elif args[0] == 'mirror':
                 from PIL import ImageOps
@@ -422,7 +422,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = ImageOps.mirror(img)
                         element.altered()
-                        yield _('Image Mirrored.')
+                        channel(_('Image Mirrored.'))
                 return
             elif args[0] == 'ccw':
                 from PIL import Image
@@ -432,7 +432,7 @@ class ImageTools(Modifier):
                         element.image = img.transpose(Image.ROTATE_90)
                         element.image_height, element.image_width = element.image_width, element.image_height
                         element.altered()
-                        yield _('Rotated image counterclockwise.')
+                        channel(_('Rotated image counterclockwise.'))
                 return
             elif args[0] == 'cw':
                 from PIL import Image
@@ -442,7 +442,7 @@ class ImageTools(Modifier):
                         element.image = img.transpose(Image.ROTATE_270)
                         element.image_height, element.image_width = element.image_width, element.image_height
                         element.altered()
-                        yield _('Rotated image clockwise.')
+                        channel(_('Rotated image clockwise.'))
                 return
             elif args[0] == 'autocontrast':
                 from PIL import ImageOps
@@ -455,9 +455,9 @@ class ImageTools(Modifier):
                                 img = img.convert('RGB')
                             element.image = ImageOps.autocontrast(img, cutoff=cutoff)
                             element.altered()
-                            yield _('Image Auto-Contrasted.')
+                            channel(_('Image Auto-Contrasted.'))
                         except (IndexError, ValueError):
-                            yield _('image autocontrast <cutoff-percent>')
+                            channel(_('image autocontrast <cutoff-percent>'))
                 return
             elif args[0] == 'grayscale' or args[0] == 'greyscale':
                 from PIL import ImageOps
@@ -466,7 +466,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = ImageOps.grayscale(img)
                         element.altered()
-                        yield _('Image Grayscale.')
+                        channel(_('Image Grayscale.'))
                 return
             elif args[0] == 'equalize':
                 from PIL import ImageOps
@@ -475,7 +475,7 @@ class ImageTools(Modifier):
                         img = element.image
                         element.image = ImageOps.equalize(img)
                         element.altered()
-                        yield _('Image Equalized.')
+                        channel(_('Image Equalized.'))
                 return
             elif args[0] == 'save':
                 for element in elements.elems(emphasized=True):
@@ -483,13 +483,13 @@ class ImageTools(Modifier):
                         try:
                             img = element.image
                             img.save(args[1])
-                            yield _('Saved: %s') % (args[1])
+                            channel(_('Saved: %s') % (args[1]))
                         except IndexError:
-                            yield _('No file given.')
+                            channel(_('No file given.'))
                         except OSError:
-                            yield _('File could not be written / created.')
+                            channel(_('File could not be written / created.'))
                         except ValueError:
-                            yield _('Could not determine expected format.')
+                            channel(_('Could not determine expected format.'))
 
                 return
             elif args[0] == 'flatrotary':
@@ -517,11 +517,11 @@ class ImageTools(Modifier):
                 #  https://stackoverflow.com/questions/10572274/halftone-images-in-python/10575940#10575940
                 pass
             else:
-                yield _('Image command unrecognized.')
+                channel(_('Image command unrecognized.'))
                 return
 
         @console_command(self.context, 'halftone', help='image halftone <diameter> <scale> <angle>')
-        def halftone(command, args=tuple(), **kwargs):
+        def halftone(command, channel, _, args=tuple(), **kwargs):
             '''
             Returns list of half-tone images for cmyk image. sample (pixels),
             determines the sample box size from the original image. The maximum

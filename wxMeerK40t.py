@@ -3129,35 +3129,35 @@ class wxMeerK40t(wx.App, Module):
             self.update_language(language)
 
         @console_command(context, 'window', help='wxMeerK40 window information')
-        def window(command, args=tuple(), **kwargs):
+        def window(command, channel, _, args=tuple(), **kwargs):
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
-                yield _('----------')
-                yield _('Windows Registered:')
+                channel(_('----------'))
+                channel(_('Windows Registered:'))
                 for i, name in enumerate(context.match('window')):
-                    yield '%d: %s' % (i + 1, name)
-                yield _('----------')
-                yield _('Loaded Windows in Context %s:') % str(context._path)
+                    channel('%d: %s' % (i + 1, name))
+                channel(_('----------'))
+                channel(_('Loaded Windows in Context %s:') % str(context._path))
                 for i, name in enumerate(context.opened):
                     if not name.startswith('window'):
                         continue
                     module = context.opened[name]
-                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
-                yield _('----------')
-                yield _('Loaded Windows in Device %s:') % str(context.active._path)
+                    channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
+                channel(_('----------'))
+                channel(_('Loaded Windows in Device %s:') % str(context.active._path))
                 for i, name in enumerate(context.active.opened):
                     if not name.startswith('window'):
                         continue
                     module = context.active.opened[name]
-                    yield _('%d: %s as type of %s') % (i + 1, name, type(module))
-                yield _('----------')
+                    channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
+                channel(_('----------'))
 
         @console_command(context, 'refresh', help='wxMeerK40 refresh')
-        def refresh(command, args=tuple(), **kwargs):
+        def refresh(command, channel, _, args=tuple(), **kwargs):
             context.signal('refresh_scene')
             context.signal('rebuild_tree')
-            yield _('Refreshed.')
+            channel(_('Refreshed.'))
             return
 
     def clear_control(self):

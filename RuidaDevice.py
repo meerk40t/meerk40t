@@ -42,29 +42,29 @@ class RuidaDevice:
         kernel.register('module/RuidaEmulator', RuidaEmulator)
 
         @console_command(kernel, 'ruidaserver', help='activate the ruidaserver.')
-        def ruidaserver(command, args=tuple(), **kwargs):
+        def ruidaserver(command, channel, _, args=tuple(), **kwargs):
             c = kernel.active
             _ = kernel.translation
             try:
                 c.open_as('module/UDPServer', 'ruidaserver', port=50200)
                 c.open_as('module/UDPServer', 'ruidajog', port=50207)
-                yield _('Ruida Data Server opened on port %d.') % 50200
-                yield _('Ruida Jog Server opened on port %d.') % 50207
+                channel(_('Ruida Data Server opened on port %d.') % 50200)
+                channel(_('Ruida Jog Server opened on port %d.') % 50207)
 
                 chan = 'ruida'
                 c.channel(chan).watch(kernel.channel('console'))
-                yield _('Watching Channel: %s') % chan
+                channel(_('Watching Channel: %s') % chan)
 
                 chan = 'server'
                 c.channel(chan).watch(kernel.channel('console'))
-                yield _('Watching Channel: %s') % chan
+                channel(_('Watching Channel: %s') % chan)
 
                 emulator = c.open('module/RuidaEmulator')
                 c.channel('ruidaserver/recv').watch(emulator.checksum_write)
                 c.channel('ruidajog/recv').watch(emulator.realtime_write)
                 c.channel('ruida_reply').watch(c.channel('ruidaserver/send'))
             except OSError:
-                yield _('Server failed.')
+                channel(_('Server failed.'))
             return
 
     def initialize(self, context, channel=None):
