@@ -14,6 +14,7 @@ from Alignment import Alignment
 from BufferView import BufferView
 from CameraInteface import CameraInterface
 from Controller import Controller
+from CutPlanner import CutPlanner
 from DeviceManager import DeviceManager
 from ImageProperty import ImageProperty
 from JobPreview import JobPreview
@@ -37,7 +38,6 @@ from Widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget
     LaserPathWidget, RectSelectWidget
 from icons import *
 from svgelements import *
-from CutPlanner import CutPlanner
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
@@ -162,6 +162,7 @@ def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
+
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -639,7 +640,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Controller', self),
                   id=ID_MENU_CONTROLLER)
         self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/UsbConnect', self), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/JobSpooler', self), id=ID_MENU_SPOOLER)
+        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/JobSpooler', self),
+                  id=ID_MENU_SPOOLER)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)
 
@@ -1326,14 +1328,14 @@ class MeerK40t(wx.Frame, Module, Job):
             h = float(self.text_h.GetValue())
             self.ribbon_position_w = w
             self.ribbon_position_h = h
-        self.context.open('module').write('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
-                                                                            self.ribbon_position_name,
-                                                                            self.ribbon_position_y,
-                                                                            self.ribbon_position_name,
-                                                                            self.ribbon_position_w,
-                                                                            self.ribbon_position_name,
-                                                                            self.ribbon_position_h,
-                                                                            self.ribbon_position_name))
+        self.context.console('resize %f%s %f%s %f%s %f%s\n' % (self.ribbon_position_x,
+                                                               self.ribbon_position_name,
+                                                               self.ribbon_position_y,
+                                                               self.ribbon_position_name,
+                                                               self.ribbon_position_w,
+                                                               self.ribbon_position_name,
+                                                               self.ribbon_position_h,
+                                                               self.ribbon_position_name))
         self.update_ribbon_position()
 
     def on_text_pos_enter(self, event):
@@ -1651,8 +1653,8 @@ class MeerK40t(wx.Frame, Module, Job):
                     for k in range(9):
                         kx, ky = pos(k)
                         yield COMMAND_MOVE, 3000, 3000
-                        yield COMMAND_MOVE, 3000+jx, 3000+jy
-                        yield command, 3000+jx+kx, 3000+jy+ky
+                        yield COMMAND_MOVE, 3000 + jx, 3000 + jy
+                        yield command, 3000 + jx + kx, 3000 + jy + ky
                 yield COMMAND_MOVE, 3000, 3000
                 yield COMMAND_MODE_RAPID
                 yield COMMAND_WAIT_FINISH
@@ -1660,6 +1662,7 @@ class MeerK40t(wx.Frame, Module, Job):
                 yield COMMAND_WAIT, 0.05
                 yield COMMAND_LASER_OFF
                 yield COMMAND_WAIT_FINISH
+
         self.context.spooler.job(jog_transition_test)
 
     def run_home_and_dot_test(self):
@@ -2367,7 +2370,8 @@ class RootNode(list):
                      special_op_menu.Append(wx.ID_ANY, _("Add Home"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(CommandOperation("Beep", COMMAND_BEEP)),
                      special_op_menu.Append(wx.ID_ANY, _("Add Beep"), "", wx.ITEM_NORMAL))
-            gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(CommandOperation("Origin", COMMAND_MOVE, 0, 0)),
+            gui.Bind(wx.EVT_MENU,
+                     lambda e: self.context.elements.add_op(CommandOperation("Origin", COMMAND_MOVE, 0, 0)),
                      special_op_menu.Append(wx.ID_ANY, _("Add Move Origin"), "", wx.ITEM_NORMAL))
             gui.Bind(wx.EVT_MENU, lambda e: self.context.elements.add_op(
                 CommandOperation("Interrupt", COMMAND_FUNCTION, self.context.console_function("interrupt\n"))),
