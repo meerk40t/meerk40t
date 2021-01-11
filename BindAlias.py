@@ -19,10 +19,11 @@ class BindAlias(Modifier):
         self.context.default_alias = self.default_alias
 
         @console_command(self.context, 'bind', help='bind <key> <console command>')
-        def bind(command, *args, **kwargs):
+        def bind(command, **kwargs):
             """
             Binds a key to a given keyboard keystroke.
             """
+            args = kwargs.get('args', tuple())
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
@@ -65,7 +66,7 @@ class BindAlias(Modifier):
             return
 
         @console_command(self.context, 'alias', help='alias <alias> <console commands[;console command]*>')
-        def alias(command, *args, **kwargs):
+        def alias(command, args=tuple(), **kwargs):
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
@@ -86,7 +87,7 @@ class BindAlias(Modifier):
             return
 
         @console_command(self.context, '.*', regex=True, hidden=True)
-        def alias_execute(command, *args, **kwargs):
+        def alias_execute(command, args=tuple(), **kwargs):
             context = self.context
             if command in self.alias:
                 aliased_command = self.alias[command]
@@ -96,7 +97,7 @@ class BindAlias(Modifier):
                 raise ValueError  # This is not an alias.
 
         @console_command(self.context, 'consoleserver', help='starts a console_server on port 23 (telnet)')
-        def server_console(command, *args, **kwargs):
+        def server_console(command, args=tuple(), **kwargs):
             _ = self.context._kernel.translation
             port = 23
             try:

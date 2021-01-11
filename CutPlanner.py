@@ -56,7 +56,7 @@ class Planner(Modifier):
         # REQUIRES CUTPLANNER
 
         @console_command(self.context, 'optimize', help='optimize <type>')
-        def optimize(command, *args, **kwargs):
+        def optimize(command, args=tuple(), **kwargs):
             if not elements.has_emphasis():
                 yield _('No selected elements.')
                 return
@@ -92,7 +92,7 @@ class Planner(Modifier):
         # REQUIRES CUTPLANNER
 
         @console_command(self.context, 'embroider', help='embroider <angle> <distance>')
-        def embroider(command, *args, **kwargs):
+        def embroider(command, args=tuple(), **kwargs):
             yield _('Embroidery Filling')
             if len(args) >= 1:
                 angle = Angle.parse(args[0])
@@ -116,7 +116,7 @@ class Planner(Modifier):
                 element.altered()
 
         @console_command(self.context, 'plan.*', help='plan<?> <command>', regex=True)
-        def plan(command, *args, **kwargs):
+        def plan(command, args=tuple(), **kwargs):
             if len(args) == 0:
                 yield _('----------')
                 yield _('Plan:')

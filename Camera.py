@@ -36,7 +36,8 @@ class CameraHub(Modifier):
         _ = kernel.translation
 
         @console_command(kernel, 'camera.*', regex=True, help="camera commands and modifiers.")
-        def camera(command, *args, **kwargs):
+        def camera(command, args=tuple(), **kwargs):
+            args = kwargs.get('args', tuple())
             if len(command) > 6:
                 self.current_camera = command[6:]
                 self.context.signal('current_camera', self.current_camera)

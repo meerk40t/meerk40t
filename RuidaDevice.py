@@ -42,7 +42,7 @@ class RuidaDevice:
         kernel.register('module/RuidaEmulator', RuidaEmulator)
 
         @console_command(kernel, 'ruidaserver', help='activate the ruidaserver.')
-        def ruidaserver(command, *args, **kwargs):
+        def ruidaserver(command, args=tuple(), **kwargs):
             c = kernel.active
             _ = kernel.translation
             try:

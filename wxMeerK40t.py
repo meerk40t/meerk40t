@@ -3129,7 +3129,7 @@ class wxMeerK40t(wx.App, Module):
             self.update_language(language)
 
         @console_command(context, 'window', help='wxMeerK40 window information')
-        def window(command, *args, **kwargs):
+        def window(command, args=tuple(), **kwargs):
             context = self.context
             _ = self.context._kernel.translation
             if len(args) == 0:
@@ -3154,7 +3154,7 @@ class wxMeerK40t(wx.App, Module):
                 yield _('----------')
 
         @console_command(context, 'refresh', help='wxMeerK40 refresh')
-        def refresh(command, *args, **kwargs):
+        def refresh(command, args=tuple(), **kwargs):
             context.signal('refresh_scene')
             context.signal('rebuild_tree')
             yield _('Refreshed.')

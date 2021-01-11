@@ -40,7 +40,7 @@ class GrblDevice:
         kernel.register('module/GRBLEmulator', GRBLEmulator)
 
         @console_command(kernel, 'grblserver', help='activate the grblserver.')
-        def grblserver(command, *args, **kwargs):
+        def grblserver(command, args=tuple(), **kwargs):
             active_context = kernel.active
             _ = kernel.translation
             port = 23
