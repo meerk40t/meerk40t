@@ -149,9 +149,6 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, da
 
         @functools.wraps(func)
         def inner(command, remainder, channel, **ik):
-            if remainder is None or len(remainder) == 0:
-                value = func(command, remainder=remainder, channel=channel, **ik)
-                return value, remainder
             options = inner.options
             arguments = inner.arguments
             stack = list()
@@ -1846,7 +1843,7 @@ class Kernel:
             remainder = command[pos + 1:]
             command = command[0:pos]
         else:
-            remainder = None
+            remainder = ''
 
         # Set context based on command path. # TODO: This might need deprecating.
         _ = self.translation
