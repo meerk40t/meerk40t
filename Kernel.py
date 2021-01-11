@@ -155,7 +155,7 @@ def console_command(context, path=None, regex=False, hidden=False, help=None):
                     if option is not None:
                         pargs, pkwargs = option
                         option = None
-                        if 'type' in pkwargs:
+                        if 'type' in pkwargs and v is not None:
                             v = pkwargs['type'](v)
                         kwargs[pargs[0]] = v
                     else:
@@ -166,9 +166,11 @@ def console_command(context, path=None, regex=False, hidden=False, help=None):
                     v = args[i]
                 except IndexError:
                     v = pkwargs.get('default')
-                if 'type' in pkwargs:
+                if 'type' in pkwargs and v is not None:
                     v = pkwargs['type'](v)
                 kwargs[pargs[0]] = v
+            if len(args) > len(arguments):
+                kwargs['args'] = args[len(arguments):]
             value = func(command, **kwargs)
             return value
 
@@ -178,7 +180,7 @@ def console_command(context, path=None, regex=False, hidden=False, help=None):
         except AttributeError:
             kernel = context
             subpath = ''
-        cmd = 'command_re' if regex else 'command'
+        cmd = 'command'
         cmd_path = "%s/%s" % (subpath, cmd)
         while cmd_path.startswith('/'):
             cmd_path = cmd_path[1:]
@@ -191,6 +193,7 @@ def console_command(context, path=None, regex=False, hidden=False, help=None):
             kernel.register(p, inner)
         inner.long_help = func.__doc__
         inner.help = help
+        inner.regex = regex
         inner.hidden = hidden
         inner.arguments = list()
         inner.options = list()
@@ -1781,13 +1784,15 @@ class Kernel:
 
     def _console_parse(self, command):
         """
-        Console parse takes single line console commands. These are checked
-        for the . silence syntax and are
+        Console parse takes single line console commands.
         """
+        # Silence Echo.
         if command.startswith('.'):
             command = command[1:]
         else:
             yield command
+
+        # Divide command from remainder.
         pos = command.find(' ')
         if pos != -1:
             remainder = command[pos + 1:]
@@ -1795,8 +1800,8 @@ class Kernel:
         else:
             remainder = None
 
+        # Set context based on command path. # TODO: This might need deprecating.
         _ = self.translation
-
         command = command.lower()
         if '/' in command:
             path = command.split('/')
@@ -1806,50 +1811,33 @@ class Kernel:
             self.active = self.get_context(p)
             command = path[-1]
 
-        active_context = self.active
-
-        if active_context is not None:
-            for command_name in self.match('%s/command/%s' % (active_context._path, command.replace('+', '\+'))):
-                command = self.registered[command_name]
-                try:
-                    for line in command(command_name, remainder):
-                        yield line
-                except TypeError:
-                    pass  # Command match is non-generating.
-                return  # Command matched context command.
-            for command_re in self.match('%s/command_re/.*' % active_context._path):
-                cmd_re = command_re.split('/')[-1]
-                match = re.compile(cmd_re)
-                if match.match(command):
-                    command_funct = self.registered[command_re]
-                    try:
-                        for line in command_funct(command, remainder):
-                            yield line
-                    except TypeError:
-                        pass  # Command match is non-generating.
-                    except ValueError:
-                        continue  # command match rejected.
-                    return  # Command matched context command_re
-        for command_re in self.match('command_re/.*'):
-            cmd_re = command_re.split('/')[-1]
-            match = re.compile(cmd_re)
-            if match.match(command):
-                command_funct = self.registered[command_re]
+        # Process all commands in the active_context
+        paths = ['command/%s' % command]
+        if self.active is not None:
+            paths.insert(0, '%s/command/.*' % self.active._path)
+        for match_text in paths:
+            # Process command matches.
+            for command_name in self.match(match_text):
+                # TODO: Make sure +right works correctly.
+                command_funct = self.registered[command_name]
+                cmd_re = command_name.split('/')[-1]
+                if command_funct.regex:
+                    match = re.compile(cmd_re)
+                    if not match.match(command):
+                        continue
+                else:
+                    if cmd_re != command:
+                        continue
                 try:
                     for line in command_funct(command, remainder):
                         yield line
+                except SyntaxError:
+                    yield _("Syntax Error: %s") % command_funct.help
                 except TypeError:
                     pass  # Command match is non-generating.
                 except ValueError:
-                    continue  # If the command_re raised a value error it rejected the match.
-                return  # Context matched global command_re.
-        try:  # Command matches global command.
-            for line in self.registered['command/%s' % command](command, remainder):
-                yield line
-        except KeyError:
-            yield _('Error. Command Unrecognized: %s') % command
-        except TypeError:
-            pass  # Command match is non-generating.
+                    continue  # command match rejected.
+                return
 
 
 class Channel:

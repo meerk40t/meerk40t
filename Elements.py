@@ -173,9 +173,10 @@ class Elemental(Modifier):
         @console_argument('ry_pos', type=Length)
         @console_command(self.context, 'ellipse', help='ellipse <cx> <cy> <rx> <ry>')
         def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, **kwargs):
-            # if len(args) < 4:
-            #     yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
-            #     return
+            if ry_pos is None:
+                raise SyntaxError
+                # yield _('Too few arguments (needs center_x, center_y, radius_x, radius_y)')
+                # return
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
             ellip.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
             ellip = Path(ellip)
@@ -186,10 +187,10 @@ class Elemental(Modifier):
         @console_argument('y_pos', type=Length)
         @console_argument('width', type=Length)
         @console_argument('height', type=Length)
-        @console_option('ry', type=Length)
-        @console_option('rx', type=Length)
+        @console_argument('ry', type=Length)
+        @console_argument('rx', type=Length)
         @console_command(self.context, 'rect', help='adds rectangle to scene')
-        def rect(command, x_pos, y_pos, width, height, rx=None, ry=None):
+        def rect(command, x_pos, y_pos, width, height, rx=None, ry=None, **kwargs):
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             rect.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
             rect = Path(rect)
