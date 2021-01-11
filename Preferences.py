@@ -136,6 +136,7 @@ class Preferences(wx.Frame, Module):
 
     def finalize(self, channel=None):
         self.SetFocus()
+        self.checkbox_swap_xy.SetFocus()
         try:
             self.Close()
         except RuntimeError:
