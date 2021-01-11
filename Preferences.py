@@ -135,18 +135,7 @@ class Preferences(wx.Frame, Module):
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def finalize(self, channel=None):
-        self.device.home_adjust_x = int(self.spin_home_x.GetValue())
-        self.device.home_adjust_y = int(self.spin_home_y.GetValue())
-        bed_height = int(self.spin_bedheight.GetValue())
-        bed_width = int(self.spin_bedwidth.GetValue())
-        if self.device.bed_width != bed_width or self.device.bed_height != bed_height:
-            self.device.bed_width = bed_width
-            self.device.bed_height = bed_height
-            self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
-        self.device.usb_index = int(self.spin_device_index.GetValue())
-        self.device.usb_address = int(self.spin_device_address.GetValue())
-        self.device.usb_bus = int(self.spin_device_bus.GetValue())
-        self.device.usb_version = int(self.spin_device_version.GetValue())
+        self.SetFocus()
         try:
             self.Close()
         except RuntimeError:
