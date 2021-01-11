@@ -77,6 +77,8 @@ class RotarySettings(wx.Frame, Module):
         self.on_check_rotary(None)
 
     def finalize(self, channel=None):
+        self.device.scale_x = self.spin_rotary_scalex.GetValue()
+        self.device.scale_y = self.spin_rotary_scaley.GetValue()
         try:
             self.Close()
         except RuntimeError:
@@ -179,10 +181,14 @@ class RotarySettings(wx.Frame, Module):
         event.Skip()
 
     def on_spin_rotary_roller_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
+        if self.device is None:
+            return
         print("Event handler 'on_spin_rotary_roller_circumference' not implemented!")
         event.Skip()
 
     def on_spin_rotary_object_circumference(self, event):  # wxGlade: RotarySettings.<event_handler>
+        if self.device is None:
+            return
         print("Event handler 'on_spin_rotary_object_circumference' not implemented!")
         event.Skip()
 

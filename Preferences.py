@@ -135,6 +135,18 @@ class Preferences(wx.Frame, Module):
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def finalize(self, channel=None):
+        self.device.home_adjust_x = int(self.spin_home_x.GetValue())
+        self.device.home_adjust_y = int(self.spin_home_y.GetValue())
+        bed_height = int(self.spin_bedheight.GetValue())
+        bed_width = int(self.spin_bedwidth.GetValue())
+        if self.device.bed_width != bed_width or self.device.bed_height != bed_height:
+            self.device.bed_width = bed_width
+            self.device.bed_height = bed_height
+            self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
+        self.device.usb_index = int(self.spin_device_index.GetValue())
+        self.device.usb_address = int(self.spin_device_address.GetValue())
+        self.device.usb_bus = int(self.spin_device_bus.GetValue())
+        self.device.usb_version = int(self.spin_device_version.GetValue())
         try:
             self.Close()
         except RuntimeError:
@@ -288,9 +300,13 @@ class Preferences(wx.Frame, Module):
         self.device.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def spin_on_home_x(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.home_adjust_x = int(self.spin_home_x.GetValue())
 
     def spin_on_home_y(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.home_adjust_y = int(self.spin_home_y.GetValue())
 
     def on_button_set_home_current(self, event):  # wxGlade: Preferences.<event_handler>
@@ -303,11 +319,15 @@ class Preferences(wx.Frame, Module):
         self.spin_home_y.SetValue(self.device.home_adjust_y)
 
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.bed_width = int(self.spin_bedwidth.GetValue())
         self.device.bed_height = int(self.spin_bedheight.GetValue())
         self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.bed_width = int(self.spin_bedwidth.GetValue())
         self.device.bed_height = int(self.spin_bedheight.GetValue())
         self.device.signal('bed_size', (self.device.bed_width, self.device.bed_height))
@@ -322,15 +342,23 @@ class Preferences(wx.Frame, Module):
         self.device.autobeep = self.checkbox_autobeep.GetValue()
 
     def spin_on_device_index(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.usb_index = int(self.spin_device_index.GetValue())
 
     def spin_on_device_address(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.usb_address = int(self.spin_device_address.GetValue())
 
     def spin_on_device_bus(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.usb_bus = int(self.spin_device_bus.GetValue())
 
     def spin_on_device_version(self, event):  # wxGlade: Preferences.<event_handler>
+        if self.device is None:
+            return
         self.device.usb_version = int(self.spin_device_version.GetValue())
 
     def on_checkbox_mock_usb(self, event):  # wxGlade: Preferences.<event_handler>
