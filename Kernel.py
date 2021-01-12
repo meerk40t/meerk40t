@@ -1826,65 +1826,72 @@ class Kernel:
     def _console_interface(self, command):
         pass
 
-    def _console_parse(self, command, channel=None):
+    def _console_parse(self, text, channel=None):
         """
         Console parse takes single line console commands.
         """
-        # TODO: Make this a for loop to parse all remaining text as additional commands.
         # Silence Echo.
-        if command.startswith('.'):
-            command = command[1:]
+        if text.startswith('.'):
+            text = text[1:]
         else:
-            channel(command)
-
-        # Divide command from remainder.
-        pos = command.find(' ')
-        if pos != -1:
-            remainder = command[pos + 1:]
-            command = command[0:pos]
-        else:
-            remainder = ''
-
-        # Set context based on command path. # TODO: This might need deprecating.
-        _ = self.translation
-        command = command.lower()
-        if '/' in command:
-            path = command.split('/')
-            p = '/'.join(path[:-1])
-            if len(p) == 0:
-                p = '/'
-            self.active = self.get_context(p)
-            command = path[-1]
+            channel(text)
 
         data = None  # Initial data is null
 
-        # Process all commands in the active_context
-        paths = ['command/%s' % command.replace('+', '\+')]
-        if self.active is not None:
-            paths.insert(0, '%s/command/.*' % self.active._path)
-        for match_text in paths:
-            # Process command matches.
-            for command_name in self.match(match_text):
-                # TODO: Make sure +right works correctly. it doesn't
-                command_funct = self.registered[command_name]
-                cmd_re = command_name.split('/')[-1]
-                if type(data) != command_funct.data_type:
-                    continue  # We much match the input type.
-                if command_funct.regex:
-                    match = re.compile(cmd_re)
-                    if not match.match(command):
-                        continue
-                else:
-                    if cmd_re != command:
-                        continue
-                try:
-                    data, remainder = command_funct(command, remainder, channel, data=data, _=_)
-                except SyntaxError:
-                    channel(_("Syntax Error: %s") % command_funct.help)
-                except ValueError:
-                    continue  # command match rejected.
-                return
+        while len(text) > 0:
+            # Divide command from remainder.
+            pos = text.find(' ')
+            if pos != -1:
+                remainder = text[pos + 1:]
+                command = text[0:pos]
+            else:
+                remainder = ''
+                command = text
 
+            # Set context based on command path. # TODO: This might need deprecating.
+            _ = self.translation
+            command = command.lower()
+            if '/' in command:
+                path = command.split('/')
+                p = '/'.join(path[:-1])
+                if len(p) == 0:
+                    p = '/'
+                self.active = self.get_context(p)
+                command = path[-1]
+
+            # Process all commands in the active_context
+            paths = ['command/%s' % command.replace('+', '\+')]
+            if self.active is not None:
+                paths.insert(0, '%s/command/.*' % self.active._path)
+            found = False
+            for match_text in paths:
+                # Process command matches.
+                for command_name in self.match(match_text):
+                    # TODO: Make sure +right works correctly. it doesn't
+                    command_funct = self.registered[command_name]
+                    cmd_re = command_name.split('/')[-1]
+                    if type(data) != command_funct.data_type:
+                        continue  # We much match the input type.
+                    if command_funct.regex:
+                        match = re.compile(cmd_re)
+                        if not match.match(command):
+                            continue
+                    else:
+                        if cmd_re != command:
+                            continue
+                    try:
+                        data, remainder = command_funct(command, remainder, channel, data=data, _=_)
+                    except SyntaxError:
+                        channel(_("Syntax Error: %s") % command_funct.help)
+                    except ValueError:
+                        continue  # command match rejected.
+                    found = True
+                    break
+                if found:
+                    break
+
+            text = remainder
+        return data
 
 class Channel:
     def __init__(self, name, buffer_size=0, line_end=None):

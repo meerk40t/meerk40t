@@ -228,8 +228,11 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @console_command(self.context, 'stroke', help='stroke <svg color>')
-        def stroke(command, channel, _, args=tuple(), **kwargs):
+        @console_command(self.context, 'stroke', help='stroke <svg color>', data_type=Path)
+        def stroke(command, channel, _, args=tuple(), data=None, **kwargs):
+            if data is not None:
+                data.stroke = Color(args[0])
+                return
             if len(args) == 0:
                 channel(_('----------'))
                 channel(_('Stroke Values:'))
