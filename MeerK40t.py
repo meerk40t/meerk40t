@@ -65,7 +65,7 @@ parser.add_argument('-S', '--speed', type=float, help='set the speed of all oper
 
 argv = sys.argv[1:]
 # argv = '-zmve "channel open send" -e home'.split()
-argv = ('-e', 'channel open 1/pipe/usb', '-e', 'rect 0 0 1in 1in')
+# argv = ('-e', 'channel open 1/pipe/usb', '-e', 'rect 0 0 1in 1in')
 args = parser.parse_args(argv)
 
 if args.version:
