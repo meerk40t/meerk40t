@@ -1860,9 +1860,11 @@ class Kernel:
                 command = path[-1]
 
             # Process all commands in the active_context
-            paths = ['command/%s' % command.replace('+', '\+')]
+            # paths = ['command/%s' % command.replace(r'+', r'\+')]
+            paths = ['command/.*']
             if self.active is not None:
                 paths.insert(0, '%s/command/.*' % self.active._path)
+
             found = False
             for match_text in paths:
                 # Process command matches.
