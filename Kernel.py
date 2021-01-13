@@ -1,4 +1,5 @@
 import re
+import threading
 import time
 import functools
 from threading import Thread, Lock
@@ -388,7 +389,7 @@ class Context:
 
     @property
     def active(self):
-        return self._kernel.active
+        return self._kernel.active_device
 
     @property
     def contexts(self):
@@ -652,7 +653,8 @@ class Kernel:
 
     def __init__(self, config=None):
         self.devices = {}
-        self.active = None
+        self.active_device = None
+        self.last_path = None
 
         self.contexts = {}
         self.threads = {}
@@ -754,7 +756,8 @@ class Kernel:
 
             return wrapper_debug
 
-        attach_list = [modules for modules, module_name in self.opened.items()]
+        context = self.get_context('/')
+        attach_list = [modules for modules, module_name in context.opened.items()]
         attach_list.append(self)
         for obj in attach_list:
             for attr in dir(obj):
@@ -777,13 +780,14 @@ class Kernel:
         self.command_boot()
         self.thread = self.threaded(self.run, 'Scheduler')
         self.signal_job = self.add_job(run=self.delegate_messages, name='kernel.signals', interval=0.005)
+        self.register("control/Debug Device", self._start_debugging)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             try:
                 context.boot()
             except AttributeError:
                 pass
-        self.set_active(None)
+        self.set_active_device(None)
         for device in self.derivable('/'):
             try:
                 d = int(device)
@@ -816,7 +820,7 @@ class Kernel:
 
         self.state = STATE_END  # Terminates the Scheduler.
 
-        self.set_active(None)  # Change active device to None
+        self.set_active_device(None)  # Change active device to None
         self.process_queue()  # Notify listeners of state.
 
         # Close Modules
@@ -887,7 +891,8 @@ class Kernel:
         self.last_message = {}
         self.listeners = {}
         self.state = STATE_TERMINATE
-        self.thread.join()
+        if self.thread != threading.current_thread(): # Join if not this thread.
+            self.thread.join()
         channel(_("Shutdown."))
 
     # Device Lifecycle
@@ -916,7 +921,7 @@ class Kernel:
             except AttributeError:
                 pass
             self.devices[device_str] = boot_device
-            self.set_active(boot_device)
+            self.set_active_device(boot_device)
 
     # Registration
 
@@ -1118,17 +1123,17 @@ class Kernel:
         thread.start()
         return thread
 
-    def set_active(self, active):
+    def set_active_device(self, active_device):
         """
         Changes the active context.
 
         :param active:
         :return:
         """
-        old_active = self.active
-        self.active = active
-        if self.active is not old_active:
-            self.signal('active', old_active, self.active)
+        old_active = self.active_device
+        self.active_device = active_device
+        if self.active_device is not old_active:
+            self.signal('active', old_active, self.active_device)
 
     def get_text_thread_state(self, state):
         _ = self.translation
@@ -1350,8 +1355,8 @@ class Kernel:
         def help(command, channel, _, args=tuple(), **kwargs):
             if len(args) >= 1:
                 extended_help = args[0]
-                if self.active is not None:
-                    for command_name in self.match('%s/command/%s' % (self.active._path, extended_help)):
+                if self.active_device is not None:
+                    for command_name in self.match('%s/command/%s' % (self.active_device._path, extended_help)):
                         command_func = self.registered[command_name]
                         channel(command_func.long_help)
                         return
@@ -1362,9 +1367,9 @@ class Kernel:
                 channel(_("No extended help for: %s") % extended_help)
                 return
 
-            if self.active is not None:
-                channel("--- %s Commands ---" % str(self.active))
-                for command_name in self.match('%s/command/.*' % (self.active._path)):
+            if self.active_device is not None:
+                channel("--- %s Commands ---" % str(self.active_device))
+                for command_name in self.match('%s/command/.*' % (self.active_device._path)):
                     command_func = self.registered[command_name]
                     help = command_func.help
                     if command_func.hidden:
@@ -1373,7 +1378,7 @@ class Kernel:
                         channel('%s %s' % (command_name.split('/')[-1].ljust(15), help))
                     else:
                         channel(command_name.split('/')[-1])
-                for command_re in self.match('%s/command_re/.*' % self.active._path):
+                for command_re in self.match('%s/command_re/.*' % self.active_device._path):
                     command_func = self.registered[command_re]
                     help = command_func.help
                     if command_func.hidden:
@@ -1495,20 +1500,20 @@ class Kernel:
 
         @console_command(self, 'context', help="context")
         def context(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
+            active_device = self.active_device
             if len(args) == 0:
-                if active_context is not None:
-                    channel("Active Context: %s" % str(active_context))
+                if active_device is not None:
+                    channel(_("Active Device: %s") % str(active_device))
                 for context_name in self.contexts:
                     yield context_name
             return
 
         @console_command(self, 'set', help="set [<key> <value>]")
         def set(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
+            last_path = self.last_path
             if len(args) == 0:
-                for attr in dir(active_context):
-                    v = getattr(active_context, attr)
+                for attr in dir(last_path):
+                    v = getattr(last_path, attr)
                     if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
                         continue
                     channel('"%s" := %s' % (attr, str(v)))
@@ -1517,19 +1522,19 @@ class Kernel:
                 attr = args[0]
                 value = args[1]
                 try:
-                    if hasattr(active_context, attr):
-                        v = getattr(active_context, attr)
+                    if hasattr(last_path, attr):
+                        v = getattr(last_path, attr)
                         if isinstance(v, bool):
                             if value == 'False' or value == 'false' or value == 0:
-                                setattr(active_context, attr, False)
+                                setattr(last_path, attr, False)
                             else:
-                                setattr(active_context, attr, True)
+                                setattr(last_path, attr, True)
                         elif isinstance(v, int):
-                            setattr(active_context, attr, int(value))
+                            setattr(last_path, attr, int(value))
                         elif isinstance(v, float):
-                            setattr(active_context, attr, float(value))
+                            setattr(last_path, attr, float(value))
                         elif isinstance(v, str):
-                            setattr(active_context, attr, str(value))
+                            setattr(last_path, attr, str(value))
                 except RuntimeError:
                     channel(_('Attempt failed. Produced a runtime error.'))
                 except ValueError:
@@ -1538,19 +1543,19 @@ class Kernel:
 
         @console_command(self, 'control', help="control [<executive>]")
         def control(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
+            active_device = self.active_device
             if len(args) == 0:
-                for control_name in active_context.match('control'):
+                for control_name in active_device.match('control'):
                     channel(control_name)
-                for control_name in active_context.match('\d+/control'):
+                for control_name in active_device.match('\d+/control'):
                     channel(control_name)
             else:
                 control_name = ' '.join(args)
-                controls = list(active_context.match('%s/control/.*' % active_context._path, True))
-                if active_context is not None and control_name in controls:
-                    active_context.execute(control_name)
+                controls = list(active_device.match('%s/control/.*' % active_device._path, True))
+                if active_device is not None and control_name in controls:
+                    active_device.execute(control_name)
                     channel(_("Executed '%s'") % control_name)
-                elif control_name in list(active_context.match('control/.*', True)):
+                elif control_name in list(active_device.match('control/.*', True)):
                     self.get_context('/').execute(control_name)
                     channel(_("Executed '%s'") % control_name)
                 else:
@@ -1559,7 +1564,7 @@ class Kernel:
 
         @console_command(self, 'module', help="module [(open|close) <module_name>]")
         def module(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
+            active_device = self.active_device
             if len(args) == 0:
                 channel(_('----------'))
                 channel(_('Modules Registered:'))
@@ -1584,36 +1589,36 @@ class Kernel:
                         name = args[2]
                     if index in self.registered:
                         if name is not None:
-                            active_context.open_as(index, name)
+                            active_device.open_as(index, name)
                         else:
-                            active_context.open(index)
+                            active_device.open(index)
                     else:
                         channel(_("Module '%s' not found.") % index)
                 elif value == 'close':
                     index = args[1]
-                    if index in active_context.opened:
-                        active_context.close(index)
+                    if index in active_device.opened:
+                        active_device.close(index)
                     else:
                         channel(_("Module '%s' not found.") % index)
             return
 
         @console_command(self, 'modifier', help="modifier [(open|close) <module_name>]")
         def modifier(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
+            active_device = self.active_device
             if len(args) == 0:
                 channel(_('----------'))
                 channel(_('Modifiers Registered:'))
                 for i, name in enumerate(self.match('modifier')):
                     channel('%d: %s' % (i + 1, name))
                 channel(_('----------'))
-                channel(_('Loaded Modifiers in Context %s:') % str(active_context._path))
-                for i, name in enumerate(active_context.attached):
-                    modifier = active_context.attached[name]
+                channel(_('Loaded Modifiers in Context %s:') % str(active_device._path))
+                for i, name in enumerate(active_device.attached):
+                    modifier = active_device.attached[name]
                     channel(_('%d: %s as type of %s') % (i + 1, name, type(modifier)))
                 channel(_('----------'))
-                channel(_('Loaded Modifiers in Device %s:') % str(active_context._path))
-                for i, name in enumerate(active_context.attached):
-                    modifier = active_context.attached[name]
+                channel(_('Loaded Modifiers in Device %s:') % str(active_device._path))
+                for i, name in enumerate(active_device.attached):
+                    modifier = active_device.attached[name]
                     channel(_('%d: %s as type of %s') % (i + 1, name, type(modifier)))
                 channel(_('----------'))
             else:
@@ -1621,13 +1626,13 @@ class Kernel:
                 if value == 'open':
                     index = args[1]
                     if index in self.registered:
-                        active_context.activate(index)
+                        active_device.activate(index)
                     else:
                         channel(_("Modifier '%s' not found.") % index)
                 elif value == 'close':
                     index = args[1]
-                    if index in active_context.attached:
-                        active_context.deactivate(index)
+                    if index in active_device.attached:
+                        active_device.deactivate(index)
                     else:
                         channel(_("Modifier '%s' not found.") % index)
             return
@@ -1655,13 +1660,12 @@ class Kernel:
 
         @console_command(self, 'channel', help="channel [(open|close|save) <channel_name>]")
         def channel(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
             if len(args) == 0:
                 channel(_('----------'))
                 channel(_('Channels Active:'))
                 for i, name in enumerate(self.channels):
-                    channel = self.channels[name]
-                    if self._console_channel in channel.watchers:
+                    chan = self.channels[name]
+                    if self._console_channel in chan.watchers:
                         is_watched = '* '
                     else:
                         is_watched = ''
@@ -1673,11 +1677,11 @@ class Kernel:
                     if chan == 'console':
                         channel(_('Infinite Loop Error.'))
                     else:
-                        active_context.channel(chan).watch(self._console_channel)
+                        self.channel(chan).watch(self._console_channel)
                         channel(_('Watching Channel: %s') % chan)
                 elif value == 'close':
                     try:
-                        active_context.channel(chan).unwatch(self._console_channel)
+                        self.channel(chan).unwatch(self._console_channel)
                         channel(_('No Longer Watching Channel: %s') % chan)
                     except KeyError:
                         channel(_('Channel %s is not opened.') % chan)
@@ -1688,12 +1692,12 @@ class Kernel:
                         channel(_('Opening file: %s') % filename)
                         self.console_channel_file = open(filename, "a")
                     channel(_('Recording Channel: %s') % chan)
-                    active_context.channel(chan).watch(self._console_file_write)
+                    self.channel(chan).watch(self._console_file_write)
             return
 
         @console_command(self, 'device', help="device [<value>]")
         def device(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
+            active_device = self.active_device
             if len(args) == 0:
                 channel(_('----------'))
                 channel(_('Backends permitted:'))
@@ -1702,13 +1706,13 @@ class Kernel:
                 channel(_('----------'))
                 channel(_('Existing Device:'))
 
-                for device in list(active_context.derivable()):
+                for device in list(active_device.derivable()):
                     try:
                         d = int(device)
                     except ValueError:
                         continue
                     try:
-                        settings = active_context.derive(device)
+                        settings = active_device.derive(device)
                         device_name = settings.setting(str, 'device_name', 'Lhystudios')
                         autoboot = settings.setting(bool, 'autoboot', True)
                         channel(_('Device %d. "%s" -- Boots: %s') % (d, device_name, autoboot))
@@ -1719,12 +1723,12 @@ class Kernel:
                 channel(_('----------'))
                 channel(_('Devices Instances:'))
                 try:
-                    device_name = active_context.device_name
+                    device_name = active_device.device_name
                 except AttributeError:
                     device_name = "Unknown"
 
                 try:
-                    device_location = active_context.device_location
+                    device_location = active_device.device_location
                 except AttributeError:
                     device_location = "Unknown"
                 for i, name in enumerate(self.devices):
@@ -1748,17 +1752,18 @@ class Kernel:
                     value = None
                 for i, name in enumerate(self.devices):
                     if i + 1 == value:
-                        self.active = self.devices[name]
-                        active_context.setting(str, 'device_location', 'Unknown')
+                        active_device = self.devices[name]
+                        self.active_device = active_device
+                        active_device.setting(str, 'device_location', 'Unknown')
                         channel(_('Device set: %s on %s') %
-                              (active_context.device_name, active_context.device_location))
+                              (active_device.device_name, active_device.device_location))
                         break
             return
 
         @console_command(self, 'flush', help="flush")
         def flush(command, channel, _, args=tuple(), **kwargs):
-            active_context = self.active
-            active_context.flush()
+            last_path = self.last_path
+            last_path.flush()
             channel(_('Persistent settings force saved.'))
 
         @console_command(self, 'shutdown', help="shutdown")
@@ -1856,20 +1861,22 @@ class Kernel:
                 p = '/'.join(path[:-1])
                 if len(p) == 0:
                     p = '/'
-                self.active = self.get_context(p)
+                self.last_path = self.get_context(p)
                 command = path[-1]
 
             # Process all commands in the active_context
             # paths = ['command/%s' % command.replace(r'+', r'\+')]
             paths = ['command/.*']
-            if self.active is not None:
-                paths.insert(0, '%s/command/.*' % self.active._path)
+            if self.active_device is not None:
+                paths.insert(0, '%s/command/.*' % self.active_device._path)
+            if self.last_path is not None  and self.last_path is not self.active_device:
+                paths.insert(0, '%s/command/.*' % self.last_path._path)
 
             found = False
             for match_text in paths:
                 # Process command matches.
                 for command_name in self.match(match_text):
-                    # TODO: Make sure +right works correctly. it doesn't
+
                     command_funct = self.registered[command_name]
                     cmd_re = command_name.split('/')[-1]
                     if type(data) != command_funct.data_type:

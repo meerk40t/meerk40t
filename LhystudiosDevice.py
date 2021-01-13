@@ -98,23 +98,22 @@ class LhystudiosDevice(Modifier):
     def attach(self, *a, **kwargs):
         context = self.context
         kernel = self.context._kernel
-        _ = kernel.translation
-        path = context._path
 
         @console_command(self.context, '+laser', hidden=True, help='turn laser on in place')
         def plus_laser(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
         @console_command(self.context, '-laser', hidden=True, help='turn laser off in place')
         def minus_laser(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
         @console_command(self.context, ('left', 'right', 'up', 'down'), help='<direction> <amount>')
         def direction(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
-            active = kernel.active
+            active = kernel.active_device
+            spooler = active.spooler
+
             if spooler is None:
                 channel(_('Device has no spooler.'))
                 return
@@ -136,7 +135,7 @@ class LhystudiosDevice(Modifier):
 
         @console_command(self.context, 'jog', hidden=True, help='executes outstanding jog buffer')
         def jog(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             idx = int(self.dx)
             idy = int(self.dy)
             if idx == 0 and idy == 0:
@@ -159,7 +158,7 @@ class LhystudiosDevice(Modifier):
 
         @console_command(self.context, 'move_relative', help='move_relative <dx> <dy>')
         def move_relative(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_relative_position(*args)):
                     channel(_('Busy Error'))
@@ -168,17 +167,17 @@ class LhystudiosDevice(Modifier):
 
         @console_command(self.context, 'home', help='home the laser')
         def home(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             spooler.job(COMMAND_HOME)
 
         @console_command(self.context, 'unlock', help='unlock the rail')
         def unlock(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             spooler.job(COMMAND_UNLOCK)
 
         @console_command(self.context, 'lock', help='lock the rail')
         def lock(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LOCK)
 
         self.context.open_as('module/LhystudioController', 'pipe')

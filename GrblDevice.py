@@ -239,6 +239,12 @@ class GRBLEmulator(Module):
         self.elements = None
 
     def initialize(self, *args, **kwargs):
+        # TODO: fix grbl commands with proper console commands.
+        # parser.add_argument('-gs', '--grbl', type=int, help='run grbl-emulator on given port.')
+        # parser.add_argument('-gy', '--flip_y', action='store_true', help="grbl y-flip")
+        # parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
+        # parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x position')
+        # parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
         self.grbl_channel = self.context.channel('grbl')
 
     def close(self):
