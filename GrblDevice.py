@@ -41,21 +41,21 @@ class GrblDevice:
 
         @console_command(kernel, 'grblserver', help='activate the grblserver.')
         def grblserver(command, channel, _, args=tuple(), **kwargs):
-            active_context = kernel.active
+            active_device = kernel.active_device
             _ = kernel.translation
             port = 23
             try:
-                active_context.open_as('module/TCPServer', 'grbl', port=port)
-                active_context.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
+                active_device.open_as('module/TCPServer', 'grbl', port=port)
+                active_device.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
                 channel(_('GRBL Mode.'))
                 chan = 'grbl'
-                active_context.channel(chan).watch(kernel.channel('console'))
+                active_device.channel(chan).watch(kernel.channel('console'))
                 channel(_('Watching Channel: %s') % chan)
                 chan = 'server'
-                active_context.channel(chan).watch(kernel.channel('console'))
+                active_device.channel(chan).watch(kernel.channel('console'))
                 channel(_('Watching Channel: %s') % chan)
-                emulator = active_context.open('module/GRBLEmulator')
-                active_context.channel('grbl/recv').watch(emulator.write)
+                emulator = active_device.open('module/GRBLEmulator')
+                active_device.channel('grbl/recv').watch(emulator.write)
             except OSError:
                 channel(_('Server failed on port: %d') % port)
             return

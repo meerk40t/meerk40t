@@ -491,15 +491,15 @@ class MeerK40t(wx.Frame, Module, Job):
                      lambda v: self.context.open('window/JobPreview', self, '0'), id=ID_JOB)
         toolbar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context._kernel.active.open('window/UsbConnect', self), id=ID_USB)
+                     lambda v: self.context._kernel.active_device.open('window/UsbConnect', self), id=ID_USB)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context._kernel.active.open('window/Controller', self), id=ID_CONTROLLER)
+                     lambda v: self.context._kernel.active_device.open('window/Controller', self), id=ID_CONTROLLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context._kernel.active.open('window/Preferences', self), id=ID_PREFERENCES)
+                     lambda v: self.context._kernel.active_device.open('window/Preferences', self), id=ID_PREFERENCES)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context._kernel.active.open('window/Rotary', self), id=ID_ROTARY)
+                     lambda v: self.context._kernel.active_device.open('window/Rotary', self), id=ID_ROTARY)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context._kernel.active.open('window/JobSpooler', self), id=ID_SPOOLER)
+                     lambda v: self.context._kernel.active_device.open('window/JobSpooler', self), id=ID_SPOOLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/CameraInterface', self), id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,

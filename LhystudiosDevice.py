@@ -149,7 +149,7 @@ class LhystudiosDevice(Modifier):
 
         @console_command(self.context, ('move', 'move_absolute'), help='move <x> <y>: move to position.')
         def move(command, channel, _, args=tuple(), **kwargs):
-            spooler = kernel.active.spooler
+            spooler = kernel.active_device.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_absolute_position(*args)):
                     channel(_('Busy Error'))
