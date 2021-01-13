@@ -1505,12 +1505,14 @@ class Kernel:
                 if active_device is not None:
                     channel(_("Active Device: %s") % str(active_device))
                 for context_name in self.contexts:
-                    yield context_name
+                    channel(context_name)
             return
 
         @console_command(self, 'set', help="set [<key> <value>]")
         def set(command, channel, _, args=tuple(), **kwargs):
             last_path = self.last_path
+            if last_path is None:
+                last_path = self.active_device
             if len(args) == 0:
                 for attr in dir(last_path):
                     v = getattr(last_path, attr)
@@ -1763,6 +1765,8 @@ class Kernel:
         @console_command(self, 'flush', help="flush")
         def flush(command, channel, _, args=tuple(), **kwargs):
             last_path = self.last_path
+            if last_path is None:
+                last_path = self.active_device
             last_path.flush()
             channel(_('Persistent settings force saved.'))
 
@@ -1869,7 +1873,7 @@ class Kernel:
             paths = ['command/.*']
             if self.active_device is not None:
                 paths.insert(0, '%s/command/.*' % self.active_device._path)
-            if self.last_path is not None  and self.last_path is not self.active_device:
+            if self.last_path is not None and self.last_path is not self.active_device:
                 paths.insert(0, '%s/command/.*' % self.last_path._path)
 
             found = False
@@ -1893,6 +1897,8 @@ class Kernel:
                     except SyntaxError:
                         channel(_("Syntax Error: %s") % command_funct.help)
                     except ValueError:
+                        if not command_funct.regex:
+                            raise ValueError
                         continue  # command match rejected.
                     found = True
                     break
@@ -1901,6 +1907,7 @@ class Kernel:
 
             text = remainder
         return data
+
 
 class Channel:
     def __init__(self, name, buffer_size=0, line_end=None):
