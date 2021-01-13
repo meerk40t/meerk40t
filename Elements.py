@@ -1419,7 +1419,7 @@ class Elemental(Modifier):
                 if op.operation == "Raster":
                     if image_added:
                         continue  # already added to an image operation, is not added her.
-                    if op.color == element.stroke:
+                    if op.color == abs(element.stroke):
                         op.append(element)
                         was_classified = True
                     elif isinstance(element, SVGImage):
@@ -1428,7 +1428,7 @@ class Elemental(Modifier):
                     elif element.fill is not None and element.fill.value is not None:
                         op.append(element)
                         was_classified = True
-                elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
+                elif op.operation in ("Engrave", "Cut") and op.color == abs(element.stroke):
                     op.append(element)
                     was_classified = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
