@@ -178,11 +178,13 @@ class SVGLoader:
                 elements.append(element)
             elif isinstance(element, Path):
                 if len(element) != 0:
+                    element.approximate_arcs_with_cubics()
                     elements.append(element)
             elif isinstance(element, Shape):
                 e = Path(element)
                 e.reify()  # In some cases the shape could not have reified, the path must.
                 if len(e) != 0:
+                    e.approximate_arcs_with_cubics()
                     elements.append(e)
             elif isinstance(element, SVGImage):
                 try:
