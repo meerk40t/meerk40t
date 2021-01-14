@@ -188,10 +188,12 @@ class Planner(Modifier):
                 self.context.signal('plan', self._default_plan, 3)
                 return
             elif args[0] == 'blob':
+                self.context.setting(bool, "opt_rapid_between", True)
                 blob = CutCode()
                 first_index = None
                 for i, c in enumerate(plan):
                     try:
+                        c.settings.jog_enable = self.context.opt_rapid_between
                         b = c.as_blob()
                         if b is not None:
                             blob.extend(b)

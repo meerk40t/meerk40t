@@ -167,6 +167,7 @@ class PlotPlanner:
         """
         if plot is None:
             yield None
+            return
         for event in plot:
             if len(event) == 3:
                 x, y, on = event

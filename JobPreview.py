@@ -109,7 +109,6 @@ class JobPreview(wx.Frame, Module):
         self.text_time_travel.SetToolTip("Time Estimate: Traveling Time")
         self.text_time_total.SetToolTip("Time Estimate: Total Time")
         self.check_rapid_moves_between.SetToolTip("Perform rapid moves between the objects")
-        self.check_rapid_moves_between.SetValue(1)
         self.check_reduce_travel_time.SetToolTip("Reduce the travel time by optimizing the order of the elements")
         self.check_reduce_travel_time.Enable(False)
         self.check_cut_inner_first.SetToolTip("Reorder elements to cut the inner elements first")
@@ -282,8 +281,6 @@ class JobPreview(wx.Frame, Module):
         self.context.setting(bool, "opt_inner_first", True)
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
-        self.context.setting(bool, "opt_reduce_directions", False)
-        self.context.setting(bool, "opt_start_from_position", False)
         self.context.setting(bool, "opt_rapid_between", True)
         self.context.setting(int, "opt_jog_minimum", 127)
         self.context.setting(int, "opt_jog_mode", 0)
@@ -295,6 +292,13 @@ class JobPreview(wx.Frame, Module):
         self.preview_menu.menu_autohome.Check(self.context.autohome)
         self.preview_menu.menu_autoorigin.Check(self.context.autoorigin)
         self.preview_menu.menu_autobeep.Check(self.context.autobeep)
+
+        self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
+        self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
+        self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
+        self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
+        self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
+
         self.update_gui()
 
     def finalize(self, *args, **kwargs):
