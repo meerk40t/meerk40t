@@ -638,13 +638,13 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self, '0'), id=ID_MENU_JOB)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self),
                   id=ID_MENU_CAMERA)
-        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Preferences', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/Preferences', self),
                   id=wx.ID_PREFERENCES)
-        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Rotary', self), id=ID_MENU_ROTARY)
-        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/Controller', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/Rotary', self), id=ID_MENU_ROTARY)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/Controller', self),
                   id=ID_MENU_CONTROLLER)
-        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/UsbConnect', self), id=ID_MENU_USB)
-        self.Bind(wx.EVT_MENU, lambda v: self.context._kernel.active.open('window/JobSpooler', self),
+        self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/UsbConnect', self), id=ID_MENU_USB)
+        self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/JobSpooler', self),
                   id=ID_MENU_SPOOLER)
 
         self.Bind(wx.EVT_MENU, self.launch_webpage, id=wx.ID_HELP)

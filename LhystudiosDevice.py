@@ -1826,10 +1826,13 @@ class LhystudioEmulator(Module):
         self.small_jump = True
         self.speed_code = None
 
+
         self.x = 0.0
         self.y = 0.0
         self.number_value = 0
-        self.distance = 0
+        self.digit = 0
+        self.distance_x = 0
+        self.distance_y = 0
 
         self.filename = ""
 
@@ -1878,7 +1881,10 @@ class LhystudioEmulator(Module):
         self.number_value += value
 
     def append_distance(self, amount):
-        self.distance += amount
+        if self.x_on:
+            self.distance_x += amount
+        if self.y_on:
+            self.distance_y += amount
 
     def write(self, data):
         for b in data:
@@ -1951,10 +1957,16 @@ class LhystudioEmulator(Module):
             self.small_jump = False
 
         if ord('0') <= b <= ord('9'):
+            self.digit += 1
             self.append_digit(b - ord('0'))
+            if self.digit >= 3:
+                self.append_distance(self.number_value)
+                self.number_value = 0
+                self.digit = 0
             return True
-
-        elif ord('a') <= b <= ord('y'):
+        else:
+            self.digit = 0
+        if ord('a') <= b <= ord('y'):
             self.append_distance(b - ord('a') + 1)
         elif c == 'z':
             if self.small_jump:
@@ -1965,22 +1977,16 @@ class LhystudioEmulator(Module):
         return False
 
     def execute_distance(self):
-        dx = 0
-        dy = 0
-        self.distance += self.number_value
-        if self.distance != 0:
-            if self.x_on:
-                if self.left:
-                    dx = -self.distance
-                else:
-                    dx = self.distance
-            if self.y_on:
-                if self.top:
-                    dy = -self.distance
-                else:
-                    dy = self.distance
-            self.distance = 0
-            self.number_value = 0
+        if self.distance_x != 0 or self.distance_y != 0:
+            dx = self.distance_x
+            dy = self.distance_y
+            if self.left:
+                dx = -dx
+            if self.top:
+                dy = -dy
+            self.distance_x = 0
+            self.distance_y = 0
+
             self.context.signal('interpreter;position', (self.x, self.y, self.x+dx, self.y+dy))
             self.x += dx
             self.y += dy
@@ -2038,11 +2044,10 @@ class LhystudioEmulator(Module):
         if self.state_distance(b, c):
             return
 
-        # Execute distance.
-        self.execute_distance()
-
         # Execute Commands.
-        if c == 'F':
+        if c == 'N':
+            self.execute_distance()
+        elif c == 'F':
             self.channel("Finish")
             self.process = self.state_finish
             self.process(b, c)
@@ -2058,6 +2063,7 @@ class LhystudioEmulator(Module):
             self.process(b, c)
             return
         elif c == 'S':
+            self.execute_distance()
             self.channel("Switch")
             self.process = self.state_switch
             self.process(b, c)
