@@ -55,8 +55,12 @@ class LaserSettings:
         for k in kwargs:
             value = kwargs[k]
             if hasattr(self, k):
-                t = type(getattr(self, k))
-                setattr(self, k, t(value))
+                q = getattr(self, k)
+                if q is None:
+                    setattr(self, k, value)
+                else:
+                    t = type(q)
+                    setattr(self, k, t(value))
         if len(args) == 1:
             obj = args[0]
             try:
@@ -110,11 +114,38 @@ class CutCode(list):
         parts.append("%d items" % len(self))
         return 'CutCode(%s)' % ' '.join(parts)
 
-    def as_svg(self):
-        svg = []
+    def as_elements(self):
+        elements = list()
+        last = None
+        path = None
+        previous_settings = None
         for e in self:
-            svg.append(e.as_svg())
-        return svg
+            start = e.start()
+            end = e.end()
+            settings = e.settings
+            if path is None:
+                path = Path()
+                path.stroke = Color(settings.color)
+
+            if len(path) == 0 or last.x != start.x or last.y != start.y:
+                path.move(e.start())
+            if isinstance(e, LineCut):
+                path.line(end)
+            elif isinstance(e, QuadCut):
+                path.quad(e.control, end)
+            elif isinstance(e, CubicCut):
+                path.quad(e.control1, e.control2, end)
+            elif isinstance(e, ArcCut):
+                path.append(e.arc)
+            if previous_settings is not settings and previous_settings is not None:
+                if path is not None and len(path) != 0:
+                    elements.append(path)
+                    path = None
+            previous_settings = settings
+            last = end
+        if path is not None and len(path) != 0:
+            elements.append(path)
+        return elements
 
     def cross(self, j, k):
         """

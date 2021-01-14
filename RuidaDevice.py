@@ -64,8 +64,9 @@ class RuidaDevice:
                 c.channel('ruidajog/recv').watch(emulator.realtime_write)
                 c.channel('ruida_reply').watch(c.channel('ruidaserver/send'))
                 if spool:
-                    emulator.export = c.spooler
+                    emulator.spooler = c.spooler
                 else:
+                    emulator.elements = c.get_context('/').elements
                     # Output to elements
                     pass
             except OSError:
@@ -86,7 +87,8 @@ class RuidaEmulator(Module):
         self.cutcode = CutCode()
         self.settings = LaserSettings()
         self._use_set = None
-        self.export = None
+        self.spooler = None
+        self.elements = None
 
         self.x = 0.0
         self.y = 0.0
@@ -634,8 +636,12 @@ class RuidaEmulator(Module):
             desc = "Keep Alive"
         elif array[0] == 0xD7:
             self.in_file = False
-            if self.export is not None:
-                self.export.append(self.cutcode)
+            if self.spooler is not None:
+                self.spooler.append(self.cutcode)
+            if self.elements is not None:
+                self.elements.add_element(self.cutcode)
+                self.elements.classify([self.cutcode])
+            if self.spooler is not None or self.elements is not None:
                 self.cutcode = CutCode()
             desc = "End Of File"
         elif array[0] == 0xD8:

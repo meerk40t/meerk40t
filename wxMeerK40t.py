@@ -2557,8 +2557,8 @@ class RootNode(list):
             if isinstance(node.object, SVGText):
                 gui.Bind(wx.EVT_MENU, self.menu_convert_text(node),
                          menu.Append(wx.ID_ANY, _("Convert to Raster"), "", wx.ITEM_NORMAL))
-            if hasattr(node.object, 'as_svg'):
-                gui.Bind(wx.EVT_MENU, self.menu_convert_svg(node),
+            if hasattr(node.object, 'as_elements'):
+                gui.Bind(wx.EVT_MENU, self.menu_convert_elements(node),
                          menu.Append(wx.ID_ANY, _("Convert to SVG"), "", wx.ITEM_NORMAL))
             if hasattr(node.object, 'generate'):
                 gui.Bind(wx.EVT_MENU, self.menu_move_to_operations(node),
@@ -2884,9 +2884,9 @@ class RootNode(list):
 
         return specific
 
-    def menu_convert_svg(self, node):
+    def menu_convert_elements(self, node):
         def specific(event):
-            self.context.elements.add_elems(node.object.as_svg())
+            self.context.elements.add_elems(node.object.as_elements())
 
         return specific
 

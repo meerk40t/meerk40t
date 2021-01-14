@@ -72,7 +72,7 @@ class CameraHub(Modifier):
             elif args[0] == "background":
                 camera_context.background()
             elif args[0] == "export":
-                camera_context.export()
+                camera_context.spooler()
 
     def detach(self, *args, **kwargs):
         pass
@@ -132,7 +132,7 @@ class Camera(Modifier):
         self.context.reset_perspective = self.reset_perspective
         self.context.reset_fisheye = self.reset_fisheye
         self.context.background = self.background
-        self.context.export = self.export
+        self.context.spooler = self.export
 
     def detach(self, *args, **kwargs):
         self.close_camera()

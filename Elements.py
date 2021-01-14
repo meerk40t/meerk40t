@@ -931,7 +931,7 @@ class Elemental(Modifier):
         if len(element) == 0:
             return  # No empty elements.
         context_root = self.context.get_context('/')
-        if element.stroke is None:
+        if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color('black')
         context_root.elements.add_elem(element)
         context_root.elements.set_selected([element])
