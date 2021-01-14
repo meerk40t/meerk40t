@@ -1439,6 +1439,7 @@ class Elemental(Modifier):
                 if element.stroke is not None and element.stroke.value is not None:
                     op = LaserOperation(operation="Engrave", color=element.stroke, speed=35.0)
                     op.append(element)
+                    items.append(op)
                     add_funct(op)
 
     def load(self, pathname, **kwargs):
