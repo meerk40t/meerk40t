@@ -1415,6 +1415,10 @@ class Elemental(Modifier):
         for element in elements:
             was_classified = False
             image_added = False
+            if hasattr(element, 'operation'):
+                add_funct(element)
+                continue
+
             for op in items:
                 if op.operation == "Raster":
                     if image_added:

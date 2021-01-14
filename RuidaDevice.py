@@ -1,9 +1,9 @@
 import os
 from io import BytesIO
 
-from BaseDevice import Interpreter
-from Kernel import Module, Context, console_command
-from svgelements import Color, Path
+from CutCode import *
+from Kernel import Module, console_command, console_option
+from svgelements import Color
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -19,6 +19,7 @@ class RuidaDevice:
     """
 
     """
+
     def __init__(self, root, uid=''):
         self.uid = uid
         self.device_name = "Ruida-STUB"
@@ -37,14 +38,13 @@ class RuidaDevice:
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register('modifier/RuidaInterpreter', RuidaInterpreter)
         kernel.register('load/RDLoader', RDLoader)
         kernel.register('module/RuidaEmulator', RuidaEmulator)
 
+        @console_option('spool', type=bool, action='store_true')
         @console_command(kernel, 'ruidaserver', help='activate the ruidaserver.')
-        def ruidaserver(command, channel, _, args=tuple(), **kwargs):
-            c = kernel.active
-            _ = kernel.translation
+        def ruidaserver(command, channel, _, spool=False, args=tuple(), **kwargs):
+            c = kernel.active_device
             try:
                 c.open_as('module/UDPServer', 'ruidaserver', port=50200)
                 c.open_as('module/UDPServer', 'ruidajog', port=50207)
@@ -63,6 +63,11 @@ class RuidaDevice:
                 c.channel('ruidaserver/recv').watch(emulator.checksum_write)
                 c.channel('ruidajog/recv').watch(emulator.realtime_write)
                 c.channel('ruida_reply').watch(c.channel('ruidaserver/send'))
+                if spool:
+                    emulator.export = c.spooler
+                else:
+                    # Output to elements
+                    pass
             except OSError:
                 channel(_('Server failed.'))
             return
@@ -74,96 +79,14 @@ class RuidaDevice:
         pass
 
 
-class RuidaInterpreter(Interpreter):
-    def __init__(self, pipe):
-        Interpreter.__init__(self, pipe=pipe)
-        self.pipe = pipe
-        self.is_relative = True
-        self.laser = False
-        self.speed = 30
-        self.power = 1000
-        self.step = 2
-        self.extra_hold = None
-
-    def set_speed(self, new_speed):
-        self.speed = new_speed
-
-    def set_power(self, new_power):
-        self.power = new_power
-
-    def set_step(self, new_step):
-        self.step = new_step
-
-    def initialize(self, channel=None):
-        self.context.setting(bool, "swap_xy", False)
-        self.context.setting(bool, "flip_x", False)
-        self.context.setting(bool, "flip_y", False)
-        self.context.setting(bool, "home_right", False)
-        self.context.setting(bool, "home_bottom", False)
-        self.context.setting(int, "home_adjust_x", 0)
-        self.context.setting(int, "home_adjust_y", 0)
-
-    def laser_on(self):
-        pass
-
-    def laser_off(self):
-        pass
-
-    def default_mode(self):
-        pass
-
-    def move_relative(self, x, y):
-        pass
-
-    def move_absolute(self, x, y):
-        pass
-
-    def move(self, x, y):
-        sx = self.context.current_x
-        sy = self.context.current_y
-        if self.is_relative:
-            x += sx
-            y += sy
-        pass
-
-    def home(self):
-        pass
-
-    def lock_rail(self):
-        pass
-
-    def unlock_rail(self):
-        pass
-
-    def swizzle(self, b):
-        b ^= (b >> 7) & 0xFF
-        b ^= (b << 7) & 0xFF
-        b ^= (b >> 7) & 0xFF
-        b ^= 0xB0
-        b ^= 0x38
-        b = (b + 1) & 0xFF
-        return b
-
-    def unswizzle(self, b):
-        b = (b - 1) & 0xFF
-        b ^= 0xB0
-        b ^= 0x38
-        b ^= (b >> 7) & 0xFF
-        b ^= (b << 7) & 0xFF
-        b ^= (b >> 7) & 0xFF
-        return b
-
-
 class RuidaEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
-        self.output = True
-        self.operation = "Ruida"
 
-        self.path_d = list()
-        self.elements = []
-        self.lasercode = []
-        self.blob = []
+        self.cutcode = CutCode()
+        self.settings = LaserSettings()
+        self._use_set = None
+        self.export = None
 
         self.x = 0.0
         self.y = 0.0
@@ -176,8 +99,6 @@ class RuidaEmulator(Module):
         self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
 
         self.filename = ''
-        self.speed = 20.0
-        self.color = 'black'
         self.power1_min = 0
         self.power1_max = 0
         self.power2_min = 0
@@ -190,23 +111,23 @@ class RuidaEmulator(Module):
 
         self.process_commands = True
         self.parse_lasercode = True
-        self.parse_blob = True
-        self.parse_svg = True
         self.in_file = False
         self.swizzle_mode = True
 
-    def __len__(self):
-        return len(self.blob)
-
     def __repr__(self):
-        return "Ruida(%s, %d commands)" % (self.name, len(self.blob))
-
-    def as_svg(self):
-        return self.elements
+        return "Ruida(%s, %d cuts)" % (self.name, len(self.cutcode))
 
     def generate(self):
-        for lc in self.lasercode:
-            yield lc
+        for cutobject in self.cutcode:
+            yield COMMAND_PLOT, cutobject
+        yield COMMAND_PLOT_START
+
+
+    @property
+    def cutset(self):
+        if self._use_set is None:
+            self._use_set = LaserSettings(self.settings)
+        return self._use_set
 
     @staticmethod
     def signed35(v):
@@ -366,64 +287,7 @@ class RuidaEmulator(Module):
         :return:
         """
         for array in self.parse_commands(data):
-            self.command(array)
-
-    def command(self, array):
-        """
-        Sends an individual unswizzled ruida command to the emulator.
-
-        :param array:
-        :return:
-        """
-        if self.process_commands:
             self.process(array)
-        if self.in_file and self.parse_blob:
-            self.blob.append(array)
-
-    def new_path(self):
-        """
-        Start a new path during the parsing.
-
-        :return:
-        """
-        if not self.parse_svg:
-            return
-        path_d = self.path_d
-        if len(path_d) == 0:
-            return
-        path = Path(' '.join(path_d))
-        path.values['name'] = self.filename
-        path.values['speed'] = self.speed
-        path.values['power'] = self.power1_min
-        path.values['power_range'] = (self.power1_min, self.power2_min, self.power1_max, self.power2_max)
-        path.stroke = Color(self.color)
-        self.elements.append(path)
-        path_d.clear()
-
-    def path_move(self):
-        if not self.parse_svg:
-            return
-        um_per_mil = 25.4
-        self.path_d.append("M%f,%f" % (self.x / um_per_mil, self.y / um_per_mil))
-
-    def path_abs_cut(self):
-        if not self.parse_svg:
-            return
-        um_per_mil = 25.4
-        self.path_d.append("L%0.4f,%0.4f" % (self.x / um_per_mil, self.y / um_per_mil))
-
-    def path_rel_cut(self, dx=0, dy=0):
-        if not self.parse_svg:
-            return
-        um_per_mil = 25.4
-        if dx == 0 and dy == 0:
-            return
-        elif dy == 0:
-            self.path_d.append("h%0.4f" % (dx / um_per_mil))
-        elif dx == 0:
-            self.path_d.append("v%0.4f" % (dy / um_per_mil))
-        else:
-            self.path_d.append("l%0.4f,%0.4f" % (dx / um_per_mil, dy / um_per_mil))
 
     def process(self, array):
         """
@@ -437,6 +301,8 @@ class RuidaEmulator(Module):
         desc = ""
         respond = None
         respond_desc = None
+        start_x = self.x
+        start_y = self.y
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
             raise ValueError
@@ -451,28 +317,20 @@ class RuidaEmulator(Module):
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.new_path()
-            self.path_move()
             desc = "Move Absolute (%f, %f)" % (self.x, self.y)
         elif array[0] == 0x89:  # 0b10001001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
-            self.new_path()
             self.x += dx
             self.y += dy
-            self.path_move()
             desc = "Move Relative (%f, %f)" % (dx, dy)
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
-            self.new_path()
             self.x += dx
-            self.path_move()
             desc = "Move Horizontal Relative (%f)" % (dx)
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
-            self.new_path()
             self.y += dy
-            self.path_move()
             desc = "Move Vertical Relative (%f)" % (dy)
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
@@ -527,24 +385,32 @@ class RuidaEmulator(Module):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.path_abs_cut()
+            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
+                                Point(self.x / um_per_mil, self.y / um_per_mil),
+                                settings=self.cutset))
             desc = "Cut Absolute (%f, %f)" % (self.x, self.y)
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
-            self.path_rel_cut(dx, dy)
             self.x += dx
             self.y += dy
+            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
+                                Point(self.x / um_per_mil, self.y / um_per_mil),
+                                settings=self.cutset))
             desc = "Cut Relative (%f, %f)" % (dx, dy)
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
-            self.path_rel_cut(dx, 0)
             self.x += dx
+            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
+                                Point(self.x / um_per_mil, self.y / um_per_mil),
+                                settings=self.cutset))
             desc = "Cut Horizontal Relative (%f)" % (dx)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
-            self.path_rel_cut(0, dy)
             self.y += dy
+            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
+                                Point(self.x / um_per_mil, self.y / um_per_mil),
+                                settings=self.cutset))
             desc = "Cut Vertical Relative (%f)" % (dy)
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
@@ -670,12 +536,16 @@ class RuidaEmulator(Module):
             if array[1] == 0x02:
                 speed = self.parse_speed(array[2:7])
                 desc = "Speed Laser 1 %fmm/s" % (speed)
+                self.settings.speed = speed
+                self._use_set = None
             elif array[1] == 0x03:
                 speed = self.parse_speed(array[2:7])
                 desc = "Axis Speed %fmm/s" % (speed)
             elif array[1] == 0x04:
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
+                self.settings.speed = speed
+                self._use_set = None
                 desc = "%d, Speed %fmm/s" % (part, speed)
             elif array[1] == 0x05:
                 speed = self.parse_speed(array[2:7]) / 1000.0
@@ -728,6 +598,8 @@ class RuidaEmulator(Module):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
+                self.settings.color = Color.rgb_to_int(r, g, b)
+                self._use_set = None
                 desc = "Layer Color %s" % (self.color)
             elif array[1] == 0x06:
                 part = array[2]
@@ -761,8 +633,10 @@ class RuidaEmulator(Module):
         elif array[0] == 0xCE:
             desc = "Keep Alive"
         elif array[0] == 0xD7:
-            self.new_path()
             self.in_file = False
+            if self.export is not None:
+                self.export.append(self.cutcode)
+                self.cutcode = CutCode()
             desc = "End Of File"
         elif array[0] == 0xD8:
             self.in_file = True
@@ -818,7 +692,6 @@ class RuidaEmulator(Module):
                 desc = "Home %s XY" % param
                 self.x = 0
                 self.y = 0
-            self.path_move()
         elif array[0] == 0xDA:
             v = 0
             name = None
@@ -1188,7 +1061,7 @@ class RuidaEmulator(Module):
                 desc = "Array Repeat (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
             elif array[1] == 0x09:
                 v1 = self.decodeu35(array[2:7])
-                desc = "Feed Length %d" %v1
+                desc = "Feed Length %d" % v1
             elif array[1] == 0x13:
                 c_x = self.abscoord(array[2:7]) / um_per_mil
                 c_y = self.abscoord(array[7:12]) / um_per_mil
@@ -1371,4 +1244,4 @@ class RDLoader:
         with open(pathname, 'rb') as f:
             ruidaemulator = kernel.get_context('/').open_as('module/RuidaEmulator', basename)
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
-        return [ruidaemulator], None, None, pathname, basename
+        return [ruidaemulator.cutcode], None, None, pathname, basename

@@ -456,6 +456,9 @@ class Spooler(Modifier):
         """Overloaded attach to demand .spooler attribute."""
         self.context.spooler = self
 
+    def append(self, item):
+        self.job(item)
+
     def peek(self):
         if len(self._queue) == 0:
             return None

@@ -18,6 +18,8 @@ are references to settings which may be shared by all CutObjects created by a La
 
 class LaserSettings:
     def __init__(self, *args, **kwargs):
+        self.color = None
+
         self.laser_enabled = True
         self.speed = 20.0
         self.power = 1000.0
@@ -100,6 +102,8 @@ class LaserSettings:
 class CutCode(list):
     def __init__(self):
         list.__init__(self)
+        self.output = True
+        self.operation = "CutCode"
 
     def __str__(self):
         parts = list()
@@ -325,3 +329,30 @@ class RasterCut(CutObject):
 
     def generator(self):
         return self.plot.plot()
+
+
+class RawCut(CutObject):
+    """
+    Raw cuts are non-shape based cut objects with location and laser amount.
+    """
+    def __init__(self, settings=None):
+        CutObject.__init__(self, settings=settings)
+        self.plot = []
+
+    def plot(self, plot):
+        self.plot.extend(plot)
+
+    def start(self):
+        try:
+            return Point(self.plot[0][:2])
+        except IndexError:
+            return None
+
+    def end(self):
+        try:
+            return Point(self.plot[-1][:2])
+        except IndexError:
+            return None
+
+    def generator(self):
+        return self.plot
