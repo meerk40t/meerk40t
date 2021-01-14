@@ -193,6 +193,7 @@ class Planner(Modifier):
                 first_index = None
                 for i, c in enumerate(plan):
                     try:
+                        c.settings.jog_distance = self.context.opt_jog_minimum
                         c.settings.jog_enable = self.context.opt_rapid_between
                         b = c.as_blob()
                         if b is not None:
