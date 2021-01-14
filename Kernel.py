@@ -194,15 +194,6 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, da
                             kwargs[pk['name']] = True
                             break
 
-            # Any singleton list arguments should become their only element.
-            for i in range(argument_index):
-                k = stack[i]
-                key = k['name']
-                current = kwargs.get(key)
-                if isinstance(current, list):
-                    if len(current) == 1:
-                        kwargs[key] = current[0]
-
             # Any unprocessed positional arguments get default values.
             for i in range(argument_index, len(stack)):
                 k = stack[i]
@@ -215,6 +206,16 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, da
                     kwargs[key] = [value]
                 else:
                     kwargs[key].append(value)
+
+            # Any singleton list arguments should become their only element.
+            for i in range(len(stack)):
+                k = stack[i]
+                key = k['name']
+                current = kwargs.get(key)
+                if isinstance(current, list):
+                    if len(current) == 1:
+                        kwargs[key] = current[0]
+
             remainder = remainder[pos:]
             if len(remainder) > 0:
                 kwargs['remainder'] = remainder

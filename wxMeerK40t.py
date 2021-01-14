@@ -332,6 +332,8 @@ class MeerK40t(wx.Frame, Module, Job):
 
         context.register("control/Crash Thread", test_crash_in_thread)
         context.register("control/Clear Laserpath", self.clear_laserpath)
+        context.register("control/egv export", self.egv_export)
+        context.register("control/egv import", self.egv_import)
 
         @console_command(context, 'rotaryview', help='Rotary View of Scene')
         def toggle_rotary_view(*args, **kwargs):
@@ -1579,12 +1581,38 @@ class MeerK40t(wx.Frame, Module, Job):
             context.elements.add_elem(p)
             self.context.classify(p)
         dlg.Destroy()
+    def egv_import(self):
+        pathname = None
+        files = "*.egv"
+        with wx.FileDialog(self, _("Import EGV"), wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+        if pathname is None:
+            return
+        with wx.BusyInfo(_("Loading File...")):
+            self.context.console("egv_import %s\n" % pathname)
+            return
+
+    def egv_export(self):
+        pathname = None
+        files = "*.egv"
+        with wx.FileDialog(self, _("Export EGV"), wildcard=files, style=wx.FD_SAVE) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+        if pathname is None:
+            return
+        with wx.BusyInfo(_("Saving File...")):
+            self.context.console("egv_export %s\n" % pathname)
+            return
 
     def apply_rotary_scale(self):
-        kernel = self.device.device_root
-        sx = self.device.scale_x
-        sy = self.device.scale_y
-        p = self.device
+        kernel = self.context._kernel
+        sx = self.context.scale_x
+        sy = self.context.scale_y
+        p = self.context
 
         mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, p.current_x, p.current_y))
         for element in kernel.elements.elems():

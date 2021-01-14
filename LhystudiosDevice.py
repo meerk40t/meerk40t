@@ -1207,6 +1207,54 @@ class LhystudioController(Module):
     def initialize(self, *args, **kwargs):
         context = self.context
 
+        @console_argument('filename', type=str)
+        @console_command(self.context, 'egv_import', help='Lhystudios Engrave Buffer Import. egv_import <egv_file>')
+        def egv_import(command, channel, _, filename, args=tuple(), **kwargs):
+            if filename is None:
+                raise SyntaxError
+
+            def skip(read, byte, count):
+                """Skips forward in the file until we find <count> instances of <byte>"""
+                pos = read.tell()
+                while count > 0:
+                    char = read.read(1)
+                    if char == byte:
+                        count -= 1
+                    if char is None or len(char) == 0:
+                        read.seek(pos, 0)
+                        # If we didn't skip the right stuff, reset the position.
+                        break
+
+            def skip_header(file):
+                skip(file, '\n', 3)
+                skip(file, '%', 5)
+
+            with open(filename, "r") as f:
+                skip_header(f)
+                while True:
+                    data = f.read(1024)
+                    if not data:
+                        break
+                    buffer = bytes(data, "utf8")
+                    self.write(buffer)
+                self.write(b'\n')
+
+        @console_argument('filename', type=str)
+        @console_command(self.context, 'egv_export', help='Lhystudios Engrave Buffer Export. egv_export <egv_file>')
+        def egv_export(command, channel, _, filename, args=tuple(), **kwargs):
+            if filename is None:
+                raise SyntaxError
+            with open(filename, "w") as f:
+                f.write("Document type : LHYMICRO-GL file\n")
+                f.write("File version: 1.0.01\n")
+                f.write("Copyright: Unknown\n")
+                f.write("Creator-Software: MeerK40t v0.7.0\n")
+                f.write("\n")
+                f.write("%0%0%0%0%\n")
+                buffer = self._buffer
+                buffer += self._queue
+                f.write(buffer.decode("utf-8"))
+
         @console_command(self.context, 'egv', help='Lhystudios Engrave Code Sender. egv <lhymicro-gl>')
         def egv(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
