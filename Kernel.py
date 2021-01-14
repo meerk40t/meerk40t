@@ -1179,7 +1179,7 @@ class Kernel:
                 break
             jobs = self.jobs
             for job_name in list(jobs):
-                job = jobs[job_name]
+                job = jobs[job_name] # kernel.console.ticks failed to remove here, since it was already removed. Sync.
 
                 # Checking if jobs should run.
                 if job.scheduled:

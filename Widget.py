@@ -929,20 +929,20 @@ class ReticleWidget(Widget):
 
     def process_draw(self, gc):
         context = self.scene.context
-        if context.draw_mode & DRAW_MODE_RETICLE == 0:
-            # Draw Reticle
-            gc.SetPen(wx.RED_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            try:
-                x = context.current_x
-                y = context.current_y
+        try:
+            if context.draw_mode & DRAW_MODE_RETICLE == 0:
+                # Draw Reticle
+                gc.SetPen(wx.RED_PEN)
+                gc.SetBrush(wx.TRANSPARENT_BRUSH)
+                x = context._reticle_x
+                y = context._reticle_y
                 if x is None or y is None:
                     x = 0
                     y = 0
                 x, y = self.scene.convert_scene_to_window([x, y])
                 gc.DrawEllipse(x - 5, y - 5, 10, 10)
-            except AttributeError:
-                pass
+        except AttributeError:
+            pass
 
 
 class LaserPathWidget(Widget):

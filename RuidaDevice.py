@@ -85,6 +85,7 @@ class RuidaEmulator(Module):
         Module.__init__(self, context, path)
 
         self.cutcode = CutCode()
+        # self.layer_settings = []
         self.settings = LaserSettings()
         self._use_set = None
         self.spooler = None
@@ -1250,4 +1251,4 @@ class RDLoader:
         with open(pathname, 'rb') as f:
             ruidaemulator = kernel.get_context('/').open_as('module/RuidaEmulator', basename)
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
-        return [ruidaemulator.cutcode], None, None, pathname, basename
+            return [ruidaemulator.cutcode], None, None, pathname, basename

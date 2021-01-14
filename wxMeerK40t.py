@@ -267,6 +267,8 @@ class MeerK40t(wx.Frame, Module, Job):
 
     def __kernel_initialize(self, context):
         context.gui = self
+        context._reticle_x = 0
+        context._reticle_y = 0
         context.setting(int, "draw_mode", 0)
         context.setting(int, "window_width", 1200)
         context.setting(int, "window_height", 600)
@@ -1031,8 +1033,11 @@ class MeerK40t(wx.Frame, Module, Job):
         self.laserpath[0][self.laserpath_index][1] = pos[1]
         self.laserpath[1][self.laserpath_index][0] = pos[2]
         self.laserpath[1][self.laserpath_index][1] = pos[3]
+        self.context._reticle_x = pos[2]
+        self.context._reticle_y = pos[3]
         self.laserpath_index += 1
         self.laserpath_index %= len(self.laserpath[0])
+        # self.request_refresh()
         self.request_refresh_for_animation()
 
     def space_changed(self, *args):
