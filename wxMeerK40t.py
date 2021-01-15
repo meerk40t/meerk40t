@@ -6,8 +6,10 @@ import os
 import sys
 import traceback
 
-import wx.lib.agw.aui as aui
+from wx.aui import AUI_DOCK_RIGHT, AUI_DOCK_LEFT
+import wx.aui as aui
 import wx.ribbon as RB
+from wx.lib.agw.aui import AUI_MINIMIZE_POS_SMART
 
 from About import About
 from Alignment import Alignment
@@ -206,11 +208,14 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
-
-        ribbon_info = aui.AuiPaneInfo().Top().MinSize(-1, 150)
-        ribbon_info.CaptionVisible(False)
-        self._mgr.AddPane(self._ribbon, ribbon_info)
-        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().Left().MinSize(200,-1).MaxSize(275,-1))
+        unlock = wx.BitmapButton(self, wx.ID_ANY, icons8_padlock_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("unlock\n"), unlock)
+        self._mgr.AddPane(unlock, aui.AuiPaneInfo().Bottom())
+        self._mgr.AddPane(self._ribbon, aui.AuiPaneInfo().Top()
+                          .TopDockable().BottomDockable()
+                          .RightDockable(False).LeftDockable(False)
+                          .MinSize(-1, 150).CaptionVisible(False))
+        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().CloseButton(False).Left().MinSize(200,-1).MaxSize(275,-1).LeftDockable().RightDockable().BottomDockable(False).TopDockable(False))
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane())
 
         self._mgr.Update()
