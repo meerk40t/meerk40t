@@ -211,6 +211,11 @@ class MeerK40t(wx.Frame, Module, Job):
         unlock = wx.BitmapButton(self, wx.ID_ANY, icons8_padlock_50.GetBitmap())
         self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("unlock\n"), unlock)
         self._mgr.AddPane(unlock, aui.AuiPaneInfo().Bottom())
+
+        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
+        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom())
+
         self._mgr.AddPane(self._ribbon, aui.AuiPaneInfo().Top()
                           .TopDockable().BottomDockable()
                           .RightDockable(False).LeftDockable(False)
