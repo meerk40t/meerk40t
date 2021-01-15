@@ -1868,8 +1868,7 @@ class LhystudioEmulator(Module):
 
         self.x = 0.0
         self.y = 0.0
-        self.number_value = 0
-        self.digit = 0
+        self.number_value = None
         self.distance_x = 0
         self.distance_y = 0
 
@@ -1914,10 +1913,6 @@ class LhystudioEmulator(Module):
                 self.header_skipped = True
                 self.write(data[i:])
                 break
-
-    def append_digit(self, value):
-        self.number_value *= 10
-        self.number_value += value
 
     def append_distance(self, amount):
         if self.x_on:
@@ -1997,13 +1992,12 @@ class LhystudioEmulator(Module):
     def state_resume(self, b, c):
         if c in 'NF':
             return
-        self.process = self.state_pad
+        self.process = self.state_compact
+        self.process(b, c)
 
     def state_pad(self, b, c):
         if c == 'F':
             return
-        self.process = self.state_compact
-        self.process(b, c)
 
     def state_execute(self, b, c):
         self.process = self.state_compact
@@ -2013,28 +2007,24 @@ class LhystudioEmulator(Module):
             self.append_distance(25)
             self.small_jump = True
             return True
+        elif ord('0') <= b <= ord('9'):
+            if self.number_value is None:
+                self.number_value = c
+            else:
+                self.number_value += c
+            if len(self.number_value) >= 3:
+                self.append_distance(int(self.number_value))
+                self.number_value = None
+            return True
+        elif ord('a') <= b <= ord('y'):
+            self.append_distance(b + 1 - ord('a'))
+        elif c == 'z':
+            self.append_distance(26 if self.small_jump else 255)
         else:
             self.small_jump = False
-
-        if ord('0') <= b <= ord('9'):
-            self.digit += 1
-            self.append_digit(b - ord('0'))
-            if self.digit >= 3:
-                self.append_distance(self.number_value)
-                self.number_value = 0
-                self.digit = 0
-            return True
-        else:
-            self.digit = 0
-        if ord('a') <= b <= ord('y'):
-            self.append_distance(b - ord('a') + 1)
-        elif c == 'z':
-            if self.small_jump:
-                self.append_distance(26)
-            else:
-                self.append_distance(255)
-            return True
-        return False
+            return False
+        self.small_jump = False
+        return True
 
     def execute_distance(self):
         if self.distance_x != 0 or self.distance_y != 0:
@@ -2055,7 +2045,6 @@ class LhystudioEmulator(Module):
     def state_compact(self, b, c):
         if self.state_distance(b,c):
             return
-
         self.execute_distance()
 
         if c == 'F':
@@ -2066,12 +2055,11 @@ class LhystudioEmulator(Module):
         elif c == '@':
             self.channel("Reset")
             self.process = self.state_reset
-            self.process(b ,c)
+            self.process(b, c)
             return
         elif c == 'P':
             self.channel("Pause")
             self.process = self.state_pause
-            self.process(b, c)
         elif c == 'N':
             self.channel("Jog")
             self.process = self.state_jog
@@ -2083,7 +2071,7 @@ class LhystudioEmulator(Module):
         elif c == 'E':
             self.channel("Compact-Compact")
             self.process = self.state_execute
-            self.process(b,c)
+            self.process(b, c)
         elif c == 'B':
             self.left = False
             self.x_on = True
