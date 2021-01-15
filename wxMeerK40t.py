@@ -10,6 +10,7 @@ from wx.aui import AUI_DOCK_RIGHT, AUI_DOCK_LEFT
 import wx.aui as aui
 import wx.ribbon as RB
 from wx.lib.agw.aui import AUI_MINIMIZE_POS_SMART
+from wx.lib.agw.ribbon import art_aui
 
 from About import About
 from Alignment import Alignment
@@ -199,6 +200,7 @@ class MeerK40t(wx.Frame, Module, Job):
         self.scene.SetDoubleBuffered(True)
 
         self._ribbon = RB.RibbonBar(self, style=RB.RIBBON_BAR_DEFAULT_STYLE)
+        self._ribbon.SetArtProvider( wx.ribbon.RibbonAUIArtProvider())
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
         self.ribbon_position_x = 0.0
