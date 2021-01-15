@@ -467,8 +467,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 try:
                     if self.hold():
                         return True
-                    x, y, on = next(self.plot)  # TODO: Reset of controller can cause error here when plot is none-type.
+                    x, y, on = next(self.plot)
                 except StopIteration:
+                    break
+                except TypeError:
                     break
                 sx = self.context.current_x
                 sy = self.context.current_y
@@ -510,12 +512,13 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                         self.set_prop(REQUEST_Y_FORWARD_TOP)
                     continue
                 if on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
-                    mode = self.context.opt_jog_mode
                     if on & PLOT_RAPID or self.state != INTERPRETER_STATE_PROGRAM or self.settings.raster_step != 0:
                         # Perform a rapid position change. Always perform this for raster moves.
-                        mode = 2
+                        self.ensure_rapid_mode()
+                        self.move_absolute(x, y)
+                        continue
                     # Jog is performable and requested. # We have not flagged our direction or state.
-                    self.jog_absolute(x, y, mode=mode)
+                    self.jog_absolute(x, y, mode=self.context.opt_jog_mode)
                     continue
                 else:
                     self.ensure_program_mode()
@@ -737,6 +740,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.goto_octent(dx, dy, on)
 
     def goto_octent(self, dx, dy, on):
+        if dx == 0 and dy == 0:
+            return
         if on:
             self.laser_on()
         else:
@@ -1401,6 +1406,8 @@ class LhystudioController(Module):
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
         self._queue_lock.release()
+        # if b'DU' in self._buffer:
+        #     print("Error!")
         self.start()
         self.update_buffer()
         return self
@@ -1859,7 +1866,6 @@ class LhystudioEmulator(Module):
         self.small_jump = True
         self.speed_code = None
 
-
         self.x = 0.0
         self.y = 0.0
         self.number_value = 0
@@ -1921,14 +1927,16 @@ class LhystudioEmulator(Module):
 
     def write(self, data):
         for b in data:
-            self.process(b, chr(b))
+            c = chr(b)
+            if c == 'I':
+                self.process = self.state_default
+                continue
+            self.process(b, c)
 
     def state_finish(self, b, c):
         if c in 'NSEF':
             return
-        if c == 'I':
-            self.process = self.state_default
-            self.process(b, c)
+        self.channel("Finish State Unknown: %s" % c)
 
     def state_reset(self, b, c):
         if c in '@NSE':
@@ -1942,7 +1950,7 @@ class LhystudioEmulator(Module):
             return
         else:
             self.process = self.state_default
-            self.process(b,c)
+            self.process(b, c)
 
     def state_pop(self, b, c):
         if c == 'P':
@@ -1954,9 +1962,8 @@ class LhystudioEmulator(Module):
             return
         elif c == 'F':
             return
-        elif c == 'I':
-            self.process = self.state_default
-            self.process(b, c)
+        else:
+            self.channel("Finish State Unknown: %s" % c)
 
     def state_speed(self, b, c):
         if c in 'GCV01234567890':
@@ -1978,12 +1985,32 @@ class LhystudioEmulator(Module):
         self.process = self.state_default
         self.process(b, c)
 
+    def state_pause(self, b, c):
+        if c in 'NF':
+            return
+        if c == 'P':
+            self.process = self.state_resume
+        else:
+            self.process = self.state_compact
+            self.process(b,c)
+
+    def state_resume(self, b, c):
+        if c in 'NF':
+            return
+        self.process = self.state_pad
+
+    def state_pad(self, b, c):
+        if c == 'F':
+            return
+        self.process = self.state_compact
+        self.process(b, c)
+
     def state_execute(self, b, c):
         self.process = self.state_compact
 
     def state_distance(self, b, c):
         if c == '|':
-            self.append_distance(26)
+            self.append_distance(25)
             self.small_jump = True
             return True
         else:
@@ -2003,7 +2030,7 @@ class LhystudioEmulator(Module):
             self.append_distance(b - ord('a') + 1)
         elif c == 'z':
             if self.small_jump:
-                self.append_distance(b - ord('a') + 1)
+                self.append_distance(26)
             else:
                 self.append_distance(255)
             return True
@@ -2041,6 +2068,10 @@ class LhystudioEmulator(Module):
             self.process = self.state_reset
             self.process(b ,c)
             return
+        elif c == 'P':
+            self.channel("Pause")
+            self.process = self.state_pause
+            self.process(b, c)
         elif c == 'N':
             self.channel("Jog")
             self.process = self.state_jog
