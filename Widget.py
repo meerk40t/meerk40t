@@ -954,7 +954,10 @@ class LaserPathWidget(Widget):
         if context.draw_mode & DRAW_MODE_LASERPATH == 0:
             gc.SetPen(wx.BLUE_PEN)
             starts, ends = gc.laserpath
-            gc.StrokeLineSegments(starts, ends)
+            try:
+                gc.StrokeLineSegments(starts, ends)
+            except OverflowError:
+                pass  # I don't actually know why this would happen.
 
 
 class GridWidget(Widget):
