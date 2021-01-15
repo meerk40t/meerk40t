@@ -4,9 +4,9 @@
 #
 import os
 import sys
-import threading
 import traceback
 
+import wx.lib.agw.aui as aui
 import wx.ribbon as RB
 
 from About import About
@@ -178,6 +178,10 @@ class MeerK40t(wx.Frame, Module, Job):
         Module.__init__(self, context, path)
         Job.__init__(self, job_name="refresh_scene", process=self.refresh_scene)
         self.DragAcceptFiles(True)
+        self._mgr = aui.AuiManager()
+
+        # notify AUI which frame to use
+        self._mgr.SetManagedWindow(self)
 
         self._Buffer = None
         self.screen_refresh_is_requested = False
@@ -202,6 +206,14 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
+
+        ribbon_info = aui.AuiPaneInfo().Top().MinSize(-1, 150)
+        ribbon_info.CaptionVisible(False)
+        self._mgr.AddPane(self._ribbon, ribbon_info)
+        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().Left().MinSize(200,-1).MaxSize(275,-1))
+        self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane())
+
+        self._mgr.Update()
 
         self.CenterOnScreen()
         # Menu Bar
@@ -712,6 +724,7 @@ class MeerK40t(wx.Frame, Module, Job):
         if self.state == 5:
             event.Veto()
         else:
+            self._mgr.UnInit()
             self.state = 5
             self.context.console("shutdown\n")
             # self.context.close(self.name)
@@ -880,9 +893,9 @@ class MeerK40t(wx.Frame, Module, Job):
         # begin wxGlade: MeerK40t.__set_properties
         self.__set_titlebar()
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
-        self.SetIcon(_icon)
+        # _icon = wx.NullIcon
+        # _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
+        # self.SetIcon(_icon)
         # statusbar fields
         main_statusbar_fields = ["Status"]
         for i in range(len(main_statusbar_fields)):
@@ -890,13 +903,14 @@ class MeerK40t(wx.Frame, Module, Job):
         self.tree.SetMaxSize((275, -1))
 
     def __do_layout(self):
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self._ribbon, 0, wx.EXPAND, 0)
-        widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        widget_sizer.Add(self.tree, 1, wx.EXPAND, 0)
-        widget_sizer.Add(self.scene, 5, wx.EXPAND, 0)
-        main_sizer.Add(widget_sizer, 8, wx.EXPAND, 0)
-        self.SetSizer(main_sizer)
+        # main_sizer = wx.BoxSizer(wx.VERTICAL)
+        # main_sizer.Add(self._ribbon, 0, wx.EXPAND, 0)
+        # widget_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # widget_sizer.Add(self.tree, 1, wx.EXPAND, 0)
+        # widget_sizer.Add(self.scene, 5, wx.EXPAND, 0)
+        # main_sizer.Add(widget_sizer, 8, wx.EXPAND, 0)
+        # self.SetSizer(main_sizer)
+        # self._mgr.Update()
         self.Layout()
 
     def populate_recent_menu(self):
