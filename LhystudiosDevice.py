@@ -1,4 +1,3 @@
-import threading
 
 from BaseDevice import *
 from CH341DriverBase import *
@@ -9,6 +8,7 @@ from LaserSpeed import LaserSpeed
 from PlotPlanner import PlotPlanner
 from svgelements import Length
 from zinglplotter import ZinglPlotter
+
 
 """
 LhystudiosDevice is the backend for all Lhystudio Devices.
@@ -35,11 +35,17 @@ STATUS_BUSY = 238
 # 0xEE, 11101110
 STATUS_POWER = 239
 
-STATE_X_FORWARD_LEFT = 1  # Direction is flagged left rather than right.
-STATE_Y_FORWARD_TOP = 2  # Direction is flagged top rather than bottom.
-STATE_X_STEPPER_ENABLE = 4  # X-stepper motor is engaged.
-STATE_Y_STEPPER_ENABLE = 8  # Y-stepper motor is engaged.
-STATE_HORIZONTAL_MAJOR = 16
+STATE_X_FORWARD_LEFT = 0b0000000000000001  # Direction is flagged left rather than right.
+STATE_Y_FORWARD_TOP = 0b0000000000000010  # Direction is flagged top rather than bottom.
+STATE_X_STEPPER_ENABLE = 0b0000000000000100  # X-stepper motor is engaged.
+STATE_Y_STEPPER_ENABLE = 0b0000000000001000  # Y-stepper motor is engaged.
+STATE_HORIZONTAL_MAJOR = 0b0000000000010000
+REQUEST_X = 0b0000000000100000
+REQUEST_X_FORWARD_LEFT = 0b0000000001000000  # Requested direction towards the left.
+REQUEST_Y = 0b0000000010000000
+REQUEST_Y_FORWARD_TOP = 0b0000000100000000  # Requested direction towards the top.
+REQUEST_AXIS = 0b0000001000000000
+REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis.
 
 
 class LhystudiosDevice(Modifier):
@@ -466,10 +472,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     break
                 sx = self.context.current_x
                 sy = self.context.current_y
-                if on & 256:  # Plot planner is ending.
+                if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
                     continue
-                if on & 128:  # Plot planner settings have changed.
+                if on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = self.plot_planner.settings
                     s_set = self.settings
                     if p_set.power != s_set.power:
@@ -484,32 +490,32 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.set_values(p_set)
                     continue
-                if on & 64:  # Major Axis.
+                if on & PLOT_AXIS:  # Major Axis.
+                    self.set_prop(REQUEST_AXIS)
                     if x == 0:  # X Major / Horizontal.
-                        self.set_prop(STATE_HORIZONTAL_MAJOR)
+                        self.set_prop(REQUEST_HORIZONTAL_MAJOR)
                     else:  # Y Major / Vertical
-                        self.unset_prop(STATE_HORIZONTAL_MAJOR)
+                        self.unset_prop(REQUEST_HORIZONTAL_MAJOR)
                     continue
-                if on & 32:
+                if on & PLOT_DIRECTION:
+                    self.set_prop(REQUEST_X)
+                    self.set_prop(REQUEST_Y)
                     if x == 1:  # Moving Right. +x
-                        self.unset_prop(STATE_X_FORWARD_LEFT)
+                        self.unset_prop(REQUEST_X_FORWARD_LEFT)
                     else:  # Moving Left -x
-                        self.set_prop(STATE_X_FORWARD_LEFT)
+                        self.set_prop(REQUEST_X_FORWARD_LEFT)
                     if y == 1:  # Moving Bottom +y
-                        self.unset_prop(STATE_Y_FORWARD_TOP)
+                        self.unset_prop(REQUEST_Y_FORWARD_TOP)
                     else:  # Moving Top. -y
-                        self.set_prop(STATE_Y_FORWARD_TOP)
-
+                        self.set_prop(REQUEST_Y_FORWARD_TOP)
                     continue
-                if on & 6:  # Plot planner requests position change.
-                    if on & 4 or self.state != INTERPRETER_STATE_PROGRAM or self.settings.raster_step != 0:
-                        # Perform a rapid position change.
-                        # Always perform this for raster moves.
-                        self.ensure_rapid_mode()
-                        self.move_absolute(x, y)
-                        continue
-                    # Jog is performable and requested.
-                    self.jog_absolute(x, y, mode=self.context.opt_jog_mode)
+                if on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
+                    mode = self.context.opt_jog_mode
+                    if on & PLOT_RAPID or self.state != INTERPRETER_STATE_PROGRAM or self.settings.raster_step != 0:
+                        # Perform a rapid position change. Always perform this for raster moves.
+                        mode = 2
+                    # Jog is performable and requested. # We have not flagged our direction or state.
+                    self.jog_absolute(x, y, mode=mode)
                     continue
                 else:
                     self.ensure_program_mode()
@@ -645,7 +651,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if dx != 0:
             self.goto_x(dx)
         self.pipe(b'SE')
-        self.pipe(self.code_declare_directions())
+        self.declare_directions()
         self.state = INTERPRETER_STATE_PROGRAM
 
     def move(self, x, y):
@@ -845,6 +851,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if dy != 0:
             self.goto_y(dy)
         self.pipe(b'N')
+        self.set_requested_directions()
         self.pipe(self.code_declare_directions())
         self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
@@ -881,6 +888,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             speed_code = bytes(speed_code, 'utf8')
         self.pipe(speed_code)
         self.pipe(b'N')
+        self.set_requested_directions()
         self.declare_directions()
         self.pipe(b'S1E')
         self.state = INTERPRETER_STATE_PROGRAM
@@ -998,6 +1006,31 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.current_y += dy
         self.check_bounds()
         self.pipe(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
+
+    def set_requested_directions(self):
+        if self.context.strict:
+            self.unset_prop(STATE_X_FORWARD_LEFT)
+            self.unset_prop(STATE_Y_FORWARD_TOP)
+            self.unset_prop(STATE_HORIZONTAL_MAJOR)
+        else:
+            if self.is_prop(REQUEST_X):
+                if self.is_prop(REQUEST_X_FORWARD_LEFT):
+                    self.set_prop(STATE_X_FORWARD_LEFT)
+                else:
+                    self.unset_prop(STATE_X_FORWARD_LEFT)
+                self.unset_prop(REQUEST_X)
+            if self.is_prop(REQUEST_Y):
+                if self.is_prop(REQUEST_Y_FORWARD_TOP):
+                    self.set_prop(STATE_Y_FORWARD_TOP)
+                else:
+                    self.unset_prop(STATE_Y_FORWARD_TOP)
+                self.unset_prop(REQUEST_Y)
+            if self.is_prop(REQUEST_AXIS):
+                if self.is_prop(REQUEST_HORIZONTAL_MAJOR):
+                    self.set_prop(STATE_HORIZONTAL_MAJOR)
+                else:
+                    self.unset_prop(STATE_HORIZONTAL_MAJOR)
+                self.unset_prop(REQUEST_AXIS)
 
     def declare_directions(self):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.

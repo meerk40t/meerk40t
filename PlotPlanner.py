@@ -1,3 +1,4 @@
+from BaseDevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
 from CutCode import *
 
 """
@@ -64,7 +65,7 @@ class PlotPlanner:
                 self.single_y = None
                 self.group_x = None
                 self.group_y = None
-                yield None, None, 256
+                yield None, None, PLOT_FINISH
                 return
 
             cut = self.queue.pop(0)
@@ -85,7 +86,7 @@ class PlotPlanner:
                     # First movement or raster_step we must rapid_jog.
                     # Request rapid move new location
                     flush = True
-                    jog |= 4
+                    jog |= PLOT_RAPID
                 else:
                     distance = cur_set.jog_distance
                     if (abs(self.single_x - new_start_x) < distance and abs(self.single_y - new_start_x) < distance) \
@@ -99,7 +100,7 @@ class PlotPlanner:
                     else:
                         # Request standard jog new location required.
                         flush = True
-                        jog |= 2
+                        jog |= PLOT_JOG
 
             if cut_set is not cur_set:
                 flush = True  # Laser Setting has changed, we must flush the buffer.
@@ -118,12 +119,12 @@ class PlotPlanner:
 
             self.settings = cut.settings
             if cut_set is not cur_set:
-                yield None, None, 128
+                yield None, None, PLOT_SETTING
 
             if jog:
                 # set the directions. Post Jog, Post Settings.
-                yield cut.major_axis(), None, 64
-                yield cut.x_dir(), cut.y_dir(), 32
+                yield cut.major_axis(), None, PLOT_AXIS
+                yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
 
             # Plot the current.
             # Current is executed in cut settings.
