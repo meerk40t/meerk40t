@@ -38,9 +38,9 @@ class CameraHub(Modifier):
         @console_option('uri', 'u', type=str)
         @console_command(kernel, 'camera\d*', regex=True, help="camera commands and modifiers.", chain=True)
         def camera(command, channel, _, uri=None, args=tuple(), **kwargs):
-            camera_context = self.context.derive(self.current_camera)
             if len(command) > 6:
                 self.current_camera = command[6:]
+            camera_context = self.context.derive(self.current_camera)
             cam = camera_context.activate('modifier/Camera')
             if uri is not None:
                 cam.set_uri(uri)

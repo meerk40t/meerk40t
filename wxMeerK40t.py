@@ -80,7 +80,9 @@ ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
 ID_PREFERENCES = idinc.new()
 ID_DEVICES = idinc.new()
-ID_CAMERA = idinc.new()
+ID_CAMERA0 = idinc.new()
+ID_CAMERA1 = idinc.new()
+ID_CAMERA2 = idinc.new()
 ID_JOB = idinc.new()
 ID_PAUSE = idinc.new()
 
@@ -434,7 +436,9 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        windows.AddButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
+        windows.AddButton(ID_CAMERA0, _("Camera0"), icons8_camera_50.GetBitmap(), "")
+        windows.AddButton(ID_CAMERA1, _("Camera1"), icons8_camera_50.GetBitmap(), "")
+        windows.AddButton(ID_CAMERA2, _("Camera2"), icons8_camera_50.GetBitmap(), "")
         windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         windows.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
         windows.AddButton(ID_TERMINAL, _("Terminal"), icons8_console_50.GetBitmap(), "")
@@ -536,7 +540,11 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context._kernel.active_device.open('window/JobSpooler', self), id=ID_SPOOLER)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open('window/CameraInterface', self), id=ID_CAMERA)
+                     lambda v: self.context.open_as('window/CameraInterface', 'camera0', self, 0), id=ID_CAMERA0)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open_as('window/CameraInterface', 'camera1', self, 1), id=ID_CAMERA1)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
+                     lambda v: self.context.open_as('window/CameraInterface', 'camera2', self, 2), id=ID_CAMERA2)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/Navigation', self), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
