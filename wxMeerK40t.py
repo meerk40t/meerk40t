@@ -1948,7 +1948,7 @@ class RootNode(list):
         while child.IsOk():
             child_node = self.tree.GetItemData(child)
             element = child_node.object
-            tree.SetItemBackgroundColour(child, wx.WHITE)
+            tree.SetItemBackgroundColour(child, None)
             try:
                 if element.highlighted:
                     tree.SetItemBackgroundColour(child, wx.YELLOW)
