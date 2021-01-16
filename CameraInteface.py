@@ -2,7 +2,7 @@ import threading
 
 import wx
 
-from Kernel import Module, Job
+from Kernel import Module, Job, console_argument, console_command
 from LaserRender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from ZMatrix import ZMatrix
 from icons import *
@@ -165,8 +165,20 @@ class CameraInterface(wx.Frame, Module, Job):
         # end wxGlade
 
     @staticmethod
-    def sub_register(context):
-        context.register('window/CameraURI', CameraURI)
+    def sub_register(kernel):
+        kernel.register('window/CameraURI', CameraURI)
+
+        @console_argument("index", type=int)
+        @console_command(kernel, 'camwin', help="camwin <index>: Open camera window at index")
+        def camera_win(command, channel, _, index=None, args=tuple(), **kwargs):
+            if index is None:
+                raise SyntaxError
+            context = kernel.get_context('/')
+            try:
+                parent = context.gui
+            except AttributeError:
+                parent = None
+            context.open_as('window/CameraInterface', 'camera%d' % index, parent, index)
 
     def on_close(self, event):
         if self.state == 5:

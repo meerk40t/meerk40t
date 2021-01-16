@@ -166,7 +166,10 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, da
                     k = stack[argument_index]
                     argument_index += 1
                     if 'type' in k and value is not None:
-                        value = k['type'](value)
+                        try:
+                            value = k['type'](value)
+                        except ValueError:
+                            raise SyntaxError
                     key = k['name']
                     current = kwargs.get(key, True)
                     if current is True:
