@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import wx
 
-from Kernel import Modifier, console_command
+from Kernel import Modifier, console_command, console_argument, console_option
 
 _ = wx.GetTranslation
 
@@ -37,7 +37,6 @@ class CameraHub(Modifier):
 
         @console_command(kernel, 'camera.*', regex=True, help="camera commands and modifiers.")
         def camera(command, channel, _, args=tuple(), **kwargs):
-            args = kwargs.get('args', tuple())
             if len(command) > 6:
                 self.current_camera = command[6:]
                 self.context.signal('current_camera', self.current_camera)
@@ -45,34 +44,58 @@ class CameraHub(Modifier):
                 channel(_('Too few arguments'))
                 return
             camera_context = self.context.derive(self.current_camera)
-            camera_context.activate('modifier/Camera')
-            if args[0] == "start":
-                camera_context.open_camera()
-            elif args[0] == "stop":
-                camera_context.close_camera()
-            elif args[0] == "fisheye":
-                if len(args) == 1:
-                    channel(_('Too few arguments'))
-                    return
-                elif args[1] == "capture":
-                    camera_context.fisheye_capture()
-                elif args[1] == "reset":
-                    camera_context.reset_fisheye()
-            elif args[0] == "perspective":
-                if len(args) <= 1:
-                    channel(_('Too few arguments'))
-                    return
-                elif args[1] == "set":
-                    if len(args) <= 3:
-                        channel(_('Too few arguments'))
-                        return
-                    camera_context.perspective[int(args[2])] = float(args[3]), float(args[4])
-                elif args[1] == "reset":
-                    camera_context.reset_perspective()
-            elif args[0] == "background":
-                camera_context.background()
-            elif args[0] == "export":
-                camera_context.spooler()
+            camera = camera_context.activate('modifier/Camera')
+            return camera
+
+        @console_command(kernel, 'start', data_type=Camera, help="Start Camera.")
+        def start_camera(command, channel, _, data=None, args=tuple(), **kwargs):
+            data.open_camera()
+            return data
+
+        @console_command(kernel, 'stop', data_type=Camera, help="Stop Camera")
+        def stop_camera(command, channel, _, data=None, args=tuple(), **kwargs):
+            data.close_camera()
+            return data
+
+        @console_argument("subcommand", type=str)
+        @console_command(kernel, 'fisheye', data_type=Camera, help="fisheye (capture|reset)")
+        def fisheye_camera(command, channel, _, data=None, subcommand=None, args=tuple(), **kwargs):
+            if subcommand is None:
+                raise SyntaxError
+            if subcommand == 'capture':
+                data.fisheye_capture()
+            elif subcommand == "reset":
+                data.reset_fisheye()
+            return data
+
+        @console_argument("subcommand", type=str)
+        @console_argument("corner", type=int)
+        @console_argument("x", type=float)
+        @console_argument("y", type=float)
+        @console_command(kernel, 'perspective', data_type=Camera, help="perspective (set <#> <value>|reset)")
+        def perspective_camera(command, channel, _, data=None, subcommand=None, corner=None, x=None, y=None,
+                               args=tuple(), **kwargs):
+            if subcommand is None:
+                raise SyntaxError
+            if subcommand == 'reset':
+                data.reset_perspective()
+                return data
+            elif subcommand == 'set':
+                if y is None:
+                    raise SyntaxError
+                data.perspective[corner] = x,y
+                return camera
+            else:
+                raise SyntaxError
+
+        @console_command(kernel, 'background', data_type=Camera, help="set background image")
+        def background_camera(command, channel, _, data=None, args=tuple(), **kwargs):
+            data.background()
+            return data
+
+        @console_command(kernel, 'export', data_type=Camera, help="export camera image")
+        def export_camera(command, channel, _, data=None, args=tuple(), **kwargs):
+            return data.export()
 
     def detach(self, *args, **kwargs):
         pass
@@ -382,5 +405,7 @@ class Camera(Modifier):
         if frame is not None:
             root = self.context.get_context('/')
             frame = frame[0]
-            root.signal('export-image', (self.image_width, self.image_height, frame))
-
+            f = (self.image_width, self.image_height, frame)
+            root.signal('export-image', f)
+            return f
+        return None

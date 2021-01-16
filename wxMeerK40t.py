@@ -206,13 +206,23 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
-        unlock = wx.BitmapButton(self, wx.ID_ANY, icons8_padlock_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("unlock\n"), unlock)
-        self._mgr.AddPane(unlock, aui.AuiPaneInfo().Bottom())
+        # unlock = wx.BitmapButton(self, wx.ID_ANY, icons8_padlock_50.GetBitmap())
+        # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("unlock\n"), unlock)
+        # self._mgr.AddPane(unlock, aui.AuiPaneInfo().Bottom())
+        #
+        # home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+        # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
+        # self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom())
 
-        home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-        self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
-        self._mgr.AddPane(home, aui.AuiPaneInfo().Bottom())
+        # self.auiToolBar = wx.aui.AuiToolBar(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize,
+        #                                     wx.aui.AUI_TB_HORZ_LAYOUT)
+        # self.auiToolBar.AddTool(wx.ID_ANY, u"tool", icons8_home_filled_50.GetBitmap(),
+        #                         wx.NullBitmap, wx.ITEM_NORMAL, wx.EmptyString, wx.EmptyString, None)
+        # self.auiToolBar.Realize()
+        # self._mgr.AddPane(self.auiToolBar,
+        #                   wx.aui.AuiPaneInfo().Top().CaptionVisible(False).CloseButton(False).MaximizeButton(
+        #                        False).MinimizeButton(False).PinButton(False).PaneBorder(False).Movable(
+        #                        False).Dock().Fixed().DockFixed(False).Floatable(False).Layer(1))
 
         self._mgr.AddPane(self._ribbon, aui.AuiPaneInfo().Top()
                           .TopDockable().BottomDockable()
@@ -2718,7 +2728,7 @@ class RootNode(list):
         value *= tau
 
         def specific(event):
-            bounds = OperationPreprocessor.bounding_box(node.parent)
+            bounds = CutPlanner.bounding_box(node.parent)
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context.console('rotate %frad %f %f\n' % (value, center_x, center_y))
