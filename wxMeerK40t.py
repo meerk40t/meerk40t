@@ -325,12 +325,13 @@ class MeerK40t(wx.Frame, Module, Job):
         context.listen('modified', self.on_element_modified)
         context.listen('altered', self.on_element_alteration)
 
+        context.listen('export-image', self.on_export_signal)
         context.listen('background', self.on_background_signal)
         context.listen('rebuild_tree', self.on_rebuild_tree_signal)
         context.listen('refresh_scene', self.on_refresh_scene)
         context.listen('element_property_update', self.on_element_update)
         context.setting(int, "bed_width", 310)  # Default Value
-        context.setting(int, "bed_height", 220)  # Default Value
+        context.setting(int, "bed_height", 210)  # Default Value
 
         context.listen('active', self.on_active_change)
 
@@ -805,6 +806,7 @@ class MeerK40t(wx.Frame, Module, Job):
         context.unlisten('modified', self.on_element_modified)
         context.unlisten('altered', self.on_element_alteration)
 
+        context.unlisten('export-image', self.on_export_signal)
         context.unlisten('background', self.on_background_signal)
         context.unlisten('rebuild_tree', self.on_rebuild_tree_signal)
         context.unlisten('refresh_scene', self.on_refresh_scene)
@@ -892,6 +894,18 @@ class MeerK40t(wx.Frame, Module, Job):
         else:
             self.background_brush = wx.Brush("Red")
         self.request_refresh_for_animation()
+
+    def on_export_signal(self, frame):
+        image_width, image_height, frame = frame
+        if frame is not None:
+            elements = self.context.elements
+            from PIL import Image
+            img = Image.fromarray(frame)
+            obj = SVGImage()
+            obj.image = img
+            obj.image_width = image_width
+            obj.image_height = image_height
+            elements.add_elem(obj)
 
     def on_background_signal(self, background):
         background = wx.Bitmap.FromBuffer(*background)
@@ -1926,7 +1940,7 @@ class Node(list):
             tree.SetItemImage(item, image=image_id)
 
     def bbox(self):
-        return OperationPreprocessor.bounding_box(self.object)
+        return CutPlanner.bounding_box(self.object)
 
     def objects_of_children(self, types):
         if isinstance(self.object, types):
@@ -3200,7 +3214,6 @@ class wxMeerK40t(wx.App, Module):
         @console_command(context, 'window', help='wxMeerK40 window information')
         def window(command, channel, _, args=tuple(), **kwargs):
             context = self.context
-            _ = self.context._kernel.translation
             if len(args) == 0:
                 channel(_('----------'))
                 channel(_('Windows Registered:'))
@@ -3221,6 +3234,15 @@ class wxMeerK40t(wx.App, Module):
                     module = context.active.opened[name]
                     channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
                 channel(_('----------'))
+            else:
+                if args[0] == "open":
+                    try:
+                        self.context.open('window/%s' % args[1], None)
+                        channel(_("Window Opened."))
+                    except KeyError:
+                        channel(_("No such window as %s" % args[1]))
+                    except IndexError:
+                        raise SyntaxError
 
         @console_command(context, 'refresh', help='wxMeerK40 refresh')
         def refresh(command, channel, _, args=tuple(), **kwargs):

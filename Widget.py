@@ -982,7 +982,7 @@ class GridWidget(Widget):
             hmils = context.bed_height * MILS_IN_MM
         else:
             wmils = 310 * MILS_IN_MM
-            hmils = 220 * MILS_IN_MM
+            hmils = 210 * MILS_IN_MM
 
         kernel_root = self.scene.context.get_context('/')
         convert = kernel_root.units_convert
@@ -1013,7 +1013,7 @@ class GridWidget(Widget):
                 hmils = context.bed_height * MILS_IN_MM
             else:
                 wmils = 320 * MILS_IN_MM
-                hmils = 220 * MILS_IN_MM
+                hmils = 210 * MILS_IN_MM
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)

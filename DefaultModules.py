@@ -31,7 +31,7 @@ class SVGWriter:
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
         context.setting(int, "bed_width", 310)
-        context.setting(int, "bed_height", 220)
+        context.setting(int, "bed_height", 210)
         mm_width = context.bed_width
         mm_height = context.bed_height
         root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
@@ -147,7 +147,7 @@ class SVGLoader:
     @staticmethod
     def load(context, pathname, **kwargs):
         context.setting(int, "bed_width", 310)
-        context.setting(int, "bed_height", 220)
+        context.setting(int, "bed_height", 210)
         elements = []
         if 'svg_ppi' in kwargs:
             ppi = float(kwargs['svg_ppi'])
@@ -286,7 +286,7 @@ class DxfLoader:
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
         context.setting(int, "bed_width", 310)
-        context.setting(int, "bed_height", 220)
+        context.setting(int, "bed_height", 210)
 
         import ezdxf
 

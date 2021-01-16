@@ -202,7 +202,7 @@ class Elemental(Modifier):
         def rect(command, x_pos, y_pos, width, height, rx=None, ry=None, stroke=None, fill=None, args=tuple(), **kwargs):
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             self.context.setting(int, "bed_width", 310)  # Default Value
-            self.context.setting(int, "bed_height", 220)  # Default Value
+            self.context.setting(int, "bed_height", 210)  # Default Value
             rect.render(ppi=1000.0, width="%fmm" % self.context.bed_width, height="%fmm" % self.context.bed_height)
             rect = Path(rect)
             rect.stroke = stroke

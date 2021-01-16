@@ -144,7 +144,7 @@ def _cmd_parser(text):
                 start += 1
 
 
-def console_command(context, path=None, regex=False, hidden=False, help=None, data_type=None):
+def console_command(context, path=None, regex=False, hidden=False, help=None, data_type=None, chain=False):
 
     def decorator(func):
 
@@ -220,6 +220,8 @@ def console_command(context, path=None, regex=False, hidden=False, help=None, da
             if len(remainder) > 0:
                 kwargs['remainder'] = remainder
                 kwargs['args'] = remainder.split()
+            if not chain:
+                remainder = ''
             value = func(command, channel=channel, **ik, **kwargs)
             return value, remainder
 

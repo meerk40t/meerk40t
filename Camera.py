@@ -35,30 +35,29 @@ class CameraHub(Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @console_command(kernel, 'camera.*', regex=True, help="camera commands and modifiers.")
-        def camera(command, channel, _, args=tuple(), **kwargs):
+        @console_option('uri', 'u', type=str)
+        @console_command(kernel, 'camera\d*', regex=True, help="camera commands and modifiers.", chain=True)
+        def camera(command, channel, _, uri=None, args=tuple(), **kwargs):
+            camera_context = self.context.derive(self.current_camera)
             if len(command) > 6:
                 self.current_camera = command[6:]
-                self.context.signal('current_camera', self.current_camera)
-            if len(args) == 0:
-                channel(_('Too few arguments'))
-                return
-            camera_context = self.context.derive(self.current_camera)
-            camera = camera_context.activate('modifier/Camera')
-            return camera
+            cam = camera_context.activate('modifier/Camera')
+            if uri is not None:
+                cam.set_uri(uri)
+            return cam
 
-        @console_command(kernel, 'start', data_type=Camera, help="Start Camera.")
+        @console_command(kernel, 'start', data_type=Camera, help="Start Camera.", chain=True)
         def start_camera(command, channel, _, data=None, args=tuple(), **kwargs):
             data.open_camera()
             return data
 
-        @console_command(kernel, 'stop', data_type=Camera, help="Stop Camera")
+        @console_command(kernel, 'stop', data_type=Camera, help="Stop Camera", chain=True)
         def stop_camera(command, channel, _, data=None, args=tuple(), **kwargs):
             data.close_camera()
             return data
 
         @console_argument("subcommand", type=str)
-        @console_command(kernel, 'fisheye', data_type=Camera, help="fisheye (capture|reset)")
+        @console_command(kernel, 'fisheye', data_type=Camera, help="fisheye (capture|reset)", chain=True)
         def fisheye_camera(command, channel, _, data=None, subcommand=None, args=tuple(), **kwargs):
             if subcommand is None:
                 raise SyntaxError
@@ -72,7 +71,7 @@ class CameraHub(Modifier):
         @console_argument("corner", type=int)
         @console_argument("x", type=float)
         @console_argument("y", type=float)
-        @console_command(kernel, 'perspective', data_type=Camera, help="perspective (set <#> <value>|reset)")
+        @console_command(kernel, 'perspective', data_type=Camera, help="perspective (set <#> <value>|reset)", chain=True)
         def perspective_camera(command, channel, _, data=None, subcommand=None, corner=None, x=None, y=None,
                                args=tuple(), **kwargs):
             if subcommand is None:
@@ -91,11 +90,10 @@ class CameraHub(Modifier):
         @console_command(kernel, 'background', data_type=Camera, help="set background image")
         def background_camera(command, channel, _, data=None, args=tuple(), **kwargs):
             data.background()
-            return data
 
         @console_command(kernel, 'export', data_type=Camera, help="export camera image")
         def export_camera(command, channel, _, data=None, args=tuple(), **kwargs):
-            return data.export()
+            data.export()
 
     def detach(self, *args, **kwargs):
         pass
@@ -104,6 +102,7 @@ class CameraHub(Modifier):
 class Camera(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
+        self.uri = 0
         self.fisheye_k = None
         self.fisheye_d = None
         self.perspective = None
@@ -136,7 +135,7 @@ class Camera(Modifier):
 
     def attach(self, *a, **kwargs):
         self.context.setting(int, "bed_width", 310)
-        self.context.setting(int, "bed_height", 220)
+        self.context.setting(int, "bed_height", 210)
         self.context.setting(int, 'fps', 1)
         self.context.setting(bool, 'correction_fisheye', False)
         self.context.setting(bool, 'correction_perspective', False)
@@ -149,6 +148,12 @@ class Camera(Modifier):
             self.fisheye_k, self.fisheye_d = eval(self.context.fisheye)
         if self.context.perspective is not None and len(self.context.perspective) != 0:
             self.perspective = eval(self.context.perspective)
+        self.uri = self.context.uri
+        try:
+            self.uri = int(self.uri)  # URI is an index.
+        except ValueError:
+            pass
+        self.context.camera = self
         self.context.fisheye_capture = self.fisheye_capture
         self.context.open_camera = self.open_camera
         self.context.close_camera = self.close_camera
@@ -156,6 +161,14 @@ class Camera(Modifier):
         self.context.reset_fisheye = self.reset_fisheye
         self.context.background = self.background
         self.context.spooler = self.export
+        self.context.frame = self.get_frame
+        self.context.raw = self.get_raw()
+
+    def get_frame(self):
+        return self.current_frame
+
+    def get_raw(self):
+        return self.current_raw
 
     def detach(self, *args, **kwargs):
         self.close_camera()
@@ -237,8 +250,7 @@ class Camera(Modifier):
         :param camera_index:
         :return:
         """
-        uri = self.context.uri
-        if uri is not None:
+        if self.uri is not None:
             self.context.threaded(self.threaded_image_fetcher)
 
     def close_camera(self):
@@ -304,11 +316,7 @@ class Camera(Modifier):
         self.quit_thread = True  # If another thread exists this will let it die gracefully.
         with self.camera_lock:
             self.quit_thread = False
-            uri = self.context.uri
-            try:
-                uri = int(uri)  # URI is an index.
-            except ValueError:
-                pass
+            uri = self.uri
             channel("URI: %s" % str(uri))
             if uri is None:
                 return
@@ -385,6 +393,14 @@ class Camera(Modifier):
         self.fisheye_d = None
         self.context.fisheye = ''
 
+    def set_uri(self, uri):
+        self.uri = uri
+        self.context.uri = self.uri
+        try:
+            self.uri = int(self.uri)  # URI is an index.
+        except ValueError:
+            pass
+
     def background(self):
         """
         Sets image background to main scene.
@@ -404,8 +420,5 @@ class Camera(Modifier):
         frame = self.last_frame
         if frame is not None:
             root = self.context.get_context('/')
-            frame = frame[0]
-            f = (self.image_width, self.image_height, frame)
-            root.signal('export-image', f)
-            return f
-        return None
+            self.image_height, self.image_width = frame.shape[:2]
+            root.signal('export-image', (self.image_width, self.image_height, frame))

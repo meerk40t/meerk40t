@@ -216,7 +216,7 @@ class LhystudiosDevice(Modifier):
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
         self.context.setting(int, "bed_width", 310)
-        self.context.setting(int, "bed_height", 220)
+        self.context.setting(int, "bed_height", 210)
         self.dx = 0
         self.dy = 0
         context.listen('interpreter;mode', self.on_mode_change)

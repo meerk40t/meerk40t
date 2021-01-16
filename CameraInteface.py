@@ -18,45 +18,13 @@ class CameraInterface(wx.Frame, Module, Job):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
-        Job.__init__(self, job_name="Camera")
+
         if len(args) > 0 and args[0] >= 1:
-            self.settings_value = args[0]
+            self.index = args[0]
         else:
-            self.settings_value = 0
-        self.SetSize((600, 600))
-        self.CameraInterface_menubar = wx.MenuBar()
-        wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-        self.Bind(wx.EVT_MENU, self.reset_perspective, id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
-        self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
-        wxglade_tmp_menu.AppendSeparator()
-
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.ip_menu_edit(), id=item.GetId())
-
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set IP Camera"), "", wx.ITEM_RADIO)
-        self.ip_camera_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(-1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "", wx.ITEM_RADIO)
-        self.camera_0_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(0), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 1"), "", wx.ITEM_RADIO)
-        self.camera_1_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 2"), "", wx.ITEM_RADIO)
-        self.camera_2_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(2), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 3"), "", wx.ITEM_RADIO)
-        self.camera_3_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(3), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 4"), "", wx.ITEM_RADIO)
-        self.camera_4_menu = item
-        self.Bind(wx.EVT_MENU, lambda e: self.swap_camera(4), id=item.GetId())
-
-        self.CameraInterface_menubar.Append(wxglade_tmp_menu, _("Camera"))
-        self.SetMenuBar(self.CameraInterface_menubar)
-        # Menu Bar
+            self.index = 0
+        Job.__init__(self, job_name="Camera%d" % self.index)
+        self.last_frame_index = -1
 
         self.button_update = wx.BitmapButton(self, wx.ID_ANY, icons8_camera_50.GetBitmap())
         self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
@@ -66,36 +34,44 @@ class CameraInterface(wx.Frame, Module, Job):
         self.slider_fps = wx.Slider(self, wx.ID_ANY, 24, 0, 60, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
         self.display_camera = wx.Panel(self, wx.ID_ANY)
+
+        self.CameraInterface_menubar = wx.MenuBar()
+        wxglade_tmp_menu = wx.Menu()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
+        self.Bind(wx.EVT_MENU, self.reset_perspective, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
+        self.Bind(wx.EVT_MENU, self.reset_fisheye, id=item.GetId())
+        wxglade_tmp_menu.AppendSeparator()
+
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.context.active.open('window/CameraURI', self, self.index), id=item.GetId())
+
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 0\n' % self.index), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 1"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 1\n' % self.index), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 2"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 2\n' % self.index), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 3"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 3\n' % self.index), id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 4"), "")
+        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 4\n' % self.index), id=item.GetId())
+
+        self.CameraInterface_menubar.Append(wxglade_tmp_menu, _("Camera"))
+        self.SetMenuBar(self.CameraInterface_menubar)
+        # Menu Bar
+
         self.__set_properties()
         self.__do_layout()
 
-        self.camera_job = None
-        self.fetch_job = None
         self.camera_setting = None
         self.setting = None
 
-        self.current_frame = None
-        self.last_frame = None
-
-        self.current_raw = None
-        self.last_raw = None
-
-        self.capture = None
         self.image_width = -1
         self.image_height = -1
         self._Buffer = None
 
         self.frame_bitmap = None
-
-        self.fisheye_k = None
-        self.fisheye_d = None
-
-        # Used during calibration.
-        self.objpoints = []  # 3d point in real world space
-        self.imgpoints = []  # 2d points in image plane.
-
-        # Perspective Points
-        self.perspective = None
 
         self.previous_window_position = None
         self.previous_scene_position = None
@@ -129,13 +105,31 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
-        self.camera_lock = threading.Lock()
+
+        self.context.setting(bool, 'mouse_zoom_invert', False)
+        self.context.setting(int, 'draw_mode', 0)
+        self.context.setting(int, "bed_width", 310)  # Default Value
+        self.context.setting(int, "bed_height", 210)  # Default Value
+
+        self.camera_setting = self.context.get_context('camera')
+        self.setting = self.camera_setting.derive(str(self.index))
+        self.camera = self.setting.activate('modifier/Camera')
+
+        self.setting.setting(int, 'index', 0)
+        self.setting.setting(int, 'fps', 1)
+        self.setting.setting(bool, 'correction_fisheye', False)
+        self.setting.setting(bool, 'correction_perspective', False)
+        self.setting.setting(str, 'fisheye', '')
+        self.setting.setting(str, 'perspective', '')
+        self.setting.setting(str, 'uri', '0')
+        self.check_fisheye.SetValue(self.setting.correction_fisheye)
+        self.check_perspective.SetValue(self.setting.correction_perspective)
+        if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
+            self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
+        if self.setting.perspective is not None and len(self.setting.perspective) != 0:
+            self.perspective = eval(self.setting.perspective)
+        self.slider_fps.SetValue(self.setting.fps)
         self.process = self.update_view
-        self.connection_attempts = 0
-        self.frame_attempts = 0
-        self.last_frame_index = -1
-        self.frame_index = 0
-        self.quit_thread = False
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -185,51 +179,16 @@ class CameraInterface(wx.Frame, Module, Job):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.context.setting(bool, 'mouse_zoom_invert', False)
-        self.context.setting(int, 'draw_mode', 0)
-        self.context.setting(int, "bed_width", 310)  # Default Value
-        self.context.setting(int, "bed_height", 220)  # Default Value
-
-        self.camera_setting = self.context.get_context('/camera')
-        self.setting = self.camera_setting.derive(str(self.settings_value))
-
-        self.setting.setting(int, 'index', 0)
-        self.setting.setting(int, 'fps', 1)
-        self.setting.setting(bool, 'correction_fisheye', False)
-        self.setting.setting(bool, 'correction_perspective', False)
-        self.setting.setting(str, 'fisheye', '')
-        self.setting.setting(str, 'perspective', '')
-        self.setting.setting(str, 'uri', '0')
-        self.check_fisheye.SetValue(self.setting.correction_fisheye)
-        self.check_perspective.SetValue(self.setting.correction_perspective)
-        if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
-            self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
-        if self.setting.perspective is not None and len(self.setting.perspective) != 0:
-            self.perspective = eval(self.setting.perspective)
-        self.slider_fps.SetValue(self.setting.fps)
-
-        if self.camera_job is not None:
-            self.camera_job.cancel()
-        self.open_camera(self.setting.index)
-        self.context.listen('camera_uri_changed', self.on_camera_uri_change)
-        self.context.listen('camera_frame_raw', self.on_camera_frame_raw)
-        self.set_camera_checks()
+        self.context.console("camera%d start\n" % self.index)
+        self.context.schedule(self)
 
     def finalize(self, *args, **kwargs):
-        self.setting.flush()
-        self.camera_setting.flush()
-        self.context.unlisten('camera_uri_changed', self.on_camera_uri_change)
-        self.context.unlisten('camera_frame_raw', self.on_camera_frame_raw)
-        self.quit_thread = True
-        if self.camera_job is not None:
-            self.camera_job.cancel()
-        if self.fetch_job is not None:
-            self.fetch_job.cancel()
         try:
             self.Close()
-            self.quit_thread = True # was shutdown value
+            self.context.console("camera%d stop\n" % self.index)
         except RuntimeError:
             pass
+        self.context.unschedule(self)
 
     def on_size(self, event):
         self.Layout()
@@ -241,60 +200,14 @@ class CameraInterface(wx.Frame, Module, Job):
         self._Buffer = wx.Bitmap(width, height)
         self.update_in_gui_thread()
 
-    def on_camera_uri_change(self, *args):
-        pass
-
-    def ip_menu_edit(self):
-        """
-        Select a particular URI.
-        :param uri:
-        :return:
-        """
-        self.context.console('window open CameraURI %s %s\n' % (self.settings_value, self.setting.uri))
-
-    def ip_menu_uri_change(self, uri):
-        def function(event=None):
-            self.ip_menu_uri(uri)
-
-        return function
-
-    def ip_menu_uri(self, uri):
-        """
-        Select a particular URI.
-        :param uri:
-        :return:
-        """
-        self.setting.uri = uri
-        self.swap_camera(-1)
-
-    def set_camera_checks(self):
-        """
-        Set the checkmarks based on the index value.
-
-        :return:
-        """
-
-        if self.setting.index == 0:
-            self.camera_0_menu.Check(True)
-        elif self.setting.index == 1:
-            self.camera_1_menu.Check(True)
-        elif self.setting.index == 2:
-            self.camera_2_menu.Check(True)
-        elif self.setting.index == 3:
-            self.camera_3_menu.Check(True)
-        elif self.setting.index == 4:
-            self.camera_4_menu.Check(True)
-        else:
-            self.ip_camera_menu.Check(True)
-
     def update_view(self):
-        frame = self.last_frame
+        frame = self.camera.get_frame()
         if frame is None:
             return
-        if self.frame_index == self.last_frame_index:
+        if self.camera.frame_index == self.last_frame_index:
             return
         else:
-            self.last_frame_index = self.frame_index
+            self.last_frame_index = self.camera.frame_index
         bed_width = self.context.bed_width * 2
         bed_height = self.context.bed_height * 2
 
@@ -307,358 +220,6 @@ class CameraInterface(wx.Frame, Module, Job):
                 self.image_height = bed_height
                 self.display_camera.SetSize((self.image_width, self.image_height))
         self.update_in_gui_thread()
-
-    def on_camera_frame_raw(self, *args):
-        """
-        Raw Camera frame was requested and should be processed.
-
-        This attempts to perform checkboard detection.
-
-        :param frame:
-        :return:
-        """
-        frame = self.last_raw
-        if frame is None:
-            return
-        try:
-            import cv2
-            import numpy as np
-        except:
-            dlg = wx.MessageDialog(None, _("Could not import Camera requirements"),
-                                   _("Imports Failed"), wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-        CHECKERBOARD = (6, 9)
-        subpix_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
-        calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_CHECK_COND + cv2.fisheye.CALIB_FIX_SKEW
-        objp = np.zeros((1, CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
-        objp[0, :, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
-
-        img = frame
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # Find the chess board corners
-        ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD,
-                                                 cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
-        # If found, add object points, image points (after refining them)
-
-        if ret:
-            self.objpoints.append(objp)
-            cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
-            self.imgpoints.append(corners)
-        else:
-            dlg = wx.MessageDialog(None, _("Checkerboard 6x9 pattern not found."),
-                                   _("Pattern not found."), wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        N_OK = len(self.objpoints)
-        K = np.zeros((3, 3))
-        D = np.zeros((4, 1))
-        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
-        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
-        try:
-            rms, a, b, c, d = \
-                cv2.fisheye.calibrate(
-                    self.objpoints,
-                    self.imgpoints,
-                    gray.shape[::-1],
-                    K,
-                    D,
-                    rvecs,
-                    tvecs,
-                    calibration_flags,
-                    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
-                )
-        except cv2.error:
-            # Ill conditioned matrix for input values.
-            self.objpoints = self.objpoints[:-1]  # Deleting the last entry.
-            self.imgpoints = self.imgpoints[:-1]
-            dlg = wx.MessageDialog(None, _("Ill-conditioned Matrix. Keep trying."),
-                                   _("Matrix."), wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        dlg = wx.MessageDialog(None, _("Success. %d images so far." % len(self.objpoints)),
-                               _("Image Captured"), wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
-        self.setting.fisheye = repr([K.tolist(), D.tolist()])
-        self.fisheye_k = K.tolist()
-        self.fisheye_d = D.tolist()
-
-    def swap_camera(self, camera_index=0):
-        """
-        Disconnect the current connected camera.
-        Connect to the provided camera index.
-
-        :param camera_index:
-        :return:
-        """
-        with self.camera_lock:
-            self.close_camera()
-            self.open_camera(camera_index)
-        self.set_camera_checks()
-
-    def init_camera(self):
-        """
-        Connect to Camera.
-
-        :return:
-        """
-        if self.context is None:
-            return
-        if self.capture is not None:
-            self.capture = None
-        try:
-            import cv2
-        except ImportError:
-            wx.CallAfter(self.camera_error_requirement)
-            return
-        wx.CallAfter(lambda: self.set_control_enable(True))
-        try:
-            self.interval = 1.0 / self.setting.fps
-        except ZeroDivisionError:
-            self.interval = 5
-        except AttributeError:
-            return
-        self.context._kernel.threaded(self.threaded_image_fetcher)
-        self.context.schedule(self)
-
-    def open_camera(self, camera_index=0):
-        """
-        Open Camera device. Prevents opening if already opening.
-
-        :param camera_index:
-        :return:
-        """
-        if self.camera_job is not None:
-            self.camera_job.cancel()
-        self.setting.index = camera_index
-        uri = self.get_camera_uri()
-        if uri is not None:
-            self.camera_job = self.context._kernel.add_job(self.init_camera, times=1, interval=0.1)
-
-    def close_camera(self):
-        """
-        Disconnect from the current camera.
-
-        :return:
-        """
-        self.context.unschedule(self)
-        if self.capture is not None:
-            self.capture.release()
-            self.capture = None
-
-    def set_control_enable(self, enable=False):
-        """
-        Disable/Enable all the major controls within the GUI.
-        :param enable:
-        :return:
-        """
-        try:
-            for attr in dir(self):
-                value = getattr(self, attr)
-                if isinstance(value, wx.Control):
-                    if value is not self.button_reconnect:
-                        value.Enable(enable)
-        except RuntimeError:
-            pass
-
-    def camera_error_requirement(self):
-        """
-        Message Error that OpenCV is not installed and thus camera cannot run.
-
-        Disable all Controls.
-
-        :return:
-        """
-        try:
-            self.set_control_enable(False)
-            dlg = wx.MessageDialog(None, _(
-                "If using a precompiled binary, this was requirement was not included.\nIf using pure Python, add it with: pip install opencv-python-headless"),
-                                   _("Interface Requires OpenCV."), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
-        except RuntimeError:
-            pass
-
-    def camera_error_webcam(self):
-        """
-        Message error based on failure to connect to webcam.
-
-        Disable all Controls.
-
-        :return:
-        """
-        try:
-            self.set_control_enable(False)
-            dlg = wx.MessageDialog(None, _("No Webcam found."),
-                                   _("Error"), wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
-        except RuntimeError:
-            pass
-
-    def ip_menu_new(self):
-        """
-        Requests and adds new IP Connection URI.
-
-        :return:
-        """
-        dlg = wx.TextEntryDialog(self, _(
-            "Enter the HTTP or RTSP uri"),
-                                 _("Webcam URI Update"), '')
-        dlg.SetValue(str(self.get_camera_uri()))
-        modal = dlg.ShowModal()
-        if modal == wx.ID_OK:
-            uri = str(dlg.GetValue())
-            index = len(list(self.camera_setting.keylist()))
-            setattr(self.camera_setting, 'uri' + str(index), uri)
-            self.setting.uri = uri
-            self.ip_menu_uri(uri)
-            self.swap_camera(-1)
-            self.set_camera_checks()
-
-    def get_camera_uri(self):
-        """
-        Get the current camera URI.
-
-        If the URI
-
-        :return:
-        """
-        index = self.setting.index
-        if index >= 0:
-            return index
-        uri = self.setting.uri
-        if uri is None or len(uri) == 0:
-            return None
-        try:
-            return int(uri)
-        except ValueError:
-            # URI is not a number.
-            return uri
-
-    def attempt_recovery(self):
-        try:
-            import cv2
-        except ImportError:
-            return False
-        if self.quit_thread:
-            return False
-        if self.context is None:
-            return False
-        self.frame_attempts += 1
-        if self.frame_attempts < 5:
-            return True
-        self.frame_attempts = 0
-
-        if self.capture is not None:
-            with self.camera_lock:
-                self.capture.release()
-                self.capture = None
-        uri = self.get_camera_uri()
-        if uri is None:
-            return False
-
-        self.context.signal("camera_initialize")
-        with self.camera_lock:
-            self.capture = cv2.VideoCapture(uri)
-
-        if self.capture is None:
-            return False
-        self.connection_attempts += 1
-        return True
-
-    def threaded_image_fetcher(self):
-        self.quit_thread = False
-        try:
-            import cv2
-        except ImportError:
-            return
-
-        raw = False
-
-        uri = self.get_camera_uri()
-        if uri is None:
-            return
-        self.context.signal("camera_initialize")
-        with self.camera_lock:
-            self.capture = cv2.VideoCapture(uri)
-
-        while not self.quit_thread:
-            if self.connection_attempts > 50:
-                wx.CallAfter(self.camera_error_webcam)
-            with self.camera_lock:
-                if self.capture is None:
-                    # No capture the thread dies.
-                    return
-                try:
-                    ret = self.capture.grab()
-                except AttributeError:
-                    continue
-
-                if not ret:
-                    if self.attempt_recovery():
-                        continue
-                    else:
-                        return
-
-                ret, frame = self.capture.retrieve()
-                if not ret or frame is None:
-                    if self.attempt_recovery():
-                        continue
-                    else:
-                        return
-            self.frame_attempts = 0
-            self.connection_attempts = 0
-            self.last_raw = self.current_raw
-            self.current_raw = frame
-
-            if not raw and \
-                    self.fisheye_k is not None and \
-                    self.fisheye_d is not None and \
-                    self.context is not None and \
-                    self.setting.correction_fisheye:
-                # Unfisheye the drawing
-                import numpy as np
-                K = np.array(self.fisheye_k)
-                D = np.array(self.fisheye_d)
-                DIM = frame.shape[:2][::-1]
-                map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), K, DIM, cv2.CV_16SC2)
-                frame = cv2.remap(frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-            if not raw and self.context is not None and self.setting.correction_perspective:
-                # Perspective the drawing.
-                bed_width = self.context.bed_width * 2
-                bed_height = self.context.bed_height * 2
-                width, height = frame.shape[:2][::-1]
-                import numpy as np
-                if self.perspective is None:
-                    rect = np.array([
-                        [0, 0],
-                        [width - 1, 0],
-                        [width - 1, height - 1],
-                        [0, height - 1]], dtype="float32")
-                else:
-                    rect = np.array(
-                        self.perspective, dtype="float32")
-                dst = np.array([
-                    [0, 0],
-                    [bed_width - 1, 0],
-                    [bed_width - 1, bed_height - 1],
-                    [0, bed_height - 1]], dtype="float32")
-                M = cv2.getPerspectiveTransform(rect, dst)
-                frame = cv2.warpPerspective(frame, M, (bed_width, bed_height))
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            self.last_frame = self.current_frame
-            self.current_frame = frame
-            self.frame_index += 1
-        if self.capture is not None:
-            self.capture.release()
-            self.capture = None
-        if self.context is not None:
-            self.context.signal("camera_finalize")
 
     def reset_perspective(self, event):
         """
@@ -723,17 +284,17 @@ class CameraInterface(wx.Frame, Module, Job):
         gc.PushState()
         gc.DrawBitmap(self.frame_bitmap, 0, 0, self.image_width, self.image_height)
         if not self.setting.correction_perspective:
-            if self.perspective is None:
-                self.perspective = [0, 0], \
+            if self.camera.perspective is None:
+                self.camera.perspective = [0, 0], \
                                    [self.image_width, 0], \
                                    [self.image_width, self.image_height], \
                                    [0, self.image_height]
             gc.SetPen(wx.BLACK_DASHED_PEN)
-            gc.StrokeLines(self.perspective)
-            gc.StrokeLine(self.perspective[0][0], self.perspective[0][1],
-                          self.perspective[3][0], self.perspective[3][1])
+            gc.StrokeLines(self.camera.perspective)
+            gc.StrokeLine(self.camera.perspective[0][0], self.camera.perspective[0][1],
+                          self.camera.perspective[3][0], self.camera.perspective[3][1])
             gc.SetPen(wx.BLUE_PEN)
-            for p in self.perspective:
+            for p in self.camera.perspective:
                 half = CORNER_SIZE / 2
                 gc.StrokeLine(p[0] - half, p[1], p[0] + half, p[1])
                 gc.StrokeLine(p[0], p[1] - half, p[0], p[1] + half)
@@ -785,9 +346,9 @@ class CameraInterface(wx.Frame, Module, Job):
         if self.corner_drag is None:
             self.scene_post_pan(wdx, wdy)
         else:
-            self.perspective[self.corner_drag][0] += sdx
-            self.perspective[self.corner_drag][1] += sdy
-            self.setting.perspective = repr(self.perspective)
+            self.camera.perspective[self.corner_drag][0] += sdx
+            self.camera.perspective[self.corner_drag][1] += sdy
+            self.setting.perspective = repr(self.camera.perspective)
         self.previous_window_position = window_position
         self.previous_scene_position = scene_position
 
@@ -821,8 +382,8 @@ class CameraInterface(wx.Frame, Module, Job):
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
         self.corner_drag = None
-        if self.perspective is not None:
-            for i, p in enumerate(self.perspective):
+        if self.camera.perspective is not None:
+            for i, p in enumerate(self.camera.perspective):
                 half = CORNER_SIZE / 2
                 if Point.distance(self.previous_scene_position, p) < half:
                     self.corner_drag = i
@@ -927,11 +488,7 @@ class CameraInterface(wx.Frame, Module, Job):
         :param event:
         :return:
         """
-        frame = self.context.last_signal('camera_frame')
-        if frame is not None:
-            frame = frame[0]
-            buffer = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
-            self.context.signal('background', buffer)
+        self.context.console("camera%d background\n" % self.index)
 
     def on_button_export(self, event):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -941,20 +498,10 @@ class CameraInterface(wx.Frame, Module, Job):
         :param event:
         :return:
         """
-        frame = self.context.last_signal('camera_frame')
-        if frame is not None:
-            elements = self.context.elements
-            frame = frame[0]
-            from PIL import Image
-            img = Image.fromarray(frame)
-            obj = SVGImage()
-            obj.image = img
-            obj.image_width = self.image_width
-            obj.image_height = self.image_height
-            elements.add_elem(obj)
+        self.context.console("camera%d export\n" % self.index)
 
     def on_button_reconnect(self, event):  # wxGlade: CameraInterface.<event_handler>
-        self.quit_thread = True
+        self.context.console("camera%d stop start\n" % self.index)
 
     def on_slider_fps(self, event):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -980,29 +527,23 @@ class CameraInterface(wx.Frame, Module, Job):
         :param event:
         :return:
         """
-        if self.fetch_job is not None:
-            self.fetch_job.cancel()
-        # TODO: This won't work anymore.
-        self.context.signal('camera_frame_raw', None)
-
-        self.fetch_job = self.context.add_job(self.on_camera_frame_raw, args=True, times=1, interval=0)
+        self.context.console("camera%d fisheye detect\n" % self.index)
 
 
 class CameraURI(wx.Frame, Module):
-    def __init__(self, context, path, parent, *args, **kwds):
+    def __init__(self, context, path, parent, *args, index=0, **kwds):
         # begin wxGlade: CameraURI.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        if 'param' in kwds:
-            self.set_name, self.set_uri = kwds['param']
+        self.index = index
+        if parent is None:
+            wx.Frame.__init__(self, parent)
         else:
-            self.set_name = None
-            self.set_uri = ''
+            wx.Frame.__init__(self, parent, -1, "",
+                              style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
         self.SetSize((437, 530))
         self.list_uri = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
         self.button_add = wx.Button(self, wx.ID_ANY, "Add URI")
-        self.text_uri = wx.TextCtrl(self, wx.ID_ANY, self.set_uri)
+        self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
 
         self.__set_properties()
         self.__do_layout()
@@ -1052,7 +593,7 @@ class CameraURI(wx.Frame, Module):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.camera_setting = self.context.get_context('/camera')
+        self.camera_setting = self.context.get_context('camera')
         self.camera_dict = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path)
         self.on_list_refresh()
 
@@ -1066,8 +607,7 @@ class CameraURI(wx.Frame, Module):
     def commit(self):
         if not self.changed:
             return
-        camera = self.camera_setting
-        for c in list(camera.keylist()):
+        for c in list(self.camera_setting._kernel.keylist(self.camera_setting._path)):
             try:
                 print(self.camera_setting)
                 setattr(self.camera_setting, c, None)
@@ -1090,18 +630,13 @@ class CameraURI(wx.Frame, Module):
                 continue
             m = self.list_uri.InsertItem(i, c)
             if m != -1:
-                if camera_item == self.set_uri:
-                    self.list_uri.Select(i)
                 self.list_uri.SetItem(m, 1, str(camera_item))
 
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
-        index = event.GetIndex()
         element = event.Text
-        new_url = self.camera_dict[element]
-        interface = self.context.find('window', 'CameraInterface:%s' % self.set_name)
-        if interface is not None:
-            self.context.signal('camera_uri_set', self.set_uri, new_url)
-            self.Close()
+        new_uri = self.camera_dict[element]
+        self.context.console("camera --uri %s\n" % new_uri)
+        self.Close()
 
     def on_list_right_clicked(self, event):  # wxGlade: CameraURI.<event_handler>
         index = event.GetIndex()
