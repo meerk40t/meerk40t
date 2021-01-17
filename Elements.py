@@ -897,6 +897,7 @@ class Elemental(Modifier):
         context = self.context
         settings = context.derive('operations')
         settings.clear_persistent()
+
         for i, op in enumerate(self.ops()):
             op_set = settings.derive(str(i))
             sets = op.settings
@@ -911,8 +912,8 @@ class Elemental(Modifier):
                         continue
                     if isinstance(value, Color):
                         value = value.value
-
                     op_set.write_persistent(key, value)
+        settings.close_subpaths()
 
     def boot(self, *a, **kwargs):
         self.context.setting(bool, "operation_default_empty", True)

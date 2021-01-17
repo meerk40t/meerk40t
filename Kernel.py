@@ -332,6 +332,16 @@ class Context:
         for e in self._kernel.derivable(self._path):
             yield e
 
+    def subpaths(self):
+        for e in list(self._kernel.contexts):
+            if e.startswith(self._path):
+                yield e, self._kernel.contexts[e]
+
+    def close_subpaths(self):
+        for e in list(self._kernel.contexts):
+            if e.startswith(self._path):
+                self._kernel.contexts[e] = None
+
     def setting(self, setting_type, key, default=None):
         """
         Registers a setting to be used between modules.
@@ -837,6 +847,8 @@ class Kernel:
         # Close Modules
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
+            if context is None:
+                continue
             for opened_name in list(context.opened):
                 obj = context.opened[opened_name]
                 channel(_("%s: Finalizing Module %s: %s") % (str(context), opened_name, str(obj)))
@@ -845,6 +857,8 @@ class Kernel:
         # Detach Modifiers
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
+            if context is None:
+                continue
 
             for attached_name in list(context.attached):
                 obj = context.attached[attached_name]
@@ -860,6 +874,8 @@ class Kernel:
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
+            if context is None:
+                continue
             channel(_("Saving Context State: '%s'") % str(context))
             context.flush()
             del self.contexts[context_name]
