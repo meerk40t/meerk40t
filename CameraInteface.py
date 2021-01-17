@@ -218,6 +218,13 @@ class CameraInterface(wx.Frame, Module, Job):
             return
         else:
             self.last_frame_index = self.camera.frame_index
+
+        if not wx.IsMainThread():
+            wx.CallAfter(self._guithread_update_view)
+        else:
+            self._guithread_update_view()
+
+    def _guithread_update_view(self):
         frame = self.camera.get_frame()
         if frame is None:
             return
@@ -287,7 +294,7 @@ class CameraInterface(wx.Frame, Module, Job):
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.Clear()
-        w, h = dc.Size
+        w, h = dc.GetSize()
         if dm & DRAW_MODE_FLIPXY != 0:
             dc.SetUserScale(-1, -1)
             dc.SetLogicalOrigin(w, h)
@@ -469,14 +476,10 @@ class CameraInterface(wx.Frame, Module, Job):
         Redraw on the GUI thread.
         :return:
         """
-
-        if wx.IsMainThread():
-            self.on_update_buffer()
-        else:
-            wx.CallAfter(self.on_update_buffer, ())
+        self.on_update_buffer()
         try:
-            self.display_camera.Refresh()
-            self.display_camera.Update()
+            self.Refresh(True)
+            self.Update()
         except RuntimeError:
             pass
 
