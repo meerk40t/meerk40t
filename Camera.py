@@ -165,10 +165,10 @@ class Camera(Modifier):
         self.context.raw = self.get_raw()
 
     def get_frame(self):
-        return self.current_frame
+        return self.last_frame
 
     def get_raw(self):
-        return self.current_raw
+        return self.last_raw
 
     def detach(self, *args, **kwargs):
         self.close_camera()
