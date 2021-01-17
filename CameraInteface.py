@@ -129,6 +129,7 @@ class CameraInterface(wx.Frame, Module, Job):
         if self.setting.perspective is not None and len(self.setting.perspective) != 0:
             self.perspective = eval(self.setting.perspective)
         self.slider_fps.SetValue(self.setting.fps)
+        self.on_slider_fps()
         self.process = self.update_view
 
     def __do_layout(self):
@@ -474,8 +475,8 @@ class CameraInterface(wx.Frame, Module, Job):
         else:
             wx.CallAfter(self.on_update_buffer, ())
         try:
-            self.Refresh(True)
-            self.Update()
+            self.display_camera.Refresh()
+            self.display_camera.Update()
         except RuntimeError:
             pass
 
@@ -519,7 +520,7 @@ class CameraInterface(wx.Frame, Module, Job):
     def on_button_reconnect(self, event):  # wxGlade: CameraInterface.<event_handler>
         self.context.console("camera%d stop start\n" % self.index)
 
-    def on_slider_fps(self, event):  # wxGlade: CameraInterface.<event_handler>
+    def on_slider_fps(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
         Adjusts the camera FPS.
 
