@@ -1,5 +1,5 @@
 
-from Kernel import Modifier, Context, console_command
+from Kernel import Modifier, console_command
 from svgelements import *
 
 

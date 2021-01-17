@@ -19,13 +19,14 @@ STATE_TERMINATE = 10
 
 class Modifier:
     """
-    A modifier alters a context with some additional functionality set during attachment and detachment.
+    A modifier alters a context with additional functionality set during attachment and detachment.
 
     These are also booted and shutdown with the kernel. The modifications to the kernel are not expected to be undone.
     Rather the detach should kill any secondary processes the modifier may possess.
 
     At detach the assumption is that the Modifier's ecosystem is the same.
 
+    Modifiers can only be called once at any particular context.
     """
 
     def __init__(self, context, name=None, channel=None):
@@ -71,6 +72,9 @@ class Module:
 
     If an opened module is tries to open() a second time in a context and it was never closed. The device restore()
     function is called for the device, with the same args and kwargs that would have been called on __init__().
+
+    Multiple instances of a module can be opened but this requires a different initialization name. Modules are not
+    expected to modify their contexts.
     """
 
     def __init__(self, context, name=None, *args, **kwargs):
@@ -809,13 +813,11 @@ class Kernel:
         Suspends all signals.
         Each initialized context is flushed and shutdown.
         Each opened module within the context is stopped and closed.
-        Each attached modifier is shutdown and deactivate.
+        Each attached modifier is shutdown and deactivated.
 
         All threads are stopped.
 
         Any residual attached listeners are made warnings.
-
-        There's no way to unattach listeners without the signal process running in the scheduler.
 
         :param channel:
         :return:
@@ -906,7 +908,7 @@ class Kernel:
     def device_boot(self, d, device_name=None, autoboot=True):
         """
         Device boot sequence. This is called on individual devices the kernel reads automatically the device_name and
-        the  autoboot setting. If autoboot is set then the device is activated at the boot location. The context 'd'
+        the autoboot setting. If autoboot is set then the device is activated at the boot location. The context 'd'
         is activated with the correct device name registered in device/<device_name>
 
         :param d:

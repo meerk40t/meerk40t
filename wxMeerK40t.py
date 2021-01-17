@@ -208,9 +208,12 @@ class MeerK40t(wx.Frame, Module, Job):
         self.ribbon_position_units = 0
         self.ribbon_position_name = None
         self.__set_ribbonbar()
-        # unlock = wx.BitmapButton(self, wx.ID_ANY, icons8_padlock_50.GetBitmap())
-        # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("unlock\n"), unlock)
-        # self._mgr.AddPane(unlock, aui.AuiPaneInfo().Bottom())
+        stop = wx.BitmapButton(self, wx.ID_ANY, icons8_end_50.GetBitmap())
+        self.Bind(wx.EVT_BUTTON, lambda e: self.context.active.interpreter.realtime_command(REALTIME_RESET), stop)
+        stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+        stop.SetToolTip(_("Emergency stop/reset the controller."))
+        stop.SetSize(stop.GetBestSize())
+        self._mgr.AddPane(stop, aui.AuiPaneInfo().Bottom())
         #
         # home = wx.BitmapButton(self, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
         # self.Bind(wx.EVT_BUTTON, lambda e: self.context.console("home\n"), home)
