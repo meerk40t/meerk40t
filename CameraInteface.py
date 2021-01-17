@@ -153,7 +153,7 @@ class CameraInterface(wx.Frame, Module, Job):
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraInterface.__set_properties
-        self.SetTitle("CameraInterface")
+        self.SetTitle(_("CameraInterface %d") % self.index)
         self.button_update.SetToolTip(_("Update Image"))
         self.button_update.SetSize(self.button_update.GetBestSize())
         self.button_export.SetToolTip(_("Export Snapsnot"))
@@ -213,13 +213,13 @@ class CameraInterface(wx.Frame, Module, Job):
         self.update_in_gui_thread()
 
     def update_view(self):
-        frame = self.camera.get_frame()
-        if frame is None:
-            return
         if self.camera.frame_index == self.last_frame_index:
             return
         else:
             self.last_frame_index = self.camera.frame_index
+        frame = self.camera.get_frame()
+        if frame is None:
+            return
         bed_width = self.context.bed_width * 2
         bed_height = self.context.bed_height * 2
 
@@ -468,7 +468,11 @@ class CameraInterface(wx.Frame, Module, Job):
         Redraw on the GUI thread.
         :return:
         """
-        self.on_update_buffer()
+
+        if wx.IsMainThread():
+            self.on_update_buffer()
+        else:
+            wx.CallAfter(self.on_update_buffer, ())
         try:
             self.Refresh(True)
             self.Update()

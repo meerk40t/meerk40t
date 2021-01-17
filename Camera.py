@@ -126,7 +126,6 @@ class Camera(Modifier):
 
         self.connection_attempts = 0
         self.frame_attempts = 0
-        self.last_frame_index = -1
         self.frame_index = 0
         self.quit_thread = False
 
@@ -251,7 +250,7 @@ class Camera(Modifier):
         :return:
         """
         if self.uri is not None:
-            self.context.threaded(self.threaded_image_fetcher)
+            self.context.threaded(self.threaded_image_fetcher, thread_name="CameraFetcher-%s" % self.context._path)
 
     def close_camera(self):
         """
