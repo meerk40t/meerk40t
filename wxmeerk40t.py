@@ -154,9 +154,9 @@ ID_MENU_TREE = idinc.new()
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('it', u'italiano', wx.LANGUAGE_ITALIAN),
-                       ('fr', u'français', wx.LANGUAGE_FRENCH),
+                       ('fr', u'franÃ§ais', wx.LANGUAGE_FRENCH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
-                       ('es', u'español', wx.LANGUAGE_SPANISH),
+                       ('es', u'espaÃ±ol', wx.LANGUAGE_SPANISH),
                        ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
 
 
@@ -2572,14 +2572,14 @@ class RootNode(list):
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
+                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0fÂ°") % (i, angle.as_degrees),
                                                          "",
                                                          wx.ITEM_NORMAL))
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
                              path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                         _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
+                                                         _(u"Rotate turn/%d, -%.0fÂ°") % (i, angle.as_degrees), "",
                                                          wx.ITEM_NORMAL))
                 if not locked:
                     menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))
