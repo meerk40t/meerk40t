@@ -1,6 +1,8 @@
+from copy import copy
+
 from lasercommandconstants import *
+from svgelements import Point, Path, Color
 from rasterplotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from svgelements import *
 from zinglplotter import ZinglPlotter
 
 """
@@ -152,7 +154,6 @@ class CutCode(list):
         Reverses subpaths flipping the individual elements from position j inclusive to
         k exclusive.
 
-        :param subpaths:
         :param j:
         :param k:
         :return:
@@ -366,6 +367,7 @@ class RawCut(CutObject):
     """
     Raw cuts are non-shape based cut objects with location and laser amount.
     """
+
     def __init__(self, settings=None):
         CutObject.__init__(self, settings=settings)
         self.plot = []

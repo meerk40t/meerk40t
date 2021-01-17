@@ -7,13 +7,15 @@ try:
 except ImportError:
     from collections import MutableSequence  # noqa
 from copy import copy
-from math import *
+
+from math import ceil, cos, radians, sin, sqrt, hypot, atan, atan2, tan, degrees, acos, log
 
 from xml.etree.ElementTree import iterparse
 
 try:
     from math import tau
 except ImportError:
+    from math import pi
     tau = pi * 2
 
 """

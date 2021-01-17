@@ -1,9 +1,9 @@
 import os
+import re
 
-from basedevice import *
-from kernel import Kernel, Module, console_command
+from kernel import Module, console_command
 from lasercommandconstants import *
-from svgelements import *
+from basedevice import Interpreter, INTERPRETER_STATE_PROGRAM
 
 MILS_PER_MM = 39.3701
 
@@ -15,6 +15,7 @@ GRBL device is a stub device. Serving as a placeholder.
 class GrblDevice:
     """
     """
+
     def __init__(self, root, uid=''):
         self.uid = uid
         self.device_name = "GRBL"
@@ -59,7 +60,6 @@ class GrblDevice:
             except OSError:
                 channel(_('Server failed on port: %d') % port)
             return
-
 
     def initialize(self, device, channel=None):
         """
@@ -665,7 +665,7 @@ class GRBLEmulator(Module):
     def g93_feedrate(self):
         # Feed Rate in Minutes / Unit
         self.feed_convert = lambda s: (60.0 / s) * self.scale / MILS_PER_MM
-        self.feed_invert = lambda s:  (60.0 / s) * MILS_PER_MM / self.scale
+        self.feed_invert = lambda s: (60.0 / s) * MILS_PER_MM / self.scale
 
     def g94_feedrate(self):
         # Feed Rate in Units / Minute

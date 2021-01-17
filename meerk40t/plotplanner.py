@@ -1,5 +1,5 @@
 from basedevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
-from cutcode import *
+from zinglplotter import ZinglPlotter
 
 """
 

@@ -1,5 +1,12 @@
-from queue import Queue
-from svgelements import *
+from math import ceil, cos, sin, sqrt, tan, floor
+
+from svgelements import Point
+
+try:
+    from math import tau
+except ImportError:
+    from math import pi
+    tau = pi * 2
 
 """
 The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"

@@ -1,8 +1,10 @@
+from copy import copy
 
 from kernel import Modifier, console_command, console_argument, console_option
-from laseroperation import *
-from svgelements import *
 from lasercommandconstants import *
+from laseroperation import LaserOperation
+from svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, Polygon, Polyline, Matrix, Angle, SVGImage, \
+    SVGElement, Point
 
 
 class Elemental(Modifier):
@@ -225,7 +227,7 @@ class Elemental(Modifier):
 
         @console_command(self.context, 'polyline', help='polyline (<point>, <point>)*')
         def polyline(command,  args=tuple(),**kwargs):
-            element = Polygon(list(map(float, args)))
+            element = Polyline(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return

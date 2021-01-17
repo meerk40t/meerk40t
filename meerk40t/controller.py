@@ -9,7 +9,8 @@ from ch341driverbase import *
 from kernel import *
 from lasercommandconstants import REALTIME_RESET
 from lhystudiosdevice import get_code_string_from_code
-from icons import *
+from icons import icons8_pause_50, icons8_end_50, icons8_comments_50, icons8_connected_50, icons8_play_50, \
+    icons8_disconnected_50, icons8_laser_beam_hazard_50
 
 _ = wx.GetTranslation
 

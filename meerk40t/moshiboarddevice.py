@@ -1,7 +1,6 @@
 from basedevice import Interpreter
-from kernel import *
-
 from ch341driverbase import *
+from kernel import Module
 
 """
 MoshiboardDevice is the backend for Moshiboard devices.

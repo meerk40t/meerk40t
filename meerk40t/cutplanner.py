@@ -1,7 +1,12 @@
+from copy import copy
+from math import isnan, isinf, ceil
+
 from kernel import Modifier, console_command
-from laseroperation import *
-from svgelements import *
 from lasercommandconstants import *
+from cutcode import CutCode
+from laseroperation import LaserOperation
+from svgelements import Matrix, Length, Angle, Path, SVGText, SVGImage, SVGElement, Polyline, Move, Point, \
+    Polygon
 
 
 class Planner(Modifier):
@@ -1506,7 +1511,7 @@ class EulerianFill:
 
 
 class VectorMontonizer:
-    def __init__(self, low_value=-float('inf'), high_value=float(inf), start=-float('inf')):
+    def __init__(self, low_value=-float('inf'), high_value=float('inf'), start=-float('inf')):
         self.clusters = []
         self.dirty_cluster_sort = True
 
@@ -1673,7 +1678,7 @@ class VectorMontonizer:
 
 
 class VectorMontonizer_original:
-    def __init__(self, low_value=-float('inf'), high_value=float(inf), start=-float('inf')):
+    def __init__(self, low_value=-float('inf'), high_value=float('inf'), start=-float('inf')):
         self.clusters = []
         self.dirty_cluster_sort = True
 

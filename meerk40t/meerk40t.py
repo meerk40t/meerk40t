@@ -1,19 +1,20 @@
 import argparse
 import sys
 
-from basedevice import Spooler
 from bindalias import BindAlias
-from cutplanner import Planner
-from defaultmodules import *
 from elements import Elemental
-from grbldevice import GrblDevice
 from imagetools import ImageTools
 from lasercommandconstants import *
+from kernel import Kernel, STATE_TERMINATE
+from cutplanner import Planner
+from defaultmodules import SVGLoader, ImageLoader, DxfLoader, SVGWriter
+from grbldevice import GrblDevice
+from kernelserver import TCPServer, UDPServer
 from lhystudiosdevice import LhystudiosDevice
+from basedevice import Spooler
 from moshiboarddevice import MoshiboardDevice
 from rasterscripts import RasterScripts
 from ruidadevice import RuidaDevice
-from kernelserver import *
 
 try:
     from math import tau
@@ -59,7 +60,8 @@ parser.add_argument('-v', '--verbose', action='store_true', help='display verbos
 parser.add_argument('-m', '--mock', action='store_true', help='uses mock usb device')
 parser.add_argument('-q', '--quit', action='store_true', help="quit on spooler complete")
 parser.add_argument('-a', '--auto', action='store_true', help='start running laser')
-parser.add_argument('-s', '--set', action='append', nargs='?', type=pair, metavar='key=value', help='set a device variable')
+parser.add_argument('-s', '--set', action='append', nargs='?', type=pair, metavar='key=value',
+                    help='set a device variable')
 parser.add_argument('-O', '--origin', action='store_true', help="return back to 0,0 on finish")
 parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
 
@@ -176,10 +178,13 @@ else:
             yield COMMAND_MODE_RAPID
             yield COMMAND_SET_ABSOLUTE
             yield COMMAND_MOVE, 0, 0
+
+
         device.spooler.job(origin)
 
     if args.output is not None:
         import os
+
         kernel_root.save(os.path.realpath(args.output.name))
 
     if args.execute:

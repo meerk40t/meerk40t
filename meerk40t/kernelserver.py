@@ -1,6 +1,6 @@
 import socket
 
-from kernel import *
+from kernel import Module
 
 
 class UDPServer(Module):

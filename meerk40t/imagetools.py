@@ -1,6 +1,5 @@
 
 from kernel import Modifier, console_command
-from svgelements import *
 
 
 class ImageTools(Modifier):

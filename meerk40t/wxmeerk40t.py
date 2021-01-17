@@ -4,8 +4,10 @@
 #
 import os
 import sys
+import threading
 import traceback
 
+import wx
 import wx.aui as aui
 import wx.ribbon as RB
 
@@ -19,10 +21,21 @@ from devicemanager import DeviceManager
 from imageproperty import ImageProperty
 from jobpreview import JobPreview
 from jobspooler import JobSpooler
-from kernel import *
 from keymap import Keymap
-from laseroperation import *
-from laserrender import *
+from icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icons8_laser_beam_52, \
+    icons8_pause_50, icons8_move_50, icons8_usb_connector_50, icons8_route_50, icons8_connected_50, \
+    icons8_administrative_tools_50, icons8_manager_50, icons8_camera_50, icons8_keyboard_50, icons8_comments_50, \
+    icons8_console_50, icons8_roll_50, icons8_fantasy_50, icons8_lock_50, icon_meerk40t, icons8_laser_beam_20, \
+    icons8_direction_20, icons8_vector_20, icons8_file_20
+from kernel import console_command, Module, Job, STATE_BUSY
+from laserrender import LaserRender, DRAW_MODE_FILLS, DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, \
+    DRAW_MODE_LASERPATH, DRAW_MODE_RETICLE, DRAW_MODE_SELECTION, DRAW_MODE_STROKES, DRAW_MODE_ICONS, DRAW_MODE_TREE, \
+    DRAW_MODE_CACHE, DRAW_MODE_REFRESH, DRAW_MODE_ANIMATE, DRAW_MODE_PATH, DRAW_MODE_IMAGE, DRAW_MODE_TEXT, \
+    DRAW_MODE_FLIPXY, DRAW_MODE_INVERT, swizzlecolor
+from lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
+    COMMAND_MODE_RAPID, COMMAND_HOME, COMMAND_LASER_OFF, COMMAND_WAIT_FINISH, COMMAND_MOVE, COMMAND_LASER_ON, \
+    COMMAND_WAIT, COMMAND_SET_SPEED, COMMAND_SET_DIRECTION, COMMAND_MODE_PROGRAM, COMMAND_FUNCTION, REALTIME_RESET
+from svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color
 from navigation import Navigation
 from notes import Notes
 from operationproperty import OperationProperty
@@ -36,8 +49,6 @@ from textproperty import TextProperty
 from usbconnect import UsbConnect
 from widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
-from icons import *
-from svgelements import *
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
@@ -233,7 +244,9 @@ class MeerK40t(wx.Frame, Module, Job):
                           .TopDockable().BottomDockable()
                           .RightDockable(False).LeftDockable(False)
                           .MinSize(-1, 150).CaptionVisible(False))
-        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().CloseButton(False).Left().MinSize(200,-1).MaxSize(275,-1).LeftDockable().RightDockable().BottomDockable(False).TopDockable(False))
+        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().CloseButton(False).Left().MinSize(200, -1).MaxSize(275,
+                                                                                                          -1).LeftDockable().RightDockable().BottomDockable(
+            False).TopDockable(False))
         self._mgr.AddPane(self.scene, aui.AuiPaneInfo().CenterPane())
 
         self._mgr.Update()
@@ -380,7 +393,6 @@ class MeerK40t(wx.Frame, Module, Job):
         @console_command(context, 'rotaryscale', help='Rotary Scale selected elements')
         def toggle_rotary_view(*args, **kwargs):
             self.apply_rotary_scale()
-
 
         @console_command(context, 'window', help='wxMeerK40 window information')
         def window(command, channel, _, args=tuple(), **kwargs):
@@ -1684,6 +1696,7 @@ class MeerK40t(wx.Frame, Module, Job):
             context.elements.add_elem(p)
             self.context.classify(p)
         dlg.Destroy()
+
     def egv_import(self):
         pathname = None
         files = "*.egv"
@@ -2572,7 +2585,8 @@ class RootNode(list):
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
-                             path_rotate_sub_menu.Append(wx.ID_ANY, _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
+                             path_rotate_sub_menu.Append(wx.ID_ANY,
+                                                         _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
                                                          "",
                                                          wx.ITEM_NORMAL))
                 for i in range(2, 13):
