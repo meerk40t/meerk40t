@@ -3,5 +3,5 @@
 @echo ...
 @echo ...
 pip install -r requirements.txt
-python MeerK40t.py
+python meerk40t.py
 pause
