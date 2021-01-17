@@ -568,7 +568,7 @@ class MeerK40t(wx.Frame, Module):
 
         if device is not None:
             device.setting(int, "bed_width", 310)  # Default Value
-            device.setting(int, "bed_height", 220)  # Default Value
+            device.setting(int, "bed_height", 210)  # Default Value
 
         kernel.listen('element_added', self.on_rebuild_tree_request)
         kernel.listen('operation_added', self.on_rebuild_tree_request)

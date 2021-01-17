@@ -93,7 +93,7 @@ class LhystudiosDevice(Device):
         self.setting(float, "scale_x", 1.0)
         self.setting(float, "scale_y", 1.0)
         self.setting(int, "bed_width", 310)
-        self.setting(int, "bed_height", 220)
+        self.setting(int, "bed_height", 210)
 
         self.signal('bed_size', (self.bed_width, self.bed_height))
 

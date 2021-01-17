@@ -994,7 +994,7 @@ class GridWidget(Widget):
             hmils = v.bed_height * MILS_IN_MM
         else:
             wmils = 310 * MILS_IN_MM
-            hmils = 220 * MILS_IN_MM
+            hmils = 210 * MILS_IN_MM
 
         p = self.scene.device.device_root
         convert = p.units_convert
@@ -1027,7 +1027,7 @@ class GridWidget(Widget):
                 hmils = device.bed_height * MILS_IN_MM
             else:
                 wmils = 320 * MILS_IN_MM
-                hmils = 220 * MILS_IN_MM
+                hmils = 210 * MILS_IN_MM
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)
