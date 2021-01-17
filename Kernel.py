@@ -1681,6 +1681,8 @@ class Kernel:
                         is_watched = ''
                     channel('%s%d: %s' % (is_watched, i + 1, name))
             else:
+                if len(args) < 2:
+                    raise SyntaxError
                 value = args[0]
                 chan = args[1]
                 if value == 'open':
