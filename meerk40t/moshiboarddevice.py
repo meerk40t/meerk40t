@@ -1,6 +1,7 @@
 from basedevice import Interpreter
-from ch341driverbase import *
 from kernel import Module
+from ch341driverbase import get_name_for_status, INFO_USB_CHIP_VERSION, INFO_USB_DRIVER, STATE_DRIVER_LIBUSB, \
+    STATE_CONNECTED, STATE_DRIVER_NO_LIBUSB, STATE_DRIVER_CH341
 
 """
 MoshiboardDevice is the backend for Moshiboard devices.

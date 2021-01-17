@@ -1,5 +1,8 @@
+from copy import copy
 
 from kernel import Modifier, console_command
+from cutplanner import CutPlanner
+from svgelements import SVGImage, Color, Length, Path
 
 
 class ImageTools(Modifier):
@@ -64,7 +67,7 @@ class ImageTools(Modifier):
                 except KeyError:
                     channel(_('Raster Script %s is not registered.') % args[1])
                     return
-                from RasterScripts import RasterScripts
+                from rasterscripts import RasterScripts
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         element.image, element.transform, step = RasterScripts.wizard_image(element, script)
@@ -126,7 +129,7 @@ class ImageTools(Modifier):
             elif args[0] == 'resample':
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
-                        OperationPreprocessor.make_actual(element)
+                        CutPlanner.make_actual(element)
                         element.altered()
                 return
             elif args[0] == 'dither':

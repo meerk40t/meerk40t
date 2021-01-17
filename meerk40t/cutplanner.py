@@ -2,9 +2,10 @@ from copy import copy
 from math import isnan, isinf, ceil
 
 from kernel import Modifier, console_command
-from lasercommandconstants import *
 from cutcode import CutCode
 from laseroperation import LaserOperation
+from lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE, \
+    COMMAND_HOME, COMMAND_WAIT, COMMAND_BEEP, COMMAND_FUNCTION
 from svgelements import Matrix, Length, Angle, Path, SVGText, SVGImage, SVGElement, Polyline, Move, Point, \
     Polygon
 

@@ -1,6 +1,6 @@
 from copy import copy
 
-from lasercommandconstants import *
+from lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 from svgelements import Point, Path, Color
 from rasterplotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
 from zinglplotter import ZinglPlotter

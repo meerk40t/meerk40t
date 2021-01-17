@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import windll, c_byte
 
 from ch341driverbase import *
 

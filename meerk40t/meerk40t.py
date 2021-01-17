@@ -4,7 +4,6 @@ import sys
 from bindalias import BindAlias
 from elements import Elemental
 from imagetools import ImageTools
-from lasercommandconstants import *
 from kernel import Kernel, STATE_TERMINATE
 from cutplanner import Planner
 from defaultmodules import SVGLoader, ImageLoader, DxfLoader, SVGWriter
@@ -12,6 +11,7 @@ from grbldevice import GrblDevice
 from kernelserver import TCPServer, UDPServer
 from lhystudiosdevice import LhystudiosDevice
 from basedevice import Spooler
+from lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE
 from moshiboarddevice import MoshiboardDevice
 from rasterscripts import RasterScripts
 from ruidadevice import RuidaDevice
