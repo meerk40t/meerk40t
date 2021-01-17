@@ -113,7 +113,7 @@ class LaserRender:
         c = stroke
         if c is not None and c != 'none':
             swizzle_color = swizzlecolor(c)
-            self.color.SetRGB(swizzle_color)
+            self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
             self.pen.SetWidth(width)
             gc.SetPen(self.pen)
@@ -124,7 +124,7 @@ class LaserRender:
         c = fill
         if c is not None and c != 'none':
             swizzle_color = swizzlecolor(c)
-            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+            self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
             self.brush.SetColour(self.color)
             gc.SetBrush(self.brush)
         else:
