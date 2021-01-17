@@ -544,12 +544,9 @@ class Context:
         :param instance_path: Attached path location.
         :return:
         """
-        try:
-            instance = self.attached[instance_path]
-            instance.detach(self, *args, **kwargs)
-            del self.attached[instance_path]
-        except (KeyError, AttributeError):
-            pass
+        instance = self.attached[instance_path]
+        instance.detach(self, *args, **kwargs)
+        del self.attached[instance_path]
 
     def load_persistent_object(self, obj):
         """
@@ -569,8 +566,17 @@ class Context:
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
             load_value = self._kernel.read_persistent(type(obj_value), self.abs_path(attr))
-            setattr(obj, attr, load_value)
-            setattr(self, attr, load_value)
+            try:
+                setattr(obj, attr, load_value)
+                setattr(self, attr, load_value)
+            except AttributeError:
+                pass
+
+    def clear_persistent(self):
+        self._kernel.clear_persistent(self._path)
+
+    def write_persistent(self, key, value):
+        self._kernel.write_persistent(self.abs_path(key), value)
 
     def set_attrib_keys(self):
         """
@@ -793,10 +799,7 @@ class Kernel:
         self.register("control/Debug Device", self._start_debugging)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
-            try:
-                context.boot()
-            except AttributeError:
-                pass
+            context.boot()
         self.set_active_device(None)
         for device in self.derivable('/'):
             try:
@@ -1186,7 +1189,7 @@ class Kernel:
                 break
             jobs = self.jobs
             for job_name in list(jobs):
-                job = jobs[job_name] # kernel.console.ticks failed to remove here, since it was already removed. Sync.
+                job = jobs[job_name]
 
                 # Checking if jobs should run.
                 if job.scheduled:
@@ -1219,7 +1222,7 @@ class Kernel:
         try:
             del self.jobs[job.job_name]
         except KeyError:
-            pass # No such job.
+            pass  # No such job.
         return job
 
     def add_job(self, run, name=None, args=(), interval=1.0, times=None):

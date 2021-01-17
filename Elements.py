@@ -1,5 +1,5 @@
 
-from Kernel import Modifier, Context, console_command, console_argument, console_option
+from Kernel import Modifier, console_command, console_argument, console_option
 from LaserOperation import *
 from svgelements import *
 from LaserCommandConstants import *
@@ -230,7 +230,7 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @console_command(self.context, 'stroke', help='stroke <svg color>', data_type=Path)
+        @console_command(self.context, 'stroke', help='stroke <svg color>')
         def stroke(command, channel, _, args=tuple(), data=None, **kwargs):
             if data is not None:
                 data.stroke = Color(args[0])
@@ -899,29 +899,37 @@ class Elemental(Modifier):
         settings.clear_persistent()
         for i, op in enumerate(self.ops()):
             op_set = settings.derive(str(i))
-            for key in dir(op):
-                if key.startswith('_'):
-                    continue
-                value = getattr(op, key)
-                if value is None:
-                    continue
-                if isinstance(value, Color):
-                    value = value.value
-                op_set.write_persistent(key, value)
+            sets = op.settings
+            for q in (op, sets):
+                for key in dir(q):
+                    if key.startswith('_'):
+                        continue
+                    if key.startswith('implicit'):
+                        continue
+                    value = getattr(q, key)
+                    if value is None:
+                        continue
+                    if isinstance(value, Color):
+                        value = value.value
+
+                    op_set.write_persistent(key, value)
 
     def boot(self, *a, **kwargs):
+        self.context.setting(bool, "operation_default_empty", True)
         settings = self.context.derive('operations')
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
-            op_set = settings.derive(v)
+            op_setting_context = settings.derive(v)
             op = LaserOperation()
-            op_set.load_persistent_object(op)
+            op_set = op.settings
+            op_setting_context.load_persistent_object(op)
+            op_setting_context.load_persistent_object(op_set)
             try:
                 ops[i] = op
             except (ValueError, IndexError):
                 ops.append(op)
-        if not len(ops):
+        if not len(ops) and self.context.operation_default_empty:
             self.load_default()
             return
         self.add_ops([o for o in ops if o is not None])

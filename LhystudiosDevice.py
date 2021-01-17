@@ -1964,7 +1964,9 @@ class LhystudioEmulator(Module):
         if c in 'GCV01234567890':
             self.speed_code += c
             return
-        self.settings.speed = LaserSpeed(self.speed_code).speed
+        speed = LaserSpeed(self.speed_code)
+        self.settings.steps = speed.raster_step
+        self.settings.speed = speed.speed
         self.channel("Setting Speed: %f" % self.settings.speed)
         self.speed_code = None
 

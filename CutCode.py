@@ -18,7 +18,7 @@ are references to settings which may be shared by all CutObjects created by a La
 
 class LaserSettings:
     def __init__(self, *args, **kwargs):
-        self.color = None
+        self.line_color = None
 
         self.laser_enabled = True
         self.speed = 20.0

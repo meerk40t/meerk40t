@@ -115,7 +115,8 @@ class TCPServer(Module):
                 if connection is not None:
                     connection.close()
                 break
-        self.socket.close()
+        if self.socket is not None:
+            self.socket.close()
 
     def connection_handler(self, connection, addr):
         """

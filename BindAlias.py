@@ -123,18 +123,18 @@ class BindAlias(Modifier):
         keys = self.context.derive('keymap')
         alias = self.context.derive('alias')
 
-        keys._kernel.clear_persistent(keys._path)
-        alias._kernel.clear_persistent(alias._path)
+        keys.clear_persistent()
+        alias.clear_persistent()
 
         for key in self.keymap:
             if key is None or len(key) == 0:
                 continue
-            keys._kernel.write_persistent(keys.abs_path(key), self.keymap[key])
+            keys.write_persistent(key, self.keymap[key])
 
         for key in self.alias:
             if key is None or len(key) == 0:
                 continue
-            alias._kernel.write_persistent(alias.abs_path(key), self.alias[key])
+            alias.write_persistent(key, self.alias[key])
 
     def boot_keymap(self):
         self.keymap.clear()

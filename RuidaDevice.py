@@ -601,9 +601,9 @@ class RuidaEmulator(Module):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
-                self.settings.color = Color.rgb_to_int(r, g, b)
+                self.settings.line_color = Color.rgb_to_int(r, g, b)
                 self._use_set = None
-                desc = "Layer Color %s" % (self.color)
+                desc = "Layer Color %s" % str(self.color)
             elif array[1] == 0x06:
                 part = array[2]
                 c = RuidaEmulator.decodeu35(array[3:8])

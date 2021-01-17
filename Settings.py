@@ -35,7 +35,8 @@ class Settings(wx.Frame, Module):
                                                                            _("SVG Uniform Save"),
                                                                            _("Image DPI Scaling"),
                                                                            _("Show Negative Guide"),
-                                                                           _("Launch Spooler JobStart")
+                                                                           _("Launch Spooler JobStart"),
+                                                                           _("Default Operation Empty")
                                                                            ])
         from wxMeerK40t import supported_languages
         choices = [language_name for language_code, language_name, language_index in supported_languages]
@@ -76,6 +77,7 @@ class Settings(wx.Frame, Module):
         self.context.setting(bool, 'image_dpi', True)
         self.context.setting(bool, "show_negative_guide", True)
         self.context.setting(bool, "auto_spooler", True)
+        self.context.setting(bool, "operation_default_empty", True)
         self.context.setting(int, "language", 0)
         self.context.setting(str, "units_name", 'mm')
         self.context.setting(int, "units_marks", 10)
@@ -93,6 +95,8 @@ class Settings(wx.Frame, Module):
             self.checklist_options.Check(4, True)
         if self.context.auto_spooler:
             self.checklist_options.Check(5, True)
+        if self.context.operation_default_empty:
+            self.checklist_options.Check(6, True)
         self.radio_units.SetSelection(self.context.units_index)
         self.combo_language.SetSelection(self.context.language)
 
@@ -180,6 +184,7 @@ class Settings(wx.Frame, Module):
         self.context.image_dpi = self.checklist_options.IsChecked(3)
         self.context.show_negative_guide = self.checklist_options.IsChecked(4)
         self.context.auto_spooler = self.checklist_options.IsChecked(5)
+        self.context.operation_default_empty = self.checklist_options.IsChecked(6)
 
     def on_combo_language(self, event):  # wxGlade: Preferences.<event_handler>
         lang = self.combo_language.GetSelection()
