@@ -1,6 +1,6 @@
 import wx
 
-from Kernel import *
+from kernel import *
 from icons import icons8_route_50
 
 _ = wx.GetTranslation

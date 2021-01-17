@@ -1,7 +1,7 @@
 import wx
 
-from Kernel import Module
-from LaserCommandConstants import *
+from kernel import Module
+from lasercommandconstants import *
 from icons import icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50, \
     icons8_laser_beam_hazard_50, icons8_end_50
 

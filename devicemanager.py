@@ -6,7 +6,7 @@
 
 import wx
 
-from Kernel import Module, STATE_UNKNOWN
+from kernel import Module, STATE_UNKNOWN
 from icons import icons8_administrative_tools_50, icons8_down, icons8up, icons8_plus_50, icons8_trash_50, \
     icons8_manager_50
 

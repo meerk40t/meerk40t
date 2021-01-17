@@ -5,7 +5,7 @@
 
 import wx
 
-from Kernel import Module
+from kernel import Module
 from icons import *
 
 _ = wx.GetTranslation

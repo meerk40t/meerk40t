@@ -1,7 +1,7 @@
-from Kernel import Modifier, console_command
-from LaserOperation import *
+from kernel import Modifier, console_command
+from laseroperation import *
 from svgelements import *
-from LaserCommandConstants import *
+from lasercommandconstants import *
 
 
 class Planner(Modifier):

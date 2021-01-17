@@ -2,9 +2,9 @@ import threading
 
 import wx
 
-from Kernel import Module, Job, console_argument, console_command
-from LaserRender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
-from ZMatrix import ZMatrix
+from kernel import Module, Job, console_argument, console_command
+from laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
+from zmatrix import ZMatrix
 from icons import *
 from svgelements import SVGImage, Matrix, Point
 

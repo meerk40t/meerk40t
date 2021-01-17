@@ -5,7 +5,7 @@
 
 import wx
 
-from Kernel import Module
+from kernel import Module
 from icons import icons8_administrative_tools_50
 
 _ = wx.GetTranslation
@@ -38,7 +38,7 @@ class Settings(wx.Frame, Module):
                                                                            _("Launch Spooler JobStart"),
                                                                            _("Default Operation Empty")
                                                                            ])
-        from wxMeerK40t import supported_languages
+        from wxmeerk40t import supported_languages
         choices = [language_name for language_code, language_name, language_index in supported_languages]
         self.combo_language = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN)
 

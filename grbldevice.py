@@ -1,8 +1,8 @@
 import os
 
-from BaseDevice import *
-from Kernel import Kernel, Module, console_command
-from LaserCommandConstants import *
+from basedevice import *
+from kernel import Kernel, Module, console_command
+from lasercommandconstants import *
 from svgelements import *
 
 MILS_PER_MM = 39.3701

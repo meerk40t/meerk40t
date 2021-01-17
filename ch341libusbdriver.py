@@ -1,6 +1,6 @@
 import usb.core
 import usb.util
-from CH341DriverBase import *
+from ch341driverbase import *
 
 STATUS_NO_DEVICE = -1
 USB_LOCK_VENDOR = 0x1a86  # Dev : (1a86) QinHeng Electronics

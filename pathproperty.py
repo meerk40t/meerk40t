@@ -1,7 +1,7 @@
 import wx
 
-from Kernel import Module
-from LaserRender import swizzlecolor
+from kernel import Module
+from laserrender import swizzlecolor
 from icons import icons8_vector_50
 from svgelements import *
 

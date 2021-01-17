@@ -1,8 +1,8 @@
 
-from Kernel import Modifier, console_command, console_argument, console_option
-from LaserOperation import *
+from kernel import Modifier, console_command, console_argument, console_option
+from laseroperation import *
 from svgelements import *
-from LaserCommandConstants import *
+from lasercommandconstants import *
 
 
 class Elemental(Modifier):

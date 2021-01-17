@@ -1,19 +1,19 @@
 import argparse
 import sys
 
-from BaseDevice import Spooler
-from BindAlias import BindAlias
-from CutPlanner import Planner
-from DefaultModules import *
-from Elements import Elemental
-from GrblDevice import GrblDevice
-from ImageTools import ImageTools
-from LaserCommandConstants import *
-from LhystudiosDevice import LhystudiosDevice
-from MoshiboardDevice import MoshiboardDevice
-from RasterScripts import RasterScripts
-from RuidaDevice import RuidaDevice
-from LaserServer import *
+from basedevice import Spooler
+from bindalias import BindAlias
+from cutplanner import Planner
+from defaultmodules import *
+from elements import Elemental
+from grbldevice import GrblDevice
+from imagetools import ImageTools
+from lasercommandconstants import *
+from lhystudiosdevice import LhystudiosDevice
+from moshiboarddevice import MoshiboardDevice
+from rasterscripts import RasterScripts
+from ruidadevice import RuidaDevice
+from kernelserver import *
 
 try:
     from math import tau
@@ -92,7 +92,7 @@ else:
     kernel_root.activate('modifier/BindAlias')
     #
     # try:
-    from Camera import CameraHub
+    from camera import CameraHub
 
     kernel.register('modifier/CameraHub', CameraHub)
     camera_root = kernel_root.derive('camera')
@@ -103,7 +103,7 @@ else:
     #     print("Module Not Loaded.")
     #     pass
     if not args.no_gui:
-        from wxMeerK40t import wxMeerK40t
+        from wxmeerk40t import wxMeerK40t
 
         kernel.register('module/wxMeerK40t', wxMeerK40t)
         meerk40tgui = kernel_root.open('module/wxMeerK40t')

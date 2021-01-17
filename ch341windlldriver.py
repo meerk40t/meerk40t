@@ -1,6 +1,6 @@
 from ctypes import *
 
-from CH341DriverBase import *
+from ch341driverbase import *
 
 
 # MIT License.

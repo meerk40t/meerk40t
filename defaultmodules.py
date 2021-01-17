@@ -3,7 +3,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from LaserOperation import LaserOperation
+from laseroperation import LaserOperation
 from svgelements import *
 
 MILS_PER_MM = 39.3701

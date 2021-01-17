@@ -1,5 +1,5 @@
-from LaserCommandConstants import *
-from RasterPlotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
+from lasercommandconstants import *
+from rasterplotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
 from svgelements import *
 from zinglplotter import ZinglPlotter
 

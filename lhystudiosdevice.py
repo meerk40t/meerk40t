@@ -1,11 +1,11 @@
 
-from BaseDevice import *
-from CH341DriverBase import *
-from CutCode import CutCode
-from Kernel import *
-from LaserCommandConstants import *
-from LaserSpeed import LaserSpeed
-from PlotPlanner import PlotPlanner
+from basedevice import *
+from ch341driverbase import *
+from cutcode import CutCode
+from kernel import *
+from lasercommandconstants import *
+from laserspeed import LaserSpeed
+from plotplanner import PlotPlanner
 from svgelements import Length
 from zinglplotter import ZinglPlotter
 
@@ -1515,7 +1515,7 @@ class LhystudioController(Module):
         chipv = self.context.usb_version
 
         try:
-            from CH341LibusbDriver import CH341Driver
+            from ch341libusbdriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.update_usb_state)
             driver.open()
@@ -1531,7 +1531,7 @@ class LhystudioController(Module):
             self.update_usb_state(STATE_DRIVER_NO_LIBUSB)
 
         try:
-            from CH341WindllDriver import CH341Driver
+            from ch341windlldriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.update_usb_state)
             driver.open()

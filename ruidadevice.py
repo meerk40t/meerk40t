@@ -1,8 +1,8 @@
 import os
 from io import BytesIO
 
-from CutCode import *
-from Kernel import Module, console_command, console_option
+from cutcode import *
+from kernel import Module, console_command, console_option
 from svgelements import Color
 
 STATE_ABORT = -1

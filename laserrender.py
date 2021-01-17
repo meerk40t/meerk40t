@@ -1,7 +1,7 @@
 import wx
 from PIL import Image
 
-from ZMatrix import ZMatrix
+from zmatrix import ZMatrix
 from svgelements import *
 
 """

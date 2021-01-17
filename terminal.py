@@ -1,7 +1,7 @@
 
 import wx
 
-from Kernel import Module
+from kernel import Module
 from icons import icons8_console_50
 
 _ = wx.GetTranslation

@@ -1,6 +1,6 @@
 import wx
 
-from Kernel import Module
+from kernel import Module
 from icons import icons8_underline_50, icons8_keyboard_50
 
 _ = wx.GetTranslation
@@ -137,7 +137,7 @@ class Keymap(wx.Frame, Module):
         self.reload_keymap()
 
     def on_key_press(self, event):
-        from wxMeerK40t import get_key_name
+        from wxmeerk40t import get_key_name
         keyvalue = get_key_name(event)
         self.text_command_name.SetValue('')
         if keyvalue is None:

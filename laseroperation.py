@@ -1,4 +1,4 @@
-from CutCode import *
+from cutcode import *
 from svgelements import *
 
 

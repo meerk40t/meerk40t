@@ -1,7 +1,7 @@
-from BaseDevice import Interpreter
-from Kernel import *
+from basedevice import Interpreter
+from kernel import *
 
-from CH341DriverBase import *
+from ch341driverbase import *
 
 """
 MoshiboardDevice is the backend for Moshiboard devices.
@@ -185,7 +185,7 @@ class MoshiboardController(Module):
         chipv = self.context.usb_version
 
         try:
-            from CH341LibusbDriver import CH341Driver
+            from ch341libusbdriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.state_listener)
             driver.open()
@@ -200,7 +200,7 @@ class MoshiboardController(Module):
         except ImportError:
              self.state_listener(STATE_DRIVER_NO_LIBUSB)
         try:
-            from CH341WindllDriver import CH341Driver
+            from ch341windlldriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.state_listener)
             driver.open()
