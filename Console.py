@@ -2108,7 +2108,7 @@ class Console(Module, Pipe):
                 yield '"%s" not a valid pulse time in milliseconds' % (args[0])
                 return
             if value > 1.0:
-                yield 'Exceeds 1 second limit to fire a standing laser.' % (args[0])
+                yield 'Exceeds 1 second limit to fire a standing laser.'
                 try:
                     if args[1] != "idonotlovemyhouse":
                         return
