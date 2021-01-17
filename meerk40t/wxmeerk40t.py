@@ -18,24 +18,23 @@ from camerainteface import CameraInterface
 from controller import Controller
 from cutplanner import CutPlanner
 from devicemanager import DeviceManager
-from imageproperty import ImageProperty
-from jobpreview import JobPreview
-from jobspooler import JobSpooler
-from keymap import Keymap
 from icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icons8_laser_beam_52, \
     icons8_pause_50, icons8_move_50, icons8_usb_connector_50, icons8_route_50, icons8_connected_50, \
     icons8_administrative_tools_50, icons8_manager_50, icons8_camera_50, icons8_keyboard_50, icons8_comments_50, \
     icons8_console_50, icons8_roll_50, icons8_fantasy_50, icons8_lock_50, icon_meerk40t, icons8_laser_beam_20, \
-    icons8_direction_20, icons8_vector_20, icons8_file_20
+    icons8_direction_20, icons8_vector_20, icons8_file_20, icons8_padlock_50
+from imageproperty import ImageProperty
+from jobpreview import JobPreview
+from jobspooler import JobSpooler
 from kernel import console_command, Module, Job, STATE_BUSY
+from keymap import Keymap
+from lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
+    COMMAND_MODE_RAPID, COMMAND_HOME, COMMAND_LASER_OFF, COMMAND_WAIT_FINISH, COMMAND_MOVE, COMMAND_LASER_ON, \
+    COMMAND_WAIT, COMMAND_SET_SPEED, COMMAND_SET_DIRECTION, COMMAND_MODE_PROGRAM, COMMAND_FUNCTION, REALTIME_RESET
 from laserrender import LaserRender, DRAW_MODE_FILLS, DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, \
     DRAW_MODE_LASERPATH, DRAW_MODE_RETICLE, DRAW_MODE_SELECTION, DRAW_MODE_STROKES, DRAW_MODE_ICONS, DRAW_MODE_TREE, \
     DRAW_MODE_CACHE, DRAW_MODE_REFRESH, DRAW_MODE_ANIMATE, DRAW_MODE_PATH, DRAW_MODE_IMAGE, DRAW_MODE_TEXT, \
     DRAW_MODE_FLIPXY, DRAW_MODE_INVERT, swizzlecolor
-from lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
-    COMMAND_MODE_RAPID, COMMAND_HOME, COMMAND_LASER_OFF, COMMAND_WAIT_FINISH, COMMAND_MOVE, COMMAND_LASER_ON, \
-    COMMAND_WAIT, COMMAND_SET_SPEED, COMMAND_SET_DIRECTION, COMMAND_MODE_PROGRAM, COMMAND_FUNCTION, REALTIME_RESET
-from svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color
 from navigation import Navigation
 from notes import Notes
 from operationproperty import OperationProperty
@@ -44,6 +43,7 @@ from preferences import Preferences
 from rasterwizard import RasterWizard
 from rotarysettings import RotarySettings
 from settings import Settings
+from svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color, Matrix, Length
 from terminal import Terminal
 from textproperty import TextProperty
 from usbconnect import UsbConnect
@@ -91,9 +91,12 @@ ID_USB = idinc.new()
 ID_CONTROLLER = idinc.new()
 ID_PREFERENCES = idinc.new()
 ID_DEVICES = idinc.new()
-ID_CAMERA0 = idinc.new()
+ID_CAMERA = idinc.new()
 ID_CAMERA1 = idinc.new()
 ID_CAMERA2 = idinc.new()
+ID_CAMERA3 = idinc.new()
+ID_CAMERA4 = idinc.new()
+ID_CAMERA5 = idinc.new()
 ID_JOB = idinc.new()
 ID_PAUSE = idinc.new()
 
@@ -492,9 +495,7 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        windows.AddButton(ID_CAMERA0, _("Camera0"), icons8_camera_50.GetBitmap(), "")
-        windows.AddButton(ID_CAMERA1, _("Camera1"), icons8_camera_50.GetBitmap(), "")
-        windows.AddButton(ID_CAMERA2, _("Camera2"), icons8_camera_50.GetBitmap(), "")
+        windows.AddHybridButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
         windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         windows.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
         windows.AddButton(ID_TERMINAL, _("Terminal"), icons8_console_50.GetBitmap(), "")
@@ -595,12 +596,7 @@ class MeerK40t(wx.Frame, Module, Job):
                      lambda v: self.context._kernel.active_device.open('window/Rotary', self), id=ID_ROTARY)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context._kernel.active_device.open('window/JobSpooler', self), id=ID_SPOOLER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open_as('window/CameraInterface', 'camera0', self, 0), id=ID_CAMERA0)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open_as('window/CameraInterface', 'camera1', self, 1), id=ID_CAMERA1)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                     lambda v: self.context.open_as('window/CameraInterface', 'camera2', self, 2), id=ID_CAMERA2)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/Navigation', self), id=ID_NAV)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -615,9 +611,42 @@ class MeerK40t(wx.Frame, Module, Job):
                      lambda v: self.context.open('window/Operations', self), id=ID_OPERATIONS)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/RasterWizard', self), id=ID_RASTER)
+        windows.Bind(RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, self.on_camera_dropdown, id=ID_CAMERA)
+
+        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
+        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
+        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
+        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
+        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
         self.context.setting(int, 'units_index', 0)
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
+
+    def on_camera_dropdown(self, event):
+        menu = wx.Menu()
+        menu.Append(ID_CAMERA1, "Camera %d" % 1)
+        menu.Append(ID_CAMERA2, "Camera %d" % 2)
+        menu.Append(ID_CAMERA3, "Camera %d" % 3)
+        menu.Append(ID_CAMERA4, "Camera %d" % 4)
+        menu.Append(ID_CAMERA5, "Camera %d" % 5)
+        event.PopupMenu(menu)
+
+    def on_camera_click(self, event):
+        eid = event.GetId()
+        self.context.setting(int, 'camera_default', 1)
+        if eid == ID_CAMERA1:
+            self.context.camera_default = 1
+        elif eid == ID_CAMERA2:
+            self.context.camera_default = 2
+        elif eid == ID_CAMERA3:
+            self.context.camera_default = 3
+        elif eid == ID_CAMERA4:
+            self.context.camera_default = 4
+        elif eid == ID_CAMERA5:
+            self.context.camera_default = 5
+
+        v = self.context.camera_default
+        self.context.console('camwin %d\n' % v)
 
     def __set_menubar(self):
         wxglade_tmp_menu = wx.Menu()
