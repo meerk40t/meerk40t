@@ -1,9 +1,9 @@
 import wx
 
-from kernel import Module
-from laserrender import swizzlecolor
-from icons import icons8_plus_50, icons8_delete_50
-from svgelements import Color
+from . kernel import Module
+from . laserrender import swizzlecolor
+from . icons import icons8_plus_50, icons8_delete_50
+from . svgelements import Color
 
 _ = wx.GetTranslation
 

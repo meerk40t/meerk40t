@@ -1,6 +1,6 @@
 from math import ceil, cos, sin, sqrt, tan, floor
 
-from svgelements import Point
+from . svgelements import Point
 
 try:
     from math import tau
@@ -11,7 +11,7 @@ except ImportError:
 """
 The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"
 ( http://members.chello.at/easyfilter/bresenham.html ).
- 
+
 In the case of Zingl's work this isn't explicit from his website, however from personal
 correspondence "'Free and open source' means you can do anything with it like the MIT licence."
 

@@ -1,6 +1,6 @@
 from copy import copy
 
-from svgelements import SVGImage
+from . svgelements import SVGImage
 
 """
 This file class/collection is part of an exploration of the modification scheme.

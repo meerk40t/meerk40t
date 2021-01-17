@@ -1,9 +1,9 @@
 import wx
 
-from kernel import Module
-from icons import icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50, \
+from . kernel import Module
+from . icons import icons8_resize_horizontal_50, icons8_resize_vertical_50, icons8_info_50, \
     icons8_laser_beam_hazard_50, icons8_end_50
-from lasercommandconstants import COMMAND_HOME, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_SET_SPEED, \
+from . lasercommandconstants import COMMAND_HOME, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_SET_SPEED, \
     COMMAND_SET_POWER, COMMAND_MODE_PROGRAM, COMMAND_LASER_ON, COMMAND_MOVE, COMMAND_UNLOCK, COMMAND_WAIT_FINISH, \
     COMMAND_WAIT, COMMAND_LASER_OFF, COMMAND_CUT
 

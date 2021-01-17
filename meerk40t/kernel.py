@@ -4,7 +4,7 @@ import time
 import functools
 from threading import Thread, Lock
 
-from svgelements import Color
+from . svgelements import Color
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -376,7 +376,7 @@ class Context:
             value = getattr(self, attr)
             if value is None:
                 continue
-            from svgelements import Color
+            from  . svgelements import Color
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 
@@ -572,7 +572,7 @@ class Context:
                 continue
             obj_value = getattr(obj, attr)
 
-            from svgelements import Color
+            from . svgelements import Color
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
             load_value = self._kernel.read_persistent(type(obj_value), self.abs_path(attr))

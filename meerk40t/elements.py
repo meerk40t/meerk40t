@@ -1,9 +1,9 @@
 from copy import copy
 
-from kernel import Modifier, console_command, console_argument, console_option
-from laseroperation import LaserOperation
-from lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_MOVE
-from svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, Polygon, Polyline, Matrix, Angle, SVGImage, \
+from . kernel import Modifier, console_command, console_argument, console_option
+from . laseroperation import LaserOperation
+from . lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_MOVE
+from . svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, Polygon, Polyline, Matrix, Angle, SVGImage, \
     SVGElement, Point
 
 

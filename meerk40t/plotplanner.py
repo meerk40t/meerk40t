@@ -1,15 +1,15 @@
-from basedevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
-from zinglplotter import ZinglPlotter
+from . basedevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
+from . zinglplotter import ZinglPlotter
 
 """
 
 The PlotPlanner simplifies the plotting modifications routines. These are buffered with plottable elements.
-These can be submitted as destination graphics commands, or by submitting a plot routine. Which may yield either 2 or 
+These can be submitted as destination graphics commands, or by submitting a plot routine. Which may yield either 2 or
 3 value coordinates. These are x, y, and on. Where on is a number between 0 and 1 which designates the on-value. In the
 graphics commands the move is given a 0 and all other plots are given a 1. All graphics commands take an optional
-on-value. If PPI is enabled, fractional on values are made non-fractional by carrying forward the value of on as a 
+on-value. If PPI is enabled, fractional on values are made non-fractional by carrying forward the value of on as a
 factor applied of the total value.
- 
+
 All plots are queued and processed in order. This queueing scheme is threadsafe, and should permit one thread reading
 the plot values while another thread adds additional items to the queue. If the queue completely empties any processes
 being applied to the plot stream are flushed prior to terminating the iterator.

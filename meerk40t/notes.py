@@ -1,8 +1,8 @@
 
 import wx
 
-from kernel import Module
-from icons import icons8_comments_50
+from . kernel import Module
+from . icons import icons8_comments_50
 
 _ = wx.GetTranslation
 

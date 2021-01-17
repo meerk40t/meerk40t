@@ -1,6 +1,6 @@
 from math import ceil
 
-from svgelements import Matrix
+from . svgelements import Matrix
 
 
 class RasterScripts:

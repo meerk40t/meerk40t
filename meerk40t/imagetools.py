@@ -1,8 +1,8 @@
 from copy import copy
 
-from kernel import Modifier, console_command
-from cutplanner import CutPlanner
-from svgelements import SVGImage, Color, Length, Path
+from . kernel import Modifier, console_command
+from . cutplanner import CutPlanner
+from . svgelements import SVGImage, Color, Length, Path
 
 
 class ImageTools(Modifier):

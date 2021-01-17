@@ -1,20 +1,20 @@
 from copy import copy
 
-from lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
-from svgelements import Point, Path, Color
-from rasterplotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from zinglplotter import ZinglPlotter
+from . lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
+from . svgelements import Point, Path, Color
+from . rasterplotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
+from . zinglplotter import ZinglPlotter
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
-considered a laser primitive. These are disjointed objects. If the distance between one and the next exist the laser 
+considered a laser primitive. These are disjointed objects. If the distance between one and the next exist the laser
 should be toggled and move by anything executing these in the planning process. Various other laser-file types should
 be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
 to LaserCode.
 
-All CutObjects have a .start() .end() and .generator() functions. They also have a settings object that contains all 
+All CutObjects have a .start() .end() and .generator() functions. They also have a settings object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
-are references to settings which may be shared by all CutObjects created by a LaserOperation.  
+are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
 

@@ -1,14 +1,14 @@
 import os
 import re
 
-from kernel import Module, console_command
-from lasercommandconstants import *
-from basedevice import Interpreter, INTERPRETER_STATE_PROGRAM
+from . kernel import Module, console_command
+from . lasercommandconstants import *
+from . basedevice import Interpreter, INTERPRETER_STATE_PROGRAM
 
 MILS_PER_MM = 39.3701
 
 """
-GRBL device is a stub device. Serving as a placeholder. 
+GRBL device is a stub device. Serving as a placeholder.
 """
 
 

@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import wx
 
-from kernel import Modifier, console_command, console_argument, console_option
+from . kernel import Modifier, console_command, console_argument, console_option
 
 _ = wx.GetTranslation
 
