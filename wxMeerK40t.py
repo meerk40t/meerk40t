@@ -381,6 +381,47 @@ class MeerK40t(wx.Frame, Module, Job):
         def toggle_rotary_view(*args, **kwargs):
             self.apply_rotary_scale()
 
+
+        @console_command(context, 'window', help='wxMeerK40 window information')
+        def window(command, channel, _, args=tuple(), **kwargs):
+            context = self.context
+            if len(args) == 0:
+                channel(_('----------'))
+                channel(_('Windows Registered:'))
+                for i, name in enumerate(context.match('window')):
+                    channel('%d: %s' % (i + 1, name))
+                channel(_('----------'))
+                channel(_('Loaded Windows in Context %s:') % str(context._path))
+                for i, name in enumerate(context.opened):
+                    if not name.startswith('window'):
+                        continue
+                    module = context.opened[name]
+                    channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
+                channel(_('----------'))
+                channel(_('Loaded Windows in Device %s:') % str(context.active._path))
+                for i, name in enumerate(context.active.opened):
+                    if not name.startswith('window'):
+                        continue
+                    module = context.active.opened[name]
+                    channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
+                channel(_('----------'))
+            else:
+                if args[0] == "open":
+                    try:
+                        self.context.open('window/%s' % args[1], self)
+                        channel(_("Window Opened."))
+                    except KeyError:
+                        channel(_("No such window as %s" % args[1]))
+                    except IndexError:
+                        raise SyntaxError
+
+        @console_command(context, 'refresh', help='wxMeerK40 refresh')
+        def refresh(command, channel, _, args=tuple(), **kwargs):
+            context.signal('refresh_scene')
+            context.signal('rebuild_tree')
+            channel(_('Refreshed.'))
+            return
+
         self.SetSize((context.window_width, context.window_height))
         self.interval = 1.0 / float(context.fps)
         self.process()
@@ -3221,46 +3262,6 @@ class wxMeerK40t(wx.App, Module):
         language = context.language
         if language is not None and language != 0:
             self.update_language(language)
-
-        @console_command(context, 'window', help='wxMeerK40 window information')
-        def window(command, channel, _, args=tuple(), **kwargs):
-            context = self.context
-            if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Windows Registered:'))
-                for i, name in enumerate(context.match('window')):
-                    channel('%d: %s' % (i + 1, name))
-                channel(_('----------'))
-                channel(_('Loaded Windows in Context %s:') % str(context._path))
-                for i, name in enumerate(context.opened):
-                    if not name.startswith('window'):
-                        continue
-                    module = context.opened[name]
-                    channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
-                channel(_('----------'))
-                channel(_('Loaded Windows in Device %s:') % str(context.active._path))
-                for i, name in enumerate(context.active.opened):
-                    if not name.startswith('window'):
-                        continue
-                    module = context.active.opened[name]
-                    channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
-                channel(_('----------'))
-            else:
-                if args[0] == "open":
-                    try:
-                        self.context.open('window/%s' % args[1], None)
-                        channel(_("Window Opened."))
-                    except KeyError:
-                        channel(_("No such window as %s" % args[1]))
-                    except IndexError:
-                        raise SyntaxError
-
-        @console_command(context, 'refresh', help='wxMeerK40 refresh')
-        def refresh(command, channel, _, args=tuple(), **kwargs):
-            context.signal('refresh_scene')
-            context.signal('rebuild_tree')
-            channel(_('Refreshed.'))
-            return
 
     def clear_control(self):
         kernel = self.context._kernel

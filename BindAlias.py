@@ -31,7 +31,7 @@ class BindAlias(Modifier):
                 channel(_('Binds:'))
                 for i, key in enumerate(context.keymap):
                     value = context.keymap[key]
-                    channel(_('%d: key %s -> %s') % (i, key, value))
+                    channel(_('%d: key %s %s') % (i, key.ljust(15), value))
                 channel(_('----------'))
             else:
                 key = args[0].lower()
@@ -74,7 +74,7 @@ class BindAlias(Modifier):
                 channel(_('Aliases:'))
                 for i, key in enumerate(context.alias):
                     value = context.alias[key]
-                    channel(('%d: %s -> %s') % (i, key, value))
+                    channel(('%d: %s %s') % (i, key.ljust(15), value))
                 channel(_('----------'))
             else:
                 key = args[0].lower()
