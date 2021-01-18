@@ -123,12 +123,14 @@ class Keymap(wx.Frame, Module):
                                _("No Keystroke for binding."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
+            self.text_key_name.SetFocus()
             return
-        if len(self.text_key_name.GetValue()) == 0:
+        if len(self.text_command_name.GetValue()) == 0:
             dlg = wx.MessageDialog(None, _("Missing Command"),
                                _("No Command for binding."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
+            self.text_command_name.SetFocus()
             return
         self.context.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
         self.text_key_name.SetValue('')
