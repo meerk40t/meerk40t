@@ -35,13 +35,13 @@ def meerk40t_core(kernel, force=False):
         from . import ruidadevice
         ruidadevice.plugin(kernel)
 
-        try:
-            from . import camera
-            camera.plugin(kernel)
-        except ImportError:
-            # OpenCV or Numpy not found. This module cannot be loaded.
-            print("Module 'Camera' Not Loaded.")
-            pass
+        # try:
+        #     from . import camera
+        #     camera.plugin(kernel)
+        # except ImportError:
+        #     # OpenCV or Numpy not found. This module cannot be loaded.
+        #     print("Module 'Camera' Not Loaded.")
+        #     pass
 
     else:
         import pkg_resources
