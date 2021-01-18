@@ -1,5 +1,8 @@
 import argparse
+import importlib
+import pkgutil
 import sys
+import pkg_resources
 
 from . bindalias import BindAlias
 from . elements import Elemental
@@ -57,6 +60,7 @@ parser.add_argument('-s', '--set', action='append', nargs='?', type=pair, metava
 parser.add_argument('-O', '--origin', action='store_true', help="return back to 0,0 on finish")
 parser.add_argument('-S', '--speed', type=float, help='set the speed of all operations')
 
+
 def run():
     argv = sys.argv[1:]
     # argv = '-zmve "channel open send" -e home'.split()
@@ -69,11 +73,23 @@ def run():
 
     kernel = Kernel()
 
-    kernel.register('modifier/Spooler', Spooler)
-    kernel.register('modifier/BindAlias', BindAlias)
-    kernel.register('modifier/Elemental', Elemental)
-    kernel.register('modifier/Planner', Planner)
-    kernel.register('modifier/ImageTools', ImageTools)
+    for entry_point in pkg_resources.iter_entry_points("meerk40t_modifier"):
+        kernel.register('modifier/%s' % entry_point.name, entry_point.load())
+
+    # kernel.register('modifier/Spooler', Spooler)
+    # kernel.register('modifier/BindAlias', BindAlias)
+    # kernel.register('modifier/Elemental', Elemental)
+    # kernel.register('modifier/Planner', Planner)
+    # kernel.register('modifier/ImageTools', ImageTools)
+
+    for entry_point in pkg_resources.iter_entry_points("meerk40t_module"):
+        kernel.register('module/%s' % entry_point.name, entry_point.load())
+
+    for entry_point in pkg_resources.iter_entry_points("meerk40t_load"):
+        kernel.register('load/%s' % entry_point.name, entry_point.load())
+
+    for entry_point in pkg_resources.iter_entry_points("meerk40t_save"):
+        kernel.register('save/%s' % entry_point.name, entry_point.load())
 
     kernel.register('static/RasterScripts', RasterScripts)
     kernel.register('module/TCPServer', TCPServer)
@@ -88,7 +104,7 @@ def run():
     kernel.register('disabled-device/GRBL', GrblDevice)
 
     kernel_root = kernel.get_context('/')
-    kernel_root.device_version = "0.7.0"
+    kernel_root.device_version = MEERK40T_VERSION
     kernel_root.device_name = "MeerK40t"
     kernel_root.activate('modifier/Elemental')
     kernel_root.activate('modifier/Planner')
@@ -180,7 +196,6 @@ def run():
             yield COMMAND_MODE_RAPID
             yield COMMAND_SET_ABSOLUTE
             yield COMMAND_MOVE, 0, 0
-
 
         device.spooler.job(origin)
 
