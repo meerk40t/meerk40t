@@ -30,7 +30,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.4"
+SVGELEMENTS_VERSION = "1.4.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -2192,7 +2192,7 @@ class Angle(float):
         return self / tau
 
     def is_orthogonal(self):
-        return (self % (tau / 4)) == 0
+        return (self % (tau / 4.0)) == 0
 
 
 class Matrix:
@@ -4217,7 +4217,7 @@ class Arc(Curve):
             if sagitta is not None:
                 control = Point.towards(self.start, self.end, 0.5)
                 angle = self.start.angle_to(self.end)
-                control = control.polar_to(angle - tau / 4, sagitta)
+                control = control.polar_to(angle - tau / 4.0, sagitta)
             if 'control' in kwargs:  # Control is any additional point on the arc.
                 control = Point(kwargs['control'])
             if control is not None:
@@ -4603,7 +4603,7 @@ class Arc(Curve):
 
     def as_quad_curves(self, arc_required):
         if arc_required is None:
-            sweep_limit = tau / 12
+            sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
             if arc_required == 0:
                 return
@@ -4638,7 +4638,7 @@ class Arc(Curve):
 
     def as_cubic_curves(self, arc_required=None):
         if arc_required is None:
-            sweep_limit = tau / 12
+            sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
             if arc_required == 0:
                 return
@@ -4753,7 +4753,7 @@ class Arc(Curve):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -4780,7 +4780,7 @@ class Arc(Curve):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return t
 
     def point_at_t(self, t):
@@ -4815,18 +4815,18 @@ class Arc(Curve):
         """
         phi = self.get_rotation().as_radians
         if cos(phi) == 0:
-            atan_x = pi / 2
+            atan_x = tau / 4.0
             atan_y = 0
         elif sin(phi) == 0:
             atan_x = 0
-            atan_y = pi / 2
+            atan_y = tau / 4.0
         else:
             rx, ry = self.rx, self.ry
             atan_x = atan(-(ry / rx) * tan(phi))
             atan_y = atan((ry / rx) / tan(phi))
 
         def angle_inv(ang, k):  # inverse of angle from Arc.derivative()
-            return ((ang + pi * k) * (360 / (2 * pi)) - self.theta) / self.delta
+            return ((ang + (tau/2.0) * k) * (360 / tau) - self.theta) / self.delta
 
         xtrema = [self.start.x, self.end.x]
         ytrema = [self.start.y, self.end.y]
@@ -6070,7 +6070,7 @@ class _RoundShape(Shape):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -6101,7 +6101,7 @@ class _RoundShape(Shape):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return t
 
     def point_at_t(self, t):
