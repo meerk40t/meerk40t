@@ -131,7 +131,7 @@ class Keymap(wx.Frame, Module):
             dlg.Destroy()
             self.text_key_name.SetFocus()
             return
-        if len(self.text_key_command.GetValue()) == 0:
+        if len(self.text_command_name.GetValue()) == 0:
             dlg = wx.MessageDialog(None, _("Missing Command"),
                                _("No Command for binding."), wx.OK | wx.ICON_WARNING)
             result = dlg.ShowModal()
