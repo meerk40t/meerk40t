@@ -76,11 +76,11 @@ def run():
     for entry_point in pkg_resources.iter_entry_points("meerk40t_modifier"):
         kernel.register('modifier/%s' % entry_point.name, entry_point.load())
 
-    # kernel.register('modifier/Spooler', Spooler)
-    # kernel.register('modifier/BindAlias', BindAlias)
-    # kernel.register('modifier/Elemental', Elemental)
-    # kernel.register('modifier/Planner', Planner)
-    # kernel.register('modifier/ImageTools', ImageTools)
+    kernel.register('modifier/Spooler', Spooler)
+    kernel.register('modifier/BindAlias', BindAlias)
+    kernel.register('modifier/Elemental', Elemental)
+    kernel.register('modifier/Planner', Planner)
+    kernel.register('modifier/ImageTools', ImageTools)
 
     for entry_point in pkg_resources.iter_entry_points("meerk40t_module"):
         kernel.register('module/%s' % entry_point.name, entry_point.load())
