@@ -137,7 +137,7 @@ class Keymap(wx.Frame, Module):
         self.reload_keymap()
 
     def on_key_press(self, event):
-        from wxmeerk40t import get_key_name
+        from . wxmeerk40t import get_key_name
         keyvalue = get_key_name(event)
         self.text_command_name.SetValue('')
         if keyvalue is None:

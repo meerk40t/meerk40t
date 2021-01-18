@@ -1,7 +1,7 @@
 import wx
 
 from . kernel import Module
-from. svgelements import Matrix
+from . svgelements import Matrix
 
 _ = wx.GetTranslation
 

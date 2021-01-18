@@ -479,6 +479,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     break
                 sx = self.context.current_x
                 sy = self.context.current_y
+                on = int(on)
                 if on & PLOT_FINISH:  # Plot planner is ending.
                     self.ensure_rapid_mode()
                     continue
@@ -1520,7 +1521,7 @@ class LhystudioController(Module):
         chipv = self.context.usb_version
 
         try:
-            from ch341libusbdriver import CH341Driver
+            from . ch341libusbdriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.update_usb_state)
             driver.open()
@@ -1536,7 +1537,7 @@ class LhystudioController(Module):
             self.update_usb_state(STATE_DRIVER_NO_LIBUSB)
 
         try:
-            from ch341windlldriver import CH341Driver
+            from . ch341windlldriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.update_usb_state)
             driver.open()

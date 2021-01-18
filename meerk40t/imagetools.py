@@ -67,7 +67,7 @@ class ImageTools(Modifier):
                 except KeyError:
                     channel(_('Raster Script %s is not registered.') % args[1])
                     return
-                from rasterscripts import RasterScripts
+                from . rasterscripts import RasterScripts
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
                         element.image, element.transform, step = RasterScripts.wizard_image(element, script)
@@ -103,7 +103,7 @@ class ImageTools(Modifier):
                     image_element = copy(element)
                     image_element.image = image_element.image.copy()
                     try:
-                        from OperationPreprocessor import OperationPreprocessor
+                        from . cutplanner import OperationPreprocessor
                     except ImportError:
                         channel("No Render Engine Installed.")
                         return
