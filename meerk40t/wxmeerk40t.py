@@ -169,9 +169,9 @@ ID_MENU_TREE = idinc.new()
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('it', u'italiano', wx.LANGUAGE_ITALIAN),
-                       ('fr', u'franÃ§ais', wx.LANGUAGE_FRENCH),
+                       ('fr', u'français', wx.LANGUAGE_FRENCH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
-                       ('es', u'espaÃ±ol', wx.LANGUAGE_SPANISH),
+                       ('es', u'español', wx.LANGUAGE_SPANISH),
                        ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
 
 
@@ -815,7 +815,7 @@ class MeerK40t(wx.Frame, Module, Job):
         m.Check(self.context.draw_mode & DRAW_MODE_INVERT != 0)
 
     def add_language_menu(self):
-        if os.path.exists(resource_path('../locale')):
+        if os.path.exists(resource_path('../locale')) or os.path.exists(resource_path('./locale')):
             wxglade_tmp_menu = wx.Menu()
             i = 0
             for lang in supported_languages:
@@ -828,7 +828,8 @@ class MeerK40t(wx.Frame, Module, Job):
                     return lambda e: self.context.app.update_language(q)
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
-                if not os.path.exists(resource_path('../locale/%s' % language_code)) and i != 0:
+                if not (os.path.exists(resource_path('../locale/%s' % language_code)) or
+                        os.path.exists(resource_path('./locale/%s' % language_code))) and i != 0:
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
