@@ -5,8 +5,8 @@
 
 import wx
 
-from kernel import Module
-from icons import icons8_administrative_tools_50
+from . kernel import Module
+from . icons import icons8_administrative_tools_50
 
 _ = wx.GetTranslation
 

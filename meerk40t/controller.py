@@ -5,12 +5,12 @@
 
 import wx
 
-from ch341driverbase import *
-from lasercommandconstants import REALTIME_RESET
-from lhystudiosdevice import get_code_string_from_code
-from icons import icons8_pause_50, icons8_end_50, icons8_comments_50, icons8_connected_50, icons8_play_50, \
+from . ch341driverbase import *
+from . lasercommandconstants import REALTIME_RESET
+from . lhystudiosdevice import get_code_string_from_code
+from . icons import icons8_pause_50, icons8_end_50, icons8_comments_50, icons8_connected_50, icons8_play_50, \
     icons8_disconnected_50, icons8_laser_beam_hazard_50
-from kernel import Module, STATE_INITIALIZE, STATE_END, STATE_IDLE, STATE_BUSY, STATE_WAIT, STATE_PAUSE, STATE_ACTIVE, \
+from . kernel import Module, STATE_INITIALIZE, STATE_END, STATE_IDLE, STATE_BUSY, STATE_WAIT, STATE_PAUSE, STATE_ACTIVE, \
     STATE_TERMINATE
 
 _ = wx.GetTranslation

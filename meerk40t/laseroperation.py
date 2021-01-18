@@ -1,7 +1,7 @@
 from copy import copy
 
-from cutcode import LaserSettings, CutCode, LineCut, QuadCut, CubicCut, ArcCut, RasterCut
-from svgelements import Color, SVGElement, Shape, SVGImage, Path, Polygon, Move, Close, Line, QuadraticBezier, \
+from . cutcode import LaserSettings, CutCode, LineCut, QuadCut, CubicCut, ArcCut, RasterCut
+from . svgelements import Color, SVGElement, Shape, SVGImage, Path, Polygon, Move, Close, Line, QuadraticBezier, \
     CubicBezier, Arc
 
 
@@ -48,7 +48,7 @@ class LaserOperation(list):
                 self.color = Color(obj.color)
                 self.output = obj.output
                 self.show = obj.show
-                
+
                 self.settings = LaserSettings(obj.settings)
 
                 for element in obj:

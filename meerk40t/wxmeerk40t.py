@@ -11,49 +11,50 @@ import wx
 import wx.aui as aui
 import wx.ribbon as RB
 
-from about import About
-from alignment import Alignment
-from bufferview import BufferView
-from camerainteface import CameraInterface
-from controller import Controller
-from cutplanner import CutPlanner
-from devicemanager import DeviceManager
-from icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icons8_laser_beam_52, \
+from . about import About
+from . alignment import Alignment
+from . bufferview import BufferView
+from . camerainteface import CameraInterface
+from . controller import Controller
+from . cutplanner import CutPlanner
+from . laseroperation import LaserOperation
+from . devicemanager import DeviceManager
+from . icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icons8_laser_beam_52, \
     icons8_pause_50, icons8_move_50, icons8_usb_connector_50, icons8_route_50, icons8_connected_50, \
     icons8_administrative_tools_50, icons8_manager_50, icons8_camera_50, icons8_keyboard_50, icons8_comments_50, \
     icons8_console_50, icons8_roll_50, icons8_fantasy_50, icons8_lock_50, icon_meerk40t, icons8_laser_beam_20, \
     icons8_direction_20, icons8_vector_20, icons8_file_20, icons8_padlock_50
-from imageproperty import ImageProperty
-from jobpreview import JobPreview
-from jobspooler import JobSpooler
-from kernel import console_command, Module, Job, STATE_BUSY
-from keymap import Keymap
-from lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
+from .  imageproperty import ImageProperty
+from . jobpreview import JobPreview
+from . jobspooler import JobSpooler
+from . kernel import console_command, Module, Job, STATE_BUSY
+from . keymap import Keymap
+from . lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
     COMMAND_MODE_RAPID, COMMAND_HOME, COMMAND_LASER_OFF, COMMAND_WAIT_FINISH, COMMAND_MOVE, COMMAND_LASER_ON, \
     COMMAND_WAIT, COMMAND_SET_SPEED, COMMAND_SET_DIRECTION, COMMAND_MODE_PROGRAM, COMMAND_FUNCTION, REALTIME_RESET
-from laserrender import LaserRender, DRAW_MODE_FILLS, DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, \
+from . laserrender import LaserRender, DRAW_MODE_FILLS, DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, \
     DRAW_MODE_LASERPATH, DRAW_MODE_RETICLE, DRAW_MODE_SELECTION, DRAW_MODE_STROKES, DRAW_MODE_ICONS, DRAW_MODE_TREE, \
     DRAW_MODE_CACHE, DRAW_MODE_REFRESH, DRAW_MODE_ANIMATE, DRAW_MODE_PATH, DRAW_MODE_IMAGE, DRAW_MODE_TEXT, \
     DRAW_MODE_FLIPXY, DRAW_MODE_INVERT, swizzlecolor
-from navigation import Navigation
-from notes import Notes
-from operationproperty import OperationProperty
-from pathproperty import PathProperty
-from preferences import Preferences
-from rasterwizard import RasterWizard
-from rotarysettings import RotarySettings
-from settings import Settings
-from svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color, Matrix, Length
-from terminal import Terminal
-from textproperty import TextProperty
-from usbconnect import UsbConnect
-from widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
+from . navigation import Navigation
+from . notes import Notes
+from . operationproperty import OperationProperty
+from . pathproperty import PathProperty
+from . preferences import Preferences
+from . rasterwizard import RasterWizard
+from . rotarysettings import RotarySettings
+from . settings import Settings
+from . svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color, Matrix, Length, SVGElement, Angle
+from . terminal import Terminal
+from . textproperty import TextProperty
+from . usbconnect import UsbConnect
+from . widget import Scene, GridWidget, GuideWidget, ReticleWidget, ElementsWidget, SelectionWidget, \
     LaserPathWidget, RectSelectWidget
 
 """
 Laser software for the Stock-LIHUIYU laserboard.
 
-MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed 
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
 open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
