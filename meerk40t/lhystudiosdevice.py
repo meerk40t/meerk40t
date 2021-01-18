@@ -14,6 +14,8 @@ from . plotplanner import PlotPlanner
 from . svgelements import Length
 from . zinglplotter import ZinglPlotter
 
+def plugin(kernel):
+    kernel.register('device/Lhystudios', LhystudiosDevice)
 
 """
 LhystudiosDevice is the backend for all Lhystudio Devices.

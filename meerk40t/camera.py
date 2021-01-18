@@ -3,11 +3,15 @@ import time
 
 import cv2
 import numpy as np
-import wx
 
 from . kernel import Modifier, console_command, console_argument, console_option
 
-_ = wx.GetTranslation
+
+def plugin(kernel):
+    kernel.register('modifier/CameraHub', CameraHub)
+    camera_root = kernel.get_context('camera')
+    camera_root.activate('modifier/CameraHub')
+
 
 CORNER_SIZE = 25
 
@@ -181,6 +185,7 @@ class Camera(Modifier):
         :param frame:
         :return:
         """
+        _ = self.context._kernel.translation
         frame = self.last_raw
         if frame is None:
             return

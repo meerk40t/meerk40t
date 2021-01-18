@@ -15,6 +15,12 @@ from . svgelements import SVG_NAME_TAG, SVG_ATTR_VERSION, SVG_VALUE_VERSION, SVG
 MILS_PER_MM = 39.3701
 
 
+def plugin(kernel):
+    kernel.register('load/SVGLoader', SVGLoader)
+    kernel.register('load/DxfLoader', DxfLoader)
+    kernel.register('save/SVGWriter', SVGWriter)
+
+
 class SVGWriter:
     @staticmethod
     def save_types():
@@ -247,35 +253,6 @@ class SVGLoader:
                 except KeyError:
                     pass
         return elements, ops, note, pathname, basename
-
-
-class ImageLoader:
-
-    @staticmethod
-    def load_types():
-        yield "Portable Network Graphics", ("png",), "image/png"
-        yield "Bitmap Graphics", ("bmp",), "image/bmp"
-        yield "EPS Format", ("eps",), "image/eps"
-        yield "GIF Format", ("gif",), "image/gif"
-        yield "Icon Format", ("ico",), "image/ico"
-        yield "JPEG Format", ("jpg", "jpeg", "jpe"), "image/jpeg"
-        yield "Webp Format", ("webp",), "image/webp"
-
-    @staticmethod
-    def load(context, pathname, **kwargs):
-        basename = os.path.basename(pathname)
-
-        image = SVGImage({'href': pathname, 'width': "100%", 'height': "100%", 'id': basename})
-        image.load()
-        try:
-            context.setting(bool, 'image_dpi', True)
-            if context.image_dpi:
-                dpi = image.image.info['dpi']
-                if isinstance(dpi, tuple):
-                    image *= 'scale(%f,%f)' % (1000.0/dpi[0], 1000.0/dpi[1])
-        except (KeyError, IndexError):
-            pass
-        return [image], None, None, pathname, basename
 
 
 class DxfLoader:

@@ -14,6 +14,8 @@ The device is primary composed of three main modules.
 
 """
 
+def plugin(kernel):
+    kernel.register('disabled-device/Moshiboard', MoshiboardDevice)
 
 class MoshiboardDevice:
     """

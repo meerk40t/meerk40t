@@ -16,6 +16,9 @@ Ruida device is a stub-backend. It doesn't work as of yet, but should be able to
 """
 
 
+def plugin(kernel):
+    kernel.register('disabled-device/Ruida', RuidaDevice)
+
 class RuidaDevice:
     """
 

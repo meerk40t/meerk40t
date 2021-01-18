@@ -1,6 +1,12 @@
 from . kernel import Modifier, console_command
 
 
+def plugin(kernel):
+    kernel.register('modifier/BindAlias', BindAlias)
+    kernel_root = kernel.get_context('/')
+    kernel_root.activate('modifier/BindAlias')
+
+
 class BindAlias(Modifier):
     """
     Functionality to add BindAlias commands.

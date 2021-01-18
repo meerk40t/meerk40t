@@ -179,7 +179,10 @@ class CameraInterface(wx.Frame, Module, Job):
                 parent = context.gui
             except AttributeError:
                 parent = None
-            context.open_as('window/CameraInterface', 'camera%d' % index, parent, index)
+            try:
+                context.open_as('window/CameraInterface', 'camera%d' % index, parent, index)
+            except KeyError:
+                pass
 
     def on_close(self, event):
         if self.state == 5:

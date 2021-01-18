@@ -1,6 +1,11 @@
 import socket
 
-from . kernel import Module
+from .kernel import Module, STATE_TERMINATE
+
+
+def plugin(kernel):
+    kernel.register('module/TCPServer', TCPServer)
+    kernel.register('module/UDPServer', UDPServer)
 
 
 class UDPServer(Module):

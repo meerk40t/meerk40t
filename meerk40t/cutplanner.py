@@ -10,6 +10,12 @@ from . svgelements import Matrix, Length, Angle, Path, SVGText, SVGImage, SVGEle
     Polygon
 
 
+def plugin(kernel):
+    kernel.register('modifier/Planner', Planner)
+    kernel_root = kernel.get_context('/')
+    kernel_root.activate('modifier/Planner')
+
+
 class Planner(Modifier):
     """
     Planner is a modifier that adds 'plan' commands to the kernel. These are text based versions of the job preview and

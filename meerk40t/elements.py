@@ -7,6 +7,11 @@ from . svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, P
     SVGElement, Point
 
 
+def plugin(kernel):
+    kernel.register('modifier/Elemental', Elemental)
+    kernel_root = kernel.get_context('/')
+    kernel_root.activate('modifier/Elemental')
+
 class Elemental(Modifier):
     """
     The elemental module is governs all the interactions with the various elements,

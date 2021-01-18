@@ -1,23 +1,9 @@
 import argparse
-import importlib
-import pkgutil
 import sys
-import pkg_resources
 
-from . bindalias import BindAlias
-from . elements import Elemental
-from . imagetools import ImageTools
+from . meerk40t_core import meerk40t_core
 from . kernel import Kernel, STATE_TERMINATE
-from . cutplanner import Planner
-from . defaultmodules import SVGLoader, ImageLoader, DxfLoader, SVGWriter
-from . grbldevice import GrblDevice
-from . kernelserver import TCPServer, UDPServer
-from . lhystudiosdevice import LhystudiosDevice
-from . basedevice import Spooler
 from . lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE
-from . moshiboarddevice import MoshiboardDevice
-from . rasterscripts import RasterScripts
-from . ruidadevice import RuidaDevice
 
 try:
     from math import tau
@@ -37,11 +23,13 @@ for full details.
 
 MEERK40T_VERSION = '0.7.0'
 
+
 def pair(value):
     rv = value.split('=')
     if len(rv) != 2:
         raise argparse.ArgumentParser()
     return rv
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-V', '--version', action='store_true', help='MeerK40t version')
@@ -63,8 +51,6 @@ parser.add_argument('-S', '--speed', type=float, help='set the speed of all oper
 
 def run():
     argv = sys.argv[1:]
-    # argv = '-zmve "channel open send" -e home'.split()
-    # argv = ('-e', 'channel open 1/pipe/usb', '-e', 'rect 0 0 1in 1in')
     args = parser.parse_args(argv)
 
     if args.version:
@@ -72,56 +58,16 @@ def run():
         return
 
     kernel = Kernel()
-
-    for entry_point in pkg_resources.iter_entry_points("meerk40t_modifier"):
-        kernel.register('modifier/%s' % entry_point.name, entry_point.load())
-
-    kernel.register('modifier/Spooler', Spooler)
-    kernel.register('modifier/BindAlias', BindAlias)
-    kernel.register('modifier/Elemental', Elemental)
-    kernel.register('modifier/Planner', Planner)
-    kernel.register('modifier/ImageTools', ImageTools)
-
-    for entry_point in pkg_resources.iter_entry_points("meerk40t_module"):
-        kernel.register('module/%s' % entry_point.name, entry_point.load())
-
-    for entry_point in pkg_resources.iter_entry_points("meerk40t_load"):
-        kernel.register('load/%s' % entry_point.name, entry_point.load())
-
-    for entry_point in pkg_resources.iter_entry_points("meerk40t_save"):
-        kernel.register('save/%s' % entry_point.name, entry_point.load())
-
-    kernel.register('static/RasterScripts', RasterScripts)
-    kernel.register('module/TCPServer', TCPServer)
-    kernel.register('module/UDPServer', UDPServer)
-    kernel.register('load/SVGLoader', SVGLoader)
-    kernel.register('load/ImageLoader', ImageLoader)
-    kernel.register('load/DxfLoader', DxfLoader)
-    kernel.register('save/SVGWriter', SVGWriter)
-    kernel.register('device/Lhystudios', LhystudiosDevice)
-    kernel.register('disabled-device/Moshiboard', MoshiboardDevice)
-    kernel.register('disabled-device/Ruida', RuidaDevice)
-    kernel.register('disabled-device/GRBL', GrblDevice)
+    meerk40t_core(kernel)
 
     kernel_root = kernel.get_context('/')
-    kernel_root.device_version = MEERK40T_VERSION
-    kernel_root.device_name = "MeerK40t"
     kernel_root.activate('modifier/Elemental')
     kernel_root.activate('modifier/Planner')
     kernel_root.activate('modifier/ImageTools')
     kernel_root.activate('modifier/BindAlias')
-    #
-    # try:
-    from . camera import CameraHub
+    kernel_root.device_version = MEERK40T_VERSION
+    kernel_root.device_name = "MeerK40t"
 
-    kernel.register('modifier/CameraHub', CameraHub)
-    camera_root = kernel_root.derive('camera')
-    camera_root.activate('modifier/CameraHub')
-    #
-    # except ImportError:
-    #     # OpenCV or Numpy not found. This module cannot be loaded.
-    #     print("Module Not Loaded.")
-    #     pass
     if not args.no_gui:
         from . wxmeerk40t import wxMeerK40t
 

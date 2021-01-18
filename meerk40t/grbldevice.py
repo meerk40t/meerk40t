@@ -12,6 +12,10 @@ GRBL device is a stub device. Serving as a placeholder.
 """
 
 
+def plugin(kernel):
+    kernel.register('disabled-device/GRBL', GrblDevice)
+
+
 class GrblDevice:
     """
     """
