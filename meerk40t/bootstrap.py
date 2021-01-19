@@ -1,38 +1,38 @@
 
-def meerk40t_core(kernel, force=False):
+def bootstrap(kernel, force=False):
     import sys
     if getattr(sys, 'frozen', False) or force:
         from . import kernelserver
         kernelserver.plugin(kernel)
 
-        from . import basedevice
+        from .device import basedevice
         basedevice.plugin(kernel)
 
-        from . import elements
+        from .core import elements
         elements.plugin(kernel)
 
-        from . import bindalias
+        from .core import bindalias
         bindalias.plugin(kernel)
 
-        from . import cutplanner
+        from .core import cutplanner
         cutplanner.plugin(kernel)
 
-        from . import imagetools
+        from .image import imagetools
         imagetools.plugin(kernel)
 
-        from . import defaultmodules
+        from .core import defaultmodules
         defaultmodules.plugin(kernel)
 
-        from . import lhystudiosdevice
+        from .device.lhystudios import lhystudiosdevice
         lhystudiosdevice.plugin(kernel)
 
-        from . import moshiboarddevice
+        from .device.moshi import moshiboarddevice
         moshiboarddevice.plugin(kernel)
 
-        from . import grbldevice
+        from .device.grbl import grbldevice
         grbldevice.plugin(kernel)
 
-        from . import ruidadevice
+        from .device.ruida import ruidadevice
         ruidadevice.plugin(kernel)
         try:
             # This will only attempt to load the optional plugin if within an app-bundle.
@@ -50,5 +50,6 @@ def meerk40t_core(kernel, force=False):
             plugin(kernel)
             found = True
         if not found:
-            meerk40t_core(kernel, True)
+            bootstrap(kernel, True)
+
 
