@@ -1,7 +1,5 @@
 from ..basedevice import Interpreter
 from ...kernel import Module
-from ..ch341driverbase import get_name_for_status, INFO_USB_CHIP_VERSION, INFO_USB_DRIVER, STATE_DRIVER_LIBUSB, \
-    STATE_CONNECTED, STATE_DRIVER_NO_LIBUSB, STATE_DRIVER_CH341
 
 """
 MoshiboardDevice is the backend for Moshiboard devices.
@@ -59,7 +57,7 @@ class MoshiboardDevice:
 
 class MoshiInterpreter(Interpreter):
     def __init__(self, pipe):
-        Interpreter.__init__(self,pipe=pipe)
+        Interpreter.__init__(self)
         self.pipe = pipe
         self.is_relative = True
         self.laser = False
@@ -147,20 +145,6 @@ class MoshiboardController(Module):
     def initialize(self, *args, **kwargs):
         self.usb_log = self.context.channel("usb")
 
-    def open(self):
-        if self.driver is None:
-            self.detect_driver_and_open()
-        else:
-            # Update criteria
-            self.driver.index = self.context.usb_index
-            self.driver.bus = self.context.usb_bus
-            self.driver.address = self.context.usb_address
-            self.driver.serial = self.context.usb_serial
-            self.driver.chipv = self.context.usb_version
-            self.driver.open()
-        if self.driver is None:
-            raise ConnectionRefusedError
-
     def close(self):
         if self.driver is not None:
             self.driver.close()
@@ -168,48 +152,3 @@ class MoshiboardController(Module):
     def log(self, info):
         update = str(info) + '\n'
         self.usb_log(update)
-
-    def state_listener(self, code):
-        if isinstance(code, int):
-            self.usb_state = code
-            name = get_name_for_status(code, translation=self.context._kernel.translation)
-            self.log(name)
-            self.context.signal('pipe;usb_state', code)
-            self.context.signal('pipe;usb_state_text', name)
-        else:
-            self.log(str(code))
-
-    def detect_driver_and_open(self):
-        index = self.context.usb_index
-        bus = self.context.usb_bus
-        address = self.context.usb_address
-        serial = self.context.usb_serial
-        chipv = self.context.usb_version
-
-        try:
-            from ..ch341libusbdriver import CH341Driver
-            self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
-                                               state_listener=self.state_listener)
-            driver.open()
-            chip_version = driver.get_chip_version()
-            self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
-            self.context.signal('pipe;chipv', chip_version)
-            self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_LIBUSB)
-            self.state_listener(STATE_CONNECTED)
-            return
-        except ConnectionRefusedError:
-            self.driver = None
-        except ImportError:
-             self.state_listener(STATE_DRIVER_NO_LIBUSB)
-        try:
-            from ..ch341windlldriver import CH341Driver
-            self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
-                                               state_listener=self.state_listener)
-            driver.open()
-            chip_version = driver.get_chip_version()
-            self.state_listener(INFO_USB_CHIP_VERSION | chip_version)
-            self.context.signal('pipe;chipv', chip_version)
-            self.state_listener(INFO_USB_DRIVER | STATE_DRIVER_CH341)
-            self.state_listener(STATE_CONNECTED)
-        except ConnectionRefusedError:
-            self.driver = None

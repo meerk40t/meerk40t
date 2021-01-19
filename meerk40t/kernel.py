@@ -1401,7 +1401,10 @@ class Kernel:
 
     def channel(self, channel, *args, **kwargs):
         if channel not in self.channels:
-            self.channels[channel] = Channel(channel, *args, **kwargs)
+            chan = Channel(channel, *args, **kwargs)
+            chan._ = self.translation
+            self.channels[channel] = chan
+
         return self.channels[channel]
 
     # Console Processing.
@@ -1976,6 +1979,7 @@ class Channel:
         self.name = name
         self.buffer_size = buffer_size
         self.line_end = line_end
+        self._ = lambda e: e
         if buffer_size == 0:
             self.buffer = None
         else:

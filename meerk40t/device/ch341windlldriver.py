@@ -12,14 +12,13 @@ class CH341Driver:
     This is basic interface code for a CH341 to be run in EPP 1.9 mode.
     """
 
-    def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, state_listener=None):
-        if state_listener is None:
-            self.state_listener = lambda code: None
-        else:
-            self.state_listener = state_listener
+    def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, channel=None, state=None):
+        self.channel = channel if channel is not None else lambda code: None
+        self.state = state
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
-        except (NameError, OSError):
+        except (NameError, OSError) as e:
+            self.channel(str(e))
             raise ConnectionRefusedError
         self.driver_index = 0
         self.index = index
@@ -28,27 +27,24 @@ class CH341Driver:
         self.serial = serial
         self.chipv = chipv
         self.driver_value = None
-        self.state = None
-
-    def set_status(self, code):
-        self.state_listener(code)
-        self.state = code
 
     def try_open(self, i):
         """Tries to open device at index, with given criteria"""
+        _ = self.channel._
         self.driver_index = i
         val = self.driver.CH341OpenDevice(self.driver_index)
         self.driver_value = val
         if val == -1:
             self.driver_value = None
-            self.set_status(STATE_CONNECTION_FAILED)
+            self.state('STATE_CONNECTION_FAILED')
+            self.channel(_("Connection to USB failed.\n"))
             raise ConnectionRefusedError  # No more devices.
         # There is a device.
         if self.chipv != -1:
             chipv = self.get_chip_version()
             if self.chipv != chipv:
                 # Rejected.
-                self.set_status(STATE_DEVICE_REJECTED)
+                self.channel(_("K40 devices were found but they were rejected."))
                 self.driver.CH341CloseDevice(self.driver_index)
                 return -1
         if self.bus != -1:
@@ -64,37 +60,45 @@ class CH341Driver:
         """
         Opens the driver for unknown criteria.
         """
+        _ = self.channel._
         if self.driver_value is None:
-            self.set_status(STATE_DRIVER_CH341)
-            self.set_status(STATE_CONNECTING)
+            self.channel(_("Using CH341 Driver to connect."))
+            self.channel(_("Attempting connection to USB."))
+            self.state('STATE_USB_CONNECTING')
+
             if self.index == -1:
                 for i in range(0, 16):
                     if self.try_open(i) == 0:
                         break  # We have our driver.
             else:
                 self.try_open(self.index)
-            self.set_status(STATE_USB_CONNECTED)
-            self.set_status(STATE_CH341_PARAMODE)
+            self.state('STATE_USB_CONNECTED')
+            self.channel(_("USB Connected."))
+            self.channel(_("Sending CH341 mode change to EPP1.9."))
             try:
                 self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
-                self.set_status(STATE_CH341_PARAMODE_SUCCESS)
-            except ConnectionError:
-                self.set_status(STATE_CH341_PARAMODE_FAIL)
+                self.channel(_("CH341 mode change to EPP1.9: Success."))
+            except ConnectionError as e:
+                self.channel(str(e))
+                self.channel(_("CH341 mode change to EPP1.9: Fail."))
                 self.driver.CH341CloseDevice(self.driver_index)
             # self.driver.CH341SetExclusive(self.driver_index, 1)
-            self.set_status(STATE_CONNECTED)
+            self.channel(_("Device Connected.\n"))
 
     def close(self):
         """
         Closes the driver for the stated device index.
         """
+        _ = self.channel._
         self.driver_value = None
-        self.set_status(STATE_USB_SET_DISCONNECTING)
+        self.state('STATE_USB_SET_DISCONNECTING')
+        self.channel(_("Attempting disconnection from USB."))
         if self.driver_value == -1:
-            self.set_status(STATE_USB_RESET_FAIL)
+            self.channel(_("USB connection did not exist."))
             raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
-        self.set_status(STATE_USB_DISCONNECTED)
+        self.state('STATE_USB_DISCONNECTED')
+        self.channel(_("USB Disconnection Successful.\n"))
 
     def write(self, packet):
         """

@@ -8,8 +8,6 @@ from ...kernel import Modifier, STATE_UNKNOWN, Job, Module, STATE_ACTIVE, STATE_
     STATE_INITIALIZE, STATE_BUSY, STATE_IDLE, STATE_TERMINATE, STATE_END, STATE_WAIT
 from ..basedevice import Interpreter, PLOT_FINISH, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION, PLOT_RAPID, PLOT_JOG, \
     INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID, INTERPRETER_STATE_FINISH, INTERPRETER_STATE_MODECHANGE
-from ..ch341driverbase import get_name_for_status, INFO_USB_CHIP_VERSION, INFO_USB_DRIVER, STATE_DRIVER_LIBUSB, \
-    STATE_CONNECTED, STATE_DRIVER_NO_LIBUSB, STATE_DRIVER_NO_WINDLL, STATE_DRIVER_CH341, STATE_DRIVER_MOCK
 from ...core.plotplanner import PlotPlanner
 from ...svgelements import Length
 from ...core.zinglplotter import ZinglPlotter
@@ -1246,6 +1244,7 @@ class LhystudioController(Module):
         self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
         self.usb_send_channel = context.channel('%s/usb_send' % name)
         self.recv_channel = context.channel('%s/recv' % name)
+        self.usb_log.watch(lambda e: context.signal('pipe;usb_status', e))
 
         send = context.channel('%s/send' % name)
         send.watch(self.write)
@@ -1499,60 +1498,49 @@ class LhystudioController(Module):
         self.abort()
         self._thread.join()  # Wait until stop completes before continuing.
 
-    def update_usb_state(self, code):
-        """
-        Process updated values for the usb status. Sending it to the usb channel and sending update signals.
-
-        :param code: usb status code.
-        :return:
-        """
-        if isinstance(code, int):
-            self._usb_state = code
-            name = get_name_for_status(code, translation=self.context._kernel.translation)
-            self.usb_log(str(name))
-            self.context.signal('pipe;usb_state', code)
-            self.context.signal('pipe;usb_state_text', name)
-        else:
-            self.usb_log(str(code))
-
     def detect_driver_and_open(self):
         index = self.context.usb_index
         bus = self.context.usb_bus
         address = self.context.usb_address
         serial = self.context.usb_serial
         chipv = self.context.usb_version
+        _ = self.usb_log._
+        def state(state_value):
+            self.context.signal('pipe;state', state_value)
 
         try:
             from ..ch341libusbdriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
-                                               state_listener=self.update_usb_state)
+                                               channel=self.usb_log, state=state)
             driver.open()
             chip_version = driver.get_chip_version()
-            self.update_usb_state(INFO_USB_CHIP_VERSION | chip_version)
+            self.usb_log(_("CH341 Chip Version: %d") % chip_version)
             self.context.signal('pipe;chipv', chip_version)
-            self.update_usb_state(INFO_USB_DRIVER | STATE_DRIVER_LIBUSB)
-            self.update_usb_state(STATE_CONNECTED)
+            self.usb_log(_("Driver Detected: LibUsb"))
+            state('STATE_CONNECTED')
+            self.usb_log(_("Device Connected.\n"))
             return
         except ConnectionRefusedError:
             self.driver = None
         except ImportError:
-            self.update_usb_state(STATE_DRIVER_NO_LIBUSB)
+            self.usb_log(_("PyUsb is not installed. Skipping."))
 
         try:
             from ..ch341windlldriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
-                                               state_listener=self.update_usb_state)
+                                               channel=self.usb_log, state=state)
             driver.open()
             chip_version = driver.get_chip_version()
-            self.update_usb_state(INFO_USB_CHIP_VERSION | chip_version)
+            self.usb_log(_("CH341 Chip Version: %d") % chip_version)
             self.context.signal('pipe;chipv', chip_version)
-            self.update_usb_state(INFO_USB_DRIVER | STATE_DRIVER_CH341)
-            self.update_usb_state(STATE_CONNECTED)
+            self.usb_log(_("Driver Detected: CH341"))
+            state('STATE_CONNECTED')
+            self.usb_log(_("Device Connected.\n"))
             return
         except ConnectionRefusedError:
             self.driver = None
         except ImportError:
-            self.update_usb_state(STATE_DRIVER_NO_WINDLL)
+            self.usb_log(_("No Windll interfacing. Skipping."))
 
     def update_state(self, state):
         self.state = state
@@ -1723,7 +1711,8 @@ class LhystudioController(Module):
 
         # Packet is prepared and ready to send. Open Channel.
         if self.context.mock:
-            self.update_usb_state(STATE_DRIVER_MOCK)
+            _ = self.usb_log._
+            self.usb_log(_("Using Mock Driver."))
         else:
             self.open()
 

@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from meerk40t.bootstrap import bootstrap
+from . bootstrap import bootstrap
 from . kernel import Kernel, STATE_TERMINATE
 from . device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE
 

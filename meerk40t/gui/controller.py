@@ -5,7 +5,6 @@
 
 import wx
 
-from ..device.ch341driverbase import *
 from ..device.lasercommandconstants import REALTIME_RESET
 from ..device.lhystudios.lhystudiosdevice import get_code_string_from_code
 from . icons import icons8_pause_50, icons8_end_50, icons8_comments_50, icons8_connected_50, icons8_play_50, \
@@ -85,7 +84,8 @@ class Controller(wx.Frame, Module):
         self.context.listen('pipe;status', self.update_status)
         self.context.listen('pipe;packet_text', self.update_packet_text)
         self.context.listen('pipe;buffer', self.on_buffer_update)
-        self.context.listen('pipe;usb_state', self.on_connection_state_change)
+        self.context.listen('pipe;usb_status', self.on_connection_status_change)
+        self.context.listen('pipe;state', self.on_connection_state_change)
         self.context.listen('pipe;thread', self.on_control_state)
         self.checkbox_limit_buffer.SetValue(self.context.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.context.buffer_max)
@@ -96,7 +96,8 @@ class Controller(wx.Frame, Module):
         self.context.unlisten('pipe;status', self.update_status)
         self.context.unlisten('pipe;packet_text', self.update_packet_text)
         self.context.unlisten('pipe;buffer', self.on_buffer_update)
-        self.context.unlisten('pipe;usb_state', self.on_connection_state_change)
+        self.context.unlisten('pipe;usb_status', self.on_connection_status_change)
+        self.context.unlisten('pipe;state', self.on_connection_state_change)
         self.context.unlisten('pipe;thread', self.on_control_state)
         try:
             self.Close()
@@ -308,30 +309,31 @@ class Controller(wx.Frame, Module):
         if string_data is not None and len(string_data) != 0:
             self.packet_text_text.SetValue(str(string_data))
 
+    def on_connection_status_change(self, status):
+        self.text_connection_status.SetValue(str(status))
+
     def on_connection_state_change(self, state):
-        status = get_name_for_status(state, translation=_)
-        self.text_connection_status.SetValue(status)
-        if state == STATE_CONNECTION_FAILED or state == STATE_DRIVER_NO_BACKEND:
+        if state == 'STATE_CONNECTION_FAILED' or state == 'STATE_DRIVER_NO_BACKEND':
             self.button_device_connect.SetBackgroundColour("#dfdf00")
-            self.button_device_connect.SetLabel(status)
+            self.button_device_connect.SetLabel(str(self.context.last_signal('pipe;usb_status')[0]))
             self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
             self.button_device_connect.Enable()
-        elif state == STATE_UNINITIALIZED or state == STATE_USB_DISCONNECTED:
+        elif state == 'STATE_UNINITIALIZED' or state == 'STATE_USB_DISCONNECTED':
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
             self.button_device_connect.Enable()
-        elif state == STATE_USB_SET_DISCONNECTING:
+        elif state == 'STATE_USB_SET_DISCONNECTING':
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(icons8_disconnected_50.GetBitmap())
             self.button_device_connect.Disable()
-        elif state == STATE_USB_CONNECTED or state == STATE_CONNECTED:
+        elif state == 'STATE_USB_CONNECTED' or state == 'STATE_CONNECTED':
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
             self.button_device_connect.Enable()
-        elif status == STATE_CONNECTING:
+        elif state == 'STATE_CONNECTING':
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap())
@@ -341,7 +343,8 @@ class Controller(wx.Frame, Module):
         state = self.context.last_signal('pipe;usb_state')
         if state is not None and isinstance(state, tuple):
             state = state[0]
-        if state in (STATE_USB_DISCONNECTED, STATE_UNINITIALIZED, STATE_CONNECTION_FAILED, STATE_DRIVER_MOCK, None):
+        if state in ('STATE_USB_DISCONNECTED', 'STATE_UNINITIALIZED', 'STATE_CONNECTION_FAILED', 'STATE_DRIVER_MOCK',
+                     None):
             try:
                 self.context.execute("Connect_USB")
             except ConnectionRefusedError:
@@ -349,7 +352,7 @@ class Controller(wx.Frame, Module):
                                        _("Manual Connection"), wx.OK | wx.ICON_WARNING)
                 result = dlg.ShowModal()
                 dlg.Destroy()
-        elif state in (STATE_CONNECTED, STATE_USB_CONNECTED):
+        elif state in ('STATE_CONNECTED', 'STATE_USB_CONNECTED'):
             self.context.execute("Disconnect_USB")
 
     def on_buffer_update(self, value, *args):
