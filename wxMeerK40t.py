@@ -3138,7 +3138,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
-        dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
+        dlg = wx.MessageDialog(None, err_msg, _('Please Report to Development Team'), wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
         dlg.Destroy()
     except:  # I already crashed once, if there's another here just ignore it.
