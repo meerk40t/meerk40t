@@ -22,7 +22,3 @@ The Gui modules all require wxPython and deal with the graphical interactions be
 
 Image modules are tools dealing with Pillow (Python Image Library).
 
-# DXF
-
-DXF modules deal with Digital Exchange Format files.
-
