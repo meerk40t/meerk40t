@@ -1143,15 +1143,24 @@ class Kernel:
         """
         if thread_name is None:
             thread_name = func.__name__
-        thread = Thread(name=thread_name)
 
+        channel = self.channel('threads')
+        _ = self.translation
+        thread = Thread(name=thread_name)
+        channel(_("Thread: %s, Initialized" %thread_name))
         def run():
             self.threads[thread_name] = thread
+            channel(_("Thread: %s, Set" % thread_name))
             try:
+                channel(_("Thread: %s, Start" % thread_name))
                 func()
+                channel(_("Thread: %s, End " % thread_name))
             except:
+                channel(_("Thread: %s, Exception-End" % thread_name))
                 import sys
+                channel(sys.exc_info())
                 sys.excepthook(*sys.exc_info())
+            channel(_("Thread: %s, Unset" % thread_name))
             del self.threads[thread_name]
 
         thread.run = run

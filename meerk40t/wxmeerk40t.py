@@ -6,6 +6,11 @@ import os
 import sys
 import threading
 import traceback
+try:
+    from math import tau
+except ImportError:
+    from math import pi
+    tau = pi * 2
 
 import wx
 import wx.aui as aui

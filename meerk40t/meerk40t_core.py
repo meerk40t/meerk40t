@@ -34,7 +34,6 @@ def meerk40t_core(kernel, force=False):
 
         from . import ruidadevice
         ruidadevice.plugin(kernel)
-
         try:
             # This will only attempt to load the optional plugin if within an app-bundle.
             from camera import camera

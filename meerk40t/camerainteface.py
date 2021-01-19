@@ -47,15 +47,15 @@ class CameraInterface(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda e: self.context.active.open('window/CameraURI', self, self.index), id=item.GetId())
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 0\n' % self.index), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.swap_camera(0), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 1"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 1\n' % self.index), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.swap_camera(1), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 2"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 2\n' % self.index), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.swap_camera(2), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 3"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 3\n' % self.index), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.swap_camera(3), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 4"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.context.console('camera%d --uri 4\n' % self.index), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.swap_camera(4), id=item.GetId())
 
         self.CameraInterface_menubar.Append(wxglade_tmp_menu, _("Camera"))
         self.SetMenuBar(self.CameraInterface_menubar)
@@ -134,6 +134,13 @@ class CameraInterface(wx.Frame, Module, Job):
         self.slider_fps.SetValue(self.setting.fps)
         self.on_slider_fps()
         self.process = self.update_view
+
+    def swap_camera(self, uri):
+        def swap(event=None):
+            self.context.console('camera%d --uri %s stop start\n' % (self.index, str(uri)))
+            self.frame_bitmap = None
+
+        return swap
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
