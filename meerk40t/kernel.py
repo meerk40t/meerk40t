@@ -415,6 +415,14 @@ class Context:
     def contexts(self):
         return self._kernel.contexts
 
+    def has_feature(self, feature):
+        """
+        Return whether or not this is a registered feature within the kernel.
+        :param feature:
+        :return:
+        """
+        return feature in self._kernel.registered
+
     def match(self, matchtext, suffix=False):
         """
         Delegate of Kernel match.
@@ -1205,7 +1213,10 @@ class Kernel:
                 break
             jobs = self.jobs
             for job_name in list(jobs):
-                job = jobs[job_name]
+                try:
+                    job = jobs[job_name]
+                except KeyError:
+                    continue  # Job was removed during execution.
 
                 # Checking if jobs should run.
                 if job.scheduled:

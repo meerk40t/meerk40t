@@ -18,7 +18,7 @@ class CameraInterface(wx.Frame, Module, Job):
         wx.Frame.__init__(self, parent, -1, "",
                           style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         Module.__init__(self, context, path)
-
+        self.camera = None
         if len(args) > 0 and args[0] >= 1:
             self.index = args[0]
         else:
@@ -113,7 +113,10 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.camera_setting = self.context.get_context('camera')
         self.setting = self.camera_setting.derive(str(self.index))
-        self.camera = self.setting.activate('modifier/Camera')
+        try:
+            self.camera = self.setting.activate('modifier/Camera')
+        except ValueError:
+            pass
 
         self.setting.setting(int, 'index', 0)
         self.setting.setting(int, 'fps', 1)
@@ -217,6 +220,9 @@ class CameraInterface(wx.Frame, Module, Job):
         self.update_in_gui_thread()
 
     def update_view(self):
+        if self.camera is None:
+            return
+
         if self.camera.frame_index == self.last_frame_index:
             return
         else:
@@ -292,7 +298,21 @@ class CameraInterface(wx.Frame, Module, Job):
         :return:
         """
         if self.frame_bitmap is None:
-            return  # Need the bitmap to refresh.
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._Buffer)
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.SetBrush(wx.WHITE_BRUSH)
+            w, h = self._Buffer.GetSize()
+            gc.DrawRectangle(0, 0, w, h)
+            font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+            gc.SetFont(font, wx.BLACK)
+            if self.camera is None:
+                gc.DrawText(_("Camera backend failure...\nCannot attempt camera connection."), 0, 0)
+            else:
+                gc.DrawText(_("Fetching Frame..."), 0, 0)
+            gc.Destroy()
+            return
         dm = self.context.draw_mode
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)

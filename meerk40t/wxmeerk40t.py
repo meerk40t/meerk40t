@@ -496,7 +496,9 @@ class MeerK40t(wx.Frame, Module, Job):
         windows.AddButton(ID_CONTROLLER, _("Controller"), icons8_connected_50.GetBitmap(), "")
         windows.AddButton(ID_PREFERENCES, _("Preferences"), icons8_administrative_tools_50.GetBitmap(), "")
         windows.AddButton(ID_DEVICES, _("Devices"), icons8_manager_50.GetBitmap(), "")
-        windows.AddHybridButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
+        if self.context.has_feature('modifier/Camera'):
+            windows.AddHybridButton(ID_CAMERA, _("Camera"), icons8_camera_50.GetBitmap(), "")
+
         windows.AddButton(ID_KEYMAP, _("Keymap"), icons8_keyboard_50.GetBitmap(), "")
         windows.AddButton(ID_NOTES, _("Notes"), icons8_comments_50.GetBitmap(), "")
         windows.AddButton(ID_TERMINAL, _("Terminal"), icons8_console_50.GetBitmap(), "")
@@ -612,13 +614,14 @@ class MeerK40t(wx.Frame, Module, Job):
                      lambda v: self.context.open('window/Operations', self), id=ID_OPERATIONS)
         windows.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED,
                      lambda v: self.context.open('window/RasterWizard', self), id=ID_RASTER)
-        windows.Bind(RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, self.on_camera_dropdown, id=ID_CAMERA)
+        if self.context.has_feature('modifier/Camera'):
+            windows.Bind(RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, self.on_camera_dropdown, id=ID_CAMERA)
 
-        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-        self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
         self.context.setting(int, 'units_index', 0)
         self.ribbon_position_units = self.context.units_index
         self.update_ribbon_position()
@@ -698,7 +701,8 @@ class MeerK40t(wx.Frame, Module, Job):
         self.main_menubar.keymap = wxglade_tmp_menu.Append(ID_MENU_KEYMAP, _("Keymap Settings"), "")
         self.main_menubar.devices = wxglade_tmp_menu.Append(ID_MENU_DEVICE_MANAGER, _("Device Manager"), "")
         self.main_menubar.alignment = wxglade_tmp_menu.Append(ID_MENU_ALIGNMENT, _("Alignment Ally"), "")
-        self.main_menubar.camera = wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
+        if self.context.has_feature('modifier/Camera'):
+            self.main_menubar.camera = wxglade_tmp_menu.Append(ID_MENU_CAMERA, _("Camera"), "")
         self.main_menubar.terminal = wxglade_tmp_menu.Append(ID_MENU_TERMINAL, _("Terminal"), "")
         self.main_menubar.navigation = wxglade_tmp_menu.Append(ID_MENU_NAVIGATION, _("Navigation"), "")
         self.main_menubar.controller = wxglade_tmp_menu.Append(ID_MENU_CONTROLLER, _("Controller"), "")
@@ -761,8 +765,9 @@ class MeerK40t(wx.Frame, Module, Job):
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/Navigation', self),
                   id=ID_MENU_NAVIGATION)
         self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/JobPreview', self, '0'), id=ID_MENU_JOB)
-        self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self),
-                  id=ID_MENU_CAMERA)
+        if self.context.has_feature('modifier/Camera'):
+            self.Bind(wx.EVT_MENU, lambda v: self.context.open('window/CameraInterface', self),
+                      id=ID_MENU_CAMERA)
         self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/Preferences', self),
                   id=wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, lambda v: self.context.active.open('window/Rotary', self), id=ID_MENU_ROTARY)
