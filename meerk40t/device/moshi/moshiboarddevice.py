@@ -187,7 +187,7 @@ class MoshiboardController(Module):
         chipv = self.context.usb_version
 
         try:
-            from . ch341libusbdriver import CH341Driver
+            from ..ch341libusbdriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.state_listener)
             driver.open()
@@ -202,7 +202,7 @@ class MoshiboardController(Module):
         except ImportError:
              self.state_listener(STATE_DRIVER_NO_LIBUSB)
         try:
-            from . ch341windlldriver import CH341Driver
+            from ..ch341windlldriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.state_listener)
             driver.open()

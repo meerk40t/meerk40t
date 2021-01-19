@@ -9,7 +9,7 @@ from ...kernel import Modifier, STATE_UNKNOWN, Job, Module, STATE_ACTIVE, STATE_
 from ..basedevice import Interpreter, PLOT_FINISH, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION, PLOT_RAPID, PLOT_JOG, \
     INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID, INTERPRETER_STATE_FINISH, INTERPRETER_STATE_MODECHANGE
 from ..ch341driverbase import get_name_for_status, INFO_USB_CHIP_VERSION, INFO_USB_DRIVER, STATE_DRIVER_LIBUSB, \
-    STATE_CONNECTED, STATE_DRIVER_NO_LIBUSB, STATE_DRIVER_CH341, STATE_DRIVER_MOCK
+    STATE_CONNECTED, STATE_DRIVER_NO_LIBUSB, STATE_DRIVER_NO_WINDLL, STATE_DRIVER_CH341, STATE_DRIVER_MOCK
 from ...core.plotplanner import PlotPlanner
 from ...svgelements import Length
 from ...core.zinglplotter import ZinglPlotter
@@ -1548,8 +1548,11 @@ class LhystudioController(Module):
             self.context.signal('pipe;chipv', chip_version)
             self.update_usb_state(INFO_USB_DRIVER | STATE_DRIVER_CH341)
             self.update_usb_state(STATE_CONNECTED)
+            return
         except ConnectionRefusedError:
             self.driver = None
+        except ImportError:
+            self.update_usb_state(STATE_DRIVER_NO_WINDLL)
 
     def update_state(self, state):
         self.state = state
