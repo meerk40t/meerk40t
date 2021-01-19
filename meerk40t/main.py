@@ -58,7 +58,7 @@ def run():
         return
 
     kernel = Kernel()
-    bootstrap(kernel,True)
+    bootstrap(kernel)
 
     kernel_root = kernel.get_context('/')
     kernel_root.activate('modifier/Elemental')
