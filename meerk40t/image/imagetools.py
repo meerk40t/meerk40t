@@ -2,7 +2,7 @@ from os import path as ospath
 from copy import copy
 from math import ceil
 
-from ..kernel import Modifier, console_command
+from ..kernel import Modifier
 from ..core.cutplanner import CutPlanner
 from ..svgelements import SVGImage, Color, Length, Path, Matrix
 
@@ -33,7 +33,7 @@ class ImageTools(Modifier):
         context = self.context
         elements = context.elements
 
-        @console_command(self.context, 'image', help='image <operation>')
+        @self.context.console_command('image', help='image <operation>')
         def image(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -535,7 +535,7 @@ class ImageTools(Modifier):
                 channel(_('Image command unrecognized.'))
                 return
 
-        @console_command(self.context, 'halftone', help='image halftone <diameter> <scale> <angle>')
+        @self.context.console_command('halftone', help='image halftone <diameter> <scale> <angle>')
         def halftone(command, channel, _, args=tuple(), **kwargs):
             '''
             Returns list of half-tone images for cmyk image. sample (pixels),

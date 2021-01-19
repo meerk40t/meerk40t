@@ -1,4 +1,4 @@
-from ..kernel import Modifier, console_command
+from ..kernel import Modifier
 
 
 def plugin(kernel):
@@ -24,7 +24,7 @@ class BindAlias(Modifier):
         self.context.default_keymap = self.default_keymap
         self.context.default_alias = self.default_alias
 
-        @console_command(self.context, 'bind', help='bind <key> <console command>')
+        @self.context.console_command('bind', help='bind <key> <console command>')
         def bind(command, channel, _, **kwargs):
             """
             Binds a key to a given keyboard keystroke.
@@ -71,7 +71,7 @@ class BindAlias(Modifier):
                         pass
             return
 
-        @console_command(self.context, 'alias', help='alias <alias> <console commands[;console command]*>')
+        @self.context.console_command('alias', help='alias <alias> <console commands[;console command]*>')
         def alias(command, channel, _, args=tuple(), **kwargs):
             context = self.context
             _ = self.context._kernel.translation
@@ -92,7 +92,7 @@ class BindAlias(Modifier):
                 context.alias[args[0]] = ' '.join(args[1:])
             return
 
-        @console_command(self.context, '.*', regex=True, hidden=True)
+        @self.context.console_command('.*', regex=True, hidden=True)
         def alias_execute(command, channel, _, args=tuple(), **kwargs):
             context = self.context
             if command in self.alias:
@@ -102,7 +102,7 @@ class BindAlias(Modifier):
             else:
                 raise ValueError  # This is not an alias.
 
-        @console_command(self.context, 'consoleserver', help='starts a console_server on port 23 (telnet)')
+        @self.context.console_command('consoleserver', help='starts a console_server on port 23 (telnet)')
         def server_console(command, channel, _, args=tuple(), **kwargs):
             _ = self.context._kernel.translation
             port = 23

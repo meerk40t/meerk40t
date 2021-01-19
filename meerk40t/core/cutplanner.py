@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan, isinf, ceil
 
-from ..kernel import Modifier, console_command
+from ..kernel import Modifier
 from ..core.cutcode import CutCode
 from . laseroperation import LaserOperation
 from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE, \
@@ -67,7 +67,7 @@ class Planner(Modifier):
 
         # REQUIRES CUTPLANNER
 
-        @console_command(self.context, 'optimize', help='optimize <type>')
+        @self.context.console_command('optimize', help='optimize <type>')
         def optimize(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
                 channel(_('No selected elements.'))
@@ -103,7 +103,7 @@ class Planner(Modifier):
 
         # REQUIRES CUTPLANNER
 
-        @console_command(self.context, 'embroider', help='embroider <angle> <distance>')
+        @self.context.console_command('embroider', help='embroider <angle> <distance>')
         def embroider(command, channel, _, args=tuple(), **kwargs):
             channel(_('Embroidery Filling'))
             if len(args) >= 1:
@@ -127,7 +127,7 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.altered()
 
-        @console_command(self.context, 'plan.*', help='plan<?> <command>', regex=True)
+        @self.context.console_command('plan.*', help='plan<?> <command>', regex=True)
         def plan(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))

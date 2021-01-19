@@ -1,7 +1,7 @@
 
 import wx
 
-from ..kernel import Module, Job, console_argument, console_command
+from ..kernel import Module, Job
 from . laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from . icons import icons8_camera_50, icons8_picture_in_picture_alternative_50, icons8_detective_50, \
     icons8_connected_50
@@ -179,8 +179,8 @@ class CameraInterface(wx.Frame, Module, Job):
     def sub_register(kernel):
         kernel.register('window/CameraURI', CameraURI)
 
-        @console_argument("index", type=int)
-        @console_command(kernel, 'camwin', help="camwin <index>: Open camera window at index")
+        @kernel.console_argument("index", type=int)
+        @kernel.console_command('camwin', help="camwin <index>: Open camera window at index")
         def camera_win(command, channel, _, index=None, args=tuple(), **kwargs):
             if index is None:
                 raise SyntaxError

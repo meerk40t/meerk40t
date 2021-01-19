@@ -4,7 +4,7 @@ import time
 from ...core.cutcode import CutCode, LaserSettings
 from ..lasercommandconstants import *
 from . laserspeed import LaserSpeed
-from ...kernel import Modifier, STATE_UNKNOWN, console_command, Job, Module, console_argument, STATE_ACTIVE, STATE_PAUSE, \
+from ...kernel import Modifier, STATE_UNKNOWN, Job, Module, STATE_ACTIVE, STATE_PAUSE, \
     STATE_INITIALIZE, STATE_BUSY, STATE_IDLE, STATE_TERMINATE, STATE_END, STATE_WAIT
 from ..basedevice import Interpreter, PLOT_FINISH, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION, PLOT_RAPID, PLOT_JOG, \
     INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID, INTERPRETER_STATE_FINISH, INTERPRETER_STATE_MODECHANGE
@@ -114,17 +114,17 @@ class LhystudiosDevice(Modifier):
         context = self.context
         kernel = self.context._kernel
 
-        @console_command(self.context, '+laser', hidden=True, help='turn laser on in place')
+        @self.context.console_command('+laser', hidden=True, help='turn laser on in place')
         def plus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @console_command(self.context, '-laser', hidden=True, help='turn laser off in place')
+        @self.context.console_command('-laser', hidden=True, help='turn laser off in place')
         def minus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @console_command(self.context, ('left', 'right', 'up', 'down'), help='<direction> <amount>')
+        @self.context.console_command(('left', 'right', 'up', 'down'), help='<direction> <amount>')
         def direction(command, channel, _, args=tuple(), **kwargs):
             active = kernel.active_device
             spooler = active.spooler
@@ -148,7 +148,7 @@ class LhystudiosDevice(Modifier):
                 self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
             kernel._console_queue('jog')
 
-        @console_command(self.context, 'jog', hidden=True, help='executes outstanding jog buffer')
+        @self.context.console_command('jog', hidden=True, help='executes outstanding jog buffer')
         def jog(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             idx = int(self.dx)
@@ -162,7 +162,7 @@ class LhystudiosDevice(Modifier):
             else:
                 channel(_('Busy Error'))
 
-        @console_command(self.context, ('move', 'move_absolute'), help='move <x> <y>: move to position.')
+        @self.context.console_command(('move', 'move_absolute'), help='move <x> <y>: move to position.')
         def move(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             if len(args) == 2:
@@ -171,7 +171,7 @@ class LhystudiosDevice(Modifier):
             else:
                 channel(_('Syntax Error'))
 
-        @console_command(self.context, 'move_relative', help='move_relative <dx> <dy>')
+        @self.context.console_command('move_relative', help='move_relative <dx> <dy>')
         def move_relative(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             if len(args) == 2:
@@ -180,17 +180,17 @@ class LhystudiosDevice(Modifier):
             else:
                 channel(_('Syntax Error'))
 
-        @console_command(self.context, 'home', help='home the laser')
+        @self.context.console_command('home', help='home the laser')
         def home(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_HOME)
 
-        @console_command(self.context, 'unlock', help='unlock the rail')
+        @self.context.console_command('unlock', help='unlock the rail')
         def unlock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_UNLOCK)
 
-        @console_command(self.context, 'lock', help='lock the rail')
+        @self.context.console_command('lock', help='lock the rail')
         def lock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LOCK)
@@ -309,7 +309,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @console_command(self.context, 'pulse', help='pulse <time>: Pulse the laser in place.')
+        @self.context.console_command('pulse', help='pulse <time>: Pulse the laser in place.')
         def pulse(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('Must specify a pulse time in milliseconds.'))
@@ -339,7 +339,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 channel(_('Pulse laser failed: Busy'))
             return
 
-        @console_command(self.context, 'speed', help='Set Speed in Interpreter.')
+        @self.context.console_command('speed', help='Set Speed in Interpreter.')
         def speed(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('Speed set at: %f mm/s') % self.speed)
@@ -367,7 +367,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.set_speed(s)
             channel(_('Speed set at: %f mm/s') % self.speed)
 
-        @console_command(self.context, 'power', help='Set Interpreter Power')
+        @self.context.console_command('power', help='Set Interpreter Power')
         def power(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('Power set at: %d pulses per inch') % self.power)
@@ -377,7 +377,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 except ValueError:
                     pass
 
-        @console_command(self.context, 'acceleration', help='Set Interpreter Acceleration [1-4]')
+        @self.context.console_command('acceleration', help='Set Interpreter Acceleration [1-4]')
         def acceleration(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 if self.acceleration is None:
@@ -1255,8 +1255,8 @@ class LhystudioController(Module):
     def initialize(self, *args, **kwargs):
         context = self.context
 
-        @console_argument('filename', type=str)
-        @console_command(self.context, 'egv_import', help='Lhystudios Engrave Buffer Import. egv_import <egv_file>')
+        @self.context.console_argument('filename', type=str)
+        @self.context.console_command('egv_import', help='Lhystudios Engrave Buffer Import. egv_import <egv_file>')
         def egv_import(command, channel, _, filename, args=tuple(), **kwargs):
             if filename is None:
                 raise SyntaxError
@@ -1287,8 +1287,8 @@ class LhystudioController(Module):
                     self.write(buffer)
                 self.write(b'\n')
 
-        @console_argument('filename', type=str)
-        @console_command(self.context, 'egv_export', help='Lhystudios Engrave Buffer Export. egv_export <egv_file>')
+        @self.context.console_argument('filename', type=str)
+        @self.context.console_command('egv_export', help='Lhystudios Engrave Buffer Export. egv_export <egv_file>')
         def egv_export(command, channel, _, filename, args=tuple(), **kwargs):
             if filename is None:
                 raise SyntaxError
@@ -1303,46 +1303,46 @@ class LhystudioController(Module):
                 buffer += self._queue
                 f.write(buffer.decode("utf-8"))
 
-        @console_command(self.context, 'egv', help='Lhystudios Engrave Code Sender. egv <lhymicro-gl>')
+        @self.context.console_command('egv', help='Lhystudios Engrave Code Sender. egv <lhymicro-gl>')
         def egv(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
                 self.write(bytes(args[0].replace('$', '\n'), "utf8"))
 
-        @console_command(self.context, 'usb_connect', help='Connect USB')
+        @self.context.console_command('usb_connect', help='Connect USB')
         def usb_connect(command, channel, _, args=tuple(), **kwargs):
             try:
                 self.open()
             except ConnectionRefusedError:
                 channel("Connection Refused.")
 
-        @console_command(self.context, 'usb_disconnect', help='Disconnect USB')
+        @self.context.console_command('usb_disconnect', help='Disconnect USB')
         def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
             if self.driver is not None:
                 self.close()
             else:
                 channel("Usb is not connected.")
 
-        @console_command(self.context, 'start', help='Start Pipe to Controller')
+        @self.context.console_command('start', help='Start Pipe to Controller')
         def pipe_start(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
             self.start()
             channel("Lhystudios Channel Started.")
 
-        @console_command(self.context, 'pause', help='Pause Controller')
+        @self.context.console_command('pause', help='Pause Controller')
         def pipe_pause(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_PAUSE)
             self.pause()
             channel("Lhystudios Channel Paused.")
 
-        @console_command(self.context, 'resume', help='Resume Controller')
+        @self.context.console_command('resume', help='Resume Controller')
         def pipe_resume(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
             self.start()
             channel("Lhystudios Channel Resumed.")
 
-        @console_command(self.context, 'abort', help='Abort Job')
+        @self.context.console_command('abort', help='Abort Job')
         def pipe_abort(command, channel, _, args=tuple(), **kwargs):
             self.reset()
             channel("Lhystudios Channel Aborted.")

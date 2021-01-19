@@ -96,24 +96,6 @@ class Module:
         shutdown or if this individual module is being closed on its own."""
         pass
 
-
-def console_option(name, short=None, **kwargs):
-    def decor(func):
-        kwargs['name'] = name
-        kwargs['short'] = short
-        func.options.insert(0, kwargs)
-        return func
-    return decor
-
-
-def console_argument(name, **kwargs):
-    def decor(func):
-        kwargs['name'] = name
-        func.arguments.insert(0, kwargs)
-        return func
-    return decor
-
-
 _cmd_parse = [
     ('OPT', r'-([a-zA-Z]+)'),
     ('LONG', r'--([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
@@ -121,145 +103,6 @@ _cmd_parse = [
     ('SKIP', r'[ ,\t\n\x09\x0A\x0C\x0D]+')
 ]
 _CMD_RE = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _cmd_parse))
-
-
-def _cmd_parser(text):
-    pos = 0
-    limit = len(text)
-    while pos < limit:
-        match = _CMD_RE.match(text, pos)
-        if match is None:
-            break  # No more matches.
-        kind = match.lastgroup
-        start = pos
-        pos = match.end()
-        if kind == 'SKIP':
-            continue
-        if kind == 'PARAM':
-            value = match.group()
-            yield kind, value, start, pos
-        elif kind == 'LONG':
-            value = match.group()
-            yield kind, value[2:], start, pos
-        elif kind == 'OPT':
-            value = match.group()
-            for letter in value[1:]:
-                yield kind, letter, start, start+1
-                start += 1
-
-
-def console_command(context, path=None, regex=False, hidden=False, help=None, data_type=None, chain=False):
-
-    def decorator(func):
-
-        @functools.wraps(func)
-        def inner(command, remainder, channel, **ik):
-            options = inner.options
-            arguments = inner.arguments
-            stack = list()
-            stack.extend(arguments)
-            kwargs = dict()
-            argument_index = 0
-            opt_index = 0
-            pos = 0
-            for kind, value, start, pos in _cmd_parser(remainder):
-                if kind == 'PARAM':
-                    if argument_index == len(stack):
-                        pos = start
-                        break  # Nothing else is expected.
-                    k = stack[argument_index]
-                    argument_index += 1
-                    if 'type' in k and value is not None:
-                        try:
-                            value = k['type'](value)
-                        except ValueError:
-                            raise SyntaxError
-                    key = k['name']
-                    current = kwargs.get(key, True)
-                    if current is True:
-                        kwargs[key] = [value]
-                    else:
-                        kwargs[key].append(value)
-                    opt_index = argument_index
-                elif kind == 'LONG':
-                    for pk in options:
-                        if value == pk['name']:
-                            if pk.get('action') != 'store_true':
-                                count = pk.get('nargs', 1)
-                                for i in range(count):
-                                    stack.insert(opt_index, pk)
-                                    opt_index += 1
-                            kwargs[value] = True
-                            break
-                    opt_index = argument_index
-                elif kind == 'OPT':
-                    for pk in options:
-                        if value == pk['short']:
-                            if pk.get('action') != 'store_true':
-                                stack.insert(opt_index, pk)
-                                opt_index += 1
-                            kwargs[pk['name']] = True
-                            break
-
-            # Any unprocessed positional arguments get default values.
-            for i in range(argument_index, len(stack)):
-                k = stack[i]
-                value = k.get('default')
-                if 'type' in k and value is not None:
-                    value = k['type'](value)
-                key = k['name']
-                current = kwargs.get(key)
-                if current is None:
-                    kwargs[key] = [value]
-                else:
-                    kwargs[key].append(value)
-
-            # Any singleton list arguments should become their only element.
-            for i in range(len(stack)):
-                k = stack[i]
-                key = k['name']
-                current = kwargs.get(key)
-                if isinstance(current, list):
-                    if len(current) == 1:
-                        kwargs[key] = current[0]
-
-            remainder = remainder[pos:]
-            if len(remainder) > 0:
-                kwargs['remainder'] = remainder
-                kwargs['args'] = remainder.split()
-            if not chain:
-                remainder = ''
-            value = func(command, channel=channel, **ik, **kwargs)
-            return value, remainder
-
-        # Main Decorator
-        try:
-            kernel = context._kernel
-            subpath = context._path
-        except AttributeError:
-            kernel = context
-            subpath = ''
-        cmd = 'command'
-        cmd_path = "%s/%s" % (subpath, cmd)
-        while cmd_path.startswith('/'):
-            cmd_path = cmd_path[1:]
-        if isinstance(path, tuple):
-            for subitem in path:
-                p = '%s/%s' % (cmd_path, subitem)
-                kernel.register(p, inner)
-        else:
-            p = '%s/%s' % (cmd_path, path)
-            kernel.register(p, inner)
-        inner.long_help = func.__doc__
-        inner.help = help
-        inner.regex = regex
-        inner.hidden = hidden
-        inner.data_type = data_type if data_type is not None else type(None)
-        inner.arguments = list()
-        inner.options = list()
-        return inner
-
-    return decorator
 
 
 class Context:
@@ -402,6 +245,17 @@ class Context:
         :return:
         """
         self._kernel.register(self.abs_path(path), obj)
+
+    @staticmethod
+    def console_argument(*args, **kwargs):
+        return Kernel.console_argument(*args, **kwargs)
+
+    @staticmethod
+    def console_option(*args, **kwargs):
+        return Kernel.console_option(*args, **kwargs)
+
+    def console_command(self, *args, **kwargs):
+        return Kernel.console_command(self, *args, **kwargs)
 
     @property
     def registered(self):
@@ -987,6 +841,163 @@ class Kernel:
         except AttributeError:
             pass
 
+    @staticmethod
+    def console_option(name, short=None, **kwargs):
+        def decor(func):
+            kwargs['name'] = name
+            kwargs['short'] = short
+            func.options.insert(0, kwargs)
+            return func
+
+        return decor
+
+    @staticmethod
+    def console_argument(name, **kwargs):
+        def decor(func):
+            kwargs['name'] = name
+            func.arguments.insert(0, kwargs)
+            return func
+
+        return decor
+
+    @staticmethod
+    def _cmd_parser(text):
+        pos = 0
+        limit = len(text)
+        while pos < limit:
+            match = _CMD_RE.match(text, pos)
+            if match is None:
+                break  # No more matches.
+            kind = match.lastgroup
+            start = pos
+            pos = match.end()
+            if kind == 'SKIP':
+                continue
+            if kind == 'PARAM':
+                value = match.group()
+                yield kind, value, start, pos
+            elif kind == 'LONG':
+                value = match.group()
+                yield kind, value[2:], start, pos
+            elif kind == 'OPT':
+                value = match.group()
+                for letter in value[1:]:
+                    yield kind, letter, start, start + 1
+                    start += 1
+
+    def console_command(self, path=None, regex=False, hidden=False, help=None, data_type=None, chain=False):
+
+        def decorator(func):
+
+            @functools.wraps(func)
+            def inner(command, remainder, channel, **ik):
+                options = inner.options
+                arguments = inner.arguments
+                stack = list()
+                stack.extend(arguments)
+                kwargs = dict()
+                argument_index = 0
+                opt_index = 0
+                pos = 0
+                for kind, value, start, pos in Kernel._cmd_parser(remainder):
+                    if kind == 'PARAM':
+                        if argument_index == len(stack):
+                            pos = start
+                            break  # Nothing else is expected.
+                        k = stack[argument_index]
+                        argument_index += 1
+                        if 'type' in k and value is not None:
+                            try:
+                                value = k['type'](value)
+                            except ValueError:
+                                raise SyntaxError
+                        key = k['name']
+                        current = kwargs.get(key, True)
+                        if current is True:
+                            kwargs[key] = [value]
+                        else:
+                            kwargs[key].append(value)
+                        opt_index = argument_index
+                    elif kind == 'LONG':
+                        for pk in options:
+                            if value == pk['name']:
+                                if pk.get('action') != 'store_true':
+                                    count = pk.get('nargs', 1)
+                                    for i in range(count):
+                                        stack.insert(opt_index, pk)
+                                        opt_index += 1
+                                kwargs[value] = True
+                                break
+                        opt_index = argument_index
+                    elif kind == 'OPT':
+                        for pk in options:
+                            if value == pk['short']:
+                                if pk.get('action') != 'store_true':
+                                    stack.insert(opt_index, pk)
+                                    opt_index += 1
+                                kwargs[pk['name']] = True
+                                break
+
+                # Any unprocessed positional arguments get default values.
+                for i in range(argument_index, len(stack)):
+                    k = stack[i]
+                    value = k.get('default')
+                    if 'type' in k and value is not None:
+                        value = k['type'](value)
+                    key = k['name']
+                    current = kwargs.get(key)
+                    if current is None:
+                        kwargs[key] = [value]
+                    else:
+                        kwargs[key].append(value)
+
+                # Any singleton list arguments should become their only element.
+                for i in range(len(stack)):
+                    k = stack[i]
+                    key = k['name']
+                    current = kwargs.get(key)
+                    if isinstance(current, list):
+                        if len(current) == 1:
+                            kwargs[key] = current[0]
+
+                remainder = remainder[pos:]
+                if len(remainder) > 0:
+                    kwargs['remainder'] = remainder
+                    kwargs['args'] = remainder.split()
+                if not chain:
+                    remainder = ''
+                value = func(command, channel=channel, **ik, **kwargs)
+                return value, remainder
+
+            # Main Decorator
+            try:
+                kernel = self._kernel
+                subpath = self._path
+            except AttributeError:
+                kernel = self
+                subpath = ''
+            cmd = 'command'
+            cmd_path = "%s/%s" % (subpath, cmd)
+            while cmd_path.startswith('/'):
+                cmd_path = cmd_path[1:]
+            if isinstance(path, tuple):
+                for subitem in path:
+                    p = '%s/%s' % (cmd_path, subitem)
+                    kernel.register(p, inner)
+            else:
+                p = '%s/%s' % (cmd_path, path)
+                kernel.register(p, inner)
+            inner.long_help = func.__doc__
+            inner.help = help
+            inner.regex = regex
+            inner.hidden = hidden
+            inner.data_type = data_type if data_type is not None else type(None)
+            inner.arguments = list()
+            inner.options = list()
+            return inner
+
+        return decorator
+
     # Persistent Object processing.
 
     def get_context(self, path):
@@ -1398,7 +1409,7 @@ class Kernel:
     def command_boot(self):
         _ = self.translation
 
-        @console_command(self, ('help', '?'), hidden=True, help="help <help>")
+        @self.console_command(('help', '?'), hidden=True, help="help <help>")
         def help(command, channel, _, args=tuple(), **kwargs):
             if len(args) >= 1:
                 extended_help = args[0]
@@ -1457,11 +1468,11 @@ class Kernel:
                     channel(cmd_re)
             return
 
-        @console_command(self, 'loop', help="loop <command>")
+        @self.console_command('loop', help="loop <command>")
         def loop(command, channel, _, args=tuple(), **kwargs):
             self._tick_command(' '.join(args))
 
-        @console_command(self, 'end', help="end <commmand>")
+        @self.console_command('end', help="end <commmand>")
         def end(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 self.commands.clear()
@@ -1469,7 +1480,7 @@ class Kernel:
             else:
                 self._untick_command(' '.join(args))
 
-        @console_command(self, 'timer.*', regex=True, help="timer<?> <duration> <iterations>")
+        @self.console_command('timer.*', regex=True, help="timer<?> <duration> <iterations>")
         def timer(command, channel, _, args=tuple(), **kwargs):
             name = command[5:]
             if len(args) == 0:
@@ -1528,7 +1539,7 @@ class Kernel:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
             return
 
-        @console_command(self, 'register', help="register")
+        @self.console_command('register', help="register")
         def register(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -1545,7 +1556,7 @@ class Kernel:
                     channel('%d: %s type of %s' % (i + 1, name, str(obj)))
                 channel(_('----------'))
 
-        @console_command(self, 'context', help="context")
+        @self.console_command('context', help="context")
         def context(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
@@ -1555,7 +1566,7 @@ class Kernel:
                     channel(context_name)
             return
 
-        @console_command(self, 'set', help="set [<key> <value>]")
+        @self.console_command('set', help="set [<key> <value>]")
         def set(command, channel, _, args=tuple(), **kwargs):
             last_path = self.last_path
             if last_path is None:
@@ -1590,7 +1601,7 @@ class Kernel:
                     channel(_('Attempt failed. Produced a value error.'))
             return
 
-        @console_command(self, 'control', help="control [<executive>]")
+        @self.console_command('control', help="control [<executive>]")
         def control(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
@@ -1611,7 +1622,7 @@ class Kernel:
                     channel(_("Control '%s' not found.") % control_name)
             return
 
-        @console_command(self, 'module', help="module [(open|close) <module_name>]")
+        @self.console_command('module', help="module [(open|close) <module_name>]")
         def module(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
@@ -1651,7 +1662,7 @@ class Kernel:
                         channel(_("Module '%s' not found.") % index)
             return
 
-        @console_command(self, 'modifier', help="modifier [(open|close) <module_name>]")
+        @self.console_command('modifier', help="modifier [(open|close) <module_name>]")
         def modifier(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
@@ -1686,7 +1697,7 @@ class Kernel:
                         channel(_("Modifier '%s' not found.") % index)
             return
 
-        @console_command(self, 'schedule', help="schedule")
+        @self.console_command('schedule', help="schedule")
         def schedule(command, channel, _, args=tuple(), **kwargs):
             channel(_('----------'))
             channel(_('Scheduled Processes:'))
@@ -1707,7 +1718,7 @@ class Kernel:
             channel(_('----------'))
             return
 
-        @console_command(self, 'channel', help="channel [(open|close|save) <channel_name>]")
+        @self.console_command('channel', help="channel [(open|close|save) <channel_name>]")
         def channel(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -1746,7 +1757,7 @@ class Kernel:
                     self.channel(chan).watch(self._console_file_write)
             return
 
-        @console_command(self, 'device', help="device [<value>]")
+        @self.console_command('device', help="device [<value>]")
         def device(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
@@ -1811,7 +1822,7 @@ class Kernel:
                         break
             return
 
-        @console_command(self, 'flush', help="flush")
+        @self.console_command('flush', help="flush")
         def flush(command, channel, _, args=tuple(), **kwargs):
             last_path = self.last_path
             if last_path is None:
@@ -1819,7 +1830,7 @@ class Kernel:
             last_path.flush()
             channel(_('Persistent settings force saved.'))
 
-        @console_command(self, 'shutdown', help="shutdown")
+        @self.console_command('shutdown', help="shutdown")
         def shutdown(command, channel, _, args=tuple(), **kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()

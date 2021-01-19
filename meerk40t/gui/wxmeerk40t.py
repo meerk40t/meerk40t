@@ -32,7 +32,7 @@ from . icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icon
 from .  imageproperty import ImageProperty
 from . jobpreview import JobPreview
 from . jobspooler import JobSpooler
-from ..kernel import console_command, Module, Job, STATE_BUSY
+from ..kernel import Module, Job, STATE_BUSY
 from . keymap import Keymap
 from ..device.lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
     COMMAND_MODE_RAPID, COMMAND_HOME, COMMAND_LASER_OFF, COMMAND_WAIT_FINISH, COMMAND_MOVE, COMMAND_LASER_ON, \
@@ -395,15 +395,15 @@ class MeerK40t(wx.Frame, Module, Job):
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
-        @console_command(context, 'rotaryview', help='Rotary View of Scene')
+        @context.console_command('rotaryview', help='Rotary View of Scene')
         def toggle_rotary_view(*args, **kwargs):
             self.toggle_rotary_view()
 
-        @console_command(context, 'rotaryscale', help='Rotary Scale selected elements')
+        @context.console_command('rotaryscale', help='Rotary Scale selected elements')
         def toggle_rotary_view(*args, **kwargs):
             self.apply_rotary_scale()
 
-        @console_command(context, 'window', help='wxMeerK40 window information')
+        @context.console_command('window', help='wxMeerK40 window information')
         def window(command, channel, _, args=tuple(), **kwargs):
             context = self.context
             if len(args) == 0:
@@ -436,7 +436,7 @@ class MeerK40t(wx.Frame, Module, Job):
                     except IndexError:
                         raise SyntaxError
 
-        @console_command(context, 'refresh', help='wxMeerK40 refresh')
+        @context.console_command('refresh', help='wxMeerK40 refresh')
         def refresh(command, channel, _, args=tuple(), **kwargs):
             context.signal('refresh_scene')
             context.signal('rebuild_tree')

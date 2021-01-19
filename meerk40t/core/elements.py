@@ -1,6 +1,6 @@
 from copy import copy
 
-from ..kernel import Modifier, console_command, console_argument, console_option
+from ..kernel import Modifier
 from . laseroperation import LaserOperation
 from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_MOVE
 from ..svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, Polygon, Polyline, Matrix, Angle, SVGImage, \
@@ -46,7 +46,7 @@ class Elemental(Modifier):
         elements = self
         _ = kernel.translation
 
-        @console_command(self.context, 'grid', help='grid <columns> <rows> <x_distance> <y_distance>')
+        @self.context.console_command('grid', help='grid <columns> <rows> <x_distance> <y_distance>')
         def grid(command, channel, _, args=tuple(), **kwargs):
             try:
                 cols = int(args[0])
@@ -71,7 +71,7 @@ class Elemental(Modifier):
                     x_pos += x_distance
                 y_pos += y_distance
 
-        @console_command(self.context, 'element',
+        @self.context.console_command('element',
                                   help='element <command>*: <#>, merge, subpath, copy, delete, *, ~, !')
         def element(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
@@ -157,7 +157,7 @@ class Elemental(Modifier):
                         channel(_('index %d out of range') % value)
             return
 
-        @console_command(self.context, 'path', help='path <svg path>')
+        @self.context.console_command('path', help='path <svg path>')
         def path(command, channel, _, args=tuple(), **kwargs):
             args = kwargs.get('args', tuple())
             path_d = ' '.join(args)
@@ -165,10 +165,10 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @console_argument('x_pos', type=Length, omit=True)
-        @console_argument('y_pos', type=Length, omit=True)
-        @console_argument('r_pos', type=Length)
-        @console_command(self.context, 'circle', help='circle <x> <y> <r> or circle <r>')
+        @self.context.console_argument('x_pos', type=Length, omit=True)
+        @self.context.console_argument('y_pos', type=Length, omit=True)
+        @self.context.console_argument('r_pos', type=Length)
+        @self.context.console_command('circle', help='circle <x> <y> <r> or circle <r>')
         def circle(command, x_pos, y_pos, r_pos, args=tuple(), **kwargs):
             if x_pos is None:
                 raise SyntaxError
@@ -182,11 +182,11 @@ class Elemental(Modifier):
             circ = Path(circ)
             self.add_element(circ)
 
-        @console_argument('x_pos', type=Length)
-        @console_argument('y_pos', type=Length)
-        @console_argument('rx_pos', type=Length)
-        @console_argument('ry_pos', type=Length)
-        @console_command(self.context, 'ellipse', help='ellipse <cx> <cy> <rx> <ry>')
+        @self.context.console_argument('x_pos', type=Length)
+        @self.context.console_argument('y_pos', type=Length)
+        @self.context.console_argument('rx_pos', type=Length)
+        @self.context.console_argument('ry_pos', type=Length)
+        @self.context.console_command('ellipse', help='ellipse <cx> <cy> <rx> <ry>')
         def ellipse(command, x_pos, y_pos, rx_pos, ry_pos, args=tuple(),**kwargs):
             if ry_pos is None:
                 raise SyntaxError
@@ -198,15 +198,15 @@ class Elemental(Modifier):
             self.add_element(ellip)
             return
 
-        @console_argument('x_pos', type=Length)
-        @console_argument('y_pos', type=Length)
-        @console_argument('width', type=Length)
-        @console_argument('height', type=Length)
-        @console_option('ry', 'y', type=Length)
-        @console_option('rx', 'x', type=Length)
-        @console_option('stroke', 's', type=Color)
-        @console_option('fill', 'f', type=Color)
-        @console_command(self.context, 'rect', help='adds rectangle to scene')
+        @self.context.console_argument('x_pos', type=Length)
+        @self.context.console_argument('y_pos', type=Length)
+        @self.context.console_argument('width', type=Length)
+        @self.context.console_argument('height', type=Length)
+        @self.context.console_option('ry', 'y', type=Length)
+        @self.context.console_option('rx', 'x', type=Length)
+        @self.context.console_option('stroke', 's', type=Color)
+        @self.context.console_option('fill', 'f', type=Color)
+        @self.context.console_command('rect', help='adds rectangle to scene')
         def rect(command, x_pos, y_pos, width, height, rx=None, ry=None, stroke=None, fill=None, args=tuple(), **kwargs):
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             self.context.setting(int, "bed_width", 310)  # Default Value
@@ -218,27 +218,27 @@ class Elemental(Modifier):
             self.add_element(rect)
             return rect
 
-        @console_command(self.context, 'text', help='text <text>')
+        @self.context.console_command('text', help='text <text>')
         def text(command, channel, _, args=tuple(), **kwargs):
             text = ' '.join(args)
             element = SVGText(text)
             self.add_element(element)
 
-        @console_command(self.context, 'polygon', help='polygon (<point>, <point>)*')
+        @self.context.console_command('polygon', help='polygon (<point>, <point>)*')
         def polygon(command, channel, _, args=tuple(), **kwargs):
             element = Polygon(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return
 
-        @console_command(self.context, 'polyline', help='polyline (<point>, <point>)*')
+        @self.context.console_command('polyline', help='polyline (<point>, <point>)*')
         def polyline(command,  args=tuple(),**kwargs):
             element = Polyline(list(map(float, args)))
             element = Path(element)
             self.add_element(element)
             return
 
-        @console_command(self.context, 'stroke', help='stroke <svg color>')
+        @self.context.console_command('stroke', help='stroke <svg color>')
         def stroke(command, channel, _, args=tuple(), data=None, **kwargs):
             if data is not None:
                 data.stroke = Color(args[0])
@@ -272,7 +272,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'fill', help='fill <svg color>')
+        @self.context.console_command('fill', help='fill <svg color>')
         def fill(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -303,7 +303,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'rotate', help='rotate <angle>')
+        @self.context.console_command('rotate', help='rotate <angle>')
         def rotate(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -349,7 +349,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'scale', help='scale <scale> [<scale-y>]?')
+        @self.context.console_command('scale', help='scale <scale> [<scale-y>]?')
         def scale(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -403,7 +403,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'translate', help='translate <tx> <ty>')
+        @self.context.console_command('translate', help='translate <tx> <ty>')
         def translate(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -439,7 +439,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'rotate_to', help='rotate_to <angle>')
+        @self.context.console_command('rotate_to', help='rotate_to <angle>')
         def rotate_to(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -489,7 +489,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'scale_to', help='scale_to <scale> [<scale-y>]?')
+        @self.context.console_command('scale_to', help='scale_to <scale> [<scale-y>]?')
         def scale_to(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -546,7 +546,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'translate_to', help='translate_to <tx> <ty>')
+        @self.context.console_command('translate_to', help='translate_to <tx> <ty>')
         def translate_to(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -586,7 +586,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'resize', help='resize <x-pos> <y-pos> <width> <height>')
+        @self.context.console_command('resize', help='resize <x-pos> <y-pos> <width> <height>')
         def resize(command,  args=tuple(),**kwargs):
             if len(args) < 4:
                 raise SyntaxError
@@ -612,7 +612,7 @@ class Elemental(Modifier):
             except (ValueError, ZeroDivisionError):
                 return
 
-        @console_command(self.context, 'matrix', help='matrix <sx> <kx> <sy> <ky> <tx> <ty>')
+        @self.context.console_command('matrix', help='matrix <sx> <kx> <sy> <ky> <tx> <ty>')
         def matrix(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -650,7 +650,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'reset', help='reset affine transformations')
+        @self.context.console_command('reset', help='reset affine transformations')
         def reset(command, channel, _, args=tuple(), **kwargs):
             for element in elements.elems(emphasized=True):
                 try:
@@ -668,7 +668,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'reify', help='reify affine transformations')
+        @self.context.console_command('reify', help='reify affine transformations')
         def reify(command, channel, _, args=tuple(), **kwargs):
             for element in elements.elems(emphasized=True):
                 try:
@@ -686,7 +686,7 @@ class Elemental(Modifier):
             context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'operation', help='operation <commands>: <#>, *, ~, !, delete, copy')
+        @self.context.console_command('operation', help='operation <commands>: <#>, *, ~, !, delete, copy')
         def operation(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_('----------'))
@@ -751,7 +751,7 @@ class Elemental(Modifier):
                         channel(_('index %d out of range') % value)
             return
 
-        @console_command(self.context, 'classify', help='classify elements into operations')
+        @self.context.console_command('classify', help='classify elements into operations')
         def classify(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
                 channel(_('No selected elements.'))
@@ -759,7 +759,7 @@ class Elemental(Modifier):
             elements.classify(list(elements.elems(emphasized=True)))
             return
 
-        @console_command(self.context, 'declassify', help='declassify selected elements')
+        @self.context.console_command('declassify', help='declassify selected elements')
         def declassify(command, channel, _, args=tuple(), **kwargs):
             args = kwargs.get('args', tuple())
             if not elements.has_emphasis():
@@ -768,7 +768,7 @@ class Elemental(Modifier):
             elements.remove_elements_from_operations(list(elements.elems(emphasized=True)))
             return
 
-        @console_command(self.context, 'note', help='note <note>')
+        @self.context.console_command('note', help='note <note>')
         def note(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 if elements.note is None:
@@ -779,7 +779,7 @@ class Elemental(Modifier):
                 elements.note = ' '.join(args)
                 channel(_('Note Set.'))
 
-        @console_command(self.context, 'cut', help='group current elements into cut operation')
+        @self.context.console_command('cut', help='group current elements into cut operation')
         def cut(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
                 channel(_('No selected elements.'))
@@ -790,7 +790,7 @@ class Elemental(Modifier):
             elements.add_op(op)
             return
 
-        @console_command(self.context, 'engrave', help='group current elements into engrave operation')
+        @self.context.console_command('engrave', help='group current elements into engrave operation')
         def engrave(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
                 channel(_('No selected elements.'))
@@ -801,7 +801,7 @@ class Elemental(Modifier):
             elements.add_op(op)
             return
 
-        @console_command(self.context, 'raster', help='group current elements into raster operation')
+        @self.context.console_command('raster', help='group current elements into raster operation')
         def raster(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
                 channel(_('No selected elements.'))
@@ -812,7 +812,7 @@ class Elemental(Modifier):
             elements.add_op(op)
             return
 
-        @console_command(self.context, 'step', help='step <raster-step-size>')
+        @self.context.console_command('step', help='step <raster-step-size>')
         def step(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 found = False
@@ -853,7 +853,7 @@ class Elemental(Modifier):
                 self.context.signal('refresh_scene')
             return
 
-        @console_command(self.context, 'trace_hull', help='trace the convex hull of current elements')
+        @self.context.console_command('trace_hull', help='trace the convex hull of current elements')
         def trace_hull(command, channel, _, args=tuple(), **kwargs):
             spooler = context.active.spooler
             pts = []
@@ -882,7 +882,7 @@ class Elemental(Modifier):
             spooler.job(trace_hull)
             return
 
-        @console_command(self.context, 'trace_quick', help='quick trace the bounding box of current elements')
+        @self.context.console_command('trace_quick', help='quick trace the bounding box of current elements')
         def trace_quick(command, channel, _, args=tuple(), **kwargs):
             spooler = context.active.spooler
             bbox = elements.bounds()

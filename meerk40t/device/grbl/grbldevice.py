@@ -3,7 +3,7 @@ import re
 
 from ..lasercommandconstants import *
 from ..basedevice import Interpreter, INTERPRETER_STATE_PROGRAM
-from ...kernel import Module, console_command
+from ...kernel import Module
 
 MILS_PER_MM = 39.3701
 
@@ -44,7 +44,7 @@ class GrblDevice:
         kernel.register('load/GCodeLoader', GCodeLoader)
         kernel.register('module/GRBLEmulator', GRBLEmulator)
 
-        @console_command(kernel, 'grblserver', help='activate the grblserver.')
+        @kernel.console_command('grblserver', help='activate the grblserver.')
         def grblserver(command, channel, _, args=tuple(), **kwargs):
             active_device = kernel.active_device
             _ = kernel.translation

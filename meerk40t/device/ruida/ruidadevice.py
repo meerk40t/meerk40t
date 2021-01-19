@@ -1,7 +1,7 @@
 import os
 from io import BytesIO
 
-from ...kernel import Module, console_command, console_option
+from ...kernel import Module
 from ...core.cutcode import CutCode, LaserSettings, LineCut
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 from ...svgelements import Color, Point
@@ -45,8 +45,8 @@ class RuidaDevice:
         kernel.register('load/RDLoader', RDLoader)
         kernel.register('module/RuidaEmulator', RuidaEmulator)
 
-        @console_option('spool', type=bool, action='store_true')
-        @console_command(kernel, 'ruidaserver', help='activate the ruidaserver.')
+        @kernel.console_option('spool', type=bool, action='store_true')
+        @kernel.console_command('ruidaserver', help='activate the ruidaserver.')
         def ruidaserver(command, channel, _, spool=False, args=tuple(), **kwargs):
             c = kernel.active_device
             try:
