@@ -121,7 +121,7 @@ class CH341LibusbDriver:
         except usb.core.USBError as e:
             self.channel(str(e))
             self.channel(_("Config Set: Fail\n(Hint: may recover if you change where the USB is plugged in.)"))
-            raise ConnectionRefusedError
+            # raise ConnectionRefusedError
 
     def claim_interface(self, device, interface):
         _ = self.channel._
