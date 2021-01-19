@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import unittest
 
-from LaserSpeed import LaserSpeed
+from meerk40t.device.lhystudios.laserspeed import LaserSpeed
 
 codes = (
     "CV0051131001065112C M2 0.4 0",
