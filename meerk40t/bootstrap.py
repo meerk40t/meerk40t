@@ -20,8 +20,8 @@ def bootstrap(kernel, force=False):
         from .image import imagetools
         imagetools.plugin(kernel)
 
-        from .core import defaultmodules
-        defaultmodules.plugin(kernel)
+        from .core import svg_io
+        svg_io.plugin(kernel)
 
         from .device.lhystudios import lhystudiosdevice
         lhystudiosdevice.plugin(kernel)
@@ -51,5 +51,4 @@ def bootstrap(kernel, force=False):
             found = True
         if not found:
             bootstrap(kernel, True)
-
 

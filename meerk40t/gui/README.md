@@ -8,3 +8,5 @@ The GUI modules all require wxPython and deal with the graphical interactions be
 
 As a rule, the GUI should never be a requirement, and replacing the GUI should not be significantly harder than writing another GUI.
 
+
+
