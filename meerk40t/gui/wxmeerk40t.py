@@ -857,7 +857,7 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_active_change(self, old_active, context_active):
         if old_active is not None:
             old_active.unlisten('pipe;error', self.on_usb_error)
-            old_active.unlisten("pipe;status", self.on_usb_state_text)
+            old_active.unlisten("pipe;usb_status", self.on_usb_state_text)
             old_active.unlisten('pipe;thread', self.on_pipe_state)
             old_active.unlisten('spooler;thread', self.on_spooler_state)
             old_active.unlisten('interpreter;position', self.update_position)
@@ -865,7 +865,7 @@ class MeerK40t(wx.Frame, Module, Job):
             old_active.unlisten('bed_size', self.bed_changed)
         if context_active is not None:
             context_active.listen('pipe;error', self.on_usb_error)
-            context_active.listen("pipe;status", self.on_usb_state_text)
+            context_active.listen("pipe;usb_status", self.on_usb_state_text)
             context_active.listen('pipe;thread', self.on_pipe_state)
             context_active.listen('spooler;thread', self.on_spooler_state)
             context_active.listen('interpreter;position', self.update_position)
