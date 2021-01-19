@@ -301,9 +301,13 @@ class LaserOperation(list):
                 yield COMMAND_SET_ACCELERATION, None
             try:
                 first_path = abs(self[0])
-                first_path[0].start = None
-                first = first_path.first_point
-                yield COMMAND_MOVE, first[0], first[1]
+                if isinstance(first_path, SVGImage):
+                    box = first_path.bbox()
+                    yield COMMAND_MOVE, box[0], box[1]
+                else:
+                    first_path[0].start = None
+                    first = first_path.first_point
+                    yield COMMAND_MOVE, first[0], first[1]
             except (IndexError, AttributeError):
                 pass
             yield COMMAND_MODE_PROGRAM
