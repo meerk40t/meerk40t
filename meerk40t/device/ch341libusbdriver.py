@@ -121,7 +121,7 @@ class CH341LibusbDriver:
         except usb.core.USBError as e:
             self.channel(str(e))
             self.channel(_("Config Set: Fail\n(Hint: may recover if you change where the USB is plugged in.)"))
-            # raise ConnectionRefusedError
+            raise ConnectionRefusedError
 
     def claim_interface(self, device, interface):
         _ = self.channel._
@@ -185,6 +185,7 @@ class CH341LibusbDriver:
         try:
             device = self.find_device(index)
             self.devices[index] = device
+            self.set_config(device)
             interface = self.get_active_config(device)
             self.interface[index] = interface
 
@@ -195,7 +196,6 @@ class CH341LibusbDriver:
                 # Attempting interface cycle.
                 self.unclaim_interface(device, interface)
                 self.claim_interface(device, interface)
-            self.set_config(device)
             self.channel(_("USB Connected."))
             return index
         except usb.core.NoBackendError as e:
