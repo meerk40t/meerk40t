@@ -1,6 +1,6 @@
 import wx
 
-from . kernel import Module
+from ..kernel import Module
 from . icons import icon_meerk40t, icons8_about_50
 
 _ = wx.GetTranslation

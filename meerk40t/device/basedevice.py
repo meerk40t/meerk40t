@@ -1,8 +1,8 @@
 import os
 from threading import Lock
 
-from . cutcode import LaserSettings
-from . kernel import Modifier
+from ..core.cutcode import LaserSettings
+from ..kernel import Modifier
 from . lasercommandconstants import *
 
 INTERPRETER_STATE_RAPID = 0

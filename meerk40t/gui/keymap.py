@@ -1,6 +1,6 @@
 import wx
 
-from . kernel import Module
+from ..kernel import Module
 from . icons import icons8_underline_50, icons8_keyboard_50
 
 _ = wx.GetTranslation

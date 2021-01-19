@@ -3,7 +3,7 @@ from math import ceil, floor
 import wx
 from PIL import Image
 
-from . svgelements import Color, Path, SVGImage, SVGText, Shape, Group, Move, Line, Close, QuadraticBezier, CubicBezier, \
+from ..svgelements import Color, Path, SVGImage, SVGText, Shape, Group, Move, Line, Close, QuadraticBezier, CubicBezier, \
     Arc, Matrix
 from . zmatrix import ZMatrix
 

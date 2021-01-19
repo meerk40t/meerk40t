@@ -1,9 +1,9 @@
 from copy import copy
 
-from . kernel import Modifier, console_command, console_argument, console_option
+from ..kernel import Modifier, console_command, console_argument, console_option
 from . laseroperation import LaserOperation
-from . lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_MOVE
-from . svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, Polygon, Polyline, Matrix, Angle, SVGImage, \
+from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_MOVE
+from ..svgelements import Path, Length, Circle, Ellipse, Color, Rect, SVGText, Polygon, Polyline, Matrix, Angle, SVGImage, \
     SVGElement, Point
 
 
@@ -11,6 +11,7 @@ def plugin(kernel):
     kernel.register('modifier/Elemental', Elemental)
     kernel_root = kernel.get_context('/')
     kernel_root.activate('modifier/Elemental')
+
 
 class Elemental(Modifier):
     """

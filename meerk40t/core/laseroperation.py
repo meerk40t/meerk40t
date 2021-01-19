@@ -1,7 +1,7 @@
 from copy import copy
 
 from . cutcode import LaserSettings, CutCode, LineCut, QuadCut, CubicCut, ArcCut, RasterCut
-from . svgelements import Color, SVGElement, Shape, SVGImage, Path, Polygon, Move, Close, Line, QuadraticBezier, \
+from ..svgelements import Color, SVGElement, Shape, SVGImage, Path, Polygon, Move, Close, Line, QuadraticBezier, \
     CubicBezier, Arc
 
 

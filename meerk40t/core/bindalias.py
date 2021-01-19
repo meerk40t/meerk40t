@@ -1,4 +1,4 @@
-from . kernel import Modifier, console_command
+from ..kernel import Modifier, console_command
 
 
 def plugin(kernel):

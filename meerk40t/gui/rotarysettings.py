@@ -6,7 +6,7 @@
 
 import wx
 
-from . kernel import Module
+from ..kernel import Module
 from . icons import icons8_roll_50
 
 _ = wx.GetTranslation

@@ -7,10 +7,10 @@ except ImportError:
 
 import wx
 
-from . kernel import Module
+from ..kernel import Module
 from . laserrender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID, DRAW_MODE_BACKGROUND
 from . zmatrix import ZMatrix
-from . svgelements import Matrix, Point, Color
+from ..svgelements import Matrix, Point, Color
 
 MILS_IN_MM = 39.3701
 

@@ -2,9 +2,9 @@ from os import path as ospath
 from copy import copy
 from math import ceil
 
-from . kernel import Modifier, console_command
-from . cutplanner import CutPlanner
-from . svgelements import SVGImage, Color, Length, Path, Matrix
+from ..kernel import Modifier, console_command
+from ..core.cutplanner import CutPlanner
+from ..svgelements import SVGImage, Color, Length, Path, Matrix
 
 
 def plugin(kernel):

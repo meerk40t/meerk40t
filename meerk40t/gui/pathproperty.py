@@ -1,9 +1,9 @@
 import wx
 
-from . kernel import Module
+from ..kernel import Module
 from . laserrender import swizzlecolor
 from . icons import icons8_vector_50
-from . svgelements import SVG_ATTR_ID, SVG_ATTR_STROKE, Color, SVG_ATTR_FILL
+from ..svgelements import SVG_ATTR_ID, SVG_ATTR_STROKE, Color, SVG_ATTR_FILL
 
 _ = wx.GetTranslation
 

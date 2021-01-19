@@ -4,7 +4,7 @@ from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from . laseroperation import LaserOperation
-from . svgelements import SVG_NAME_TAG, SVG_ATTR_VERSION, SVG_VALUE_VERSION, SVG_ATTR_XMLNS, SVG_VALUE_XMLNS, \
+from ..svgelements import SVG_NAME_TAG, SVG_ATTR_VERSION, SVG_VALUE_VERSION, SVG_ATTR_XMLNS, SVG_VALUE_XMLNS, \
     SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK, SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV, SVG_ATTR_WIDTH, SVG_ATTR_HEIGHT, \
     SVG_ATTR_VIEWBOX, SVG_TAG_TEXT, Path, SVG_TAG_PATH, SVG_ATTR_DATA, SVG_ATTR_TRANSFORM, SVG_ATTR_STROKE_WIDTH, Shape, \
     Rect, SVG_TAG_RECT, Circle, SVG_TAG_CIRCLE, Ellipse, SVG_TAG_ELLIPSE, Polygon, SVG_TAG_POLYGON, Polyline, \

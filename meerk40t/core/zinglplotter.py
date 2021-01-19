@@ -1,6 +1,6 @@
 from math import ceil, cos, sin, sqrt, tan, floor
 
-from . svgelements import Point
+from ..svgelements import Point
 
 try:
     from math import tau

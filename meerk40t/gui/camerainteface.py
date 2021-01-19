@@ -1,12 +1,12 @@
 
 import wx
 
-from . kernel import Module, Job, console_argument, console_command
+from ..kernel import Module, Job, console_argument, console_command
 from . laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
 from . icons import icons8_camera_50, icons8_picture_in_picture_alternative_50, icons8_detective_50, \
     icons8_connected_50
 from . zmatrix import ZMatrix
-from . svgelements import Matrix, Point
+from ..svgelements import Matrix, Point
 
 _ = wx.GetTranslation
 

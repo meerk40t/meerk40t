@@ -21,8 +21,8 @@ from . alignment import Alignment
 from . bufferview import BufferView
 from . camerainteface import CameraInterface
 from . controller import Controller
-from . cutplanner import CutPlanner
-from . laseroperation import LaserOperation
+from meerk40t.core.cutplanner import CutPlanner
+from ..core.laseroperation import LaserOperation
 from . devicemanager import DeviceManager
 from . icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icons8_laser_beam_52, \
     icons8_pause_50, icons8_move_50, icons8_usb_connector_50, icons8_route_50, icons8_connected_50, \
@@ -32,9 +32,9 @@ from . icons import icons8_end_50, icons8_opened_folder_50, icons8_save_50, icon
 from .  imageproperty import ImageProperty
 from . jobpreview import JobPreview
 from . jobspooler import JobSpooler
-from . kernel import console_command, Module, Job, STATE_BUSY
+from ..kernel import console_command, Module, Job, STATE_BUSY
 from . keymap import Keymap
-from . lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
+from ..device.lasercommandconstants import COMMAND_JOG_FINISH, COMMAND_JOG_SWITCH, COMMAND_JOG, COMMAND_SET_ABSOLUTE, \
     COMMAND_MODE_RAPID, COMMAND_HOME, COMMAND_LASER_OFF, COMMAND_WAIT_FINISH, COMMAND_MOVE, COMMAND_LASER_ON, \
     COMMAND_WAIT, COMMAND_SET_SPEED, COMMAND_SET_DIRECTION, COMMAND_MODE_PROGRAM, COMMAND_FUNCTION, REALTIME_RESET
 from . laserrender import LaserRender, DRAW_MODE_FILLS, DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, \
@@ -49,7 +49,7 @@ from . preferences import Preferences
 from . rasterwizard import RasterWizard
 from . rotarysettings import RotarySettings
 from . settings import Settings
-from . svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color, Matrix, Length, SVGElement, Angle
+from ..svgelements import SVGImage, Path, SVGText, SVG_ATTR_STROKE, Color, Matrix, Length, SVGElement, Angle
 from . terminal import Terminal
 from . textproperty import TextProperty
 from . usbconnect import UsbConnect
@@ -174,9 +174,9 @@ ID_MENU_TREE = idinc.new()
 _ = wx.GetTranslation
 supported_languages = (('en', u'English', wx.LANGUAGE_ENGLISH),
                        ('it', u'italiano', wx.LANGUAGE_ITALIAN),
-                       ('fr', u'français', wx.LANGUAGE_FRENCH),
+                       ('fr', u'fran�ais', wx.LANGUAGE_FRENCH),
                        ('de', u'Deutsch', wx.LANGUAGE_GERMAN),
-                       ('es', u'español', wx.LANGUAGE_SPANISH),
+                       ('es', u'espa�ol', wx.LANGUAGE_SPANISH),
                        ('zh', u'Chinese', wx.LANGUAGE_CHINESE))
 
 
@@ -2627,14 +2627,14 @@ class RootNode(list):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(node, 1.0 / float(i)),
                              path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                         _(u"Rotate turn/%d, %.0fÂ°") % (i, angle.as_degrees),
+                                                         _(u"Rotate turn/%d, %.0f°") % (i, angle.as_degrees),
                                                          "",
                                                          wx.ITEM_NORMAL))
                 for i in range(2, 13):
                     angle = Angle.turns(1.0 / float(i))
                     gui.Bind(wx.EVT_MENU, self.menu_rotate(node, -1.0 / float(i)),
                              path_rotate_sub_menu.Append(wx.ID_ANY,
-                                                         _(u"Rotate turn/%d, -%.0fÂ°") % (i, angle.as_degrees), "",
+                                                         _(u"Rotate turn/%d, -%.0f°") % (i, angle.as_degrees), "",
                                                          wx.ITEM_NORMAL))
                 if not locked:
                     menu.AppendSubMenu(path_rotate_sub_menu, _("Rotate"))

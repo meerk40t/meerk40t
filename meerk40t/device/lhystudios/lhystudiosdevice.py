@@ -1,18 +1,18 @@
 import threading
 import time
 
-from . cutcode import CutCode, LaserSettings
-from . lasercommandconstants import *
+from ...core.cutcode import CutCode, LaserSettings
+from ..lasercommandconstants import *
 from . laserspeed import LaserSpeed
-from . kernel import Modifier, STATE_UNKNOWN, console_command, Job, Module, console_argument, STATE_ACTIVE, STATE_PAUSE, \
+from ...kernel import Modifier, STATE_UNKNOWN, console_command, Job, Module, console_argument, STATE_ACTIVE, STATE_PAUSE, \
     STATE_INITIALIZE, STATE_BUSY, STATE_IDLE, STATE_TERMINATE, STATE_END, STATE_WAIT
-from . basedevice import Interpreter, PLOT_FINISH, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION, PLOT_RAPID, PLOT_JOG, \
+from ..basedevice import Interpreter, PLOT_FINISH, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION, PLOT_RAPID, PLOT_JOG, \
     INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID, INTERPRETER_STATE_FINISH, INTERPRETER_STATE_MODECHANGE
-from . ch341driverbase import get_name_for_status, INFO_USB_CHIP_VERSION, INFO_USB_DRIVER, STATE_DRIVER_LIBUSB, \
+from ..ch341driverbase import get_name_for_status, INFO_USB_CHIP_VERSION, INFO_USB_DRIVER, STATE_DRIVER_LIBUSB, \
     STATE_CONNECTED, STATE_DRIVER_NO_LIBUSB, STATE_DRIVER_CH341, STATE_DRIVER_MOCK
-from . plotplanner import PlotPlanner
-from . svgelements import Length
-from . zinglplotter import ZinglPlotter
+from ...core.plotplanner import PlotPlanner
+from ...svgelements import Length
+from ...core.zinglplotter import ZinglPlotter
 
 def plugin(kernel):
     kernel.register('device/Lhystudios', LhystudiosDevice)
@@ -1523,7 +1523,7 @@ class LhystudioController(Module):
         chipv = self.context.usb_version
 
         try:
-            from . ch341libusbdriver import CH341Driver
+            from ..ch341libusbdriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.update_usb_state)
             driver.open()
@@ -1539,7 +1539,7 @@ class LhystudioController(Module):
             self.update_usb_state(STATE_DRIVER_NO_LIBUSB)
 
         try:
-            from . ch341windlldriver import CH341Driver
+            from ..ch341windlldriver import CH341Driver
             self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
                                                state_listener=self.update_usb_state)
             driver.open()

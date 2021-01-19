@@ -1,4 +1,4 @@
-from . basedevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
+from ..device.basedevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
 from . zinglplotter import ZinglPlotter
 
 """

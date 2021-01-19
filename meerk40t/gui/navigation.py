@@ -5,7 +5,7 @@
 
 import wx
 
-from . kernel import Module
+from ..kernel import Module
 from . icons import icons8_up_left_50, icons8_up_50, icons8_up_right_50, icons8_left_50, icons8_home_filled_50, \
     icons8_right_50, icons8_down_left_50, icons8_down_50, icons8_down_right_50, icons8_padlock_50, icons8_lock_50, \
     icon_corner1, icons8up, icon_corner2, icons8_left, icons8_square_border_50, icons8_right, icon_corner4, icons8_down, \

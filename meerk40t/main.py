@@ -1,9 +1,9 @@
 import argparse
 import sys
 
-from . meerk40t_core import meerk40t_core
+from meerk40t.bootstrap import bootstrap
 from . kernel import Kernel, STATE_TERMINATE
-from . lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE
+from . device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE
 
 try:
     from math import tau
@@ -58,7 +58,7 @@ def run():
         return
 
     kernel = Kernel()
-    meerk40t_core(kernel)
+    bootstrap(kernel,True)
 
     kernel_root = kernel.get_context('/')
     kernel_root.activate('modifier/Elemental')
@@ -69,7 +69,7 @@ def run():
     kernel_root.device_name = "MeerK40t"
 
     if not args.no_gui:
-        from . wxmeerk40t import wxMeerK40t
+        from .gui.wxmeerk40t import wxMeerK40t
 
         kernel.register('module/wxMeerK40t', wxMeerK40t)
         meerk40tgui = kernel_root.open('module/wxMeerK40t')
