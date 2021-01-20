@@ -8,7 +8,6 @@ from meerk40t.svgelements import Point, Path
 
 
 class TestCutcode(unittest.TestCase):
-
     def test_cutcode(self):
         """
         Test intro to Cutcode.
@@ -20,9 +19,13 @@ class TestCutcode(unittest.TestCase):
         cutcode.append(LineCut(Point(0, 0), Point(100, 100), settings=settings))
         cutcode.append(LineCut(Point(100, 100), Point(0, 0), settings=settings))
         cutcode.append(LineCut(Point(50, -50), Point(100, -100), settings=settings))
-        cutcode.append(QuadCut(Point(0, 0), Point(100, 100), Point(200, 0), settings=settings))
+        cutcode.append(
+            QuadCut(Point(0, 0), Point(100, 100), Point(200, 0), settings=settings)
+        )
         path = Path(*cutcode.as_elements())
-        self.assertEqual(path, "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0")
+        self.assertEqual(
+            path, "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+        )
 
     def test_cutcode_cut(self):
         """

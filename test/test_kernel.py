@@ -7,7 +7,6 @@ from meerk40t.kernel import Kernel
 
 
 class TestKernel(unittest.TestCase):
-
     def test_kernel_commands(self):
         """
         Tests all commands with no arguments to test for crashes.
@@ -16,13 +15,13 @@ class TestKernel(unittest.TestCase):
         """
         kernel = Kernel()
         bootstrap(kernel)
-        kernel_root = kernel.get_context('/')
-        kernel_root.activate('modifier/Elemental')
-        kernel_root.activate('modifier/Planner')
-        kernel_root.activate('modifier/ImageTools')
-        kernel_root.activate('modifier/BindAlias')
+        kernel_root = kernel.get_context("/")
+        kernel_root.activate("modifier/Elemental")
+        kernel_root.activate("modifier/Planner")
+        kernel_root.activate("modifier/ImageTools")
+        kernel_root.activate("modifier/BindAlias")
 
         for command in kernel.match("command/.*"):
             cmd = kernel.registered[command]
             if not cmd.regex:
-                kernel.console(command.split('/')[-1] + '\n')
+                kernel.console(command.split("/")[-1] + "\n")

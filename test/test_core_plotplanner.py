@@ -8,7 +8,6 @@ from meerk40t.svgelements import Point
 
 
 class TestPlotplanner(unittest.TestCase):
-
     def test_plotplanner_flush(self):
         """
         Intro test for plotplanner.
@@ -32,4 +31,3 @@ class TestPlotplanner(unittest.TestCase):
         plan.push(LineCut(Point(50, -50), Point(100, -100), settings=LaserSettings()))
         for x, y, on in plan.gen():
             print(x, y, on)
-
