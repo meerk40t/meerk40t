@@ -158,6 +158,11 @@ class Planner(Modifier):
                 for c in elements.ops():
                     if not c.output:
                         continue
+                    try:
+                        if len(c) == 0:
+                            continue
+                    except TypeError:
+                        pass
                     plan.append(copy(c))
                 channel(_('Copied Operations.'))
                 self.context.signal('plan', self._default_plan, 1)
