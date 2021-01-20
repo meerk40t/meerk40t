@@ -266,15 +266,11 @@ class LhystudiosDevice(Modifier):
         self.context.setting(int, "packet_count", 0)
         self.context.setting(int, "rejected_count", 0)
         self.context.setting(bool, "autolock", True)
-        self.context.setting(bool, "autohome", False)
-        self.context.setting(bool, "autobeep", True)
 
         self.context.setting(str, "board", "M2")
-        self.context.setting(bool, "rotary", False)
-        self.context.setting(float, "scale_x", 1.0)
-        self.context.setting(float, "scale_y", 1.0)
         self.context.setting(int, "bed_width", 310)
         self.context.setting(int, "bed_height", 210)
+        self.context.setting(bool, "fix_speeds", False)
         self.dx = 0
         self.dy = 0
         context.listen("interpreter;mode", self.on_mode_change)
@@ -988,7 +984,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            fix_speeds=False,
+            fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
         try:
@@ -1033,7 +1029,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            fix_speeds=False,
+            fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
         try:
@@ -2102,6 +2098,7 @@ class LhystudioEmulator(Module):
         self.x_on = False
         self.y_on = False
         self.horizontal_major = False
+        self.context.setting(bool, "fix_speeds", False)
         self.process = self.state_default
 
         send = context.channel("pipe/usb_send")
@@ -2187,7 +2184,8 @@ class LhystudioEmulator(Module):
         if c in "GCV01234567890":
             self.speed_code += c
             return
-        speed = LaserSpeed(self.speed_code)
+        speed = LaserSpeed(self.speed_code,
+                           fix_speeds=self.context.fix_speeds)
         self.settings.steps = speed.raster_step
         self.settings.speed = speed.speed
         self.channel("Setting Speed: %f" % self.settings.speed)
