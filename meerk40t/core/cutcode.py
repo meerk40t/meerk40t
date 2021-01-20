@@ -127,7 +127,7 @@ class CutCode(list):
             settings = e.settings
             if path is None:
                 path = Path()
-                path.stroke = Color(settings.color)
+                path.stroke = Color(settings.line_color)
 
             if len(path) == 0 or last.x != start.x or last.y != start.y:
                 path.move(e.start())
