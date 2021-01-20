@@ -30,7 +30,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.5"
+SVGELEMENTS_VERSION = "1.4.6"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1426,20 +1426,24 @@ class Color(object):
 
     @property
     def opacity(self):
-        return self.alpha / 255.0
+        return self.alpha / 255.0 if self.value is not None else None
 
     @opacity.setter
     def opacity(self, opacity):
+        if self.value is None:
+            raise ValueError
         a = int(round(opacity * 255.0))
         a = Color.crimp(a)
         self.alpha = a
 
     @property
     def alpha(self):
-        return (self.value >> 24) & 0xFF
+        return (self.value >> 24) & 0xFF if self.value is not None else None
 
     @alpha.setter
     def alpha(self, a):
+        if self.value is None:
+            raise ValueError
         a = Color.crimp(a)
         self.value &= 0xFFFFFF
         self.value = int(self.value)
@@ -1454,10 +1458,12 @@ class Color(object):
 
     @property
     def red(self):
-        return (self.value >> 16) & 0xFF
+        return (self.value >> 16) & 0xFF if self.value is not None else None
 
     @red.setter
     def red(self, r):
+        if self.value is None:
+            raise ValueError
         r = int(r & 0xFF)
         self.value &= ~0xFF0000
         r <<= 16
@@ -1465,10 +1471,12 @@ class Color(object):
 
     @property
     def green(self):
-        return (self.value >> 8) & 0xFF
+        return (self.value >> 8) & 0xFF if self.value is not None else None
 
     @green.setter
     def green(self, g):
+        if self.value is None:
+            raise ValueError
         g = int(g & 0xFF)
         self.value &= ~0xFF00
         g <<= 8
@@ -1476,27 +1484,31 @@ class Color(object):
 
     @property
     def blue(self):
-        return self.value & 0xFF
+        return self.value & 0xFF if self.value is not None else None
 
     @blue.setter
     def blue(self, b):
+        if self.value is None:
+            raise ValueError
         b = int(b & 0xFF)
         self.value &= ~0xFF
         self.value |= b
 
     @property
     def hexa(self):
-        return '#%02x%02x%02x%02x' % (self.alpha, self.red, self.green, self.blue)
+        return '#%02x%02x%02x%02x' % (self.alpha, self.red, self.green, self.blue) if self.value is not None else None
 
     @property
     def hex(self):
         if self.alpha == 0xFF:
-            return '#%02x%02x%02x' % (self.red, self.green, self.blue)
+            return '#%02x%02x%02x' % (self.red, self.green, self.blue) if self.value is not None else None
         else:
-            return '#%02x%02x%02x%02x' % (self.alpha, self.red, self.green, self.blue)
+            return self.hexa
 
     @property
     def hue(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1522,11 +1534,15 @@ class Color(object):
 
     @hue.setter
     def hue(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = v, s, l
 
     @property
     def saturation(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1542,11 +1558,15 @@ class Color(object):
 
     @saturation.setter
     def saturation(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = h, v, l
 
     @property
     def lightness(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1556,11 +1576,15 @@ class Color(object):
 
     @lightness.setter
     def lightness(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = h, s, v
 
     @property
     def intensity(self):
+        if self.value is None:
+            return None
         r = self.red
         g = self.green
         b = self.blue
@@ -1568,6 +1592,8 @@ class Color(object):
 
     @property
     def brightness(self):
+        if self.value is None:
+            return None
         r = self.red
         g = self.green
         b = self.blue
@@ -1576,10 +1602,14 @@ class Color(object):
 
     @property
     def blackness(self):
+        if self.value is None:
+            return None
         return 1.0 - self.brightness
 
     @property
     def luminance(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1587,6 +1617,8 @@ class Color(object):
 
     @property
     def luma(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1674,6 +1706,8 @@ class Color(object):
 
     @property
     def hsl(self):
+        if self.value is None:
+            return None
         return self.hue, self.saturation, self.lightness
 
     @hsl.setter
@@ -1723,7 +1757,6 @@ class Color(object):
             color = Color(other)
             color.opacity = opacity
             self.value = Color.over(color, self)
-
 
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
