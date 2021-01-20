@@ -1,7 +1,7 @@
 import wx
 
 from ..kernel import Module
-from . icons import icons8_usb_connector_50
+from .icons import icons8_usb_connector_50
 
 _ = wx.GetTranslation
 
@@ -9,12 +9,21 @@ _ = wx.GetTranslation
 class UsbConnect(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Terminal.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((915, 424))
-        self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
-        self.text_entry = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB)
+        self.text_main = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
+        )
+        self.text_entry = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -35,10 +44,10 @@ class UsbConnect(wx.Frame, Module):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.context.active.channel('pipe/usb').watch(self.update_text)
+        self.context.active.channel("pipe/usb").watch(self.update_text)
 
     def finalize(self, *args, **kwargs):
-        self.context.active.channel('pipe/usb').unwatch(self.update_text)
+        self.context.active.channel("pipe/usb").unwatch(self.update_text)
         try:
             self.Close()
         except RuntimeError:
@@ -46,9 +55,9 @@ class UsbConnect(wx.Frame, Module):
 
     def update_text(self, text):
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, text + '\n')
+            wx.CallAfter(self.update_text_gui, text + "\n")
         else:
-            self.update_text_gui(text + '\n')
+            self.update_text_gui(text + "\n")
 
     def update_text_gui(self, text):
         try:
@@ -61,7 +70,7 @@ class UsbConnect(wx.Frame, Module):
         _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
-        self.SetTitle(_('UsbConnect'))
+        self.SetTitle(_("UsbConnect"))
         self.text_entry.SetFocus()
         # end wxGlade
 
@@ -77,5 +86,5 @@ class UsbConnect(wx.Frame, Module):
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         if self.pipe is not None:
             self.pipe.write(self.text_entry.GetValue() + "\n")
-            self.text_entry.SetValue('')
+            self.text_entry.SetValue("")
         event.Skip()

@@ -1,7 +1,7 @@
 import wx
 
 from ..kernel import Module
-from . icons import icon_meerk40t, icons8_about_50
+from .icons import icon_meerk40t, icons8_about_50
 
 _ = wx.GetTranslation
 
@@ -9,10 +9,18 @@ _ = wx.GetTranslation
 class About(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: About.__init__
-        wx.Frame.__init__(self, parent, -1, "", style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((699, 442))
-        self.bitmap_button_1 = wx.BitmapButton(self, wx.ID_ANY, icon_meerk40t.GetBitmap())
+        self.bitmap_button_1 = wx.BitmapButton(
+            self, wx.ID_ANY, icon_meerk40t.GetBitmap()
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -56,15 +64,50 @@ class About(wx.Frame, Module):
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
         sizer_3.Add(self.bitmap_button_1, 1, 0, 0)
-        self.meerk40t_about_version_text.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        self.meerk40t_about_version_text.SetFont(
+            wx.Font(
+                10,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         sizer_3.Add(self.meerk40t_about_version_text, 0, 0, 0)
         sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-        meerk40t_about_text_header = wx.StaticText(self, wx.ID_ANY, "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing participation is graciously thanked. This program is mostly the brainchild of Tatarize, who sincerely hopes his contributions will be but the barest trickle that becomes a raging river.")
-        meerk40t_about_text_header.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        meerk40t_about_text_header = wx.StaticText(
+            self,
+            wx.ID_ANY,
+            "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing participation is graciously thanked. This program is mostly the brainchild of Tatarize, who sincerely hopes his contributions will be but the barest trickle that becomes a raging river.",
+        )
+        meerk40t_about_text_header.SetFont(
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         sizer_2.Add(meerk40t_about_text_header, 2, wx.EXPAND, 0)
         sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
-        meerk40t_about_text = wx.StaticText(self, wx.ID_ANY, "Thanks.\nLi Huiyu for their controller. \nScorch for lighting our path.\nAlois Zingl for his wonderful Bresenham plotting algorithms.\n@joerlane and all the MeerKittens, past and present, great and small.\n\nIcon8 for their great icons ( https://icons8.com/ ) used throughout the project.\nThe works of countless developers who made everything possible.\nRegebro for his svg.path module.\nThe SVG Working Group.\nHackers (in the general sense).")
-        meerk40t_about_text.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
+        meerk40t_about_text = wx.StaticText(
+            self,
+            wx.ID_ANY,
+            "Thanks.\nLi Huiyu for their controller. \nScorch for lighting our path.\nAlois Zingl for his wonderful Bresenham plotting algorithms.\n@joerlane and all the MeerKittens, past and present, great and small.\n\nIcon8 for their great icons ( https://icons8.com/ ) used throughout the project.\nThe works of countless developers who made everything possible.\nRegebro for his svg.path module.\nThe SVG Working Group.\nHackers (in the general sense).",
+        )
+        meerk40t_about_text.SetFont(
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         sizer_1.Add(meerk40t_about_text, 2, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()

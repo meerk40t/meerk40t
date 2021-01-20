@@ -6,6 +6,7 @@ try:
     from math import tau
 except ImportError:
     from math import pi
+
     tau = pi * 2
 
 """
@@ -22,7 +23,6 @@ This work is MIT Licensed.
 
 
 class ZinglPlotter:
-
     @staticmethod
     def plot_arc(arc):
         """
@@ -75,10 +75,16 @@ class ZinglPlotter:
             p_c1 = (p_start[0] + alpha * ePrimen1x, p_start[1] + alpha * ePrimen1y)
             p_c2 = (p_end[0] - alpha * ePrimen2x, p_end[1] - alpha * ePrimen2y)
 
-            for value in ZinglPlotter.plot_cubic_bezier(p_start[0], p_start[1],
-                                                        p_c1[0], p_c1[1],
-                                                        p_c2[0], p_c2[1],
-                                                        p_end[0], p_end[1]):
+            for value in ZinglPlotter.plot_cubic_bezier(
+                p_start[0],
+                p_start[1],
+                p_c1[0],
+                p_c1[1],
+                p_c2[0],
+                p_c2[1],
+                p_end[0],
+                p_end[1],
+            ):
                 yield value
             p_start = Point(p_end)
             current_t = next_t
@@ -141,7 +147,7 @@ class ZinglPlotter:
         cur = xx * sy - yy * sx  # /* curvature */
         points = None
 
-        assert (xx * sx <= 0 and yy * sy <= 0)  # /* sign of gradient must not change */
+        assert xx * sx <= 0 and yy * sy <= 0  # /* sign of gradient must not change */
 
         if sx * sx + sy * sy > xx * xx + yy * yy:  # /* begin with shorter part */
             x2 = x0
@@ -201,11 +207,15 @@ class ZinglPlotter:
                     # /* y step */
                 if not (dy < 0 < dx):  # /* gradient negates -> algorithm fails */
                     break
-        for plot in ZinglPlotter.plot_line(x0, y0, x2, y2):  # /* plot remaining part to end */:
+        for plot in ZinglPlotter.plot_line(
+            x0, y0, x2, y2
+        ):  # /* plot remaining part to end */:
             if points is None:
                 yield plot  # /* plot curve */
             else:
-                points.append(plot)  # plotLine(x0,y0, x2,y2) #/* plot remaining part to end */
+                points.append(
+                    plot
+                )  # plotLine(x0,y0, x2,y2) #/* plot remaining part to end */
         if points is not None:
             for plot in reversed(points):
                 yield plot
@@ -246,7 +256,9 @@ class ZinglPlotter:
             x = floor(t + 0.5)
             y = floor(r + 0.5)
             r = (y1 - y0) * (t - x0) / (x1 - x0) + y0  # /* intersect P3 | P0 P1 */
-            for plot in ZinglPlotter.plot_quad_bezier_seg(x0, y0, x, floor(r + 0.5), x, y):
+            for plot in ZinglPlotter.plot_quad_bezier_seg(
+                x0, y0, x, floor(r + 0.5), x, y
+            ):
                 if points is None:
                     yield plot
                 else:
@@ -263,7 +275,9 @@ class ZinglPlotter:
             x = floor(r + 0.5)
             y = floor(t + 0.5)
             r = (x1 - x0) * (t - y0) / (y1 - y0) + x0  # /* intersect P6 | P0 P1 */
-            for plot in ZinglPlotter.plot_quad_bezier_seg(x0, y0, floor(r + 0.5), y, x, y):
+            for plot in ZinglPlotter.plot_quad_bezier_seg(
+                x0, y0, floor(r + 0.5), y, x, y
+            ):
                 if points is None:
                     yield plot
                 else:
@@ -272,7 +286,9 @@ class ZinglPlotter:
             x0 = x
             x1 = floor(r + 0.5)
             y0 = y1 = y  # /* P0 = P6, P1 = P7 */
-        for plot in ZinglPlotter.plot_quad_bezier_seg(x0, y0, x1, y1, x2, y2):  # /* remaining part */
+        for plot in ZinglPlotter.plot_quad_bezier_seg(
+            x0, y0, x1, y1, x2, y2
+        ):  # /* remaining part */
             if points is None:
                 yield plot
             else:
@@ -345,7 +361,9 @@ class ZinglPlotter:
             ab = xa * yb - xb * ya
             ac = xa * yc - xc * ya
             bc = xb * yc - xc * yb
-            ex = ab * (ab + ac - 3 * bc) + ac * ac  # /* P0 part of self-intersection loop? */
+            ex = (
+                ab * (ab + ac - 3 * bc) + ac * ac
+            )  # /* P0 part of self-intersection loop? */
             if ex > 0:
                 f = 1  # /* calc resolution */
             else:
@@ -356,15 +374,35 @@ class ZinglPlotter:
             ex *= f * f  # /* increase resolution */
             xy = 9 * (ab + ac + bc) / 8
             cb = 8 * (xa - ya)  # /* init differences of 1st degree */
-            dx = 27 * (8 * ab * (yb * yb - ya * yc) + ex * (ya + 2 * yb + yc)) / 64 - ya * ya * (xy - ya)
-            dy = 27 * (8 * ab * (xb * xb - xa * xc) - ex * (xa + 2 * xb + xc)) / 64 - xa * xa * (xy + xa)
+            dx = 27 * (
+                8 * ab * (yb * yb - ya * yc) + ex * (ya + 2 * yb + yc)
+            ) / 64 - ya * ya * (xy - ya)
+            dy = 27 * (
+                8 * ab * (xb * xb - xa * xc) - ex * (xa + 2 * xb + xc)
+            ) / 64 - xa * xa * (xy + xa)
             # /* init differences of 2nd degree */
-            xx = 3 * (3 * ab * (3 * yb * yb - ya * ya - 2 * ya * yc) - ya * (3 * ac * (ya + yb) + ya * cb)) / 4
-            yy = 3 * (3 * ab * (3 * xb * xb - xa * xa - 2 * xa * xc) - xa * (3 * ac * (xa + xb) + xa * cb)) / 4
+            xx = (
+                3
+                * (
+                    3 * ab * (3 * yb * yb - ya * ya - 2 * ya * yc)
+                    - ya * (3 * ac * (ya + yb) + ya * cb)
+                )
+                / 4
+            )
+            yy = (
+                3
+                * (
+                    3 * ab * (3 * xb * xb - xa * xa - 2 * xa * xc)
+                    - xa * (3 * ac * (xa + xb) + xa * cb)
+                )
+                / 4
+            )
             xy = xa * ya * (6 * ab + 6 * ac - 3 * bc + cb)
             ac = ya * ya
             cb = xa * xa
-            xy = 3 * (xy + 9 * f * (cb * yb * yc - xb * xc * ac) - 18 * xb * yb * ab) / 8
+            xy = (
+                3 * (xy + 9 * f * (cb * yb * yc - xb * xc * ac) - 18 * xb * yb * ab) / 8
+            )
 
             if ex < 0:  # /* negate values if inside self-intersection loop */
                 dx = -dx
@@ -441,7 +479,9 @@ class ZinglPlotter:
             if not (leg != 0):
                 break
             leg -= 1  # /* try other end */
-        for plot in ZinglPlotter.plot_line(x3, y3, x0, y0):  # /* remaining part in case of cusp or crunode */
+        for plot in ZinglPlotter.plot_line(
+            x3, y3, x0, y0
+        ):  # /* remaining part in case of cusp or crunode */
             second_leg.append(plot)
         for plot in reversed(second_leg):
             yield plot
@@ -523,10 +563,18 @@ class ZinglPlotter:
         t[n] = 1.0  # /* begin / end point */
         for i in range(0, n + 1):  # /* plot each segment separately */
             t2 = t[i]  # /* sub-divide at t[i-1], t[i] */
-            fx1 = (t1 * (t1 * xb - 2 * xc) - t2 * (t1 * (t1 * xa - 2 * xb) + xc) + xd) / 8 - fx0
-            fy1 = (t1 * (t1 * yb - 2 * yc) - t2 * (t1 * (t1 * ya - 2 * yb) + yc) + yd) / 8 - fy0
-            fx2 = (t2 * (t2 * xb - 2 * xc) - t1 * (t2 * (t2 * xa - 2 * xb) + xc) + xd) / 8 - fx0
-            fy2 = (t2 * (t2 * yb - 2 * yc) - t1 * (t2 * (t2 * ya - 2 * yb) + yc) + yd) / 8 - fy0
+            fx1 = (
+                t1 * (t1 * xb - 2 * xc) - t2 * (t1 * (t1 * xa - 2 * xb) + xc) + xd
+            ) / 8 - fx0
+            fy1 = (
+                t1 * (t1 * yb - 2 * yc) - t2 * (t1 * (t1 * ya - 2 * yb) + yc) + yd
+            ) / 8 - fy0
+            fx2 = (
+                t2 * (t2 * xb - 2 * xc) - t1 * (t2 * (t2 * xa - 2 * xb) + xc) + xd
+            ) / 8 - fx0
+            fy2 = (
+                t2 * (t2 * yb - 2 * yc) - t1 * (t2 * (t2 * ya - 2 * yb) + yc) + yd
+            ) / 8 - fy0
             fx3 = (t2 * (t2 * (3 * xb - t2 * xa) - 3 * xc) + xd) / 8
             fx0 -= fx3
             fy3 = (t2 * (t2 * (3 * yb - t2 * ya) - 3 * yc) + yd) / 8
@@ -543,7 +591,9 @@ class ZinglPlotter:
                 fy2 *= fy0
             if x0 != x3 or y0 != y3:  # /* segment t1 - t2 */
                 # plotCubicBezierSeg(x0,y0, x0+fx1,y0+fy1, x0+fx2,y0+fy2, x3,y3)
-                for plot in ZinglPlotter.plot_cubic_bezier_seg(x0, y0, x0 + fx1, y0 + fy1, x0 + fx2, y0 + fy2, x3, y3):
+                for plot in ZinglPlotter.plot_cubic_bezier_seg(
+                    x0, y0, x0 + fx1, y0 + fy1, x0 + fx2, y0 + fy2, x3, y3
+                ):
                     yield plot
             x0 = x3
             y0 = y3

@@ -1,7 +1,7 @@
 import wx
 
 from ..kernel import Module
-from . icons import icons8_underline_50, icons8_keyboard_50
+from .icons import icons8_underline_50, icons8_keyboard_50
 
 _ = wx.GetTranslation
 
@@ -9,11 +9,18 @@ _ = wx.GetTranslation
 class Keymap(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Keymap.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((500, 530))
-        self.list_keymap = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
+        self.list_keymap = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+        )
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_command_name = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -23,7 +30,9 @@ class Keymap(wx.Frame, Module):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
         # end wxGlade
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap)
+        self.Bind(
+            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap
+        )
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
@@ -56,7 +65,9 @@ class Keymap(wx.Frame, Module):
         self.SetTitle(_("Keymap Settings"))
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
         self.list_keymap.AppendColumn(_("Key"), format=wx.LIST_FORMAT_LEFT, width=114)
-        self.list_keymap.AppendColumn(_("Command"), format=wx.LIST_FORMAT_LEFT, width=348)
+        self.list_keymap.AppendColumn(
+            _("Command"), format=wx.LIST_FORMAT_LEFT, width=348
+        )
         self.button_add.SetToolTip(_("Add a new hotkey"))
         # end wxGlade
 
@@ -81,7 +92,9 @@ class Keymap(wx.Frame, Module):
     def on_item_rightclick(self, event):
         element = event.Text
         menu = wx.Menu()
-        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        convert = menu.Append(
+            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+        )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
         convert = menu.Append(wx.ID_ANY, _("Reset Default"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
@@ -119,31 +132,42 @@ class Keymap(wx.Frame, Module):
     def on_button_add_hotkey(self, event):  # wxGlade: Keymap.<event_handler>
         keystroke = self.text_key_name.GetValue()
         if len(keystroke) == 0:
-            dlg = wx.MessageDialog(None, _("Missing Keystroke"),
-                               _("No Keystroke for binding."), wx.OK | wx.ICON_WARNING)
+            dlg = wx.MessageDialog(
+                None,
+                _("Missing Keystroke"),
+                _("No Keystroke for binding."),
+                wx.OK | wx.ICON_WARNING,
+            )
             result = dlg.ShowModal()
             dlg.Destroy()
             self.text_key_name.SetFocus()
             return
         if len(self.text_command_name.GetValue()) == 0:
-            dlg = wx.MessageDialog(None, _("Missing Command"),
-                               _("No Command for binding."), wx.OK | wx.ICON_WARNING)
+            dlg = wx.MessageDialog(
+                None,
+                _("Missing Command"),
+                _("No Command for binding."),
+                wx.OK | wx.ICON_WARNING,
+            )
             result = dlg.ShowModal()
             dlg.Destroy()
             self.text_command_name.SetFocus()
             return
-        self.context.keymap[self.text_key_name.GetValue()] = self.text_command_name.GetValue()
-        self.text_key_name.SetValue('')
-        self.text_command_name.SetValue('')
+        self.context.keymap[
+            self.text_key_name.GetValue()
+        ] = self.text_command_name.GetValue()
+        self.text_key_name.SetValue("")
+        self.text_command_name.SetValue("")
         self.list_keymap.DeleteAllItems()
         self.reload_keymap()
 
     def on_key_press(self, event):
-        from . wxmeerk40t import get_key_name
+        from .wxmeerk40t import get_key_name
+
         keyvalue = get_key_name(event)
-        self.text_command_name.SetValue('')
+        self.text_command_name.SetValue("")
         if keyvalue is None:
-            self.text_key_name.SetValue('')
+            self.text_key_name.SetValue("")
         else:
             self.text_key_name.SetValue(keyvalue)
             for i, key in enumerate(self.context.keymap):

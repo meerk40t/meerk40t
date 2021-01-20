@@ -41,7 +41,9 @@ COMMAND_SET_D_RATIO = 207  # sets the diagonal_ratio for the device
 COMMAND_SET_ACCELERATION = 208  # sets the acceleration for the device 1-4
 COMMAND_SET_INCREMENTAL = 210  # sets the commands to be relative to current position
 COMMAND_SET_ABSOLUTE = 211  # sets the commands to be absolute positions.
-COMMAND_SET_POSITION = 220  # Without moving sets the current position to the given coord.
+COMMAND_SET_POSITION = (
+    220  # Without moving sets the current position to the given coord.
+)
 
 COMMAND_HOME = 300  # Homes the device
 COMMAND_LOCK = 301  # Locks the rail
@@ -55,7 +57,9 @@ REALTIME_PAUSE = 1010  # Issue a pause command.
 REALTIME_RESUME = 1020  # Issue a resume command.
 REALTIME_STATUS = 1030  # Issue a status command.
 REALTIME_SAFETY_DOOR = 1040  # Issues a forced safety_door state.
-REALTIME_JOG_CANCEL = 1050  # Issues a jog cancel. This should cancel any jogging being processed.
+REALTIME_JOG_CANCEL = (
+    1050  # Issues a jog cancel. This should cancel any jogging being processed.
+)
 REALTIME_SPEED_PERCENT = 1060  # Set the speed to this percent value of total.
 REALTIME_RAPID_PERCENT = 1070  # Sets the rapid speed to this percent value of total.
 REALTIME_POWER_PERCENT = 1080  # Sets the power to this percent value of total.

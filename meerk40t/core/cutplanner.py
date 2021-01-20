@@ -3,17 +3,36 @@ from math import isnan, isinf, ceil
 
 from ..kernel import Modifier
 from ..core.cutcode import CutCode
-from . laseroperation import LaserOperation
-from ..device.lasercommandconstants import COMMAND_WAIT_FINISH, COMMAND_MODE_RAPID, COMMAND_SET_ABSOLUTE, COMMAND_MOVE, \
-    COMMAND_HOME, COMMAND_WAIT, COMMAND_BEEP, COMMAND_FUNCTION
-from ..svgelements import Matrix, Length, Angle, Path, SVGText, SVGImage, SVGElement, Polyline, Move, Point, \
-    Polygon
+from .laseroperation import LaserOperation
+from ..device.lasercommandconstants import (
+    COMMAND_WAIT_FINISH,
+    COMMAND_MODE_RAPID,
+    COMMAND_SET_ABSOLUTE,
+    COMMAND_MOVE,
+    COMMAND_HOME,
+    COMMAND_WAIT,
+    COMMAND_BEEP,
+    COMMAND_FUNCTION,
+)
+from ..svgelements import (
+    Matrix,
+    Length,
+    Angle,
+    Path,
+    SVGText,
+    SVGImage,
+    SVGElement,
+    Polyline,
+    Move,
+    Point,
+    Polygon,
+)
 
 
 def plugin(kernel):
-    kernel.register('modifier/Planner', Planner)
-    kernel_root = kernel.get_context('/')
-    kernel_root.activate('modifier/Planner')
+    kernel.register("modifier/Planner", Planner)
+    kernel_root = kernel.get_context("/")
+    kernel_root.activate("modifier/Planner")
 
 
 class Planner(Modifier):
@@ -59,59 +78,73 @@ class Planner(Modifier):
         self.context.setting(bool, "opt_start_from_position", False)
         self.context.setting(bool, "opt_rapid_between", False)
 
-        kernel.register('plan/home', self.home)
-        kernel.register('plan/origin', self.origin)
-        kernel.register('plan/wait', self.wait)
-        kernel.register('plan/beep', self.beep)
-        kernel.register('plan/interrupt', self.interrupt)
+        kernel.register("plan/home", self.home)
+        kernel.register("plan/origin", self.origin)
+        kernel.register("plan/wait", self.wait)
+        kernel.register("plan/beep", self.beep)
+        kernel.register("plan/interrupt", self.interrupt)
 
         # REQUIRES CUTPLANNER
 
-        @self.context.console_command('optimize', help='optimize <type>')
+        @self.context.console_command("optimize", help="optimize <type>")
         def optimize(command, channel, _, args=tuple(), **kwargs):
             if not elements.has_emphasis():
-                channel(_('No selected elements.'))
+                channel(_("No selected elements."))
                 return
             elif len(args) == 0:
-                channel(_('Optimizations: cut_inner, travel, cut_travel'))
+                channel(_("Optimizations: cut_inner, travel, cut_travel"))
                 return
-            elif args[0] == 'cut_inner':
+            elif args[0] == "cut_inner":
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_cut_inside(element)
                     element.clear()
                     element += e
                     element.altered()
-            elif args[0] == 'travel':
-                channel(_('Travel Optimizing: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
+            elif args[0] == "travel":
+                channel(
+                    _("Travel Optimizing: %f")
+                    % CutPlanner.length_travel(elements.elems(emphasized=True))
+                )
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_travel(element)
                     element.clear()
                     element += e
                     element.altered()
-                channel(_('Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
-            elif args[0] == 'cut_travel':
-                channel(_('Cut Travel Initial: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
+                channel(
+                    _("Optimized: %f")
+                    % CutPlanner.length_travel(elements.elems(emphasized=True))
+                )
+            elif args[0] == "cut_travel":
+                channel(
+                    _("Cut Travel Initial: %f")
+                    % CutPlanner.length_travel(elements.elems(emphasized=True))
+                )
                 for element in elements.elems(emphasized=True):
                     e = CutPlanner.optimize_general(element)
                     element.clear()
                     element += e
                     element.altered()
-                channel(_('Cut Travel Optimized: %f') % CutPlanner.length_travel(elements.elems(emphasized=True)))
+                channel(
+                    _("Cut Travel Optimized: %f")
+                    % CutPlanner.length_travel(elements.elems(emphasized=True))
+                )
             else:
-                channel(_('Optimization not found.'))
+                channel(_("Optimization not found."))
                 return
 
         # REQUIRES CUTPLANNER
 
-        @self.context.console_command('embroider', help='embroider <angle> <distance>')
+        @self.context.console_command("embroider", help="embroider <angle> <distance>")
         def embroider(command, channel, _, args=tuple(), **kwargs):
-            channel(_('Embroidery Filling'))
+            channel(_("Embroidery Filling"))
             if len(args) >= 1:
                 angle = Angle.parse(args[0])
             else:
                 angle = None
             if len(args) >= 2:
-                distance = Length(args[1]).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+                distance = Length(args[1]).value(
+                    ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+                )
             else:
                 distance = 16
             for element in elements.elems(emphasized=True):
@@ -127,18 +160,18 @@ class Planner(Modifier):
                     element *= Matrix.rotate(-angle)
                 element.altered()
 
-        @self.context.console_command('plan.*', help='plan<?> <command>', regex=True)
+        @self.context.console_command("plan.*", help="plan<?> <command>", regex=True)
         def plan(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Plan:'))
+                channel(_("----------"))
+                channel(_("Plan:"))
                 for i, plan_name in enumerate(self._plan):
-                    channel('%d: %s' % (i, plan_name))
-                channel(_('----------'))
+                    channel("%d: %s" % (i, plan_name))
+                channel(_("----------"))
                 return
             if len(args) <= 0:
-                channel(_('Plan <command> (dest)'))
-                channel(_('classify/copy/validate/blob/optimize/clear/list/spool'))
+                channel(_("Plan <command> (dest)"))
+                channel(_("classify/copy/validate/blob/optimize/clear/list/spool"))
                 return
             if len(command) > 4:
                 self._default_plan = command[4:]
@@ -149,12 +182,14 @@ class Planner(Modifier):
                 commands = list()
                 self._plan[self._default_plan] = plan, commands
             if len(command) > 4:
-                self.context.signal('plan', self._default_plan, None)
+                self.context.signal("plan", self._default_plan, None)
 
-            if args[0] == 'classify':
-                elements.classify(list(elements.elems(emphasized=True)), plan, plan.append)
+            if args[0] == "classify":
+                elements.classify(
+                    list(elements.elems(emphasized=True)), plan, plan.append
+                )
                 return
-            elif args[0] == 'copy':
+            elif args[0] == "copy":
                 for c in elements.ops():
                     if not c.output:
                         continue
@@ -164,47 +199,47 @@ class Planner(Modifier):
                     except TypeError:
                         pass
                     plan.append(copy(c))
-                channel(_('Copied Operations.'))
-                self.context.signal('plan', self._default_plan, 1)
+                channel(_("Copied Operations."))
+                self.context.signal("plan", self._default_plan, 1)
                 return
-            elif args[0] == 'command':
+            elif args[0] == "command":
                 try:
-                    for command_name in self.context.match('plan/%s' % args[1]):
+                    for command_name in self.context.match("plan/%s" % args[1]):
                         plan_command = self.context.registered[command_name]
                         plan.append(plan_command)
                         break
-                    self.context.signal('plan', self._default_plan, None)
+                    self.context.signal("plan", self._default_plan, None)
                 except (KeyError, IndexError):
                     channel(_("No plan command found."))
                 return
-            elif args[0] == 'preprocess':
+            elif args[0] == "preprocess":
                 if self.context.prehome:
                     if not self.context.rotary:
-                        plan.insert(0, self.context.registered['plan/home'])
+                        plan.insert(0, self.context.registered["plan/home"])
                     else:
                         plan.insert(0, _("Home Before: Disabled (Rotary On)"))
                 if self.context.autobeep:
-                    plan.append(self.context.registered['plan/beep'])
+                    plan.append(self.context.registered["plan/beep"])
                 if self.context.autohome:
                     if not self.context.rotary:
-                        plan.append(self.context.registered['plan/home'])
+                        plan.append(self.context.registered["plan/home"])
                     else:
                         plan.append(_("Home After: Disabled (Rotary On)"))
                 if self.context.autoorigin:
-                    plan.append(self.context.registered['plan/origin'])
+                    plan.append(self.context.registered["plan/origin"])
                 # divide
                 self.conditional_jobadd_strip_text()
                 if self.context.rotary:
                     self.conditional_jobadd_scale_rotary()
                 self.conditional_jobadd_actualize_image()
                 self.conditional_jobadd_make_raster()
-                self.context.signal('plan', self._default_plan, 2)
+                self.context.signal("plan", self._default_plan, 2)
                 return
-            elif args[0] == 'validate':
+            elif args[0] == "validate":
                 self.execute()
-                self.context.signal('plan', self._default_plan, 3)
+                self.context.signal("plan", self._default_plan, 3)
                 return
-            elif args[0] == 'blob':
+            elif args[0] == "blob":
                 self.context.setting(bool, "opt_rapid_between", True)
                 blob = CutCode()
                 first_index = None
@@ -222,13 +257,13 @@ class Planner(Modifier):
                         continue
                 if first_index is not None:
                     plan.insert(first_index, blob)
-                for i in range(len(plan)-1, -1, -1):
+                for i in range(len(plan) - 1, -1, -1):
                     c = plan[i]
                     if c is None:
                         del plan[i]
-                self.context.signal('plan', self._default_plan, 4)
+                self.context.signal("plan", self._default_plan, 4)
                 return
-            elif args[0] == 'preopt':
+            elif args[0] == "preopt":
                 if self.context.opt_reduce_travel:
                     self.conditional_jobadd_optimize_travel()
                 if self.context.opt_inner_first:
@@ -237,36 +272,36 @@ class Planner(Modifier):
                     pass
                 if self.context.opt_remove_overlap:
                     pass
-                self.context.signal('plan', self._default_plan, 5)
+                self.context.signal("plan", self._default_plan, 5)
                 return
-            elif args[0] == 'optimize':
+            elif args[0] == "optimize":
                 self.execute()
-                self.context.signal('plan', self._default_plan, 6)
+                self.context.signal("plan", self._default_plan, 6)
                 return
-            elif args[0] == 'clear':
+            elif args[0] == "clear":
                 plan.clear()
                 commands.clear()
-                self.context.signal('plan', self._default_plan, 0)
+                self.context.signal("plan", self._default_plan, 0)
                 return
-            elif args[0] == 'scale_speed':
+            elif args[0] == "scale_speed":
                 return
-            elif args[0] == 'list':
-                channel(_('----------'))
-                channel(_('Plan %s:' % self._default_plan))
+            elif args[0] == "list":
+                channel(_("----------"))
+                channel(_("Plan %s:" % self._default_plan))
                 for i, op_name in enumerate(plan):
-                    channel('%d: %s' % (i, op_name))
-                channel(_('Commands %s:' % self._default_plan))
+                    channel("%d: %s" % (i, op_name))
+                channel(_("Commands %s:" % self._default_plan))
                 for i, cmd_name in enumerate(commands):
-                    channel('%d: %s' % (i, cmd_name))
-                channel(_('----------'))
+                    channel("%d: %s" % (i, cmd_name))
+                channel(_("----------"))
                 return
-            elif args[0] == 'spool':
+            elif args[0] == "spool":
                 context.active.spooler.jobs(plan)
-                channel(_('Spooled Plan.'))
-                self.context.signal('plan', self._default_plan, 6)
+                channel(_("Spooled Plan."))
+                self.context.signal("plan", self._default_plan, 6)
                 return
             else:
-                channel(_('Unrecognized command.'))
+                channel(_("Unrecognized command."))
 
     def plan(self, **kwargs):
         for item in self._plan:
@@ -320,6 +355,7 @@ class Planner(Modifier):
                 p = [q for q in plan if q is not None]
                 plan.clear()
                 plan.extend(p)
+
         commands.append(strip_text)
 
     def conditional_jobadd_make_raster(self):
@@ -338,7 +374,7 @@ class Planner(Modifier):
         return False
 
     def jobadd_make_raster(self):
-        make_raster = self.context.registered.get('render-op/make_raster')
+        make_raster = self.context.registered.get("render-op/make_raster")
         plan, commands = self.default_plan()
 
         def strip_rasters():
@@ -387,6 +423,7 @@ class Planner(Modifier):
     def jobadd_optimize_travel(self):
         def optimize_travel():
             pass
+
         plan, commands = self.default_plan()
         commands.append(optimize_travel)
 
@@ -458,7 +495,12 @@ class Planner(Modifier):
     def jobadd_scale_rotary(self):
         def scale_for_rotary():
             p = self.context
-            scale_str = 'scale(%f,%f,%f,%f)' % (p.scale_x, p.scale_y, p.current_x, p.current_y)
+            scale_str = "scale(%f,%f,%f,%f)" % (
+                p.scale_x,
+                p.scale_y,
+                p.current_x,
+                p.current_y,
+            )
             plan, commands = self.default_plan()
             for o in plan:
                 if isinstance(o, LaserOperation):
@@ -477,8 +519,8 @@ class Planner(Modifier):
         if not isinstance(image_element, SVGImage):
             return False
         if step_level is None:
-            if 'raster_step' in image_element.values:
-                step_level = float(image_element.values['raster_step'])
+            if "raster_step" in image_element.values:
+                step_level = float(image_element.values["raster_step"])
             else:
                 step_level = 1.0
         m = image_element.transform
@@ -510,25 +552,35 @@ class Planner(Modifier):
         element_height = int(ceil(bbox[3] - bbox[1]))
         if step_level is None:
             # If we are not told the step amount either draw it from the object or set it to default.
-            if 'raster_step' in image_element.values:
-                step_level = float(image_element.values['raster_step'])
+            if "raster_step" in image_element.values:
+                step_level = float(image_element.values["raster_step"])
             else:
                 step_level = 1.0
         step_scale = 1 / float(step_level)
         tx = bbox[0]
         ty = bbox[1]
         matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale, step_scale)  # step level requires the actual image be scaled down.
+        matrix.post_scale(
+            step_scale, step_scale
+        )  # step level requires the actual image be scaled down.
         matrix.inverse()
 
-        if (matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0) and pil_image.mode != 'RGBA':
+        if (
+            matrix.value_skew_y() != 0.0 or matrix.value_skew_y() != 0.0
+        ) and pil_image.mode != "RGBA":
             # If we are rotating an image without alpha, we need to convert it, or the rotation invents black pixels.
-            pil_image = pil_image.convert('RGBA')
+            pil_image = pil_image.convert("RGBA")
 
-        pil_image = pil_image.transform((element_width, element_height), Image.AFFINE,
-                                        (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                                        resample=Image.BICUBIC)
-        image_element.image_width, image_element.image_height = (element_width, element_height)
+        pil_image = pil_image.transform(
+            (element_width, element_height),
+            Image.AFFINE,
+            (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+            resample=Image.BICUBIC,
+        )
+        image_element.image_width, image_element.image_height = (
+            element_width,
+            element_height,
+        )
         matrix.reset()
 
         box = pil_image.getbbox()
@@ -569,7 +621,8 @@ class Planner(Modifier):
     @staticmethod
     def interrupt():
         def intr():
-            input('waiting for user...')
+            input("waiting for user...")
+
         yield COMMAND_FUNCTION, intr
 
     @staticmethod
@@ -584,7 +637,9 @@ class Planner(Modifier):
             elements = [elements]
         elif isinstance(elements, list):
             try:
-                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+                elements = [
+                    e.object for e in elements if isinstance(e.object, SVGElement)
+                ]
             except AttributeError:
                 pass
         boundary_points = []
@@ -616,9 +671,9 @@ class Planner(Modifier):
         :param outer_path: outer path
         :return: whether path1 is wholely inside path2.
         """
-        if not hasattr(inner_path, 'bounding_box'):
+        if not hasattr(inner_path, "bounding_box"):
             inner_path.bounding_box = CutPlanner.bounding_box(inner_path)
-        if not hasattr(outer_path, 'bounding_box'):
+        if not hasattr(outer_path, "bounding_box"):
             outer_path.bounding_box = CutPlanner.bounding_box(outer_path)
         if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
             # outer minx > inner minx (is not contained)
@@ -635,8 +690,10 @@ class Planner(Modifier):
         if outer_path.bounding_box == inner_path.bounding_box:
             if outer_path == inner_path:  # This is the same object.
                 return False
-        if not hasattr(outer_path, 'vm'):
-            outer_path = Polygon([outer_path.point(i / 100.0, error=1e4) for i in range(101)])
+        if not hasattr(outer_path, "vm"):
+            outer_path = Polygon(
+                [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+            )
             vm = VectorMontonizer()
             vm.add_cluster(outer_path)
             outer_path.vm = vm
@@ -655,8 +712,8 @@ class Planner(Modifier):
         for path in paths:
             subpaths.extend([abs(Path(s)) for s in path.as_subpaths()])
         for j in range(len(subpaths)):
-            for k in range(j+1, len(subpaths)):
-                if CutPlanner.is_inside(subpaths[k],subpaths[j]):
+            for k in range(j + 1, len(subpaths)):
+                if CutPlanner.is_inside(subpaths[k], subpaths[j]):
                     t = subpaths[j]
                     subpaths[j] = subpaths[k]
                     subpaths[k] = t
@@ -674,14 +731,15 @@ class Planner(Modifier):
 
 
 class CutPlanner:
-
     @staticmethod
     def bounding_box(elements):
         if isinstance(elements, SVGElement):
             elements = [elements]
         elif isinstance(elements, list):
             try:
-                elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+                elements = [
+                    e.object for e in elements if isinstance(e.object, SVGElement)
+                ]
             except AttributeError:
                 pass
         boundary_points = []
@@ -713,9 +771,9 @@ class CutPlanner:
         :param outer_path: outer path
         :return: whether path1 is wholely inside path2.
         """
-        if not hasattr(inner_path, 'bounding_box'):
+        if not hasattr(inner_path, "bounding_box"):
             inner_path.bounding_box = CutPlanner.bounding_box(inner_path)
-        if not hasattr(outer_path, 'bounding_box'):
+        if not hasattr(outer_path, "bounding_box"):
             outer_path.bounding_box = CutPlanner.bounding_box(outer_path)
         if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
             # outer minx > inner minx (is not contained)
@@ -732,8 +790,10 @@ class CutPlanner:
         if outer_path.bounding_box == inner_path.bounding_box:
             if outer_path == inner_path:  # This is the same object.
                 return False
-        if not hasattr(outer_path, 'vm'):
-            outer_path = Polygon([outer_path.point(i / 100.0, error=1e4) for i in range(101)])
+        if not hasattr(outer_path, "vm"):
+            outer_path = Polygon(
+                [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+            )
             vm = VectorMontonizer()
             vm.add_cluster(outer_path)
             outer_path.vm = vm
@@ -950,7 +1010,7 @@ class Segment:
         self.a = a
         self.b = b
         self.active = False
-        self.value = 'RUNG'
+        self.value = "RUNG"
         self.index = index
         self.bisectors = []
         self.object = None
@@ -980,19 +1040,27 @@ class Segment:
                 return self.b
         if item == 6:
             if self.b[0] - self.a[0] == 0:
-                return float('inf')
+                return float("inf")
             return (self.b[1] - self.a[1]) / (self.b[0] - self.a[0])
         if item == 7:
             if self.b[0] - self.a[0] == 0:
-                return float('inf')
+                return float("inf")
             im = (self.b[1] - self.a[1]) / (self.b[0] - self.a[0])
             return self.a[1] - (im * self.a[0])
         if item == 8:
             return self.object
 
     def intersect(self, segment):
-        return Segment.line_intersect(self.a[0], self.a[1], self.b[0], self.b[1],
-                                      segment.a[0], segment.a[1], segment.b[0], segment.b[1],)
+        return Segment.line_intersect(
+            self.a[0],
+            self.a[1],
+            self.b[0],
+            self.b[1],
+            segment.a[0],
+            segment.a[1],
+            segment.b[0],
+            segment.b[1],
+        )
 
     def sort_bisectors(self):
         def distance(a):
@@ -1031,6 +1099,7 @@ class Graph:
 
     If a graph is outline, it will be in order, from a to b for each edge, and looped.
     """
+
     def __init__(self):
         self.nodes = []
         self.links = []
@@ -1046,12 +1115,12 @@ class Graph:
             if last_node is not None:
                 segment = self.link(last_node, current_node)
                 segment.index = i
-                segment.value = 'EDGE'
+                segment.value = "EDGE"
             last_node = current_node
         if close:
             segment = self.link(last_node, first_node)
             segment.index = len(series)
-            segment.value = 'EDGE'
+            segment.value = "EDGE"
 
     @staticmethod
     def monotone_fill(graph, outlines, min, max, distance):
@@ -1065,14 +1134,14 @@ class Graph:
             y = crawler.current
 
             for i in range(1, len(crawler.actives), 2):
-                left_segment = crawler.actives[i-1]
+                left_segment = crawler.actives[i - 1]
                 right_segment = crawler.actives[i]
                 left_segment_x = crawler.intercept(left_segment, y)
                 right_segment_x = crawler.intercept(right_segment, y)
                 left_node = graph.new_node((left_segment_x, y))
                 right_node = graph.new_node((right_segment_x, y))
                 row = graph.link(left_node, right_node)
-                row.value = 'RUNG'
+                row.value = "RUNG"
                 row.index = itr
                 left_segment.bisectors.append(left_node)
                 right_segment.bisectors.append(right_node)
@@ -1089,7 +1158,7 @@ class Graph:
                 for bi in s.bisectors:
                     if previous is not None:
                         segment = graph.link(previous, bi)
-                        segment.value = 'EDGE'
+                        segment.value = "EDGE"
                         segment.index = itr
                         itr += 1
                     else:
@@ -1098,7 +1167,7 @@ class Graph:
                 s.bisectors.clear()
             if current is not None and previous is not None:
                 segment = graph.link(previous, current)
-                segment.value = 'EDGE'
+                segment.value = "EDGE"
                 segment.index = itr
 
     def new_node(self, point):
@@ -1130,10 +1199,10 @@ class Graph:
         for i in range(len(self.links)):
             s = self.links[i]
             second_copy = self.link(s.a, s.b)
-            if s.value == 'RUNG':
-                second_copy.value = 'SCAFFOLD_RUNG'
+            if s.value == "RUNG":
+                second_copy.value = "SCAFFOLD_RUNG"
             else:
-                second_copy.value = 'SCAFFOLD'
+                second_copy.value = "SCAFFOLD"
             second_copy.index = None
 
     def double_odd_edge(self):
@@ -1143,9 +1212,9 @@ class Graph:
         """
         for i in range(len(self.links)):
             segment = self.links[i]
-            if segment.value == 'EDGE' and segment.index & 1:
+            if segment.value == "EDGE" and segment.index & 1:
                 second_copy = self.link(segment.a, segment.b)
-                second_copy.value = 'SCAFFOLD'
+                second_copy.value = "SCAFFOLD"
                 second_copy.index = None
 
     def walk(self, points):
@@ -1180,6 +1249,7 @@ class GraphWalker:
 
     If the graph is discontinuous it will find no segment between these elements and add a blank segment between them.
     """
+
     def __init__(self, graph):
         self.graph = graph
         self.walk = list()
@@ -1271,7 +1341,7 @@ class GraphWalker:
             if not c.visited:
                 if value is None:
                     value = index
-                if c.value == 'RUNG':
+                if c.value == "RUNG":
                     return index
         return value
 
@@ -1285,7 +1355,7 @@ class GraphWalker:
         """
         for i in range(0, len(self.walk), 2):
             if i + 1 != len(self.walk):
-                if self.walk[i+1] is None:
+                if self.walk[i + 1] is None:
                     points.append(None)
             points.append(self.walk[i])
 
@@ -1317,10 +1387,10 @@ class GraphWalker:
         :param end:
         :return:
         """
-        for i in range(start, end+2, 2):
+        for i in range(start, end + 2, 2):
             n = self.get_node(i)
             n.visited = None
-        for i in range(0, int((end-start)//2), 2):
+        for i in range(0, int((end - start) // 2), 2):
             left = start + i
             right = end - i
             s = self.get_node(left)
@@ -1351,11 +1421,11 @@ class GraphWalker:
         while index < ie:
             segment = None
             try:
-                segment = self.walk[index+1]
+                segment = self.walk[index + 1]
             except IndexError:
                 self.remove_biggest_loop_in_range(start, index)
                 return
-            if segment is None or segment.value == 'RUNG':
+            if segment is None or segment.value == "RUNG":
                 # Segment is essential.
                 if start != index:
                     ie -= self.remove_biggest_loop_in_range(start, index)
@@ -1368,18 +1438,18 @@ class GraphWalker:
         limit = start + 2
         while new_end >= limit:
             j_segment = self.walk[new_end - 1]
-            if j_segment is None or j_segment.value == 'RUNG':
+            if j_segment is None or j_segment.value == "RUNG":
                 if new_end == end:
                     break
-                del self.walk[new_end + 1:end+1]
+                del self.walk[new_end + 1 : end + 1]
                 end = new_end
                 break
             new_end -= 2
         new_start = start
         limit = end - 2
         while new_start <= limit:
-            j_segment = self.walk[new_start+1]
-            if j_segment is None or j_segment.value == 'RUNG':
+            j_segment = self.walk[new_start + 1]
+            if j_segment is None or j_segment.value == "RUNG":
                 if new_start == start:
                     break
                 del self.walk[start:new_start]
@@ -1428,7 +1498,9 @@ class GraphWalker:
                     new_value = self.get_value()
                     if new_value > value:
                         value = new_value
-                        self.walk[swap_start+1:swap_end] = self.walk[swap_start+1:swap_end:-1]  # reverse
+                        self.walk[swap_start + 1 : swap_end] = self.walk[
+                            swap_start + 1 : swap_end : -1
+                        ]  # reverse
                     else:
                         self.flip_start = None
                         self.flip_end = None
@@ -1439,16 +1511,20 @@ class GraphWalker:
         return value
 
     def get_segment(self, index):
-        if self.flip_start is not None and \
-                self.flip_end is not None and \
-                self.flip_start <= index <= self.flip_end:
+        if (
+            self.flip_start is not None
+            and self.flip_end is not None
+            and self.flip_start <= index <= self.flip_end
+        ):
             return self.walk[self.flip_end - (index - self.flip_start)]
         return self.walk[index]
 
     def get_node(self, index):
-        if self.flip_start is not None and \
-                self.flip_end is not None and \
-                self.flip_start <= index <= self.flip_end:
+        if (
+            self.flip_start is not None
+            and self.flip_end is not None
+            and self.flip_start <= index <= self.flip_end
+        ):
             return self.walk[self.flip_end - (index - self.flip_start)]
         try:
             return self.walk[index]
@@ -1466,13 +1542,13 @@ class GraphWalker:
         start = 0
         end = len(self.walk) - 1
         while start < end:
-            i_segment = self.get_segment(start+1)
-            if i_segment.value == 'RUNG':
+            i_segment = self.get_segment(start + 1)
+            if i_segment.value == "RUNG":
                 break
             start += 2
         while end >= 2:
-            i_segment = self.get_segment(end-1)
-            if i_segment.value == 'RUNG':
+            i_segment = self.get_segment(end - 1)
+            if i_segment.value == "RUNG":
                 break
             end -= 2
         j = start
@@ -1481,7 +1557,7 @@ class GraphWalker:
             j += 1
             j_segment = self.get_segment(j)
             j += 1
-            if j_segment.value != 'RUNG':
+            if j_segment.value != "RUNG":
                 # if the node connector is not critical, try to find and skip a loop
                 k = j
                 while k < end:
@@ -1489,7 +1565,7 @@ class GraphWalker:
                     k += 1
                     k_segment = self.get_segment(k)
                     k += 1
-                    if k_segment.value == 'RUNG':
+                    if k_segment.value == "RUNG":
                         break
                     if k_node == j_node:
                         # Only skippable nodes existed before returned to original node, so skip that loop.
@@ -1498,9 +1574,9 @@ class GraphWalker:
                         j_node = k_node
                         j_segment = k_segment
                         break
-            if j_segment.value == 'SCAFFOLD':
+            if j_segment.value == "SCAFFOLD":
                 value -= j_segment.a.distance_sq(j_segment.b)
-            elif j_segment.value == 'RUNG':
+            elif j_segment.value == "RUNG":
                 value -= j_segment.a.distance_sq(j_segment.b)
         return value
 
@@ -1523,7 +1599,9 @@ class EulerianFill:
 
 
 class VectorMontonizer:
-    def __init__(self, low_value=-float('inf'), high_value=float('inf'), start=-float('inf')):
+    def __init__(
+        self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")
+    ):
         self.clusters = []
         self.dirty_cluster_sort = True
 
@@ -1536,8 +1614,8 @@ class VectorMontonizer:
         self.valid_low_value = low_value
         self.valid_high_value = high_value
         self.cluster_range_index = 0
-        self.cluster_low_value = float('inf')
-        self.cluster_high_value = -float('inf')
+        self.cluster_low_value = float("inf")
+        self.cluster_high_value = -float("inf")
 
     def add_segments(self, links):
         self.dirty_cluster_position = True
@@ -1563,7 +1641,7 @@ class VectorMontonizer:
             try:
                 m = (high.y - low.y) / (high.x - low.x)
             except ZeroDivisionError:
-                m = float('inf')
+                m = float("inf")
 
             b = low.y - (m * low.x)
             if self.valid_low_value > high.y:
@@ -1605,7 +1683,7 @@ class VectorMontonizer:
             y = self.current
         m = e[6]
         b = e[7]
-        if m == float('nan') or m == float('inf'):
+        if m == float("nan") or m == float("inf"):
             low = e[5]
             return low.x
         return (y - b) / m
@@ -1617,14 +1695,16 @@ class VectorMontonizer:
         self.sort_clusters()
 
         self.cluster_range_index = -1
-        self.cluster_high_value = -float('inf')
+        self.cluster_high_value = -float("inf")
         self.increment_cluster()
 
         while self.is_higher_than_cluster_range(self.current):
             self.increment_cluster()
 
     def in_cluster_range(self, v):
-        return not self.is_lower_than_cluster_range(v) and not self.is_higher_than_cluster_range(v)
+        return not self.is_lower_than_cluster_range(
+            v
+        ) and not self.is_higher_than_cluster_range(v)
 
     def is_lower_than_cluster_range(self, v):
         return v < self.cluster_low_value
@@ -1638,7 +1718,7 @@ class VectorMontonizer:
         if self.cluster_range_index < len(self.clusters):
             self.cluster_high_value = self.clusters[self.cluster_range_index][0]
         else:
-            self.cluster_high_value = float('inf')
+            self.cluster_high_value = float("inf")
         if self.cluster_range_index > 0:
             return self.clusters[self.cluster_range_index - 1][1]
         else:
@@ -1650,7 +1730,7 @@ class VectorMontonizer:
         if self.cluster_range_index > 0:
             self.cluster_low_value = self.clusters[self.cluster_range_index - 1][0]
         else:
-            self.cluster_low_value = -float('inf')
+            self.cluster_low_value = -float("inf")
         return self.clusters[self.cluster_range_index][1]
 
     def is_point_inside(self, x, y):
@@ -1690,7 +1770,9 @@ class VectorMontonizer:
 
 
 class VectorMontonizer_original:
-    def __init__(self, low_value=-float('inf'), high_value=float('inf'), start=-float('inf')):
+    def __init__(
+        self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")
+    ):
         self.clusters = []
         self.dirty_cluster_sort = True
 
@@ -1703,16 +1785,16 @@ class VectorMontonizer_original:
         self.valid_low_value = low_value
         self.valid_high_value = high_value
         self.cluster_range_index = 0
-        self.cluster_low_value = float('inf')
-        self.cluster_high_value = -float('inf')
+        self.cluster_low_value = float("inf")
+        self.cluster_high_value = -float("inf")
 
     def add_cluster(self, path):
         self.dirty_cluster_position = True
         self.dirty_cluster_sort = True
         self.dirty_actives_sort = True
-        for i in range(len(path)-1):
+        for i in range(len(path) - 1):
             p0 = path[i]
-            p1 = path[i+1]
+            p1 = path[i + 1]
             if p0.y > p1.y:
                 high = p0
                 low = p1
@@ -1722,7 +1804,7 @@ class VectorMontonizer_original:
             try:
                 m = (high.y - low.y) / (high.x - low.x)
             except ZeroDivisionError:
-                m = float('inf')
+                m = float("inf")
 
             b = low.y - (m * low.x)
             if self.valid_low_value > high.y:
@@ -1763,7 +1845,7 @@ class VectorMontonizer_original:
             y = self.current
         m = e[6]
         b = e[7]
-        if m == float('nan') or m == float('inf'):
+        if m == float("nan") or m == float("inf"):
             low = e[5]
             return low.x
         return (y - b) / m
@@ -1775,14 +1857,16 @@ class VectorMontonizer_original:
         self.sort_clusters()
 
         self.cluster_range_index = -1
-        self.cluster_high_value = -float('inf')
+        self.cluster_high_value = -float("inf")
         self.increment_cluster()
 
         while self.is_higher_than_cluster_range(self.current):
             self.increment_cluster()
 
     def in_cluster_range(self, v):
-        return not self.is_lower_than_cluster_range(v) and not self.is_higher_than_cluster_range(v)
+        return not self.is_lower_than_cluster_range(
+            v
+        ) and not self.is_higher_than_cluster_range(v)
 
     def is_lower_than_cluster_range(self, v):
         return v < self.cluster_low_value
@@ -1796,9 +1880,9 @@ class VectorMontonizer_original:
         if self.cluster_range_index < len(self.clusters):
             self.cluster_high_value = self.clusters[self.cluster_range_index][0]
         else:
-            self.cluster_high_value = float('inf')
+            self.cluster_high_value = float("inf")
         if self.cluster_range_index > 0:
-            return self.clusters[self.cluster_range_index-1][1]
+            return self.clusters[self.cluster_range_index - 1][1]
         else:
             return None
 
@@ -1806,16 +1890,16 @@ class VectorMontonizer_original:
         self.cluster_range_index -= 1
         self.cluster_high_value = self.cluster_low_value
         if self.cluster_range_index > 0:
-            self.cluster_low_value = self.clusters[self.cluster_range_index-1][0]
+            self.cluster_low_value = self.clusters[self.cluster_range_index - 1][0]
         else:
-            self.cluster_low_value = -float('inf')
+            self.cluster_low_value = -float("inf")
         return self.clusters[self.cluster_range_index][1]
 
     def is_point_inside(self, x, y):
         self.scanline(y)
         self.sort_actives()
         for i in range(1, len(self.actives), 2):
-            prior = self.actives[i-1]
+            prior = self.actives[i - 1]
             after = self.actives[i]
             if self.intercept(prior, y) <= x <= self.intercept(after, y):
                 return True

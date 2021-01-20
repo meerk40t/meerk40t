@@ -37,7 +37,7 @@ class LaserSpeed:
     """
 
     def __init__(self, *args, **kwargs):
-        self.board = 'M2'
+        self.board = "M2"
         self.speed = 30
         self.d_ratio = None
         self.raster_step = 0
@@ -48,26 +48,26 @@ class LaserSpeed:
         self.fix_speeds = False
         self.fix_lows = False
         self.fix_limit = False
-        if 'board' in kwargs:
-            self.board = kwargs['board']
-        if 'speed' in kwargs:
-            self.speed = float(kwargs['speed'])
-        if 'd_ratio' in kwargs:
-            self.d_ratio = kwargs['d_ratio']
-        if 'raster_step' in kwargs:
-            self.raster_step = kwargs['raster_step']
-        if 'suffix_c' in kwargs:
-            self.suffix_c = kwargs['suffix_c']
-        if 'acceleration' in kwargs:
-            self.acceleration = kwargs['acceleration']
-        if 'fix_speeds' in kwargs:
-            self.fix_speeds = kwargs['fix_speeds']
-        if 'fix_lows' in kwargs:
-            self.fix_lows = kwargs['fix_lows']
-        if 'fix_limit' in kwargs:
-            self.fix_limit = kwargs['fix_limit']
-        if 'raster_horizontal' in kwargs:
-            self.raster_horizontal = kwargs['raster_horizontal']
+        if "board" in kwargs:
+            self.board = kwargs["board"]
+        if "speed" in kwargs:
+            self.speed = float(kwargs["speed"])
+        if "d_ratio" in kwargs:
+            self.d_ratio = kwargs["d_ratio"]
+        if "raster_step" in kwargs:
+            self.raster_step = kwargs["raster_step"]
+        if "suffix_c" in kwargs:
+            self.suffix_c = kwargs["suffix_c"]
+        if "acceleration" in kwargs:
+            self.acceleration = kwargs["acceleration"]
+        if "fix_speeds" in kwargs:
+            self.fix_speeds = kwargs["fix_speeds"]
+        if "fix_lows" in kwargs:
+            self.fix_lows = kwargs["fix_lows"]
+        if "fix_limit" in kwargs:
+            self.fix_limit = kwargs["fix_limit"]
+        if "raster_horizontal" in kwargs:
+            self.raster_horizontal = kwargs["raster_horizontal"]
         if len(args) >= 1:
             self.board = args[0]
         if len(args) >= 2:
@@ -75,8 +75,20 @@ class LaserSpeed:
                 self.speed = float(args[1])
             elif isinstance(args[1], str):
                 # this is a speedcode value.
-                code_value, accel, step_value, diagonal, raster_step, suffix_c = LaserSpeed.parse_speed_code(args[1])
-                b, m = LaserSpeed.get_equation(self.board, accel=accel, suffix_c=suffix_c, fix_speeds=self.fix_speeds)
+                (
+                    code_value,
+                    accel,
+                    step_value,
+                    diagonal,
+                    raster_step,
+                    suffix_c,
+                ) = LaserSpeed.parse_speed_code(args[1])
+                b, m = LaserSpeed.get_equation(
+                    self.board,
+                    accel=accel,
+                    suffix_c=suffix_c,
+                    fix_speeds=self.fix_speeds,
+                )
                 self.speed = LaserSpeed.get_speed_from_value(code_value, b, m)
                 self.acceleration = accel
                 self.raster_step = raster_step
@@ -89,35 +101,42 @@ class LaserSpeed:
 
     def __repr__(self):
         parts = list()
-        if self.board != 'M2':
+        if self.board != "M2":
             parts.append('board="%s"' % self.board)
         if self.speed is not None:
-            parts.append('speed=%f' % self.speed)
+            parts.append("speed=%f" % self.speed)
         if self.d_ratio is not None:
-            parts.append('d_ratio=%f' % self.d_ratio)
+            parts.append("d_ratio=%f" % self.d_ratio)
         if self.raster_step != 0:
-            parts.append('raster_step=%d' % self.raster_step)
+            parts.append("raster_step=%d" % self.raster_step)
         if self.suffix_c is not None:
-            parts.append('suffix_c=%s' % str(self.suffix_c))
+            parts.append("suffix_c=%s" % str(self.suffix_c))
         if self.acceleration is not None:
-            parts.append('acceleration=%d' % self.acceleration)
+            parts.append("acceleration=%d" % self.acceleration)
         if self.fix_speeds:
-            parts.append('fix_speeds=%s' % str(self.fix_speeds))
+            parts.append("fix_speeds=%s" % str(self.fix_speeds))
         if self.fix_lows:
-            parts.append('fix_lows=%s' % str(self.fix_lows))
+            parts.append("fix_lows=%s" % str(self.fix_lows))
         if self.fix_limit:
-            parts.append('fix_limit=%s' % str(self.fix_limit))
+            parts.append("fix_limit=%s" % str(self.fix_limit))
         if not self.raster_horizontal:
-            parts.append('raster_horizontal=%s' % str(self.raster_horizontal))
+            parts.append("raster_horizontal=%s" % str(self.raster_horizontal))
         return "LaserSpeed(%s)" % (", ".join(parts))
 
     @property
     def speedcode(self):
         return LaserSpeed.get_code_from_speed(
-            self.speed, self.raster_step, self.board,
-            self.d_ratio, self.acceleration, self.suffix_c,
-            fix_limit=self.fix_limit, fix_speeds=self.fix_speeds, fix_lows=self.fix_lows,
-            raster_horizontal=self.raster_horizontal)
+            self.speed,
+            self.raster_step,
+            self.board,
+            self.d_ratio,
+            self.acceleration,
+            self.suffix_c,
+            fix_limit=self.fix_limit,
+            fix_speeds=self.fix_speeds,
+            fix_lows=self.fix_lows,
+            raster_horizontal=self.raster_horizontal,
+        )
 
     @staticmethod
     def get_speed_from_code(speed_code, board="M2", fix_speeds=False):
@@ -128,21 +147,32 @@ class LaserSpeed:
         :param fix_speeds: Is this speedcode in a fixed_speed code?
         :return:
         """
-        code_value, accel, step_value, diagonal, raster_step, suffix_c = LaserSpeed.parse_speed_code(speed_code)
-        b, m = LaserSpeed.get_equation(board, accel=accel, suffix_c=suffix_c, fix_speeds=fix_speeds)
+        (
+            code_value,
+            accel,
+            step_value,
+            diagonal,
+            raster_step,
+            suffix_c,
+        ) = LaserSpeed.parse_speed_code(speed_code)
+        b, m = LaserSpeed.get_equation(
+            board, accel=accel, suffix_c=suffix_c, fix_speeds=fix_speeds
+        )
         return LaserSpeed.get_speed_from_value(code_value, b, m)
 
     @staticmethod
-    def get_code_from_speed(mm_per_second,
-                            raster_step=0,
-                            board='M2',
-                            d_ratio=None,
-                            acceleration=None,
-                            suffix_c=None,
-                            fix_limit=False,
-                            fix_speeds=False,
-                            fix_lows=False,
-                            raster_horizontal=True):
+    def get_code_from_speed(
+        mm_per_second,
+        raster_step=0,
+        board="M2",
+        d_ratio=None,
+        acceleration=None,
+        suffix_c=None,
+        fix_limit=False,
+        fix_speeds=False,
+        fix_lows=False,
+        raster_horizontal=True,
+    ):
         """
         Get a speedcode from a given speed. The raster step appends the 'G' value and uses speed ranges.
         The d_ratio uses the default/auto ratio. The accel is optional and forces the speedcode to work
@@ -165,12 +195,18 @@ class LaserSpeed:
         if not fix_limit and mm_per_second > 240 and raster_step == 0:
             mm_per_second = 19.05  # Arbitrary default speed for out range value.
         if acceleration is None:
-            acceleration = LaserSpeed.get_acceleration_for_speed(mm_per_second, raster_step != 0,
-                                                                 raster_horizontal=raster_horizontal, fix_speeds=fix_speeds)
+            acceleration = LaserSpeed.get_acceleration_for_speed(
+                mm_per_second,
+                raster_step != 0,
+                raster_horizontal=raster_horizontal,
+                fix_speeds=fix_speeds,
+            )
         if suffix_c is None:
             suffix_c = LaserSpeed.get_suffix_c(board, mm_per_second)
 
-        b, m = LaserSpeed.get_equation(board, accel=acceleration, suffix_c=suffix_c, fix_speeds=fix_speeds)
+        b, m = LaserSpeed.get_equation(
+            board, accel=acceleration, suffix_c=suffix_c, fix_speeds=fix_speeds
+        )
         speed_value = LaserSpeed.get_value_from_speed(mm_per_second, b, m)
 
         if fix_lows and speed_value < 0:
@@ -185,26 +221,18 @@ class LaserSpeed:
                     encoded_speed,
                     acceleration,
                     raster_step[0],
-                    raster_step[1]
+                    raster_step[1],
                 )
             else:
-                return "V%s%1dG%03d" % (
-                    encoded_speed,
-                    acceleration,
-                    raster_step
-                )
+                return "V%s%1dG%03d" % (encoded_speed, acceleration, raster_step)
 
-        if d_ratio == 0 or board in ('A', 'B', 'M'):
+        if d_ratio == 0 or board in ("A", "B", "M"):
             # We do not need the diagonal code.
             if raster_step == 0:
                 if suffix_c:
-                    return "CV%s1C" % (
-                        encoded_speed
-                    )
+                    return "CV%s1C" % (encoded_speed)
                 else:
-                    return "CV%s%1d" % (
-                        encoded_speed,
-                        acceleration)
+                    return "CV%s%1d" % (encoded_speed, acceleration)
         else:
             step_value = min(int(floor(mm_per_second) + 1), 128)
             frequency_kHz = float(mm_per_second) / 25.4
@@ -221,17 +249,14 @@ class LaserSpeed:
                     d_value = 0
             encoded_diagonal = LaserSpeed.encode_16bit(d_value)
             if suffix_c:
-                return "CV%s1%03d%sC" % (
-                    encoded_speed,
-                    step_value,
-                    encoded_diagonal
-                )
+                return "CV%s1%03d%sC" % (encoded_speed, step_value, encoded_diagonal)
             else:
                 return "CV%s%1d%03d%s" % (
                     encoded_speed,
                     acceleration,
                     step_value,
-                    encoded_diagonal)
+                    encoded_diagonal,
+                )
 
     @staticmethod
     def parse_speed_code(speed_code):
@@ -261,15 +286,19 @@ class LaserSpeed:
         if speed_code[end - 1] == "C":
             end -= 1
             suffix_c = True
-        if speed_code[start:start + 4] == "V167" and speed_code[start + 4] not in ("0", "1", "2"):
+        if speed_code[start : start + 4] == "V167" and speed_code[start + 4] not in (
+            "0",
+            "1",
+            "2",
+        ):
             # The 4th character can only be 0,1,2 except for error speeds.
-            code_value = LaserSpeed.decode_16bit(speed_code[start + 1:start + 12])
+            code_value = LaserSpeed.decode_16bit(speed_code[start + 1 : start + 12])
             start += 12
             # The value for this speed is so low, it's negative
             # and bit-shifted in 24 bits of a negative number.
             # These are produced by chinese software but are not valid.
         else:
-            code_value = LaserSpeed.decode_16bit(speed_code[start + 1:start + 7])
+            code_value = LaserSpeed.decode_16bit(speed_code[start + 1 : start + 7])
             start += 7
         code_value = 65536 - code_value
         accel = int(speed_code[start])
@@ -277,18 +306,18 @@ class LaserSpeed:
 
         raster_step = 0
         if speed_code[end - 4] == "G":
-            raster_step = int(speed_code[end - 3:end])
+            raster_step = int(speed_code[end - 3 : end])
             end -= 4
             # Removes Gxxx
         if speed_code[end - 4] == "G":
-            raster_step = (int(speed_code[end - 3:end]), raster_step)
+            raster_step = (int(speed_code[end - 3 : end]), raster_step)
             end -= 4
             # Removes Gxxx, means this is was GxxxGxxx.
         step_value = 0
         diagonal = 0
         if (end + 1) - start >= 9:
-            step_value = int(speed_code[start:start + 4])
-            diagonal = LaserSpeed.decode_16bit(speed_code[start + 3:end])
+            step_value = int(speed_code[start : start + 4])
+            diagonal = LaserSpeed.decode_16bit(speed_code[start + 3 : end])
         return code_value, accel, step_value, diagonal, raster_step, suffix_c
 
     @staticmethod
@@ -325,7 +354,7 @@ class LaserSpeed:
         try:
             return (y - b) / m
         except ZeroDivisionError:
-            return float('inf')
+            return float("inf")
 
     @staticmethod
     def decode_16bit(code):
@@ -345,7 +374,9 @@ class LaserSpeed:
         return "%03d%03d" % (b1, b0)
 
     @staticmethod
-    def get_acceleration_for_speed(mm_per_second, raster=False, raster_horizontal=True, fix_speeds=False):
+    def get_acceleration_for_speed(
+        mm_per_second, raster=False, raster_horizontal=True, fix_speeds=False
+    ):
         """
         Gets the acceleration factor for a particular speed.
 
@@ -412,14 +443,14 @@ class LaserSpeed:
             b = 896.0
         if accel == 4:
             b = 1024.0
-        if board in ('A', 'B', 'B1'):
+        if board in ("A", "B", "B1"):
             # A, B, B1 have no known suffix-C equations.
             return b, 2000.0
 
         m = 12120.0
         if fix_speeds:
             m = 11148.0
-        if board == 'B2':
+        if board == "B2":
             m *= 2
             if suffix_c:
                 return b, m / 12.0

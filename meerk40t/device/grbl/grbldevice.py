@@ -13,20 +13,19 @@ GRBL device is a stub device. Serving as a placeholder.
 
 
 def plugin(kernel):
-    kernel.register('disabled-device/GRBL', GrblDevice)
+    kernel.register("disabled-device/GRBL", GrblDevice)
 
 
 class GrblDevice:
-    """
-    """
+    """"""
 
-    def __init__(self, root, uid=''):
+    def __init__(self, root, uid=""):
         self.uid = uid
         self.device_name = "GRBL"
         self.location_name = "Print"
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-        self._device_log = ''
+        self._device_log = ""
         self.current_x = 0
         self.current_y = 0
 
@@ -40,11 +39,11 @@ class GrblDevice:
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register('modifier/GRBLInterpreter', GRBLInterpreter)
-        kernel.register('load/GCodeLoader', GCodeLoader)
-        kernel.register('module/GRBLEmulator', GRBLEmulator)
+        kernel.register("modifier/GRBLInterpreter", GRBLInterpreter)
+        kernel.register("load/GCodeLoader", GCodeLoader)
+        kernel.register("module/GRBLEmulator", GRBLEmulator)
 
-        @kernel.console_command('grblserver', help='activate the grblserver.')
+        @kernel.console_command("grblserver", help="activate the grblserver.")
         def grblserver(command, channel, _, args=tuple(), **kwargs):
             active_device = kernel.active_device
             if active_device is None:
@@ -52,19 +51,21 @@ class GrblDevice:
             _ = kernel.translation
             port = 23
             try:
-                active_device.open_as('module/TCPServer', 'grbl', port=port)
-                active_device.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
-                channel(_('GRBL Mode.'))
-                chan = 'grbl'
-                active_device.channel(chan).watch(kernel.channel('console'))
-                channel(_('Watching Channel: %s') % chan)
-                chan = 'server'
-                active_device.channel(chan).watch(kernel.channel('console'))
-                channel(_('Watching Channel: %s') % chan)
-                emulator = active_device.open('module/GRBLEmulator')
-                active_device.channel('grbl/recv').watch(emulator.write)
+                active_device.open_as("module/TCPServer", "grbl", port=port)
+                active_device.channel(
+                    "grbl/send"
+                ).greet = "Grbl 1.1e ['$' for help]\r\n"
+                channel(_("GRBL Mode."))
+                chan = "grbl"
+                active_device.channel(chan).watch(kernel.channel("console"))
+                channel(_("Watching Channel: %s") % chan)
+                chan = "server"
+                active_device.channel(chan).watch(kernel.channel("console"))
+                channel(_("Watching Channel: %s") % chan)
+                emulator = active_device.open("module/GRBLEmulator")
+                active_device.channel("grbl/recv").watch(emulator.write)
             except OSError:
-                channel(_('Server failed on port: %d') % port)
+                channel(_("Server failed on port: %d") % port)
             return
 
     def initialize(self, device, channel=None):
@@ -76,8 +77,8 @@ class GrblDevice:
         :return:
         """
         self.write = print
-        device.activate('modifier/Spooler')
-        device.activate('modifier/GRBLInterpreter')
+        device.activate("modifier/Spooler")
+        device.activate("modifier/GRBLInterpreter")
 
     def __len__(self):
         return 0
@@ -126,14 +127,14 @@ class GRBLInterpreter(Interpreter):
         self.speed_updated = True
 
     def initialize(self, channel=None):
-        self.context.setting(str, 'line_end', '\n')
+        self.context.setting(str, "line_end", "\n")
 
     def ensure_program_mode(self, *values):
-        self.pipe.write('M3' + self.context.line_end)
+        self.pipe.write("M3" + self.context.line_end)
         Interpreter.ensure_program_mode(self, *values)
 
     def ensure_finished_mode(self, *values):
-        self.pipe.write('M5' + self.context.line_end)
+        self.pipe.write("M5" + self.context.line_end)
         Interpreter.ensure_finished_mode(self, *values)
 
     def plot_path(self, path):
@@ -145,18 +146,18 @@ class GRBLInterpreter(Interpreter):
     def move(self, x, y):
         line = []
         if self.state == INTERPRETER_STATE_PROGRAM:
-            line.append('G1')
+            line.append("G1")
         else:
-            line.append('G0')
-        line.append('X%f' % (x / self.scale))
-        line.append('Y%f' % (y / self.scale))
+            line.append("G0")
+        line.append("X%f" % (x / self.scale))
+        line.append("Y%f" % (y / self.scale))
         if self.power_updated:
-            line.append('S%f' % self.power)
+            line.append("S%f" % self.power)
             self.power_updated = False
         if self.speed_updated:
-            line.append('F%d' % int(self.feed_convert(self.speed)))
+            line.append("F%d" % int(self.feed_convert(self.speed)))
             self.speed_updated = False
-        self.pipe.write(' '.join(line) + self.context.line_end)
+        self.pipe.write(" ".join(line) + self.context.line_end)
         Interpreter.move(self, x, y)
 
     def execute_deprecated(self):
@@ -182,13 +183,14 @@ class GRBLInterpreter(Interpreter):
 
 
 class GRBLEmulator(Module):
-
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.home_adjust = None
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
-        self.scale = MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+        self.scale = (
+            MILS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+        )
         self.feed_convert = None
         self.feed_invert = None
         self.g94_feedrate()  # G94 DEFAULT, mm mode
@@ -199,10 +201,10 @@ class GRBLEmulator(Module):
         self.power = 0
         self.speed = 0
         self.used_speed = 0
-        self.buffer = ''
-        self.grbl_set_re = re.compile(r'\$(\d+)=([-+]?[0-9]*\.?[0-9]*)')
-        self.code_re = re.compile(r'([A-Za-z])')
-        self.float_re = re.compile(r'[-+]?[0-9]*\.?[0-9]*')
+        self.buffer = ""
+        self.grbl_set_re = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
+        self.code_re = re.compile(r"([A-Za-z])")
+        self.float_re = re.compile(r"[-+]?[0-9]*\.?[0-9]*")
         self.settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -237,7 +239,7 @@ class GRBLEmulator(Module):
             122: 10.000,  # Z-axis acceleration, mm/s^2
             130: 200.000,  # X-axis max travel mm.
             131: 200.000,  # Y-axis max travel mm
-            132: 200.000  # Z-axis max travel mm.
+            132: 200.000,  # Z-axis max travel mm.
         }
         self.grbl_channel = None
         self.reply = None
@@ -251,7 +253,7 @@ class GRBLEmulator(Module):
         # parser.add_argument('-gx', '--flip_x', action='store_true', help="grbl x-flip")
         # parser.add_argument('-ga', '--adjust_x', type=int, help='adjust grbl home_x position')
         # parser.add_argument('-gb', '--adjust_y', type=int, help='adjust grbl home_y position')
-        self.grbl_channel = self.context.channel('grbl')
+        self.grbl_channel = self.context.channel("grbl")
 
     def close(self):
         pass
@@ -267,27 +269,27 @@ class GRBLEmulator(Module):
 
     def realtime_write(self, bytes_to_write):
         interpreter = self.context.interpreter
-        if bytes_to_write == '?':  # Status report
+        if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if interpreter.state == 0:
-                state = 'Idle'
+                state = "Idle"
             else:
-                state = 'Busy'
+                state = "Busy"
             x = self.context.current_x / self.scale
             y = self.context.current_y / self.scale
             z = 0.0
             parts = list()
             parts.append(state)
-            parts.append('MPos:%f,%f,%f' % (x, y, z))
+            parts.append("MPos:%f,%f,%f" % (x, y, z))
             f = self.feed_invert(self.context.interpreter.speed)
             s = self.context.interpreter.power
-            parts.append('FS:%f,%d' % (f, s))
-            self.grbl_write("<%s>\r\n" % '|'.join(parts))
-        elif bytes_to_write == '~':  # Resume.
+            parts.append("FS:%f,%d" % (f, s))
+            self.grbl_write("<%s>\r\n" % "|".join(parts))
+        elif bytes_to_write == "~":  # Resume.
             interpreter.realtime_command(REALTIME_RESUME)
-        elif bytes_to_write == '!':  # Pause.
+        elif bytes_to_write == "!":  # Pause.
             interpreter.realtime_command(REALTIME_PAUSE)
-        elif bytes_to_write == '\x18':  # Soft reset.
+        elif bytes_to_write == "\x18":  # Soft reset.
             interpreter.realtime_command(REALTIME_RESET)
 
     def write(self, data, reply=None, channel=None, elements=None):
@@ -296,28 +298,28 @@ class GRBLEmulator(Module):
         self.elements = elements
         if isinstance(data, bytes):
             data = data.decode()
-        if '?' in data:
-            data = data.replace('?', '')
-            self.realtime_write('?')
-        if '~' in data:
-            data = data.replace('$', '')
-            self.realtime_write('~')
-        if '!' in data:
-            data = data.replace('!', '')
-            self.realtime_write('!')
-        if '\x18' in data:
-            data = data.replace('\x18', '')
-            self.realtime_write('\x18')
+        if "?" in data:
+            data = data.replace("?", "")
+            self.realtime_write("?")
+        if "~" in data:
+            data = data.replace("$", "")
+            self.realtime_write("~")
+        if "!" in data:
+            data = data.replace("!", "")
+            self.realtime_write("!")
+        if "\x18" in data:
+            data = data.replace("\x18", "")
+            self.realtime_write("\x18")
         self.buffer += data
-        while '\b' in self.buffer:
-            self.buffer = re.sub('.\b', '', self.buffer, count=1)
-            if self.buffer.startswith('\b'):
-                self.buffer = re.sub('\b+', '', self.buffer)
+        while "\b" in self.buffer:
+            self.buffer = re.sub(".\b", "", self.buffer, count=1)
+            if self.buffer.startswith("\b"):
+                self.buffer = re.sub("\b+", "", self.buffer)
 
-        while '\n' in self.buffer:
-            pos = self.buffer.find('\n')
-            command = self.buffer[0:pos].strip('\r')
-            self.buffer = self.buffer[pos + 1:]
+        while "\n" in self.buffer:
+            pos = self.buffer.find("\n")
+            command = self.buffer[0:pos].strip("\r")
+            self.buffer = self.buffer[pos + 1 :]
             cmd = self.commandline(command)
             if cmd == 0:  # Execute GCode.
                 self.grbl_write("ok\r\n")
@@ -344,26 +346,28 @@ class GRBLEmulator(Module):
 
     def commandline(self, data):
         spooler = self.context.active.spooler
-        pos = data.find('(')
+        pos = data.find("(")
         commands = {}
         while pos != -1:
-            end = data.find(')')
-            if 'comment' not in commands:
-                commands['comment'] = []
-            commands['comment'].append(data[pos + 1:end])
-            data = data[:pos] + data[end + 1:]
-            pos = data.find('(')
-        pos = data.find(';')
+            end = data.find(")")
+            if "comment" not in commands:
+                commands["comment"] = []
+            commands["comment"].append(data[pos + 1 : end])
+            data = data[:pos] + data[end + 1 :]
+            pos = data.find("(")
+        pos = data.find(";")
         if pos != -1:
-            if 'comment' not in commands:
-                commands['comment'] = []
-            commands['comment'].append(data[pos + 1:])
+            if "comment" not in commands:
+                commands["comment"] = []
+            commands["comment"].append(data[pos + 1 :])
             data = data[:pos]
-        if data.startswith('$'):
-            if data == '$':
-                self.grbl_write("[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n")
+        if data.startswith("$"):
+            if data == "$":
+                self.grbl_write(
+                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                )
                 return 0
-            elif data == '$$':
+            elif data == "$$":
                 for s in self.settings:
                     v = self.settings[s]
                     if isinstance(v, int):
@@ -383,13 +387,13 @@ class GRBLEmulator(Module):
                 else:
                     self.settings[int(settings[0])] = int(settings[1])
                 return 0
-            elif data == '$I':
+            elif data == "$I":
                 pass
-            elif data == '$G':
+            elif data == "$G":
                 pass
-            elif data == '$N':
+            elif data == "$N":
                 pass
-            elif data == '$H':
+            elif data == "$H":
                 spooler.job(COMMAND_HOME)
                 if self.home_adjust is not None:
                     spooler.job(COMMAND_MODE_RAPID)
@@ -397,7 +401,7 @@ class GRBLEmulator(Module):
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             return 3  # GRBL '$' system command was not recognized or supported.
-        if data.startswith('cat'):
+        if data.startswith("cat"):
             return 2
         for c in self._tokenize_code(data):
             g = c[0]
@@ -411,8 +415,8 @@ class GRBLEmulator(Module):
 
     def command(self, gc):
         spooler = self.context.active.spooler
-        if 'm' in gc:
-            for v in gc['m']:
+        if "m" in gc:
+            for v in gc["m"]:
                 if v == 0 or v == 1:
                     spooler.job(COMMAND_MODE_RAPID)
                     spooler.job(COMMAND_WAIT_FINISH)
@@ -429,9 +433,9 @@ class GRBLEmulator(Module):
                     #  Coolant control.
                     pass
                 elif v == 8:
-                    spooler.job(COMMAND_SIGNAL, ('coolant', True))
+                    spooler.job(COMMAND_SIGNAL, ("coolant", True))
                 elif v == 9:
-                    spooler.job(COMMAND_SIGNAL, ('coolant', False))
+                    spooler.job(COMMAND_SIGNAL, ("coolant", False))
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -440,9 +444,9 @@ class GRBLEmulator(Module):
                     pass  # M912: Set TMC2130 running currents
                 else:
                     return 20
-            del gc['m']
-        if 'g' in gc:
-            for v in gc['g']:
+            del gc["m"]
+        if "g" in gc:
+            for v in gc["g"]:
                 if v is None:
                     return 2
                 elif v == 0.0:
@@ -455,21 +459,21 @@ class GRBLEmulator(Module):
                     self.move_mode = 3
                 elif v == 4.0:  # DWELL
                     t = 0
-                    if 'p' in gc:
-                        t = float(gc['p'].pop()) / 1000.0
-                        if len(gc['p']) == 0:
-                            del gc['p']
-                    if 's' in gc:
-                        t = float(gc['s'].pop())
-                        if len(gc['s']) == 0:
-                            del gc['s']
+                    if "p" in gc:
+                        t = float(gc["p"].pop()) / 1000.0
+                        if len(gc["p"]) == 0:
+                            del gc["p"]
+                    if "s" in gc:
+                        t = float(gc["s"].pop())
+                        if len(gc["s"]) == 0:
+                            del gc["s"]
                     spooler.job(COMMAND_MODE_RAPID)
                     spooler.job(COMMAND_WAIT, t)
                 elif v == 10.0:
-                    if 'l' in gc:
-                        l = float(gc['l'].pop(0))
-                        if len(gc['l']) == 0:
-                            del gc['l']
+                    if "l" in gc:
+                        l = float(gc["l"].pop(0))
+                        if len(gc["l"]) == 0:
+                            del gc["l"]
                         if l == 2.0:
                             pass
                         elif l == 20:
@@ -488,17 +492,19 @@ class GRBLEmulator(Module):
                     spooler.job(COMMAND_MODE_RAPID)
                     spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
+                        spooler.job(
+                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                        )
                     if self.home is not None:
                         spooler.job(COMMAND_MOVE, self.home)
                 elif v == 28.1:
-                    if 'x' in gc and 'y' in gc:
-                        x = gc['x'].pop(0)
-                        if len(gc['x']) == 0:
-                            del gc['x']
-                        y = gc['y'].pop(0)
-                        if len(gc['y']) == 0:
-                            del gc['y']
+                    if "x" in gc and "y" in gc:
+                        x = gc["x"].pop(0)
+                        if len(gc["x"]) == 0:
+                            del gc["x"]
+                        y = gc["y"].pop(0)
+                        if len(gc["y"]) == 0:
+                            del gc["y"]
                         if x is None:
                             x = 0
                         if y is None:
@@ -509,49 +515,55 @@ class GRBLEmulator(Module):
                     spooler.job(COMMAND_MODE_RAPID)
                     spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
+                        spooler.job(
+                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                        )
                 elif v == 28.3:
                     spooler.job(COMMAND_MODE_RAPID)
                     spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
-                    if 'x' in gc:
-                        x = gc['x'].pop(0)
-                        if len(gc['x']) == 0:
-                            del gc['x']
+                        spooler.job(
+                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                        )
+                    if "x" in gc:
+                        x = gc["x"].pop(0)
+                        if len(gc["x"]) == 0:
+                            del gc["x"]
                         if x is None:
                             x = 0
                         spooler.job(COMMAND_MOVE, x, 0)
-                    if 'y' in gc:
-                        y = gc['y'].pop(0)
-                        if len(gc['y']) == 0:
-                            del gc['y']
+                    if "y" in gc:
+                        y = gc["y"].pop(0)
+                        if len(gc["y"]) == 0:
+                            del gc["y"]
                         if y is None:
                             y = 0
                         spooler.job(COMMAND_MOVE, 0, y)
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
-                    if 'p' in gc:
-                        p = float(gc['p'].pop(0))
-                        if len(gc['p']) == 0:
-                            del gc['p']
+                    if "p" in gc:
+                        p = float(gc["p"].pop(0))
+                        if len(gc["p"]) == 0:
+                            del gc["p"]
                     else:
                         p = None
                     spooler.job(COMMAND_MODE_RAPID)
                     spooler.job(COMMAND_HOME)
                     if self.home_adjust is not None:
-                        spooler.job(COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1])
+                        spooler.job(
+                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                        )
                     if self.home2 is not None:
                         spooler.job(COMMAND_MOVE, self.home2)
                 elif v == 30.1:
                     # Stores the current absolute position.
-                    if 'x' in gc and 'y' in gc:
-                        x = gc['x'].pop(0)
-                        if len(gc['x']) == 0:
-                            del gc['x']
-                        y = gc['y'].pop(0)
-                        if len(gc['y']) == 0:
-                            del gc['y']
+                    if "x" in gc and "y" in gc:
+                        x = gc["x"].pop(0)
+                        if len(gc["x"]) == 0:
+                            del gc["x"]
+                        y = gc["y"].pop(0)
+                        if len(gc["y"]) == 0:
+                            del gc["y"]
                         if x is None:
                             x = 0
                         if y is None:
@@ -610,19 +622,19 @@ class GRBLEmulator(Module):
                     self.g94_feedrate()
                 else:
                     return 20  # Unsupported or invalid g-code command found in block.
-            del gc['g']
-        if 'comment' in gc:
-            del gc['comment']
-        if 'f' in gc:  # Feed_rate
-            for v in gc['f']:
+            del gc["g"]
+        if "comment" in gc:
+            del gc["comment"]
+        if "f" in gc:  # Feed_rate
+            for v in gc["f"]:
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 feed_rate = self.feed_convert(v)
                 if self.speed != feed_rate:
                     self.speed = feed_rate
-            del gc['f']
-        if 's' in gc:
-            for v in gc['s']:
+            del gc["f"]
+        if "s" in gc:
+            for v in gc["s"]:
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 if 0.0 < v <= 1.0:
@@ -630,26 +642,26 @@ class GRBLEmulator(Module):
                 self.power = v
                 spooler.job(COMMAND_SET_POWER, v)
 
-            del gc['s']
-        if 'x' in gc or 'y' in gc:
-            if 'x' in gc:
-                x = gc['x'].pop(0)
+            del gc["s"]
+        if "x" in gc or "y" in gc:
+            if "x" in gc:
+                x = gc["x"].pop(0)
                 if x is None:
                     x = 0
                 else:
                     x *= self.scale * self.flip_x
-                if len(gc['x']) == 0:
-                    del gc['x']
+                if len(gc["x"]) == 0:
+                    del gc["x"]
             else:
                 x = 0
-            if 'y' in gc:
-                y = gc['y'].pop(0)
+            if "y" in gc:
+                y = gc["y"].pop(0)
                 if y is None:
                     y = 0
                 else:
                     y *= self.scale * self.flip_y
-                if len(gc['y']) == 0:
-                    del gc['y']
+                if len(gc["y"]) == 0:
+                    del gc["y"]
             else:
                 y = 0
             if self.move_mode == 0:
@@ -710,6 +722,6 @@ class GCodeLoader:
     @staticmethod
     def load(kernel, pathname, channel=None, **kwargs):
         basename = os.path.basename(pathname)
-        with open(pathname, 'r') as f:
+        with open(pathname, "r") as f:
             blob = GcodeBlob(basename, f.readlines())
         return [blob], None, None, pathname, basename

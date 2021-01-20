@@ -1,7 +1,7 @@
 import wx
 
 from ..kernel import Module
-from . icons import icons8_comments_50
+from .icons import icons8_comments_50
 
 _ = wx.GetTranslation
 
@@ -9,12 +9,19 @@ _ = wx.GetTranslation
 class BufferView(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: BufferView.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((697, 584))
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_buffer_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE)
+        self.text_buffer_info = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE
+        )
 
         # Menu Bar
         self.BufferView_menubar = wx.MenuBar()
@@ -45,7 +52,7 @@ class BufferView(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
 
-        pipe = self.context.open('pipe')
+        pipe = self.context.open("pipe")
         buffer = None
         if pipe is not None:
             try:
@@ -93,10 +100,10 @@ class BufferView(wx.Frame, Module):
         self.Layout()
         # end wxGlade
 
-# end of class BufferView
+    # end of class BufferView
 
     def on_menu_export(self, event):  # wxGlade: BufferView.<event_handler>
-        self.context.get_context('/').execute("egv export")
+        self.context.get_context("/").execute("egv export")
 
     def on_menu_import(self, event):  # wxGlade: BufferView.<event_handler>
-        self.context.get_context('/').execute("egv import")
+        self.context.get_context("/").execute("egv import")

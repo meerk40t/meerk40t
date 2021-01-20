@@ -1,5 +1,12 @@
-from ..device.basedevice import PLOT_FINISH, PLOT_RAPID, PLOT_JOG, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION
-from . zinglplotter import ZinglPlotter
+from ..device.basedevice import (
+    PLOT_FINISH,
+    PLOT_RAPID,
+    PLOT_JOG,
+    PLOT_SETTING,
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+)
+from .zinglplotter import ZinglPlotter
 
 """
 
@@ -89,12 +96,17 @@ class PlotPlanner:
                     jog |= PLOT_RAPID
                 else:
                     distance = cur_set.jog_distance
-                    if (abs(self.single_x - new_start_x) < distance and abs(self.single_y - new_start_x) < distance) \
-                            or not cur_set.jog_enable:
+                    if (
+                        abs(self.single_x - new_start_x) < distance
+                        and abs(self.single_y - new_start_x) < distance
+                    ) or not cur_set.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
                         self.single_default = 0  # Turn laser off for movement.
-                        for n in self.wrap(ZinglPlotter.plot_line(self.single_x, self.single_y,
-                                                                  new_start_x, new_start_y)):
+                        for n in self.wrap(
+                            ZinglPlotter.plot_line(
+                                self.single_x, self.single_y, new_start_x, new_start_y
+                            )
+                        ):
                             yield n  # Walk there.
                         self.single_default = 1
                     else:
@@ -199,9 +211,15 @@ class PlotPlanner:
             if total_dx == 0 and total_dy == 0:
                 continue
             if total_dy * dx != total_dx * dy:
-                raise ValueError("Must be uniformly diagonal or orthogonal: (%d, %d) is not." % (total_dx, total_dy))
+                raise ValueError(
+                    "Must be uniformly diagonal or orthogonal: (%d, %d) is not."
+                    % (total_dx, total_dy)
+                )
             count = max(abs(total_dx), abs(total_dy)) + 1
-            interpolated = [(self.single_x + (i * dx), self.single_y + (i * dy), on) for i in range(index, count)]
+            interpolated = [
+                (self.single_x + (i * dx), self.single_y + (i * dy), on)
+                for i in range(index, count)
+            ]
             self.single_x = x
             self.single_y = y
             for p in interpolated:
@@ -296,17 +314,25 @@ class PlotPlanner:
                 self.group_dx = x - self.group_x
                 self.group_dy = y - self.group_y
             if self.group_dx != 0 or self.group_dy != 0:
-                if x == self.group_x + self.group_dx and y == self.group_y + self.group_dy and on == self.group_on:
+                if (
+                    x == self.group_x + self.group_dx
+                    and y == self.group_y + self.group_dy
+                    and on == self.group_on
+                ):
                     # This is an orthogonal/diagonal step along the same path.
                     self.group_x = x
                     self.group_y = y
                     continue
                 yield self.group_x, self.group_y, self.group_on
-            self.group_dx = x - self.group_x  # TODO: Type error here, x was None. During reset.
+            self.group_dx = (
+                x - self.group_x
+            )  # TODO: Type error here, x was None. During reset.
             self.group_dy = y - self.group_y
             if abs(self.group_dx) > 1 or abs(self.group_dy) > 1:
                 # The last step was not valid.
-                raise ValueError("dx(%d) or dy(%d) exceeds 1" % (self.group_dx, self.group_dy))
+                raise ValueError(
+                    "dx(%d) or dy(%d) exceeds 1" % (self.group_dx, self.group_dy)
+                )
             self.group_x = x
             self.group_y = y
             self.group_on = on

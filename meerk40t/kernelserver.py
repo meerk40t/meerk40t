@@ -4,8 +4,8 @@ from .kernel import Module, STATE_TERMINATE
 
 
 def plugin(kernel):
-    kernel.register('module/TCPServer', TCPServer)
-    kernel.register('module/UDPServer', UDPServer)
+    kernel.register("module/TCPServer", TCPServer)
+    kernel.register("module/UDPServer", UDPServer)
 
 
 class UDPServer(Module):
@@ -25,20 +25,22 @@ class UDPServer(Module):
         :param port: UDP listen port.
         """
         Module.__init__(self, context, path)
-        self.server_channel = self.context.channel('server')
+        self.server_channel = self.context.channel("server")
         self.port = port
 
         self.udp_address = None
-        self.context.channel('%s/send' % path).watch(self.send)
-        self.recv = self.context.channel('%s/recv' % path)
+        self.context.channel("%s/send" % path).watch(self.send)
+        self.recv = self.context.channel("%s/recv" % path)
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
-        self.socket.bind(('', self.port))
+        self.socket.bind(("", self.port))
         self.context.threaded(self.run_udp_listener, thread_name=path)
 
     def finalize(self, *args, **kwargs):
-        self.context.channel('%s/send' % self.name).unwatch(self.send)  # We stop watching the send channel
+        self.context.channel("%s/send" % self.name).unwatch(
+            self.send
+        )  # We stop watching the send channel
         self.server_channel("Shutting down server.")
         if self.socket is not None:
             self.socket.close()
@@ -46,7 +48,9 @@ class UDPServer(Module):
 
     def send(self, message):
         if self.udp_address is None:
-            self.server_channel("No UDP packet can be sent as reply to a host that has never made contact.")
+            self.server_channel(
+                "No UDP packet can be sent as reply to a host that has never made contact."
+            )
             return
         self.socket.sendto(message, self.udp_address)
 
@@ -69,6 +73,7 @@ class TCPServer(Module):
     """
     TCPServer opens up a localhost server and waits. Any connection is given its own handler.
     """
+
     def __init__(self, context, path, port=23):
         """
         Laser Server init.
@@ -82,7 +87,7 @@ class TCPServer(Module):
 
         self.server_channel = None
         self.socket = None
-        self.server_channel = self.context.channel('server')
+        self.server_channel = self.context.channel("server")
         self.context.threaded(self.run_tcp_delegater)
 
     def finalize(self, *args, **kwargs):
@@ -99,7 +104,7 @@ class TCPServer(Module):
         self.socket = socket.socket()
         self.socket.settimeout(2)
         try:
-            self.socket.bind(('', self.port))
+            self.socket.bind(("", self.port))
             self.socket.listen(5)
         except OSError:
             self.server_channel("Could not start listening.")
@@ -128,17 +133,18 @@ class TCPServer(Module):
         The TCP Connection Handle, handles all connections delegated by the tcp_run() method.
         The threaded context is entirely local and independent.
         """
+
         def handle():
             def send(e):
                 if connection is not None:
                     try:
-                        connection.send(bytes(e, 'utf-8'))
+                        connection.send(bytes(e, "utf-8"))
                         self.server_channel("<-- %s" % str(e))
                     except ConnectionAbortedError:
                         connection.close()
 
-            recv = self.context.channel('%s/recv' % self.name)
-            self.context.channel('%s/send' % self.name).watch(send)
+            recv = self.context.channel("%s/recv" % self.name)
+            self.context.channel("%s/send" % self.name).watch(send)
             while self.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
@@ -152,5 +158,6 @@ class TCPServer(Module):
                     if connection is not None:
                         connection.close()
                     break
-            self.context.channel('%s/send' % self.name).unwatch(send)
+            self.context.channel("%s/send" % self.name).unwatch(send)
+
         return handle

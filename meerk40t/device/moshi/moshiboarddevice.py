@@ -12,20 +12,23 @@ The device is primary composed of three main modules.
 
 """
 
+
 def plugin(kernel):
-    kernel.register('disabled-device/Moshiboard', MoshiboardDevice)
+    kernel.register("disabled-device/Moshiboard", MoshiboardDevice)
+
 
 class MoshiboardDevice:
     """
     MoshiboardDevice instance. Connects the MeerK40t frontend to the Moshiboard backend.
     """
-    def __init__(self, root, uid=''):
+
+    def __init__(self, root, uid=""):
         self.uid = uid
         self.device_name = "Moshiboard"
         self.location_name = "USB"
 
         # Device specific stuff. Fold into proper kernel commands or delegate to subclass.
-        self._device_log = ''
+        self._device_log = ""
         self.current_x = 0
         self.current_y = 0
 
@@ -39,8 +42,8 @@ class MoshiboardDevice:
 
     @staticmethod
     def sub_register(device):
-        device.register('modifier/MoshiInterpreter', MoshiInterpreter)
-        device.register('modifier/MoshiboardController', MoshiboardController)
+        device.register("modifier/MoshiInterpreter", MoshiInterpreter)
+        device.register("modifier/MoshiboardController", MoshiboardController)
 
     def initialize(self, device, channel=None):
         """
@@ -50,9 +53,9 @@ class MoshiboardDevice:
         :param name:
         :return:
         """
-        device.activate('modifier/MoshiboardController')
-        device.activate('modifier/MoshiInterpreter')
-        device.activate('modifier/Spooler')
+        device.activate("modifier/MoshiboardController")
+        device.activate("modifier/MoshiInterpreter")
+        device.activate("modifier/Spooler")
 
 
 class MoshiInterpreter(Interpreter):
@@ -67,10 +70,16 @@ class MoshiInterpreter(Interpreter):
         self.extra_hold = None
 
     def swizzle(self, b, p7, p6, p5, p4, p3, p2, p1, p0):
-        return ((b >> 0) & 1) << p0 | ((b >> 1) & 1) << p1 | \
-               ((b >> 2) & 1) << p2 | ((b >> 3) & 1) << p3 | \
-               ((b >> 4) & 1) << p4 | ((b >> 5) & 1) << p5 | \
-               ((b >> 6) & 1) << p6 | ((b >> 7) & 1) << p7
+        return (
+            ((b >> 0) & 1) << p0
+            | ((b >> 1) & 1) << p1
+            | ((b >> 2) & 1) << p2
+            | ((b >> 3) & 1) << p3
+            | ((b >> 4) & 1) << p4
+            | ((b >> 5) & 1) << p5
+            | ((b >> 6) & 1) << p6
+            | ((b >> 7) & 1) << p7
+        )
 
     def convert(self, q):
         if q & 1:
@@ -135,7 +144,7 @@ class MoshiInterpreter(Interpreter):
 
 
 class MoshiboardController(Module):
-    def __init__(self, context, path, uid=''):
+    def __init__(self, context, path, uid=""):
         Module.__init__(self, context, path)
         self.usb_log = None
         self.driver = None
@@ -150,5 +159,5 @@ class MoshiboardController(Module):
             self.driver.close()
 
     def log(self, info):
-        update = str(info) + '\n'
+        update = str(info) + "\n"
         self.usb_log(update)

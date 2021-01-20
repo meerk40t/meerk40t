@@ -1,9 +1,9 @@
 import usb.core
 import usb.util
-from . ch341driverbase import *
+from .ch341driverbase import *
 
 STATUS_NO_DEVICE = -1
-USB_LOCK_VENDOR = 0x1a86  # Dev : (1a86) QinHeng Electronics
+USB_LOCK_VENDOR = 0x1A86  # Dev : (1a86) QinHeng Electronics
 USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
 BULK_WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
 BULK_READ_ENDPOINT = 0x82  # usb.util.ENDPOINT_IN|usb.util.ENDPOINT_TYPE_BULK
@@ -64,7 +64,9 @@ class CH341LibusbDriver:
         self.channel(_("Using LibUSB to connect."))
         self.channel(_("Finding devices."))
         try:
-            devices = usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
+            devices = usb.core.find(
+                idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True
+            )
         except usb.core.USBError as e:
             self.channel(str(e))
             raise ConnectionRefusedError
@@ -75,7 +77,7 @@ class CH341LibusbDriver:
         for d in devices:
             self.channel(_("K40 device detected:"))
             string = str(d)
-            string = string.replace('\n', '\n\t')
+            string = string.replace("\n", "\n\t")
             self.channel(string)
         try:
             device = devices[index]
@@ -97,7 +99,9 @@ class CH341LibusbDriver:
                     self.channel(_("Kernel detach: Failed."))
                     raise ConnectionRefusedError
         except NotImplementedError:
-            self.channel(_("Kernel detach: Not Implemented."))  # Driver does not permit kernel detaching.
+            self.channel(
+                _("Kernel detach: Not Implemented.")
+            )  # Driver does not permit kernel detaching.
             # Non-fatal error.
 
     def get_active_config(self, device):
@@ -120,7 +124,11 @@ class CH341LibusbDriver:
             self.channel(_("Config Set: Success"))
         except usb.core.USBError as e:
             self.channel(str(e))
-            self.channel(_("Config Set: Fail\n(Hint: may recover if you change where the USB is plugged in.)"))
+            self.channel(
+                _(
+                    "Config Set: Fail\n(Hint: may recover if you change where the USB is plugged in.)"
+                )
+            )
             # raise ConnectionRefusedError
 
     def claim_interface(self, device, interface):
@@ -222,7 +230,9 @@ class CH341LibusbDriver:
             except ConnectionError:
                 pass
 
-    def CH341InitParallel(self, index=0, mode=CH341_PARA_MODE_EPP19):  # Mode 1, we need EPP 1.9
+    def CH341InitParallel(
+        self, index=0, mode=CH341_PARA_MODE_EPP19
+    ):  # Mode 1, we need EPP 1.9
         """Permits setting a mode, but our mode is only 1 since the device is using
         EPP 1.9. This is a control transfer event."""
         device = self.devices[index]
@@ -230,12 +240,14 @@ class CH341LibusbDriver:
         if mode < 256:
             value |= 2
         try:
-            device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
-                                 bRequest=mCH341_PARA_INIT,
-                                 wValue=value,
-                                 wIndex=0,
-                                 data_or_wLength=0,
-                                 timeout=500)
+            device.ctrl_transfer(
+                bmRequestType=mCH341_VENDOR_WRITE,
+                bRequest=mCH341_PARA_INIT,
+                wValue=value,
+                wIndex=0,
+                data_or_wLength=0,
+                timeout=500,
+            )
             # 0x40, 177, 0x8800, 0, 0
         except usb.core.USBError as e:
             self.channel(str(e))
@@ -246,12 +258,14 @@ class CH341LibusbDriver:
         device = self.devices[index]
         value = 0x2525
         try:
-            device.ctrl_transfer(bmRequestType=mCH341_VENDOR_WRITE,
-                                 bRequest=mCH341_SET_PARA_MODE,
-                                 wValue=value,
-                                 wIndex=index,
-                                 data_or_wLength=mode << 8 | mode,
-                                 timeout=500)
+            device.ctrl_transfer(
+                bmRequestType=mCH341_VENDOR_WRITE,
+                bRequest=mCH341_SET_PARA_MODE,
+                wValue=value,
+                wIndex=index,
+                data_or_wLength=mode << 8 | mode,
+                timeout=500,
+            )
             # 0x40, 154, 0x2525, 257, 0
         except usb.core.USBError as e:
             self.channel(str(e))
@@ -295,12 +309,14 @@ class CH341LibusbDriver:
     def CH341GetVerIC(self, index=0):
         device = self.devices[index]
         try:
-            buffer = device.ctrl_transfer(bmRequestType=mCH341_VENDOR_READ,
-                                          bRequest=mCH341A_GET_VER,
-                                          wValue=0,
-                                          wIndex=0,
-                                          data_or_wLength=2,
-                                          timeout=200)
+            buffer = device.ctrl_transfer(
+                bmRequestType=mCH341_VENDOR_READ,
+                bRequest=mCH341A_GET_VER,
+                wValue=0,
+                wIndex=0,
+                data_or_wLength=2,
+                timeout=200,
+            )
         except usb.core.USBError as e:
             self.channel(str(e))
             raise ConnectionError
@@ -309,21 +325,38 @@ class CH341LibusbDriver:
         else:
             return (buffer[1] << 8) | buffer[0]
 
-    def CH341EppReadData(self, index=0, buffer=None, length=0):  # WR=1, DS=0, AS=1, D0-D7 in
+    def CH341EppReadData(
+        self, index=0, buffer=None, length=0
+    ):  # WR=1, DS=0, AS=1, D0-D7 in
         self.CH341EppRead(index, buffer, length, 0)
 
-    def CH341EppReadAddr(self, index=0, buffer=None, length=0):  # WR=1, DS=0, AS=1 D0-D7 in
+    def CH341EppReadAddr(
+        self, index=0, buffer=None, length=0
+    ):  # WR=1, DS=0, AS=1 D0-D7 in
         self.CH341EppRead(index, buffer, length, 1)
 
-    def CH341EppWriteData(self, index, buffer=None, length=0):  # WR=0, DS=0, AS=1, D0-D7 out
+    def CH341EppWriteData(
+        self, index, buffer=None, length=0
+    ):  # WR=0, DS=0, AS=1, D0-D7 out
         self.CH341EppWrite(index, buffer, length, 0)
 
-    def CH341EppWriteAddr(self, index, buffer=None, length=0):  # WR=0, DS=1, AS=0, D0-D7 out
+    def CH341EppWriteAddr(
+        self, index, buffer=None, length=0
+    ):  # WR=0, DS=1, AS=0, D0-D7 out
         self.CH341EppWrite(index, buffer, length, 1)
 
 
 class CH341Driver:
-    def __init__(self, index=-1, bus=-1, address=-1, serial=-1, chipv=-1, channel=None, state=None):
+    def __init__(
+        self,
+        index=-1,
+        bus=-1,
+        address=-1,
+        serial=-1,
+        chipv=-1,
+        channel=None,
+        state=None,
+    ):
         self.channel = channel if channel is not None else lambda code: None
         self.state = state
         self.driver = CH341LibusbDriver(channel=channel)
@@ -342,12 +375,12 @@ class CH341Driver:
         val = self.driver.CH341OpenDevice(self.driver_index)
         self.driver_value = val
         if val == -2:
-            self.state('STATE_DRIVER_NO_BACKEND')
+            self.state("STATE_DRIVER_NO_BACKEND")
             raise ConnectionRefusedError
         if val == -1:
             self.driver_value = None
             self.channel(_("Connection to USB failed.\n"))
-            self.state('STATE_CONNECTION_FAILED')
+            self.state("STATE_CONNECTION_FAILED")
             raise ConnectionRefusedError  # No more devices.
         # There is a device.
         if self.chipv != -1:
@@ -387,7 +420,7 @@ class CH341Driver:
         if self.driver_value is None:
             self.channel(_("Using LibUSB to connect."))
             self.channel(_("Attempting connection to USB."))
-            self.state('STATE_USB_CONNECTING')
+            self.state("STATE_USB_CONNECTING")
             if self.index == -1:
                 for i in range(0, 16):
                     if self.try_open(i) == 0:
@@ -395,10 +428,12 @@ class CH341Driver:
             else:
                 self.try_open(self.index)
             self.channel(_("USB Connected."))
-            self.state('STATE_USB_CONNECTED')
+            self.state("STATE_USB_CONNECTED")
             self.channel(_("Sending CH341 mode change to EPP1.9."))
             try:
-                self.driver.CH341InitParallel(self.driver_index, 1)  # 0x40, 177, 0x8800, 0, 0
+                self.driver.CH341InitParallel(
+                    self.driver_index, 1
+                )  # 0x40, 177, 0x8800, 0, 0
                 self.channel(_("CH341 mode change to EPP1.9: Success."))
             except ConnectionError:
                 self.channel(_("CH341 mode change to EPP1.9: Fail."))
@@ -417,4 +452,6 @@ class CH341Driver:
         return self.driver.CH341GetStatus(self.driver_index)
 
     def get_chip_version(self):
-        return self.driver.CH341GetVerIC(self.driver_index)  # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
+        return self.driver.CH341GetVerIC(
+            self.driver_index
+        )  # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)

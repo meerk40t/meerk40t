@@ -3,17 +3,42 @@ import time
 
 from ...core.cutcode import CutCode, LaserSettings
 from ..lasercommandconstants import *
-from . laserspeed import LaserSpeed
-from ...kernel import Modifier, STATE_UNKNOWN, Job, Module, STATE_ACTIVE, STATE_PAUSE, \
-    STATE_INITIALIZE, STATE_BUSY, STATE_IDLE, STATE_TERMINATE, STATE_END, STATE_WAIT
-from ..basedevice import Interpreter, PLOT_FINISH, PLOT_SETTING, PLOT_AXIS, PLOT_DIRECTION, PLOT_RAPID, PLOT_JOG, \
-    INTERPRETER_STATE_PROGRAM, INTERPRETER_STATE_RAPID, INTERPRETER_STATE_FINISH, INTERPRETER_STATE_MODECHANGE
+from .laserspeed import LaserSpeed
+from ...kernel import (
+    Modifier,
+    STATE_UNKNOWN,
+    Job,
+    Module,
+    STATE_ACTIVE,
+    STATE_PAUSE,
+    STATE_INITIALIZE,
+    STATE_BUSY,
+    STATE_IDLE,
+    STATE_TERMINATE,
+    STATE_END,
+    STATE_WAIT,
+)
+from ..basedevice import (
+    Interpreter,
+    PLOT_FINISH,
+    PLOT_SETTING,
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_RAPID,
+    PLOT_JOG,
+    INTERPRETER_STATE_PROGRAM,
+    INTERPRETER_STATE_RAPID,
+    INTERPRETER_STATE_FINISH,
+    INTERPRETER_STATE_MODECHANGE,
+)
 from ...core.plotplanner import PlotPlanner
 from ...svgelements import Length
 from ...core.zinglplotter import ZinglPlotter
 
+
 def plugin(kernel):
-    kernel.register('device/Lhystudios', LhystudiosDevice)
+    kernel.register("device/Lhystudios", LhystudiosDevice)
+
 
 """
 LhystudiosDevice is the backend for all Lhystudio Devices.
@@ -40,7 +65,9 @@ STATUS_BUSY = 238
 # 0xEE, 11101110
 STATUS_POWER = 239
 
-STATE_X_FORWARD_LEFT = 0b0000000000000001  # Direction is flagged left rather than right.
+STATE_X_FORWARD_LEFT = (
+    0b0000000000000001  # Direction is flagged left rather than right.
+)
 STATE_Y_FORWARD_TOP = 0b0000000000000010  # Direction is flagged top rather than bottom.
 STATE_X_STEPPER_ENABLE = 0b0000000000000100  # X-stepper motor is engaged.
 STATE_Y_STEPPER_ENABLE = 0b0000000000001000  # Y-stepper motor is engaged.
@@ -71,7 +98,7 @@ class LhystudiosDevice(Modifier):
         self.interpreter = None
         self.spooler = None
         self.state = STATE_UNKNOWN
-        self.context.listen('interpreter;mode', self.on_mode_change)
+        self.context.listen("interpreter;mode", self.on_mode_change)
         self.dx = 0
         self.dy = 0
 
@@ -80,14 +107,18 @@ class LhystudiosDevice(Modifier):
 
     @staticmethod
     def sub_register(device):
-        device.register('modifier/LhymicroInterpreter', LhymicroInterpreter)
-        device.register('module/LhystudioController', LhystudioController)
-        device.register('module/LhystudioEmulator', LhystudioEmulator)
-        device.register('load/EgvLoader', EgvLoader)
+        device.register("modifier/LhymicroInterpreter", LhymicroInterpreter)
+        device.register("module/LhystudioController", LhystudioController)
+        device.register("module/LhystudioEmulator", LhystudioEmulator)
+        device.register("load/EgvLoader", EgvLoader)
 
     def execute_absolute_position(self, position_x, position_y):
-        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+        x_pos = Length(position_x).value(
+            ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+        )
+        y_pos = Length(position_y).value(
+            ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+        )
 
         def move():
             yield COMMAND_SET_ABSOLUTE
@@ -97,8 +128,12 @@ class LhystudiosDevice(Modifier):
         return move
 
     def execute_relative_position(self, position_x, position_y):
-        x_pos = Length(position_x).value(ppi=1000.0, relative_length=self.context.bed_width * 39.3701)
-        y_pos = Length(position_y).value(ppi=1000.0, relative_length=self.context.bed_height * 39.3701)
+        x_pos = Length(position_x).value(
+            ppi=1000.0, relative_length=self.context.bed_width * 39.3701
+        )
+        y_pos = Length(position_y).value(
+            ppi=1000.0, relative_length=self.context.bed_height * 39.3701
+        )
 
         def move():
             yield COMMAND_SET_INCREMENTAL
@@ -112,41 +147,57 @@ class LhystudiosDevice(Modifier):
         context = self.context
         kernel = self.context._kernel
 
-        @self.context.console_command('+laser', hidden=True, help='turn laser on in place')
+        @self.context.console_command(
+            "+laser", hidden=True, help="turn laser on in place"
+        )
         def plus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @self.context.console_command('-laser', hidden=True, help='turn laser off in place')
+        @self.context.console_command(
+            "-laser", hidden=True, help="turn laser off in place"
+        )
         def minus_laser(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LASER_ON)
 
-        @self.context.console_command(('left', 'right', 'up', 'down'), help='<direction> <amount>')
+        @self.context.console_command(
+            ("left", "right", "up", "down"), help="<direction> <amount>"
+        )
         def direction(command, channel, _, args=tuple(), **kwargs):
             active = kernel.active_device
             spooler = active.spooler
 
             if spooler is None:
-                channel(_('Device has no spooler.'))
+                channel(_("Device has no spooler."))
                 return
             if len(args) == 0:
-                amount = '1mm'
+                amount = "1mm"
             else:
                 amount = args[0]
             max_bed_height = active.bed_height * 39.3701
             max_bed_width = active.bed_width * 39.3701
-            if command.endswith('right'):
-                self.dx += Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
-            elif command.endswith('left'):
-                self.dx -= Length(amount).value(ppi=1000.0, relative_length=max_bed_width)
-            elif command.endswith('up'):
-                self.dy -= Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
-            elif command.endswith('down'):
-                self.dy += Length(amount).value(ppi=1000.0, relative_length=max_bed_height)
-            kernel._console_queue('jog')
+            if command.endswith("right"):
+                self.dx += Length(amount).value(
+                    ppi=1000.0, relative_length=max_bed_width
+                )
+            elif command.endswith("left"):
+                self.dx -= Length(amount).value(
+                    ppi=1000.0, relative_length=max_bed_width
+                )
+            elif command.endswith("up"):
+                self.dy -= Length(amount).value(
+                    ppi=1000.0, relative_length=max_bed_height
+                )
+            elif command.endswith("down"):
+                self.dy += Length(amount).value(
+                    ppi=1000.0, relative_length=max_bed_height
+                )
+            kernel._console_queue("jog")
 
-        @self.context.console_command('jog', hidden=True, help='executes outstanding jog buffer')
+        @self.context.console_command(
+            "jog", hidden=True, help="executes outstanding jog buffer"
+        )
         def jog(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             idx = int(self.dx)
@@ -154,69 +205,71 @@ class LhystudiosDevice(Modifier):
             if idx == 0 and idy == 0:
                 return
             if spooler.job_if_idle(self.execute_relative_position(idx, idy)):
-                channel(_('Position moved: %d %d') % (idx, idy))
+                channel(_("Position moved: %d %d") % (idx, idy))
                 self.dx -= idx
                 self.dy -= idy
             else:
-                channel(_('Busy Error'))
+                channel(_("Busy Error"))
 
-        @self.context.console_command(('move', 'move_absolute'), help='move <x> <y>: move to position.')
+        @self.context.console_command(
+            ("move", "move_absolute"), help="move <x> <y>: move to position."
+        )
         def move(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_absolute_position(*args)):
-                    channel(_('Busy Error'))
+                    channel(_("Busy Error"))
             else:
-                channel(_('Syntax Error'))
+                channel(_("Syntax Error"))
 
-        @self.context.console_command('move_relative', help='move_relative <dx> <dy>')
+        @self.context.console_command("move_relative", help="move_relative <dx> <dy>")
         def move_relative(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             if len(args) == 2:
                 if not spooler.job_if_idle(self.execute_relative_position(*args)):
-                    channel(_('Busy Error'))
+                    channel(_("Busy Error"))
             else:
-                channel(_('Syntax Error'))
+                channel(_("Syntax Error"))
 
-        @self.context.console_command('home', help='home the laser')
+        @self.context.console_command("home", help="home the laser")
         def home(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_HOME)
 
-        @self.context.console_command('unlock', help='unlock the rail')
+        @self.context.console_command("unlock", help="unlock the rail")
         def unlock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_UNLOCK)
 
-        @self.context.console_command('lock', help='lock the rail')
+        @self.context.console_command("lock", help="lock the rail")
         def lock(command, channel, _, args=tuple(), **kwargs):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LOCK)
 
-        self.context.open_as('module/LhystudioController', 'pipe')
-        self.context.open_as('module/LhystudioEmulator', 'emulator')
-        self.context.activate('modifier/LhymicroInterpreter', self.context)
-        self.context.activate('modifier/Spooler')
+        self.context.open_as("module/LhystudioController", "pipe")
+        self.context.open_as("module/LhystudioEmulator", "emulator")
+        self.context.activate("modifier/LhymicroInterpreter", self.context)
+        self.context.activate("modifier/Spooler")
 
-        self.context.setting(str, 'device_name', 'Lhystudios')
+        self.context.setting(str, "device_name", "Lhystudios")
 
-        self.context.setting(bool, 'quit', False)
+        self.context.setting(bool, "quit", False)
         self.context.quit = False
 
-        self.context.setting(int, 'usb_index', -1)
-        self.context.setting(int, 'usb_bus', -1)
-        self.context.setting(int, 'usb_address', -1)
-        self.context.setting(int, 'usb_serial', -1)
-        self.context.setting(int, 'usb_version', -1)
+        self.context.setting(int, "usb_index", -1)
+        self.context.setting(int, "usb_bus", -1)
+        self.context.setting(int, "usb_address", -1)
+        self.context.setting(int, "usb_serial", -1)
+        self.context.setting(int, "usb_version", -1)
 
-        self.context.setting(bool, 'mock', False)
-        self.context.setting(int, 'packet_count', 0)
-        self.context.setting(int, 'rejected_count', 0)
+        self.context.setting(bool, "mock", False)
+        self.context.setting(int, "packet_count", 0)
+        self.context.setting(int, "rejected_count", 0)
         self.context.setting(bool, "autolock", True)
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "autobeep", True)
 
-        self.context.setting(str, "board", 'M2')
+        self.context.setting(str, "board", "M2")
         self.context.setting(bool, "rotary", False)
         self.context.setting(float, "scale_x", 1.0)
         self.context.setting(float, "scale_y", 1.0)
@@ -224,12 +277,14 @@ class LhystudiosDevice(Modifier):
         self.context.setting(int, "bed_height", 210)
         self.dx = 0
         self.dy = 0
-        context.listen('interpreter;mode', self.on_mode_change)
+        context.listen("interpreter;mode", self.on_mode_change)
 
-        self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
+        self.context.signal(
+            "bed_size", (self.context.bed_width, self.context.bed_height)
+        )
 
     def detach(self, *args, **kwargs):
-        self.context.unlisten('interpreter;mode', self.on_mode_change)
+        self.context.unlisten("interpreter;mode", self.on_mode_change)
 
     def on_mode_change(self, *args):
         self.dx = 0
@@ -237,22 +292,69 @@ class LhystudiosDevice(Modifier):
 
 
 distance_lookup = [
-    b'',
-    b'a', b'b', b'c', b'd', b'e', b'f', b'g', b'h', b'i', b'j', b'k', b'l', b'm',
-    b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v', b'w', b'x', b'y',
-    b'|a', b'|b', b'|c', b'|d', b'|e', b'|f', b'|g', b'|h', b'|i', b'|j', b'|k', b'|l', b'|m',
-    b'|n', b'|o', b'|p', b'|q', b'|r', b'|s', b'|t', b'|u', b'|v', b'|w', b'|x', b'|y', b'|z'
+    b"",
+    b"a",
+    b"b",
+    b"c",
+    b"d",
+    b"e",
+    b"f",
+    b"g",
+    b"h",
+    b"i",
+    b"j",
+    b"k",
+    b"l",
+    b"m",
+    b"n",
+    b"o",
+    b"p",
+    b"q",
+    b"r",
+    b"s",
+    b"t",
+    b"u",
+    b"v",
+    b"w",
+    b"x",
+    b"y",
+    b"|a",
+    b"|b",
+    b"|c",
+    b"|d",
+    b"|e",
+    b"|f",
+    b"|g",
+    b"|h",
+    b"|i",
+    b"|j",
+    b"|k",
+    b"|l",
+    b"|m",
+    b"|n",
+    b"|o",
+    b"|p",
+    b"|q",
+    b"|r",
+    b"|s",
+    b"|t",
+    b"|u",
+    b"|v",
+    b"|w",
+    b"|x",
+    b"|y",
+    b"|z",
 ]
 
 
 def lhymicro_distance(v):
-    dist = b''
+    dist = b""
     if v >= 255:
         zs = int(v / 255)
         v %= 255
-        dist += (b'z' * zs)
+        dist += b"z" * zs
     if v >= 52:
-        return dist + b'%03d' % v
+        return dist + b"%03d" % v
     return dist + distance_lookup[v]
 
 
@@ -267,14 +369,16 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, job_name, channel)
         Interpreter.__init__(self, context=context)
-        Job.__init__(self, job_name="Lhystudios-spool", process=self.interpret, interval=0.01)
-        self.CODE_RIGHT = b'B'
-        self.CODE_LEFT = b'T'
-        self.CODE_TOP = b'L'
-        self.CODE_BOTTOM = b'R'
-        self.CODE_ANGLE = b'M'
-        self.CODE_LASER_ON = b'D'
-        self.CODE_LASER_OFF = b'U'
+        Job.__init__(
+            self, job_name="Lhystudios-spool", process=self.interpret, interval=0.01
+        )
+        self.CODE_RIGHT = b"B"
+        self.CODE_LEFT = b"T"
+        self.CODE_TOP = b"L"
+        self.CODE_BOTTOM = b"R"
+        self.CODE_ANGLE = b"M"
+        self.CODE_LASER_ON = b"D"
+        self.CODE_LASER_OFF = b"U"
 
         self.plot_planner = PlotPlanner(self.settings)
 
@@ -292,8 +396,8 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.is_paused = False
         self.context._buffer_size = 0
 
-        self.pipe = self.context.channel('pipe/send')
-        self.realtime_pipe = self.context.channel('pipe/send_realtime')
+        self.pipe = self.context.channel("pipe/send")
+        self.realtime_pipe = self.context.channel("pipe/send_realtime")
 
         def primary_hold():
             buffer = self.context._buffer_size
@@ -307,10 +411,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         kernel = self.context._kernel
         _ = kernel.translation
 
-        @self.context.console_command('pulse', help='pulse <time>: Pulse the laser in place.')
+        @self.context.console_command(
+            "pulse", help="pulse <time>: Pulse the laser in place."
+        )
         def pulse(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                channel(_('Must specify a pulse time in milliseconds.'))
+                channel(_("Must specify a pulse time in milliseconds."))
                 return
             try:
                 value = float(args[0]) / 1000.0
@@ -318,7 +424,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 channel(_('"%s" not a valid pulse time in milliseconds') % (args[0]))
                 return
             if value > 1.0:
-                channel(_('"%s" exceeds 1 second limit to fire a standing laser.') % (args[0]))
+                channel(
+                    _('"%s" exceeds 1 second limit to fire a standing laser.')
+                    % (args[0])
+                )
                 try:
                     if args[1] != "idonotlovemyhouse":
                         return
@@ -332,15 +441,15 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 yield COMMAND_LASER_OFF
 
             if self.context.spooler.job_if_idle(timed_fire):
-                channel(_('Pulse laser for %f milliseconds') % (value * 1000.0))
+                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
             else:
-                channel(_('Pulse laser failed: Busy'))
+                channel(_("Pulse laser failed: Busy"))
             return
 
-        @self.context.console_command('speed', help='Set Speed in Interpreter.')
+        @self.context.console_command("speed", help="Set Speed in Interpreter.")
         def speed(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                channel(_('Speed set at: %f mm/s') % self.speed)
+                channel(_("Speed set at: %f mm/s") % self.speed)
                 return
             inc = False
             percent = False
@@ -348,13 +457,13 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             if speed == "inc":
                 speed = args[1]
                 inc = True
-            if speed.endswith('%'):
+            if speed.endswith("%"):
                 speed = speed[:-1]
                 percent = True
             try:
                 s = float(speed)
             except ValueError:
-                channel(_('Not a valid speed or percent.'))
+                channel(_("Not a valid speed or percent."))
                 return
             if percent and inc:
                 s = self.speed + self.speed * (s / 100.0)
@@ -363,43 +472,45 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             elif percent:
                 s = self.speed * (s / 100.0)
             self.set_speed(s)
-            channel(_('Speed set at: %f mm/s') % self.speed)
+            channel(_("Speed set at: %f mm/s") % self.speed)
 
-        @self.context.console_command('power', help='Set Interpreter Power')
+        @self.context.console_command("power", help="Set Interpreter Power")
         def power(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                channel(_('Power set at: %d pulses per inch') % self.power)
+                channel(_("Power set at: %d pulses per inch") % self.power)
             else:
                 try:
                     self.set_power(int(args[0]))
                 except ValueError:
                     pass
 
-        @self.context.console_command('acceleration', help='Set Interpreter Acceleration [1-4]')
+        @self.context.console_command(
+            "acceleration", help="Set Interpreter Acceleration [1-4]"
+        )
         def acceleration(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 if self.acceleration is None:
-                    channel(_('Acceleration is set to default.'))
+                    channel(_("Acceleration is set to default."))
                 else:
-                    channel(_('Acceleration: %d') % self.acceleration)
+                    channel(_("Acceleration: %d") % self.acceleration)
 
             else:
                 try:
                     v = int(args[0])
                     if v not in (1, 2, 3, 4):
                         self.set_acceleration(None)
-                        channel(_('Acceleration is set to default.'))
+                        channel(_("Acceleration is set to default."))
                         return
                     self.set_acceleration(v)
-                    channel(_('Acceleration: %d') % self.acceleration)
+                    channel(_("Acceleration: %d") % self.acceleration)
                 except ValueError:
-                    channel(_('Invalid Acceleration [1-4].'))
+                    channel(_("Invalid Acceleration [1-4]."))
                     return
 
         self.context.interpreter = self
 
-        self.context.setting(int, 'current_x', 0)
-        self.context.setting(int, 'current_y', 0)
+        self.context.setting(int, "current_x", 0)
+        self.context.setting(int, "current_y", 0)
 
         self.context.setting(bool, "strict", False)
         self.context.setting(bool, "swap_xy", False)
@@ -431,10 +542,10 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.start_x = current_x
         self.start_y = current_y
 
-        self.context.register('control/Realtime Pause_Resume', self.pause_resume)
-        self.context.register('control/Realtime Pause', self.pause)
-        self.context.register('control/Realtime Resume', self.resume)
-        self.context.register('control/Update Codes', self.update_codes)
+        self.context.register("control/Realtime Pause_Resume", self.pause_resume)
+        self.context.register("control/Realtime Pause", self.pause)
+        self.context.register("control/Realtime Resume", self.resume)
+        self.context.register("control/Update Codes", self.update_codes)
         self.context.schedule(self)
 
     def __repr__(self):
@@ -442,15 +553,15 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def update_codes(self):
         if not self.context.swap_xy:
-            self.CODE_RIGHT = b'B'
-            self.CODE_LEFT = b'T'
-            self.CODE_TOP = b'L'
-            self.CODE_BOTTOM = b'R'
+            self.CODE_RIGHT = b"B"
+            self.CODE_LEFT = b"T"
+            self.CODE_TOP = b"L"
+            self.CODE_BOTTOM = b"R"
         else:
-            self.CODE_RIGHT = b'R'
-            self.CODE_LEFT = b'L'
-            self.CODE_TOP = b'T'
-            self.CODE_BOTTOM = b'B'
+            self.CODE_RIGHT = b"R"
+            self.CODE_LEFT = b"L"
+            self.CODE_TOP = b"T"
+            self.CODE_BOTTOM = b"B"
         if self.context.flip_x:
             q = self.CODE_LEFT
             self.CODE_LEFT = self.CODE_RIGHT
@@ -488,10 +599,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     s_set = self.settings
                     if p_set.power != s_set.power:
                         self.set_power(p_set.power)
-                    if p_set.raster_step != s_set.raster_step or \
-                            p_set.speed != s_set.speed or \
-                            s_set.implicit_d_ratio != p_set.implicit_d_ratio or \
-                            s_set.implicit_accel != p_set.implicit_accel:
+                    if (
+                        p_set.raster_step != s_set.raster_step
+                        or p_set.speed != s_set.speed
+                        or s_set.implicit_d_ratio != p_set.implicit_d_ratio
+                        or s_set.implicit_accel != p_set.implicit_accel
+                    ):
                         self.set_speed(p_set.speed)
                         self.set_step(p_set.raster_step)
                         self.set_acceleration(p_set.implicit_accel)
@@ -517,8 +630,14 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                     else:  # Moving Top. -y
                         self.set_prop(REQUEST_Y_FORWARD_TOP)
                     continue
-                if on & (PLOT_RAPID | PLOT_JOG):  # Plot planner requests position change.
-                    if on & PLOT_RAPID or self.state != INTERPRETER_STATE_PROGRAM or self.settings.raster_step != 0:
+                if on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    if (
+                        on & PLOT_RAPID
+                        or self.state != INTERPRETER_STATE_PROGRAM
+                        or self.settings.raster_step != 0
+                    ):
                         # Perform a rapid position change. Always perform this for raster moves.
                         self.ensure_rapid_mode()
                         self.move_absolute(x, y)
@@ -536,7 +655,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                             if self.is_prop(STATE_Y_FORWARD_TOP):
                                 if abs(dy) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(0, dy + self.settings.raster_step)
+                                    self.move_relative(
+                                        0, dy + self.settings.raster_step
+                                    )
                                     self.set_prop(STATE_X_STEPPER_ENABLE)
                                     self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                     self.ensure_program_mode()
@@ -544,7 +665,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                             else:
                                 if abs(dy) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(0, dy - self.settings.raster_step)
+                                    self.move_relative(
+                                        0, dy - self.settings.raster_step
+                                    )
                                     self.set_prop(STATE_X_STEPPER_ENABLE)
                                     self.unset_prop(STATE_Y_STEPPER_ENABLE)
                                     self.ensure_program_mode()
@@ -554,7 +677,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                             if self.is_prop(STATE_X_FORWARD_LEFT):
                                 if abs(dx) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(dx + self.settings.raster_step, 0)
+                                    self.move_relative(
+                                        dx + self.settings.raster_step, 0
+                                    )
                                     self.set_prop(STATE_Y_STEPPER_ENABLE)
                                     self.unset_prop(STATE_X_STEPPER_ENABLE)
                                     self.ensure_program_mode()
@@ -562,7 +687,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                             else:
                                 if abs(dx) > self.settings.raster_step:
                                     self.ensure_finished_mode()
-                                    self.move_relative(dx - self.settings.raster_step, 0)
+                                    self.move_relative(
+                                        dx - self.settings.raster_step, 0
+                                    )
                                     self.set_prop(STATE_Y_STEPPER_ENABLE)
                                     self.unset_prop(STATE_X_STEPPER_ENABLE)
                                     self.ensure_program_mode()
@@ -589,23 +716,23 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.pause(*values)
 
     def pause(self, *values):
-        self.realtime_pipe(b'PN!\n')
+        self.realtime_pipe(b"PN!\n")
         self.is_paused = True
 
     def resume(self, *values):
-        self.realtime_pipe(b'PN&\n')
+        self.realtime_pipe(b"PN&\n")
         self.is_paused = False
 
     def reset(self):
         Interpreter.reset(self)
-        self.context.signal('pipe;buffer', 0)
+        self.context.signal("pipe;buffer", 0)
         self.plot = None
         self.plot_planner.clear()
-        self.realtime_pipe(b'I*\n')
+        self.realtime_pipe(b"I*\n")
         self.laser = False
         self.properties = 0
         self.state = INTERPRETER_STATE_RAPID
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
         self.is_paused = False
 
     def cut(self, x, y):
@@ -624,7 +751,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.jog_absolute(x, y, **kwargs)
 
     def jog_absolute(self, x, y, **kwargs):
-        self.jog_relative(x - self.context.current_x, y - self.context.current_y, **kwargs)
+        self.jog_relative(
+            x - self.context.current_x, y - self.context.current_y, **kwargs
+        )
 
     def jog_relative(self, dx, dy, mode=0):
         self.laser_off()
@@ -654,12 +783,12 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.pipe(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
                 self.pipe(self.CODE_BOTTOM)
-        self.pipe(b'N')
+        self.pipe(b"N")
         if dy != 0:
             self.goto_y(dy)
         if dx != 0:
             self.goto_x(dx)
-        self.pipe(b'SE')
+        self.pipe(b"SE")
         self.declare_directions()
         self.state = INTERPRETER_STATE_PROGRAM
 
@@ -713,14 +842,14 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b'I')
+            self.pipe(b"I")
             if dx != 0:
                 self.goto_x(dx)
             if dy != 0:
                 self.goto_y(dy)
-            self.pipe(b'S1P\n')
+            self.pipe(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b'IS2P\n')
+                self.pipe(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
             mx = 0
             my = 0
@@ -733,7 +862,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
                 self.goto_x(dx)
             if dy != 0:
                 self.goto_y(dy)
-            self.pipe(b'N')
+            self.pipe(b"N")
         elif self.state == INTERPRETER_STATE_MODECHANGE:
             self.fly_switch_speed(dx, dy)
         self.check_bounds()
@@ -758,11 +887,17 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         elif dx != 0:
             self.goto_x(dx)
             if dy != 0:
-                raise ValueError("Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)" % (str(dx), str(dy)))
+                raise ValueError(
+                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
+                    % (str(dx), str(dy))
+                )
         else:
             self.goto_y(dy)
             if dx != 0:
-                raise ValueError("Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)" % (str(dx), str(dy)))
+                raise ValueError(
+                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
+                    % (str(dx), str(dy))
+                )
         # self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y,
         #                                              self.context.current_x - dx, self.context.current_y - dy))
 
@@ -794,16 +929,16 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if not self.laser:
             return False
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b'I')
+            self.pipe(b"I")
             self.pipe(self.CODE_LASER_OFF)
-            self.pipe(b'S1P\n')
+            self.pipe(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b'IS2P\n')
+                self.pipe(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
             self.pipe(self.CODE_LASER_OFF)
         elif self.state == INTERPRETER_STATE_FINISH:
             self.pipe(self.CODE_LASER_OFF)
-            self.pipe(b'N')
+            self.pipe(b"N")
         self.laser = False
         return True
 
@@ -811,16 +946,16 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if self.laser:
             return False
         if self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b'I')
+            self.pipe(b"I")
             self.pipe(self.CODE_LASER_ON)
-            self.pipe(b'S1P\n')
+            self.pipe(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b'IS2P\n')
+                self.pipe(b"IS2P\n")
         elif self.state == INTERPRETER_STATE_PROGRAM:
             self.pipe(self.CODE_LASER_ON)
         elif self.state == INTERPRETER_STATE_FINISH:
             self.pipe(self.CODE_LASER_ON)
-            self.pipe(b'N')
+            self.pipe(b"N")
         self.laser = True
         return True
 
@@ -828,19 +963,22 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         if self.state == INTERPRETER_STATE_RAPID:
             return
         if self.state == INTERPRETER_STATE_FINISH:
-            self.pipe(b'S1P\n')
+            self.pipe(b"S1P\n")
             if not self.context.autolock:
-                self.pipe(b'IS2P\n')
-        elif self.state == INTERPRETER_STATE_PROGRAM or self.state == INTERPRETER_STATE_MODECHANGE:
-            self.pipe(b'FNSE-\n')
+                self.pipe(b"IS2P\n")
+        elif (
+            self.state == INTERPRETER_STATE_PROGRAM
+            or self.state == INTERPRETER_STATE_MODECHANGE
+        ):
+            self.pipe(b"FNSE-\n")
             self.laser = False
         self.state = INTERPRETER_STATE_RAPID
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
 
     def fly_switch_speed(self, dx=0, dy=0):
         dx = int(round(dx))
         dy = int(round(dy))
-        self.pipe(b'@NSE')
+        self.pipe(b"@NSE")
         self.state = INTERPRETER_STATE_RAPID
         speed_code = LaserSpeed(
             self.context.board,
@@ -851,32 +989,36 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             fix_limit=True,
             fix_lows=True,
             fix_speeds=False,
-            raster_horizontal=True).speedcode
+            raster_horizontal=True,
+        ).speedcode
         try:
             speed_code = bytes(speed_code)
         except TypeError:
-            speed_code = bytes(speed_code, 'utf8')
+            speed_code = bytes(speed_code, "utf8")
         self.pipe(speed_code)
         if dx != 0:
             self.goto_x(dx)
         if dy != 0:
             self.goto_y(dy)
-        self.pipe(b'N')
+        self.pipe(b"N")
         self.set_requested_directions()
         self.pipe(self.code_declare_directions())
-        self.pipe(b'S1E')
+        self.pipe(b"S1E")
         self.state = INTERPRETER_STATE_PROGRAM
 
     def ensure_finished_mode(self):
         if self.state == INTERPRETER_STATE_FINISH:
             return
-        if self.state == INTERPRETER_STATE_PROGRAM or self.state == INTERPRETER_STATE_MODECHANGE:
-            self.pipe(b'@NSE')
+        if (
+            self.state == INTERPRETER_STATE_PROGRAM
+            or self.state == INTERPRETER_STATE_MODECHANGE
+        ):
+            self.pipe(b"@NSE")
             self.laser = False
         elif self.state == INTERPRETER_STATE_RAPID:
-            self.pipe(b'I')
+            self.pipe(b"I")
         self.state = INTERPRETER_STATE_FINISH
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
 
     def ensure_program_mode(self):
         if self.state == INTERPRETER_STATE_PROGRAM:
@@ -892,18 +1034,19 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             fix_limit=True,
             fix_lows=True,
             fix_speeds=False,
-            raster_horizontal=True).speedcode
+            raster_horizontal=True,
+        ).speedcode
         try:
             speed_code = bytes(speed_code)
         except TypeError:
-            speed_code = bytes(speed_code, 'utf8')
+            speed_code = bytes(speed_code, "utf8")
         self.pipe(speed_code)
-        self.pipe(b'N')
+        self.pipe(b"N")
         self.set_requested_directions()
         self.declare_directions()
-        self.pipe(b'S1E')
+        self.pipe(b"S1E")
         self.state = INTERPRETER_STATE_PROGRAM
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
 
     def h_switch(self):
         if self.is_prop(STATE_X_FORWARD_LEFT):
@@ -943,7 +1086,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def home(self):
         x, y = self.calc_home_position()
         self.ensure_rapid_mode()
-        self.pipe(b'IPP\n')
+        self.pipe(b"IPP\n")
         old_x = self.context.current_x
         old_y = self.context.current_y
         self.context.current_x = x
@@ -960,19 +1103,19 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
             self.context.current_x = x
             self.context.current_y = y
 
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
         # self.context.signal('interpreter;position', (self.context.current_x, self.context.current_y, old_x, old_y))
 
     def lock_rail(self):
         self.ensure_rapid_mode()
-        self.pipe(b'IS1P\n')
+        self.pipe(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
         self.ensure_rapid_mode()
-        self.pipe(b'IS2P\n')
+        self.pipe(b"IS2P\n")
 
     def abort(self):
-        self.pipe(b'I\n')
+        self.pipe(b"I\n")
 
     def check_bounds(self):
         self.min_x = min(self.min_x, self.context.current_x)
@@ -994,7 +1137,7 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     def goto_angle(self, dx, dy):
         if abs(dx) != abs(dy):
-            raise ValueError('abs(dx) must equal abs(dy)')
+            raise ValueError("abs(dx) must equal abs(dy)")
         self.set_prop(STATE_X_STEPPER_ENABLE)  # Set both on
         self.set_prop(STATE_Y_STEPPER_ENABLE)
         if dx > 0:  # Moving right
@@ -1049,7 +1192,9 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.pipe(self.code_declare_directions())
 
     def code_declare_directions(self):
-        x_dir = self.CODE_LEFT if self.is_prop(STATE_X_FORWARD_LEFT) else self.CODE_RIGHT
+        x_dir = (
+            self.CODE_LEFT if self.is_prop(STATE_X_FORWARD_LEFT) else self.CODE_RIGHT
+        )
         y_dir = self.CODE_TOP if self.is_prop(STATE_Y_FORWARD_TOP) else self.CODE_BOTTOM
         if self.is_prop(STATE_HORIZONTAL_MAJOR):
             self.set_prop(STATE_X_STEPPER_ENABLE)
@@ -1062,32 +1207,41 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
 
     @property
     def is_left(self):
-        return self.is_prop(STATE_X_STEPPER_ENABLE) and \
-               not self.is_prop(STATE_Y_STEPPER_ENABLE) and \
-               self.is_prop(STATE_X_FORWARD_LEFT)
+        return (
+            self.is_prop(STATE_X_STEPPER_ENABLE)
+            and not self.is_prop(STATE_Y_STEPPER_ENABLE)
+            and self.is_prop(STATE_X_FORWARD_LEFT)
+        )
 
     @property
     def is_right(self):
-        return self.is_prop(STATE_X_STEPPER_ENABLE) and \
-               not self.is_prop(STATE_Y_STEPPER_ENABLE) and \
-               not self.is_prop(STATE_X_FORWARD_LEFT)
+        return (
+            self.is_prop(STATE_X_STEPPER_ENABLE)
+            and not self.is_prop(STATE_Y_STEPPER_ENABLE)
+            and not self.is_prop(STATE_X_FORWARD_LEFT)
+        )
 
     @property
     def is_top(self):
-        return not self.is_prop(STATE_X_STEPPER_ENABLE) and \
-               self.is_prop(STATE_Y_STEPPER_ENABLE) and \
-               self.is_prop(STATE_Y_FORWARD_TOP)
+        return (
+            not self.is_prop(STATE_X_STEPPER_ENABLE)
+            and self.is_prop(STATE_Y_STEPPER_ENABLE)
+            and self.is_prop(STATE_Y_FORWARD_TOP)
+        )
 
     @property
     def is_bottom(self):
-        return not self.is_prop(STATE_X_STEPPER_ENABLE) and \
-               self.is_prop(STATE_Y_STEPPER_ENABLE) and \
-               not self.is_prop(STATE_Y_FORWARD_TOP)
+        return (
+            not self.is_prop(STATE_X_STEPPER_ENABLE)
+            and self.is_prop(STATE_Y_STEPPER_ENABLE)
+            and not self.is_prop(STATE_Y_FORWARD_TOP)
+        )
 
     @property
     def is_angle(self):
-        return self.is_prop(STATE_Y_STEPPER_ENABLE) and \
-               self.is_prop(STATE_X_STEPPER_ENABLE)
+        return self.is_prop(STATE_Y_STEPPER_ENABLE) and self.is_prop(
+            STATE_X_STEPPER_ENABLE
+        )
 
     def set_left(self):
         self.set_prop(STATE_X_STEPPER_ENABLE)
@@ -1179,10 +1333,39 @@ def get_code_string_from_code(code):
 
 
 crc_table = [
-    0x00, 0x5E, 0xBC, 0xE2, 0x61, 0x3F, 0xDD, 0x83,
-    0xC2, 0x9C, 0x7E, 0x20, 0xA3, 0xFD, 0x1F, 0x41,
-    0x00, 0x9D, 0x23, 0xBE, 0x46, 0xDB, 0x65, 0xF8,
-    0x8C, 0x11, 0xAF, 0x32, 0xCA, 0x57, 0xE9, 0x74]
+    0x00,
+    0x5E,
+    0xBC,
+    0xE2,
+    0x61,
+    0x3F,
+    0xDD,
+    0x83,
+    0xC2,
+    0x9C,
+    0x7E,
+    0x20,
+    0xA3,
+    0xFD,
+    0x1F,
+    0x41,
+    0x00,
+    0x9D,
+    0x23,
+    0xBE,
+    0x46,
+    0xDB,
+    0x65,
+    0xF8,
+    0x8C,
+    0x11,
+    0xAF,
+    0x32,
+    0xCA,
+    0x57,
+    0xE9,
+    0x74,
+]
 
 
 def onewire_crc_lookup(line):
@@ -1197,7 +1380,7 @@ def onewire_crc_lookup(line):
     crc = 0
     for i in range(0, 30):
         crc = line[i] ^ crc
-        crc = crc_table[crc & 0x0f] ^ crc_table[16 + ((crc >> 4) & 0x0f)]
+        crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
     return crc
 
 
@@ -1220,10 +1403,12 @@ class LhystudioController(Module):
         self.is_shutdown = False
 
         self._thread = None
-        self._buffer = b''  # Threadsafe buffered commands to be sent to controller.
-        self._realtime_buffer = b''  # Threadsafe realtime buffered commands to be sent to the controller.
-        self._queue = b''  # Thread-unsafe additional commands to append.
-        self._preempt = b''  # Thread-unsafe preempt commands to prepend to the buffer.
+        self._buffer = b""  # Threadsafe buffered commands to be sent to controller.
+        self._realtime_buffer = (
+            b""  # Threadsafe realtime buffered commands to be sent to the controller.
+        )
+        self._queue = b""  # Thread-unsafe additional commands to append.
+        self._preempt = b""  # Thread-unsafe preempt commands to prepend to the buffer.
         self.context._buffer_size = 0
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
@@ -1242,20 +1427,22 @@ class LhystudioController(Module):
         self.abort_waiting = False
         self.pipe_channel = context.channel("%s/events" % name)
         self.usb_log = context.channel("%s/usb" % name, buffer_size=20)
-        self.usb_send_channel = context.channel('%s/usb_send' % name)
-        self.recv_channel = context.channel('%s/recv' % name)
-        self.usb_log.watch(lambda e: context.signal('pipe;usb_status', e))
+        self.usb_send_channel = context.channel("%s/usb_send" % name)
+        self.recv_channel = context.channel("%s/recv" % name)
+        self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
-        send = context.channel('%s/send' % name)
+        send = context.channel("%s/send" % name)
         send.watch(self.write)
         send.__len__ = lambda: len(self._buffer) + len(self._queue)
-        context.channel('%s/send_realtime' % name).watch(self.realtime_write)
+        context.channel("%s/send_realtime" % name).watch(self.realtime_write)
 
     def initialize(self, *args, **kwargs):
         context = self.context
 
-        @self.context.console_argument('filename', type=str)
-        @self.context.console_command('egv_import', help='Lhystudios Engrave Buffer Import. egv_import <egv_file>')
+        @self.context.console_argument("filename", type=str)
+        @self.context.console_command(
+            "egv_import", help="Lhystudios Engrave Buffer Import. egv_import <egv_file>"
+        )
         def egv_import(command, channel, _, filename, args=tuple(), **kwargs):
             if filename is None:
                 raise SyntaxError
@@ -1273,8 +1460,8 @@ class LhystudioController(Module):
                         break
 
             def skip_header(file):
-                skip(file, '\n', 3)
-                skip(file, '%', 5)
+                skip(file, "\n", 3)
+                skip(file, "%", 5)
 
             with open(filename, "r") as f:
                 skip_header(f)
@@ -1284,10 +1471,12 @@ class LhystudioController(Module):
                         break
                     buffer = bytes(data, "utf8")
                     self.write(buffer)
-                self.write(b'\n')
+                self.write(b"\n")
 
-        @self.context.console_argument('filename', type=str)
-        @self.context.console_command('egv_export', help='Lhystudios Engrave Buffer Export. egv_export <egv_file>')
+        @self.context.console_argument("filename", type=str)
+        @self.context.console_command(
+            "egv_export", help="Lhystudios Engrave Buffer Export. egv_export <egv_file>"
+        )
         def egv_export(command, channel, _, filename, args=tuple(), **kwargs):
             if filename is None:
                 raise SyntaxError
@@ -1302,52 +1491,54 @@ class LhystudioController(Module):
                 buffer += self._queue
                 f.write(buffer.decode("utf-8"))
 
-        @self.context.console_command('egv', help='Lhystudios Engrave Code Sender. egv <lhymicro-gl>')
+        @self.context.console_command(
+            "egv", help="Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
+        )
         def egv(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                self.write(bytes(args[0].replace('$', '\n'), "utf8"))
+                self.write(bytes(args[0].replace("$", "\n"), "utf8"))
 
-        @self.context.console_command('usb_connect', help='Connect USB')
+        @self.context.console_command("usb_connect", help="Connect USB")
         def usb_connect(command, channel, _, args=tuple(), **kwargs):
             try:
                 self.open()
             except ConnectionRefusedError:
                 channel("Connection Refused.")
 
-        @self.context.console_command('usb_disconnect', help='Disconnect USB')
+        @self.context.console_command("usb_disconnect", help="Disconnect USB")
         def usb_disconnect(command, channel, _, args=tuple(), **kwargs):
             if self.driver is not None:
                 self.close()
             else:
                 channel("Usb is not connected.")
 
-        @self.context.console_command('start', help='Start Pipe to Controller')
+        @self.context.console_command("start", help="Start Pipe to Controller")
         def pipe_start(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
             self.start()
             channel("Lhystudios Channel Started.")
 
-        @self.context.console_command('pause', help='Pause Controller')
+        @self.context.console_command("pause", help="Pause Controller")
         def pipe_pause(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_PAUSE)
             self.pause()
             channel("Lhystudios Channel Paused.")
 
-        @self.context.console_command('resume', help='Resume Controller')
+        @self.context.console_command("resume", help="Resume Controller")
         def pipe_resume(command, channel, _, args=tuple(), **kwargs):
             self.update_state(STATE_ACTIVE)
             self.start()
             channel("Lhystudios Channel Resumed.")
 
-        @self.context.console_command('abort', help='Abort Job')
+        @self.context.console_command("abort", help="Abort Job")
         def pipe_abort(command, channel, _, args=tuple(), **kwargs):
             self.reset()
             channel("Lhystudios Channel Aborted.")
 
-        context.setting(int, 'packet_count', 0)
-        context.setting(int, 'rejected_count', 0)
+        context.setting(int, "packet_count", 0)
+        context.setting(int, "rejected_count", 0)
 
         context.register("control/Connect_USB", self.open)
         context.register("control/Disconnect_USB", self.close)
@@ -1373,7 +1564,7 @@ class LhystudioController(Module):
 
     def finalize(self, *args, **kwargs):
         if self._thread is not None:
-            self.write(b'\x18\n')
+            self.write(b"\x18\n")
 
     def __repr__(self):
         return "LhystudioController()"
@@ -1486,9 +1677,9 @@ class LhystudioController(Module):
             self.update_state(STATE_ACTIVE)
 
     def abort(self):
-        self._buffer = b''
-        self._queue = b''
-        self.context.signal('pipe;buffer', 0)
+        self._buffer = b""
+        self._queue = b""
+        self.context.signal("pipe;buffer", 0)
         self.update_state(STATE_TERMINATE)
 
     def reset(self):
@@ -1505,19 +1696,28 @@ class LhystudioController(Module):
         serial = self.context.usb_serial
         chipv = self.context.usb_version
         _ = self.usb_log._
+
         def state(state_value):
-            self.context.signal('pipe;state', state_value)
+            self.context.signal("pipe;state", state_value)
 
         try:
             from ..ch341libusbdriver import CH341Driver
-            self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
-                                               channel=self.usb_log, state=state)
+
+            self.driver = driver = CH341Driver(
+                index=index,
+                bus=bus,
+                address=address,
+                serial=serial,
+                chipv=chipv,
+                channel=self.usb_log,
+                state=state,
+            )
             driver.open()
             chip_version = driver.get_chip_version()
             self.usb_log(_("CH341 Chip Version: %d") % chip_version)
-            self.context.signal('pipe;chipv', chip_version)
+            self.context.signal("pipe;chipv", chip_version)
             self.usb_log(_("Driver Detected: LibUsb"))
-            state('STATE_CONNECTED')
+            state("STATE_CONNECTED")
             self.usb_log(_("Device Connected.\n"))
             return
         except ConnectionRefusedError:
@@ -1527,14 +1727,22 @@ class LhystudioController(Module):
 
         try:
             from ..ch341windlldriver import CH341Driver
-            self.driver = driver = CH341Driver(index=index, bus=bus, address=address, serial=serial, chipv=chipv,
-                                               channel=self.usb_log, state=state)
+
+            self.driver = driver = CH341Driver(
+                index=index,
+                bus=bus,
+                address=address,
+                serial=serial,
+                chipv=chipv,
+                channel=self.usb_log,
+                state=state,
+            )
             driver.open()
             chip_version = driver.get_chip_version()
             self.usb_log(_("CH341 Chip Version: %d") % chip_version)
-            self.context.signal('pipe;chipv', chip_version)
+            self.context.signal("pipe;chipv", chip_version)
             self.usb_log(_("Driver Detected: CH341"))
-            state('STATE_CONNECTED')
+            state("STATE_CONNECTED")
             self.usb_log(_("Device Connected.\n"))
             return
         except ConnectionRefusedError:
@@ -1545,17 +1753,19 @@ class LhystudioController(Module):
     def update_state(self, state):
         self.state = state
         if self.context is not None:
-            self.context.signal('pipe;thread', self.state)
+            self.context.signal("pipe;thread", self.state)
 
     def update_buffer(self):
         if self.context is not None:
-            self.context._buffer_size = len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
-            self.context.signal('pipe;buffer', self.context._buffer_size)
+            self.context._buffer_size = (
+                len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
+            )
+            self.context.signal("pipe;buffer", self.context._buffer_size)
 
     def update_packet(self, packet):
         if self.context is not None:
-            self.context.signal('pipe;packet', convert_to_list_bytes(packet))
-            self.context.signal('pipe;packet_text', packet)
+            self.context.signal("pipe;packet", convert_to_list_bytes(packet))
+            self.context.signal("pipe;packet_text", packet)
             self.usb_send_channel(packet)
 
     def _thread_data_send(self):
@@ -1591,7 +1801,7 @@ class LhystudioController(Module):
                 if self.refuse_counts >= self.max_attempts:
                     # We were refused too many times, kill the thread.
                     self.update_state(STATE_TERMINATE)
-                    self.context.signal('pipe;error', self.refuse_counts)
+                    self.context.signal("pipe;error", self.refuse_counts)
                     break
                 continue
             except ConnectionError:
@@ -1603,13 +1813,23 @@ class LhystudioController(Module):
                 continue
             if queue_processed:
                 # Packet was sent.
-                if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_ACTIVE, STATE_TERMINATE):
+                if self.state not in (
+                    STATE_PAUSE,
+                    STATE_BUSY,
+                    STATE_ACTIVE,
+                    STATE_TERMINATE,
+                ):
                     self.update_state(STATE_ACTIVE)
                 self.count = 0
                 continue
             else:
                 # No packet could be sent.
-                if self.state not in (STATE_PAUSE, STATE_BUSY, STATE_BUSY, STATE_TERMINATE):
+                if self.state not in (
+                    STATE_PAUSE,
+                    STATE_BUSY,
+                    STATE_BUSY,
+                    STATE_TERMINATE,
+                ):
                     self.update_state(STATE_IDLE)
                 if self.count > 50:
                     self.count = 50
@@ -1641,14 +1861,14 @@ class LhystudioController(Module):
         if len(self._queue):  # check for and append queue
             self._queue_lock.acquire(True)
             self._buffer += self._queue
-            self._queue = b''
+            self._queue = b""
             self._queue_lock.release()
             self.update_buffer()
 
         if len(self._preempt):  # check for and prepend preempt
             self._preempt_lock.acquire(True)
             self._realtime_buffer += self._preempt
-            self._preempt = b''
+            self._preempt = b""
             self._preempt_lock.release()
             self.update_buffer()
 
@@ -1664,7 +1884,7 @@ class LhystudioController(Module):
                 return False
 
         # Find buffer of 30 or containing '\n'.
-        find = buffer.find(b'\n', 0, 30)
+        find = buffer.find(b"\n", 0, 30)
         if find == -1:  # No end found.
             length = min(30, len(buffer))
         else:  # Line end found.
@@ -1672,40 +1892,40 @@ class LhystudioController(Module):
         packet = buffer[:length]
 
         # edge condition of catching only pipe command without '\n'
-        if packet.endswith((b'-', b'*', b'&', b'!', b'#', b'\x18')):
-            packet += buffer[length:length + 1]
+        if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"\x18")):
+            packet += buffer[length : length + 1]
             length += 1
         post_send_command = None
 
         # find pipe commands.
-        if packet.endswith(b'\n'):
+        if packet.endswith(b"\n"):
             packet = packet[:-1]
-            if packet.endswith(b'-'):  # wait finish
+            if packet.endswith(b"-"):  # wait finish
                 packet = packet[:-1]
                 post_send_command = self.wait_finished
-            elif packet.endswith(b'*'):  # abort
+            elif packet.endswith(b"*"):  # abort
                 post_send_command = self.abort
                 packet = packet[:-1]
-            elif packet.endswith(b'&'):  # resume
+            elif packet.endswith(b"&"):  # resume
                 self._resume_busy()
                 packet = packet[:-1]
-            elif packet.endswith(b'!'):  # pause
+            elif packet.endswith(b"!"):  # pause
                 self._pause_busy()
                 packet = packet[:-1]
-            elif packet.endswith(b'\x18'):
+            elif packet.endswith(b"\x18"):
                 self.state = STATE_TERMINATE
                 self.is_shutdown = True
                 packet = packet[:-1]
             if len(packet) != 0:
-                if packet.endswith(b'#'):
+                if packet.endswith(b"#"):
                     packet = packet[:-1]
                     try:
                         c = packet[-1]
                     except IndexError:
-                        c = b'F' # Packet was simply #. We can do nothing.
+                        c = b"F"  # Packet was simply #. We can do nothing.
                     packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
                 else:
-                    packet += b'F' * (30 - len(packet))  # Padding. '\n'
+                    packet += b"F" * (30 - len(packet))  # Padding. '\n'
         if not realtime and self.state in (STATE_PAUSE, STATE_BUSY):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
@@ -1758,7 +1978,9 @@ class LhystudioController(Module):
                     continue  # This is not a confirmation.
             if status == 0:  # After 300 attempts we could only get status = 0.
                 raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
-            self.context.packet_count += 1  # Our packet is confirmed or assumed confirmed.
+            self.context.packet_count += (
+                1  # Our packet is confirmed or assumed confirmed.
+            )
         else:
             if len(packet) != 0:
                 # We could only generate a partial packet, throw it back
@@ -1785,7 +2007,7 @@ class LhystudioController(Module):
         if self.context.mock:
             time.sleep(0.04)
         else:
-            packet = b'\x00' + packet + bytes([onewire_crc_lookup(packet)])
+            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
             self.driver.write(packet)
         self.update_packet(packet)
         self.pre_ok = False
@@ -1793,6 +2015,7 @@ class LhystudioController(Module):
     def update_status(self):
         if self.context.mock:
             from random import randint
+
             if randint(0, 500) == 0:
                 self._status = [255, STATUS_ERROR, 0, 0, 0, 1]
             else:
@@ -1801,7 +2024,7 @@ class LhystudioController(Module):
         else:
             self._status = self.driver.get_status()
         if self.context is not None:
-            self.context.signal('pipe;status', self._status)
+            self.context.signal("pipe;status", self._status)
             self.recv_channel(str(self._status))
 
     def wait_until_accepting_packets(self):
@@ -1818,7 +2041,7 @@ class LhystudioController(Module):
                 break
             time.sleep(0.05)
             if self.context is not None:
-                self.context.signal('pipe;wait', STATUS_OK, i)
+                self.context.signal("pipe;wait", STATUS_OK, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
@@ -1845,7 +2068,7 @@ class LhystudioController(Module):
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
                 break
             if self.context is not None:
-                self.context.signal('pipe;wait', status, i)
+                self.context.signal("pipe;wait", status, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
@@ -1881,10 +2104,10 @@ class LhystudioEmulator(Module):
         self.horizontal_major = False
         self.process = self.state_default
 
-        send = context.channel('pipe/usb_send')
+        send = context.channel("pipe/usb_send")
         send.watch(self.write)
 
-        self.channel = self.context.channel('lhy')
+        self.channel = self.context.channel("lhy")
 
     def __repr__(self):
         return "LhystudioEmulator(%s, %d cuts)" % (self.name, len(self.cutcode))
@@ -1904,9 +2127,9 @@ class LhystudioEmulator(Module):
             self.write(data)
         for i in range(len(data)):
             c = data[i]
-            if c == b'\n':
+            if c == b"\n":
                 self.count_lines += 1
-            elif c == b'%':
+            elif c == b"%":
                 self.count_flag += 1
 
             if self.count_lines >= 3 and self.count_flag >= 5:
@@ -1923,45 +2146,45 @@ class LhystudioEmulator(Module):
     def write(self, data):
         for b in data:
             c = chr(b)
-            if c == 'I':
+            if c == "I":
                 self.process = self.state_default
                 continue
             self.process(b, c)
 
     def state_finish(self, b, c):
-        if c in 'NSEF':
+        if c in "NSEF":
             return
         self.channel("Finish State Unknown: %s" % c)
 
     def state_reset(self, b, c):
-        if c in '@NSE':
+        if c in "@NSE":
             return
         else:
             self.process = self.state_default
             self.process(b, c)
 
     def state_jog(self, b, c):
-        if c in 'N':
+        if c in "N":
             return
         else:
             self.process = self.state_default
             self.process(b, c)
 
     def state_pop(self, b, c):
-        if c == 'P':
+        if c == "P":
             # Home sequence triggered.
-            self.context.signal('interpreter;position', (self.x, self.y, 0, 0))
+            self.context.signal("interpreter;position", (self.x, self.y, 0, 0))
             self.x = 0
             self.y = 0
             self.process = self.state_default
             return
-        elif c == 'F':
+        elif c == "F":
             return
         else:
             self.channel("Finish State Unknown: %s" % c)
 
     def state_speed(self, b, c):
-        if c in 'GCV01234567890':
+        if c in "GCV01234567890":
             self.speed_code += c
             return
         speed = LaserSpeed(self.speed_code)
@@ -1974,8 +2197,8 @@ class LhystudioEmulator(Module):
         self.process(b, c)
 
     def state_switch(self, b, c):
-        if c in 'S012':
-            if c == '1':
+        if c in "S012":
+            if c == "1":
                 self.horizontal_major = self.x_on
                 self.channel("Setting Axis.")
             return
@@ -1983,33 +2206,33 @@ class LhystudioEmulator(Module):
         self.process(b, c)
 
     def state_pause(self, b, c):
-        if c in 'NF':
+        if c in "NF":
             return
-        if c == 'P':
+        if c == "P":
             self.process = self.state_resume
         else:
             self.process = self.state_compact
-            self.process(b,c)
+            self.process(b, c)
 
     def state_resume(self, b, c):
-        if c in 'NF':
+        if c in "NF":
             return
         self.process = self.state_compact
         self.process(b, c)
 
     def state_pad(self, b, c):
-        if c == 'F':
+        if c == "F":
             return
 
     def state_execute(self, b, c):
         self.process = self.state_compact
 
     def state_distance(self, b, c):
-        if c == '|':
+        if c == "|":
             self.append_distance(25)
             self.small_jump = True
             return True
-        elif ord('0') <= b <= ord('9'):
+        elif ord("0") <= b <= ord("9"):
             if self.number_value is None:
                 self.number_value = c
             else:
@@ -2018,9 +2241,9 @@ class LhystudioEmulator(Module):
                 self.append_distance(int(self.number_value))
                 self.number_value = None
             return True
-        elif ord('a') <= b <= ord('y'):
-            self.append_distance(b + 1 - ord('a'))
-        elif c == 'z':
+        elif ord("a") <= b <= ord("y"):
+            self.append_distance(b + 1 - ord("a"))
+        elif c == "z":
             self.append_distance(26 if self.small_jump else 255)
         else:
             self.small_jump = False
@@ -2039,58 +2262,60 @@ class LhystudioEmulator(Module):
             self.distance_x = 0
             self.distance_y = 0
 
-            self.context.signal('interpreter;position', (self.x, self.y, self.x+dx, self.y+dy))
+            self.context.signal(
+                "interpreter;position", (self.x, self.y, self.x + dx, self.y + dy)
+            )
             self.x += dx
             self.y += dy
             self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
 
     def state_compact(self, b, c):
-        if self.state_distance(b,c):
+        if self.state_distance(b, c):
             return
         self.execute_distance()
 
-        if c == 'F':
+        if c == "F":
             self.channel("Finish")
             self.process = self.state_finish
             self.process(b, c)
             return
-        elif c == '@':
+        elif c == "@":
             self.channel("Reset")
             self.process = self.state_reset
             self.process(b, c)
             return
-        elif c == 'P':
+        elif c == "P":
             self.channel("Pause")
             self.process = self.state_pause
-        elif c == 'N':
+        elif c == "N":
             self.channel("Jog")
             self.process = self.state_jog
             self.process(b, c)
-        elif c == 'S':
+        elif c == "S":
             self.channel("Switch")
             self.process = self.state_switch
             self.process(b, c)
-        elif c == 'E':
+        elif c == "E":
             self.channel("Compact-Compact")
             self.process = self.state_execute
             self.process(b, c)
-        elif c == 'B':
+        elif c == "B":
             self.left = False
             self.x_on = True
             self.y_on = False
-        elif c == 'T':
+        elif c == "T":
             self.left = True
             self.x_on = True
             self.y_on = False
-        elif c == 'R':
+        elif c == "R":
             self.top = False
             self.x_on = False
             self.y_on = True
-        elif c == 'L':
+        elif c == "L":
             self.top = True
             self.x_on = False
             self.y_on = True
-        elif c == 'M':
+        elif c == "M":
             self.x_on = True
             self.y_on = True
 
@@ -2099,45 +2324,45 @@ class LhystudioEmulator(Module):
             return
 
         # Execute Commands.
-        if c == 'N':
+        if c == "N":
             self.execute_distance()
-        elif c == 'F':
+        elif c == "F":
             self.channel("Finish")
             self.process = self.state_finish
             self.process(b, c)
             return
-        elif c == 'P':
+        elif c == "P":
             self.channel("Popping")
             self.process = self.state_pop
             return
-        elif c in 'CVG':
+        elif c in "CVG":
             self.channel("Speedcode")
-            self.speed_code = ''
+            self.speed_code = ""
             self.process = self.state_speed
             self.process(b, c)
             return
-        elif c == 'S':
+        elif c == "S":
             self.execute_distance()
             self.channel("Switch")
             self.process = self.state_switch
             self.process(b, c)
-        elif c == 'E':
+        elif c == "E":
             self.channel("Compact")
             self.process = self.state_execute
             self.process(b, c)
-        elif c == 'B':
+        elif c == "B":
             self.left = False
             self.x_on = True
             self.y_on = False
-        elif c == 'T':
+        elif c == "T":
             self.left = True
             self.x_on = True
             self.y_on = False
-        elif c == 'R':
+        elif c == "R":
             self.top = False
             self.x_on = False
             self.y_on = True
-        elif c == 'L':
+        elif c == "L":
             self.top = True
             self.x_on = False
             self.y_on = True
@@ -2151,8 +2376,11 @@ class EgvLoader:
     @staticmethod
     def load(kernel, pathname, **kwargs):
         import os
+
         basename = os.path.basename(pathname)
-        with open(pathname, 'rb') as f:
-            lhymicroemulator = kernel.get_context('/').open_as('module/LhystudiosEmulator', basename)
+        with open(pathname, "rb") as f:
+            lhymicroemulator = kernel.get_context("/").open_as(
+                "module/LhystudiosEmulator", basename
+            )
             lhymicroemulator.write_header(f.read())
             return [lhymicroemulator.cutcode], None, None, pathname, basename

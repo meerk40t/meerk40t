@@ -1,11 +1,14 @@
-
 import wx
 
 from ..kernel import Module, Job
-from . laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
-from . icons import icons8_camera_50, icons8_picture_in_picture_alternative_50, icons8_detective_50, \
-    icons8_connected_50
-from . zmatrix import ZMatrix
+from .laserrender import DRAW_MODE_FLIPXY, DRAW_MODE_INVERT
+from .icons import (
+    icons8_camera_50,
+    icons8_picture_in_picture_alternative_50,
+    icons8_detective_50,
+    icons8_connected_50,
+)
+from .zmatrix import ZMatrix
 from ..svgelements import Matrix, Point
 
 _ = wx.GetTranslation
@@ -15,8 +18,13 @@ CORNER_SIZE = 25
 
 class CameraInterface(wx.Frame, Module, Job):
     def __init__(self, context, path, parent, *args, **kwds):
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.camera = None
         if len(args) > 0 and args[0] >= 1:
@@ -26,13 +34,28 @@ class CameraInterface(wx.Frame, Module, Job):
         Job.__init__(self, job_name="Camera%d" % self.index)
         self.last_frame_index = -1
 
-        self.button_update = wx.BitmapButton(self, wx.ID_ANY, icons8_camera_50.GetBitmap())
-        self.button_export = wx.BitmapButton(self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap())
-        self.button_reconnect = wx.BitmapButton(self, wx.ID_ANY, icons8_connected_50.GetBitmap())
+        self.button_update = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_camera_50.GetBitmap()
+        )
+        self.button_export = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap()
+        )
+        self.button_reconnect = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_connected_50.GetBitmap()
+        )
         self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
         self.check_perspective = wx.CheckBox(self, wx.ID_ANY, _("Correct Perspective"))
-        self.slider_fps = wx.Slider(self, wx.ID_ANY, 24, 0, 60, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
-        self.button_detect = wx.BitmapButton(self, wx.ID_ANY, icons8_detective_50.GetBitmap())
+        self.slider_fps = wx.Slider(
+            self,
+            wx.ID_ANY,
+            24,
+            0,
+            60,
+            style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
+        )
+        self.button_detect = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_detective_50.GetBitmap()
+        )
         self.display_camera = wx.Panel(self, wx.ID_ANY)
 
         self.CameraInterface_menubar = wx.MenuBar()
@@ -44,7 +67,11 @@ class CameraInterface(wx.Frame, Module, Job):
         wxglade_tmp_menu.AppendSeparator()
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
-        self.Bind(wx.EVT_MENU, lambda e: self.context.active.open('window/CameraURI', self, self.index), id=item.GetId())
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context.active.open("window/CameraURI", self, self.index),
+            id=item.GetId(),
+        )
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set Camera 0"), "")
         self.Bind(wx.EVT_MENU, self.swap_camera(0), id=item.GetId())
@@ -99,32 +126,33 @@ class CameraInterface(wx.Frame, Module, Job):
 
         self.display_camera.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.display_camera.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
-        self.display_camera.Bind(wx.EVT_ENTER_WINDOW,
-                                 lambda event: self.display_camera.SetFocus())  # Focus follows mouse.
+        self.display_camera.Bind(
+            wx.EVT_ENTER_WINDOW, lambda event: self.display_camera.SetFocus()
+        )  # Focus follows mouse.
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
 
         self.on_size(None)
         self.Bind(wx.EVT_SIZE, self.on_size, self)
 
-        self.context.setting(bool, 'mouse_zoom_invert', False)
-        self.context.setting(int, 'draw_mode', 0)
+        self.context.setting(bool, "mouse_zoom_invert", False)
+        self.context.setting(int, "draw_mode", 0)
         self.context.setting(int, "bed_width", 310)  # Default Value
         self.context.setting(int, "bed_height", 210)  # Default Value
 
-        self.camera_setting = self.context.get_context('camera')
+        self.camera_setting = self.context.get_context("camera")
         self.setting = self.camera_setting.derive(str(self.index))
         try:
-            self.camera = self.setting.activate('modifier/Camera')
+            self.camera = self.setting.activate("modifier/Camera")
         except ValueError:
             pass
 
-        self.setting.setting(int, 'index', 0)
-        self.setting.setting(int, 'fps', 1)
-        self.setting.setting(bool, 'correction_fisheye', False)
-        self.setting.setting(bool, 'correction_perspective', False)
-        self.setting.setting(str, 'fisheye', '')
-        self.setting.setting(str, 'perspective', '')
-        self.setting.setting(str, 'uri', '0')
+        self.setting.setting(int, "index", 0)
+        self.setting.setting(int, "fps", 1)
+        self.setting.setting(bool, "correction_fisheye", False)
+        self.setting.setting(bool, "correction_perspective", False)
+        self.setting.setting(str, "fisheye", "")
+        self.setting.setting(str, "perspective", "")
+        self.setting.setting(str, "uri", "0")
         self.check_fisheye.SetValue(self.setting.correction_fisheye)
         self.check_perspective.SetValue(self.setting.correction_perspective)
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
@@ -137,7 +165,9 @@ class CameraInterface(wx.Frame, Module, Job):
 
     def swap_camera(self, uri):
         def swap(event=None):
-            self.context.console('camera%d --uri %s stop start\n' % (self.index, str(uri)))
+            self.context.console(
+                "camera%d --uri %s stop start\n" % (self.index, str(uri))
+            )
             self.frame_bitmap = None
 
         return swap
@@ -177,20 +207,24 @@ class CameraInterface(wx.Frame, Module, Job):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register('window/CameraURI', CameraURI)
+        kernel.register("window/CameraURI", CameraURI)
 
         @kernel.console_argument("index", type=int)
-        @kernel.console_command('camwin', help="camwin <index>: Open camera window at index")
+        @kernel.console_command(
+            "camwin", help="camwin <index>: Open camera window at index"
+        )
         def camera_win(command, channel, _, index=None, args=tuple(), **kwargs):
             if index is None:
                 raise SyntaxError
-            context = kernel.get_context('/')
+            context = kernel.get_context("/")
             try:
                 parent = context.gui
             except AttributeError:
                 parent = None
             try:
-                context.open_as('window/CameraInterface', 'camera%d' % index, parent, index)
+                context.open_as(
+                    "window/CameraInterface", "camera%d" % index, parent, index
+                )
             except KeyError:
                 pass
 
@@ -248,7 +282,9 @@ class CameraInterface(wx.Frame, Module, Job):
         bed_height = self.context.bed_height * 2
 
         self.image_height, self.image_width = frame.shape[:2]
-        self.frame_bitmap = wx.Bitmap.FromBuffer(self.image_width, self.image_height, frame)
+        self.frame_bitmap = wx.Bitmap.FromBuffer(
+            self.image_width, self.image_height, frame
+        )
 
         if self.setting.correction_perspective:
             if bed_width != self.image_width or bed_height != self.image_height:
@@ -265,7 +301,7 @@ class CameraInterface(wx.Frame, Module, Job):
         :return:
         """
         self.perspective = None
-        self.setting.perspective = ''
+        self.setting.perspective = ""
 
     def reset_fisheye(self, event):
         """
@@ -276,7 +312,7 @@ class CameraInterface(wx.Frame, Module, Job):
         """
         self.fisheye_k = None
         self.fisheye_d = None
-        self.setting.fisheye = ''
+        self.setting.fisheye = ""
 
     def on_erase(self, event):
         """
@@ -315,7 +351,11 @@ class CameraInterface(wx.Frame, Module, Job):
             font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
             if self.camera is None:
-                gc.DrawText(_("Camera backend failure...\nCannot attempt camera connection."), 0, 0)
+                gc.DrawText(
+                    _("Camera backend failure...\nCannot attempt camera connection."),
+                    0,
+                    0,
+                )
             else:
                 gc.DrawText(_("Fetching Frame..."), 0, 0)
             gc.Destroy()
@@ -335,14 +375,20 @@ class CameraInterface(wx.Frame, Module, Job):
         gc.DrawBitmap(self.frame_bitmap, 0, 0, self.image_width, self.image_height)
         if not self.setting.correction_perspective:
             if self.camera.perspective is None:
-                self.camera.perspective = [0, 0], \
-                                   [self.image_width, 0], \
-                                   [self.image_width, self.image_height], \
-                                   [0, self.image_height]
+                self.camera.perspective = (
+                    [0, 0],
+                    [self.image_width, 0],
+                    [self.image_width, self.image_height],
+                    [0, self.image_height],
+                )
             gc.SetPen(wx.BLACK_DASHED_PEN)
             gc.StrokeLines(self.camera.perspective)
-            gc.StrokeLine(self.camera.perspective[0][0], self.camera.perspective[0][1],
-                          self.camera.perspective[3][0], self.camera.perspective[3][1])
+            gc.StrokeLine(
+                self.camera.perspective[0][0],
+                self.camera.perspective[0][1],
+                self.camera.perspective[3][0],
+                self.camera.perspective[3][1],
+            )
             gc.SetPen(wx.BLUE_PEN)
             for p in self.camera.perspective:
                 half = CORNER_SIZE / 2
@@ -388,11 +434,13 @@ class CameraInterface(wx.Frame, Module, Job):
             return
         pos = event.GetPosition()
         window_position = pos.x, pos.y
-        scene_position = self.convert_window_to_scene([window_position[0], window_position[1]])
-        sdx = (scene_position[0] - self.previous_scene_position[0])
-        sdy = (scene_position[1] - self.previous_scene_position[1])
-        wdx = (window_position[0] - self.previous_window_position[0])
-        wdy = (window_position[1] - self.previous_window_position[1])
+        scene_position = self.convert_window_to_scene(
+            [window_position[0], window_position[1]]
+        )
+        sdx = scene_position[0] - self.previous_scene_position[0]
+        sdy = scene_position[1] - self.previous_scene_position[1]
+        wdx = window_position[0] - self.previous_window_position[0]
+        wdy = window_position[1] - self.previous_window_position[1]
         if self.corner_drag is None:
             self.scene_post_pan(wdx, wdy)
         else:
@@ -413,7 +461,7 @@ class CameraInterface(wx.Frame, Module, Job):
         """
         rotation = event.GetWheelRotation()
         mouse = event.GetPosition()
-        if self.context.get_context('/').mouse_zoom_invert:
+        if self.context.get_context("/").mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
             self.scene_post_scale(1.1, 1.1, mouse[0], mouse[1])
@@ -430,7 +478,9 @@ class CameraInterface(wx.Frame, Module, Job):
         :return:
         """
         self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+        self.previous_scene_position = self.convert_window_to_scene(
+            self.previous_window_position
+        )
         self.corner_drag = None
         if self.camera.perspective is not None:
             for i, p in enumerate(self.camera.perspective):
@@ -464,7 +514,9 @@ class CameraInterface(wx.Frame, Module, Job):
         """
         self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         self.previous_window_position = event.GetPosition()
-        self.previous_scene_position = self.convert_window_to_scene(self.previous_window_position)
+        self.previous_scene_position = self.convert_window_to_scene(
+            self.previous_window_position
+        )
 
     def on_mouse_middle_up(self, event):
         """
@@ -587,11 +639,20 @@ class CameraURI(wx.Frame, Module):
         if parent is None:
             wx.Frame.__init__(self, parent)
         else:
-            wx.Frame.__init__(self, parent, -1, "",
-                              style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+            wx.Frame.__init__(
+                self,
+                parent,
+                -1,
+                "",
+                style=wx.DEFAULT_FRAME_STYLE
+                | wx.FRAME_FLOAT_ON_PARENT
+                | wx.TAB_TRAVERSAL,
+            )
         Module.__init__(self, context, path)
         self.SetSize((437, 530))
-        self.list_uri = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
+        self.list_uri = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+        )
         self.button_add = wx.Button(self, wx.ID_ANY, "Add URI")
         self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
 
@@ -599,7 +660,9 @@ class CameraURI(wx.Frame, Module):
         self.__do_layout()
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_activated, self.list_uri)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_clicked, self.list_uri)
+        self.Bind(
+            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_clicked, self.list_uri
+        )
         self.Bind(wx.EVT_BUTTON, self.on_button_add_uri, self.button_add)
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
@@ -643,8 +706,10 @@ class CameraURI(wx.Frame, Module):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.camera_setting = self.context.get_context('camera')
-        self.camera_dict = self.camera_setting._kernel.load_persistent_string_dict(self.camera_setting._path)
+        self.camera_setting = self.context.get_context("camera")
+        self.camera_dict = self.camera_setting._kernel.load_persistent_string_dict(
+            self.camera_setting._path
+        )
         self.on_list_refresh()
 
     def finalize(self, *args, **kwargs):
@@ -670,13 +735,13 @@ class CameraURI(wx.Frame, Module):
             if isinstance(value, str):
                 setattr(self.camera_setting, key, value)
         self.camera_setting.flush()
-        self.context.signal('camera_uri_changed', True)
+        self.context.signal("camera_uri_changed", True)
 
     def on_list_refresh(self):
         self.list_uri.DeleteAllItems()
         for i, c in enumerate(self.camera_dict):
             camera_item = self.camera_dict[c]
-            if camera_item == '':
+            if camera_item == "":
                 continue
             m = self.list_uri.InsertItem(i, c)
             if m != -1:
@@ -692,7 +757,9 @@ class CameraURI(wx.Frame, Module):
         index = event.GetIndex()
         element = event.Text
         menu = wx.Menu()
-        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        convert = menu.Append(
+            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+        )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
@@ -720,13 +787,13 @@ class CameraURI(wx.Frame, Module):
 
     def on_button_add_uri(self, event):  # wxGlade: CameraURI.<event_handler>
         uri = self.text_uri.GetValue()
-        if uri is None or uri == '':
+        if uri is None or uri == "":
             return
         next_index = 1
-        while ('uri%d' % next_index) in self.camera_dict:
+        while ("uri%d" % next_index) in self.camera_dict:
             next_index += 1
-        self.camera_dict['uri%d' % next_index] = uri
-        self.text_uri.SetValue('')
+        self.camera_dict["uri%d" % next_index] = uri
+        self.text_uri.SetValue("")
         self.changed = True
         self.on_list_refresh()
 

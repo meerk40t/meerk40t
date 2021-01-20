@@ -1,8 +1,7 @@
-
 import wx
 
 from ..kernel import Module
-from . icons import icons8_comments_50
+from .icons import icons8_comments_50
 
 _ = wx.GetTranslation
 
@@ -10,17 +9,28 @@ _ = wx.GetTranslation
 class Notes(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Notes.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((730, 621))
-        self.check_auto_open_notes = wx.CheckBox(self, wx.ID_ANY, _("Automatically Open Notes"))
-        self.text_notes = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP)
+        self.check_auto_open_notes = wx.CheckBox(
+            self, wx.ID_ANY, _("Automatically Open Notes")
+        )
+        self.text_notes = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP
+        )
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes)
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes
+        )
         self.Bind(wx.EVT_TEXT, self.on_text_notes, self.text_notes)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_notes, self.text_notes)
         # end wxGlade
@@ -36,7 +46,7 @@ class Notes(wx.Frame, Module):
             event.Skip()  # Call destroy as regular.
 
     def initialize(self, *args, **kwargs):
-        self.context.setting(bool, 'auto_note', True)
+        self.context.setting(bool, "auto_note", True)
         self.context.close(self.name)
         self.check_auto_open_notes.SetValue(self.context.auto_note)
         if self.context.elements.note is not None:
@@ -54,7 +64,9 @@ class Notes(wx.Frame, Module):
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle("Notes")
-        self.check_auto_open_notes.SetToolTip(_("Automatically open notes if they exist when file is opened."))
+        self.check_auto_open_notes.SetToolTip(
+            _("Automatically open notes if they exist when file is opened.")
+        )
         # end wxGlade
 
     def __do_layout(self):

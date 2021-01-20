@@ -1,8 +1,28 @@
 from copy import copy
 
-from . cutcode import LaserSettings, CutCode, LineCut, QuadCut, CubicCut, ArcCut, RasterCut
-from ..svgelements import Color, SVGElement, Shape, SVGImage, Path, Polygon, Move, Close, Line, QuadraticBezier, \
-    CubicBezier, Arc
+from .cutcode import (
+    LaserSettings,
+    CutCode,
+    LineCut,
+    QuadCut,
+    CubicCut,
+    ArcCut,
+    RasterCut,
+)
+from ..svgelements import (
+    Color,
+    SVGElement,
+    Shape,
+    SVGImage,
+    Path,
+    Polygon,
+    Move,
+    Close,
+    Line,
+    QuadraticBezier,
+    CubicBezier,
+    Arc,
+)
 
 
 class LaserOperation(list):
@@ -16,26 +36,26 @@ class LaserOperation(list):
         list.__init__(self)
         self.operation = None
         try:
-            self.operation = kwargs['operation']
+            self.operation = kwargs["operation"]
         except KeyError:
             self.operation = "Unknown"
         self.output = True
         self.show = True
 
         self._status_value = "Queued"
-        self.color = Color('black')
+        self.color = Color("black")
         self.settings = LaserSettings(*args, **kwargs)
 
         try:
-            self.color = Color(kwargs['color'])
+            self.color = Color(kwargs["color"])
         except (ValueError, TypeError, KeyError):
             pass
         try:
-            self.output = bool(kwargs['output'])
+            self.output = bool(kwargs["output"])
         except (ValueError, TypeError, KeyError):
             pass
         try:
-            self.show = bool(kwargs['show'])
+            self.show = bool(kwargs["show"])
         except (ValueError, TypeError, KeyError):
             pass
         if len(args) == 1:
@@ -131,10 +151,14 @@ class LaserOperation(list):
                     try:
                         estimate += length / (39.3701 * self.settings.speed)
                     except ZeroDivisionError:
-                        estimate = float('inf')
+                        estimate = float("inf")
             hours, remainder = divmod(estimate, 3600)
             minutes, seconds = divmod(remainder, 60)
-            return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
+            return "%s:%s:%s" % (
+                int(hours),
+                str(int(minutes)).zfill(2),
+                str(int(seconds)).zfill(2),
+            )
         elif self.operation in ("Raster", "Image"):
             estimate = 0
             for e in self:
@@ -143,13 +167,19 @@ class LaserOperation(list):
                         step = e.raster_step
                     except AttributeError:
                         try:
-                            step = int(e.values['raster_step'])
+                            step = int(e.values["raster_step"])
                         except (KeyError, ValueError):
                             step = 1
-                    estimate += (e.image_width * e.image_height * step) / (39.3701 * self.settings.speed)
+                    estimate += (e.image_width * e.image_height * step) / (
+                        39.3701 * self.settings.speed
+                    )
             hours, remainder = divmod(estimate, 3600)
             minutes, seconds = divmod(remainder, 60)
-            return "%s:%s:%s" % (int(hours), str(int(minutes)).zfill(2), str(int(seconds)).zfill(2))
+            return "%s:%s:%s" % (
+                int(hours),
+                str(int(minutes)).zfill(2),
+                str(int(seconds)).zfill(2),
+            )
         return "Unknown"
 
     def as_blob(self):
@@ -159,7 +189,14 @@ class LaserOperation(list):
             for object_path in self:
                 if isinstance(object_path, SVGImage):
                     box = object_path.bbox()
-                    plot = Path(Polygon((box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])))
+                    plot = Path(
+                        Polygon(
+                            (box[0], box[1]),
+                            (box[0], box[3]),
+                            (box[2], box[3]),
+                            (box[2], box[1]),
+                        )
+                    )
                 else:
                     plot = abs(object_path)
                 for seg in plot:
@@ -170,9 +207,19 @@ class LaserOperation(list):
                     elif isinstance(seg, Line):
                         c.append(LineCut(seg.start, seg.end, settings=settings))
                     elif isinstance(seg, QuadraticBezier):
-                        c.append(QuadCut(seg.start, seg.control, seg.end, settings=settings))
+                        c.append(
+                            QuadCut(seg.start, seg.control, seg.end, settings=settings)
+                        )
                     elif isinstance(seg, CubicBezier):
-                        c.append(CubicCut(seg.start, seg.control1, seg.control2, seg.end, settings=settings))
+                        c.append(
+                            CubicCut(
+                                seg.start,
+                                seg.control1,
+                                seg.control2,
+                                seg.end,
+                                settings=settings,
+                            )
+                        )
                     elif isinstance(seg, Arc):
                         arc = ArcCut(seg, settings=settings)
                         c.append(arc)
@@ -192,7 +239,7 @@ class LaserOperation(list):
             for object_image in self:
                 settings = LaserSettings(self.settings)
                 try:
-                    settings.raster_step = int(object_image.values['raster_step'])
+                    settings.raster_step = int(object_image.values["raster_step"])
                 except KeyError:
                     settings.raster_step = 1
                 direction = settings.raster_direction
@@ -211,6 +258,7 @@ class LaserOperation(list):
 
 class CommandOperation:
     """CommandOperation is a basic command operation. It contains nothing except a single command to be executed."""
+
     def __init__(self, name, command, *args):
         self.name = name
         self.command = command

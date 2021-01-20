@@ -1,6 +1,6 @@
 import wx
 
-from . icons import icons8_route_50
+from .icons import icons8_route_50
 from ..kernel import Module
 
 _ = wx.GetTranslation
@@ -9,23 +9,36 @@ _ = wx.GetTranslation
 class JobSpooler(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Spooler.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((673, 456))
-        self.combo_device = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+        self.combo_device = wx.ComboBox(
+            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
+        )
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_total_copy = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.list_job_spool = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES)
+        self.text_time_total_copy = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.list_job_spool = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+        )
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool)
+        self.Bind(
+            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
+        )
         # end wxGlade
         self.dirty = False
         self.update_buffer_size = False
@@ -56,17 +69,27 @@ class JobSpooler(wx.Frame, Module):
         self.list_job_spool.AppendColumn("Status", format=wx.LIST_FORMAT_LEFT, width=73)
         self.list_job_spool.AppendColumn("Type", format=wx.LIST_FORMAT_LEFT, width=53)
         self.list_job_spool.AppendColumn("Speed", format=wx.LIST_FORMAT_LEFT, width=83)
-        self.list_job_spool.AppendColumn("Settings", format=wx.LIST_FORMAT_LEFT, width=223)
+        self.list_job_spool.AppendColumn(
+            "Settings", format=wx.LIST_FORMAT_LEFT, width=223
+        )
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Spooler.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_time = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_total_remaining = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Time Remaining"), wx.VERTICAL)
-        sizer_total_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL)
-        sizer_travel_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL)
-        sizer_laser_time = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL)
+        sizer_total_remaining = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Time Remaining"), wx.VERTICAL
+        )
+        sizer_total_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Total Time"), wx.VERTICAL
+        )
+        sizer_travel_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Travel Time"), wx.VERTICAL
+        )
+        sizer_laser_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Laser Time"), wx.VERTICAL
+        )
         sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
         sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
@@ -96,7 +119,9 @@ class JobSpooler(wx.Frame, Module):
         except IndexError:
             return
         menu = wx.Menu()
-        convert = menu.Append(wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL)
+        convert = menu.Append(
+            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+        )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
         convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
@@ -115,11 +140,11 @@ class JobSpooler(wx.Frame, Module):
         self.context.close(self.name)
         self.Show()
 
-        self.context.active.listen('spooler;queue', self.on_spooler_update)
+        self.context.active.listen("spooler;queue", self.on_spooler_update)
         self.refresh_spooler_list()
 
     def finalize(self, *args, **kwargs):
-        self.context.active.unlisten('spooler;queue', self.on_spooler_update)
+        self.context.active.unlisten("spooler;queue", self.on_spooler_update)
         try:
             self.Close()
         except RuntimeError:
@@ -134,6 +159,7 @@ class JobSpooler(wx.Frame, Module):
                 return e.__name__
             except AttributeError:
                 return str(e)
+
         try:
             self.list_job_spool.DeleteAllItems()
         except RuntimeError:

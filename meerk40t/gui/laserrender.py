@@ -3,9 +3,22 @@ from math import ceil, floor
 import wx
 from PIL import Image
 
-from ..svgelements import Color, Path, SVGImage, SVGText, Shape, Group, Move, Line, Close, QuadraticBezier, CubicBezier, \
-    Arc, Matrix
-from . zmatrix import ZMatrix
+from ..svgelements import (
+    Color,
+    Path,
+    SVGImage,
+    SVGText,
+    Shape,
+    Group,
+    Move,
+    Line,
+    Close,
+    QuadraticBezier,
+    CubicBezier,
+    Arc,
+    Matrix,
+)
+from .zmatrix import ZMatrix
 
 """
 Laser Render provides GUI relevant methods of displaying the given project.
@@ -99,22 +112,31 @@ class LaserRender:
             elif isinstance(e, Close):
                 p.CloseSubpath()
             elif isinstance(e, QuadraticBezier):
-                p.AddQuadCurveToPoint(e.control[0], e.control[1],
-                                      e.end[0], e.end[1])
+                p.AddQuadCurveToPoint(e.control[0], e.control[1], e.end[0], e.end[1])
             elif isinstance(e, CubicBezier):
-                p.AddCurveToPoint(e.control1[0], e.control1[1],
-                                  e.control2[0], e.control2[1],
-                                  e.end[0], e.end[1])
+                p.AddCurveToPoint(
+                    e.control1[0],
+                    e.control1[1],
+                    e.control2[0],
+                    e.control2[1],
+                    e.end[0],
+                    e.end[1],
+                )
             elif isinstance(e, Arc):
                 for curve in e.as_cubic_curves():
-                    p.AddCurveToPoint(curve.control1[0], curve.control1[1],
-                                      curve.control2[0], curve.control2[1],
-                                      curve.end[0], curve.end[1])
+                    p.AddCurveToPoint(
+                        curve.control1[0],
+                        curve.control1[1],
+                        curve.control2[0],
+                        curve.control2[1],
+                        curve.end[0],
+                        curve.end[1],
+                    )
         return p
 
     def set_pen(self, gc, stroke, width=1.0):
         c = stroke
-        if c is not None and c != 'none':
+        if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
             self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
@@ -125,7 +147,7 @@ class LaserRender:
 
     def set_brush(self, gc, fill):
         c = fill
-        if c is not None and c != 'none':
+        if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
             self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
             self.brush.SetColour(self.color)
@@ -138,7 +160,7 @@ class LaserRender:
             sw = element.stroke_width if element.stroke_width is not None else 1.0
         except AttributeError:
             sw = 1.0
-        limit = zoomscale**.5
+        limit = zoomscale ** 0.5
         if sw < limit:
             sw = limit
         self.set_pen(gc, element.stroke, width=sw)
@@ -155,7 +177,7 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
-        if not hasattr(element, 'cache') or element.cache is None:
+        if not hasattr(element, "cache") or element.cache is None:
             cache = self.make_path(gc, Path(element))
             element.cache = cache
         gc.PushState()
@@ -174,7 +196,7 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
-        if not hasattr(element, 'cache') or element.cache is None:
+        if not hasattr(element, "cache") or element.cache is None:
             cache = self.make_path(gc, element)
             element.cache = cache
         gc.PushState()
@@ -192,15 +214,14 @@ class LaserRender:
             matrix = element.transform
         except AttributeError:
             matrix = Matrix()
-        if hasattr(element, 'wxfont'):
+        if hasattr(element, "wxfont"):
             font = element.wxfont
         else:
             if element.font_size < 1:
                 if element.font_size > 0:
-                    element.transform.pre_scale(element.font_size,
-                                                element.font_size,
-                                                element.x,
-                                                element.y)
+                    element.transform.pre_scale(
+                        element.font_size, element.font_size, element.x, element.y
+                    )
                 element.font_size = 1  # No zero sized fonts.
             font = wx.Font(element.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             element.wxfont = font
@@ -210,7 +231,7 @@ class LaserRender:
         self.set_element_pen(gc, element, zoomscale=zoomscale)
         self.set_element_brush(gc, element)
 
-        if element.fill is None or element.fill == 'none':
+        if element.fill is None or element.fill == "none":
             gc.SetFont(font, wx.BLACK)
         else:
             gc.SetFont(font, wx.Colour(swizzlecolor(element.fill)))
@@ -220,12 +241,12 @@ class LaserRender:
         y = element.y
         if text is not None:
             element.width, element.height = gc.GetTextExtent(element.text)
-            if not hasattr(element, 'anchor') or element.anchor == 'start':
+            if not hasattr(element, "anchor") or element.anchor == "start":
                 y -= element.height
-            elif element.anchor == 'middle':
-                x -= (element.width / 2)
+            elif element.anchor == "middle":
+                x -= element.width / 2
                 y -= element.height
-            elif element.anchor == 'end':
+            elif element.anchor == "end":
                 x -= element.width
                 y -= element.height
             gc.DrawText(text, x, y)
@@ -258,7 +279,9 @@ class LaserRender:
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
 
-    def make_raster(self, elements, bounds, width=None, height=None, bitmap=False, step=1):
+    def make_raster(
+        self, elements, bounds, width=None, height=None, bitmap=False, step=1
+    ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
         the step size etc.
@@ -311,12 +334,14 @@ class LaserRender:
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
         gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(elements, (list,tuple)):
+        if not isinstance(elements, (list, tuple)):
             elements = [elements]
         self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
         img = bmp.ConvertToImage()
         buf = img.GetData()
-        image = Image.frombuffer("RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1)
+        image = Image.frombuffer(
+            "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+        )
         gc.Destroy()
         del dc
         if bitmap:
@@ -344,6 +369,6 @@ class LaserRender:
         else:
             pil_data = pil_data.copy()
         if pil_data.mode != "RGBA":
-            pil_data = pil_data.convert('RGBA')
+            pil_data = pil_data.convert("RGBA")
         pil_bytes = pil_data.tobytes()
         return wx.Bitmap.FromBufferRGBA(width, height, pil_bytes)

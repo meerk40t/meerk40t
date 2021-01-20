@@ -1,15 +1,24 @@
 import time
+
 try:
     from math import tau
 except ImportError:
     from math import pi
+
     tau = 2 * pi
 
 import wx
 
 from ..kernel import Module
-from . laserrender import DRAW_MODE_SELECTION, DRAW_MODE_RETICLE, DRAW_MODE_LASERPATH, DRAW_MODE_GUIDES, DRAW_MODE_GRID, DRAW_MODE_BACKGROUND
-from . zmatrix import ZMatrix
+from .laserrender import (
+    DRAW_MODE_SELECTION,
+    DRAW_MODE_RETICLE,
+    DRAW_MODE_LASERPATH,
+    DRAW_MODE_GUIDES,
+    DRAW_MODE_GRID,
+    DRAW_MODE_BACKGROUND,
+)
+from .zmatrix import ZMatrix
 from ..svgelements import Matrix, Point, Color
 
 MILS_IN_MM = 39.3701
@@ -134,18 +143,32 @@ class Scene(Module):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type=''):
+    def event(self, window_pos, event_type=""):
         if self.last_position is None:
             self.last_position = window_pos
         dx = window_pos[0] - self.last_position[0]
         dy = window_pos[1] - self.last_position[1]
-        window_pos = (window_pos[0], window_pos[1], self.last_position[0], self.last_position[1], dx, dy)
+        window_pos = (
+            window_pos[0],
+            window_pos[1],
+            self.last_position[0],
+            self.last_position[1],
+            dx,
+            dy,
+        )
         self.last_position = window_pos
         try:
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
-        if event_type in ('leftdown', 'middledown', 'rightdown', 'wheeldown', 'wheelup', 'hover'):
+        if event_type in (
+            "leftdown",
+            "middledown",
+            "rightdown",
+            "wheeldown",
+            "wheelup",
+            "hover",
+        ):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
@@ -161,13 +184,24 @@ class Scene(Module):
                 space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
                 sdx = space_cur[0] - space_last[0]
                 sdy = space_cur[1] - space_last[1]
-                space_pos = (space_cur[0], space_cur[1], space_last[0], space_last[1], sdx, sdy)
-            if i == 0 and event_type == 'hover' and previous_top_element is not current_widget:
+                space_pos = (
+                    space_cur[0],
+                    space_cur[1],
+                    space_last[0],
+                    space_last[1],
+                    sdx,
+                    sdy,
+                )
+            if (
+                i == 0
+                and event_type == "hover"
+                and previous_top_element is not current_widget
+            ):
                 if previous_top_element is not None:
-                    previous_top_element.event(window_pos, window_pos, 'hover_end')
-                current_widget.event(window_pos, space_pos, 'hover_start')
-            if event_type == 'leftup' and time.time() - self.time <= 0.15:
-                response = current_widget.event(window_pos, space_pos, 'leftclick')
+                    previous_top_element.event(window_pos, window_pos, "hover_end")
+                current_widget.event(window_pos, space_pos, "hover_start")
+            if event_type == "leftup" and time.time() - self.time <= 0.15:
+                response = current_widget.event(window_pos, space_pos, "leftclick")
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
             if response == RESPONSE_ABORT:
@@ -198,16 +232,16 @@ class Widget(list):
         self.properties = ORIENTATION_RELATIVE
         if all:
             # contains all points
-            self.left = -float('inf')
-            self.top = -float('inf')
-            self.right = float('inf')
-            self.bottom = float('inf')
+            self.left = -float("inf")
+            self.top = -float("inf")
+            self.right = float("inf")
+            self.bottom = float("inf")
         else:
             # contains no points
-            self.left = float('inf')
-            self.top = float('inf')
-            self.right = -float('inf')
-            self.bottom = -float('inf')
+            self.left = float("inf")
+            self.top = float("inf")
+            self.right = -float("inf")
+            self.bottom = -float("inf")
         if left is not None:
             self.left = left
         if right is not None:
@@ -218,10 +252,16 @@ class Widget(list):
             self.bottom = bottom
 
     def __str__(self):
-        return 'Widget(%f, %f, %f, %f)' % (self.left, self.top, self.right, self.bottom)
+        return "Widget(%f, %f, %f, %f)" % (self.left, self.top, self.right, self.bottom)
 
     def __repr__(self):
-        return '%s(%f, %f, %f, %f)' % (type(self).__name__, self.left, self.top, self.right, self.bottom)
+        return "%s(%f, %f, %f, %f)" % (
+            type(self).__name__,
+            self.left,
+            self.top,
+            self.right,
+            self.bottom,
+        )
 
     def hit(self):
         return HITCHAIN_DELEGATE
@@ -244,8 +284,7 @@ class Widget(list):
         if y is None:
             y = x.y
             x = x.x
-        return self.left <= x <= self.right and \
-               self.top <= y <= self.bottom
+        return self.left <= x <= self.right and self.top <= y <= self.bottom
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         return RESPONSE_CHAIN
@@ -282,13 +321,13 @@ class Widget(list):
     def translate(self, dx, dy):
         if dx == 0 and dy == 0:
             return
-        if dx == float('nan'):
+        if dx == float("nan"):
             return
-        if dy == float('nan'):
+        if dy == float("nan"):
             return
-        if abs(dx) == float('inf'):
+        if abs(dx) == float("inf"):
             return
-        if abs(dy) == float('inf'):
+        if abs(dy) == float("inf"):
             return
         self.translate_loop(dx, dy)
 
@@ -349,18 +388,26 @@ class Widget(list):
                 if dim == 0:  # Vertical
                     if self.height >= last.bottom - self.top + widget.height:
                         # add to line
-                        widget.translate(last.left - widget.left, last.bottom - widget.top)
+                        widget.translate(
+                            last.left - widget.left, last.bottom - widget.top
+                        )
                     else:
                         # line return
-                        widget.translate(last.right - widget.left + buffer, self.top - widget.top)
+                        widget.translate(
+                            last.right - widget.left + buffer, self.top - widget.top
+                        )
             else:
                 if dim == 0:  # Horizontal
                     if self.width >= last.right - self.left + widget.width:
                         # add to line
-                        widget.translate(last.right - widget.left + buffer, last.top - widget.top)
+                        widget.translate(
+                            last.right - widget.left + buffer, last.top - widget.top
+                        )
                     else:
                         # line return
-                        widget.translate(self.left - widget.left, last.bottom - widget.top + buffer)
+                        widget.translate(
+                            self.left - widget.left, last.bottom - widget.top + buffer
+                        )
         elif (properties & ORIENTATION_HORIZONTAL) != 0:
             widget.translate(last.right - widget.left + buffer, last.top - widget.top)
         elif (properties & ORIENTATION_VERTICAL) != 0:
@@ -498,10 +545,15 @@ class ElementsWidget(Widget):
         zoom_scale = 1 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
         if zoom_scale < 1:
             zoom_scale = 1
-        self.renderer.render(context.elements.elems(), gc, self.renderer.context.draw_mode, zoomscale=zoom_scale)
+        self.renderer.render(
+            context.elements.elems(),
+            gc,
+            self.renderer.context.draw_mode,
+            zoomscale=zoom_scale,
+        )
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type in ('leftclick'):
+        if event_type in ("leftclick"):
             elements = self.scene.context.elements
             elements.set_selected_by_position(space_pos)
             self.root.select_in_tree_by_selected()
@@ -532,28 +584,28 @@ class SelectionWidget(Widget):
             self.right = bounds[2]
             self.bottom = bounds[3]
             self.clear()
-            self.scene.context.signal('refresh_scene', 0)
+            self.scene.context.signal("refresh_scene", 0)
             return HITCHAIN_HIT
         else:
-            self.left = float('inf')
-            self.top = float('inf')
-            self.right = -float('inf')
-            self.bottom = -float('inf')
+            self.left = float("inf")
+            self.top = float("inf")
+            self.right = -float("inf")
+            self.bottom = -float("inf")
             self.clear()
-            self.scene.context.signal('refresh_scene', 0)
+            self.scene.context.signal("refresh_scene", 0)
             return HITCHAIN_DELEGATE
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.elements
-        if event_type == 'hover_start':
+        if event_type == "hover_start":
             self.cursor = wx.CURSOR_SIZING
             self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
-        if event_type == 'hover_end':
+        if event_type == "hover_end":
             self.cursor = wx.CURSOR_ARROW
             self.scene.context.gui.SetCursor(wx.Cursor(self.cursor))
             return RESPONSE_CHAIN
-        if event_type == 'hover':
+        if event_type == "hover":
             matrix = self.parent.matrix
             xin = space_pos[0] - self.left
             yin = space_pos[1] - self.top
@@ -602,30 +654,32 @@ class SelectionWidget(Widget):
         dx = space_pos[4]
         dy = space_pos[5]
 
-        if event_type == 'rightdown':
+        if event_type == "rightdown":
             elements.set_selected_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            self.root.create_menu(self.scene.context.gui, elements.first_element(emphasized=True))
+            self.root.create_menu(
+                self.scene.context.gui, elements.first_element(emphasized=True)
+            )
             return RESPONSE_CONSUME
-        if event_type == 'doubleclick':
+        if event_type == "doubleclick":
             elements.set_selected_by_position(space_pos)
             self.root.activate_selected_node()
             return RESPONSE_CONSUME
-        if event_type == 'leftdown':
+        if event_type == "leftdown":
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = True
             return RESPONSE_CONSUME
-        if event_type == 'middledown':
+        if event_type == "middledown":
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = False
             return RESPONSE_CONSUME
-        if event_type in ('middleup', 'leftup'):
+        if event_type in ("middleup", "leftup"):
             self.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
-        if event_type == 'move':
+        if event_type == "move":
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
             if self.save_width is None or self.save_height is None:
@@ -651,7 +705,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], position[1]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_se(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -673,7 +727,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], b[0] + self.save_width, b[1] + self.save_height])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_nw(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -695,7 +749,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_ne(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -717,7 +771,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalexy_sw(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -739,7 +793,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, scaley, self.right, self.top)
             obj.modified()
         # elements.update_bounds([b[2] - self.save_width, b[1], b[2], b[1] + self.save_height])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalex_e(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -755,7 +809,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, 1, self.left, self.top)
             obj.modified()
         # elements.update_bounds([b[0], b[1], position[0], b[3]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scalex_w(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -771,7 +825,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(scalex, 1, self.right, self.top)
             obj.modified()
         # elements.update_bounds([position[0], b[1], b[2], b[3]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scaley_s(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -788,7 +842,7 @@ class SelectionWidget(Widget):
             obj.modified()
 
         # elements.update_bounds([b[0], b[1], b[2], position[1]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_scaley_n(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -804,7 +858,7 @@ class SelectionWidget(Widget):
             obj.transform.post_scale(1, scaley, self.left, self.bottom)
             obj.modified()
         # elements.update_bounds([b[0], position[1], b[2], b[3]])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def tool_translate(self, position, dx, dy):
         elements = self.scene.context.elements
@@ -814,7 +868,7 @@ class SelectionWidget(Widget):
             obj.modified()
         self.translate(dx, dy)
         # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
 
     def process_draw(self, gc):
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
@@ -841,7 +895,12 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x0, y1, x0, y0)
             if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.context
-                conversion, name, marks, index = p.units_convert, p.units_name, p.units_marks, p.units_index
+                conversion, name, marks, index = (
+                    p.units_convert,
+                    p.units_name,
+                    p.units_marks,
+                    p.units_index,
+                )
                 gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
                 gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
@@ -863,11 +922,11 @@ class RectSelectWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.scene.context.elements
-        if event_type == 'leftdown':
+        if event_type == "leftdown":
             self.start_location = space_pos
             self.end_location = space_pos
             return RESPONSE_CONSUME
-        elif event_type == 'leftup':
+        elif event_type == "leftup":
             elements.validate_bounds()
             for obj in elements.elems():
                 try:
@@ -888,21 +947,28 @@ class RectSelectWidget(Widget):
                 xmax = q[2]
                 ymax = q[3]
                 if right_drag:
-                    if sx <= xmin <= ex and sy <= ymin <= ey and sx <= xmax <= ex and sy <= ymax <= ey:
+                    if (
+                        sx <= xmin <= ex
+                        and sy <= ymin <= ey
+                        and sx <= xmax <= ex
+                        and sy <= ymax <= ey
+                    ):
                         obj.emphasize()
                     else:
                         obj.unemphasize()
                 else:
-                    if (sx <= xmin <= ex or sx <= xmax <= ex) and (sy <= ymin <= ey or sy <= ymax <= ey):
+                    if (sx <= xmin <= ex or sx <= xmax <= ex) and (
+                        sy <= ymin <= ey or sy <= ymax <= ey
+                    ):
                         obj.emphasize()
                     else:
                         obj.unemphasize()
-            self.scene.context.signal('refresh_scene', 0)
+            self.scene.context.signal("refresh_scene", 0)
             self.start_location = None
             self.end_location = None
             return RESPONSE_CONSUME
-        elif event_type == 'move':
-            self.scene.context.signal('refresh_scene', 0)
+        elif event_type == "move":
+            self.scene.context.signal("refresh_scene", 0)
             self.end_location = space_pos
             return RESPONSE_CONSUME
         return RESPONSE_DROP
@@ -970,7 +1036,7 @@ class GridWidget(Widget):
         self.grid_line_pen.SetWidth(1)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type == 'hover':
+        if event_type == "hover":
             return RESPONSE_CHAIN
         self.grid = None
         return RESPONSE_CHAIN
@@ -984,7 +1050,7 @@ class GridWidget(Widget):
             wmils = 310 * MILS_IN_MM
             hmils = 210 * MILS_IN_MM
 
-        kernel_root = self.scene.context.get_context('/')
+        kernel_root = self.scene.context.get_context("/")
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
         step = convert * marks
@@ -1053,7 +1119,9 @@ class GuideWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
         p = self.scene.context
-        scaled_conversion = p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        scaled_conversion = (
+            p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
         if scaled_conversion == 0:
             return
         edge_gap = 5
@@ -1062,7 +1130,7 @@ class GuideWidget(Widget):
         points = min(wpoints, hpoints)
         # tweak the scaled points into being useful.
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        points = scaled_conversion * float('{:.1g}'.format(points / scaled_conversion))
+        points = scaled_conversion * float("{:.1g}".format(points / scaled_conversion))
         sx, sy = self.scene.convert_scene_to_window([0, 0])
         if points == 0:
             return
@@ -1083,7 +1151,7 @@ class GuideWidget(Widget):
                     mark_point = 0.0  # prevents -0
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((x, edge_gap))
-                    ends.append((x, length+edge_gap))
+                    ends.append((x, length + edge_gap))
 
                     starts.append((x, h - edge_gap))
                     ends.append((x, h - length - edge_gap))
@@ -1100,9 +1168,9 @@ class GuideWidget(Widget):
                     mark_point = 0.0  # prevents -0
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((edge_gap, y))
-                    ends.append((length+edge_gap, y))
+                    ends.append((length + edge_gap, y))
 
-                    starts.append((w-edge_gap, y))
+                    starts.append((w - edge_gap, y))
                     ends.append((w - length - edge_gap, y))
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
@@ -1129,22 +1197,24 @@ class SceneSpaceWidget(Widget):
         return HITCHAIN_DELEGATE_AND_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type == 'hover':
+        if event_type == "hover":
             return RESPONSE_CHAIN
-        if event_type == 'wheelup':
+        if event_type == "wheelup":
             self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
-            self.scene.context.signal('refresh_scene', 0)
+            self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
-        elif event_type == 'wheeldown':
-            self.scene_widget.matrix.post_scale(1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1])
-            self.scene.context.signal('refresh_scene', 0)
+        elif event_type == "wheeldown":
+            self.scene_widget.matrix.post_scale(
+                1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
+            )
+            self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
-        elif event_type == 'middledown':
+        elif event_type == "middledown":
             return RESPONSE_CONSUME
-        elif event_type == 'middleup':
+        elif event_type == "middleup":
             return RESPONSE_CONSUME
         self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-        self.scene.context.signal('refresh_scene', 0)
+        self.scene.context.signal("refresh_scene", 0)
         return RESPONSE_CONSUME
 
     def focus_position_scene(self, scene_point, scene_size):
@@ -1156,7 +1226,9 @@ class SceneSpaceWidget(Widget):
         self.scene_post_scale(scale_x, scale_y)
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
-    def focus_viewport_scene(self, new_scene_viewport, scene_size, buffer=0.0, lock=True):
+    def focus_viewport_scene(
+        self, new_scene_viewport, scene_size, buffer=0.0, lock=True
+    ):
         """
         Focus on the given viewport in the scene.
 
@@ -1188,8 +1260,8 @@ class SceneSpaceWidget(Widget):
         else:
             scale_y = window_height / float(bottom - top)
 
-        cx = ((right + left) / 2)
-        cy = ((top + bottom) / 2)
+        cx = (right + left) / 2
+        cy = (top + bottom) / 2
         self.scene_widget.matrix.reset()
         self.scene_widget.matrix.post_translate(-cx, -cy)
         if lock:

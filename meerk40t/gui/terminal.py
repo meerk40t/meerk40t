@@ -1,8 +1,7 @@
-
 import wx
 
 from ..kernel import Module
-from . icons import icons8_console_50
+from .icons import icons8_console_50
 
 _ = wx.GetTranslation
 
@@ -10,13 +9,26 @@ _ = wx.GetTranslation
 class Terminal(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Terminal.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((581, 410))
-        self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY)
-        self.text_main.SetFont(wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.NORMAL, wx.NORMAL, faceName="Monospace"))
-        self.text_entry = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB)
+        self.text_main = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
+        )
+        self.text_main.SetFont(
+            wx.Font(
+                10, wx.FONTFAMILY_TELETYPE, wx.NORMAL, wx.NORMAL, faceName="Monospace"
+            )
+        )
+        self.text_entry = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -30,7 +42,7 @@ class Terminal(wx.Frame, Module):
         self.command_position = 0
 
     def on_middle_click(self, event):
-        self.text_main.SetValue('')
+        self.text_main.SetValue("")
 
     def on_close(self, event):
         if self.state == 5:
@@ -43,11 +55,11 @@ class Terminal(wx.Frame, Module):
     def initialize(self, *args, **kwargs):
         self.context.close(self.name)
         self.Show()
-        self.context.channel('console').watch(self.update_text)
+        self.context.channel("console").watch(self.update_text)
         self.text_entry.SetFocus()
 
     def finalize(self, *args, **kwargs):
-        self.context.channel('console').unwatch(self.update_text)
+        self.context.channel("console").unwatch(self.update_text)
         try:
             self.Close()
         except RuntimeError:
@@ -55,9 +67,9 @@ class Terminal(wx.Frame, Module):
 
     def update_text(self, text):
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, str(text) + '\n')
+            wx.CallAfter(self.update_text_gui, str(text) + "\n")
         else:
-            self.update_text_gui(str(text) + '\n')
+            self.update_text_gui(str(text) + "\n")
 
     def update_text_gui(self, text):
         try:
@@ -70,7 +82,7 @@ class Terminal(wx.Frame, Module):
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
-        self.SetTitle(_('Terminal'))
+        self.SetTitle(_("Terminal"))
         self.text_entry.SetFocus()
         # end wxGlade
 
@@ -85,7 +97,7 @@ class Terminal(wx.Frame, Module):
 
     def on_key_down_main(self, event):
         key = event.GetKeyCode()
-        if key != wx.WXK_CONTROL and (key != ord('C') or not event.ControlDown()):
+        if key != wx.WXK_CONTROL and (key != ord("C") or not event.ControlDown()):
             if self.FindFocus() is not self.text_entry:
                 self.text_entry.SetFocus()
                 self.text_entry.AppendText(str(chr(key)).lower())
@@ -115,8 +127,8 @@ class Terminal(wx.Frame, Module):
 
     def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
-        self.context.console(command + '\n')
-        self.text_entry.SetValue('')
+        self.context.console(command + "\n")
+        self.text_entry.SetValue("")
         self.command_log.append(command)
         self.command_position = 0
         event.Skip()

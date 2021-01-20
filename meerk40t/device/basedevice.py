@@ -3,7 +3,7 @@ from threading import Lock
 
 from ..core.cutcode import LaserSettings
 from ..kernel import Modifier
-from . lasercommandconstants import *
+from .lasercommandconstants import *
 
 INTERPRETER_STATE_RAPID = 0
 INTERPRETER_STATE_FINISH = 1
@@ -19,7 +19,7 @@ PLOT_DIRECTION = 32
 
 
 def plugin(kernel):
-    kernel.register('modifier/Spooler', Spooler)
+    kernel.register("modifier/Spooler", Spooler)
 
 
 class Interpreter:
@@ -47,8 +47,8 @@ class Interpreter:
         self.properties = 0
         self.is_relative = False
         self.laser = False
-        context.setting(int, 'current_x', 0)
-        context.setting(int, 'current_y', 0)
+        context.setting(int, "current_x", 0)
+        context.setting(int, "current_y", 0)
         context.setting(bool, "opt_rapid_between", True)
         context.setting(int, "opt_jog_mode", 0)
         context.setting(int, "opt_jog_minimum", 127)
@@ -215,19 +215,20 @@ class Interpreter:
             elif command == COMMAND_WAIT_FINISH:
                 self.wait_finish()
             elif command == COMMAND_BEEP:
-                if os.name == 'nt':
+                if os.name == "nt":
                     try:
                         import winsound
+
                         for x in range(5):
                             winsound.Beep(2000, 100)
                     except:
                         pass
-                if os.name == 'posix':
+                if os.name == "posix":
                     # Mac or linux.
-                    print('\a')  # Beep.
+                    print("\a")  # Beep.
                     os.system('say "Ding"')
                 else:
-                    print('\a')  # Beep.
+                    print("\a")  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]
@@ -342,19 +343,19 @@ class Interpreter:
         if self.state == INTERPRETER_STATE_RAPID:
             return
         self.state = INTERPRETER_STATE_RAPID
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
 
     def ensure_finished_mode(self, *values):
         if self.state == INTERPRETER_STATE_FINISH:
             return
         self.state = INTERPRETER_STATE_FINISH
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
 
     def ensure_program_mode(self, *values):
         if self.state == INTERPRETER_STATE_PROGRAM:
             return
         self.state = INTERPRETER_STATE_PROGRAM
-        self.context.signal('interpreter;mode', self.state)
+        self.context.signal("interpreter;mode", self.state)
 
     def set_speed(self, speed=None):
         self.settings.speed = speed
@@ -421,7 +422,7 @@ class Interpreter:
         parts.append("speed=%f" % self.settings.speed)
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
-        self.context.signal('interpreter;status', status)
+        self.context.signal("interpreter;status", status)
 
     def set_prop(self, mask):
         self.properties |= mask
@@ -482,7 +483,7 @@ class Spooler(Modifier):
         queue_head = self._queue[0]
         del self._queue[0]
         self.queue_lock.release()
-        self.context.signal('spooler;queue', len(self._queue))
+        self.context.signal("spooler;queue", len(self._queue))
         return queue_head
 
     def job(self, *job):
@@ -502,7 +503,7 @@ class Spooler(Modifier):
         else:
             self._queue.append(job)
         self.queue_lock.release()
-        self.context.signal('spooler;queue', len(self._queue))
+        self.context.signal("spooler;queue", len(self._queue))
 
     def jobs(self, jobs):
         """
@@ -518,7 +519,7 @@ class Spooler(Modifier):
         else:
             self._queue.append(jobs)
         self.queue_lock.release()
-        self.context.signal('spooler;queue', len(self._queue))
+        self.context.signal("spooler;queue", len(self._queue))
 
     def job_if_idle(self, element):
         if len(self._queue) == 0:
@@ -531,11 +532,10 @@ class Spooler(Modifier):
         self.queue_lock.acquire(True)
         self._queue = []
         self.queue_lock.release()
-        self.context.signal('spooler;queue', len(self._queue))
+        self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element):
         self.queue_lock.acquire(True)
         self._queue.remove(element)
         self.queue_lock.release()
-        self.context.signal('spooler;queue', len(self._queue))
-
+        self.context.signal("spooler;queue", len(self._queue))

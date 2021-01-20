@@ -4,7 +4,7 @@ import time
 import functools
 from threading import Thread, Lock
 
-from . svgelements import Color
+from .svgelements import Color
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -96,13 +96,14 @@ class Module:
         shutdown or if this individual module is being closed on its own."""
         pass
 
+
 _cmd_parse = [
-    ('OPT', r'-([a-zA-Z]+)'),
-    ('LONG', r'--([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
-    ('PARAM', r'([^ ,\t\n\x09\x0A\x0C\x0D]+)'),
-    ('SKIP', r'[ ,\t\n\x09\x0A\x0C\x0D]+')
+    ("OPT", r"-([a-zA-Z]+)"),
+    ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
+    ("PARAM", r"([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
+    ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
 ]
-_CMD_RE = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _cmd_parse))
+_CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 
 class Context:
@@ -142,9 +143,9 @@ class Context:
         :return:
         """
         subpath = str(subpath)
-        if subpath.startswith('/'):
+        if subpath.startswith("/"):
             return subpath[1:]
-        if self._path is None or self._path == '/':
+        if self._path is None or self._path == "/":
             return subpath
         return "%s/%s" % (self._path, subpath)
 
@@ -202,8 +203,10 @@ class Context:
             return getattr(self, key)
 
         # Key is not located in the attr. Load the value.
-        if not key.startswith('_'):
-            load_value = self._kernel.read_persistent(setting_type, self.abs_path(key), default)
+        if not key.startswith("_"):
+            load_value = self._kernel.read_persistent(
+                setting_type, self.abs_path(key), default
+            )
         else:
             load_value = default
         setattr(self, key, load_value)
@@ -214,12 +217,13 @@ class Context:
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
         for attr in dir(self):
-            if attr.startswith('_'):
+            if attr.startswith("_"):
                 continue
             value = getattr(self, attr)
             if value is None:
                 continue
-            from  . svgelements import Color
+            from .svgelements import Color
+
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 
@@ -285,7 +289,7 @@ class Context:
         """
         for m in self._kernel.match(matchtext):
             if suffix:
-                yield list(m.split('/'))[-1]
+                yield list(m.split("/"))[-1]
             else:
                 yield m
 
@@ -346,7 +350,7 @@ class Context:
             raise ValueError
 
         instance = open_object(self, instance_path, *args, **kwargs)
-        channel = self._kernel.channel('open')
+        channel = self._kernel.channel("open")
         instance.initialize(channel=channel)
 
         self.opened[instance_path] = instance
@@ -430,14 +434,17 @@ class Context:
         :return:
         """
         for attr in dir(obj):
-            if attr.startswith('_'):
+            if attr.startswith("_"):
                 continue
             obj_value = getattr(obj, attr)
 
-            from . svgelements import Color
+            from .svgelements import Color
+
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
-            load_value = self._kernel.read_persistent(type(obj_value), self.abs_path(attr))
+            load_value = self._kernel.read_persistent(
+                type(obj_value), self.abs_path(attr)
+            )
             try:
                 setattr(obj, attr, load_value)
                 setattr(self, attr, load_value)
@@ -566,10 +573,14 @@ class Kernel:
         self.channels = {}
 
         self.commands = []
-        self.console_job = Job(job_name="kernel.console.ticks", process=self._console_job_tick, interval=0.05)
-        self._console_buffer = ''
+        self.console_job = Job(
+            job_name="kernel.console.ticks",
+            process=self._console_job_tick,
+            interval=0.05,
+        )
+        self._console_buffer = ""
         self.queue = []
-        self._console_channel = self.channel('console')
+        self._console_channel = self.channel("console")
         self.console_channel_file = None
 
         if config is not None:
@@ -619,7 +630,10 @@ class Kernel:
         import functools
         import datetime
         import types
-        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.datetime.now())
+
+        filename = "MeerK40t-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
+            date=datetime.datetime.now()
+        )
         debug_file = open(filename, "a")
         debug_file.write("\n\n\n")
 
@@ -631,29 +645,34 @@ class Kernel:
                 kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
-                debug_file.write(start + '\n')
+                debug_file.write(start + "\n")
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
-                finish = "    %s returned %s after %fms" % (func.__name__, value, t * 1000)
+                finish = "    %s returned %s after %fms" % (
+                    func.__name__,
+                    value,
+                    t * 1000,
+                )
                 print(finish)
-                debug_file.write(finish + '\n')
+                debug_file.write(finish + "\n")
                 debug_file.flush()
                 return value
 
             return wrapper_debug
 
-        context = self.get_context('/')
+        context = self.get_context("/")
         attach_list = [modules for modules, module_name in context.opened.items()]
         attach_list.append(self)
         for obj in attach_list:
             for attr in dir(obj):
-                if attr.startswith('_'):
+                if attr.startswith("_"):
                     continue
                 fn = getattr(obj, attr)
-                if not isinstance(fn, types.FunctionType) and \
-                        not isinstance(fn, types.MethodType):
+                if not isinstance(fn, types.FunctionType) and not isinstance(
+                    fn, types.MethodType
+                ):
                     continue
                 setattr(obj, attr, debug(fn, obj))
 
@@ -666,14 +685,16 @@ class Kernel:
         :return:
         """
         self.command_boot()
-        self.thread = self.threaded(self.run, 'Scheduler')
-        self.signal_job = self.add_job(run=self.delegate_messages, name='kernel.signals', interval=0.005)
+        self.thread = self.threaded(self.run, "Scheduler")
+        self.signal_job = self.add_job(
+            run=self.delegate_messages, name="kernel.signals", interval=0.005
+        )
         self.register("control/Debug Device", self._start_debugging)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]
             context.boot()
         self.set_active_device(None)
-        for device in self.derivable('/'):
+        for device in self.derivable("/"):
             try:
                 d = int(device)
             except ValueError:
@@ -699,7 +720,7 @@ class Kernel:
         """
         _ = self.translation
         if channel is None:
-            channel = self.get_context('/').channel('shutdown')
+            channel = self.get_context("/").channel("shutdown")
 
         self.state = STATE_END  # Terminates the Scheduler.
 
@@ -713,7 +734,10 @@ class Kernel:
                 continue
             for opened_name in list(context.opened):
                 obj = context.opened[opened_name]
-                channel(_("%s: Finalizing Module %s: %s") % (str(context), opened_name, str(obj)))
+                channel(
+                    _("%s: Finalizing Module %s: %s")
+                    % (str(context), opened_name, str(obj))
+                )
                 context.close(opened_name, channel=channel)
 
         # Detach Modifiers
@@ -724,12 +748,15 @@ class Kernel:
 
             for attached_name in list(context.attached):
                 obj = context.attached[attached_name]
-                channel(_("%s: Detaching %s: %s") % (str(context), attached_name, str(obj)))
+                channel(
+                    _("%s: Detaching %s: %s") % (str(context), attached_name, str(obj))
+                )
                 context.deactivate(attached_name, channel=channel)
 
         # Suspend Signals
         def signal(code, *message):
             channel(_("Suspended Signal: %s for %s" % (code, message)))
+
         self.signal = signal
         self.process_queue()  # Process last events.
 
@@ -755,7 +782,10 @@ class Kernel:
                 continue
 
             if not thread.is_alive:
-                channel(_("WARNING: Dead thread %s still registered to %s.") % (thread_name, str(thread)))
+                channel(
+                    _("WARNING: Dead thread %s still registered to %s.")
+                    % (thread_name, str(thread))
+                )
                 continue
 
             channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
@@ -776,11 +806,14 @@ class Kernel:
         for key, listener in self.listeners.items():
             if len(listener):
                 if channel is not None:
-                    channel(_("WARNING: Listener '%s' still registered to %s.") % (key, str(listener)))
+                    channel(
+                        _("WARNING: Listener '%s' still registered to %s.")
+                        % (key, str(listener))
+                    )
         self.last_message = {}
         self.listeners = {}
         self.state = STATE_TERMINATE
-        if self.thread != threading.current_thread(): # Join if not this thread.
+        if self.thread != threading.current_thread():  # Join if not this thread.
             self.thread.join()
         channel(_("Shutdown."))
 
@@ -801,8 +834,8 @@ class Kernel:
         if device_str in self.devices:
             return self.devices[device_str]
         boot_device = self.get_context(device_str)
-        boot_device.setting(str, 'device_name', device_name)
-        boot_device.setting(bool, 'autoboot', autoboot)
+        boot_device.setting(str, "device_name", device_name)
+        boot_device.setting(bool, "autoboot", autoboot)
         if boot_device.autoboot and boot_device.device_name is not None:
             boot_device.activate("device/%s" % boot_device.device_name)
             try:
@@ -844,8 +877,8 @@ class Kernel:
     @staticmethod
     def console_option(name, short=None, **kwargs):
         def decor(func):
-            kwargs['name'] = name
-            kwargs['short'] = short
+            kwargs["name"] = name
+            kwargs["short"] = short
             func.options.insert(0, kwargs)
             return func
 
@@ -854,7 +887,7 @@ class Kernel:
     @staticmethod
     def console_argument(name, **kwargs):
         def decor(func):
-            kwargs['name'] = name
+            kwargs["name"] = name
             func.arguments.insert(0, kwargs)
             return func
 
@@ -871,24 +904,30 @@ class Kernel:
             kind = match.lastgroup
             start = pos
             pos = match.end()
-            if kind == 'SKIP':
+            if kind == "SKIP":
                 continue
-            if kind == 'PARAM':
+            if kind == "PARAM":
                 value = match.group()
                 yield kind, value, start, pos
-            elif kind == 'LONG':
+            elif kind == "LONG":
                 value = match.group()
                 yield kind, value[2:], start, pos
-            elif kind == 'OPT':
+            elif kind == "OPT":
                 value = match.group()
                 for letter in value[1:]:
                     yield kind, letter, start, start + 1
                     start += 1
 
-    def console_command(self, path=None, regex=False, hidden=False, help=None, data_type=None, chain=False):
-
+    def console_command(
+        self,
+        path=None,
+        regex=False,
+        hidden=False,
+        help=None,
+        data_type=None,
+        chain=False,
+    ):
         def decorator(func):
-
             @functools.wraps(func)
             def inner(command, remainder, channel, **ik):
                 options = inner.options
@@ -900,51 +939,51 @@ class Kernel:
                 opt_index = 0
                 pos = 0
                 for kind, value, start, pos in Kernel._cmd_parser(remainder):
-                    if kind == 'PARAM':
+                    if kind == "PARAM":
                         if argument_index == len(stack):
                             pos = start
                             break  # Nothing else is expected.
                         k = stack[argument_index]
                         argument_index += 1
-                        if 'type' in k and value is not None:
+                        if "type" in k and value is not None:
                             try:
-                                value = k['type'](value)
+                                value = k["type"](value)
                             except ValueError:
                                 raise SyntaxError
-                        key = k['name']
+                        key = k["name"]
                         current = kwargs.get(key, True)
                         if current is True:
                             kwargs[key] = [value]
                         else:
                             kwargs[key].append(value)
                         opt_index = argument_index
-                    elif kind == 'LONG':
+                    elif kind == "LONG":
                         for pk in options:
-                            if value == pk['name']:
-                                if pk.get('action') != 'store_true':
-                                    count = pk.get('nargs', 1)
+                            if value == pk["name"]:
+                                if pk.get("action") != "store_true":
+                                    count = pk.get("nargs", 1)
                                     for i in range(count):
                                         stack.insert(opt_index, pk)
                                         opt_index += 1
                                 kwargs[value] = True
                                 break
                         opt_index = argument_index
-                    elif kind == 'OPT':
+                    elif kind == "OPT":
                         for pk in options:
-                            if value == pk['short']:
-                                if pk.get('action') != 'store_true':
+                            if value == pk["short"]:
+                                if pk.get("action") != "store_true":
                                     stack.insert(opt_index, pk)
                                     opt_index += 1
-                                kwargs[pk['name']] = True
+                                kwargs[pk["name"]] = True
                                 break
 
                 # Any unprocessed positional arguments get default values.
                 for i in range(argument_index, len(stack)):
                     k = stack[i]
-                    value = k.get('default')
-                    if 'type' in k and value is not None:
-                        value = k['type'](value)
-                    key = k['name']
+                    value = k.get("default")
+                    if "type" in k and value is not None:
+                        value = k["type"](value)
+                    key = k["name"]
                     current = kwargs.get(key)
                     if current is None:
                         kwargs[key] = [value]
@@ -954,7 +993,7 @@ class Kernel:
                 # Any singleton list arguments should become their only element.
                 for i in range(len(stack)):
                     k = stack[i]
-                    key = k['name']
+                    key = k["name"]
                     current = kwargs.get(key)
                     if isinstance(current, list):
                         if len(current) == 1:
@@ -962,10 +1001,10 @@ class Kernel:
 
                 remainder = remainder[pos:]
                 if len(remainder) > 0:
-                    kwargs['remainder'] = remainder
-                    kwargs['args'] = remainder.split()
+                    kwargs["remainder"] = remainder
+                    kwargs["args"] = remainder.split()
                 if not chain:
-                    remainder = ''
+                    remainder = ""
                 value = func(command, channel=channel, **ik, **kwargs)
                 return value, remainder
 
@@ -975,17 +1014,17 @@ class Kernel:
                 subpath = self._path
             except AttributeError:
                 kernel = self
-                subpath = ''
-            cmd = 'command'
+                subpath = ""
+            cmd = "command"
             cmd_path = "%s/%s" % (subpath, cmd)
-            while cmd_path.startswith('/'):
+            while cmd_path.startswith("/"):
                 cmd_path = cmd_path[1:]
             if isinstance(path, tuple):
                 for subitem in path:
-                    p = '%s/%s' % (cmd_path, subitem)
+                    p = "%s/%s" % (cmd_path, subitem)
                     kernel.register(p, inner)
             else:
-                p = '%s/%s' % (cmd_path, path)
+                p = "%s/%s" % (cmd_path, path)
                 kernel.register(p, inner)
             inner.long_help = func.__doc__
             inner.help = help
@@ -1030,7 +1069,7 @@ class Kernel:
         while more:
             yield value
             more, value, index = self._config.GetNextGroup(index)
-        self._config.SetPath('/')
+        self._config.SetPath("/")
 
     def read_item_persistent(self, key):
         """Directly read from persistent storage the value of an item."""
@@ -1109,7 +1148,7 @@ class Kernel:
         for k in list(self.keylist(path)):
             item = self.read_item_persistent(k)
             if suffix:
-                k = k.split('/')[-1]
+                k = k.split("/")[-1]
             dictionary[k] = item
         return dictionary
 
@@ -1127,7 +1166,7 @@ class Kernel:
         while more:
             yield "%s/%s" % (path, value)
             more, value, index = self._config.GetNextEntry(index)
-        self._config.SetPath('/')
+        self._config.SetPath("/")
 
     def set_config(self, config):
         """
@@ -1155,10 +1194,11 @@ class Kernel:
         if thread_name is None:
             thread_name = func.__name__
 
-        channel = self.channel('threads')
+        channel = self.channel("threads")
         _ = self.translation
         thread = Thread(name=thread_name)
-        channel(_("Thread: %s, Initialized" %thread_name))
+        channel(_("Thread: %s, Initialized" % thread_name))
+
         def run():
             self.threads[thread_name] = thread
             channel(_("Thread: %s, Set" % thread_name))
@@ -1169,6 +1209,7 @@ class Kernel:
             except:
                 channel(_("Thread: %s, Exception-End" % thread_name))
                 import sys
+
                 channel(sys.exc_info())
                 sys.excepthook(*sys.exc_info())
             channel(_("Thread: %s, Unset" % thread_name))
@@ -1188,7 +1229,7 @@ class Kernel:
         old_active = self.active_device
         self.active_device = active_device
         if self.active_device is not old_active:
-            self.signal('active', old_active, self.active_device)
+            self.signal("active", old_active, self.active_device)
 
     def get_text_thread_state(self, state):
         _ = self.translation
@@ -1256,6 +1297,7 @@ class Kernel:
                             job.process(job.args)
                     except:
                         import sys
+
                         sys.excepthook(*sys.exc_info())
                     job._last_run = time.time()
                     job._next_run += job._last_run + job.interval
@@ -1291,14 +1333,22 @@ class Kernel:
     def set_timer(self, command, name=None, times=1, interval=1.0):
         if name is None or len(name) == 0:
             i = 1
-            while 'timer%d' % i in self.jobs:
+            while "timer%d" % i in self.jobs:
                 i += 1
-            name = 'timer%d' % i
-        if not name.startswith('timer'):
-            name = 'timer' + name
+            name = "timer%d" % i
+        if not name.startswith("timer"):
+            name = "timer" + name
         if times == 0:
             times = None
-        self.schedule(ConsoleFunction(self.get_context('/'), command, interval=interval, times=times, job_name=name))
+        self.schedule(
+            ConsoleFunction(
+                self.get_context("/"),
+                command,
+                interval=interval,
+                times=times,
+                job_name=name,
+            )
+        )
 
     # Signal processing.
 
@@ -1334,7 +1384,11 @@ class Kernel:
         :param args: None
         :return:
         """
-        if len(self.message_queue) == 0 and len(self.adding_listeners) == 0 and len(self.removing_listeners) == 0:
+        if (
+            len(self.message_queue) == 0
+            and len(self.adding_listeners) == 0
+            and len(self.removing_listeners) == 0
+        ):
             return
         self._is_queue_processing = True
         add = None
@@ -1412,16 +1466,18 @@ class Kernel:
     def command_boot(self):
         _ = self.translation
 
-        @self.console_command(('help', '?'), hidden=True, help="help <help>")
+        @self.console_command(("help", "?"), hidden=True, help="help <help>")
         def help(command, channel, _, args=tuple(), **kwargs):
             if len(args) >= 1:
                 extended_help = args[0]
                 if self.active_device is not None:
-                    for command_name in self.match('%s/command/%s' % (self.active_device._path, extended_help)):
+                    for command_name in self.match(
+                        "%s/command/%s" % (self.active_device._path, extended_help)
+                    ):
                         command_func = self.registered[command_name]
                         channel(command_func.long_help)
                         return
-                    for command_name in self.match('command/%s' % extended_help):
+                    for command_name in self.match("command/%s" % extended_help):
                         command_func = self.registered[command_name]
                         channel(command_func.long_help)
                         return
@@ -1430,91 +1486,97 @@ class Kernel:
 
             if self.active_device is not None:
                 channel("--- %s Commands ---" % str(self.active_device))
-                for command_name in self.match('%s/command/.*' % (self.active_device._path)):
+                for command_name in self.match(
+                    "%s/command/.*" % (self.active_device._path)
+                ):
                     command_func = self.registered[command_name]
                     help = command_func.help
                     if command_func.hidden:
                         continue
                     if help is not None:
-                        channel('%s %s' % (command_name.split('/')[-1].ljust(15), help))
+                        channel("%s %s" % (command_name.split("/")[-1].ljust(15), help))
                     else:
-                        channel(command_name.split('/')[-1])
-                for command_re in self.match('%s/command_re/.*' % self.active_device._path):
+                        channel(command_name.split("/")[-1])
+                for command_re in self.match(
+                    "%s/command_re/.*" % self.active_device._path
+                ):
                     command_func = self.registered[command_re]
                     help = command_func.help
                     if command_func.hidden:
                         continue
-                    cmd_re = command_re.split('/')[-1]
+                    cmd_re = command_re.split("/")[-1]
                     if help is not None:
-                        channel('%s %s' % (cmd_re.ljust(15), help))
+                        channel("%s %s" % (cmd_re.ljust(15), help))
                     else:
                         channel(cmd_re)
             channel("--- Global Commands ---")
-            for command_name in self.match('command/.*'):
+            for command_name in self.match("command/.*"):
                 command_func = self.registered[command_name]
                 help = command_func.help
                 if command_func.hidden:
                     continue
                 if help is not None:
-                    channel('%s %s' % (command_name.split('/')[-1].ljust(15), help))
+                    channel("%s %s" % (command_name.split("/")[-1].ljust(15), help))
                 else:
-                    channel(command_name.split('/')[-1])
-            for command_re in self.match('command_re/.*'):
+                    channel(command_name.split("/")[-1])
+            for command_re in self.match("command_re/.*"):
                 command_func = self.registered[command_re]
                 help = command_func.help
                 if command_func.hidden:
                     continue
-                cmd_re = command_re.split('/')[-1]
+                cmd_re = command_re.split("/")[-1]
                 if help is not None:
-                    channel('%s %s' % (cmd_re.ljust(15), help))
+                    channel("%s %s" % (cmd_re.ljust(15), help))
                 else:
                     channel(cmd_re)
             return
 
-        @self.console_command('loop', help="loop <command>")
+        @self.console_command("loop", help="loop <command>")
         def loop(command, channel, _, args=tuple(), **kwargs):
-            self._tick_command(' '.join(args))
+            self._tick_command(" ".join(args))
 
-        @self.console_command('end', help="end <commmand>")
+        @self.console_command("end", help="end <commmand>")
         def end(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 self.commands.clear()
                 self.schedule(self.console_job)
             else:
-                self._untick_command(' '.join(args))
+                self._untick_command(" ".join(args))
 
-        @self.console_command('timer.*', regex=True, help="timer<?> <duration> <iterations>")
+        @self.console_command(
+            "timer.*", regex=True, help="timer<?> <duration> <iterations>"
+        )
         def timer(command, channel, _, args=tuple(), **kwargs):
             name = command[5:]
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Timers:'))
+                channel(_("----------"))
+                channel(_("Timers:"))
                 i = 0
                 for job_name in self.jobs:
-                    if not job_name.startswith('timer'):
+                    if not job_name.startswith("timer"):
                         continue
                     i += 1
                     job = self.jobs[job_name]
                     parts = list()
-                    parts.append('%d:' % i)
+                    parts.append("%d:" % i)
                     parts.append(job_name)
                     parts.append('"%s"' % str(job))
                     if job.times is None:
-                        parts.append(_('forever,'))
+                        parts.append(_("forever,"))
                     else:
-                        parts.append(_('%d times,') % job.times)
+                        parts.append(_("%d times,") % job.times)
                     if job.interval is None:
-                        parts.append(_('never'))
+                        parts.append(_("never"))
                     else:
-                        parts.append(_('each %f seconds') % job.interval)
-                    channel(' '.join(parts))
-                channel(_('----------'))
+                        parts.append(_("each %f seconds") % job.interval)
+                    channel(" ".join(parts))
+                channel(_("----------"))
                 return
             if len(args) == 1:
-                if args[0] == 'off':
+                if args[0] == "off":
                     if name == "*":
                         for job_name in list(self.jobs):
-                            if not job_name.startswith('timer'):
+                            if not job_name.startswith("timer"):
                                 continue
                             try:
                                 job = self.jobs[job_name]
@@ -1536,30 +1598,35 @@ class Kernel:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
                 return
             try:
-                timer_command = ' '.join(args[2:])
-                self.set_timer(timer_command + '\n', name=name, times=int(args[0]), interval=float(args[1]))
+                timer_command = " ".join(args[2:])
+                self.set_timer(
+                    timer_command + "\n",
+                    name=name,
+                    times=int(args[0]),
+                    interval=float(args[1]),
+                )
             except ValueError:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
             return
 
-        @self.console_command('register', help="register")
+        @self.console_command("register", help="register")
         def register(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Objects Registered:'))
-                for i, name in enumerate(self.match('.*')):
+                channel(_("----------"))
+                channel(_("Objects Registered:"))
+                for i, name in enumerate(self.match(".*")):
                     obj = self.registered[name]
-                    channel(_('%d: %s type of %s') % (i + 1, name, str(obj)))
-                channel(_('----------'))
+                    channel(_("%d: %s type of %s") % (i + 1, name, str(obj)))
+                channel(_("----------"))
             if len(args) == 1:
-                channel(_('----------'))
-                channel('Objects Registered:')
-                for i, name in enumerate(self.match('%s.*' % args[0])):
+                channel(_("----------"))
+                channel("Objects Registered:")
+                for i, name in enumerate(self.match("%s.*" % args[0])):
                     obj = self.registered[name]
-                    channel('%d: %s type of %s' % (i + 1, name, str(obj)))
-                channel(_('----------'))
+                    channel("%d: %s type of %s" % (i + 1, name, str(obj)))
+                channel(_("----------"))
 
-        @self.console_command('context', help="context")
+        @self.console_command("context", help="context")
         def context(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
@@ -1569,7 +1636,7 @@ class Kernel:
                     channel(context_name)
             return
 
-        @self.console_command('set', help="set [<key> <value>]")
+        @self.console_command("set", help="set [<key> <value>]")
         def set(command, channel, _, args=tuple(), **kwargs):
             last_path = self.last_path
             if last_path is None:
@@ -1577,7 +1644,9 @@ class Kernel:
             if len(args) == 0:
                 for attr in dir(last_path):
                     v = getattr(last_path, attr)
-                    if attr.startswith('_') or not isinstance(v, (int, float, str, bool)):
+                    if attr.startswith("_") or not isinstance(
+                        v, (int, float, str, bool)
+                    ):
                         continue
                     channel('"%s" := %s' % (attr, str(v)))
                 return
@@ -1588,7 +1657,7 @@ class Kernel:
                     if hasattr(last_path, attr):
                         v = getattr(last_path, attr)
                         if isinstance(v, bool):
-                            if value == 'False' or value == 'false' or value == 0:
+                            if value == "False" or value == "false" or value == 0:
                                 setattr(last_path, attr, False)
                             else:
                                 setattr(last_path, attr, True)
@@ -1599,53 +1668,55 @@ class Kernel:
                         elif isinstance(v, str):
                             setattr(last_path, attr, str(value))
                 except RuntimeError:
-                    channel(_('Attempt failed. Produced a runtime error.'))
+                    channel(_("Attempt failed. Produced a runtime error."))
                 except ValueError:
-                    channel(_('Attempt failed. Produced a value error.'))
+                    channel(_("Attempt failed. Produced a value error."))
             return
 
-        @self.console_command('control', help="control [<executive>]")
+        @self.console_command("control", help="control [<executive>]")
         def control(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
-                for control_name in active_device.match('control'):
+                for control_name in active_device.match("control"):
                     channel(control_name)
-                for control_name in active_device.match('\d+/control'):
+                for control_name in active_device.match("\d+/control"):
                     channel(control_name)
             else:
-                control_name = ' '.join(args)
-                controls = list(active_device.match('%s/control/.*' % active_device._path, True))
+                control_name = " ".join(args)
+                controls = list(
+                    active_device.match("%s/control/.*" % active_device._path, True)
+                )
                 if active_device is not None and control_name in controls:
                     active_device.execute(control_name)
                     channel(_("Executed '%s'") % control_name)
-                elif control_name in list(active_device.match('control/.*', True)):
-                    self.get_context('/').execute(control_name)
+                elif control_name in list(active_device.match("control/.*", True)):
+                    self.get_context("/").execute(control_name)
                     channel(_("Executed '%s'") % control_name)
                 else:
                     channel(_("Control '%s' not found.") % control_name)
             return
 
-        @self.console_command('module', help="module [(open|close) <module_name>]")
+        @self.console_command("module", help="module [(open|close) <module_name>]")
         def module(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Modules Registered:'))
-                for i, name in enumerate(self.match('module')):
-                    channel('%d: %s' % (i + 1, name))
-                channel(_('----------'))
+                channel(_("----------"))
+                channel(_("Modules Registered:"))
+                for i, name in enumerate(self.match("module")):
+                    channel("%d: %s" % (i + 1, name))
+                channel(_("----------"))
                 for i, name in enumerate(self.contexts):
                     context = self.contexts[name]
                     if len(context.opened) == 0:
                         continue
-                    channel(_('Loaded Modules in Context %s:') % str(context._path))
+                    channel(_("Loaded Modules in Context %s:") % str(context._path))
                     for i, name in enumerate(context.opened):
                         module = context.opened[name]
-                        channel(_('%d: %s as type of %s') % (i + 1, name, type(module)))
-                    channel(_('----------'))
+                        channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
+                    channel(_("----------"))
             else:
                 value = args[0]
-                if value == 'open':
+                if value == "open":
                     index = args[1]
                     name = None
                     if len(args) >= 3:
@@ -1657,7 +1728,7 @@ class Kernel:
                             active_device.open(index)
                     else:
                         channel(_("Module '%s' not found.") % index)
-                elif value == 'close':
+                elif value == "close":
                     index = args[1]
                     if index in active_device.opened:
                         active_device.close(index)
@@ -1665,34 +1736,34 @@ class Kernel:
                         channel(_("Module '%s' not found.") % index)
             return
 
-        @self.console_command('modifier', help="modifier [(open|close) <module_name>]")
+        @self.console_command("modifier", help="modifier [(open|close) <module_name>]")
         def modifier(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Modifiers Registered:'))
-                for i, name in enumerate(self.match('modifier')):
-                    channel('%d: %s' % (i + 1, name))
-                channel(_('----------'))
-                channel(_('Loaded Modifiers in Context %s:') % str(active_device._path))
+                channel(_("----------"))
+                channel(_("Modifiers Registered:"))
+                for i, name in enumerate(self.match("modifier")):
+                    channel("%d: %s" % (i + 1, name))
+                channel(_("----------"))
+                channel(_("Loaded Modifiers in Context %s:") % str(active_device._path))
                 for i, name in enumerate(active_device.attached):
                     modifier = active_device.attached[name]
-                    channel(_('%d: %s as type of %s') % (i + 1, name, type(modifier)))
-                channel(_('----------'))
-                channel(_('Loaded Modifiers in Device %s:') % str(active_device._path))
+                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
+                channel(_("----------"))
+                channel(_("Loaded Modifiers in Device %s:") % str(active_device._path))
                 for i, name in enumerate(active_device.attached):
                     modifier = active_device.attached[name]
-                    channel(_('%d: %s as type of %s') % (i + 1, name, type(modifier)))
-                channel(_('----------'))
+                    channel(_("%d: %s as type of %s") % (i + 1, name, type(modifier)))
+                channel(_("----------"))
             else:
                 value = args[0]
-                if value == 'open':
+                if value == "open":
                     index = args[1]
                     if index in self.registered:
                         active_device.activate(index)
                     else:
                         channel(_("Modifier '%s' not found.") % index)
-                elif value == 'close':
+                elif value == "close":
                     index = args[1]
                     if index in active_device.attached:
                         active_device.deactivate(index)
@@ -1700,76 +1771,83 @@ class Kernel:
                         channel(_("Modifier '%s' not found.") % index)
             return
 
-        @self.console_command('schedule', help="schedule")
+        @self.console_command("schedule", help="schedule")
         def schedule(command, channel, _, args=tuple(), **kwargs):
-            channel(_('----------'))
-            channel(_('Scheduled Processes:'))
+            channel(_("----------"))
+            channel(_("Scheduled Processes:"))
             for i, job_name in enumerate(self.jobs):
                 job = self.jobs[job_name]
                 parts = list()
-                parts.append('%d:' % (i + 1))
+                parts.append("%d:" % (i + 1))
                 parts.append(str(job))
                 if job.times is None:
-                    parts.append(_('forever,'))
+                    parts.append(_("forever,"))
                 else:
-                    parts.append(_('%d times,') % job.times)
+                    parts.append(_("%d times,") % job.times)
                 if job.interval is None:
-                    parts.append(_('never'))
+                    parts.append(_("never"))
                 else:
-                    parts.append(_('each %f seconds') % job.interval)
-                channel(' '.join(parts))
-            channel(_('----------'))
+                    parts.append(_("each %f seconds") % job.interval)
+                channel(" ".join(parts))
+            channel(_("----------"))
             return
 
-        @self.console_command('channel', help="channel [(open|close|save) <channel_name>]")
+        @self.console_command(
+            "channel", help="channel [(open|close|save) <channel_name>]"
+        )
         def channel(command, channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Channels Active:'))
+                channel(_("----------"))
+                channel(_("Channels Active:"))
                 for i, name in enumerate(self.channels):
                     chan = self.channels[name]
                     if self._console_channel in chan.watchers:
-                        is_watched = '* '
+                        is_watched = "* "
                     else:
-                        is_watched = ''
-                    channel('%s%d: %s' % (is_watched, i + 1, name))
+                        is_watched = ""
+                    channel("%s%d: %s" % (is_watched, i + 1, name))
             else:
                 if len(args) < 2:
                     raise SyntaxError
                 value = args[0]
                 chan = args[1]
-                if value == 'open':
-                    if chan == 'console':
-                        channel(_('Infinite Loop Error.'))
+                if value == "open":
+                    if chan == "console":
+                        channel(_("Infinite Loop Error."))
                     else:
                         self.channel(chan).watch(self._console_channel)
-                        channel(_('Watching Channel: %s') % chan)
-                elif value == 'close':
+                        channel(_("Watching Channel: %s") % chan)
+                elif value == "close":
                     try:
                         self.channel(chan).unwatch(self._console_channel)
-                        channel(_('No Longer Watching Channel: %s') % chan)
+                        channel(_("No Longer Watching Channel: %s") % chan)
                     except KeyError:
-                        channel(_('Channel %s is not opened.') % chan)
-                elif value == 'save':
+                        channel(_("Channel %s is not opened.") % chan)
+                elif value == "save":
                     from datetime import datetime
+
                     if self.console_channel_file is None:
-                        filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
-                        channel(_('Opening file: %s') % filename)
+                        filename = (
+                            "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
+                                date=datetime.now()
+                            )
+                        )
+                        channel(_("Opening file: %s") % filename)
                         self.console_channel_file = open(filename, "a")
-                    channel(_('Recording Channel: %s') % chan)
+                    channel(_("Recording Channel: %s") % chan)
                     self.channel(chan).watch(self._console_file_write)
             return
 
-        @self.console_command('device', help="device [<value>]")
+        @self.console_command("device", help="device [<value>]")
         def device(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
             if len(args) == 0:
-                channel(_('----------'))
-                channel(_('Backends permitted:'))
-                for i, name in enumerate(self.match('device/')):
-                    channel('%d: %s' % (i + 1, name))
-                channel(_('----------'))
-                channel(_('Existing Device:'))
+                channel(_("----------"))
+                channel(_("Backends permitted:"))
+                for i, name in enumerate(self.match("device/")):
+                    channel("%d: %s" % (i + 1, name))
+                channel(_("----------"))
+                channel(_("Existing Device:"))
 
                 for device in list(active_device.derivable()):
                     try:
@@ -1778,15 +1856,18 @@ class Kernel:
                         continue
                     try:
                         settings = active_device.derive(device)
-                        device_name = settings.setting(str, 'device_name', 'Lhystudios')
-                        autoboot = settings.setting(bool, 'autoboot', True)
-                        channel(_('Device %d. "%s" -- Boots: %s') % (d, device_name, autoboot))
+                        device_name = settings.setting(str, "device_name", "Lhystudios")
+                        autoboot = settings.setting(bool, "autoboot", True)
+                        channel(
+                            _('Device %d. "%s" -- Boots: %s')
+                            % (d, device_name, autoboot)
+                        )
                     except ValueError:
                         break
                     except AttributeError:
                         break
-                channel(_('----------'))
-                channel(_('Devices Instances:'))
+                channel(_("----------"))
+                channel(_("Devices Instances:"))
                 try:
                     device_name = active_device.device_name
                 except AttributeError:
@@ -1807,8 +1888,8 @@ class Kernel:
                         device_location = device.device_location
                     except AttributeError:
                         device_location = "Unknown"
-                    channel(_('%d: %s on %s') % (i + 1, device_name, device_location))
-                channel(_('----------'))
+                    channel(_("%d: %s on %s") % (i + 1, device_name, device_location))
+                channel(_("----------"))
             else:
                 value = args[0]
                 try:
@@ -1819,21 +1900,23 @@ class Kernel:
                     if i + 1 == value:
                         active_device = self.devices[name]
                         self.active_device = active_device
-                        active_device.setting(str, 'device_location', 'Unknown')
-                        channel(_('Device set: %s on %s') %
-                              (active_device.device_name, active_device.device_location))
+                        active_device.setting(str, "device_location", "Unknown")
+                        channel(
+                            _("Device set: %s on %s")
+                            % (active_device.device_name, active_device.device_location)
+                        )
                         break
             return
 
-        @self.console_command('flush', help="flush")
+        @self.console_command("flush", help="flush")
         def flush(command, channel, _, args=tuple(), **kwargs):
             last_path = self.last_path
             if last_path is None:
                 last_path = self.active_device
             last_path.flush()
-            channel(_('Persistent settings force saved.'))
+            channel(_("Persistent settings force saved."))
 
-        @self.console_command('shutdown', help="shutdown")
+        @self.console_command("shutdown", help="shutdown")
         def shutdown(command, channel, _, args=tuple(), **kwargs):
             if self.state not in (STATE_END, STATE_TERMINATE):
                 self.shutdown()
@@ -1852,10 +1935,10 @@ class Kernel:
         if isinstance(data, bytes):
             data = data.decode()
         self._console_buffer += data
-        while '\n' in self._console_buffer:
-            pos = self._console_buffer.find('\n')
-            command = self._console_buffer[0:pos].strip('\r')
-            self._console_buffer = self._console_buffer[pos + 1:]
+        while "\n" in self._console_buffer:
+            pos = self._console_buffer.find("\n")
+            command = self._console_buffer[0:pos].strip("\r")
+            self._console_buffer = self._console_buffer[pos + 1 :]
             self._console_parse(command, channel=self._console_channel)
 
     def _console_job_tick(self):
@@ -1874,13 +1957,17 @@ class Kernel:
             self.unschedule(self.console_job)
 
     def _console_queue(self, command):
-        self.queue = [c for c in self.queue if c != command]  # Only allow 1 copy of any command.
+        self.queue = [
+            c for c in self.queue if c != command
+        ]  # Only allow 1 copy of any command.
         self.queue.append(command)
         if self.console_job not in self.jobs:
             self.add_job(self.console_job)
 
     def _tick_command(self, command):
-        self.commands = [c for c in self.commands if c != command]  # Only allow 1 copy of any command.
+        self.commands = [
+            c for c in self.commands if c != command
+        ]  # Only allow 1 copy of any command.
         self.commands.append(command)
         if self.console_job not in self.jobs:
             self.schedule(self.console_job)
@@ -1892,7 +1979,7 @@ class Kernel:
 
     def _console_file_write(self, v):
         if self.console_channel_file is not None:
-            self.console_channel_file.write('%s\r\n' % v)
+            self.console_channel_file.write("%s\r\n" % v)
             self.console_channel_file.flush()
 
     def _console_interface(self, command):
@@ -1903,7 +1990,7 @@ class Kernel:
         Console parse takes single line console commands.
         """
         # Silence Echo.
-        if text.startswith('.'):
+        if text.startswith("."):
             text = text[1:]
         else:
             channel(text)
@@ -1912,32 +1999,32 @@ class Kernel:
 
         while len(text) > 0:
             # Divide command from remainder.
-            pos = text.find(' ')
+            pos = text.find(" ")
             if pos != -1:
-                remainder = text[pos + 1:]
+                remainder = text[pos + 1 :]
                 command = text[0:pos]
             else:
-                remainder = ''
+                remainder = ""
                 command = text
 
             # Set context based on command path. # TODO: This might need deprecating.
             _ = self.translation
             command = command.lower()
-            if '/' in command:
-                path = command.split('/')
-                p = '/'.join(path[:-1])
+            if "/" in command:
+                path = command.split("/")
+                p = "/".join(path[:-1])
                 if len(p) == 0:
-                    p = '/'
+                    p = "/"
                 self.last_path = self.get_context(p)
                 command = path[-1]
 
             # Process all commands in the active_context
             # paths = ['command/%s' % command.replace(r'+', r'\+')]
-            paths = ['command/.*']
+            paths = ["command/.*"]
             if self.active_device is not None:
-                paths.insert(0, '%s/command/.*' % self.active_device._path)
+                paths.insert(0, "%s/command/.*" % self.active_device._path)
             if self.last_path is not None and self.last_path is not self.active_device:
-                paths.insert(0, '%s/command/.*' % self.last_path._path)
+                paths.insert(0, "%s/command/.*" % self.last_path._path)
 
             found = False
             for match_text in paths:
@@ -1945,7 +2032,7 @@ class Kernel:
                 for command_name in self.match(match_text):
 
                     command_funct = self.registered[command_name]
-                    cmd_re = command_name.split('/')[-1]
+                    cmd_re = command_name.split("/")[-1]
                     if type(data) != command_funct.data_type:
                         continue  # We much match the input type.
                     if command_funct.regex:
@@ -1956,7 +2043,9 @@ class Kernel:
                         if cmd_re != command:
                             continue
                     try:
-                        data, remainder = command_funct(command, remainder, channel, data=data, _=_)
+                        data, remainder = command_funct(
+                            command, remainder, channel, data=data, _=_
+                        )
                     except SyntaxError:
                         channel(_("Syntax Error: %s") % command_funct.help)
                     except ValueError:
@@ -1993,7 +2082,7 @@ class Channel:
         if self.buffer is not None:
             self.buffer.append(message)
             if len(self.buffer) + 10 > self.buffer_size:
-                self.buffer = self.buffer[-self.buffer_size:]
+                self.buffer = self.buffer[-self.buffer_size :]
 
     def __len__(self):
         return self.buffer_size
@@ -2069,4 +2158,4 @@ class ConsoleFunction(Job):
         self.context.console(self.data)
 
     def __str__(self):
-        return self.data.replace('\n', '')
+        return self.data.replace("\n", "")

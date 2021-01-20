@@ -5,17 +5,30 @@ class ZMatrix(AffineMatrix2D):
     def __init__(self, matrix=None):
         AffineMatrix2D.__init__(self)
         if matrix is not None:
-            self.Set(Matrix2D(
-                matrix.value_scale_x(), matrix.value_skew_x(),
-                matrix.value_skew_y(), matrix.value_scale_y()),
-                Point2D(
-                    matrix.value_trans_x(), matrix.value_trans_y()))
+            self.Set(
+                Matrix2D(
+                    matrix.value_scale_x(),
+                    matrix.value_skew_x(),
+                    matrix.value_skew_y(),
+                    matrix.value_scale_y(),
+                ),
+                Point2D(matrix.value_trans_x(), matrix.value_trans_y()),
+            )
 
     def __str__(self):
         m = self.Get()[0]
         p = self.Get()[1]
-        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % \
-               (m.m_11, m.m_12, 0, m.m_21, m.m_22, 0, p.x, p.y, 1)
+        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % (
+            m.m_11,
+            m.m_12,
+            0,
+            m.m_21,
+            m.m_22,
+            0,
+            p.x,
+            p.y,
+            1,
+        )
 
     def Reset(self):
         AffineMatrix2D.__init__(self)

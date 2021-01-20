@@ -2,8 +2,17 @@ from copy import copy
 
 from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 from ..svgelements import Point, Path, Color
-from . rasterplotter import RasterPlotter, X_AXIS, TOP, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL
-from . zinglplotter import ZinglPlotter
+from .rasterplotter import (
+    RasterPlotter,
+    X_AXIS,
+    TOP,
+    BOTTOM,
+    Y_AXIS,
+    RIGHT,
+    LEFT,
+    UNIDIRECTIONAL,
+)
+from .zinglplotter import ZinglPlotter
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -74,7 +83,7 @@ class LaserSettings:
 
     def set_values(self, obj):
         for q in dir(obj):
-            if q.startswith('_') or q.startswith('implicit'):
+            if q.startswith("_") or q.startswith("implicit"):
                 continue
             value = getattr(obj, q)
             if isinstance(value, (int, float, bool, str)):
@@ -114,7 +123,7 @@ class CutCode(list):
     def __str__(self):
         parts = list()
         parts.append("%d items" % len(self))
-        return 'CutCode(%s)' % ' '.join(parts)
+        return "CutCode(%s)" % " ".join(parts)
 
     def as_elements(self):
         elements = list()
@@ -220,7 +229,9 @@ class LineCut(CutObject):
         settings.raster_step = 0
 
     def generator(self):
-        return ZinglPlotter.plot_line(self._start[0], self._start[1], self._end[0], self._end[1])
+        return ZinglPlotter.plot_line(
+            self._start[0], self._start[1], self._end[0], self._end[1]
+        )
 
 
 class QuadCut(CutObject):
@@ -230,9 +241,14 @@ class QuadCut(CutObject):
         self.control = control_point
 
     def generator(self):
-        return ZinglPlotter.plot_quad_bezier(self._start[0], self._start[1],
-                                             self.control[0], self.control[1],
-                                             self._end[0], self._end[1])
+        return ZinglPlotter.plot_quad_bezier(
+            self._start[0],
+            self._start[1],
+            self.control[0],
+            self.control[1],
+            self._end[0],
+            self._end[1],
+        )
 
 
 class CubicCut(CutObject):
@@ -247,10 +263,16 @@ class CubicCut(CutObject):
         CutObject.reverse(self)
 
     def generator(self):
-        return ZinglPlotter.plot_cubic_bezier(self._start[0], self._start[1],
-                                              self.control1[0], self.control1[1],
-                                              self.control2[0], self.control2[1],
-                                              self._end[0], self._end[1])
+        return ZinglPlotter.plot_cubic_bezier(
+            self._start[0],
+            self._start[1],
+            self.control1[0],
+            self.control1[1],
+            self.control2[0],
+            self.control2[1],
+            self._end[0],
+            self._end[1],
+        )
 
 
 class ArcCut(CutObject):
@@ -302,28 +324,45 @@ class RasterCut(CutObject):
         width, height = image.size
         mode = image.mode
 
-        if mode != "1" and mode != "P" and mode != "L" and mode != "RGB" and mode != "RGBA":
+        if (
+            mode != "1"
+            and mode != "P"
+            and mode != "L"
+            and mode != "RGB"
+            and mode != "RGBA"
+        ):
             # Any mode without a filter should get converted.
             image = image.convert("RGBA")
             mode = image.mode
         if mode == "1":
+
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+
         elif mode == "P":
             p = image.getpalette()
 
             def image_filter(pixel):
                 v = p[pixel * 3] + p[pixel * 3 + 1] + p[pixel * 3 + 2]
                 return 1.0 - v / 765.0
+
         elif mode == "L":
+
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+
         elif mode == "RGB":
+
             def image_filter(pixel):
                 return 1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0
+
         elif mode == "RGBA":
+
             def image_filter(pixel):
-                return (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
+                return (
+                    (1.0 - (pixel[0] + pixel[1] + pixel[2]) / 765.0) * pixel[3] / 255.0
+                )
+
         else:
             raise ValueError  # this shouldn't happen.
         m = svgimage.transform
@@ -339,10 +378,9 @@ class RasterCut(CutObject):
                 overscan = 20
         tx = m.value_trans_x()
         ty = m.value_trans_y()
-        self.plot = RasterPlotter(data, width, height, traverse, 0, overscan,
-                                  tx,
-                                  ty,
-                                  step, image_filter)
+        self.plot = RasterPlotter(
+            data, width, height, traverse, 0, overscan, tx, ty, step, image_filter
+        )
 
     def start(self):
         return Point(self.plot.initial_position_in_scene())

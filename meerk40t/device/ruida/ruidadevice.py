@@ -17,14 +17,13 @@ Ruida device is a stub-backend. It doesn't work as of yet, but should be able to
 
 
 def plugin(kernel):
-    kernel.register('disabled-device/Ruida', RuidaDevice)
+    kernel.register("disabled-device/Ruida", RuidaDevice)
+
 
 class RuidaDevice:
-    """
+    """"""
 
-    """
-
-    def __init__(self, root, uid=''):
+    def __init__(self, root, uid=""):
         self.uid = uid
         self.device_name = "Ruida-STUB"
         self.location_name = "UDP"
@@ -42,41 +41,41 @@ class RuidaDevice:
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register('load/RDLoader', RDLoader)
-        kernel.register('module/RuidaEmulator', RuidaEmulator)
+        kernel.register("load/RDLoader", RDLoader)
+        kernel.register("module/RuidaEmulator", RuidaEmulator)
 
-        @kernel.console_option('spool', type=bool, action='store_true')
-        @kernel.console_command('ruidaserver', help='activate the ruidaserver.')
+        @kernel.console_option("spool", type=bool, action="store_true")
+        @kernel.console_command("ruidaserver", help="activate the ruidaserver.")
         def ruidaserver(command, channel, _, spool=False, args=tuple(), **kwargs):
             c = kernel.active_device
             if c is None:
                 return
             try:
-                c.open_as('module/UDPServer', 'ruidaserver', port=50200)
-                c.open_as('module/UDPServer', 'ruidajog', port=50207)
-                channel(_('Ruida Data Server opened on port %d.') % 50200)
-                channel(_('Ruida Jog Server opened on port %d.') % 50207)
+                c.open_as("module/UDPServer", "ruidaserver", port=50200)
+                c.open_as("module/UDPServer", "ruidajog", port=50207)
+                channel(_("Ruida Data Server opened on port %d.") % 50200)
+                channel(_("Ruida Jog Server opened on port %d.") % 50207)
 
-                chan = 'ruida'
-                c.channel(chan).watch(kernel.channel('console'))
-                channel(_('Watching Channel: %s') % chan)
+                chan = "ruida"
+                c.channel(chan).watch(kernel.channel("console"))
+                channel(_("Watching Channel: %s") % chan)
 
-                chan = 'server'
-                c.channel(chan).watch(kernel.channel('console'))
-                channel(_('Watching Channel: %s') % chan)
+                chan = "server"
+                c.channel(chan).watch(kernel.channel("console"))
+                channel(_("Watching Channel: %s") % chan)
 
-                emulator = c.open('module/RuidaEmulator')
-                c.channel('ruidaserver/recv').watch(emulator.checksum_write)
-                c.channel('ruidajog/recv').watch(emulator.realtime_write)
-                c.channel('ruida_reply').watch(c.channel('ruidaserver/send'))
+                emulator = c.open("module/RuidaEmulator")
+                c.channel("ruidaserver/recv").watch(emulator.checksum_write)
+                c.channel("ruidajog/recv").watch(emulator.realtime_write)
+                c.channel("ruida_reply").watch(c.channel("ruidaserver/send"))
                 if spool:
                     emulator.spooler = c.spooler
                 else:
-                    emulator.elements = c.get_context('/').elements
+                    emulator.elements = c.get_context("/").elements
                     # Output to elements
                     pass
             except OSError:
-                channel(_('Server failed.'))
+                channel(_("Server failed."))
             return
 
     def initialize(self, context, channel=None):
@@ -107,16 +106,16 @@ class RuidaEmulator(Module):
         self.lut_swizzle = [self.swizzle_byte(s) for s in range(256)]
         self.lut_unswizzle = [self.unswizzle_byte(s) for s in range(256)]
 
-        self.filename = ''
+        self.filename = ""
         self.power1_min = 0
         self.power1_max = 0
         self.power2_min = 0
         self.power2_max = 0
 
-        self.ruida_channel = self.context.channel('ruida')
-        self.ruida_reply = self.context.channel('ruida_reply')
-        self.ruida_send = self.context.channel('ruida_send')
-        self.ruida_describe = self.context.channel('ruida_desc')
+        self.ruida_channel = self.context.channel("ruida")
+        self.ruida_reply = self.context.channel("ruida_reply")
+        self.ruida_send = self.context.channel("ruida_send")
+        self.ruida_describe = self.context.channel("ruida_desc")
 
         self.process_commands = True
         self.parse_lasercode = True
@@ -131,7 +130,6 @@ class RuidaEmulator(Module):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
-
     @property
     def cutset(self):
         if self._use_set is None:
@@ -142,7 +140,7 @@ class RuidaEmulator(Module):
     def signed35(v):
         v &= 0x7FFFFFFFF
         if v > 0x3FFFFFFFF:
-            return - 0x800000000 + v
+            return -0x800000000 + v
         else:
             return v
 
@@ -150,7 +148,7 @@ class RuidaEmulator(Module):
     def signed14(v):
         v &= 0x7FFF
         if v > 0x1FFF:
-            return - 0x4000 + v
+            return -0x4000 + v
         else:
             return v
 
@@ -175,11 +173,13 @@ class RuidaEmulator(Module):
 
     @staticmethod
     def decodeu35(data):
-        return (data[0] & 0x7F) << 28 | \
-               (data[1] & 0x7F) << 21 | \
-               (data[2] & 0x7F) << 14 | \
-               (data[3] & 0x7F) << 7 | \
-               (data[4] & 0x7F)
+        return (
+            (data[0] & 0x7F) << 28
+            | (data[1] & 0x7F) << 21
+            | (data[2] & 0x7F) << 14
+            | (data[3] & 0x7F) << 7
+            | (data[4] & 0x7F)
+        )
 
     @staticmethod
     def encode32(v):
@@ -234,7 +234,7 @@ class RuidaEmulator(Module):
         if len(array) > 0:
             yield array
 
-    def reply(self, response, desc='ACK'):
+    def reply(self, response, desc="ACK"):
         if self.swizzle_mode:
             self.ruida_reply(self.swizzle(response))
         else:
@@ -266,11 +266,14 @@ class RuidaEmulator(Module):
                 self.ruida_channel("Setting magic to 0x11")
 
         if checksum_check == checksum_sum:
-            response = b'\xCC'
+            response = b"\xCC"
             self.reply(response, desc="Checksum match")
         else:
-            response = b'\xCF'
-            self.reply(response, desc="Checksum Fail (%d != %d)" % (checksum_sum, checksum_check))
+            response = b"\xCF"
+            self.reply(
+                response,
+                desc="Checksum Fail (%d != %d)" % (checksum_sum, checksum_check),
+            )
             self.ruida_channel("--> " + str(data.hex()))
             return
         self.write(BytesIO(self.unswizzle(data)))
@@ -283,7 +286,7 @@ class RuidaEmulator(Module):
         :return:
         """
         self.swizzle_mode = False
-        self.reply(b'\xCC')  # Clear ACK.
+        self.reply(b"\xCC")  # Clear ACK.
         self.write(BytesIO(bytes_to_write))
 
     def write(self, data):
@@ -394,32 +397,48 @@ class RuidaEmulator(Module):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
-                                Point(self.x / um_per_mil, self.y / um_per_mil),
-                                settings=self.cutset))
+            self.cutcode.append(
+                LineCut(
+                    Point(start_x / um_per_mil, start_y / um_per_mil),
+                    Point(self.x / um_per_mil, self.y / um_per_mil),
+                    settings=self.cutset,
+                )
+            )
             desc = "Cut Absolute (%f, %f)" % (self.x, self.y)
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
-                                Point(self.x / um_per_mil, self.y / um_per_mil),
-                                settings=self.cutset))
+            self.cutcode.append(
+                LineCut(
+                    Point(start_x / um_per_mil, start_y / um_per_mil),
+                    Point(self.x / um_per_mil, self.y / um_per_mil),
+                    settings=self.cutset,
+                )
+            )
             desc = "Cut Relative (%f, %f)" % (dx, dy)
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
-                                Point(self.x / um_per_mil, self.y / um_per_mil),
-                                settings=self.cutset))
+            self.cutcode.append(
+                LineCut(
+                    Point(start_x / um_per_mil, start_y / um_per_mil),
+                    Point(self.x / um_per_mil, self.y / um_per_mil),
+                    settings=self.cutset,
+                )
+            )
             desc = "Cut Horizontal Relative (%f)" % (dx)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.cutcode.append(LineCut(Point(start_x / um_per_mil, start_y / um_per_mil),
-                                Point(self.x / um_per_mil, self.y / um_per_mil),
-                                settings=self.cutset))
+            self.cutcode.append(
+                LineCut(
+                    Point(start_x / um_per_mil, start_y / um_per_mil),
+                    Point(self.x / um_per_mil, self.y / um_per_mil),
+                    settings=self.cutset,
+                )
+            )
             desc = "Cut Vertical Relative (%f)" % (dy)
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
@@ -747,7 +766,7 @@ class RuidaEmulator(Module):
                     name = "Laser Standby Frequency 2"
                 elif array[3] == 0x1D:
                     name = "Laser Standby Pulse 2"
-                elif array[3] == 0x1e:
+                elif array[3] == 0x1E:
                     name = "Auto Type Space"
                 elif array[3] == 0x20:
                     name = "Axis Control Para 1"
@@ -1001,11 +1020,11 @@ class RuidaEmulator(Module):
                 elif array[3] == 0x53:
                     name = "U Total Travel (m)"
             elif array[2] == 0x05:
-                if array[3] == 0x7e:
+                if array[3] == 0x7E:
                     v = 0x65006500
                     name = "Card ID"
-                if array[3] == 0x7f:
-                    v = b'MEERK40T\x00'
+                if array[3] == 0x7F:
+                    v = b"MEERK40T\x00"
                     name = "Mainboard Version"
             if array[1] == 0x00:
                 if name is None:
@@ -1014,18 +1033,37 @@ class RuidaEmulator(Module):
                 if isinstance(v, int):
                     v = int(v)
                     vencode = RuidaEmulator.encode32(v)
-                    respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (%s) = %d (0x%08x)" % (array[2], array[3], name, v, v)
+                    respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
+                    respond_desc = "Respond %02x %02x (%s) = %d (0x%08x)" % (
+                        array[2],
+                        array[3],
+                        name,
+                        v,
+                        v,
+                    )
                 else:
                     vencode = v
-                    respond = b'\xDA\x01' + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (%s) = %s" % (array[2], array[3], name, str(vencode))
+                    respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
+                    respond_desc = "Respond %02x %02x (%s) = %s" % (
+                        array[2],
+                        array[3],
+                        name,
+                        str(vencode),
+                    )
             elif array[1] == 0x01:
                 value0 = array[4:9]
                 value1 = array[9:14]
                 v0 = self.decodeu35(value0)
                 v1 = self.decodeu35(value1)
-                desc = "Set %02x %02x (%s) = %d (0x%08x) %d (0x%08x)" % (array[2], array[3], name, v0, v0, v1, v1)
+                desc = "Set %02x %02x (%s) = %d (0x%08x) %d (0x%08x)" % (
+                    array[2],
+                    array[3],
+                    name,
+                    v0,
+                    v0,
+                    v1,
+                    v1,
+                )
         elif array[0] == 0xE6:
             if array[1] == 0x01:
                 desc = "Set Absolute"
@@ -1051,7 +1089,15 @@ class RuidaEmulator(Module):
                 v4 = self.decode14(array[10:12])
                 v5 = self.decode14(array[12:14])
                 v6 = self.decode14(array[14:16])
-                desc = "Process Repeat (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
+                desc = "Process Repeat (%d, %d, %d, %d, %d, %d, %d)" % (
+                    v0,
+                    v1,
+                    v2,
+                    v3,
+                    v4,
+                    v5,
+                    v6,
+                )
             elif array[1] == 0x05:
                 direction = array[2]
                 desc = "Array Direction (%d)" % (direction)
@@ -1071,7 +1117,15 @@ class RuidaEmulator(Module):
                 v4 = self.decode14(array[10:12])
                 v5 = self.decode14(array[12:14])
                 v6 = self.decode14(array[14:16])
-                desc = "Array Repeat (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
+                desc = "Array Repeat (%d, %d, %d, %d, %d, %d, %d)" % (
+                    v0,
+                    v1,
+                    v2,
+                    v3,
+                    v4,
+                    v5,
+                    v6,
+                )
             elif array[1] == 0x09:
                 v1 = self.decodeu35(array[2:7])
                 desc = "Feed Length %d" % v1
@@ -1201,7 +1255,15 @@ class RuidaEmulator(Module):
                 v4 = self.decode14(array[10:12])
                 v5 = self.decode14(array[12:14])
                 v6 = self.decode14(array[14:16])
-                desc = "Element Array (%d, %d, %d, %d, %d, %d, %d)" % (v0, v1, v2, v3, v4, v5, v6)
+                desc = "Element Array (%d, %d, %d, %d, %d, %d, %d)" % (
+                    v0,
+                    v1,
+                    v2,
+                    v3,
+                    v4,
+                    v5,
+                    v6,
+                )
             if array[1] == 0x06:
                 c_x = self.abscoord(array[2:7]) / um_per_mil
                 c_y = self.abscoord(array[7:12]) / um_per_mil
@@ -1254,7 +1316,9 @@ class RDLoader:
     @staticmethod
     def load(kernel, pathname, channel=None, **kwargs):
         basename = os.path.basename(pathname)
-        with open(pathname, 'rb') as f:
-            ruidaemulator = kernel.get_context('/').open_as('module/RuidaEmulator', basename)
+        with open(pathname, "rb") as f:
+            ruidaemulator = kernel.get_context("/").open_as(
+                "module/RuidaEmulator", basename
+            )
             ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
             return [ruidaemulator.cutcode], None, None, pathname, basename

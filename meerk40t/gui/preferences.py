@@ -6,7 +6,7 @@
 import wx
 
 from ..kernel import Module
-from . icons import icons8_administrative_tools_50
+from .icons import icons8_administrative_tools_50
 
 _ = wx.GetTranslation
 
@@ -14,32 +14,59 @@ _ = wx.GetTranslation
 # begin wxGlade: dependencies
 # end wxGlade
 
+
 class Preferences(wx.Frame, Module):
     def __init__(self, context, path, parent, *args, **kwds):
         # begin wxGlade: Preferences.__init__
-        wx.Frame.__init__(self, parent, -1, "",
-                          style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            "",
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL,
+        )
         Module.__init__(self, context, path)
         self.SetSize((395, 424))
-        self.combobox_board = wx.ComboBox(self, wx.ID_ANY, choices=["M2", "B2", "M", "M1", "A", "B", "B1"], style=wx.CB_DROPDOWN)
+        self.combobox_board = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=["M2", "B2", "M", "M1", "A", "B", "B1"],
+            style=wx.CB_DROPDOWN,
+        )
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Homes Right"))
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Homes Bottom"))
         self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, _("Swap X and Y"))
-        self.checkbox_mock_usb = wx.CheckBox(self, wx.ID_ANY, _("Mock USB Connection Mode"))
+        self.checkbox_mock_usb = wx.CheckBox(
+            self, wx.ID_ANY, _("Mock USB Connection Mode")
+        )
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
-        self.spin_home_x = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
-        self.spin_home_y = wx.SpinCtrlDouble(self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0)
+        self.spin_home_x = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+        )
+        self.spin_home_y = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+        )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
-        self.spin_bedwidth = wx.SpinCtrlDouble(self, wx.ID_ANY, "330.0", min=1.0, max=1000.0)
-        self.spin_bedheight = wx.SpinCtrlDouble(self, wx.ID_ANY, "230.0", min=1.0, max=1000.0)
-        self.checkbox_autolock = wx.CheckBox(self, wx.ID_ANY, _("Automatically lock rail"))
-        self.checkbox_autohome = wx.CheckBox(self, wx.ID_ANY, _("Home after job complete"))
-        self.checkbox_autobeep = wx.CheckBox(self, wx.ID_ANY, _("Beep after job complete"))
+        self.spin_bedwidth = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "330.0", min=1.0, max=1000.0
+        )
+        self.spin_bedheight = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, "230.0", min=1.0, max=1000.0
+        )
+        self.checkbox_autolock = wx.CheckBox(
+            self, wx.ID_ANY, _("Automatically lock rail")
+        )
+        self.checkbox_autohome = wx.CheckBox(
+            self, wx.ID_ANY, _("Home after job complete")
+        )
+        self.checkbox_autobeep = wx.CheckBox(
+            self, wx.ID_ANY, _("Beep after job complete")
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -54,22 +81,32 @@ class Preferences(wx.Frame, Module):
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
         self.Bind(wx.EVT_TEXT, self.spin_on_device_index, self.spin_device_index)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_index, self.spin_device_index)
-        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_address, self.spin_device_address)
+        self.Bind(
+            wx.EVT_SPINCTRL, self.spin_on_device_address, self.spin_device_address
+        )
         self.Bind(wx.EVT_TEXT, self.spin_on_device_address, self.spin_device_address)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_address, self.spin_device_address)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.spin_on_device_address, self.spin_device_address
+        )
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_bus, self.spin_device_bus)
         self.Bind(wx.EVT_TEXT, self.spin_on_device_bus, self.spin_device_bus)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_bus, self.spin_device_bus)
-        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_version, self.spin_device_version)
+        self.Bind(
+            wx.EVT_SPINCTRL, self.spin_on_device_version, self.spin_device_version
+        )
         self.Bind(wx.EVT_TEXT, self.spin_on_device_version, self.spin_device_version)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_version, self.spin_device_version)
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.spin_on_device_version, self.spin_device_version
+        )
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_y, self.spin_home_y)
         self.Bind(wx.EVT_TEXT, self.spin_on_home_y, self.spin_home_y)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_y, self.spin_home_y)
-        self.Bind(wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
+        )
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_bedwidth, self.spin_bedwidth)
         self.Bind(wx.EVT_TEXT, self.spin_on_bedwidth, self.spin_bedwidth)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_bedwidth, self.spin_bedwidth)
@@ -106,7 +143,7 @@ class Preferences(wx.Frame, Module):
         self.context.setting(bool, "autobeep", False)
         self.context.setting(bool, "autohome", False)
         self.context.setting(bool, "autolock", True)
-        self.context.setting(str, "board", 'M2')
+        self.context.setting(str, "board", "M2")
         self.context.setting(int, "bed_width", 280)
         self.context.setting(int, "bed_height", 200)
         self.context.setting(int, "units_index", 0)
@@ -146,24 +183,49 @@ class Preferences(wx.Frame, Module):
         self.SetIcon(_icon)
         # begin wxGlade: Preferences.__set_properties
         self.SetTitle(_("Preferences"))
-        self.combobox_board.SetToolTip(_("Select the board to use. This has affects the speedcodes used."))
+        self.combobox_board.SetToolTip(
+            _("Select the board to use. This has affects the speedcodes used.")
+        )
         self.combobox_board.SetSelection(0)
-        self.checkbox_swap_xy.SetToolTip(_("Swaps the X and Y axis. This happens before the FlipX and FlipY."))
-        self.checkbox_flip_x.SetToolTip(_("Flip the Right and Left commands sent to the controller"))
-        self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
-        self.checkbox_flip_y.SetToolTip(_("Flip the Top and Bottom commands sent to the controller"))
-        self.checkbox_home_bottom.SetToolTip(_("Indicates the device Home is on the bottom"))
+        self.checkbox_swap_xy.SetToolTip(
+            _("Swaps the X and Y axis. This happens before the FlipX and FlipY.")
+        )
+        self.checkbox_flip_x.SetToolTip(
+            _("Flip the Right and Left commands sent to the controller")
+        )
+        self.checkbox_home_right.SetToolTip(
+            _("Indicates the device Home is on the right")
+        )
+        self.checkbox_flip_y.SetToolTip(
+            _("Flip the Top and Bottom commands sent to the controller")
+        )
+        self.checkbox_home_bottom.SetToolTip(
+            _("Indicates the device Home is on the bottom")
+        )
         self.checkbox_mock_usb.SetToolTip(
-            _("DEBUG. Without a K40 connected continue to process things as if there was one."))
-        self.spin_device_index.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
-        self.spin_device_address.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
-        self.spin_device_bus.SetToolTip(_("-1 match anything. 0-5 match exactly that value."))
-        self.spin_device_version.SetToolTip(_("-1 match anything. 0-255 match exactly that value."))
+            _(
+                "DEBUG. Without a K40 connected continue to process things as if there was one."
+            )
+        )
+        self.spin_device_index.SetToolTip(
+            _("-1 match anything. 0-5 match exactly that value.")
+        )
+        self.spin_device_address.SetToolTip(
+            _("-1 match anything. 0-5 match exactly that value.")
+        )
+        self.spin_device_bus.SetToolTip(
+            _("-1 match anything. 0-5 match exactly that value.")
+        )
+        self.spin_device_version.SetToolTip(
+            _("-1 match anything. 0-255 match exactly that value.")
+        )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
         self.spin_home_y.SetMinSize((80, 23))
         self.spin_home_y.SetToolTip(_("Translate Home Y"))
-        self.button_home_by_current.SetToolTip(_("Set Home Position based on the current position"))
+        self.button_home_by_current.SetToolTip(
+            _("Set Home Position based on the current position")
+        )
         self.spin_bedwidth.SetMinSize((80, 23))
         self.spin_bedwidth.SetToolTip(_("Width of the laser bed."))
         self.spin_bedheight.SetMinSize((80, 23))
@@ -178,15 +240,25 @@ class Preferences(wx.Frame, Module):
     def __do_layout(self):
         # begin wxGlade: Preferences.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_general = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("General Options")), wx.VERTICAL)
-        sizer_bed = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL)
-        sizer_home = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL)
-        sizer_usb = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("USB Settings")), wx.VERTICAL)
+        sizer_general = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("General Options")), wx.VERTICAL
+        )
+        sizer_bed = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
+        )
+        sizer_home = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL
+        )
+        sizer_usb = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("USB Settings")), wx.VERTICAL
+        )
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_board = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Board Setup")), wx.HORIZONTAL)
+        sizer_board = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Board Setup")), wx.HORIZONTAL
+        )
         sizer_16 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
         sizer_board.Add(self.combobox_board, 0, 0, 0)
@@ -299,12 +371,16 @@ class Preferences(wx.Frame, Module):
     def spin_on_bedwidth(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.bed_width = int(self.spin_bedwidth.GetValue())
         self.context.bed_height = int(self.spin_bedheight.GetValue())
-        self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
+        self.context.signal(
+            "bed_size", (self.context.bed_width, self.context.bed_height)
+        )
 
     def spin_on_bedheight(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.bed_width = int(self.spin_bedwidth.GetValue())
         self.context.bed_height = int(self.spin_bedheight.GetValue())
-        self.context.signal('bed_size', (self.context.bed_width, self.context.bed_height))
+        self.context.signal(
+            "bed_size", (self.context.bed_width, self.context.bed_height)
+        )
 
     def on_check_autolock(self, event):  # wxGlade: Preferences.<event_handler>
         self.context.autolock = self.checkbox_autolock.GetValue()

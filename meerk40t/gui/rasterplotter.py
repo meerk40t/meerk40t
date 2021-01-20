@@ -1,4 +1,3 @@
-
 X_AXIS = 0
 TOP = 0
 LEFT = 0
@@ -36,9 +35,20 @@ or only on forward swing.
 
 
 class RasterPlotter:
-
-    def __init__(self, data, width, height, traversal=0, skip_pixel=0, overscan=0,
-                 offset_x=0, offset_y=0, step=1, filter=None, alt_filter=None):
+    def __init__(
+        self,
+        data,
+        width,
+        height,
+        traversal=0,
+        skip_pixel=0,
+        overscan=0,
+        offset_x=0,
+        offset_y=0,
+        step=1,
+        filter=None,
+        alt_filter=None,
+    ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
 
@@ -65,7 +75,7 @@ class RasterPlotter:
         self.height = height
         self.traversal = traversal
         self.skip_pixel = skip_pixel
-        if isinstance(overscan, str) and overscan.endswith('%'):
+        if isinstance(overscan, str) and overscan.endswith("%"):
             try:
                 overscan = float(overscan[:-1]) / 100.0
                 if self.traversal & Y_AXIS:
@@ -109,7 +119,7 @@ class RasterPlotter:
         raise IndexError
 
     def leftmost_not_equal(self, y):
-        """"
+        """ "
         Determine the leftmost pixel that is not equal to the skip_pixel value.
 
         if all pixels skipped returns None
@@ -315,7 +325,9 @@ class RasterPlotter:
             if self.traversal & RIGHT:  # Start on Right Edge?
                 x = self.width - 1
                 dx = -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, bool(self.traversal & BOTTOM))
+            x, y = self.calculate_next_vertical_pixel(
+                x, dx, bool(self.traversal & BOTTOM)
+            )
             return x, y
         else:
             y = 0
@@ -323,7 +335,9 @@ class RasterPlotter:
             if self.traversal & BOTTOM:  # Start on Bottom Edge?
                 y = self.height - 1
                 dy = -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, bool(self.traversal & RIGHT))
+            x, y = self.calculate_next_horizontal_pixel(
+                y, dy, bool(self.traversal & RIGHT)
+            )
             return x, y
 
     def calculate_last_pixel(self):
@@ -340,7 +354,9 @@ class RasterPlotter:
             if not (self.traversal & RIGHT) and self.height & 1:
                 x = self.width - 1
                 dx = -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, not bool(self.traversal & BOTTOM))
+            x, y = self.calculate_next_vertical_pixel(
+                x, dx, not bool(self.traversal & BOTTOM)
+            )
             return x, y
         else:
             y = 0
@@ -348,7 +364,9 @@ class RasterPlotter:
             if not (self.traversal & BOTTOM) and self.width & 1:
                 y = self.height - 1
                 dy = -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, not bool(self.traversal & RIGHT))
+            x, y = self.calculate_next_horizontal_pixel(
+                y, dy, not bool(self.traversal & RIGHT)
+            )
             return x, y
 
     def initial_position(self):
@@ -365,7 +383,10 @@ class RasterPlotter:
         """
         if self.initial_x is None:  # image is blank.
             return self.offset_x, self.offset_y
-        return self.offset_x + self.initial_x * self.step, self.offset_y + self.initial_y * self.step
+        return (
+            self.offset_x + self.initial_x * self.step,
+            self.offset_y + self.initial_y * self.step,
+        )
 
     def final_position_in_scene(self):
         """
@@ -375,7 +396,10 @@ class RasterPlotter:
         """
         if self.final_x is None:  # image is blank.
             return self.offset_x, self.offset_y
-        return self.offset_x + self.final_x * self.step, self.offset_y + self.final_y * self.step
+        return (
+            self.offset_x + self.final_x * self.step,
+            self.offset_y + self.final_y * self.step,
+        )
 
     @property
     def top(self):
@@ -505,7 +529,6 @@ class RasterPlotter:
         """
         return self.top and self.horizontal
 
-
     @property
     def corner(self):
         if self.top:
@@ -553,7 +576,9 @@ class RasterPlotter:
                     continue
                 upper_bound = self.bottommost_not_equal(x)
 
-                next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, dy > 0)  # y + dy, dy, dx > 0
+                next_x, next_y = self.calculate_next_vertical_pixel(
+                    x + dx, dx, dy > 0
+                )  # y + dy, dy, dx > 0
                 if next_y is not None:
                     upper_bound = max(next_y, upper_bound) + self.overscan
                     lower_bound = min(next_y, lower_bound) - self.overscan
@@ -597,7 +622,9 @@ class RasterPlotter:
                     continue
                 upper_bound = self.rightmost_not_equal(y)
 
-                next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, dx > 0)
+                next_x, next_y = self.calculate_next_horizontal_pixel(
+                    y + dy, dy, dx > 0
+                )
                 if next_x is not None:
                     upper_bound = max(next_x, upper_bound) + self.overscan
                     lower_bound = min(next_x, lower_bound) - self.overscan
