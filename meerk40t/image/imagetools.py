@@ -573,8 +573,8 @@ class ImageTools(Modifier):
                 xx = (width_half - im.size[0] * scale) / 2
                 yy = (height_half - im.size[1] * scale) / 2
                 half_tone = half_tone.crop((xx, yy, xx + im.size[0] * scale, yy + im.size[1] * scale))
-            element.image = half_tone
-            element.altered()
+                element.image = half_tone
+                element.altered()
 
 
 class RasterScripts:

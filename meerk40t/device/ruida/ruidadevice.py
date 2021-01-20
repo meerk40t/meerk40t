@@ -49,6 +49,8 @@ class RuidaDevice:
         @kernel.console_command('ruidaserver', help='activate the ruidaserver.')
         def ruidaserver(command, channel, _, spool=False, args=tuple(), **kwargs):
             c = kernel.active_device
+            if c is None:
+                return
             try:
                 c.open_as('module/UDPServer', 'ruidaserver', port=50200)
                 c.open_as('module/UDPServer', 'ruidajog', port=50207)

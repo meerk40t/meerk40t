@@ -208,6 +208,8 @@ class Elemental(Modifier):
         @self.context.console_option('fill', 'f', type=Color)
         @self.context.console_command('rect', help='adds rectangle to scene')
         def rect(command, x_pos, y_pos, width, height, rx=None, ry=None, stroke=None, fill=None, args=tuple(), **kwargs):
+            if x_pos is None:
+                raise SyntaxError
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             self.context.setting(int, "bed_width", 310)  # Default Value
             self.context.setting(int, "bed_height", 210)  # Default Value
@@ -855,6 +857,8 @@ class Elemental(Modifier):
 
         @self.context.console_command('trace_hull', help='trace the convex hull of current elements')
         def trace_hull(command, channel, _, args=tuple(), **kwargs):
+            if context.active is None:
+                return
             spooler = context.active.spooler
             pts = []
             for obj in elements.elems(emphasized=True):
@@ -884,6 +888,8 @@ class Elemental(Modifier):
 
         @self.context.console_command('trace_quick', help='quick trace the bounding box of current elements')
         def trace_quick(command, channel, _, args=tuple(), **kwargs):
+            if context.active is None:
+                return
             spooler = context.active.spooler
             bbox = elements.bounds()
             if bbox is None:
@@ -945,7 +951,7 @@ class Elemental(Modifier):
         self.context.signal('rebuild_tree')
 
     def add_element(self, element):
-        if len(element) == 0:
+        if not isinstance(element, SVGText) and len(element) == 0:
             return  # No empty elements.
         context_root = self.context.get_context('/')
         if hasattr(element, "stroke") and element.stroke is None:

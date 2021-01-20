@@ -47,6 +47,8 @@ class GrblDevice:
         @kernel.console_command('grblserver', help='activate the grblserver.')
         def grblserver(command, channel, _, args=tuple(), **kwargs):
             active_device = kernel.active_device
+            if active_device is None:
+                return
             _ = kernel.translation
             port = 23
             try:

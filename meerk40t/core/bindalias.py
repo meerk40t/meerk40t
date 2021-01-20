@@ -114,7 +114,7 @@ class BindAlias(Modifier):
                 recv = self.context.channel('console-server/recv')
                 recv.watch(self.context.console)
                 self.context.channel('console').watch(send)
-            except OSError:
+            except (OSError, ValueError):
                 channel(_('Server failed on port: %d') % port)
             return
 
