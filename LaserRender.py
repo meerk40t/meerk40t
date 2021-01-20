@@ -1,3 +1,5 @@
+from math import floor
+
 import wx
 from PIL import Image
 
