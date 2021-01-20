@@ -1,0 +1,7 @@
+Pillow
+pyusb
+wxPython
+ezdxf
+opencv-python-headless
+pytest
+flake8
