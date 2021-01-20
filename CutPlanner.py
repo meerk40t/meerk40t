@@ -1,3 +1,5 @@
+from math import isnan, isinf
+
 from svgelements import *
 
 
