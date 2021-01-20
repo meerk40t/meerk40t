@@ -7,13 +7,15 @@ try:
 except ImportError:
     from collections import MutableSequence  # noqa
 from copy import copy
-from math import *
+
+from math import ceil, cos, radians, sin, sqrt, hypot, atan, atan2, tan, degrees, acos, log
 
 from xml.etree.ElementTree import iterparse
 
 try:
     from math import tau
 except ImportError:
+    from math import pi
     tau = pi * 2
 
 """
@@ -28,7 +30,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.4.2"
+SVGELEMENTS_VERSION = "1.4.6"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1428,6 +1430,8 @@ class Color(object):
 
     @opacity.setter
     def opacity(self, opacity):
+        if self.value is None:
+            raise ValueError
         a = int(round(opacity * 255.0))
         a = Color.crimp(a)
         self.alpha = a
@@ -1438,6 +1442,8 @@ class Color(object):
 
     @alpha.setter
     def alpha(self, a):
+        if self.value is None:
+            raise ValueError
         a = Color.crimp(a)
         self.value &= 0xFFFFFF
         self.value = int(self.value)
@@ -1456,6 +1462,8 @@ class Color(object):
 
     @red.setter
     def red(self, r):
+        if self.value is None:
+            raise ValueError
         r = int(r & 0xFF)
         self.value &= ~0xFF0000
         r <<= 16
@@ -1467,6 +1475,8 @@ class Color(object):
 
     @green.setter
     def green(self, g):
+        if self.value is None:
+            raise ValueError
         g = int(g & 0xFF)
         self.value &= ~0xFF00
         g <<= 8
@@ -1478,6 +1488,8 @@ class Color(object):
 
     @blue.setter
     def blue(self, b):
+        if self.value is None:
+            raise ValueError
         b = int(b & 0xFF)
         self.value &= ~0xFF
         self.value |= b
@@ -1495,6 +1507,8 @@ class Color(object):
 
     @property
     def hue(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1520,11 +1534,15 @@ class Color(object):
 
     @hue.setter
     def hue(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = v, s, l
 
     @property
     def saturation(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1540,11 +1558,15 @@ class Color(object):
 
     @saturation.setter
     def saturation(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = h, v, l
 
     @property
     def lightness(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1554,11 +1576,15 @@ class Color(object):
 
     @lightness.setter
     def lightness(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = h, s, v
 
     @property
     def intensity(self):
+        if self.value is None:
+            return None
         r = self.red
         g = self.green
         b = self.blue
@@ -1566,6 +1592,8 @@ class Color(object):
 
     @property
     def brightness(self):
+        if self.value is None:
+            return None
         r = self.red
         g = self.green
         b = self.blue
@@ -1574,10 +1602,14 @@ class Color(object):
 
     @property
     def blackness(self):
+        if self.value is None:
+            return None
         return 1.0 - self.brightness
 
     @property
     def luminance(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1585,6 +1617,8 @@ class Color(object):
 
     @property
     def luma(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1672,6 +1706,8 @@ class Color(object):
 
     @property
     def hsl(self):
+        if self.value is None:
+            return None
         return self.hue, self.saturation, self.lightness
 
     @hsl.setter
@@ -1721,7 +1757,6 @@ class Color(object):
             color = Color(other)
             color.opacity = opacity
             self.value = Color.over(color, self)
-
 
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
@@ -2190,7 +2225,7 @@ class Angle(float):
         return self / tau
 
     def is_orthogonal(self):
-        return (self % (tau / 4)) == 0
+        return (self % (tau / 4.0)) == 0
 
 
 class Matrix:
@@ -3488,7 +3523,7 @@ class PathSegment:
             start_point = curve.point(start)
         if end_point is None:
             end_point = curve.point(end)
-        mid = (start + end) / 2
+        mid = (start + end) / 2.0
         mid_point = curve.point(mid)
         length = abs(end_point - start_point)
         first_half = abs(mid_point - start_point)
@@ -3735,7 +3770,7 @@ class Linear(PathSegment):
         ABAPproduct = vABx * vAPx + vABy * vAPy
         if sqDistanceAB == 0:
             return 0  # Line is point.
-        amount = ABAPproduct / sqDistanceAB
+        amount = ABAPproduct / float(sqDistanceAB)
         if respect_bounds:
             if amount > 1:
                 amount = 1
@@ -3867,7 +3902,7 @@ class QuadraticBezier(Curve):
         n = self.start.x - self.control.x
         d = self.start.x - 2 * self.control.x + self.end.x
         if d != 0:
-            t = n / d
+            t = n / float(d)
         else:
             t = 0.5
         if 0 < t < 1:
@@ -3877,7 +3912,7 @@ class QuadraticBezier(Curve):
         n = self.start.y - self.control.y
         d = self.start.y - 2 * self.control.y + self.end.y
         if d != 0:
-            t = n / d
+            t = n / float(d)
         else:
             t = 0.5
         if 0 < t < 1:
@@ -4215,7 +4250,7 @@ class Arc(Curve):
             if sagitta is not None:
                 control = Point.towards(self.start, self.end, 0.5)
                 angle = self.start.angle_to(self.end)
-                control = control.polar_to(angle - tau / 4, sagitta)
+                control = control.polar_to(angle - tau / 4.0, sagitta)
             if 'control' in kwargs:  # Control is any additional point on the arc.
                 control = Point(kwargs['control'])
             if control is not None:
@@ -4601,7 +4636,7 @@ class Arc(Curve):
 
     def as_quad_curves(self, arc_required):
         if arc_required is None:
-            sweep_limit = tau / 12
+            sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
             if arc_required == 0:
                 return
@@ -4636,7 +4671,7 @@ class Arc(Curve):
 
     def as_cubic_curves(self, arc_required=None):
         if arc_required is None:
-            sweep_limit = tau / 12
+            sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
             if arc_required == 0:
                 return
@@ -4751,7 +4786,7 @@ class Arc(Curve):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -4778,7 +4813,7 @@ class Arc(Curve):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return t
 
     def point_at_t(self, t):
@@ -4813,18 +4848,18 @@ class Arc(Curve):
         """
         phi = self.get_rotation().as_radians
         if cos(phi) == 0:
-            atan_x = pi / 2
+            atan_x = tau / 4.0
             atan_y = 0
         elif sin(phi) == 0:
             atan_x = 0
-            atan_y = pi / 2
+            atan_y = tau / 4.0
         else:
             rx, ry = self.rx, self.ry
             atan_x = atan(-(ry / rx) * tan(phi))
             atan_y = atan((ry / rx) / tan(phi))
 
         def angle_inv(ang, k):  # inverse of angle from Arc.derivative()
-            return ((ang + pi * k) * (360 / (2 * pi)) - self.theta) / self.delta
+            return ((ang + (tau/2.0) * k) * (360 / tau) - self.theta) / self.delta
 
         xtrema = [self.start.x, self.end.x]
         ytrema = [self.start.y, self.end.y]
@@ -5201,7 +5236,8 @@ class Path(Shape, MutableSequence):
     def end(self):
         pass
 
-    def move(self, *points, relative=False):
+    def move(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         end_pos = points[0]
         if end_pos in ('z', 'Z'):
@@ -5213,7 +5249,8 @@ class Path(Shape, MutableSequence):
             self.line(*points[1:], relative=relative)
         return self
 
-    def line(self, *points, relative=False):
+    def line(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         end_pos = points[0]
         if end_pos in ('z', 'Z'):
@@ -5225,7 +5262,8 @@ class Path(Shape, MutableSequence):
             self.line(*points[1:])
         return self
 
-    def vertical(self, *y_points, relative=False):
+    def vertical(self, *y_points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         if relative:
             segment = Line(start_pos, Point(start_pos.x, start_pos.y + y_points[0]))
@@ -5237,7 +5275,8 @@ class Path(Shape, MutableSequence):
             self.vertical(*y_points[1:], relative=relative)
         return self
 
-    def horizontal(self, *x_points, relative=False):
+    def horizontal(self, *x_points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         if relative:
             segment = Line(start_pos, Point(start_pos.x + x_points[0], start_pos.y))
@@ -5250,9 +5289,10 @@ class Path(Shape, MutableSequence):
             self.horizontal(*x_points[1:], relative=relative)
         return self
 
-    def smooth_quad(self, *points, relative=False):
+    def smooth_quad(self, *points, **kwargs):
         """Smooth curve. First control point is the "reflection" of
            the second control point in the previous path."""
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control1 = self.smooth_point
         end_pos = points[0]
@@ -5266,7 +5306,8 @@ class Path(Shape, MutableSequence):
             self.smooth_quad(*points[1:])
         return self
 
-    def quad(self, *points, relative=False):
+    def quad(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control = points[0]
         if control in ('z', 'Z'):
@@ -5282,9 +5323,10 @@ class Path(Shape, MutableSequence):
             self.quad(*points[2:])
         return self
 
-    def smooth_cubic(self, *points, relative=False):
+    def smooth_cubic(self, *points, **kwargs):
         """Smooth curve. First control point is the "reflection" of
         the second control point in the previous path."""
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control1 = self.smooth_point
         control2 = points[0]
@@ -5302,7 +5344,8 @@ class Path(Shape, MutableSequence):
             self.smooth_cubic(*points[2:])
         return self
 
-    def cubic(self, *points, relative=False):
+    def cubic(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control1 = points[0]
         if control1 in ('z', 'Z'):
@@ -5321,7 +5364,8 @@ class Path(Shape, MutableSequence):
             self.cubic(*points[3:])
         return self
 
-    def arc(self, *arc_args, relative=False):
+    def arc(self, *arc_args, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         rx = arc_args[0]
         ry = arc_args[1]
@@ -5337,6 +5381,7 @@ class Path(Shape, MutableSequence):
         if len(arc_args) > 6:
             self.arc(*arc_args[6:])
         return self
+
 
     def closed(self, relative=False):
         start_pos = self.current_point
@@ -6058,7 +6103,7 @@ class _RoundShape(Shape):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -6089,7 +6134,7 @@ class _RoundShape(Shape):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return t
 
     def point_at_t(self, t):
@@ -7290,19 +7335,19 @@ class SVG(Group):
         return self.viewbox.transform(self)
 
     @staticmethod
-    def _shadow_iter(elem, children):
-        yield 'start', elem
+    def _shadow_iter(tag, elem, children):
+        yield tag, 'start', elem
         try:
-            for e, c in children:
-                for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
-                    yield shadow_event, shadow_elem
-        except RecursionError:
+            for t, e, c in children:
+                for shadow_tag, shadow_event, shadow_elem in SVG._shadow_iter(t, e, c):
+                    yield shadow_tag, shadow_event, shadow_elem
+        except ValueError:
             """
             Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
             we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
             """
             pass
-        yield 'end', elem
+        yield tag, 'end', elem
 
     @staticmethod
     def _use_structure_parse(source):
@@ -7320,9 +7365,8 @@ class SVG(Group):
                 tag = elem.tag
                 if tag.startswith('{http://www.w3.org/2000/svg'):
                     tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                    elem.tag = tag
             except AttributeError:
-                yield event, elem
+                yield (None, event, elem)
                 continue
 
             if event == 'start':
@@ -7331,7 +7375,7 @@ class SVG(Group):
                 siblings = children  # Parent's children are now my siblings.
                 parent = (parent, children)  # parent is now previous node context
                 children = list()  # new node has no children.
-                node = (elem, children)  # define this node.
+                node = (tag, elem, children)  # define this node.
                 siblings.append(node)  # siblings now includes this node.
 
                 if SVG_TAG_USE == tag:
@@ -7360,7 +7404,7 @@ class SVG(Group):
                                                                  (attributes[SVG_ATTR_TRANSFORM], x, y)
                             except KeyError:
                                 attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
-                        yield event, elem
+                        yield (tag, event, elem)
                         try:
                             shadow_node = defs[url[1:]]
                             children.append(shadow_node)  # Shadow children are children of the use.
@@ -7369,11 +7413,11 @@ class SVG(Group):
                         except KeyError:
                             pass  # Failed to find link.
                 else:
-                    yield event, elem
+                    yield (tag, event, elem)
                 if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
                     defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
             elif event == 'end':
-                yield event, elem
+                yield (tag, event, elem)
                 # event is 'end', pop values.
                 parent, children = parent  # Parent is now node.
 
@@ -7410,7 +7454,7 @@ class SVG(Group):
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
 
-        for event, elem in SVG._use_structure_parse(source):
+        for tag, event, elem in SVG._use_structure_parse(source):
             """
             SVG element parsing parses the job compiling any parsed elements into their compiled object forms. 
             """
@@ -7422,7 +7466,6 @@ class SVG(Group):
                 current_values = values
                 values = {}
                 values.update(current_values)  # copy of dictionary
-                tag = elem.tag
 
                 # Non-propagating values.
                 if SVG_ATTR_PRESERVEASPECTRATIO in values:
@@ -7599,7 +7642,6 @@ class SVG(Group):
             elif event == 'end':  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
                 s = None
-                tag = elem.tag
                 if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN, SVG_TAG_DESC, SVG_TAG_TITLE, SVG_TAG_STYLE):
                     attributes = elem.attrib
                     if SVG_ATTR_ID in values and root is not None:
