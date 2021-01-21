@@ -47,6 +47,8 @@ class Elemental(Modifier):
         self._operations = list()
         self._elements = list()
         self._filenodes = {}
+        self._clipboard = {}
+        self._clipboard_default = "0"
         self.note = None
         self._bounds = None
 
@@ -197,8 +199,41 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @self.context.console_argument("x_pos", type=Length, omit=True)
-        @self.context.console_argument("y_pos", type=Length, omit=True)
+        @self.context.console_argument("subcommand")
+        @self.context.console_command("clipboard.*", regex=True, help="clipboard<N> (copy|paste|cut|clear)", output_type='elements')
+        def clipboard(command, channel, _, subcommand, args=tuple(), **kwargs):
+            if subcommand is None:
+                raise SyntaxError
+            if len(command) > 9:
+                self._clipboard_default = command[9:]
+            destination = self._clipboard_default
+            if subcommand == 'copy':
+                self._clipboard[destination] = [copy(e) for e in self.elems(emphasized=True)]
+                return 'elements', self._clipboard[destination]
+            elif subcommand == 'cut':
+                self._clipboard[destination] = [copy(e) for e in self.elems(emphasized=True)]
+                elements.remove_elements(
+                    list(elements.elems(emphasized=True))
+                )
+                return 'elements', self._clipboard[destination]
+            elif subcommand == 'paste':
+                elements.add_elems([copy(e) for e in self._clipboard[destination]])
+            elif subcommand == 'contents':
+                return 'elements', self._clipboard[destination]
+            elif subcommand == 'clear':
+                old = self._clipboard[destination]
+                self._clipboard[destination] = None
+                return 'elements', old
+            elif subcommand == 'list':
+                for v in self._clipboard:
+                    k = self._clipboard[v]
+                    channel("%s: %s" % (str(v).ljust(5), str(k)))
+                return None
+            else:
+                raise SyntaxError
+
+        @self.context.console_argument("x_pos", type=Length)
+        @self.context.console_argument("y_pos", type=Length)
         @self.context.console_argument("r_pos", type=Length)
         @self.context.console_command("circle", help="circle <x> <y> <r> or circle <r>")
         def circle(command, x_pos, y_pos, r_pos, args=tuple(), **kwargs):
@@ -1383,9 +1418,6 @@ class Elemental(Modifier):
             self.context.signal("element_removed", e)
         self._elements.clear()
 
-    def clear_plan(self):
-        self._plan.clear()
-
     def clear_files(self):
         self._filenodes.clear()
 
@@ -1394,7 +1426,6 @@ class Elemental(Modifier):
         self.clear_operations()
 
     def clear_all(self):
-        self.clear_plan()
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
