@@ -924,8 +924,8 @@ class Kernel:
         regex=False,
         hidden=False,
         help=None,
-        data_type=None,
-        chain=False,
+        input_type=None,
+        output_type=None,
     ):
         def decorator(func):
             @functools.wraps(func)
@@ -937,6 +937,7 @@ class Kernel:
                 kwargs = dict()
                 argument_index = 0
                 opt_index = 0
+                output_type = inner.output_type
                 pos = 0
                 for kind, value, start, pos in Kernel._cmd_parser(remainder):
                     if kind == "PARAM":
@@ -1003,10 +1004,15 @@ class Kernel:
                 if len(remainder) > 0:
                     kwargs["remainder"] = remainder
                     kwargs["args"] = remainder.split()
-                if not chain:
-                    remainder = ""
-                value = func(command, channel=channel, **ik, **kwargs)
-                return value, remainder
+                if output_type is None:
+                    remainder = ""  # not chaining
+                returned = func(command, channel=channel, **ik, **kwargs)
+                if returned is None:
+                    value = None
+                    output_type = None
+                else:
+                    output_type, value = returned
+                return value, remainder, output_type
 
             # Main Decorator
             try:
@@ -1030,7 +1036,8 @@ class Kernel:
             inner.help = help
             inner.regex = regex
             inner.hidden = hidden
-            inner.data_type = data_type if data_type is not None else type(None)
+            inner.input_type = input_type
+            inner.output_type = output_type
             inner.arguments = list()
             inner.options = list()
             return inner
@@ -1996,6 +2003,7 @@ class Kernel:
             channel(text)
 
         data = None  # Initial data is null
+        input_type = None
 
         while len(text) > 0:
             # Divide command from remainder.
@@ -2033,7 +2041,10 @@ class Kernel:
 
                     command_funct = self.registered[command_name]
                     cmd_re = command_name.split("/")[-1]
-                    if type(data) != command_funct.data_type:
+                    if isinstance(command_funct.input_type, tuple):
+                        if input_type not in command_funct.input_type:
+                            continue
+                    elif input_type != command_funct.input_type:
                         continue  # We much match the input type.
                     if command_funct.regex:
                         match = re.compile(cmd_re)
@@ -2043,7 +2054,7 @@ class Kernel:
                         if cmd_re != command:
                             continue
                     try:
-                        data, remainder = command_funct(
+                        data, remainder, input_type = command_funct(
                             command, remainder, channel, data=data, _=_
                         )
                     except SyntaxError:

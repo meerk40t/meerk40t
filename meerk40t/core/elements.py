@@ -246,7 +246,7 @@ class Elemental(Modifier):
         @self.context.console_option("rx", "x", type=Length)
         @self.context.console_option("stroke", "s", type=Color)
         @self.context.console_option("fill", "f", type=Color)
-        @self.context.console_command("rect", help="adds rectangle to scene")
+        @self.context.console_command("rect", help="adds rectangle to scene", output_type='path')
         def rect(
             command,
             x_pos,
@@ -274,7 +274,7 @@ class Elemental(Modifier):
             rect.stroke = stroke
             rect.fill = fill
             self.add_element(rect)
-            return rect
+            return 'path', rect
 
         @self.context.console_command("text", help="text <text>")
         def text(command, channel, _, args=tuple(), **kwargs):
@@ -296,7 +296,7 @@ class Elemental(Modifier):
             self.add_element(element)
             return
 
-        @self.context.console_command("stroke", help="stroke <svg color>")
+        @self.context.console_command("stroke", help="stroke <svg color>", input_type=(None, 'path'))
         def stroke(command, channel, _, args=tuple(), data=None, **kwargs):
             if data is not None:
                 data.stroke = Color(args[0])
