@@ -30,6 +30,14 @@ def bootstrap(kernel, force=False):
 
         svg_io.plugin(kernel)
 
+        try:
+            from .dxf import dxf_io
+
+            dxf_io.plugin(kernel)
+        except ImportError:
+            # This module cannot be loaded. ezdxf missing.
+            pass
+
         from .device.lhystudios import lhystudiosdevice
 
         lhystudiosdevice.plugin(kernel)

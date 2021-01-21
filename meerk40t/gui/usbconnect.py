@@ -47,7 +47,8 @@ class UsbConnect(wx.Frame, Module):
         self.context.active.channel("pipe/usb").watch(self.update_text)
 
     def finalize(self, *args, **kwargs):
-        self.context.active.channel("pipe/usb").unwatch(self.update_text)
+        if self.context.active is not None:
+            self.context.active.channel("pipe/usb").unwatch(self.update_text)
         try:
             self.Close()
         except RuntimeError:
