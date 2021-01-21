@@ -87,7 +87,6 @@ class ImageTools(Modifier):
                 except KeyError:
                     channel(_("Raster Script %s is not registered.") % args[1])
                     return
-                from .rasterscripts import RasterScripts
 
                 for element in elements.elems(emphasized=True):
                     if isinstance(element, SVGImage):
