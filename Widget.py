@@ -23,16 +23,16 @@ RESPONSE_ABORT = 1
 RESPONSE_CHAIN = 2
 RESPONSE_DROP = 3
 
-ORIENTATION_MODE_MASK = 0b000011_11110000
-ORIENTATION_DIM_MASK = 0b000000_00001111
+ORIENTATION_MODE_MASK = 0b00001111110000
+ORIENTATION_DIM_MASK = 0b00000000001111
 ORIENTATION_MASK = ORIENTATION_MODE_MASK | ORIENTATION_DIM_MASK
-ORIENTATION_RELATIVE = 0b000000_00000000
-ORIENTATION_ABSOLUTE = 0b000000_00010000
-ORIENTATION_CENTERED = 0b000000_00100000
-ORIENTATION_HORIZONTAL = 0b000000_01000000
-ORIENTATION_VERTICAL = 0b000000_10000000
-ORIENTATION_GRID = 0b000001_00000000
-ORIENTATION_NO_BUFFER = 0b000010_00000000
+ORIENTATION_RELATIVE = 0b00000000000000
+ORIENTATION_ABSOLUTE = 0b00000000010000
+ORIENTATION_CENTERED = 0b00000000100000
+ORIENTATION_HORIZONTAL = 0b00000001000000
+ORIENTATION_VERTICAL = 0b00000010000000
+ORIENTATION_GRID = 0b00000100000000
+ORIENTATION_NO_BUFFER = 0b00001000000000
 BUFFER = 10.0
 
 
@@ -993,8 +993,8 @@ class GridWidget(Widget):
             wmils = v.bed_width * MILS_IN_MM
             hmils = v.bed_height * MILS_IN_MM
         else:
-            wmils = 320 * MILS_IN_MM
-            hmils = 220 * MILS_IN_MM
+            wmils = 310 * MILS_IN_MM
+            hmils = 210 * MILS_IN_MM
 
         p = self.scene.device.device_root
         convert = p.units_convert
@@ -1018,6 +1018,8 @@ class GridWidget(Widget):
         self.grid = starts, ends
 
     def process_draw(self, gc):
+        if self.scene.device.draw_mode is None:
+            return
         if self.scene.device.draw_mode & DRAW_MODE_BACKGROUND == 0:
             device = self.scene.device
             if device is not None:
@@ -1025,7 +1027,7 @@ class GridWidget(Widget):
                 hmils = device.bed_height * MILS_IN_MM
             else:
                 wmils = 320 * MILS_IN_MM
-                hmils = 220 * MILS_IN_MM
+                hmils = 210 * MILS_IN_MM
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)

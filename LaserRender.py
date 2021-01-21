@@ -1,3 +1,5 @@
+from math import floor
+
 import wx
 from PIL import Image
 
@@ -113,7 +115,7 @@ class LaserRender:
         c = stroke
         if c is not None and c != 'none':
             swizzle_color = swizzlecolor(c)
-            self.color.SetRGB(swizzle_color)
+            self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
             self.pen.SetWidth(width)
             gc.SetPen(self.pen)
@@ -124,7 +126,7 @@ class LaserRender:
         c = fill
         if c is not None and c != 'none':
             swizzle_color = swizzlecolor(c)
-            self.color.SetRGB(swizzle_color)  # wx has BBGGRR
+            self.color.SetRGBA(swizzle_color | c.alpha << 24)  # wx has BBGGRR
             self.brush.SetColour(self.color)
             gc.SetBrush(self.brush)
         else:
@@ -132,10 +134,12 @@ class LaserRender:
 
     def set_element_pen(self, gc, element, zoomscale=1.0):
         try:
-            sw = Length(element.values['stroke-width']).value(ppi=96.0)
+            sw = Length(element.stroke_width).value(ppi=96.0)
             # if sw < 3.0:
             #     sw = 3.0
-        except KeyError:
+        except AttributeError:
+            sw = 1.0
+        if sw is None:
             sw = 1.0
         limit = zoomscale**.5
         if sw < limit:

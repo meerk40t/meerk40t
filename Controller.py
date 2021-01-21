@@ -88,6 +88,7 @@ class Controller(wx.Frame, Module):
         self.text_location.SetValue(self.device.device_location)
 
     def finalize(self, channel=None):
+        self.device.buffer_max = self.spin_packet_buffer_max.GetValue()  # Spin.
         self.device.unlisten('pipe;status', self.update_status)
         self.device.unlisten('pipe;packet_text', self.update_packet_text)
         self.device.unlisten('pipe;buffer', self.on_buffer_update)
@@ -273,6 +274,8 @@ class Controller(wx.Frame, Module):
         self.device.buffer_limit = not self.device.buffer_limit
 
     def on_spin_packet_buffer_max(self, event):  # wxGlade: JobInfo.<event_handler>
+        if self.device is None:
+            return
         self.device.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def on_button_emergency_stop(self, event):  # wxGlade: Controller.<event_handler>

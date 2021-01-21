@@ -7,13 +7,15 @@ try:
 except ImportError:
     from collections import MutableSequence  # noqa
 from copy import copy
-from math import *
+
+from math import ceil, cos, radians, sin, sqrt, hypot, atan, atan2, tan, degrees, acos, log
 
 from xml.etree.ElementTree import iterparse
 
 try:
     from math import tau
 except ImportError:
+    from math import pi
     tau = pi * 2
 
 """
@@ -28,7 +30,7 @@ Though not required the SVGImage class acquires new functionality if provided wi
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.3.5"
+SVGELEMENTS_VERSION = "1.4.6"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -65,20 +67,30 @@ SVG_TAG_TEXT = 'text'
 SVG_TAG_TSPAN = 'tspan'
 SVG_TAG_IMAGE = 'image'
 SVG_TAG_DESC = 'desc'
+SVG_TAG_TITLE = 'title'
+SVG_TAG_METADATA = 'metadata'
 SVG_TAG_STYLE = 'style'
 SVG_TAG_DEFS = 'defs'
 SVG_TAG_USE = 'use'
+SVG_TAG_CLIPPATH = 'clipPath'
+SVG_TAG_PATTERN = 'pattern'
+
 SVG_STRUCT_ATTRIB = 'attributes'
 SVG_ATTR_ID = 'id'
 SVG_ATTR_DATA = 'd'
 SVG_ATTR_DISPLAY = 'display'
 SVG_ATTR_COLOR = 'color'
 SVG_ATTR_FILL = 'fill'
+SVG_ATTR_FILL_OPACITY = 'fill-opacity'
 SVG_ATTR_STROKE = 'stroke'
+SVG_ATTR_STROKE_OPACITY = 'stroke-opacity'
 SVG_ATTR_STROKE_WIDTH = 'stroke-width'
 SVG_ATTR_TRANSFORM = 'transform'
 SVG_ATTR_STYLE = 'style'
 SVG_ATTR_CLASS = 'class'
+SVG_ATTR_CLIP_PATH = 'clip-path'
+SVG_ATTR_CLIP_RULE = 'clip-rule'
+SVG_ATTR_CLIP_UNIT_TYPE = 'clipPathUnits'
 SVG_ATTR_CENTER_X = 'cx'
 SVG_ATTR_CENTER_Y = 'cy'
 SVG_ATTR_RADIUS_X = 'rx'
@@ -103,6 +115,17 @@ SVG_ATTR_FONT_FACE = 'font-face'
 SVG_ATTR_FONT_SIZE = 'font-size'
 SVG_ATTR_FONT_WEIGHT = 'font-weight'  # normal, bold, bolder, lighter, 100-900
 SVG_ATTR_TEXT_ANCHOR = 'text-anchor'
+SVG_ATTR_PATTERN_CONTENT_UNITS = "patternContentUnits"
+SVG_ATTR_PATTERN_TRANSFORM = "patternTransform"
+SVG_ATTR_PATTERN_UNITS = "patternUnits"
+
+SVG_ATTR_VECTOR_EFFECT = 'vector-effect'
+
+SVG_UNIT_TYPE_USERSPACEONUSE = 'userSpaceOnUse'
+SVG_UNIT_TYPE_OBJECTBOUNDINGBOX = 'objectBoundingBox'
+
+SVG_RULE_NONZERO = 'nonzero'
+SVG_RULE_EVENODD = 'evenodd'
 
 SVG_TRANSFORM_MATRIX = 'matrix'
 SVG_TRANSFORM_TRANSLATE = 'translate'
@@ -115,8 +138,11 @@ SVG_TRANSFORM_TRANSLATE_X = 'translatex'
 SVG_TRANSFORM_TRANSLATE_Y = 'translatey'
 SVG_TRANSFORM_SCALE_X = 'scalex'
 SVG_TRANSFORM_SCALE_Y = 'scaley'
+
 SVG_VALUE_NONE = 'none'
 SVG_VALUE_CURRENT_COLOR = 'currentColor'
+
+SVG_VALUE_NON_SCALING_STROKE = 'non-scaling-stroke'
 
 PATTERN_WS = r'[\s\t\n]*'
 PATTERN_COMMA = r'(?:\s*,\s*|\s+|(?=-))'
@@ -143,6 +169,7 @@ PATTERN_TRANSFORM_UNITS = PATTERN_LENGTH_UNITS + '|' \
                           + PATTERN_ANGLE_UNITS + '|' \
                           + PATTERN_PERCENT
 
+REGEX_IRI = re.compile('url\(#?(.*)\)')
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile('(%s)%s(%s)' % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT))
 REGEX_TRANSFORM_TEMPLATE = re.compile('(?u)(%s)%s\(([^)]+)\)' % (PATTERN_TRANSFORM, PATTERN_WS))
@@ -260,7 +287,7 @@ class SVGLexicalParser:
         current_pos = self.parser.current_point
         if current_pos is None:
             return position
-        return position[0] + current_pos[0], position[1] + current_pos[1]
+        return position[0] + current_pos.x, position[1] + current_pos.y
 
     def parse(self, parser, pathd):
         self.parser = parser
@@ -803,7 +830,7 @@ class Length(object):
         v = value / ppi
         return Length("%sin" % (Length.str(v)))
 
-    def value(self, ppi=None, relative_length=None, font_size=None, font_height=None, viewbox=None):
+    def value(self, ppi=None, relative_length=None, font_size=None, font_height=None, viewbox=None, **kwargs):
         if self.amount is None:
             return None
         if self.units == '%':
@@ -848,23 +875,23 @@ class Length(object):
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            return self.amount * v.viewbox_width / 100.0
+            return self.amount * v.width / 100.0
         if self.units == 'vh':
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            return self.amount * v.viewbox_height / 100.0
+            return self.amount * v.height / 100.0
         if self.units == 'vmin':
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            m = min(v.viewbox_height, v.viewbox_height)
+            m = min(v.height, v.height)
             return self.amount * m / 100.0
         if self.units == 'vmax':
             if viewbox is None:
                 return self
             v = Viewbox(viewbox)
-            m = max(v.viewbox_height, v.viewbox_height)
+            m = max(v.height, v.height)
             return self.amount * m / 100.0
         try:
             return float(self)
@@ -967,6 +994,12 @@ class Color(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def __abs__(self):
+        # Return opaque color.
+        if self.value is None:
+            return Color(self.value)
+        return Color(self.red, self.green, self.blue)
 
     @staticmethod
     def rgb_to_int(r, g, b, opacity=1.0):
@@ -1393,20 +1426,24 @@ class Color(object):
 
     @property
     def opacity(self):
-        return self.alpha / 255.0
+        return self.alpha / 255.0 if self.value is not None else None
 
     @opacity.setter
     def opacity(self, opacity):
+        if self.value is None:
+            raise ValueError
         a = int(round(opacity * 255.0))
         a = Color.crimp(a)
         self.alpha = a
 
     @property
     def alpha(self):
-        return (self.value >> 24) & 0xFF
+        return (self.value >> 24) & 0xFF if self.value is not None else None
 
     @alpha.setter
     def alpha(self, a):
+        if self.value is None:
+            raise ValueError
         a = Color.crimp(a)
         self.value &= 0xFFFFFF
         self.value = int(self.value)
@@ -1421,10 +1458,12 @@ class Color(object):
 
     @property
     def red(self):
-        return (self.value >> 16) & 0xFF
+        return (self.value >> 16) & 0xFF if self.value is not None else None
 
     @red.setter
     def red(self, r):
+        if self.value is None:
+            raise ValueError
         r = int(r & 0xFF)
         self.value &= ~0xFF0000
         r <<= 16
@@ -1432,10 +1471,12 @@ class Color(object):
 
     @property
     def green(self):
-        return (self.value >> 8) & 0xFF
+        return (self.value >> 8) & 0xFF if self.value is not None else None
 
     @green.setter
     def green(self, g):
+        if self.value is None:
+            raise ValueError
         g = int(g & 0xFF)
         self.value &= ~0xFF00
         g <<= 8
@@ -1443,27 +1484,31 @@ class Color(object):
 
     @property
     def blue(self):
-        return self.value & 0xFF
+        return self.value & 0xFF if self.value is not None else None
 
     @blue.setter
     def blue(self, b):
+        if self.value is None:
+            raise ValueError
         b = int(b & 0xFF)
         self.value &= ~0xFF
         self.value |= b
 
     @property
     def hexa(self):
-        return '#%02x%02x%02x%02x' % (self.alpha, self.red, self.green, self.blue)
+        return '#%02x%02x%02x%02x' % (self.alpha, self.red, self.green, self.blue) if self.value is not None else None
 
     @property
     def hex(self):
         if self.alpha == 0xFF:
-            return '#%02x%02x%02x' % (self.red, self.green, self.blue)
+            return '#%02x%02x%02x' % (self.red, self.green, self.blue) if self.value is not None else None
         else:
-            return '#%02x%02x%02x%02x' % (self.alpha, self.red, self.green, self.blue)
+            return self.hexa
 
     @property
     def hue(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1489,11 +1534,15 @@ class Color(object):
 
     @hue.setter
     def hue(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = v, s, l
 
     @property
     def saturation(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1509,11 +1558,15 @@ class Color(object):
 
     @saturation.setter
     def saturation(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = h, v, l
 
     @property
     def lightness(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1523,11 +1576,15 @@ class Color(object):
 
     @lightness.setter
     def lightness(self, v):
+        if self.value is None:
+            raise ValueError
         h, s, l = self.hsl
         self.hsl = h, s, v
 
     @property
     def intensity(self):
+        if self.value is None:
+            return None
         r = self.red
         g = self.green
         b = self.blue
@@ -1535,6 +1592,8 @@ class Color(object):
 
     @property
     def brightness(self):
+        if self.value is None:
+            return None
         r = self.red
         g = self.green
         b = self.blue
@@ -1543,10 +1602,14 @@ class Color(object):
 
     @property
     def blackness(self):
+        if self.value is None:
+            return None
         return 1.0 - self.brightness
 
     @property
     def luminance(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1554,6 +1617,8 @@ class Color(object):
 
     @property
     def luma(self):
+        if self.value is None:
+            return None
         r = self.red / 255.0
         g = self.green / 255.0
         b = self.blue / 255.0
@@ -1641,6 +1706,8 @@ class Color(object):
 
     @property
     def hsl(self):
+        if self.value is None:
+            return None
         return self.hue, self.saturation, self.lightness
 
     @hsl.setter
@@ -1691,7 +1758,6 @@ class Color(object):
             color.opacity = opacity
             self.value = Color.over(color, self)
 
-
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
 
@@ -1708,24 +1774,28 @@ class Point:
         if x is not None and y is None:
             if isinstance(x, str):
                 string_x, string_y = REGEX_COORD_PAIR.findall(x)[0]
-                x = float(string_x)
-                y = float(string_y)
-            else:
-                try:  # try subscription.
-                    y = x[1]
-                    x = x[0]
-                except TypeError:
-                    try:  # Try .x .y
-                        y = x.y
-                        x = x.x
-                    except AttributeError:
-                        try:  # try .imag .real complex values.
-                            y = x.imag
-                            x = x.real
-                        except AttributeError:
-                            # Unknown.
-                            x = 0
-                            y = 0
+                self.x = float(string_x)
+                self.y = float(string_y)
+                return
+            try:  # Try .x .y
+                self.y = x.y
+                self.x = x.x
+                return
+            except AttributeError:
+                pass
+            try:  # try subscription.
+                self.y = x[1]
+                self.x = x[0]
+                return
+            except TypeError:
+                pass
+            try:  # try .imag .real complex values.
+                self.y = x.imag
+                self.x = x.real
+                return
+            except AttributeError:
+                # Unknown.
+                raise TypeError
         self.x = x
         self.y = y
 
@@ -1793,82 +1863,187 @@ class Point:
             other = Matrix(other)
         if isinstance(other, Matrix):
             v = other.point_in_matrix_space(self)
-            self[0] = v[0]
-            self[1] = v[1]
-        elif isinstance(other, (int, float)):  # Emulates complex point multiplication by real.
+            self.x = v.x
+            self.y = v.y
+            return self
+        try:
+            c = complex(self) * complex(other.x, other.y)
+            self.x = c.real
+            self.y = c.imag
+            return self
+        except AttributeError:
+            pass
+        try:
+            c = complex(self) * complex(other[0], other[1])
+            self.x = c.real
+            self.y = c.imag
+            return self
+        except (TypeError, IndexError):
+            pass
+        try:
+            c = complex(self) * complex(other.real, other.imag)
+            self.x = c.real
+            self.y = c.imag
+            return self
+        except AttributeError:
+            pass
+        try:
             self.x *= other
             self.y *= other
-        else:
+            return self
+        except Exception:
             return NotImplemented
-        return self
 
     def __mul__(self, other):
-        if isinstance(other, (Matrix, str, int, float)):
-            n = copy(self)
-            n *= other
-            return n
-        return NotImplemented
+        if isinstance(other, str):
+            other = Matrix(other)
+        if isinstance(other, Matrix):
+            return other.point_in_matrix_space(self)
+        try:
+            return Point(complex(self) * complex(other.x,other.y))
+        except AttributeError:
+            pass
+        try:
+            return Point(complex(self) * complex(other[0], other[1]))
+        except (TypeError, IndexError):
+            pass
+        try:
+            return Point(complex(self) * complex(other.real, other.imag))
+        except AttributeError:
+            pass
+        try:
+            return Point(self.x * other, self.y * other)
+        except Exception:
+            return NotImplemented
 
     __rmul__ = __mul__
 
     def __iadd__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            self[0] += other[0]
-            self[1] += other[1]
-        elif isinstance(other, complex):
-            self[0] += other.real
-            self[1] += other.imag
-        elif isinstance(other, (float, int)):
-            self[0] += other
-        else:
+        try:
+            self.x += other.x
+            self.y += other.y
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.y += other[1]
+            self.x += other[0]
+            return self
+        except (TypeError, IndexError):
+            pass
+        try:
+            self.x += other.real
+            self.y += other.imag
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.x += other
+            return self
+        except Exception:
             return NotImplemented
-        return self
 
     def __add__(self, other):
-        if isinstance(other, (Point, tuple, list, complex, int, float)):
-            n = copy(self)
-            n += other
-            return n
+        try:
+            x = self.x + other.x
+            y = self.y + other.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        try:
+            y = self.y + other[1]
+            x = self.x + other[0]
+            return Point(x, y)
+        except (TypeError, IndexError):
+            pass
+        try:
+            x = self.x + other.real
+            y = self.y + other.imag
+            return Point(x, y)
+        except AttributeError:
+            pass
+        if isinstance(other, (float, int)):
+            x = self.x + other
+            return Point(x, self.y)
         return NotImplemented
 
     __radd__ = __add__
 
     def __isub__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            self[0] -= other[0]
-            self[1] -= other[1]
-        elif isinstance(other, complex):
-            self[0] -= other.real
-            self[1] -= other.imag
-        elif isinstance(other, (float, int)):
-            self[0] -= other
-        else:
+        try:
+            self.x -= other.x
+            self.y -= other.y
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.y -= other[1]
+            self.x -= other[0]
+            return self
+        except (TypeError, IndexError):
+            pass
+        try:
+            self.x -= other.real
+            self.y -= other.imag
+            return self
+        except AttributeError:
+            pass
+        try:
+            self.x -= other
+            return self
+        except Exception:
             return NotImplemented
-        return self
 
     def __sub__(self, other):
-        if isinstance(other, (Point, tuple, list, complex, int, float)):
-            n = copy(self)
-            n -= other
-            return n
+        try:
+            x = self.x - other.x
+            y = self.y - other.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        try:
+            y = self.y - other[1]
+            x = self.x - other[0]
+            return Point(x, y)
+        except (TypeError, IndexError):
+            pass
+        try:
+            x = self.x - other.real
+            y = self.y - other.imag
+            return Point(x, y)
+        except AttributeError:
+            pass
+        if isinstance(other, (float, int)):
+            x = self.x - other
+            return Point(x, self.y)
         return NotImplemented
 
     def __rsub__(self, other):
-        if isinstance(other, (Point, tuple, list)):
-            x = other[0] - self[0]
-            y = other[1] - self[1]
-        elif isinstance(other, complex):
-            x = other.real - self[0]
-            y = other.imag - self[1]
-        elif isinstance(other, (float, int)):
-            x = other - self[0]
-            y = self[1]
-        else:
-            return NotImplemented
-        return Point(x, y)
+        try:
+            x = other.x - self.x
+            y = other.y - self.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        try:
+            y = other[1] - self.y
+            x = other[0] - self.x
+            return Point(x, y)
+        except (TypeError, IndexError):
+            pass
+        try:
+            x = other.real - self.x
+            y = other.imag - self.y
+            return Point(x, y)
+        except AttributeError:
+            pass
+        if isinstance(other, (float, int)):
+            x = other - self.x
+            return Point(x, self.y)
+        return NotImplemented
 
     def __complex__(self):
-        return self.x + self.y*1j
+        return self.x + self.y * 1j
 
     def __abs__(self):
         return hypot(self.x, self.y)
@@ -1898,35 +2073,29 @@ class Point:
         return self.y
 
     def matrix_transform(self, matrix):
-        v = matrix.point_in_matrix_space(self)
-        self[0] = v[0]
-        self[1] = v[1]
+        self *= matrix
         return self
 
     def move_towards(self, p2, amount=1):
         if not isinstance(p2, Point):
             p2 = Point(p2)
-        self.x = amount * (p2[0] - self[0]) + self[0]
-        self.y = amount * (p2[1] - self[1]) + self[1]
+        self += amount * (p2 - self)
 
     def distance_to(self, p2):
-        if not isinstance(p2, Point):
-            p2 = Point(p2)
-        return Point.distance(self, p2)
+        return abs(self - p2)
 
     def angle_to(self, p2):
-        if not isinstance(p2, Point):
-            p2 = Point(p2)
-        return Point.angle(self, p2)
+        p = p2 - self
+        return Angle.radians(atan2(p.y, p.x))
 
     def polar_to(self, angle, distance):
-        return Point.polar(self, angle, distance)
+        q =  Point.polar(self, angle, distance)
+        self.x = q.x
+        self.y = q.y
+        return self
 
     def reflected_across(self, p):
-        m = Point(p)
-        m += p
-        m -= self
-        return m
+        return (p + (p - self))
 
     @staticmethod
     def orientation(p, q, r):
@@ -2056,7 +2225,7 @@ class Angle(float):
         return self / tau
 
     def is_orthogonal(self):
-        return (self % (tau / 4)) == 0
+        return (self % (tau / 4.0)) == 0
 
 
 class Matrix:
@@ -2309,20 +2478,22 @@ class Matrix:
         Provides values to turn trans_x and trans_y values into user units floats rather
         than Lengths by giving the required information to perform the conversions.
         """
-
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-
         if isinstance(self.e, Length):
+            if width is None and relative_length is not None:
+                width = relative_length
             self.e = self.e.value(ppi=ppi, relative_length=width, font_size=font_size,
                                   font_height=font_height, viewbox=viewbox)
 
         if isinstance(self.f, Length):
+            if height is None and relative_length is not None:
+                height = relative_length
             self.f = self.f.value(ppi=ppi, relative_length=height, font_size=font_size,
                                   font_height=font_height, viewbox=viewbox)
         return self
+
+    @property
+    def determinant(self):
+        return self.a * self.d - self.c * self.b
 
     def value_trans_x(self):
         return self.e
@@ -2624,6 +2795,148 @@ class Matrix:
         return float(r0[0]), float(r1[0]), float(r0[1]), float(r1[1]), r0[2], r1[2]
 
 
+class Viewbox:
+
+    def __init__(self, viewbox, preserve_aspect_ratio=None):
+        """
+        Viewbox controls the scaling between the drawing size view that is observing that drawing.
+
+        :param viewbox: either values or viewbox attribute or a Viewbox object
+        :param preserve_aspect_ratio: preserveAspectRatio
+        """
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.preserve_aspect_ratio = preserve_aspect_ratio
+        if isinstance(viewbox, dict):
+            self.property_by_values(viewbox)
+        elif isinstance(viewbox, Viewbox):
+            self.property_by_object(viewbox)
+        else:
+            self.set_viewbox(viewbox)
+
+    def __str__(self):
+        return '%s %s %s %s' % (
+            Length.str(self.x),
+            Length.str(self.y),
+            Length.str(self.width),
+            Length.str(self.height),
+        )
+
+    def property_by_object(self, obj):
+        self.x = obj.x
+        self.y = obj.y
+        self.width = obj.width
+        self.height = obj.height
+        self.preserve_aspect_ratio = obj.preserve_aspect_ratio
+
+    def property_by_values(self, values):
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        if viewbox is not None:
+            self.set_viewbox(viewbox)
+        if SVG_ATTR_PRESERVEASPECTRATIO in values:
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+
+    def set_viewbox(self, viewbox):
+        if viewbox is not None:
+            dims = list(REGEX_FLOAT.findall(viewbox))
+            try:
+                self.x = float(dims[0])
+                self.y = float(dims[1])
+                self.width = float(dims[2])
+                self.height = float(dims[3])
+            except IndexError:
+                pass
+
+    def transform(self, element):
+        return Viewbox.viewbox_transform(
+            element.x, element.y, element.width, element.height,
+            self.x, self.y, self.width, self.height,
+            self.preserve_aspect_ratio)
+
+    @staticmethod
+    def viewbox_transform(e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect):
+        """
+        SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
+        With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+
+        It creates transform commands equal to that viewport expected.
+
+        :param svg_node: dict containing the relevant svg entries.
+        :return: string of the SVG transform commands to account for the viewbox.
+        """
+
+        # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+
+        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
+        # width and height values of the viewBox attribute respectively.
+
+        # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+        # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+        # or if meetOrSlice is missing from this value.
+        if e_x is None or e_y is None or e_width is None or e_height is None or \
+                vb_x is None or vb_y is None or vb_width is None or vb_height is None:
+            return ''
+        if aspect is not None:
+            aspect_slice = aspect.split(' ')
+            try:
+                align = aspect_slice[0]
+            except IndexError:
+                align = 'xMidyMid'
+            try:
+                meet_or_slice = aspect_slice[1]
+            except IndexError:
+                meet_or_slice = 'meet'
+        else:
+            align = 'xMidyMid'
+            meet_or_slice = 'meet'
+        # Initialize scale-x to e-width/vb-width.
+        scale_x = e_width / vb_width
+        # Initialize scale-y to e-height/vb-height.
+        scale_y = e_height / vb_height
+
+        # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
+        if align != SVG_VALUE_NONE and meet_or_slice == 'meet':
+            scale_x = scale_y = min(scale_x, scale_y)
+        # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
+        elif align != SVG_VALUE_NONE and meet_or_slice == 'slice':
+            scale_x = scale_y = max(scale_x, scale_y)
+        # Initialize translate-x to e-x - (vb-x * scale-x).
+        translate_x = e_x - (vb_x * scale_x)
+        # Initialize translate-y to e-y - (vb-y * scale-y)
+        translate_y = e_y - (vb_y * scale_y)
+        # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+        align = align.lower()
+        if 'xmid' in align:
+            translate_x += (e_width - vb_width * scale_x) / 2.0
+        # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
+        if 'xmax' in align:
+            translate_x += e_width - vb_width * scale_x
+        # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+        if 'ymid' in align:
+            translate_y += (e_height - vb_height * scale_y) / 2.0
+        # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
+        if 'ymax' in align:
+            translate_y += (e_height - vb_height * scale_y)
+        # The transform applied to content contained by the element is given by:
+        # translate(translate-x, translate-y) scale(scale-x, scale-y)
+        if isinstance(scale_x, Length) or isinstance(scale_y, Length):
+            raise ValueError
+        if translate_x == 0 and translate_y == 0:
+            if scale_x == 1 and scale_y == 1:
+                return ""  # Nothing happens.
+            else:
+                return "scale(%s, %s)" % (Length.str(scale_x), Length.str(scale_y))
+        else:
+            if scale_x == 1 and scale_y == 1:
+                return "translate(%s, %s)" % (Length.str(translate_x), Length.str(translate_y))
+            else:
+                return "translate(%s, %s) scale(%s, %s)" % \
+                       (Length.str(translate_x), Length.str(translate_y),
+                        Length.str(scale_x), Length.str(scale_y))
+
+
 class SVGElement(object):
     """
     Any element within the SVG namespace.
@@ -2666,51 +2979,22 @@ class SVGElement(object):
     def property_by_values(self, values):
         self.id = values.get(SVG_ATTR_ID)
 
-
-class Group(SVGElement, list):
-    """
-    Group Container element can have children.
-    SVG 2.0 <g> are defined in:
-    5.2. Grouping: the g element
-    """
-
-    # TODO: SVG group objects must actually possess transformation matrices.
-
-    def __init__(self, *args, **kwargs):
-        SVGElement.__init__(self, *args, **kwargs)
-        list.__init__(self)
-        if len(args) >= 1:
-            s = args[0]
-            if isinstance(s, Group):
-                self.extend(list(map(copy, s)))
-                return
-
-    def __copy__(self):
-        return Group(self)
-
-    def select(self, conditional=None):
+    def render(self, **kwargs):
         """
-        Finds all flattened subobjects of this group for which the conditional returns
-        true.
+        Render changes any length/percent values or attributes into real usable limits if
+        given the information required to change such parameters.
 
-        :param conditional: function taking element and returns True or False if matching
+        :param kwargs: various other properties to be rendered with.
+        :return:
         """
-        if conditional is None:
-            def conditional(item):
-                return True
-        for subitem in self:
-            if not conditional(subitem):
-                continue
-            yield subitem
-            if isinstance(subitem, Group):
-                for s in subitem.select(conditional):
-                    yield s
-
-    def reify(self):
         pass
 
+    def set(self, key, value):
+        self.values[key] = value
+        return self
 
-class Transformable(SVGElement):
+
+class Transformable:
     """Any element that is transformable and has a transform property."""
 
     def __init__(self, *args, **kwargs):
@@ -2718,17 +3002,14 @@ class Transformable(SVGElement):
         self._lengths = None
         self.transform = None
         self.apply = None
-        SVGElement.__init__(self, *args, **kwargs)
 
     def property_by_object(self, s):
-        SVGElement.property_by_object(self, s)
         self.transform = Matrix(s.transform)
         self.apply = s.apply
 
     def property_by_values(self, values):
-        SVGElement.property_by_values(self, values)
-        self.transform = Matrix(self.values.get(SVG_ATTR_TRANSFORM, ''))
-        self.apply = bool(self.values.get('apply', True))
+        self.transform = Matrix(values.get(SVG_ATTR_TRANSFORM, ''))
+        self.apply = bool(values.get('apply', True))
 
     def __mul__(self, other):
         if isinstance(other, (Matrix, str)):
@@ -2767,19 +3048,14 @@ class Transformable(SVGElement):
         """
         self._lengths = None
         self._length = None
-        if SVG_ATTR_STROKE_WIDTH in self.values:
-            width = Length(self.values[SVG_ATTR_STROKE_WIDTH]).value()
-            t = self.transform
-            det = t.a * t.d - t.c * t.b
-            self.values[SVG_ATTR_STROKE_WIDTH] = width * sqrt(abs(det))
-        return self
 
     def render(self, **kwargs):
         """
         Renders the transformable by performing any required length conversion operations into pixels. The element
         will be the pixel-length form.
         """
-        self.transform.render(**kwargs)
+        if self.transform is not None:
+            self.transform.render(**kwargs)
         return self
 
     def bbox(self, transformed=True):
@@ -2802,40 +3078,77 @@ class Transformable(SVGElement):
         return origin.angle_to(prx)
 
 
-class GraphicObject(SVGElement):
+class GraphicObject:
     """Any drawn element."""
 
     def __init__(self, *args, **kwargs):
         self.stroke = None
         self.fill = None
-        SVGElement.__init__(self, *args, **kwargs)
+        self.stroke_width = None
 
     def property_by_object(self, s):
-        if s.fill is None:
-            self.fill = None
-        else:
-            self.fill = Color(s.fill)
-        if s.stroke is None:
-            self.stroke = None
-        else:
-            self.stroke = Color(s.stroke)
+        self.fill = Color(s.fill) if s.fill is not None else None
+        self.stroke = Color(s.stroke) if s.stroke is not None else None
+        self.stroke_width = Length(s.stroke_width).value() if s.stroke_width is not None else None
 
     def property_by_values(self, values):
-        if SVG_ATTR_STROKE in values:
-            stroke = values[SVG_ATTR_STROKE]
-            if stroke is None:
-                self.stroke = None
-            else:
-                self.stroke = Color(stroke)
-        if SVG_ATTR_FILL in values:
-            fill = values[SVG_ATTR_FILL]
-            if fill is None:
-                self.fill = None
-            else:
-                self.fill = Color(fill)
+        stroke = values.get(SVG_ATTR_STROKE)
+        self.stroke = Color(stroke) if stroke is not None else None
+        stroke_opacity = values.get(SVG_ATTR_STROKE_OPACITY)
+        if stroke_opacity is not None and self.stroke is not None and self.stroke.value is not None:
+            try:
+                self.stroke.opacity = float(stroke_opacity)
+            except ValueError:
+                pass
+        fill = values.get(SVG_ATTR_FILL)
+        self.fill = Color(fill) if fill is not None else None
+        fill_opacity = values.get(SVG_ATTR_FILL_OPACITY)
+        if fill_opacity is not None and self.fill is not None and self.fill.value is not None:
+            try:
+                self.fill.opacity = float(fill_opacity)
+            except ValueError:
+                pass
+        self.stroke_width = Length(values.get(SVG_ATTR_STROKE_WIDTH, 1.0)).value()
+
+    def render(self, **kwargs):
+        if isinstance(self.stroke_width, Length):
+            width = kwargs.get('width', kwargs.get('relative_length'))
+            height = kwargs.get('height', kwargs.get('relative_length'))
+            try:
+                del kwargs['relative_length']
+            except KeyError:
+                pass
+            self.stroke_width = self.stroke_width.value(relative_length=sqrt(width * width + height * height), **kwargs)
+            # A percentage stroke_width is always computed as a percentage of the normalized viewBox diagonal length.
+
+    def reify(self):
+        """
+        Realizes the transform to the attributes. Such that the attributes become actualized and the transform
+        simplifies towards the identity matrix. In many cases it will become the identity matrix. In other cases the
+        transformed shape cannot be represented through the properties alone. And shall keep those parts of the
+        transform required preserve equivalency.
+        """
+        self.stroke_width = self.implicit_stroke_width
+        return self
+
+    @property
+    def implicit_stroke_width(self):
+        try:
+            if not self.apply:
+                return self.stroke_width
+            if self.stroke_width is not None:
+                if hasattr(self, 'values') and \
+                        SVG_ATTR_VECTOR_EFFECT in self.values and \
+                        SVG_VALUE_NON_SCALING_STROKE in self.values[SVG_ATTR_VECTOR_EFFECT]:
+                    return self.stroke_width  # we are not to scale the stroke.
+                width = self.stroke_width
+                det = self.transform.determinant
+                return width * sqrt(abs(det))
+        except AttributeError:
+            return self.stroke_width
 
 
-class Shape(GraphicObject, Transformable):
+class Shape(SVGElement, GraphicObject, Transformable):
     """
     SVG Shapes are several SVG items defined in SVG 1.1 9.1
     https://www.w3.org/TR/SVG11/shapes.html
@@ -2858,19 +3171,28 @@ class Shape(GraphicObject, Transformable):
     apply: Determine whether transform should be applied. (Transformable)
     fill: SVG color of the shape fill. (GraphicObject)
     stroke: SVG color of the shape stroke. (GraphicObject)
+    stroke_width: Stroke width of the stroke. (GraphicObject)
     """
 
     def __init__(self, *args, **kwargs):
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+        SVGElement.__init__(self, *args, **kwargs)  # Must go last, triggers, by_object, by_value, by_arg functions.
 
     def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
         GraphicObject.property_by_object(self, s)
 
     def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
+
+    def render(self, **kwargs):
+        SVGElement.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+        GraphicObject.render(self, **kwargs)
 
     def __eq__(self, other):
         if not isinstance(other, Shape):
@@ -3098,6 +3420,8 @@ class Shape(GraphicObject, Transformable):
             values.append('stroke=\'%s\'' % self.stroke)
         if self.fill is not None:
             values.append('fill=\'%s\'' % self.fill)
+        if self.stroke_width is not None and self.stroke_width != 1.0:
+            values.append('stroke_width=\'%s\'' % str(self.stroke_width))
         if self.apply is not None and not self.apply:
             values.append('apply=%s' % self.apply)
         if self.id is not None:
@@ -3199,7 +3523,7 @@ class PathSegment:
             start_point = curve.point(start)
         if end_point is None:
             end_point = curve.point(end)
-        mid = (start + end) / 2
+        mid = (start + end) / 2.0
         mid_point = curve.point(mid)
         length = abs(end_point - start_point)
         first_half = abs(mid_point - start_point)
@@ -3223,8 +3547,8 @@ class PathSegment:
         """returns the bounding box for the segment.
         xmin, ymin, xmax, ymax
         """
-        xs = [p[0] for p in self if p is not None]
-        ys = [p[1] for p in self if p is not None]
+        xs = [p.x for p in self if p is not None]
+        ys = [p.y for p in self if p is not None]
         xmin = min(xs)
         xmax = max(xs)
         ymin = min(ys)
@@ -3367,6 +3691,15 @@ class Move(PathSegment):
         return 'm %s' % (self.end - current_point)
 
 
+class Curve(PathSegment):
+    """Represents curve commands"""
+
+    def __init__(self, start=None, end=None, **kwargs):
+        PathSegment.__init__(self, **kwargs)
+        self.start = Point(start) if start is not None else None
+        self.end = Point(end) if end is not None else None
+
+
 class Linear(PathSegment):
     """Represents line commands."""
 
@@ -3426,18 +3759,18 @@ class Linear(PathSegment):
             return 0
 
     def closest_segment_point(self, p, respect_bounds=True):
-        """ Gives the t value of the point on the line closest to the given point. """
+        """ Gives the point on the line closest to the given point. """
         a = self.start
         b = self.end
-        vAPx = p[0] - a[0]
-        vAPy = p[1] - a[1]
-        vABx = b[0] - a[0]
-        vABy = b[1] - a[1]
+        vAPx = p[0] - a.x
+        vAPy = p[1] - a.y
+        vABx = b.x - a.x
+        vABy = b.y - a.y
         sqDistanceAB = vABx * vABx + vABy * vABy
         ABAPproduct = vABx * vAPx + vABy * vAPy
         if sqDistanceAB == 0:
             return 0  # Line is point.
-        amount = ABAPproduct / sqDistanceAB
+        amount = ABAPproduct / float(sqDistanceAB)
         if respect_bounds:
             if amount > 1:
                 amount = 1
@@ -3488,20 +3821,12 @@ class Line(Linear):
             return 'l %s' % (self.end - current_point)
 
 
-class QuadraticBezier(PathSegment):
+class QuadraticBezier(Curve):
     """Represents Quadratic Bezier commands."""
 
     def __init__(self, start, control, end, **kwargs):
-        PathSegment.__init__(self, **kwargs)
-        self.end = None
-        self.control = None
-        self.start = None
-        if start is not None:
-            self.start = Point(start)
-        if control is not None:
-            self.control = Point(control)
-        if end is not None:
-            self.end = Point(end)
+        Curve.__init__(self, start, end, **kwargs)
+        self.control = Point(control) if control is not None else None
 
     def __repr__(self):
         return 'QuadraticBezier(start=%s, control=%s, end=%s)' % (
@@ -3561,6 +3886,7 @@ class QuadraticBezier(PathSegment):
 
             return (n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
                     n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2)
+
         try:
             import numpy as np
             xy = np.empty(shape=(len(positions), 2))
@@ -3573,26 +3899,26 @@ class QuadraticBezier(PathSegment):
         """
         Returns the bounding box for the quadratic bezier curve.
         """
-        n = self.start[0] - self.control[0]
-        d = self.start[0] - 2 * self.control[0] + self.end[0]
+        n = self.start.x - self.control.x
+        d = self.start.x - 2 * self.control.x + self.end.x
         if d != 0:
-            t = n / d
+            t = n / float(d)
         else:
             t = 0.5
         if 0 < t < 1:
-            x_values = [self.start[0], self.end[0], self.point(t)[0]]
+            x_values = [self.start.x, self.end.x, self.point(t).x]
         else:
-            x_values = [self.start[0], self.end[0]]
-        n = self.start[1] - self.control[1]
-        d = self.start[1] - 2 * self.control[1] + self.end[1]
+            x_values = [self.start.x, self.end.x]
+        n = self.start.y - self.control.y
+        d = self.start.y - 2 * self.control.y + self.end.y
         if d != 0:
-            t = n / d
+            t = n / float(d)
         else:
             t = 0.5
         if 0 < t < 1:
-            y_values = [self.start[1], self.end[1], self.point(t)[1]]
+            y_values = [self.start.y, self.end.y, self.point(t).y]
         else:
-            y_values = [self.start[1], self.end[1]]
+            y_values = [self.start.y, self.end.y]
         return min(x_values), min(y_values), max(x_values), max(y_values)
 
     def length(self, error=None, min_depth=None):
@@ -3647,23 +3973,13 @@ class QuadraticBezier(PathSegment):
                 return 'q %s %s' % (self.control - current_point, self.end - current_point)
 
 
-class CubicBezier(PathSegment):
+class CubicBezier(Curve):
     """Represents Cubic Bezier commands."""
 
     def __init__(self, start, control1, control2, end, **kwargs):
-        PathSegment.__init__(self, **kwargs)
-        self.end = None
-        self.control1 = None
-        self.control2 = None
-        self.start = None
-        if start is not None:
-            self.start = Point(start)
-        if control1 is not None:
-            self.control1 = Point(control1)
-        if control2 is not None:
-            self.control2 = Point(control2)
-        if end is not None:
-            self.end = Point(end)
+        Curve.__init__(self, start, end, **kwargs)
+        self.control1 = Point(control1) if control1 is not None else None
+        self.control2 = Point(control2) if control1 is not None else None
 
     def __repr__(self):
         return 'CubicBezier(start=%s, control1=%s, control2=%s, end=%s)' % (
@@ -3736,6 +4052,7 @@ class CubicBezier(PathSegment):
             n_pos_2_pos = n_pos * n_pos * position
             return (n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
                     n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3)
+
         try:
             import numpy as np
             xy = np.empty(shape=(len(positions), 2))
@@ -3826,7 +4143,7 @@ class CubicBezier(PathSegment):
                     self.control1 - current_point, self.control2 - current_point, self.end - current_point)
 
 
-class Arc(PathSegment):
+class Arc(Curve):
     def __init__(self, *args, **kwargs):
         """
         Represents Arc commands.
@@ -3862,10 +4179,7 @@ class Arc(PathSegment):
 
         start_t + sweep = end_t
         """
-
-        PathSegment.__init__(self, **kwargs)
-        self.start = None
-        self.end = None
+        Curve.__init__(self, **kwargs)
         self.center = None
         self.prx = None
         self.pry = None
@@ -3889,8 +4203,8 @@ class Arc(PathSegment):
             self.center = Point((left + right) / 2.0, (top + bottom) / 2.0)
             rx = (right - left) / 2.0
             ry = (bottom - top) / 2.0
-            self.prx = Point(self.center[0] + rx, self.center[1])
-            self.pry = Point(self.center[0], self.center[1] + ry)
+            self.prx = Point(self.center.x + rx, self.center.y)
+            self.pry = Point(self.center.x, self.center.y + ry)
         len_args = len(args)
         if len_args > 0:
             if args[0] is not None:
@@ -3936,87 +4250,87 @@ class Arc(PathSegment):
             if sagitta is not None:
                 control = Point.towards(self.start, self.end, 0.5)
                 angle = self.start.angle_to(self.end)
-                control = control.polar_to(angle - tau / 4, sagitta)
+                control = control.polar_to(angle - tau / 4.0, sagitta)
             if 'control' in kwargs:  # Control is any additional point on the arc.
                 control = Point(kwargs['control'])
             if control is not None:
                 delta_a = control - self.start
                 delta_b = self.end - control
                 try:
-                    slope_a = delta_a[1] / delta_a[0]
+                    slope_a = delta_a.y / delta_a.x
                 except ZeroDivisionError:
                     slope_a = float('inf')
                 try:
-                    slope_b = delta_b[1] / delta_b[0]
+                    slope_b = delta_b.y / delta_b.x
                 except ZeroDivisionError:
                     slope_b = float('inf')
                 ab_mid = Point.towards(self.start, control, 0.5)
                 bc_mid = Point.towards(control, self.end, 0.5)
-                if delta_a[1] == 0:  # slope_a == 0
-                    cx = ab_mid[0]
-                    if delta_b[0] == 0:  # slope_b == inf
-                        cy = bc_mid[1]
+                if delta_a.y == 0:  # slope_a == 0
+                    cx = ab_mid.x
+                    if delta_b.x == 0:  # slope_b == inf
+                        cy = bc_mid.y
                     else:
-                        cy = bc_mid[1] + (bc_mid.x - cx) / slope_b
-                elif delta_b[1] == 0:  # slope_b == 0
-                    cx = bc_mid[0]
-                    if delta_a[1] == 0:  # slope_a == inf
-                        cy = ab_mid[1]
+                        cy = bc_mid.y + (bc_mid.x - cx) / slope_b
+                elif delta_b.y == 0:  # slope_b == 0
+                    cx = bc_mid.x
+                    if delta_a.y == 0:  # slope_a == inf
+                        cy = ab_mid.y
                     else:
-                        cy = ab_mid[1] + (ab_mid[0] - cx) / slope_a
-                elif delta_a[0] == 0:  # slope_a == inf
-                    cy = ab_mid[1]
-                    cx = slope_b * (bc_mid[1] - cy) + bc_mid[0]
-                elif delta_b[0] == 0:  # slope_b == inf
-                    cy = bc_mid[1]
-                    cx = slope_a * (ab_mid[1] - cy) + ab_mid[0]
+                        cy = ab_mid.y + (ab_mid.x - cx) / slope_a
+                elif delta_a.x == 0:  # slope_a == inf
+                    cy = ab_mid.y
+                    cx = slope_b * (bc_mid.y - cy) + bc_mid.x
+                elif delta_b.x == 0:  # slope_b == inf
+                    cy = bc_mid.y
+                    cx = slope_a * (ab_mid.y - cy) + ab_mid.x
                 elif slope_a == slope_b:
-                    cx = ab_mid[0]
-                    cy = ab_mid[1]
+                    cx = ab_mid.x
+                    cy = ab_mid.y
                 else:
-                    cx = (slope_a * slope_b * (ab_mid[1] - bc_mid[1])
-                          - slope_a * bc_mid[0]
-                          + slope_b * ab_mid[0]) / (slope_b - slope_a)
-                    cy = ab_mid[1] - (cx - ab_mid[0]) / slope_a
+                    cx = (slope_a * slope_b * (ab_mid.y - bc_mid.y)
+                          - slope_a * bc_mid.x
+                          + slope_b * ab_mid.x) / (slope_b - slope_a)
+                    cy = ab_mid.y - (cx - ab_mid.x) / slope_a
                 self.center = Point(cx, cy)
                 cw = bool(Point.orientation(self.start, control, self.end) == 2)
             elif 'r' in kwargs:
                 r = kwargs['r']
-                mid = Point((self.start[0] + self.end[0]) / 2.0, (self.start[1] + self.end[1]) / 2.0)
+                mid = Point((self.start.x + self.end.x) / 2.0, (self.start.y + self.end.y) / 2.0)
                 q = Point.distance(self.start, self.end)
                 hq = q / 2.0
                 if r < hq:
                     kwargs['r'] = r = hq  # Correct potential math domain error.
                 self.center = Point(
-                    mid[0] + sqrt(r ** 2 - hq ** 2) * (self.start[1] - self.end[1]) / q,
-                    mid[1] + sqrt(r ** 2 - hq ** 2) * (self.end[0] - self.start[0]) / q
+                    mid.x + sqrt(r ** 2 - hq ** 2) * (self.start.y - self.end.y) / q,
+                    mid.y + sqrt(r ** 2 - hq ** 2) * (self.end.x - self.start.x) / q
                 )
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
                 if 'ccw' in kwargs and kwargs['ccw'] and cw or not cw:
                     # ccw arg exists, is true, and we found the cw center, or we didn't find the cw center.
                     self.center = Point(
-                        mid[0] - sqrt(r ** 2 - hq ** 2) * (self.start[1] - self.end[1]) / q,
-                        mid[1] - sqrt(r ** 2 - hq ** 2) * (self.end[0] - self.start[0]) / q
+                        mid.x - sqrt(r ** 2 - hq ** 2) * (self.start.y - self.end.y) / q,
+                        mid.y - sqrt(r ** 2 - hq ** 2) * (self.end.x - self.start.x) / q
                     )
             elif 'rx' in kwargs and 'ry' in kwargs:
                 # This formulation will assume p1 and p2 are both axis aligned.
                 rx = kwargs['rx']
                 ry = kwargs['ry']
-                # We will assume rx == abs(self.start[0] - self.end[0])
-                self.center = Point(self.start[0], self.end[1])
+                # We will assume rx == abs(self.start.x - self.end.x)
+                self.center = Point(self.start.x, self.end.y)
                 cw = bool(Point.orientation(self.start, self.center, self.end) == 1)
                 if 'ccw' in kwargs and kwargs['ccw'] and cw or not cw:
-                    self.center = Point(self.end[0], self.start[1])
+                    self.center = Point(self.end.x, self.start.y)
                 self.sweep = tau / 4.0
 
         if self.center is None:
-            return  # Center must be solvable.
+            raise ValueError("Not enough values to solve for center.")
         if 'r' in kwargs:
             r = kwargs['r']
             if self.prx is None:
-                self.prx = Point(self.center[0] + r, self.center[1])
+                self.prx = Point(self.center.x + r, self.center.y)
             if self.pry is None:
-                self.pry = Point(self.center[0], self.center[1] + r)
+                self.pry = Point(self.center.x, self.center.y + r)
         if 'rx' in kwargs:
             rx = kwargs['rx']
             if self.prx is None:
@@ -4024,7 +4338,7 @@ class Arc(PathSegment):
                     theta = kwargs['rotation']
                     self.prx = Point.polar(self.center, theta, rx)
                 else:
-                    self.prx = Point(self.center[0] + rx, self.center[1])
+                    self.prx = Point(self.center.x + rx, self.center.y)
         if 'ry' in kwargs:
             ry = kwargs['ry']
             if self.pry is None:
@@ -4033,15 +4347,15 @@ class Arc(PathSegment):
                     theta += tau / 4.0
                     self.pry = Point.polar(self.center, theta, ry)
                 else:
-                    self.pry = Point(self.center[0], self.center[1] + ry)
+                    self.pry = Point(self.center.x, self.center.y + ry)
         if self.start is not None and (self.prx is None or self.pry is None):
             radius_s = Point.distance(self.center, self.start)
-            self.prx = Point(self.center[0] + radius_s, self.center[1])
-            self.pry = Point(self.center[0], self.center[1] + radius_s)
+            self.prx = Point(self.center.x + radius_s, self.center.y)
+            self.pry = Point(self.center.x, self.center.y + radius_s)
         if self.end is not None and (self.prx is None or self.pry is None):
             radius_e = Point.distance(self.center, self.end)
-            self.prx = Point(self.center[0] + radius_e, self.center[1])
-            self.pry = Point(self.center[0], self.center[1] + radius_e)
+            self.prx = Point(self.center.x + radius_e, self.center.y)
+            self.pry = Point(self.center.x, self.center.y + radius_e)
         if self.sweep is None and self.start is not None and self.end is not None:
             start_t = self.get_start_t()
             end_t = self.get_end_t()
@@ -4141,7 +4455,7 @@ class Arc(PathSegment):
 
             start_t = self.get_start_t()
             return [self.start if pos == 0 else self.end if pos == 1 else
-                    self.point_at_t(start_t + self.sweep * pos) for pos in positions]
+            self.point_at_t(start_t + self.sweep * pos) for pos in positions]
 
     def _points_numpy(self, positions):
         """Vectorized version of `point()`.
@@ -4160,8 +4474,8 @@ class Arc(PathSegment):
             rotation = self.get_rotation()
             a = self.rx
             b = self.ry
-            cx = self.center[0]
-            cy = self.center[1]
+            cx = self.center.x
+            cy = self.center.y
             cos_rot = cos(rotation)
             sin_rot = sin(rotation)
             cos_t = np.cos(t)
@@ -4310,11 +4624,11 @@ class Arc(PathSegment):
         # built parameters, delta, theta, center
 
         rotate_matrix = Matrix()
-        rotate_matrix.post_rotate(Angle.degrees(rotation).as_radians, center[0], center[1])
+        rotate_matrix.post_rotate(Angle.degrees(rotation).as_radians, center.x, center.y)
 
         self.center = center
-        self.prx = Point(center[0] + rx, center[1])
-        self.pry = Point(center[0], center[1] + ry)
+        self.prx = Point(center.x + rx, center.y)
+        self.pry = Point(center.x, center.y + ry)
 
         self.prx.matrix_transform(rotate_matrix)
         self.pry.matrix_transform(rotate_matrix)
@@ -4322,7 +4636,7 @@ class Arc(PathSegment):
 
     def as_quad_curves(self, arc_required):
         if arc_required is None:
-            sweep_limit = tau / 12
+            sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
             if arc_required == 0:
                 return
@@ -4337,8 +4651,8 @@ class Arc(PathSegment):
 
         a = self.rx
         b = self.ry
-        cx = self.center[0]
-        cy = self.center[1]
+        cx = self.center.x
+        cy = self.center.y
 
         for i in range(0, arc_required):
             next_t = current_t + t_slice
@@ -4357,7 +4671,7 @@ class Arc(PathSegment):
 
     def as_cubic_curves(self, arc_required=None):
         if arc_required is None:
-            sweep_limit = tau / 12
+            sweep_limit = tau / 12.0
             arc_required = int(ceil(abs(self.sweep) / sweep_limit))
             if arc_required == 0:
                 return
@@ -4368,8 +4682,8 @@ class Arc(PathSegment):
         ry = self.ry
         p_start = self.start
         current_t = self.get_start_t()
-        x0 = self.center[0]
-        y0 = self.center[1]
+        x0 = self.center.x
+        y0 = self.center.y
         cos_theta = cos(theta)
         sin_theta = sin(theta)
 
@@ -4472,7 +4786,7 @@ class Arc(PathSegment):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -4499,7 +4813,7 @@ class Arc(PathSegment):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return t
 
     def point_at_t(self, t):
@@ -4515,8 +4829,8 @@ class Arc(PathSegment):
         rotation = self.get_rotation()
         a = self.rx
         b = self.ry
-        cx = self.center[0]
-        cy = self.center[1]
+        cx = self.center.x
+        cy = self.center.y
         cos_rot = cos(rotation)
         sin_rot = sin(rotation)
         cos_t = cos(t)
@@ -4534,29 +4848,29 @@ class Arc(PathSegment):
         """
         phi = self.get_rotation().as_radians
         if cos(phi) == 0:
-            atan_x = pi / 2
+            atan_x = tau / 4.0
             atan_y = 0
         elif sin(phi) == 0:
             atan_x = 0
-            atan_y = pi / 2
+            atan_y = tau / 4.0
         else:
             rx, ry = self.rx, self.ry
             atan_x = atan(-(ry / rx) * tan(phi))
             atan_y = atan((ry / rx) / tan(phi))
 
         def angle_inv(ang, k):  # inverse of angle from Arc.derivative()
-            return ((ang + pi * k) * (360 / (2 * pi)) - self.theta) / self.delta
+            return ((ang + (tau/2.0) * k) * (360 / tau) - self.theta) / self.delta
 
-        xtrema = [self.start[0], self.end[0]]
-        ytrema = [self.start[1], self.end[1]]
+        xtrema = [self.start.x, self.end.x]
+        ytrema = [self.start.y, self.end.y]
 
         for k in range(-4, 5):
             tx = angle_inv(atan_x, k)
             ty = angle_inv(atan_y, k)
             if 0 <= tx <= 1:
-                xtrema.append(self.point(tx)[0])
+                xtrema.append(self.point(tx).x)
             if 0 <= ty <= 1:
-                ytrema.append(self.point(ty)[1])
+                ytrema.append(self.point(ty).y)
 
         return min(xtrema), min(ytrema), max(xtrema), max(ytrema)
 
@@ -4792,6 +5106,8 @@ class Path(Shape, MutableSequence):
         for s, o in zip(q._segments, p._segments):
             if not s == o:
                 return False
+        if p.stroke_width != q.stroke_width:
+            return False
         return True
 
     def __ne__(self, other):
@@ -4920,7 +5236,8 @@ class Path(Shape, MutableSequence):
     def end(self):
         pass
 
-    def move(self, *points, relative=False):
+    def move(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         end_pos = points[0]
         if end_pos in ('z', 'Z'):
@@ -4932,7 +5249,8 @@ class Path(Shape, MutableSequence):
             self.line(*points[1:], relative=relative)
         return self
 
-    def line(self, *points, relative=False):
+    def line(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         end_pos = points[0]
         if end_pos in ('z', 'Z'):
@@ -4944,34 +5262,37 @@ class Path(Shape, MutableSequence):
             self.line(*points[1:])
         return self
 
-    def vertical(self, *y_points, relative=False):
+    def vertical(self, *y_points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         if relative:
-            segment = Line(start_pos, Point(start_pos[0], start_pos[1] + y_points[0]))
+            segment = Line(start_pos, Point(start_pos.x, start_pos.y + y_points[0]))
         else:
-            segment = Line(start_pos, Point(start_pos[0], y_points[0]))
+            segment = Line(start_pos, Point(start_pos.x, y_points[0]))
         segment.relative = relative
         self.append(segment)
         if len(y_points) > 1:
             self.vertical(*y_points[1:], relative=relative)
         return self
 
-    def horizontal(self, *x_points, relative=False):
+    def horizontal(self, *x_points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         if relative:
-            segment = Line(start_pos, Point(start_pos[0] + x_points[0], start_pos[1]))
+            segment = Line(start_pos, Point(start_pos.x + x_points[0], start_pos.y))
             segment.relative = relative
         else:
-            segment = Line(start_pos, Point(x_points[0], start_pos[1]))
+            segment = Line(start_pos, Point(x_points[0], start_pos.y))
             segment.relative = relative
         self.append(segment)
         if len(x_points) > 1:
             self.horizontal(*x_points[1:], relative=relative)
         return self
 
-    def smooth_quad(self, *points, relative=False):
+    def smooth_quad(self, *points, **kwargs):
         """Smooth curve. First control point is the "reflection" of
            the second control point in the previous path."""
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control1 = self.smooth_point
         end_pos = points[0]
@@ -4985,7 +5306,8 @@ class Path(Shape, MutableSequence):
             self.smooth_quad(*points[1:])
         return self
 
-    def quad(self, *points, relative=False):
+    def quad(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control = points[0]
         if control in ('z', 'Z'):
@@ -5001,9 +5323,10 @@ class Path(Shape, MutableSequence):
             self.quad(*points[2:])
         return self
 
-    def smooth_cubic(self, *points, relative=False):
+    def smooth_cubic(self, *points, **kwargs):
         """Smooth curve. First control point is the "reflection" of
         the second control point in the previous path."""
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control1 = self.smooth_point
         control2 = points[0]
@@ -5021,7 +5344,8 @@ class Path(Shape, MutableSequence):
             self.smooth_cubic(*points[2:])
         return self
 
-    def cubic(self, *points, relative=False):
+    def cubic(self, *points, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         control1 = points[0]
         if control1 in ('z', 'Z'):
@@ -5040,7 +5364,8 @@ class Path(Shape, MutableSequence):
             self.cubic(*points[3:])
         return self
 
-    def arc(self, *arc_args, relative=False):
+    def arc(self, *arc_args, **kwargs):
+        relative = kwargs['relative'] if 'relative' in kwargs else False
         start_pos = self.current_point
         rx = arc_args[0]
         ry = arc_args[1]
@@ -5056,6 +5381,7 @@ class Path(Shape, MutableSequence):
         if len(arc_args) > 6:
             self.arc(*arc_args[6:])
         return self
+
 
     def closed(self, relative=False):
         start_pos = self.current_point
@@ -5175,6 +5501,7 @@ class Path(Shape, MutableSequence):
 
         Path objects reify perfectly.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         if isinstance(self.transform, Matrix):
             for e in self._segments:
@@ -5454,7 +5781,7 @@ class Rect(Shape):
         width = self.width
         height = self.height
         if width == 0 or height == 0:
-            return ''  # a computed value of zero for either dimension disables rendering.
+            return ()  # a computed value of zero for either dimension disables rendering.
         rx = self.rx
         ry = self.ry
         if rx == ry == 0:
@@ -5488,6 +5815,7 @@ class Rect(Shape):
 
         Skewed and Rotated rectangles cannot be reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         scale_x = self.transform.value_scale_x()
         scale_y = self.transform.value_scale_y()
@@ -5507,12 +5835,14 @@ class Rect(Shape):
             self.transform *= Matrix.scale(1.0 / scale_x, 1.0 / scale_y)
         return self
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        Shape.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        Shape.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.x, Length):
             self.x = self.x.value(relative_length=width, **kwargs)
         if isinstance(self.y, Length):
@@ -5650,13 +5980,19 @@ class _RoundShape(Shape):
             step_size = -step_size
         t_start = 0
         t_end = step_size
+        # zero for either dimension, or a computed value of auto for both dimensions, disables rendering of the element.
+        rx = self.implicit_rx
+        ry = self.implicit_ry
+        if rx == 0 or ry == 0:
+            return ()
+        center = self.implicit_center
         path.move((self.point_at_t(0)))
         for i in range(steps):
             path += Arc(
                 self.point_at_t(t_start),
                 self.point_at_t(t_end),
-                self.implicit_center,
-                rx=self.implicit_rx, ry=self.implicit_ry, rotation=self.rotation, sweep=step_size)
+                center,
+                rx=rx, ry=ry, rotation=self.rotation, sweep=step_size)
             t_start = t_end
             t_end += step_size
         path.closed()
@@ -5669,6 +6005,7 @@ class _RoundShape(Shape):
 
         Skewed and Rotated roundshapes cannot be reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         scale_x = abs(self.transform.value_scale_x())
         scale_y = abs(self.transform.value_scale_y())
@@ -5686,12 +6023,14 @@ class _RoundShape(Shape):
             self.transform *= Matrix.scale(1.0 / scale_x, 1.0 / scale_y)
         return self
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        Shape.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        Shape.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.cx, Length):
             self.cx = self.cx.value(relative_length=width, **kwargs)
         if isinstance(self.cy, Length):
@@ -5715,7 +6054,7 @@ class _RoundShape(Shape):
         m.post_scale(self.implicit_rx, self.implicit_ry)
         m.post_rotate(self.rotation)
         center = self.implicit_center
-        m.post_translate(center[0], center[1])
+        m.post_translate(center.x, center.y)
         return m
 
     def arc_t(self, t0, t1):
@@ -5764,7 +6103,7 @@ class _RoundShape(Shape):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return self.point_at_t(t)
 
     def angle_at_point(self, p):
@@ -5795,7 +6134,7 @@ class _RoundShape(Shape):
         tau_1_4 = tau / 4.0
         tau_3_4 = 3 * tau_1_4
         if tau_3_4 >= abs(angle) % tau > tau_1_4:
-            t += tau / 2
+            t += tau / 2.0
         return t
 
     def point_at_t(self, t):
@@ -5812,8 +6151,8 @@ class _RoundShape(Shape):
         a = self.implicit_rx
         b = self.implicit_ry
         center = self.implicit_center
-        cx = center[0]
-        cy = center[1]
+        cx = center.x
+        cy = center.y
         cosTheta = cos(rotation)
         sinTheta = sin(rotation)
         cosT = cos(t)
@@ -5838,7 +6177,7 @@ class _RoundShape(Shape):
         if b > a:
             a, b = b, a
         h = (a - b) ** 2 / (a + b) ** 2
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4-3*h))))
+        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
 class Ellipse(_RoundShape):
@@ -5941,25 +6280,25 @@ class SimpleLine(Shape):
     def implicit_x1(self):
         point = Point(self.x1, self.y1)
         point *= self.transform
-        return point[0]
+        return point.x
 
     @property
     def implicit_y1(self):
         point = Point(self.x1, self.y1)
         point *= self.transform
-        return point[1]
+        return point.y
 
     @property
     def implicit_x2(self):
         point = Point(self.x2, self.y2)
         point *= self.transform
-        return point[0]
+        return point.x
 
     @property
     def implicit_y2(self):
         point = Point(self.x2, self.y2)
         point *= self.transform
-        return point[1]
+        return point.y
 
     def segments(self, transformed=True):
         """
@@ -5984,27 +6323,30 @@ class SimpleLine(Shape):
 
         SimpleLines are perfectly reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         matrix = self.transform
         p = Point(self.x1, self.y1)
         p *= matrix
-        self.x1 = p[0]
-        self.y1 = p[1]
+        self.x1 = p.x
+        self.y1 = p.y
 
         p = Point(self.x2, self.y2)
         p *= matrix
-        self.x2 = p[0]
-        self.y2 = p[1]
+        self.x2 = p.x
+        self.y2 = p.y
 
         matrix.reset()
         return self
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        Shape.render(self, width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        Shape.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.x1, Length):
             self.x1 = self.x1.value(relative_length=width, **kwargs)
         if isinstance(self.y1, Length):
@@ -6115,6 +6457,7 @@ class _Polyshape(Shape):
 
         Polyshapes are perfectly reified.
         """
+        GraphicObject.reify(self)
         Transformable.reify(self)
         matrix = self.transform
         for p in self:
@@ -6366,7 +6709,154 @@ class Subpath:
         return self
 
 
-class SVGText(GraphicObject, Transformable):
+class Group(SVGElement, Transformable, list):
+    """
+    Group Container element can have children.
+    SVG 2.0 <g> are defined in:
+    5.2. Grouping: the g element
+    """
+    # TODO: This should override the Transformable math and propagate to children.
+    def __init__(self, *args, **kwargs):
+        Transformable.__init__(self, *args, **kwargs)
+        list.__init__(self)
+        if len(args) >= 1:
+            s = args[0]
+            if isinstance(s, Group):
+                self.extend(list(map(copy, s)))
+                return
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def render(self, **kwargs):
+        Transformable.render(self, **kwargs)
+
+    def __copy__(self):
+        return Group(self)
+
+    def select(self, conditional=None):
+        """
+        Finds all flattened subobjects of this group for which the conditional returns
+        true.
+
+        :param conditional: function taking element and returns True or False if matching
+        """
+        if conditional is None:
+            def conditional(item):
+                return True
+        for subitem in self:
+            if not conditional(subitem):
+                continue
+            yield subitem
+            if isinstance(subitem, Group):
+                for s in subitem.select(conditional):
+                    yield s
+
+    def reify(self):
+        pass
+
+
+class ClipPath(SVGElement, list):
+    """
+    clipPath elements are defined in svg 14.3.5
+    https://www.w3.org/TR/SVG11/masking.html#ClipPathElement
+
+    Clip paths conceptually define a 1 bit mask for images these are usually defined within
+    def blocks and do not render themselves but rather are attached by IRI references to the
+    """
+
+    def __init__(self, *args, **kwargs):
+        list.__init__(self)
+        self.unit_type = SVG_UNIT_TYPE_USERSPACEONUSE
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        self.unit_type = s.unit_type
+
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+        self.unit_type = self.values.get(SVG_ATTR_CLIP_UNIT_TYPE, SVG_UNIT_TYPE_USERSPACEONUSE)
+
+
+class Pattern(SVGElement, list):
+    def __init__(self, *args, **kwargs):
+        self.viewbox = None
+        self.preserve_aspect_ratio = None
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.href = None
+        self.pattern_content_units = None  # UserSpaceOnUse default
+        self.pattern_transform = None
+        self.pattern_units = None
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def __int__(self):
+        return 0
+
+    @property
+    def viewbox_transform(self):
+        if self.viewbox is None:
+            return ''
+        return self.viewbox.transform(self)
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        self.viewbox = s.viewbox
+        self.preserve_aspect_ratio = s.preserve_aspect_ratio
+
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+        self.href = s.href
+        self.pattern_content_units = s.pattern_contents_units
+        self.pattern_transform = Matrix(s.pattern_transform) if s.pattern_transform is not None else None
+        self.pattern_units = s.pattern_units
+
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+        if XLINK_HREF in values:
+            self.href = values[XLINK_HREF]
+        elif SVG_HREF in values:
+            self.href = values[SVG_HREF]
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        if viewbox is not None:
+            self.viewbox = Viewbox(viewbox)
+        if SVG_ATTR_PRESERVEASPECTRATIO in values:
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, '100%')).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, '100%')).value()
+        if SVG_ATTR_PATTERN_CONTENT_UNITS in values:
+            self.pattern_content_units = values[SVG_ATTR_PATTERN_CONTENT_UNITS]
+        if SVG_ATTR_PATTERN_TRANSFORM in values:
+            self.pattern_transform = Matrix(values[SVG_ATTR_PATTERN_TRANSFORM])
+        if SVG_ATTR_PATTERN_UNITS in values:
+            self.pattern_units = values[SVG_ATTR_PATTERN_UNITS]
+
+    def render(self, **kwargs):
+        if self.pattern_transform is not None:
+            self.pattern_transform.render(**kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
+        if isinstance(self.x, Length):
+            self.x = self.x.value(relative_length=width, **kwargs)
+        if isinstance(self.y, Length):
+            self.y = self.y.value(relative_length=height, **kwargs)
+        if isinstance(self.width, Length):
+            self.width = self.width.value(relative_length=width, **kwargs)
+        if isinstance(self.height, Length):
+            self.height = self.height.value(relative_length=height, **kwargs)
+        return self
+
+
+class SVGText(SVGElement, GraphicObject, Transformable):
     """
     SVG Text are defined in SVG 2.0 Chapter 11
 
@@ -6397,6 +6887,7 @@ class SVGText(GraphicObject, Transformable):
         self.path = None
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+        SVGElement.__init__(self, *args, **kwargs)
 
     def __str__(self):
         parts = list()
@@ -6496,15 +6987,19 @@ class SVGText(GraphicObject, Transformable):
         self.dx = Length(values.get(SVG_ATTR_DX, self.dx)).value()
         self.dy = Length(values.get(SVG_ATTR_DY, self.dy)).value()
 
-    def __copy__(self):
-        return SVGText(self)
+    def reify(self):
+        GraphicObject.reify(self)
+        Transformable.reify(self)
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        self.transform.render(width=width, height=height, relative_length=relative_length, **kwargs)
+    def render(self, **kwargs):
+        GraphicObject.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
         if isinstance(self.x, Length):
             self.x = self.x.value(relative_length=width, **kwargs)
         if isinstance(self.y, Length):
@@ -6514,6 +7009,9 @@ class SVGText(GraphicObject, Transformable):
         if isinstance(self.dy, Length):
             self.dy = self.dy.value(relative_length=height, **kwargs)
         return self
+
+    def __copy__(self):
+        return SVGText(self)
 
     def bbox(self, transformed=True):
         """
@@ -6547,38 +7045,30 @@ class SVGText(GraphicObject, Transformable):
         return xmin, ymin, xmax, ymax
 
 
-class SVGDesc:
-    """
-    SVG Desc are just desc data.
-
-    This is a stub element.
-    """
-
-    def __init__(self, values, desc=None):
-        if isinstance(values, dict):
-            self.desc = desc
-        else:
-            self.desc = values
-
-
-class SVGImage(GraphicObject, Transformable):
+class SVGImage(SVGElement, GraphicObject, Transformable):
     """
     SVG Images are defined in SVG 2.0 12.3
 
     This class is called SVG Image rather than image as a guard against many Image objects
     which are quite useful and would be ideal for reading the linked or contained data.
-
     """
 
     def __init__(self, *args, **kwargs):
         self.url = None
         self.data = None
         self.viewbox = None
+        self.preserve_aspect_ratio = None
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+
         self.image = None
         self.image_width = None
         self.image_height = None
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
+        SVGElement.__init__(self, *args, **kwargs)  # Dataurl requires this be processed first.
 
         if self.url is not None:
             if self.url.startswith("data:image/"):
@@ -6593,32 +7083,63 @@ class SVGImage(GraphicObject, Transformable):
                 elif self.url.startswith("data:image/svg+xml;base64,"):
                     self.data = b64decode(self.url[26:])
 
-        if SVG_ATTR_WIDTH in kwargs:
-            self.viewbox.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
-        if SVG_ATTR_HEIGHT in kwargs:
-            self.viewbox.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
-
     def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
         Transformable.property_by_object(self, s)
         GraphicObject.property_by_object(self, s)
         self.url = s.url
         self.data = s.data
         self.viewbox = s.viewbox
+        self.preserve_aspect_ratio = s.preserve_aspect_ratio
+
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+
         self.image = s.image
         self.image_width = s.image_width
         self.image_height = s.image_height
 
     def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
         if XLINK_HREF in values:
             self.url = values[XLINK_HREF]
         elif SVG_HREF in values:
             self.url = values[SVG_HREF]
-        self.viewbox = Viewbox(values)
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        if viewbox is not None:
+            self.viewbox = Viewbox(viewbox)
+        if SVG_ATTR_PRESERVEASPECTRATIO in values:
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, '100%')).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, '100%')).value()
         if 'image' in values:
             self.image = values['image']
             self.image_width, self.image_height = self.image.size
+
+    def render(self, **kwargs):
+        GraphicObject.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
+        if isinstance(self.x, Length):
+            self.x = self.x.value(relative_length=width, **kwargs)
+        if isinstance(self.y, Length):
+            self.y = self.y.value(relative_length=height, **kwargs)
+        if isinstance(self.width, Length):
+            self.width = self.width.value(relative_length=width, **kwargs)
+        if isinstance(self.height, Length):
+            self.height = self.height.value(relative_length=height, **kwargs)
+        return self
 
     def __copy__(self):
         """
@@ -6627,6 +7148,12 @@ class SVGImage(GraphicObject, Transformable):
         be required to either say self.image = self.image.copy() or call .load() again.
         """
         return SVGImage(self)
+
+    @property
+    def viewbox_transform(self):
+        if self.viewbox is None:
+            return ''
+        return self.viewbox.transform(self)
 
     def load(self, directory=None):
         try:
@@ -6672,16 +7199,13 @@ class SVGImage(GraphicObject, Transformable):
             pass
 
     def set_values_by_image(self):
-        if self.image is not None:
-            self.image_width = self.image.width
-            self.image_height = self.image.height
-        else:
-            return
-        viewbox = "0 0 %d %d" % (self.image_width, self.image_height)
-        self.viewbox.set_viewbox(viewbox)
-        self.viewbox.render(width=self.image_width, height=self.image_height)
-        viewbox_transform = self.viewbox.transform()
-        self.transform = Matrix(viewbox_transform) * self.transform
+        if self.image is None:
+            return  # No image to set values by.
+        self.image_width = self.image.width
+        self.image_height = self.image.height
+        self.viewbox = Viewbox("0 0 %d %d" % (self.image_width, self.image_height), self.preserve_aspect_ratio)
+        self.render(width=self.image_width, height=self.image_height)
+        self.transform = Matrix(self.viewbox_transform) * self.transform
 
     def bbox(self, transformed=True):
         """
@@ -6690,7 +7214,7 @@ class SVGImage(GraphicObject, Transformable):
         if self.image_width is None or self.image_height is None:
             p = Point(0, 0)
             p *= self.transform
-            return p[0], p[1], p[0], p[1]
+            return p.x, p.y, p.x, p.y
         width = self.image_width
         height = self.image_height
         if transformed:
@@ -6703,8 +7227,8 @@ class SVGImage(GraphicObject, Transformable):
                  Point(width, 0),
                  Point(width, height),
                  Point(0, height))
-        x_vals = list(s[0] for s in p)
-        y_vals = list(s[1] for s in p)
+        x_vals = list(s.x for s in p)
+        y_vals = list(s.y for s in p)
         min_x = min(x_vals)
         min_y = min(y_vals)
         max_x = max(x_vals)
@@ -6712,234 +7236,37 @@ class SVGImage(GraphicObject, Transformable):
         return min_x, min_y, max_x, max_y
 
 
-class Viewbox:
-
-    def __init__(self, *args, **kwargs):
-        """
-        Viewbox control the scaling between the drawing size view that is observing that drawing.
-
-        The width and height are merely to interpret the meaning of percent values of lengths. Usually this is
-        the size of the physical space being occupied.
-
-        :param args: either values, or viewbox attribute.
-        :param kwargs: viewbox, width, height, preserveAspectRatio
-        """
-        self.viewbox = None
-        self.viewbox_x = None
-        self.viewbox_y = None
-        self.viewbox_width = None
-        self.viewbox_height = None
-        self.element_x = None
-        self.element_y = None
-        self.element_width = None
-        self.element_height = None
-        self.preserve_aspect_ratio = None
-        self.values = None
-        if SVG_ATTR_WIDTH in kwargs:
-            self.physical_width = Length(kwargs[SVG_ATTR_WIDTH]).value()
-            del kwargs[SVG_ATTR_WIDTH]
-        else:
-            self.physical_width = None
-
-        if SVG_ATTR_HEIGHT in kwargs:
-            self.physical_height = Length(kwargs[SVG_ATTR_HEIGHT]).value()
-            del kwargs[SVG_ATTR_HEIGHT]
-        else:
-            self.physical_height = None
-
-        if len(args) >= 1:
-            s = args[0]
-            if isinstance(s, dict):
-                args = args[1:]
-                self.values = dict(s)
-                self.values.update(kwargs)
-            elif isinstance(s, Viewbox):
-                args = args[1:]
-                self.property_by_object(s)
-                self.property_by_args(*args)
-                return
-        if self.values is None:
-            self.values = dict(kwargs)
-        self.property_by_values(self.values)
-        if len(args) != 0:
-            self.property_by_args(*args)
-
-    def __str__(self):
-        return '%s %s %s %s -> %s %s %s %s' % (
-            Length.str(self.element_x),
-            Length.str(self.element_y),
-            Length.str(self.element_width),
-            Length.str(self.element_height),
-            Length.str(self.viewbox_x),
-            Length.str(self.viewbox_y),
-            Length.str(self.viewbox_width),
-            Length.str(self.viewbox_height),
-        )
-
-    def property_by_args(self, *args):
-        pass
+class Desc(SVGElement):
+    def __init__(self, values, desc=None):
+        self.desc = desc
+        SVGElement.__init__(self, **values)
 
     def property_by_object(self, obj):
-        self.values = dict(obj.values)
-        self.viewbox = obj.viewbox
-        self.viewbox_x = obj.viewbox_x
-        self.viewbox_y = obj.viewbox_y
-        self.viewbox_width = obj.viewbox_width
-        self.viewbox_height = obj.viewbox_height
-        self.physical_width = obj.physical_width
-        self.physical_height = obj.physical_height
-        self.element_x = obj.element_x
-        self.element_y = obj.element_y
-        self.element_height = obj.element_height
-        self.element_width = obj.element_height
-        self.preserve_aspect_ratio = obj.preserve_aspect_ratio
+        SVGElement.property_by_object(self, obj)
+        self.desc = obj.desc
 
     def property_by_values(self, values):
-        if SVG_ATTR_VIEWBOX in values:
-            self.viewbox = values[SVG_ATTR_VIEWBOX]
-        if SVG_ATTR_WIDTH in values:
-            self.element_width = Length(values[SVG_ATTR_WIDTH]).value(relative_length=self.physical_width)
-        else:
-            self.element_width = self.physical_width
+        SVGElement.property_by_values(self, values)
+        if SVG_TAG_DESC in values:
+            self.desc = values[SVG_TAG_DESC]
 
-        if SVG_ATTR_HEIGHT in values:
-            self.element_height = Length(values[SVG_ATTR_HEIGHT]).value(relative_length=self.physical_height)
-        else:
-            self.element_height = self.physical_height
 
-        if SVG_ATTR_X in values:
-            self.element_x = Length(values[SVG_ATTR_X]).value(relative_length=self.physical_width)
-        else:
-            self.element_x = 0
+SVGDesc = Desc
 
-        if SVG_ATTR_Y in values:
-            self.element_y = Length(values[SVG_ATTR_Y]).value(relative_length=self.physical_height)
-        else:
-            self.element_y = 0
-        self.set_viewbox(self.viewbox)
-        if SVG_ATTR_PRESERVEASPECTRATIO in values:
-            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
 
-    def set_viewbox(self, viewbox):
-        if viewbox is not None and isinstance(viewbox, str):
-            dims = list(REGEX_FLOAT.findall(viewbox))
-            try:
-                self.viewbox_x = float(dims[0])
-                self.viewbox_y = float(dims[1])
-                self.viewbox_width = float(dims[2])
-                self.viewbox_height = float(dims[3])
-            except IndexError:
-                pass
+class Title(SVGElement):
+    def __init__(self, values, title=None):
+        self.title = title
+        SVGElement.__init__(self,**values)
 
-    def render(self, width=None, height=None, relative_length=None, **kwargs):
-        if width is None and relative_length is not None:
-            width = relative_length
-        if height is None and relative_length is not None:
-            height = relative_length
-        if isinstance(self.physical_width, Length):
-            self.physical_width = self.physical_width.value(relative_length=width, **kwargs)
-        if isinstance(self.physical_height, Length):
-            self.physical_height = self.physical_height.value(relative_length=height, **kwargs)
-        if self.physical_width is not None:
-            width = self.physical_width
-        if self.physical_height is not None:
-            height = self.physical_height
-        if isinstance(self.element_x, Length):
-            self.element_x = self.element_x.value(relative_length=width, **kwargs)
-        if isinstance(self.element_y, Length):
-            self.element_y = self.element_y.value(relative_length=height, **kwargs)
-        if isinstance(self.element_width, Length):
-            self.element_width = self.element_width.value(relative_length=width, **kwargs)
-        if isinstance(self.element_height, Length):
-            self.element_height = self.element_height.value(relative_length=height, **kwargs)
-        return self
+    def property_by_object(self, obj):
+        SVGElement.property_by_object(self, obj)
+        self.title = obj.title
 
-    def transform(self):
-        return Viewbox.viewbox_transform(
-            self.element_x, self.element_y, self.element_width, self.element_height,
-            self.viewbox_x, self.viewbox_y, self.viewbox_width, self.viewbox_height,
-            self.preserve_aspect_ratio)
-
-    @staticmethod
-    def viewbox_transform(e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect):
-        """
-        SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
-        With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
-
-        It creates transform commands equal to that viewport expected.
-
-        :param svg_node: dict containing the relevant svg entries.
-        :return: string of the SVG transform commands to account for the viewbox.
-        """
-
-        # Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
-
-        # Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y,
-        # width and height values of the viewBox attribute respectively.
-
-        # Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
-        # Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
-        # or if meetOrSlice is missing from this value.
-        if e_x is None or e_y is None or e_width is None or e_height is None or \
-                vb_x is None or vb_y is None or vb_width is None or vb_height is None:
-            return ''
-        if aspect is not None:
-            aspect_slice = aspect.split(' ')
-            try:
-                align = aspect_slice[0]
-            except IndexError:
-                align = 'xMidyMid'
-            try:
-                meet_or_slice = aspect_slice[1]
-            except IndexError:
-                meet_or_slice = 'meet'
-        else:
-            align = 'xMidyMid'
-            meet_or_slice = 'meet'
-        # Initialize scale-x to e-width/vb-width.
-        scale_x = e_width / vb_width
-        # Initialize scale-y to e-height/vb-height.
-        scale_y = e_height / vb_height
-
-        # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
-        if align != SVG_VALUE_NONE and meet_or_slice == 'meet':
-            scale_x = scale_y = min(scale_x, scale_y)
-        # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
-        elif align != SVG_VALUE_NONE and meet_or_slice == 'slice':
-            scale_x = scale_y = max(scale_x, scale_y)
-        # Initialize translate-x to e-x - (vb-x * scale-x).
-        translate_x = e_x - (vb_x * scale_x)
-        # Initialize translate-y to e-y - (vb-y * scale-y)
-        translate_y = e_y - (vb_y * scale_y)
-        # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
-        align = align.lower()
-        if 'xmid' in align:
-            translate_x += (e_width - vb_width * scale_x) / 2.0
-        # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
-        if 'xmax' in align:
-            translate_x += e_width - vb_width * scale_x
-        # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
-        if 'ymid' in align:
-            translate_y += (e_height - vb_height * scale_y) / 2.0
-        # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
-        if 'ymax' in align:
-            translate_y += (e_height - vb_height * scale_y)
-        # The transform applied to content contained by the element is given by:
-        # translate(translate-x, translate-y) scale(scale-x, scale-y)
-        if isinstance(scale_x, Length) or isinstance(scale_y, Length):
-            raise ValueError
-        if translate_x == 0 and translate_y == 0:
-            if scale_x == 1 and scale_y == 1:
-                return ""  # Nothing happens.
-            else:
-                return "scale(%s, %s)" % (Length.str(scale_x), Length.str(scale_y))
-        else:
-            if scale_x == 1 and scale_y == 1:
-                return "translate(%s, %s)" % (Length.str(translate_x), Length.str(translate_y))
-            else:
-                return "translate(%s, %s) scale(%s, %s)" % \
-                       (Length.str(translate_x), Length.str(translate_y),
-                        Length.str(scale_x), Length.str(scale_y))
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+        if SVG_TAG_TITLE in values:
+            self.title = values[SVG_TAG_TITLE]
 
 
 class SVG(Group):
@@ -6949,67 +7276,106 @@ class SVG(Group):
     SVG is the SVG main object and also the embedded SVGs within it. It's a subtype of Group. The SVG has a viewbox,
     and parsing methods which can be used if given a stream, path, or svg string.
     """
-
     def __init__(self, *args, **kwargs):
-        Group.__init__(self, *args, **kwargs)
+        self.objects = {}
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
         self.viewbox = None
-        values = None
-        if len(args) == 1:
-            if isinstance(args[0], dict):
-                values = args[0]
-            elif isinstance(args[0], SVG):
-                s = args[0]
-                self.viewbox = Viewbox(s.viewbox)
-                return
-        if values is not None:
-            self.viewbox = Viewbox(values)
-        else:
-            self.viewbox = Viewbox(kwargs)
+        Group.__init__(self, *args, **kwargs)
 
-    def render(self, ppi=None, width=None, height=None):
-        self.viewbox.render(ppi=ppi, width=width, height=height)
+    def property_by_object(self, s):
+        Group.property_by_object(self, s)
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+        self.viewbox = Viewbox(s.viewbox) if s.viewbox is not None else None
+
+    def property_by_values(self, values):
+        Group.property_by_values(self, values)
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, '100%')).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, '100%')).value()
+        viewbox = values.get(SVG_ATTR_VIEWBOX)
+        par = values.get(SVG_ATTR_PRESERVEASPECTRATIO)
+        self.viewbox = Viewbox(viewbox, par) if viewbox is not None else None
+
+    def get_element_by_id(self, id):
+        return self.objects.get(id)
+
+    def get_element_by_url(self, url):
+        for _id in REGEX_IRI.findall(url):
+            return self.get_element_by_id(_id)
+
+    def render(self, **kwargs):
+        Group.render(self, **kwargs)
+        width = kwargs.get('width', kwargs.get('relative_length'))
+        height = kwargs.get('height', kwargs.get('relative_length'))
+        try:
+            del kwargs['relative_length']
+        except KeyError:
+            pass
+        self.width = Length(self.width).value(relative_length=width, **kwargs)
+        self.height = Length(self.height).value(relative_length=height, **kwargs)
+        self.x = Length(self.x).value(relative_length=width, **kwargs)
+        self.y = Length(self.y).value(relative_length=height, **kwargs)
 
     def elements(self, conditional=None):
         yield self
-        yield self.viewbox
         for q in self.select(conditional):
             yield q
 
-    @staticmethod
-    def _shadow_iter(elem, children):
-        yield 'start', elem
-        for e, c in children:
-            for shadow_event, shadow_elem in SVG._shadow_iter(e, c):
-                yield shadow_event, shadow_elem
-        yield 'end', elem
+    @property
+    def viewbox_transform(self):
+        if self.viewbox is None:
+            return ''
+        return self.viewbox.transform(self)
 
     @staticmethod
-    def svg_structure_parse(source):
+    def _shadow_iter(tag, elem, children):
+        yield tag, 'start', elem
+        try:
+            for t, e, c in children:
+                for shadow_tag, shadow_event, shadow_elem in SVG._shadow_iter(t, e, c):
+                    yield shadow_tag, shadow_event, shadow_elem
+        except ValueError:
+            """
+            Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
+            we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
+            """
+            pass
+        yield tag, 'end', elem
+
+    @staticmethod
+    def _use_structure_parse(source):
         """
-        SVG Structure parsing parses the svg file such that it creates the structure implied by reused objects in a more
-        generalized context. Objects ids are read, and put into a shadow tree. <defs> objects are omitted from the
-        structure of the objects. And <use> objects seamlessly replaced with their definitions.
-
-        :param source: svg file source.
-        :generates: iterparse 'start' and 'end' values restructured.
+        SVG structure pass: parses the svg file such that it creates the structure implied by reused objects in a
+        generalized context. Objects ids are read and put into an unparsed shadow tree. <use> objects seamlessly contain
+        their definitions.
         """
         defs = {}
-        parent = None
+        parent = None  # Define Root Node.
         children = list()
-        def_depth = 0
 
         for event, elem in iterparse(source, events=('start', 'end', 'start-ns')):
-            if event == 'start':
+            try:
                 tag = elem.tag
                 if tag.startswith('{http://www.w3.org/2000/svg'):
                     tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                    elem.tag = tag
+            except AttributeError:
+                yield (None, event, elem)
+                continue
+
+            if event == 'start':
                 attributes = elem.attrib
-                # New node.
+                # Create new node.
                 siblings = children  # Parent's children are now my siblings.
                 parent = (parent, children)  # parent is now previous node context
                 children = list()  # new node has no children.
-                node = (elem, children)  # define this node.
+                node = (tag, elem, children)  # define this node.
                 siblings.append(node)  # siblings now includes this node.
 
                 if SVG_TAG_USE == tag:
@@ -7021,15 +7387,15 @@ class SVG(Group):
                     if url is not None:
                         transform = False
                         try:
-                            transform = True
                             x = attributes[SVG_ATTR_X]
                             del attributes[SVG_ATTR_X]
+                            transform = True
                         except KeyError:
                             x = '0'
                         try:
-                            transform = True
                             y = attributes[SVG_ATTR_Y]
                             del attributes[SVG_ATTR_Y]
+                            transform = True
                         except KeyError:
                             y = '0'
                         if transform:
@@ -7038,34 +7404,22 @@ class SVG(Group):
                                                                  (attributes[SVG_ATTR_TRANSFORM], x, y)
                             except KeyError:
                                 attributes[SVG_ATTR_TRANSFORM] = 'translate(%s, %s)' % (x, y)
-                        yield event, elem
+                        yield (tag, event, elem)
                         try:
-                            s_elem, s_children = defs[url[1:]]  # Shadow node.
+                            shadow_node = defs[url[1:]]
+                            children.append(shadow_node)  # Shadow children are children of the use.
+                            for n in SVG._shadow_iter(*shadow_node):
+                                yield n
                         except KeyError:
-                            continue
-                        for shadow_event, shadow_elem in SVG._shadow_iter(s_elem, s_children):
-                            yield shadow_event, shadow_elem
-                        continue
-                if SVG_ATTR_ID in attributes:  # If we have an ID, save the node.
+                            pass  # Failed to find link.
+                else:
+                    yield (tag, event, elem)
+                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
                     defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
-                if tag == SVG_TAG_DEFS:
-                    def_depth += 1
             elif event == 'end':
-                tag = elem.tag
-                if tag.startswith('{http://www.w3.org/2000/svg'):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-                    elem.tag = tag
-                attributes = elem.attrib
+                yield (tag, event, elem)
                 # event is 'end', pop values.
-                parent, children = parent  # Pop off previous context.
-                if tag == SVG_TAG_DEFS:
-                    def_depth -= 1
-                    continue
-            elif event == "start-ns":
-                yield event, elem
-                continue
-            if def_depth == 0 or elem.tag == SVG_TAG_STYLE:
-                yield event, elem
+                parent, children = parent  # Parent is now node.
 
     @staticmethod
     def parse(source,
@@ -7077,35 +7431,41 @@ class SVG(Group):
               transform=None,
               context=None):
         """
-        Parses the SVG file.
-        Style elements are split into their proper values.
+        Parses the SVG file. All attributes are things which the SVG document itself could not be aware of, such as
+        the real size of pixels and the size of the viewport (as opposed to the viewbox).
 
-        switch elements are not processed.
-        title elements are not processed.
-        metadata elements are not processed.
-        foreignObject elements are not processed.
-
-        Color refers to the value of the current color from the default context. This could be set with some external
-        values that the parsing of the SVG would be unaware. This is the color for the 'currentColor' value.
+        :param source: Source svg file or stream.
+        :param reify: Should the Geometry sized or have lazy matrices.
+        :param ppi: How many physical pixels per inch are there in this view.
+        :param width: The physical width of the viewport
+        :param height: The physical height of the viewport
+        :param color: the `currentColor` value from outside the current scope.
+        :param transform: Any required transformations to be pre-applied to this document
+        :param context: Any existing document context.
+        :return:
         """
+        clip = 0
         root = context
         styles = {}
         stack = []
 
-        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black", SVG_ATTR_STROKE: "none",
-                  SVG_ATTR_HEIGHT: "100%", SVG_ATTR_WIDTH: "100%"}
+        values = {SVG_ATTR_COLOR: color, SVG_ATTR_FILL: "black", SVG_ATTR_STROKE: "none"}
+
         if transform is not None:
             values[SVG_ATTR_TRANSFORM] = transform
-        for event, elem in SVG.svg_structure_parse(source):
-            # print("%d tag: %s is %s" % (len(stack), elem.tag, event))
+
+        for tag, event, elem in SVG._use_structure_parse(source):
+            """
+            SVG element parsing parses the job compiling any parsed elements into their compiled object forms. 
+            """
+            # print(event, elem)
             if event == 'start':
                 stack.append((context, values))
                 if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
-                    continue  # Values has a display=none. Do not render anything.
+                    continue  # Values has a display=none. Do not render anything. No Shadow Dom.
                 current_values = values
                 values = {}
                 values.update(current_values)  # copy of dictionary
-                tag = elem.tag
 
                 # Non-propagating values.
                 if SVG_ATTR_PRESERVEASPECTRATIO in values:
@@ -7114,6 +7474,8 @@ class SVG(Group):
                     del values[SVG_ATTR_VIEWBOX]
                 if SVG_ATTR_ID in values:
                     del values[SVG_ATTR_ID]
+                if SVG_ATTR_CLIP_PATH in values:
+                    del values[SVG_ATTR_CLIP_PATH]
 
                 attributes = elem.attrib  # priority; lowest
                 attributes[SVG_ATTR_TAG] = tag
@@ -7174,33 +7536,35 @@ class SVG(Group):
                                                          attributes[SVG_ATTR_TRANSFORM]
                     else:
                         attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
+
+                # All class and attribute properties are compiled.
+
                 values.update(attributes)
                 if SVG_ATTR_DISPLAY in values and values[SVG_ATTR_DISPLAY] == SVG_VALUE_NONE:
-                    continue  # If the attributes we just flags our values to display=none, stop rendering.
+                    continue  # If the attributes flags our values to display=none, stop rendering.
                 if SVG_NAME_TAG == tag:
                     # The ordering for transformations on the SVG object are:
                     # explicit transform, parent transforms, attribute transforms, viewport transforms
                     s = SVG(values)
                     s.render(ppi=ppi, width=width, height=height)
+                    height, width = s.width, s.height
+                    if s.viewbox is not None:
+                        try:
+                            if s.height == 0 or s.width == 0:
+                                return s
+                            viewport_transform = s.viewbox_transform
+                        except ZeroDivisionError:
+                            # The width or height was zero.
+                            # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
+                            # "A value of zero disables rendering of the element."
+                            return s  # No more parsing will be done.
 
-                    # viewbox was rendered here.
-                    try:
-                        if s.viewbox.element_height == 0 or s.viewbox.element_width == 0:
-                            return s
-                        viewport_transform = s.viewbox.transform()
-                    except ZeroDivisionError:
-                        # The width or height was zero.
-                        # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
-                        # "A value of zero disables rendering of the element."
-                        return s  # No more parsing will be done.
-
-                    if SVG_ATTR_TRANSFORM in values:
-                        # transform on SVG element applied as if svg had parent with transform.
-                        values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
-                    else:
-                        values[SVG_ATTR_TRANSFORM] = viewport_transform
-                    width = s.viewbox.viewbox_width
-                    height = s.viewbox.viewbox_height
+                        if SVG_ATTR_TRANSFORM in values:
+                            # transform on SVG element applied as if svg had parent with transform.
+                            values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
+                        else:
+                            values[SVG_ATTR_TRANSFORM] = viewport_transform
+                        width, height = s.viewbox.width, s.viewbox.height
                     if context is None:
                         stack[-1] = (context, values)
                     if context is not None:
@@ -7208,57 +7572,91 @@ class SVG(Group):
                     context = s
                     if root is None:
                         root = s
-                    continue
                 elif SVG_TAG_GROUP == tag:
                     s = Group(values)
                     context.append(s)
                     context = s
-                    continue
-                elif SVG_TAG_PATH == tag:
+                    s.render(ppi=ppi, width=width, height=height)
+                elif SVG_TAG_DEFS == tag:
+                    s = Group(values)
+                    context = s  # Non-Rendered
+                    s.render(ppi=ppi, width=width, height=height)
+                elif SVG_TAG_CLIPPATH == tag:
+                    s = ClipPath(values)
+                    context = s  # Non-Rendered
+                    s.render(ppi=ppi, width=width, height=height)
+                    clip += 1
+                elif SVG_TAG_PATTERN == tag:
+                    s = Pattern(values)
+                    context = s  # Non-rendered
+                    s.render(ppi=ppi, width=width, height=height)
+                elif tag in (SVG_TAG_PATH, SVG_TAG_CIRCLE, SVG_TAG_ELLIPSE, SVG_TAG_LINE,  # Shapes
+                             SVG_TAG_POLYLINE, SVG_TAG_POLYGON, SVG_TAG_RECT, SVG_TAG_IMAGE):
                     try:
-                        s = Path(values)
+                        if SVG_TAG_PATH == tag:
+                            s = Path(values)
+                        elif SVG_TAG_CIRCLE == tag:
+                            s = Circle(values)
+                        elif SVG_TAG_ELLIPSE == tag:
+                            s = Ellipse(values)
+                        elif SVG_TAG_LINE == tag:
+                            s = SimpleLine(values)
+                        elif SVG_TAG_POLYLINE == tag:
+                            s = Polyline(values)
+                        elif SVG_TAG_POLYGON == tag:
+                            s = Polygon(values)
+                        elif SVG_TAG_RECT == tag:
+                            s = Rect(values)
+                        else:  # SVG_TAG_IMAGE == tag:
+                            s = SVGImage(values)
                     except ValueError:
                         continue
-                elif SVG_TAG_CIRCLE == tag:
-                    s = Circle(values)
-                elif SVG_TAG_ELLIPSE == tag:
-                    s = Ellipse(values)
-                elif SVG_TAG_LINE == tag:
-                    s = SimpleLine(values)
-                elif SVG_TAG_POLYLINE == tag:
-                    s = Polyline(values)
-                elif SVG_TAG_POLYGON == tag:
-                    s = Polygon(values)
-                elif SVG_TAG_RECT == tag:
-                    s = Rect(values)
-                elif SVG_TAG_IMAGE == tag:
-                    s = SVGImage(values)
-                elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC):
-                    # <style>, <text>, <desc>
+                    s.render(ppi=ppi, width=width, height=height)
+                    if reify:
+                        s.reify()
+                    context.append(s)
+                elif tag in (SVG_TAG_STYLE, SVG_TAG_TEXT, SVG_TAG_DESC, SVG_TAG_TITLE, SVG_TAG_TSPAN):
+                    # <style>, <text>, <desc>, <title>
                     continue
                 else:
                     s = SVGElement(values)  # SVG Unknown object return as element.
                     context.append(s)
-                    continue
-                s.render(ppi=ppi, width=width, height=height)
-                if reify:
-                    s.reify()
-                context.append(s)
+
+                # Assign optional linked properties.
+                try:
+                    clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
+                    if clip_path_url is not None:
+                        clip_path = root.get_element_by_url(clip_path_url)
+                        s.clip_path = clip_path
+                except AttributeError:
+                    pass
+                if clip != 0:
+                    try:
+                        clip_rule = s.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
+                        if clip_rule is not None:
+                            s.clip_rule = clip_rule
+                    except AttributeError:
+                        pass
+                if SVG_ATTR_ID in values and root is not None:
+                    root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == 'end':  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
-                tag = elem.tag
-                if SVG_TAG_TEXT == tag:
+                s = None
+                if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN, SVG_TAG_DESC, SVG_TAG_TITLE, SVG_TAG_STYLE):
+                    attributes = elem.attrib
+                    if SVG_ATTR_ID in values and root is not None:
+                        root.objects[attributes[SVG_ATTR_ID]] = s
+                if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
                     s = SVGText(values, text=elem.text)
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
                     context.append(s)
-                elif SVG_TAG_TSPAN == tag:
-                    s = SVGText(values, text=elem.text)
-                    context.append(s)
-                    s.render(ppi=ppi, width=width, height=height)
                 elif SVG_TAG_DESC == tag:
-                    s = SVGDesc(values, desc=elem.text)
+                    s = Desc(values, desc=elem.text)
+                    context.append(s)
+                elif SVG_TAG_TITLE == tag:
+                    s = Title(values, title=elem.text)
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
@@ -7267,6 +7665,25 @@ class SVG(Group):
                         value = value.strip()
                         for selector in key.split(','):  # Can comma select subitems.
                             styles[selector.strip()] = value
+                elif SVG_TAG_CLIPPATH == tag:
+                    clip -= 1
+                if s is not None:
+                    # Assign optional linked properties.
+                    try:
+                        clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
+                        if clip_path_url is not None:
+                            clip_path = root.get_element_by_url(clip_path_url)
+                            s.clip_path = clip_path
+                    except AttributeError:
+                        pass
+                    if clip != 0:
+                        try:
+                            clip_rule = s.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
+                            if clip_rule is not None:
+                                s.clip_rule = clip_rule
+                        except AttributeError:
+                            pass
+
                 context, values = stack.pop()
             elif event == 'start-ns':
                 if elem[0] != SVG_ATTR_DATA:

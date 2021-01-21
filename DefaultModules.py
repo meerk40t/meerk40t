@@ -30,8 +30,8 @@ class SVGWriter:
         mils_per_mm = 39.3701
         mils_per_px = 1000.0 / 96.0
         px_per_mils = 96.0 / 1000.0
-        device.setting(int, "bed_width", 320)
-        device.setting(int, "bed_height", 220)
+        device.setting(int, "bed_width", 310)
+        device.setting(int, "bed_height", 210)
         mm_width = device.bed_width
         mm_height = device.bed_height
         root.set(SVG_ATTR_WIDTH, '%fmm' % mm_width)
@@ -61,12 +61,13 @@ class SVGWriter:
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
             if isinstance(element, Path):
+                element = abs(element)
                 subelement = SubElement(root, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_DATA, element.d())
+                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
+
                 for key, val in element.values.items():
-                    if key in ('stroke-width', 'fill-opacity', 'speed',
-                               'overscan', 'power', 'id', 'passes',
+                    if key in ('speed', 'overscan', 'power', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
             elif isinstance(element, SVGText):
@@ -76,8 +77,7 @@ class SVGWriter:
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
                 for key, val in element.values.items():
-                    if key in ('stroke-width', 'fill-opacity', 'speed',
-                               'overscan', 'power', 'id', 'passes',
+                    if key in ('speed', 'overscan', 'power', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio',
                                'font-family', 'font-size', 'font-weight'):
                         subelement.set(key, str(val))
@@ -96,18 +96,28 @@ class SVGWriter:
                 t *= scale
                 subelement.set('transform', 'matrix(%f, %f, %f, %f, %f, %f)' % (t.a, t.b, t.c, t.d, t.e, t.f))
                 for key, val in element.values.items():
-                    if key in ('stroke-width', 'fill-opacity', 'speed',
-                               'overscan', 'power', 'id', 'passes',
+                    if key in ('speed', 'overscan', 'power', 'passes',
                                'raster_direction', 'raster_step', 'd_ratio'):
                         subelement.set(key, str(val))
-            stroke = str(element.stroke)
-            fill = str(element.fill)
-            if stroke == 'None':
-                stroke = SVG_VALUE_NONE
-            if fill == 'None':
-                fill = SVG_VALUE_NONE
+            stroke = element.stroke
+            stroke_opacity = stroke.opacity
+            stroke = str(abs(stroke)) if stroke is not None and stroke.value is not None else SVG_VALUE_NONE
             subelement.set(SVG_ATTR_STROKE, stroke)
+            if stroke_opacity != 1.0 and stroke_opacity is not None:
+                subelement.set(SVG_ATTR_STROKE_OPACITY, stroke_opacity)
+            try:
+                stroke_width = str(element.stroke_width) if element.stroke_width is not None else SVG_VALUE_NONE
+                subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+            except AttributeError:
+                pass
+            fill = element.fill
+            fill_opacity = fill.opacity
+            fill = str(abs(fill)) if fill is not None and fill.value is not None else SVG_VALUE_NONE
             subelement.set(SVG_ATTR_FILL, fill)
+            if fill_opacity != 1.0 and fill_opacity is not None:
+                subelement.set(SVG_ATTR_STROKE_OPACITY, fill_opacity)
+            if element.id is not None:
+                subelement.set(SVG_ATTR_ID, element.id)
         tree = ElementTree(root)
         tree.write(f)
 
@@ -120,8 +130,8 @@ class SVGLoader:
 
     @staticmethod
     def load(kernel, pathname, **kwargs):
-        kernel.setting(int, "bed_width", 320)
-        kernel.setting(int, "bed_height", 220)
+        kernel.setting(int, "bed_width", 310)
+        kernel.setting(int, "bed_height", 210)
         elements = []
         if 'svg_ppi' in kwargs:
             ppi = float(kwargs['svg_ppi'])
@@ -243,8 +253,8 @@ class DxfLoader:
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        kernel.setting(int, "bed_width", 320)
-        kernel.setting(int, "bed_height", 220)
+        kernel.setting(int, "bed_width", 310)
+        kernel.setting(int, "bed_height", 210)
 
         import ezdxf
 

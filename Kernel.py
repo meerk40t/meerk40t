@@ -270,10 +270,12 @@ class Interpreter(Module):
             self.fetch_next_item()
         if self.spooled_item is not None:
             self.execute()
-        else:
-            if self.device.quit:
-                self.device.interpreter.pipe.stop()
-                self.device.stop()
+        elif self.device.quit:
+                self.console = self.device.using('module', 'Console')
+                self.console.write("element * remove\n")
+                self.console.write("shutdown\n")
+                # self.device.interpreter.pipe.stop()
+                # self.device.stop()
 
     def execute(self):
         """
@@ -1301,7 +1303,7 @@ class Elemental(Module):
                 if op.operation == "Raster":
                     if image_added:
                         continue  # already added to an image operation, is not added her.
-                    if op.color == element.stroke:
+                    if element.stroke is not None and op.color == abs(element.stroke):
                         op.append(element)
                         was_classified = True
                     elif isinstance(element, SVGImage):
@@ -1310,7 +1312,8 @@ class Elemental(Module):
                     elif element.fill is not None and element.fill.value is not None:
                         op.append(element)
                         was_classified = True
-                elif op.operation in ("Engrave", "Cut") and op.color == element.stroke:
+                elif op.operation in ("Engrave", "Cut") and element.stroke is not None and \
+                        op.color == abs(element.stroke):
                     op.append(element)
                     was_classified = True
                 elif op.operation == 'Image' and isinstance(element, SVGImage):
@@ -2277,7 +2280,7 @@ class Kernel(Device):
         Device.__init__(self, self, 0)
         # Current Project.
         self.device_name = "MeerK40t"
-        self.device_version = '0.6.14'
+        self.device_version = '0.6.15'
         self.device_root = self
 
         # Persistent storage if it exists.

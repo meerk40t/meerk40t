@@ -407,7 +407,7 @@ class OperationPreprocessor:
 
 
 class VectorMontonizer:
-    def __init__(self, low_value=-float('inf'), high_value=float(inf), start=-float('inf')):
+    def __init__(self, low_value=-float('inf'), high_value=float('inf'), start=-float('inf')):
         self.clusters = []
         self.dirty_cluster_sort = True
 

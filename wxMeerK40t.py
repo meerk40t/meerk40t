@@ -567,8 +567,8 @@ class MeerK40t(wx.Frame, Module):
         device.setting(int, 'fps', 40)
 
         if device is not None:
-            device.setting(int, "bed_width", 320)  # Default Value
-            device.setting(int, "bed_height", 220)  # Default Value
+            device.setting(int, "bed_width", 310)  # Default Value
+            device.setting(int, "bed_height", 210)  # Default Value
 
         kernel.listen('element_added', self.on_rebuild_tree_request)
         kernel.listen('operation_added', self.on_rebuild_tree_request)
@@ -632,6 +632,8 @@ class MeerK40t(wx.Frame, Module):
         device.control_instance_add("Clear Laserpath", self.clear_laserpath)
         device.control_instance_add("RotaryView", self.toggle_rotary_view)
         device.control_instance_add("RotaryScale", self.apply_rotary_scale)
+        device.control_instance_add("egv export", self.egv_export)
+        device.control_instance_add("egv import", self.egv_import)
         self.SetSize((device.window_width, device.window_height))
         self.interval = 1.0 / float(device.fps)
         self.schedule()
@@ -973,7 +975,9 @@ class MeerK40t(wx.Frame, Module):
             if self._Buffer is None:
                 self.update_buffer_ui_thread()
             wx.BufferedPaintDC(self.scene, self._Buffer)
-        except RuntimeError:
+        except (RuntimeError, TypeError):
+            # RuntimeError if the DC is deleted.
+            # TypeError if the buffer didn't get added because it aborted early.
             pass
 
     def set_buffer(self):
@@ -1067,8 +1071,10 @@ class MeerK40t(wx.Frame, Module):
 
     def update_buffer_ui_thread(self):
         """Performs the redraw of the data in the UI thread."""
-
-        dm = self.device.draw_mode
+        try:
+            dm = self.device.draw_mode
+        except AttributeError:
+            return  # Abort in a race condition. Do no draw the scene.
         if self._Buffer is None or self._Buffer.GetSize() != self.scene.ClientSize:
             self.set_buffer()
         dc = wx.MemoryDC()
@@ -1543,6 +1549,35 @@ class MeerK40t(wx.Frame, Module):
             self.device.classify(p)
         dlg.Destroy()
 
+    def egv_import(self):
+        pathname = None
+        files = "*.egv"
+        with wx.FileDialog(self, _("Import EGV"), wildcard=files,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+        if pathname is None:
+            return
+        with wx.BusyInfo(_("Loading File...")):
+            console = self.device.using('module', 'Console')
+            console.write("egv_import %s\n" % pathname)
+            return
+
+    def egv_export(self):
+        pathname = None
+        files = "*.egv"
+        with wx.FileDialog(self, _("Export EGV"), wildcard=files, style=wx.FD_SAVE) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+        if pathname is None:
+            return
+        with wx.BusyInfo(_("Saving File...")):
+            console = self.device.using('module', 'Console')
+            console.write("egv_export %s\n" % pathname)
+            return
+
     def apply_rotary_scale(self):
         kernel = self.device.device_root
         sx = self.device.scale_x
@@ -1913,7 +1948,7 @@ class RootNode(list):
         while child.IsOk():
             child_node = self.tree.GetItemData(child)
             element = child_node.object
-            tree.SetItemBackgroundColour(child, wx.WHITE)
+            tree.SetItemBackgroundColour(child, None)
             try:
                 if element.highlighted:
                     tree.SetItemBackgroundColour(child, wx.YELLOW)
@@ -3099,11 +3134,11 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         print(_("Saving Log: %s") % filename)
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % '0.6.14')
+            file.write("MeerK40t crash log. Version: %s\n" % '0.6.15')
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
-        dlg = wx.MessageDialog(None, err_msg, _('Error encountered'), wx.OK | wx.ICON_ERROR)
+        dlg = wx.MessageDialog(None, err_msg, _('Please Report to Development Team'), wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
         dlg.Destroy()
     except:  # I already crashed once, if there's another here just ignore it.
