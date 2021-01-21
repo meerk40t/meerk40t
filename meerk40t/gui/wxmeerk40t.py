@@ -1603,6 +1603,7 @@ class MeerK40t(wx.Frame, Module, Job):
     def on_emphasized_elements_changed(self, *args):
         self.update_ribbon_position()
         self.clear_laserpath()
+        self.root.select_in_tree_by_selected()
         self.request_refresh()
 
     def on_element_alteration(self, *args):
