@@ -48,12 +48,12 @@ class DeviceManager(wx.Frame, Module):
         self.device_properties_button = wx.BitmapButton(
             self, wx.ID_ANY, icons8_administrative_tools_50.GetBitmap()
         )
-        self.move_item_up_button = wx.BitmapButton(
-            self, wx.ID_ANY, icons8up.GetBitmap()
-        )
-        self.move_item_down_button = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down.GetBitmap()
-        )
+        # self.move_item_up_button = wx.BitmapButton(
+        #     self, wx.ID_ANY, icons8up.GetBitmap()
+        # )
+        # self.move_item_down_button = wx.BitmapButton(
+        #     self, wx.ID_ANY, icons8_down.GetBitmap()
+        # )
 
         self.__set_properties()
         self.__do_layout()
@@ -70,8 +70,8 @@ class DeviceManager(wx.Frame, Module):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_properties, self.device_properties_button
         )
-        self.Bind(wx.EVT_BUTTON, self.on_button_up, self.move_item_up_button)
-        self.Bind(wx.EVT_BUTTON, self.on_button_down, self.move_item_down_button)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_up, self.move_item_up_button)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_down, self.move_item_down_button)
         # end wxGlade
 
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
@@ -135,10 +135,10 @@ class DeviceManager(wx.Frame, Module):
         self.device_properties_button.SetSize(
             self.device_properties_button.GetBestSize()
         )
-        self.move_item_up_button.SetToolTip(_("Move device up"))
-        self.move_item_up_button.SetSize(self.move_item_up_button.GetBestSize())
-        self.move_item_down_button.SetToolTip(_("Move device down"))
-        self.move_item_down_button.SetSize(self.move_item_down_button.GetBestSize())
+        # self.move_item_up_button.SetToolTip(_("Move device up"))
+        # self.move_item_up_button.SetSize(self.move_item_up_button.GetBestSize())
+        # self.move_item_down_button.SetToolTip(_("Move device down"))
+        # self.move_item_down_button.SetSize(self.move_item_down_button.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
