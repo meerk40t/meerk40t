@@ -1,8 +1,9 @@
 import os
+import time
 from threading import Lock
 
 from ..core.cutcode import LaserSettings
-from ..kernel import Modifier
+from ..kernel import Modifier, Job
 from .lasercommandconstants import *
 
 INTERPRETER_STATE_RAPID = 0
@@ -27,8 +28,8 @@ class Interpreter:
     An Interpreter Module takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
 
-    Interpreters register themselves as device.interpreter objects.
-    Interpreters expect the device.spooler object exists to provide spooled commands as needed.
+    Interpreters register themselves as context.interpreter objects.
+    Interpreters expect the context.spooler object exists to provide spooled commands as needed.
 
     These modules function to interpret hardware specific backend information from the reusable spoolers and server
     objects that may also be common within devices.
@@ -52,45 +53,51 @@ class Interpreter:
         context.setting(bool, "opt_rapid_between", True)
         context.setting(int, "opt_jog_mode", 0)
         context.setting(int, "opt_jog_minimum", 127)
+        context.setting(bool, "quit", False)
+
         context.current_x = 0
         context.current_y = 0
         self.rapid = self.context.opt_rapid_between
         self.jog = self.context.opt_jog_mode
+        self.thread = None
+        self.start_interpreter()
+        self.context.schedule(Job(self.start_interpreter, job_name="Interpreter-Persist"))
 
-    def interpret(self, *args):
+    def start_interpreter(self, *args):
+        if self.thread is None:
+            def clear_thread(*args):
+                self.thread = None
+            self.thread = self.context.threaded(self._interpret_threaded, result=clear_thread)
+            self.thread.stop = clear_thread
+
+    def _interpret_threaded(self, *args):
         """
         Fetch and Execute.
-
-        Get next spooled element if needed.
-
-        Calls execute.
 
         :param args:
         :return:
         """
-        if self.spooled_item is None:
-            self._fetch_next_item_from_spooler()
-        if self.spooled_item is None:
-            # There is no data to interpret. Fetch Failed.
-            if self.context.quit:
-                self.context.console("shutdown\n")
-            return
-        self._process_spooled_item()
-
-    def plotplanner_process(self):
-        """
-        Executes the device specific processing.
-
-        :return: if execute tick was processed.
-        """
-        return False
+        while True:
+            if self.thread is None:
+                return
+            if self.spooled_item is None:
+                self._fetch_next_item_from_spooler()
+            if self.spooled_item is None:
+                # There is no data to interpret. Fetch Failed.
+                if self.context.quit:
+                    self.context.console("shutdown\n")
+                    return
+                time.sleep(0.1)
+            self._process_spooled_item()
 
     def _process_spooled_item(self):
         """
-        Default command loop. Processes the spooled item. If the spooled_item is a command it is executed.
-        If it is a generator, it should generate commands, which are then executed.
+        Default Execution Cycle. If Held, we wait. Otherwise we process the spooler.
+
+        Processes one item in the spooler. If the spooler item is a generator. Process one generated item.
         """
         if self.hold():
+            time.sleep(0.01)
             return
         if self.plotplanner_process():
             return
@@ -111,13 +118,24 @@ class Interpreter:
             # The spooled item is finished.
             self.spooled_item = None
 
+    def plotplanner_process(self):
+        """
+        Executes the device specific processing.
+
+        :return: if execute tick was processed.
+        """
+        return False
+
     def _fetch_next_item_from_spooler(self):
         """
         Fetches the next item from the spooler.
 
         :return:
         """
-        element = self.context.spooler.peek()
+        try:
+            element = self.context.spooler.peek()
+        except AttributeError:
+            return # Spooler does not exist.
         if element is None:
             return  # Spooler is empty.
 
@@ -404,6 +422,7 @@ class Interpreter:
         self.context.current_y = y
 
     def wait(self, t):
+        # TODO: This doesn't work without scheduler.
         self.next_run = t
 
     def wait_finish(self, *values):

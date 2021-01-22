@@ -98,7 +98,6 @@ class LhystudiosDevice(Modifier):
         self.interpreter = None
         self.spooler = None
         self.state = STATE_UNKNOWN
-        self.context.listen("interpreter;mode", self.on_mode_change)
         self.dx = 0
         self.dy = 0
 
@@ -246,11 +245,6 @@ class LhystudiosDevice(Modifier):
             spooler = kernel.active_device.spooler
             spooler.job(COMMAND_LOCK)
 
-        self.context.open_as("module/LhystudioController", "pipe")
-        self.context.open_as("module/LhystudioEmulator", "emulator")
-        self.context.activate("modifier/LhymicroInterpreter", self.context)
-        self.context.activate("modifier/Spooler")
-
         self.context.setting(str, "device_name", "Lhystudios")
 
         self.context.setting(bool, "quit", False)
@@ -273,6 +267,12 @@ class LhystudiosDevice(Modifier):
         self.context.setting(bool, "fix_speeds", False)
         self.dx = 0
         self.dy = 0
+
+        self.context.open_as("module/LhystudioController", "pipe")
+        self.context.open_as("module/LhystudioEmulator", "emulator")
+        self.context.activate("modifier/LhymicroInterpreter", self.context)
+        self.context.activate("modifier/Spooler")
+
         context.listen("interpreter;mode", self.on_mode_change)
 
         self.context.signal(
@@ -354,7 +354,7 @@ def lhymicro_distance(v):
     return dist + distance_lookup[v]
 
 
-class LhymicroInterpreter(Interpreter, Job, Modifier):
+class LhymicroInterpreter(Interpreter, Modifier):
     """
     LhymicroInterpreter provides Lhystudio specific coding for elements and sends it to the backend
     to write to the usb.
@@ -365,9 +365,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
     def __init__(self, context, job_name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, job_name, channel)
         Interpreter.__init__(self, context=context)
-        Job.__init__(
-            self, job_name="Lhystudios-spool", process=self.interpret, interval=0.01
-        )
         self.CODE_RIGHT = b"B"
         self.CODE_LEFT = b"T"
         self.CODE_TOP = b"L"
@@ -542,7 +539,6 @@ class LhymicroInterpreter(Interpreter, Job, Modifier):
         self.context.register("control/Realtime Pause", self.pause)
         self.context.register("control/Realtime Resume", self.resume)
         self.context.register("control/Update Codes", self.update_codes)
-        self.context.schedule(self)
 
     def __repr__(self):
         return "LhymicroInterpreter()"
@@ -1600,8 +1596,6 @@ class LhystudioController(Module):
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
         self._queue_lock.release()
-        # if b'DU' in self._buffer:
-        #     print("Error!")
         self.start()
         self.update_buffer()
         return self
@@ -2102,7 +2096,7 @@ class LhystudioEmulator(Module):
         self.process = self.state_default
 
         send = context.channel("pipe/usb_send")
-        send.watch(self.write)
+        send.watch(self.write_packet)
 
         self.channel = self.context.channel("lhy")
 
@@ -2139,6 +2133,9 @@ class LhystudioEmulator(Module):
             self.distance_x += amount
         if self.y_on:
             self.distance_y += amount
+
+    def write_packet(self, packet):
+        self.write(packet[1:31])
 
     def write(self, data):
         for b in data:

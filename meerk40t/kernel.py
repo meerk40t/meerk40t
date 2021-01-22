@@ -528,8 +528,8 @@ class Context:
     def unschedule(self, job):
         self._kernel.unschedule(job)
 
-    def threaded(self, func, thread_name=None):
-        self._kernel.threaded(func, thread_name=thread_name)
+    def threaded(self, func, thread_name=None, result=None):
+        return self._kernel.threaded(func, thread_name=thread_name, result=None)
 
 
 class Kernel:
@@ -553,13 +553,14 @@ class Kernel:
 
         self.contexts = {}
         self.threads = {}
+        self.thread_lock = Lock()
         self.registered = {}
         self.translation = lambda e: e
         self.run_later = lambda listener, message: listener(message)
         self.state = STATE_INITIALIZE
         self.jobs = {}
 
-        self.thread = None
+        self.scheduler_thread = None
 
         self.signal_job = None
         self.listeners = {}
@@ -685,7 +686,7 @@ class Kernel:
         :return:
         """
         self.command_boot()
-        self.thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.delegate_messages, name="kernel.signals", interval=0.005
         )
@@ -790,7 +791,7 @@ class Kernel:
 
             channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
             try:
-                if thread is self.thread:
+                if thread is self.scheduler_thread:
                     channel(_("%s is the current shutdown thread") % (thread_name))
                     continue
                 channel(_("Asking thread to stop."))
@@ -813,8 +814,8 @@ class Kernel:
         self.last_message = {}
         self.listeners = {}
         self.state = STATE_TERMINATE
-        if self.thread != threading.current_thread():  # Join if not this thread.
-            self.thread.join()
+        if self.scheduler_thread != threading.current_thread():  # Join if not this thread.
+            self.scheduler_thread.join()
         channel(_("Shutdown."))
 
     # Device Lifecycle
@@ -1188,30 +1189,38 @@ class Kernel:
 
     # Threads processing.
 
-    def threaded(self, func, thread_name=None):
+    def threaded(self, func, thread_name=None, result=None):
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
         will exit, and deregister itself. During shutdown any active threads created will be told to stop and the kernel
         will wait until such time as it stops.
 
+        result is a threadsafe execution. It will execute if the crashes or exits normally. If there was a return from
+        the function call the result will be passed this value. If there is not one or it is None, None will be passed.
+        result must take 1 argument. This permits final calls to the thread.
+
         :param func: The function to be executed.
         :param thread_name: The name under which the thread should be registered.
+        :param result: Final runs after the thread is deleted.
         :return: The thread object created.
         """
+        self.thread_lock.acquire(True)  # Prevent dup-threading.
         if thread_name is None:
             thread_name = func.__name__
-
+        if thread_name in self.threads:
+            # Thread is already running.
+            raise PermissionError("Thread is already running!")
         channel = self.channel("threads")
         _ = self.translation
         thread = Thread(name=thread_name)
         channel(_("Thread: %s, Initialized" % thread_name))
 
         def run():
-            self.threads[thread_name] = thread
+            func_result = None
             channel(_("Thread: %s, Set" % thread_name))
             try:
                 channel(_("Thread: %s, Start" % thread_name))
-                func()
+                func_result = func()
                 channel(_("Thread: %s, End " % thread_name))
             except:
                 channel(_("Thread: %s, Exception-End" % thread_name))
@@ -1221,9 +1230,13 @@ class Kernel:
                 sys.excepthook(*sys.exc_info())
             channel(_("Thread: %s, Unset" % thread_name))
             del self.threads[thread_name]
+            if result is not None:
+                result(func_result)
 
         thread.run = run
+        self.threads[thread_name] = thread
         thread.start()
+        self.thread_lock.release()
         return thread
 
     def set_active_device(self, active_device):

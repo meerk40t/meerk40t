@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# from meerk40t import main
-#
-# main.run()
 
 import re
 import sys
