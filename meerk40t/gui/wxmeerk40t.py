@@ -4059,48 +4059,68 @@ class wxMeerK40t(wx.App, Module):
 
 # end of class MeerK40tGui
 def send_file_to_developers(filename):
-    return
-    # This currently sucks.
-    print("1")
+    """
+    Sends crash log to a server using rfc1341 7.2 The multipart Content-Type
+    https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
+
+    :param filename: filename to send. (must be text/plain)
+    :return:
+    """
     import socket
-    print("2")
     with open(filename, 'r') as f:
-        print("3")
         data = f.read()
-        print(data)
-        print("5")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ipaddr = socket.gethostbyname('api.anonfiles.com')
         s.connect((ipaddr, 80))
-        print("6")
-        headers = list()
-        headers.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
-        headers.append("Host: api.anonfiles.com")
-        headers.append("User-Agent: MeerK40t-Bug-Uploader 0.0.1")
-        headers.append("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-        headers.append("Accept-Language: en-US,en;q=0.5")
-        headers.append("Accept-Encoding: gzip, deflate")
-        headers.append("Referer: http://google.com")
-        headers.append("Connection: keep-alive")
-        headers.append("Content-Length: %d" % (len(data)))
-        headers.append('Content-Disposition: form-data; name="file"; filename="%s"' % filename)
-        headers.append('Content-Type: text/plain')
-        header = "\x0D\x0A".join(headers) + "\x0D\x0D\x0A"
-        request = header + data
-        print(str(request))
-        print("8")
+        boundary = '----------------meerk40t-boundary'
+        file_head = list()
+        file_head.append('--' + boundary)
+        file_head.append('Content-Disposition: form-data; name="file"; filename="%s"' % filename)
+        file_head.append('Content-Type: text/plain')
+        file_head.append('')
+        part = "\x0D\x0A".join(file_head)
+        terminal = '--' + boundary + '--'
+        payload = '\x0D\x0A'.join((part, data, terminal, ''))
+        http_req = list()
+        http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
+        http_req.append("Host: api.anonfiles.com")
+        http_req.append("User-Agent: meerk40t/0.0.1")
+        http_req.append("Accept: */*")
+        http_req.append("Content-Length: %d" % (len(payload)))
+        http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
+        http_req.append('')
+        header = "\x0D\x0A".join(http_req)
+        request = '\x0D\x0A'.join((header, payload))
         s.send(bytes(request, 'utf-8'))
         response = s.recv(4096)
+        response = response.decode('utf-8')
         print(response)
         s.close()
-    dlg = wx.MessageDialog(
-        None,
-        _("We got your message. Thank you for helping\n\n") + str(response),
-        _("Thanks"),
-        wx.OK,
-    )
-    dlg.ShowModal()
-    dlg.Destroy()
+    if response is None or len(response) == 0:
+        http_code = "No Response."
+    else:
+        http_code = response.split('\n')[0]
+
+    if http_code.startswith('HTTP/1.1 200 OK'):
+        http_code = response.split('\n')[0]
+        dlg = wx.MessageDialog(
+            None,
+            _("We got your message. Thank you for helping\n\n") + str(http_code),
+            _("Thanks"),
+            wx.OK,
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
+    else:
+
+        dlg = wx.MessageDialog(
+            None,
+            _("We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n" + MEERK40T_ISSUES + '\n\n' + str(http_code)),
+            _("Thanks"),
+            wx.OK,
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
 
 def handleGUIException(exc_type, exc_value, exc_traceback):
     """
@@ -4113,6 +4133,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     err_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print(err_msg)
+    err_msg = "MeerK40t crash log. Version: %s\n" % "0.7.0" + err_msg
     try:
         import datetime
 
@@ -4125,8 +4146,6 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     try:
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write("MeerK40t crash log. Version: %s\n" % "0.7.0")
-            file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
     except:  # I already crashed once, if there's another here just ignore it.
@@ -4134,16 +4153,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     # Ask to send file.
     message = """
-    JKJK, this is turned off because it currently doesn't work
-    
     Good news MeerK40t User! MeerK40t encountered an crash!
+    
     You now have the ability to help meerk40t's development by sending us the log.
-    Push this big friendly "yes" with some internet access and I'll send this info
-    to the very nice and friendly people in the clouds.
-
+    
+    Send the following data to the MeerK40t team?
+    ------
     """
     message += err_msg
-    answer = wx.MessageBox(message, _("Crash Detected!"),
+    answer = wx.MessageBox(message, _("Crash Detected! Send Log?"),
                         wx.YES_NO | wx.CANCEL, None)
     if answer == wx.YES:
         send_file_to_developers(filename)
