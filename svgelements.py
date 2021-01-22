@@ -1758,6 +1758,7 @@ class Color(object):
             color.opacity = opacity
             self.value = Color.over(color, self)
 
+
 class Point:
     """Point is a general subscriptable point class with .x and .y as well as [0] and [1]
 
