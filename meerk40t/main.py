@@ -212,7 +212,7 @@ def run():
     else:
         device = kernel_root.derive("1")
         device.activate("device/Lhystudios")
-        kernel.active = device
+        kernel.active_device = device
 
     if args.verbose:
         kernel_root.execute("Debug Device")
