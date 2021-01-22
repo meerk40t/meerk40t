@@ -64,8 +64,6 @@ class SVGWriter:
             if isinstance(element, Path):
                 element = abs(element)
                 subelement = SubElement(root, SVG_TAG_PATH)
-                tsub = SubElement(subelement, "sometrash")
-                tsub.text = "9483"
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 subelement.set(SVG_ATTR_TRANSFORM, scale)
 
