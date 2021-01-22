@@ -507,6 +507,10 @@ class MeerK40t(wx.Frame, Module, Job):
         context.register("control/egv export", self.egv_export)
         context.register("control/egv import", self.egv_import)
 
+        @context.console_command("theme", help="Theming information and assignments")
+        def theme(command, channel, _, args=tuple(), **kwargs):
+            channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
+
         @context.console_command("rotaryview", help="Rotary View of Scene")
         def toggle_rotary_view(*args, **kwargs):
             self.toggle_rotary_view()
@@ -4054,6 +4058,50 @@ class wxMeerK40t(wx.App, Module):
 
 
 # end of class MeerK40tGui
+def send_file_to_developers(filename):
+    return
+    # This currently sucks.
+    print("1")
+    import socket
+    print("2")
+    with open(filename, 'r') as f:
+        print("3")
+        data = f.read()
+        print(data)
+        print("5")
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ipaddr = socket.gethostbyname('api.anonfiles.com')
+        s.connect((ipaddr, 80))
+        print("6")
+        headers = list()
+        headers.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
+        headers.append("Host: api.anonfiles.com")
+        headers.append("User-Agent: MeerK40t-Bug-Uploader 0.0.1")
+        headers.append("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+        headers.append("Accept-Language: en-US,en;q=0.5")
+        headers.append("Accept-Encoding: gzip, deflate")
+        headers.append("Referer: http://google.com")
+        headers.append("Connection: keep-alive")
+        headers.append("Content-Length: %d" % (len(data)))
+        headers.append('Content-Disposition: form-data; name="file"; filename="%s"' % filename)
+        headers.append('Content-Type: text/plain')
+        header = "\x0D\x0A".join(headers) + "\x0D\x0D\x0A"
+        request = header + data
+        print(str(request))
+        print("8")
+        s.send(bytes(request, 'utf-8'))
+        response = s.recv(4096)
+        print(response)
+        s.close()
+    dlg = wx.MessageDialog(
+        None,
+        _("We got your message. Thank you for helping\n\n") + str(response),
+        _("Thanks"),
+        wx.OK,
+    )
+    dlg.ShowModal()
+    dlg.Destroy()
+
 def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
@@ -4071,20 +4119,33 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
             date=datetime.datetime.now()
         )
-        print(_("Saving Log: %s") % filename)
+    except: # I already crashed once, if there's another here just ignore it.
+        filename = "MeerK40t-Crash.txt"
+
+    try:
         with open(filename, "w") as file:
             # Crash logs are not translated.
             file.write("MeerK40t crash log. Version: %s\n" % "0.7.0")
             file.write("Please report to: %s\n\n" % MEERK40T_ISSUES)
             file.write(err_msg)
             print(file)
-        dlg = wx.MessageDialog(
-            None, err_msg, _("Error encountered"), wx.OK | wx.ICON_ERROR
-        )
-        dlg.ShowModal()
-        dlg.Destroy()
     except:  # I already crashed once, if there's another here just ignore it.
         pass
 
+    # Ask to send file.
+    message = """
+    JKJK, this is turned off because it currently doesn't work
+    
+    Good news MeerK40t User! MeerK40t encountered an crash!
+    You now have the ability to help meerk40t's development by sending us the log.
+    Push this big friendly "yes" with some internet access and I'll send this info
+    to the very nice and friendly people in the clouds.
+
+    """
+    message += err_msg
+    answer = wx.MessageBox(message, _("Crash Detected!"),
+                        wx.YES_NO | wx.CANCEL, None)
+    if answer == wx.YES:
+        send_file_to_developers(filename)
 
 sys.excepthook = handleGUIException
