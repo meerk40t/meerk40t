@@ -57,9 +57,10 @@ from ..svgelements import (
 MILS_PER_MM = 39.3701
 
 
-def plugin(kernel):
-    kernel.register("load/SVGLoader", SVGLoader)
-    kernel.register("save/SVGWriter", SVGWriter)
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("load/SVGLoader", SVGLoader)
+        kernel.register("save/SVGWriter", SVGWriter)
 
 
 class SVGWriter:

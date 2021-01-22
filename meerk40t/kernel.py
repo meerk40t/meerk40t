@@ -547,6 +547,8 @@ class Kernel:
     """
 
     def __init__(self, config=None):
+        self.plugins = []
+
         self.devices = {}
         self.active_device = None
         self.last_path = None
@@ -679,12 +681,17 @@ class Kernel:
 
     # Lifecycle processes.
 
+    def bootstrap(self, lifecycle):
+        for plugin in self.plugins:
+            plugin(self, lifecycle)
+
     def boot(self):
         """
         Kernel boot sequence. This should be called after all the registered devices are established.
 
         :return:
         """
+        self.bootstrap("boot")
         self.command_boot()
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
@@ -719,6 +726,7 @@ class Kernel:
         :param channel:
         :return:
         """
+        self.bootstrap("shutdown")
         _ = self.translation
         if channel is None:
             channel = self.get_context("/").channel("shutdown")
@@ -1861,6 +1869,8 @@ class Kernel:
         @self.console_command("device", help="device [<value>]")
         def device(command, channel, _, args=tuple(), **kwargs):
             active_device = self.active_device
+            if active_device is None:
+                return
             if len(args) == 0:
                 channel(_("----------"))
                 channel(_("Backends permitted:"))

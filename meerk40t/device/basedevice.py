@@ -19,8 +19,9 @@ PLOT_AXIS = 64
 PLOT_DIRECTION = 32
 
 
-def plugin(kernel):
-    kernel.register("modifier/Spooler", Spooler)
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("modifier/Spooler", Spooler)
 
 
 class Interpreter:
@@ -53,15 +54,13 @@ class Interpreter:
         context.setting(bool, "opt_rapid_between", True)
         context.setting(int, "opt_jog_mode", 0)
         context.setting(int, "opt_jog_minimum", 127)
-        context.setting(bool, "quit", False)
+        context._quit = False
 
         context.current_x = 0
         context.current_y = 0
         self.rapid = self.context.opt_rapid_between
         self.jog = self.context.opt_jog_mode
         self.thread = None
-        self.start_interpreter()
-        self.context.schedule(Job(self.start_interpreter, job_name="Interpreter-Persist"))
 
     def start_interpreter(self, *args):
         if self.thread is None:
@@ -84,7 +83,7 @@ class Interpreter:
                 self._fetch_next_item_from_spooler()
             if self.spooled_item is None:
                 # There is no data to interpret. Fetch Failed.
-                if self.context.quit:
+                if self.context._quit:
                     self.context.console("shutdown\n")
                     return
                 time.sleep(0.1)

@@ -29,10 +29,12 @@ from ..svgelements import (
 )
 
 
-def plugin(kernel):
-    kernel.register("modifier/Planner", Planner)
-    kernel_root = kernel.get_context("/")
-    kernel_root.activate("modifier/Planner")
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("modifier/Planner", Planner)
+    elif lifecycle == "boot":
+        kernel_root = kernel.get_context("/")
+        kernel_root.activate("modifier/Planner")
 
 
 class Planner(Modifier):

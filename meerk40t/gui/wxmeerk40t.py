@@ -149,6 +149,18 @@ MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 
 
+def plugin(kernel, lifecycle):
+    if lifecycle == "register":
+        kernel.register("module/wxMeerK40t", wxMeerK40t)
+    if lifecycle == "boot":
+        kernel_root = kernel.get_context("/")
+        kernel_root.open("module/wxMeerK40t")
+    elif lifecycle == "ready":
+        kernel_root = kernel.get_context("/")
+        meerk40tgui = kernel_root.open("module/wxMeerK40t")
+        kernel_root.open("window/MeerK40t", None)
+        meerk40tgui.MainLoop()
+
 class IdInc:
     """
     Id Incrementor

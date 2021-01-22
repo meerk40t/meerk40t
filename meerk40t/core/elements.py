@@ -25,10 +25,12 @@ from ..svgelements import (
 )
 
 
-def plugin(kernel):
-    kernel.register("modifier/Elemental", Elemental)
-    kernel_root = kernel.get_context("/")
-    kernel_root.activate("modifier/Elemental")
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("modifier/Elemental", Elemental)
+    elif lifecycle == "boot":
+        kernel_root = kernel.get_context("/")
+        kernel_root.activate("modifier/Elemental")
 
 
 class Elemental(Modifier):

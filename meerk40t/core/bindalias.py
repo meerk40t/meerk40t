@@ -1,10 +1,12 @@
 from ..kernel import Modifier
 
 
-def plugin(kernel):
-    kernel.register("modifier/BindAlias", BindAlias)
-    kernel_root = kernel.get_context("/")
-    kernel_root.activate("modifier/BindAlias")
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("modifier/BindAlias", BindAlias)
+    elif lifecycle == "boot":
+        kernel_root = kernel.get_context("/")
+        kernel_root.activate("modifier/BindAlias")
 
 
 class BindAlias(Modifier):

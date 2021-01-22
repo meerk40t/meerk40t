@@ -36,8 +36,9 @@ from ...svgelements import Length
 from ...core.zinglplotter import ZinglPlotter
 
 
-def plugin(kernel):
-    kernel.register("device/Lhystudios", LhystudiosDevice)
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("device/Lhystudios", LhystudiosDevice)
 
 
 """
@@ -247,8 +248,7 @@ class LhystudiosDevice(Modifier):
 
         self.context.setting(str, "device_name", "Lhystudios")
 
-        self.context.setting(bool, "quit", False)
-        self.context.quit = False
+        self.context._quit = False
 
         self.context.setting(int, "usb_index", -1)
         self.context.setting(int, "usb_bus", -1)
@@ -539,6 +539,9 @@ class LhymicroInterpreter(Interpreter, Modifier):
         self.context.register("control/Realtime Pause", self.pause)
         self.context.register("control/Realtime Resume", self.resume)
         self.context.register("control/Update Codes", self.update_codes)
+
+        self.start_interpreter()
+        self.context.schedule(Job(self.start_interpreter, job_name="Interpreter-Persist"))
 
     def __repr__(self):
         return "LhymicroInterpreter()"

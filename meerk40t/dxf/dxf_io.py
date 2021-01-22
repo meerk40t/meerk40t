@@ -20,8 +20,9 @@ from ..svgelements import (
 MILS_PER_MM = 39.3701
 
 
-def plugin(kernel):
-    kernel.register("load/DxfLoader", DxfLoader)
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "register":
+        kernel.register("load/DxfLoader", DxfLoader)
 
 
 class DxfLoader:

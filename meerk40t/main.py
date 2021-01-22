@@ -1,7 +1,6 @@
 import argparse
 import sys
 
-from .bootstrap import bootstrap
 from .kernel import Kernel, STATE_TERMINATE
 from .device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
@@ -88,33 +87,127 @@ def run():
         return
 
     kernel = Kernel()
-    bootstrap(kernel)
+    force_frozen = False
+
+    if not getattr(sys, "frozen", False) and not force_frozen:
+        """
+        These are dynamic bootstraps. They are dynamically found by entry points.
+        """
+        import pkg_resources
+
+        for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
+            plugin = entry_point.load()
+            kernel.plugins.append(plugin)
+
+    if len(kernel.plugins) == 0:
+        """
+        These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
+        hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
+        """
+        try:
+            from . import kernelserver
+            kernel.plugins.append(kernelserver.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .device import basedevice
+            kernel.plugins.append(basedevice.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .core import elements
+            kernel.plugins.append(elements.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .core import bindalias
+            kernel.plugins.append(bindalias.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .core import cutplanner
+            kernel.plugins.append(cutplanner.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .image import imagetools
+            kernel.plugins.append(imagetools.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .core import svg_io
+            kernel.plugins.append(svg_io.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .dxf import dxf_io
+            kernel.plugins.append(dxf_io.plugin)
+        except ImportError:
+            # This module cannot be loaded. ezdxf missing.
+            pass
+
+        try:
+            from .device.lhystudios import lhystudiosdevice
+            kernel.plugins.append(lhystudiosdevice.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .device.moshi import moshiboarddevice
+            kernel.plugins.append(moshiboarddevice.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .device.grbl import grbldevice
+            kernel.plugins.append(grbldevice.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from .device.ruida import ruidadevice
+            kernel.plugins.append(ruidadevice.plugin)
+        except ImportError:
+            pass
+
+        try:
+            from camera import camera
+            kernel.plugins.append(camera.plugin)
+        except ImportError:
+            pass
 
     kernel_root = kernel.get_context("/")
-    kernel_root.activate("modifier/Elemental")
-    kernel_root.activate("modifier/Planner")
-    kernel_root.activate("modifier/ImageTools")
-    kernel_root.activate("modifier/BindAlias")
     kernel_root.device_version = MEERK40T_VERSION
     kernel_root.device_name = "MeerK40t"
 
     if not args.no_gui:
-        from .gui.wxmeerk40t import wxMeerK40t
+        # This isn't registered with an entry point. It's only directly included.
+        try:
+            from .gui import wxmeerk40t
+            kernel.plugins.append(wxmeerk40t.plugin)
+        except ImportError:
+            pass
 
-        kernel.register("module/wxMeerK40t", wxMeerK40t)
-        meerk40tgui = kernel_root.open("module/wxMeerK40t")
+    kernel.bootstrap("register")
 
     kernel.boot()
 
-    device_entries = list()
+    console_command = list()
     for dev in kernel_root.derivable():
         try:
-            device_entries.append(int(dev))
+            console_command.append(int(dev))
         except ValueError:
             pass
 
-    if len(device_entries) != 0:
-        device = kernel_root.derive(str(device_entries[0]))
+    if len(console_command) != 0:
+        device = kernel_root.derive(str(console_command[0]))
         device_name = device.setting(str, "device_name", "Lhystudios")
     else:
         device = kernel_root.derive("1")
@@ -135,8 +228,7 @@ def run():
         device.mock = True
 
     if args.quit:
-        device.setting(bool, "quit", True)
-        device.quit = True
+        device._quit = True
 
     if args.set is not None:
         # Set the variables requested here.
@@ -156,18 +248,16 @@ def run():
 
     if args.auto:
         # Automatically classify and start the job.
-        elements = kernel.elements
+        elements = kernel_root.elements
         elements.classify(list(elements.elems()))
         ops = list(elements.ops())
         if args.speed is not None:
             for o in ops:
                 o.speed = args.speed
         device.spooler.jobs(ops)
-        device.setting(bool, "quit", True)
-        device.quit = True
+        device._quit = True
 
     if args.origin:
-
         def origin():
             yield COMMAND_WAIT_FINISH
             yield COMMAND_MODE_RAPID
@@ -196,16 +286,13 @@ def run():
 
     if args.console:
         kernel_root.channel("console").watch(print)
-        # kernel_root.channel('shutdown').watch(print)
         while True:
-            device_entries = input(">")
+            console_command = input(">")
             if device._state == STATE_TERMINATE:
                 break
-            if device_entries == "quit":
+            if console_command == "quit":
                 break
-            device.console(device_entries + "\n")
+            device.console(console_command + "\n")
         kernel_root.channel("console").unwatch(print)
 
-    if not args.no_gui:
-        kernel_root.open("window/MeerK40t", None)
-        meerk40tgui.MainLoop()
+    kernel.bootstrap("ready")
