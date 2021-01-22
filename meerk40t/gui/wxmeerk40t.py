@@ -4134,6 +4134,7 @@ def send_file_to_developers(filename):
         dlg.ShowModal()
         dlg.Destroy()
 
+
 def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
@@ -4143,22 +4144,22 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     :param exc_traceback:
     :return:
     """
-    err_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    print(err_msg)
-    err_msg = "MeerK40t crash log. Version: %s\n" % "0.7.0" + err_msg
+    error_log = "MeerK40t crash log. Version: %s on %s\n" % ("0.7.0", sys.platform)
+    error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print(error_log)
     try:
         import datetime
 
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
             date=datetime.datetime.now()
         )
-    except: # I already crashed once, if there's another here just ignore it.
+    except:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
 
     try:
         with open(filename, "w") as file:
             # Crash logs are not translated.
-            file.write(err_msg)
+            file.write(error_log)
             print(file)
     except:  # I already crashed once, if there's another here just ignore it.
         pass
@@ -4172,7 +4173,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     Send the following data to the MeerK40t team?
     ------
     """
-    message += err_msg
+    message += error_log
     answer = wx.MessageBox(message, _("Crash Detected! Send Log?"),
                         wx.YES_NO | wx.CANCEL, None)
     if answer == wx.YES:
