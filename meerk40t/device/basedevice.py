@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 from threading import Lock
 
@@ -62,6 +63,10 @@ class Interpreter:
         self.jog = self.context.opt_jog_mode
         self.thread = None
 
+        @context.console_command("interpreter_start", hidden=True)
+        def start(*args, **kwargs):
+            self.start_interpreter()
+
     def start_interpreter(self, *args):
         if self.thread is None:
             def clear_thread(*args):
@@ -78,6 +83,8 @@ class Interpreter:
         """
         while True:
             if self.thread is None:
+                return
+            if self.thread is not threading.currentThread():
                 return
             if self.spooled_item is None:
                 self._fetch_next_item_from_spooler()

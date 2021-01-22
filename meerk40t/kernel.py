@@ -682,6 +682,12 @@ class Kernel:
     # Lifecycle processes.
 
     def bootstrap(self, lifecycle):
+        """
+        Bootstraps all plugins at this particular lifecycle event.
+
+        :param lifecycle:
+        :return:
+        """
         for plugin in self.plugins:
             plugin(self, lifecycle)
 
@@ -1800,7 +1806,7 @@ class Kernel:
                         channel(_("Modifier '%s' not found.") % index)
             return
 
-        @self.console_command("schedule", help="schedule")
+        @self.console_command("schedule", help="show scheduled events")
         def schedule(command, channel, _, args=tuple(), **kwargs):
             channel(_("----------"))
             channel(_("Scheduled Processes:"))
@@ -1817,6 +1823,21 @@ class Kernel:
                     parts.append(_("never"))
                 else:
                     parts.append(_("each %f seconds") % job.interval)
+                channel(" ".join(parts))
+            channel(_("----------"))
+            return
+
+        @self.console_command("thread", help="show threads")
+        def thread(command, channel, _, args=tuple(), **kwargs):
+            channel(_("----------"))
+            channel(_("Registered Threads:"))
+            for i, thread_name in enumerate(list(self.threads)):
+                thread = self.threads[thread_name]
+                parts = list()
+                parts.append("%d:" % (i + 1))
+                parts.append(str(thread))
+                if thread.is_alive:
+                    parts.append(_("is alive."))
                 channel(" ".join(parts))
             channel(_("----------"))
             return
