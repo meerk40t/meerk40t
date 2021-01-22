@@ -691,12 +691,13 @@ class Kernel:
 
         :return:
         """
-        self.bootstrap("boot")
+
         self.command_boot()
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.delegate_messages, name="kernel.signals", interval=0.005
         )
+        self.bootstrap("boot")
         self.register("control/Debug Device", self._start_debugging)
         for context_name in list(self.contexts):
             context = self.contexts[context_name]

@@ -199,20 +199,20 @@ def run():
 
     kernel.boot()
 
-    console_command = list()
+    devices = list()
     for dev in kernel_root.derivable():
         try:
-            console_command.append(int(dev))
+            devices.append(int(dev))
         except ValueError:
             pass
 
-    if len(console_command) != 0:
-        device = kernel_root.derive(str(console_command[0]))
+    if len(devices) != 0:
+        device = kernel_root.derive(str(devices[0]))
         device_name = device.setting(str, "device_name", "Lhystudios")
     else:
         device = kernel_root.derive("1")
         device.activate("device/Lhystudios")
-        kernel.active_device = device
+        kernel.set_active_device(device)
 
     if args.verbose:
         kernel_root.execute("Debug Device")

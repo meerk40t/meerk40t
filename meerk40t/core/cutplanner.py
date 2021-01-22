@@ -298,6 +298,9 @@ class Planner(Modifier):
                 channel(_("----------"))
                 return
             elif args[0] == "spool":
+                active = context.active
+                if active is None:
+                    return
                 context.active.spooler.jobs(plan)
                 channel(_("Spooled Plan."))
                 self.context.signal("plan", self._default_plan, 6)

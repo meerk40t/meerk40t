@@ -131,10 +131,7 @@ class Interpreter:
 
         :return:
         """
-        try:
-            element = self.context.spooler.peek()
-        except AttributeError:
-            return # Spooler does not exist.
+        element = self.context.spooler.peek()
         if element is None:
             return  # Spooler is empty.
 
