@@ -60,6 +60,7 @@ class SVGWriter:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
+
             if isinstance(element, Path):
                 element = abs(element)
                 subelement = SubElement(root, SVG_TAG_PATH)
@@ -234,7 +235,7 @@ class ImageLoader:
             if kernel.image_dpi:
                 dpi = image.image.info['dpi']
                 if isinstance(dpi, tuple):
-                    image *= 'scale(%f,%f)' % (1000.0/dpi[0], 1000.0/dpi[1])
+                    image *= 'scale(%f,%f)' % (1000.0 / dpi[0], 1000.0 / dpi[1])
         except (KeyError, IndexError, AttributeError):
             pass
         return [image], None, None, pathname, basename
@@ -308,16 +309,16 @@ class DxfLoader:
                                 element.line((point[0], point[1]))
                             else:
                                 element += Arc(start=element.current_point,
-                                                end=(point[0], point[1]),
-                                                bulge=bulge)
+                                               end=(point[0], point[1]),
+                                               bulge=bulge)
                             bulge = e.dxf.bulge
                         if entity.is_closed:
                             if bulge == 0:
                                 element.closed()
                             else:
                                 element += Arc(start=element.current_point,
-                                                end=element.z_point,
-                                                bulge=bulge)
+                                               end=element.z_point,
+                                               bulge=bulge)
                                 element.closed()
             elif entity.dxftype() == 'LWPOLYLINE':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
@@ -334,16 +335,16 @@ class DxfLoader:
                             element.line((e[0], e[1]))
                         else:
                             element += Arc(start=element.current_point,
-                                            end=(e[0], e[1]),
-                                            bulge=bulge)
+                                           end=(e[0], e[1]),
+                                           bulge=bulge)
                         bulge = e[4]
                     if entity.closed:
                         if bulge == 0:
                             element.closed()
                         else:
                             element += Arc(start=element.current_point,
-                                            end=element.z_point,
-                                            bulge=bulge)
+                                           end=element.z_point,
+                                           bulge=bulge)
                             element.closed()
             elif entity.dxftype() == 'HATCH':
                 # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
@@ -420,11 +421,11 @@ class DxfLoader:
                 try:
                     for b in entity.construction_tool().bezier_decomposition():
                         if len(element) == 0:
-                            element.move((b[0][0],b[0][1]))
+                            element.move((b[0][0], b[0][1]))
                         element.cubic(
-                            (b[1][0],b[1][1]),
-                            (b[2][0],b[2][1]),
-                            (b[3][0],b[3][1])
+                            (b[1][0], b[1][1]),
+                            (b[2][0], b[2][1]),
+                            (b[3][0], b[3][1])
                         )
                 except (AttributeError, TypeError):
                     # Fallback for versions of EZDXF prior to 0.13
