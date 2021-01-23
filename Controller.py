@@ -88,7 +88,6 @@ class Controller(wx.Frame, Module):
         self.text_location.SetValue(self.device.device_location)
 
     def finalize(self, channel=None):
-        self.device.buffer_max = self.spin_packet_buffer_max.GetValue()  # Spin.
         self.device.unlisten('pipe;status', self.update_status)
         self.device.unlisten('pipe;packet_text', self.update_packet_text)
         self.device.unlisten('pipe;buffer', self.on_buffer_update)

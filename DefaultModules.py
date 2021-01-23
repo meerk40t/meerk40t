@@ -428,10 +428,19 @@ class DxfLoader:
                             (b[3][0], b[3][1])
                         )
                 except (AttributeError, TypeError):
-                    # Fallback for versions of EZDXF prior to 0.13
-                    element.move(entity.control_points[0])
-                    for i in range(1, entity.dxf.n_control_points):
-                        element.line(entity.control_points[i])
+                    # Fallback for rational b-splines.
+                    try:
+                        for bezier in entity.construction_tool().cubic_bezier_approximation(3):
+                            b = bezier.control_points
+                            element.cubic(
+                                (b[1][0], b[1][1]),
+                                (b[2][0], b[2][1]),
+                                (b[3][0], b[3][1]))
+                    except (AttributeError, TypeError):
+                        # Fallback for versions of EZDXF prior to 0.13
+                        element.move(entity.control_points[0])
+                        for i in range(1, entity.dxf.n_control_points):
+                            element.line(entity.control_points[i])
                 if entity.closed:
                     element.closed()
             else:
