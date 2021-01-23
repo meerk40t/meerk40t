@@ -62,6 +62,7 @@ class Interpreter:
         self.rapid = self.context.opt_rapid_between
         self.jog = self.context.opt_jog_mode
         self.thread = None
+        self._shutdown = False
 
         @context.console_command("interpreter_start", hidden=True)
         def start(*args, **kwargs):
@@ -82,6 +83,8 @@ class Interpreter:
         :return:
         """
         while True:
+            if self._shutdown:
+                return
             if self.thread is None:
                 return
             if self.thread is not threading.currentThread():
@@ -92,6 +95,7 @@ class Interpreter:
                 # There is no data to interpret. Fetch Failed.
                 if self.context._quit:
                     self.context.console("shutdown\n")
+                    self._shutdown = True
                     return
                 time.sleep(0.1)
             self._process_spooled_item()
