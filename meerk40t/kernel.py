@@ -807,7 +807,7 @@ class Kernel:
 
             channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
             try:
-                if thread is self.scheduler_thread:
+                if thread is threading.currentThread():
                     channel(_("%s is the current shutdown thread") % (thread_name))
                     continue
                 channel(_("Asking thread to stop."))

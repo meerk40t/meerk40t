@@ -64,10 +64,6 @@ class Interpreter:
         self.thread = None
         self._shutdown = False
 
-        @context.console_command("interpreter_start", hidden=True)
-        def start(*args, **kwargs):
-            self.start_interpreter()
-
     def start_interpreter(self, *args):
         if self.thread is None:
             def clear_thread(*args):

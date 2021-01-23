@@ -285,6 +285,8 @@ def run():
                 device.console(line.strip() + "\n")
         kernel_root.channel("console").unwatch(print)
 
+    kernel.bootstrap("ready")
+
     if args.console:
         kernel_root.channel("console").watch(print)
         while True:
@@ -296,5 +298,4 @@ def run():
             device.console(console_command + "\n")
         kernel_root.channel("console").unwatch(print)
 
-    kernel.bootstrap("ready")
     kernel.bootstrap("mainloop")
